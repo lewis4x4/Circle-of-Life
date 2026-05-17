@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { triggerCsvDownload } from "@/lib/csv-export";
 import {
@@ -319,7 +319,7 @@ export default function AdminPayrollBatchDetailPage() {
   if (!facilityReady) {
     return (
       <div className="mx-auto max-w-4xl space-y-6 p-6">
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+        <p className="text-sm text-warning">Select a facility first.</p>
         <Link href="/admin/payroll" className={cn(buttonVariants({ variant: "outline" }))}>
           Back to payroll
         </Link>
@@ -330,7 +330,7 @@ export default function AdminPayrollBatchDetailPage() {
   if (!batchId) {
     return (
       <div className="mx-auto max-w-4xl space-y-6 p-6">
-        <p className="text-sm text-slate-600">Invalid batch.</p>
+        <p className="text-sm text-muted-foreground">Invalid batch.</p>
         <Link href="/admin/payroll" className={cn(buttonVariants({ variant: "outline" }))}>
           Back to payroll
         </Link>
@@ -338,67 +338,54 @@ export default function AdminPayrollBatchDetailPage() {
     );
   }
 
+  const batchSubtitle = batch
+    ? `${batch.period_start} → ${batch.period_end} · ${batch.provider} · ${batch.status.toUpperCase()}`
+    : undefined;
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-            Payroll batch
-          </h1>
-        </div>
-        <Link href="/admin/payroll" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
-          Back
-        </Link>
-      </div>
+      <RecordDetailHeader
+        title="Payroll batch"
+        subtitle={batchSubtitle}
+        backLink={{ label: "Back to payroll", href: "/admin/payroll" }}
+      />
 
-      {loading && <p className="text-sm font-mono text-slate-500">Loading…</p>}
+      {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <p className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
 
       {!loading && !batch && (
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted-foreground">
           Batch not found for this facility, or it was removed.
         </p>
       )}
 
       {batch && (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Period & status</CardTitle>
-              <CardDescription>
-                {batch.period_start} → {batch.period_end} · {batch.provider} ·{" "}
-                <span className="font-mono uppercase">{batch.status}</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-slate-600 dark:text-slate-400">
+          <RecordDetailSection title="Period & status">
+            <p className="text-sm text-muted-foreground">
               Updated {format(new Date(batch.updated_at), "MMM d, yyyy HH:mm")}
-            </CardContent>
-          </Card>
+            </p>
+          </RecordDetailSection>
 
           {batch.status === "draft" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Approved mileage</CardTitle>
-                <CardDescription>
-                  Imports approved mileage logs in this pay period that are not yet tied to an export.
-                  Lines use idempotency key <code className="text-xs">mileage:{"{log_id}"}</code>.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <RecordDetailSection
+              title="Approved mileage"
+              description={`Imports approved mileage logs in this pay period that are not yet tied to an export. Lines use idempotency key mileage:{log_id}.`}
+            >
+              <div className="space-y-4">
                 <p className="text-sm">
-                  <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="font-mono font-semibold tabular-nums text-foreground">
                     {eligibleMileage.length}
                   </span>{" "}
                   eligible trip(s) in range.
                 </p>
                 {importSummary && (
-                  <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                  <p className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
                     {importSummary}
                   </p>
                 )}
@@ -409,30 +396,24 @@ export default function AdminPayrollBatchDetailPage() {
                 >
                   {importing ? "Importing…" : "Import mileage into batch"}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </RecordDetailSection>
           )}
 
           {batch.status === "draft" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Approved time records</CardTitle>
-                <CardDescription>
-                  Imports approved punches whose <strong>clock-in</strong> falls in this pay period (
-                  <span className="font-mono text-xs">America/New_York</span> bounds) and are not already on an export
-                  line. Idempotency <code className="text-xs">time_record:{"{id}"}</code>. Amount is left to the vendor;
-                  hours are in <span className="font-mono text-xs">payload_json</span>.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <RecordDetailSection
+              title="Approved time records"
+              description={`Imports approved punches whose clock-in falls in this pay period (America/New_York bounds) and are not already on an export line. Idempotency time_record:{id}. Amount is left to the vendor; hours are in payload_json.`}
+            >
+              <div className="space-y-4">
                 <p className="text-sm">
-                  <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="font-mono font-semibold tabular-nums text-foreground">
                     {eligibleTimeRecords.length}
                   </span>{" "}
                   eligible punch(es) in range.
                 </p>
                 {timeImportSummary && (
-                  <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                  <p className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
                     {timeImportSummary}
                   </p>
                 )}
@@ -443,29 +424,20 @@ export default function AdminPayrollBatchDetailPage() {
                 >
                   {importing ? "Importing…" : "Import time records into batch"}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </RecordDetailSection>
           )}
 
-          <Card>
-            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <CardTitle className="text-lg">Export lines ({lines.length})</CardTitle>
-                <CardDescription>
-                  Full export includes JSON payload per row. Flat export adds parsed hours (time lines) and miles
-                  (mileage) columns without a JSON field. Vendor handoff adds pay-period columns and{' '}
-                  <span className="font-mono text-xs">amount_usd</span> (not ADP/Gusto proprietary layouts). Hours split
-                  adds separate <span className="font-mono text-xs">regular_hours</span> /{' '}
-                  <span className="font-mono text-xs">overtime_hours</span> /{' '}
-                  <span className="font-mono text-xs">total_hours</span> for time lines.
-                </CardDescription>
-              </div>
-              {lines.length > 0 && batch && (
-                <div className="flex flex-wrap gap-2 self-start">
+          <RecordDetailSection
+            title={`Export lines (${lines.length})`}
+            description="Full export includes JSON payload per row. Flat export adds parsed hours (time lines) and miles (mileage) columns without a JSON field. Vendor handoff adds pay-period columns and amount_usd. Hours split adds separate regular_hours / overtime_hours / total_hours for time lines."
+            action={
+              lines.length > 0 && batch ? (
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     variant="outline"
-                    className="shrink-0"
+                    size="sm"
                     onClick={() => {
                       const csv = buildPayrollLinesCsvGeneric(toExportRows(lines));
                       const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
@@ -475,12 +447,12 @@ export default function AdminPayrollBatchDetailPage() {
                       );
                     }}
                   >
-                    Download CSV (full)
+                    CSV (full)
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="shrink-0"
+                    size="sm"
                     onClick={() => {
                       const csv = buildPayrollLinesCsvFlat(toExportRows(lines));
                       const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
@@ -490,12 +462,12 @@ export default function AdminPayrollBatchDetailPage() {
                       );
                     }}
                   >
-                    Download CSV (flat)
+                    CSV (flat)
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="shrink-0"
+                    size="sm"
                     onClick={() => {
                       const csv = buildPayrollLinesCsvVendorHandoff(toExportRows(lines), {
                         period_start: batch.period_start,
@@ -508,12 +480,12 @@ export default function AdminPayrollBatchDetailPage() {
                       );
                     }}
                   >
-                    Download CSV (vendor handoff)
+                    CSV (vendor handoff)
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="shrink-0"
+                    size="sm"
                     title="Regular / overtime / total hours for time lines; generic columns, not vendor-specific layouts."
                     onClick={() => {
                       const csv = buildPayrollLinesCsvHoursSplit(toExportRows(lines), {
@@ -527,37 +499,36 @@ export default function AdminPayrollBatchDetailPage() {
                       );
                     }}
                   >
-                    Download CSV (hours split)
+                    CSV (hours split)
                   </Button>
                 </div>
-              )}
-            </CardHeader>
-            <CardContent>
-              {lines.length === 0 ? (
-                <p className="text-sm text-slate-500">No lines yet.</p>
-              ) : (
-                <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {lines.map((line) => {
-                    const name = line.staff
-                      ? [line.staff.first_name, line.staff.last_name].filter(Boolean).join(" ") ||
-                        "Staff"
-                      : "Staff";
-                    return (
-                      <li key={line.id} className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm">
-                        <div>
-                          <span className="font-medium text-slate-900 dark:text-slate-100">{name}</span>
-                          <span className="ml-2 font-mono text-xs uppercase text-slate-500">
-                            {line.line_kind}
-                          </span>
-                        </div>
-                        <span className="font-mono">{formatCents(line.amount_cents)}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+              ) : undefined
+            }
+          >
+            {lines.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No lines yet.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {lines.map((line) => {
+                  const name = line.staff
+                    ? [line.staff.first_name, line.staff.last_name].filter(Boolean).join(" ") ||
+                      "Staff"
+                    : "Staff";
+                  return (
+                    <li key={line.id} className="flex flex-wrap items-baseline justify-between gap-2 py-[14px] text-sm">
+                      <div>
+                        <span className="font-medium text-foreground">{name}</span>
+                        <span className="ml-2 text-xs uppercase tracking-wider text-muted-foreground">
+                          {line.line_kind}
+                        </span>
+                      </div>
+                      <span className="tabular-nums font-mono">{formatCents(line.amount_cents)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </RecordDetailSection>
         </>
       )}
     </div>

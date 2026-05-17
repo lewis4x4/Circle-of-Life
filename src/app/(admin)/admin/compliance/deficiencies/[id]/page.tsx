@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 export default function DeficiencyDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
-  const router = useRouter();
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
@@ -115,13 +114,13 @@ export default function DeficiencyDetailPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading…</p>;
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
 
   if (error && !def) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
         <Link href="/admin/compliance" className={cn(buttonVariants({ variant: "outline" }))}>
           Back
         </Link>
@@ -133,46 +132,38 @@ export default function DeficiencyDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <button type="button" onClick={() => router.back()} className="text-sm text-slate-600 hover:underline dark:text-slate-400">
-          ← Back
-        </button>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
-          {def.tag_number}
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          {def.tag_description} · {def.survey_date} · {def.survey_type}
-        </p>
-      </div>
+      <RecordDetailHeader
+        title={def.tag_number}
+        subtitle={`${def.tag_description} · ${def.survey_date} · ${def.survey_type}`}
+        backLink={{ label: "Compliance", href: "/admin/compliance" }}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Finding</CardTitle>
-          <CardDescription>{def.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="text-sm text-slate-600 dark:text-slate-400">
-          <p>
-            Severity: <span className="font-medium text-slate-900 dark:text-slate-100">{def.severity}</span> · Scope:{" "}
-            {def.scope}
-          </p>
-          <p className="mt-2">
-            Deficiency status: <span className="font-medium">{def.status}</span>
-          </p>
-        </CardContent>
-      </Card>
+      <RecordDetailSection title="Finding">
+        <p className="text-sm text-muted-foreground">{def.description}</p>
+        <dl className="mt-3 space-y-1 text-sm">
+          <div className="flex gap-2">
+            <dt className="text-muted-foreground">Severity:</dt>
+            <dd className="font-medium text-foreground">{def.severity}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-muted-foreground">Scope:</dt>
+            <dd className="text-foreground">{def.scope}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="text-muted-foreground">Status:</dt>
+            <dd className="font-medium text-foreground">{def.status}</dd>
+          </div>
+        </dl>
+      </RecordDetailSection>
 
       {pocId ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Plan of Correction</CardTitle>
-            <CardDescription>Draft and submit through your internal QA process before filing with the agency.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <RecordDetailSection title="Plan of correction">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ca">Corrective action</Label>
               <textarea
                 id="ca"
-                className="min-h-[100px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                className="min-h-[100px] w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
                 value={correctiveAction}
                 onChange={(e) => setCorrectiveAction(e.target.value)}
               />
@@ -185,7 +176,7 @@ export default function DeficiencyDetailPage() {
               <Label htmlFor="ps">POC status</Label>
               <select
                 id="ps"
-                className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950"
+                className="flex h-9 w-full rounded-[8px] border border-border bg-background px-3 text-sm text-foreground"
                 value={pocStatus}
                 onChange={(e) => setPocStatus(e.target.value)}
               >
@@ -196,14 +187,14 @@ export default function DeficiencyDetailPage() {
                 <option value="revised">Revised</option>
               </select>
             </div>
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button type="button" disabled={saving} onClick={() => void savePoc()}>
               {saving ? "Saving…" : "Save POC"}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
       ) : (
-        <p className="text-sm text-slate-500">No active Plan of Correction row found for this deficiency.</p>
+        <p className="text-sm text-muted-foreground">No active Plan of Correction row found for this deficiency.</p>
       )}
     </div>
   );

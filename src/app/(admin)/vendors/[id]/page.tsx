@@ -6,8 +6,8 @@ import { useParams } from "next/navigation";
 
 import { VendorHubNav } from "../vendor-hub-nav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { canManageVendorMaster } from "@/lib/vendors/vendor-role-helpers";
@@ -127,52 +127,47 @@ export default function VendorDetailPage() {
     <div className="space-y-6">
       <VendorHubNav />
       {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {loadError}
         </p>
       )}
 
       {loading && !vendor ? (
-        <p className="text-sm text-slate-600">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : vendor ? (
         <>
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{vendor.name}</h1>
-            <p className="text-sm capitalize text-slate-600 dark:text-slate-400">
-              {vendor.category} · {vendor.status}
-            </p>
-          </div>
+          <RecordDetailHeader
+            title={vendor.name}
+            subtitle={`${vendor.category} · ${vendor.status}`}
+            backLink={{ label: "Vendors", href: "/admin/vendors" }}
+          />
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Contracts</CardTitle>
-              </CardHeader>
-              <CardContent className="text-2xl font-semibold tabular-nums">{counts.contracts}</CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Purchase orders</CardTitle>
-              </CardHeader>
-              <CardContent className="text-2xl font-semibold tabular-nums">{counts.pos}</CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Invoices</CardTitle>
-              </CardHeader>
-              <CardContent className="text-2xl font-semibold tabular-nums">{counts.invoices}</CardContent>
-            </Card>
+            {(
+              [
+                { label: "Contracts", value: counts.contracts },
+                { label: "Purchase orders", value: counts.pos },
+                { label: "Invoices", value: counts.invoices },
+              ] as const
+            ).map(({ label, value }) => (
+              <div
+                key={label}
+                className="rounded-[8px] border border-border bg-card p-[14px] shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:-translate-y-0.5"
+              >
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+              </div>
+            ))}
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Facilities served</CardTitle>
-              <CardDescription>Link this vendor to sites where they deliver goods or services.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <ul className="list-inside list-disc text-sm text-slate-700 dark:text-slate-300">
+          <RecordDetailSection
+            title="Facilities served"
+            description="Link this vendor to sites where they deliver goods or services."
+          >
+            <div className="space-y-3">
+              <ul className="list-inside list-disc text-sm text-foreground">
                 {linked.length === 0 ? (
-                  <li className="list-none text-slate-500">No facilities linked.</li>
+                  <li className="list-none text-muted-foreground">No facilities linked.</li>
                 ) : (
                   linked.map((fid) => (
                     <li key={fid}>{facilities.find((f) => f.id === fid)?.name ?? fid}</li>
@@ -185,7 +180,7 @@ export default function VendorDetailPage() {
                     <Label htmlFor="add-facility">Add facility</Label>
                     <select
                       id="add-facility"
-                      className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                      className="flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
                       value={addFacilityId}
                       onChange={(ev) => setAddFacilityId(ev.target.value)}
                     >
@@ -202,8 +197,8 @@ export default function VendorDetailPage() {
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
 
           <div className="flex flex-wrap gap-2 text-sm">
             <Link className="text-primary underline-offset-4 hover:underline" href="/admin/vendors/contracts">

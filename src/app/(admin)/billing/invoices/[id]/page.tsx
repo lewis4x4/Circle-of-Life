@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Calculator, FileText, StickyNote } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { postInvoiceToGl } from "@/lib/finance/post-to-gl";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import {
@@ -174,15 +174,14 @@ export default function AdminInvoiceDetailPage() {
     return (
       <div className="space-y-6">
         <BillingHubNav />
-        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm">
-          <div className="mb-4 border-b border-slate-200 dark:border-white/5 pb-4">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Invoice not found</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Check the link or your facility selection.</p>
+        <RecordDetailSection title="Invoice not found">
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Check the link or your facility selection.</p>
+            <Link href="/admin/billing/invoices" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+              Back to invoices
+            </Link>
           </div>
-          <Link href="/admin/billing/invoices" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            Back to invoices
-          </Link>
-        </div>
+        </RecordDetailSection>
       </div>
     );
   }
@@ -229,210 +228,169 @@ export default function AdminInvoiceDetailPage() {
   const uiPayer = mapDbPayerTypeToUi(invoice.payer_type);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
-      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <BillingHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-3">
-             <Link
-               href="/admin/billing/invoices"
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-             >
-                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO INVOICES
-             </Link>
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               {invoice.invoice_number}
-             </h1>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-               {residentName} · Period {formatDate(invoice.period_start)} – {formatDate(invoice.period_end)}
-            </p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              <InvoiceStatusBadge status={uiStatus} />
-              <PayerTypeBadge payerType={uiPayer} />
-            </div>
-          </div>
-          <div>
-            <Link
-              href={`/admin/residents/${invoice.resident_id}/billing`}
-              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-slate-100 hover:bg-slate-200 text-slate-900 shadow-lg flex items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-white/10")}
-            >
-              Resident Billing Profile
-            </Link>
-          </div>
-        </header>
+    <div className="space-y-6">
+      <BillingHubNav />
 
-        <div className="grid gap-6 md:grid-cols-2">
-          
-          <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
-            <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Timeline & Parties</h3>
+      <RecordDetailHeader
+        title={invoice.invoice_number}
+        subtitle={`${residentName} · Period ${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)}`}
+        statusChips={
+          <>
+            <InvoiceStatusBadge status={uiStatus} />
+            <PayerTypeBadge payerType={uiPayer} />
+          </>
+        }
+        backLink={{ label: "Back to invoices", href: "/admin/billing/invoices" }}
+        actions={
+          <Link
+            href={`/admin/residents/${invoice.resident_id}/billing`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Resident billing profile
+          </Link>
+        }
+      />
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <RecordDetailSection title="Timeline & parties">
+          <dl className="space-y-3 text-sm">
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Invoice date</dt>
+              <dd className="font-medium tabular-nums text-foreground">{formatDate(invoice.invoice_date)}</dd>
             </div>
-            <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
-              <div className="flex justify-between items-center bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400">Invoice date</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{formatDate(invoice.invoice_date)}</span>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-muted-foreground">Due</dt>
+              <dd className="font-medium tabular-nums text-foreground">{formatDate(invoice.due_date)}</dd>
+            </div>
+            {invoice.payer_name && (
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">Payer on file</dt>
+                <dd className="font-medium text-foreground">{invoice.payer_name}</dd>
               </div>
-              <div className="flex justify-between items-center bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400">Due</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{formatDate(invoice.due_date)}</span>
-              </div>
-              {invoice.payer_name && (
-                <div className="flex justify-between items-center bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                  <span className="font-bold uppercase tracking-wider text-[9px] text-slate-400">Payer on file</span>
-                  <span className="font-medium text-slate-800 dark:text-slate-200">{invoice.payer_name}</span>
-                </div>
-              )}
+            )}
+          </dl>
+        </RecordDetailSection>
+
+        <RecordDetailSection title="Totals">
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <dt>Subtotal</dt>
+              <dd className="tabular-nums">{billingCurrency.format(invoice.subtotal / 100)}</dd>
             </div>
-          </div>
-
-          <div className="p-6 sm:p-8 rounded-lg border border-emerald-500/20 dark:border-emerald-500/10 bg-emerald-50/30 dark:bg-emerald-900/10 shadow-[inset_0_0_15px_rgba(16,185,129,0.02)] relative overflow-hidden transition-all">
-            <div className="mb-6 border-b border-emerald-500/20 dark:border-white/5 pb-4 flex items-center justify-between">
-               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2"><Calculator className="h-4 w-4 text-emerald-500" /> Totals</h3>
+            <div className="flex justify-between text-muted-foreground">
+              <dt>Adjustments</dt>
+              <dd className="tabular-nums">{billingCurrency.format(invoice.adjustments / 100)}</dd>
             </div>
-            <div className="space-y-2 text-sm">
-              <p className="flex justify-between text-slate-600 dark:text-slate-400 px-2">
-                <span>Subtotal</span>
-                <span className="tabular-nums font-mono">{billingCurrency.format(invoice.subtotal / 100)}</span>
-              </p>
-              <p className="flex justify-between text-slate-600 dark:text-slate-400 px-2">
-                <span>Adjustments</span>
-                <span className="tabular-nums font-mono">{billingCurrency.format(invoice.adjustments / 100)}</span>
-              </p>
-              <p className="flex justify-between text-slate-600 dark:text-slate-400 px-2 pb-2">
-                <span>Tax</span>
-                <span className="tabular-nums font-mono">{billingCurrency.format(invoice.tax / 100)}</span>
-              </p>
-              <div className="h-px w-full bg-slate-200 dark:bg-white/10 my-2"></div>
-              <p className="flex justify-between font-medium text-slate-900 dark:text-slate-100 px-2">
-                <span>Total</span>
-                <span className="tabular-nums font-mono">{billingCurrency.format(invoice.total / 100)}</span>
-              </p>
-              <p className="flex justify-between text-slate-600 dark:text-slate-400 px-2">
-                <span>Amount Paid</span>
-                <span className="tabular-nums font-mono">{billingCurrency.format(invoice.amount_paid / 100)}</span>
-              </p>
-              <div className="h-px w-full bg-emerald-500/20 dark:bg-emerald-500/30 my-3"></div>
-              <p className="flex justify-between font-semibold text-emerald-800 dark:text-emerald-400 px-2 text-lg">
-                <span>Balance Due</span>
-                <span className="tabular-nums font-mono">{billingCurrency.format(Math.max(0, invoice.balance_due) / 100)}</span>
-              </p>
+            <div className="flex justify-between text-muted-foreground pb-2">
+              <dt>Tax</dt>
+              <dd className="tabular-nums">{billingCurrency.format(invoice.tax / 100)}</dd>
             </div>
-          </div>
-        </div>
-
-        {invoice.notes?.trim() && (
-          <div className="p-6 sm:p-8 rounded-lg border border-amber-500/20 dark:border-amber-500/10 bg-amber-50/50 dark:bg-amber-900/10 shadow-sm relative overflow-hidden transition-all">
-             <div className="flex items-center gap-2 mb-2">
-                <StickyNote className="w-4 h-4 text-amber-500" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500">Notes</h3>
-             </div>
-             <p className="text-sm text-slate-700 dark:text-slate-300 left-leading relative z-10 font-medium">
-               {invoice.notes.trim()}
-             </p>
-          </div>
-        )}
-
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative mt-4">
-          <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
-               <FileText className="h-5 w-5 text-brand-500" /> Line Items
-            </h3>
-            <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Charges comprising this invoice</p>
-          </div>
-          
-          <div className="relative z-10 w-full overflow-hidden">
-             {lines.length === 0 ? (
-               <p className="text-sm text-slate-500 dark:text-slate-400 py-4">No line items returned.</p>
-             ) : (
-                <>
-                  <div className="hidden sm:grid grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Description</div>
-                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Type</div>
-                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Qty</div>
-                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Unit</div>
-                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Total</div>
-                  </div>
-
-                  <div className="space-y-3 mt-6 relative z-10">
-                     <MotionList className="space-y-3">
-                        {lines.map((line) => (
-                           <MotionItem key={line.id}>
-                              <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 sm:items-center p-5 rounded-2xl bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
-                                <div className="flex flex-col">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Description</span>
-                                   <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{line.description}</span>
-                                </div>
-                                <div className="flex flex-col">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Type</span>
-                                   <span className="text-xs font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">{line.line_type}</span>
-                                </div>
-                                <div className="flex flex-col sm:items-end">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Qty</span>
-                                   <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{Number(line.quantity)}</span>
-                                </div>
-                                <div className="flex flex-col sm:items-end">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Unit</span>
-                                   <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{billingCurrency.format(line.unit_price / 100)}</span>
-                                </div>
-                                <div className="flex flex-col sm:items-end p-3 sm:p-0 bg-slate-50 sm:bg-transparent rounded-lg dark:bg-white/5 dark:sm:bg-transparent mt-2 sm:mt-0">
-                                   <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Total</span>
-                                   <span className="text-lg font-mono font-bold text-slate-900 dark:text-slate-100">{billingCurrency.format(line.total / 100)}</span>
-                                </div>
-                              </div>
-                           </MotionItem>
-                        ))}
-                     </MotionList>
-                  </div>
-                </>
-             )}
-          </div>
-        </div>
-
-        {canPost && (
-          <div className="p-6 sm:p-8 rounded-lg border border-indigo-500/20 dark:border-indigo-500/10 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm relative overflow-hidden transition-all">
-             <div className="mb-6 border-b border-indigo-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">General Ledger</h3>
-                <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Financial Posting Control</p>
-             </div>
-             
-             <div className="space-y-4 relative z-10 w-full max-w-xl">
-               <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">Post this invoice to the GL as a balanced journal entry (Debit AR / Credit Revenue).</p>
-               {glError && (
-                 <p className="text-sm font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 p-3 flex border border-rose-200 dark:border-rose-500/30 rounded-xl" role="alert">
-                   {glError}
-                 </p>
-               )}
-               {glResult ? (
-                 <div className="flex flex-wrap items-center gap-4 bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-200 dark:border-emerald-500/20">
-                   <div className="flex flex-col">
-                      <span className="font-bold text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1">Status</span>
-                      <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
-                        {glResult.alreadyPosted ? "Reconciliation confirmed. Previously posted to GL." : "Commit successful. Posted to GL."}
-                      </span>
-                   </div>
-                   <Link
-                     href={`/admin/finance/journal-entries/${glResult.journalEntryId}`}
-                     className={cn(buttonVariants({ size: "default" }), "h-10 px-5 rounded-xl font-bold uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white border-none ml-auto")}
-                   >
-                     View Journal Entry
-                   </Link>
-                 </div>
-               ) : (
-                 <Button
-                   type="button"
-                   onClick={() => void postToGl()}
-                   disabled={glPosting || invoice.total <= 0}
-                   className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center gap-2")}
-                 >
-                   {glPosting ? "Posting…" : "Post to GL"}
-                 </Button>
-               )}
-             </div>
-          </div>
-        )}
+            <div className="border-t border-border pt-2" />
+            <div className="flex justify-between font-medium text-foreground">
+              <dt>Total</dt>
+              <dd className="tabular-nums">{billingCurrency.format(invoice.total / 100)}</dd>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <dt>Amount paid</dt>
+              <dd className="tabular-nums">{billingCurrency.format(invoice.amount_paid / 100)}</dd>
+            </div>
+            <div className="border-t border-border pt-2" />
+            <div className="flex justify-between font-semibold text-foreground">
+              <dt>Balance due</dt>
+              <dd className="tabular-nums">{billingCurrency.format(Math.max(0, invoice.balance_due) / 100)}</dd>
+            </div>
+          </dl>
+        </RecordDetailSection>
       </div>
+
+      {invoice.notes?.trim() && (
+        <RecordDetailSection title="Notes">
+          <p className="text-sm text-foreground">{invoice.notes.trim()}</p>
+        </RecordDetailSection>
+      )}
+
+      <RecordDetailSection title="Line items" description="Charges comprising this invoice">
+        {lines.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No line items returned.</p>
+        ) : (
+          <>
+            <div className="hidden sm:grid grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 pb-2 border-b border-border">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Description</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Type</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Qty</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Unit</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Total</div>
+            </div>
+            <MotionList className="space-y-2 mt-2">
+              {lines.map((line) => (
+                <MotionItem key={line.id}>
+                  <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_0.5fr_1fr_1fr] gap-4 sm:items-center rounded-[8px] border border-border bg-card p-[14px] transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:-translate-y-0.5">
+                    <div className="flex flex-col">
+                      <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Description</span>
+                      <span className="font-medium text-sm text-foreground">{line.description}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Type</span>
+                      <span className="text-xs font-mono tracking-wider text-muted-foreground uppercase">{line.line_type}</span>
+                    </div>
+                    <div className="flex flex-col sm:items-end">
+                      <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Qty</span>
+                      <span className="text-sm tabular-nums text-foreground">{Number(line.quantity)}</span>
+                    </div>
+                    <div className="flex flex-col sm:items-end">
+                      <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Unit</span>
+                      <span className="text-sm tabular-nums text-foreground">{billingCurrency.format(line.unit_price / 100)}</span>
+                    </div>
+                    <div className="flex flex-col sm:items-end">
+                      <span className="sm:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Total</span>
+                      <span className="text-sm tabular-nums font-semibold text-foreground">{billingCurrency.format(line.total / 100)}</span>
+                    </div>
+                  </div>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </>
+        )}
+      </RecordDetailSection>
+
+      {canPost && (
+        <RecordDetailSection
+          title="General ledger"
+          description="Post this invoice to the GL as a balanced journal entry (Debit AR / Credit Revenue)."
+        >
+          <div className="space-y-4 max-w-xl">
+            {glError && (
+              <p className="text-sm text-destructive bg-destructive/10 p-3 border border-destructive/30 rounded-[8px]" role="alert">
+                {glError}
+              </p>
+            )}
+            {glResult ? (
+              <div className="flex flex-wrap items-center gap-4 rounded-[8px] border border-success/20 bg-success/10 p-[14px]">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-success mb-1">Status</span>
+                  <span className="text-sm text-success">
+                    {glResult.alreadyPosted ? "Reconciliation confirmed. Previously posted to GL." : "Commit successful. Posted to GL."}
+                  </span>
+                </div>
+                <Link
+                  href={`/admin/finance/journal-entries/${glResult.journalEntryId}`}
+                  className={cn(buttonVariants({ size: "sm", variant: "outline" }), "ml-auto")}
+                >
+                  View journal entry
+                </Link>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => void postToGl()}
+                disabled={glPosting || invoice.total <= 0}
+              >
+                {glPosting ? "Posting…" : "Post to GL"}
+              </Button>
+            )}
+          </div>
+        </RecordDetailSection>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, FileText, Loader2, UserPlus } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 
 import { AdmissionsHubNav } from "../admissions-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,6 +15,10 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -507,114 +511,98 @@ export default function AdminAdmissionCaseDetailPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <></>
       
-      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <AdmissionsHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-3">
-             <Link
-               href="/admin/admissions"
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-             >
-                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO ADMISSIONS
-             </Link>
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Admission Case
-             </h1>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-               Operational workspace for move-in readiness, quoted terms, and downstream onboarding.
-            </p>
-          </div>
-          <div>
-            {row?.resident_id && (
+        <RecordDetailHeader
+          title="Admission Case"
+          subtitle="Operational workspace for move-in readiness, quoted terms, and downstream onboarding."
+          backLink={{ label: "Back to admissions", href: "/admin/admissions" }}
+          actions={
+            row?.resident_id ? (
               <Link
                 href={`/admin/residents/${row.resident_id}`}
-                className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-brand-600 hover:bg-brand-700 text-white shadow-lg flex items-center gap-2")}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
               >
                 Resident Profile
               </Link>
-            )}
-          </div>
-        </header>
+            ) : undefined
+          }
+        />
 
         {loading ? (
-          <div className="flex items-center justify-center p-12 text-sm text-slate-500 font-medium bg-white/50 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/10">
+          <div className="flex items-center justify-center p-12 text-sm text-muted-foreground bg-card rounded-[8px] border border-border">
              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading Case...
           </div>
         ) : error ? (
-           <div className="p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
+           <div className="p-4 rounded-[8px] border border-destructive/20 bg-destructive/10 text-destructive font-medium" role="alert">
               {error}
            </div>
         ) : !row ? (
-          <div className="flex items-center justify-center p-12 text-center text-sm text-slate-500 bg-white/50 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/10">
+          <div className="flex items-center justify-center p-12 text-center text-sm text-muted-foreground bg-card rounded-[8px] border border-border">
             No case found for this id, or you do not have access.
           </div>
         ) : (
           <>
             {actionError ? (
-              <div className="p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium text-sm">
+              <div className="p-4 rounded-[8px] border border-destructive/20 bg-destructive/10 text-destructive font-medium text-sm" role="alert">
                 {actionError}
               </div>
             ) : null}
             {actionMessage ? (
-              <div className="p-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium text-sm">
+              <div className="p-4 rounded-[8px] border border-success/20 bg-success/10 text-success font-medium text-sm">
                 {actionMessage}
               </div>
             ) : null}
             {wrongFacility && (
-              <div className="p-6 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 font-medium text-sm">
+              <div className="p-4 rounded-[8px] border border-warning/20 bg-warning/10 text-warning font-medium text-sm">
                 This case belongs to another facility. Switch the facility in the header to match.
               </div>
             )}
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all h-fit">
-                <div className="mb-8 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col gap-2">
-                   <h3 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-3">
-                     <UserPlus className="h-6 w-6 text-brand-500" />
-                     {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
-                   </h3>
-                   <p className="font-mono text-xs break-all text-slate-500 dark:text-slate-400">{row.id}</p>
-                </div>
-                
+              <RecordDetailSection
+                title={row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
+                description={`Case ID: ${row.id}`}
+              >
                 <dl className="grid gap-4 sm:grid-cols-2">
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status</dt>
-                    <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.status)}</dd>
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Status</dt>
+                    <dd className="text-base font-semibold text-foreground capitalize">{formatStatus(row.status)}</dd>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Medicaid Stage</dt>
-                    <dd className="text-base font-semibold text-slate-900 dark:text-slate-100 capitalize">{formatStatus(row.medicaid_pipeline_stage ?? "prospect")}</dd>
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medicaid Stage</dt>
+                    <dd className="text-base font-semibold text-foreground capitalize">{formatStatus(row.medicaid_pipeline_stage ?? "prospect")}</dd>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Target Move-In</dt>
-                    <dd className="text-base font-semibold text-slate-900 dark:text-slate-100">{row.target_move_in_date ?? "—"}</dd>
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Target Move-In</dt>
+                    <dd className="text-base font-semibold text-foreground">{row.target_move_in_date ?? "—"}</dd>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Referral Lead</dt>
-                    <dd className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Referral Lead</dt>
+                    <dd className="text-sm font-medium text-foreground">
                       {row.referral_leads ? `${row.referral_leads.first_name} ${row.referral_leads.last_name}` : "—"}
                     </dd>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Bed</dt>
-                    <dd className="text-sm font-medium text-slate-900 dark:text-slate-100">{row.beds?.bed_label ?? "—"}</dd>
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Bed</dt>
+                    <dd className="text-sm font-medium text-foreground">{row.beds?.bed_label ?? "—"}</dd>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Financial Clearance</dt>
-                    <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.financial_clearance_at)}</dd>
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Financial Clearance</dt>
+                    <dd className="text-sm font-mono text-foreground">{formatTs(row.financial_clearance_at)}</dd>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Physician Orders</dt>
-                    <dd className="text-sm font-mono text-slate-900 dark:text-slate-300">{formatTs(row.physician_orders_received_at)}</dd>
+                  <div className="p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Physician Orders</dt>
+                    <dd className="text-sm font-mono text-foreground">{formatTs(row.physician_orders_received_at)}</dd>
                   </div>
-                  <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Medicaid Pipeline Tracking</dt>
+                  <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Medicaid Pipeline Tracking</dt>
                     <dd className="space-y-3">
                       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                         <select
                           value={medicaidPipelineStageDraft}
                           onChange={(event) => setMedicaidPipelineStageDraft(event.target.value as MedicaidPipelineStage)}
-                          className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {MEDICAID_PIPELINE_STAGE_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -631,19 +619,19 @@ export default function AdminAdmissionCaseDetailPage() {
                           {actionLoading === "Medicaid stage saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save stage"}
                         </Button>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                      <p className="text-xs text-muted-foreground">
                         Keep this in sync with the COL Medicaid workflow while the main admission status stays unchanged.
                       </p>
                     </dd>
                   </div>
-                  <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Physician Orders Summary</dt>
+                  <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Physician Orders Summary</dt>
                     <dd className="space-y-3">
                       <textarea
                         value={physicianOrdersSummaryDraft}
                         onChange={(event) => setPhysicianOrdersSummaryDraft(event.target.value)}
                         rows={4}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                       <div className="flex justify-end">
                         <Button
@@ -662,14 +650,14 @@ export default function AdminAdmissionCaseDetailPage() {
                       </div>
                     </dd>
                   </div>
-                  <div className="sm:col-span-2 bg-white dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-                    <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Notes</dt>
+                  <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Notes</dt>
                     <dd className="space-y-3">
                       <textarea
                         value={caseNotesDraft}
                         onChange={(event) => setCaseNotesDraft(event.target.value)}
                         rows={4}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                       <div className="flex justify-end">
                         <Button
@@ -688,35 +676,31 @@ export default function AdminAdmissionCaseDetailPage() {
                       </div>
                     </dd>
                   </div>
-                  <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-2">
+                  <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-muted-foreground uppercase tracking-wider font-mono mt-2">
                     Updated: {formatTs(row.updated_at)}
                   </div>
                 </dl>
-              </div>
+              </RecordDetailSection>
 
-              <div className="p-6 sm:p-8 rounded-lg border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 shadow-sm relative overflow-hidden h-fit">
-                <div className="mb-6 border-b border-amber-200/70 dark:border-amber-900/40 pb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Move-In Readiness</h3>
-                  <span className="text-[10px] font-mono tracking-wider text-amber-700 dark:text-amber-300 uppercase">Operational checklist</span>
-                </div>
+              <RecordDetailSection title="Move-In Readiness" description="Operational checklist">
                 <div className="space-y-3">
                   {readiness.map((item) => (
-                    <div key={item.key} className="rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
+                    <div key={item.key} className="rounded-[8px] border border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-foreground">{item.label}</span>
                       <span className={cn(
                         "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                         item.passed
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                          ? "bg-success/10 text-success"
+                          : "bg-warning/10 text-warning",
                       )}>
                         {item.passed ? "Complete" : "Missing"}
                       </span>
                     </div>
                   ))}
                 </div>
-                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 p-4">
-                  <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500 mb-2">Next actions</p>
-                  <ul className="list-inside list-disc space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                <div className="mt-5 rounded-[8px] border border-border bg-card p-4">
+                  <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground mb-2">Next actions</p>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-foreground">
                     {!row.financial_clearance_at ? <li>Record financial clearance before move-in.</li> : null}
                     {!row.physician_orders_received_at ? <li>Capture physician orders receipt before move-in.</li> : null}
                     {!row.bed_id ? <li>Reserve or assign a bed.</li> : null}
@@ -728,8 +712,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     ) : null}
                   </ul>
                 </div>
-                <div className="mt-5 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 p-4 space-y-4">
-                  <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">Workflow actions</p>
+                <div className="mt-5 rounded-[8px] border border-border bg-card p-4 space-y-4">
+                  <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Workflow actions</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Button
                       type="button"
@@ -748,30 +732,30 @@ export default function AdminAdmissionCaseDetailPage() {
                       {actionLoading === "Physician orders recorded." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark physician orders received"}
                     </Button>
                   </div>
-                <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-4">
+                <div className="rounded-[8px] border border-info/20 bg-info/10 p-4 space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">Form 1823 gate</p>
-                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                      <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Form 1823 gate</p>
+                      <p className="mt-1 text-sm text-foreground">
                         Move-in requires a received Form 1823 for this admission case.
                       </p>
                     </div>
                     <span className={cn(
                       "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                       form1823Satisfied
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                        ? "bg-success/10 text-success"
+                        : "bg-warning/10 text-warning",
                     )}>
                       {form1823Satisfied ? "Satisfied" : "Blocked"}
                     </span>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="space-y-1">
-                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</span>
                       <select
                         value={form1823StatusDraft}
                         onChange={(event) => setForm1823StatusDraft(event.target.value as Form1823Record["status"])}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="pending">Pending</option>
                         <option value="received">Received</option>
@@ -780,43 +764,43 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </label>
                     <label className="space-y-1">
-                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Physician name</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Physician name</span>
                       <input
                         type="text"
                         value={form1823PhysicianDraft}
                         onChange={(event) => setForm1823PhysicianDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </label>
                     <label className="space-y-1">
-                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Exam date</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Exam date</span>
                       <input
                         type="date"
                         value={form1823ExamDateDraft}
                         onChange={(event) => setForm1823ExamDateDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </label>
                     <label className="space-y-1">
-                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Expiration date</span>
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Expiration date</span>
                       <input
                         type="date"
                         value={form1823ExpirationDraft}
                         onChange={(event) => setForm1823ExpirationDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </label>
                   </div>
                   <label className="space-y-1 block">
-                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Checklist notes</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Checklist notes</span>
                     <textarea
                       value={form1823NotesDraft}
                       onChange={(event) => setForm1823NotesDraft(event.target.value)}
                       rows={3}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                   </label>
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                     <div>
                       Latest record updated: {form1823Record ? formatTs(form1823Record.updated_at) : "—"}
                       {" · "}
@@ -836,7 +820,7 @@ export default function AdminAdmissionCaseDetailPage() {
                   <select
                     value={bedDraft}
                     onChange={(event) => setBedDraft(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">No bed assigned</option>
                     {row.bed_id && row.beds?.bed_label ? (
@@ -866,7 +850,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     type="date"
                     value={targetMoveInDraft}
                       onChange={(event) => setTargetMoveInDraft(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                     <Button
                       type="button"
@@ -895,23 +879,23 @@ export default function AdminAdmissionCaseDetailPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="mt-5 rounded-2xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-3">
-                  <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">Downstream onboarding work</p>
+                <div className="mt-5 rounded-[8px] border border-info/20 bg-info/10 p-4 space-y-3">
+                  <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Downstream onboarding work</p>
                   {row.status !== "move_in" ? (
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
+                    <p className="text-sm text-foreground">
                       Advance this case to <span className="font-semibold">move in</span> before completing downstream onboarding work across resident, care plan, medications, billing, and family coordination.
                     </p>
                   ) : (
                     <>
                       <div className="space-y-2">
                         {onboarding.map((item) => (
-                          <div key={item.key} className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 flex items-center justify-between gap-3">
-                            <span className="text-sm font-medium text-slate-900 dark:text-white">{item.label}</span>
+                          <div key={item.key} className="rounded-[8px] border border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
+                            <span className="text-sm font-medium text-foreground">{item.label}</span>
                             <span className={cn(
                               "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
                               item.passed
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                                ? "bg-success/10 text-success"
+                                : "bg-warning/10 text-warning",
                             )}>
                               {item.passed ? "Complete" : "Missing"}
                             </span>
@@ -923,14 +907,14 @@ export default function AdminAdmissionCaseDetailPage() {
                           <Link
                             key={item.href}
                             href={item.href}
-                            className="rounded-xl border border-slate-200/70 dark:border-white/5 bg-white/80 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white transition-colors hover:bg-white dark:hover:bg-black/30"
+                            className="rounded-[8px] border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
                           >
                             {item.label}
                           </Link>
                         ))}
                         <Link
                           href="/admin/admissions/onboarding"
-                          className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-sm font-medium text-indigo-900 dark:text-indigo-100 transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                          className="rounded-[8px] border border-info/20 bg-info/10 px-4 py-3 text-sm font-medium text-info transition-colors hover:bg-info/20"
                         >
                           Open onboarding queue
                         </Link>
@@ -938,19 +922,12 @@ export default function AdminAdmissionCaseDetailPage() {
                     </>
                   )}
                 </div>
-              </div>
+              </RecordDetailSection>
 
-              <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative h-fit">
-                <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
-                     <FileText className="h-5 w-5 text-indigo-500" /> Quoted Rate Terms
-                  </h3>
-                  <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">Saved in admission_case_rate_terms</p>
-                </div>
-
-                <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-white/5 bg-white/80 p-4 space-y-4">
+              <RecordDetailSection title="Quoted Rate Terms" description="Saved in admission_case_rate_terms">
+                <div className="mb-6 rounded-[8px] border border-border bg-card p-4 space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500">
+                    <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
                       {editingRateTermId ? "Edit quoted terms" : "Add quoted terms"}
                     </p>
                     {editingRateTermId ? (
@@ -961,11 +938,11 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Rate schedule</label>
+                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Rate schedule</label>
                       <select
                         value={rateScheduleDraft}
                         onChange={(event) => setRateScheduleDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="">Manual quote</option>
                         {rateSchedules.map((schedule) => (
@@ -976,22 +953,22 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Accommodation</label>
+                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Accommodation</label>
                       <select
                         value={rateAccommodationDraft}
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="private">{formatColLabel("private")}</option>
                         <option value="semi_private">{formatColLabel("semi_private")}</option>
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Care level helper</label>
+                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Care level helper</label>
                       <select
                         value={rateCareLevelDraft}
                         onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
@@ -1009,37 +986,37 @@ export default function AdminAdmissionCaseDetailPage() {
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Quoted base rate (cents)</label>
+                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Quoted base rate (cents)</label>
                       <input
                         type="number"
                         min="0"
                         value={quotedBaseDraft}
                         onChange={(event) => setQuotedBaseDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Quoted care surcharge (cents)</label>
+                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Quoted care surcharge (cents)</label>
                       <input
                         type="number"
                         min="0"
                         value={quotedCareDraft}
                         onChange={(event) => setQuotedCareDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Effective date</label>
+                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Effective date</label>
                       <input
                         type="date"
                         value={effectiveDateDraft}
                         onChange={(event) => setEffectiveDateDraft(event.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                   </div>
                   {selectedRateSchedule ? (
-                    <div className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-xs text-indigo-900 dark:text-indigo-100">
+                    <div className="rounded-[8px] border border-info/20 bg-info/10 px-4 py-3 text-xs text-info">
                       Schedule helper:
                       <span className="ml-2 font-medium">{formatColLabel("private")} {formatCents(selectedRateSchedule.base_rate_private)}</span>
                       <span className="ml-2 font-medium">{formatColLabel("semi_private")} {formatCents(selectedRateSchedule.base_rate_semi_private)}</span>
@@ -1049,12 +1026,12 @@ export default function AdminAdmissionCaseDetailPage() {
                     </div>
                   ) : null}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Notes</label>
+                    <label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</label>
                     <textarea
                       value={rateNotesDraft}
                       onChange={(event) => setRateNotesDraft(event.target.value)}
                       rows={3}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                   </div>
                   <div className="flex justify-end">
@@ -1074,36 +1051,36 @@ export default function AdminAdmissionCaseDetailPage() {
 
                 <div className="relative z-10 w-full overflow-hidden">
                    {rateTerms.length === 0 ? (
-                     <p className="text-sm text-slate-500 dark:text-slate-400 py-4 font-medium px-2">No rate quotes recorded.</p>
+                     <p className="text-sm text-muted-foreground py-4 font-medium px-2">No rate quotes recorded.</p>
                    ) : (
                      <>
-                        <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Accommodation</div>
-                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Base (¢)</div>
-                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Care (¢)</div>
-                           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Effective</div>
+                        <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 px-6 pb-4 border-b border-border relative z-10 text-left">
+                           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Accommodation</div>
+                           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Base (¢)</div>
+                           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Care (¢)</div>
+                           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Effective</div>
                         </div>
 
                         <div className="space-y-3 mt-6 relative z-10">
                            <MotionList className="space-y-3">
                               {rateTerms.map((t) => (
                                  <MotionItem key={t.id}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 sm:items-center p-5 rounded-2xl bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg transition-all duration-300 w-full outline-none">
+                                    <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 sm:items-center p-5 rounded-[8px] bg-card border border-border tap-responsive w-full outline-none">
                                       <div className="flex flex-col">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Accommodation</span>
-                                         <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight leading-tight">{formatColLabel(t.accommodation_type)}</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Accommodation</span>
+                                         <span className="font-semibold text-base text-foreground tracking-tight leading-tight">{formatColLabel(t.accommodation_type)}</span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Base (¢)</span>
-                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_base_rate_cents)}</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Base (¢)</span>
+                                         <span className="text-sm tabular-nums text-foreground">{formatCents(t.quoted_base_rate_cents)}</span>
                                       </div>
                                       <div className="flex flex-col sm:items-end">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Care (¢)</span>
-                                         <span className="text-sm font-mono text-slate-700 dark:text-slate-300">{formatCents(t.quoted_care_surcharge_cents)}</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Care (¢)</span>
+                                         <span className="text-sm tabular-nums text-foreground">{formatCents(t.quoted_care_surcharge_cents)}</span>
                                       </div>
                                      <div className="flex flex-col">
-                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Effective</span>
-                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-slate-400" /> {t.effective_date ?? "—"}</span>
+                                         <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Effective</span>
+                                         <span className="text-sm font-medium text-foreground flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {t.effective_date ?? "—"}</span>
                                       </div>
                                       <div className="sm:col-span-4 flex justify-end">
                                         <Button type="button" variant="outline" size="sm" onClick={() => startEditingRateTerm(t)}>
@@ -1118,7 +1095,7 @@ export default function AdminAdmissionCaseDetailPage() {
                      </>
                    )}
                 </div>
-              </div>
+              </RecordDetailSection>
             </div>
           </>
         )}

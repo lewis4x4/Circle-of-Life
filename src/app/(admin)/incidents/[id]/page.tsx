@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardList, GitBranch, Loader2, MapPin, ShieldAlert, User } from "lucide-react";
+import { ArrowLeft, GitBranch, Loader2, User } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -12,12 +12,15 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 import {
   fetchIncidentFollowupAssignees,
   type IncidentFollowupAssigneeOption,
@@ -399,181 +402,136 @@ export default function AdminIncidentDetailPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
-          <Link
-            href="/admin/incidents"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "inline-flex w-fit gap-1 px-0 sm:px-3",
-            )}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Queue
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-200/50 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30">
-              <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {incident.incident_number}
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-                Incident detail
-              </h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {formatCategoryRaw(incident.category)} · Updated {formatTs(incident.updated_at)}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
+    <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
+      <RecordDetailHeader
+        title="Incident detail"
+        subtitle={`${incident.incident_number} · ${formatCategoryRaw(incident.category)} · Updated ${formatTs(incident.updated_at)}`}
+        statusChips={
+          <>
             <CategoryBadge category={categoryUi} />
             <SeverityBadge severity={severityUi} />
             <StatusBadge status={statusUi} />
-          </div>
-        </div>
-        <div className="flex flex-col items-stretch gap-2 sm:items-end">
-          <div className="flex flex-col items-end gap-1.5">
-            <Link
-              href={`/admin/incidents/${incident.id}/rca`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "border-violet-200 bg-violet-50/50 text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-100",
-              )}
-            >
-              <GitBranch className="mr-2 h-3.5 w-3.5" />
-              Root cause workspace
-            </Link>
-            {rcaInvestigation === "complete" ? (
-              <Badge
-                variant="outline"
-                className="border-emerald-300/60 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+          </>
+        }
+        backLink={{ label: "Queue", href: "/admin/incidents" }}
+        actions={
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-1.5">
+              <Link
+                href={`/admin/incidents/${incident.id}/rca`}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
-                RCA investigation complete
-              </Badge>
-            ) : rcaInvestigation === "draft" ? (
-              <Badge variant="outline" className="font-normal text-slate-600 dark:text-slate-400">
-                RCA in progress
-              </Badge>
+                <GitBranch className="mr-2 h-3.5 w-3.5" />
+                Root cause workspace
+              </Link>
+              {rcaInvestigation === "complete" ? (
+                <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
+                  RCA investigation complete
+                </Badge>
+              ) : rcaInvestigation === "draft" ? (
+                <Badge variant="outline" className="font-normal text-muted-foreground">
+                  RCA in progress
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">No RCA record yet</span>
+              )}
+            </div>
+            {incident.resident_id && residentName ? (
+              <Link
+                href={`/admin/residents/${incident.resident_id}`}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              >
+                <User className="mr-2 h-3.5 w-3.5" />
+                Resident profile
+              </Link>
             ) : (
-              <span className="text-xs text-slate-500 dark:text-slate-400">No RCA record yet</span>
+              <span className="text-sm text-muted-foreground">No linked resident</span>
             )}
           </div>
-          {incident.resident_id && residentName ? (
-            <Link
-              href={`/admin/residents/${incident.resident_id}`}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "border-slate-200 dark:border-slate-700",
-              )}
-            >
-              <User className="mr-2 h-3.5 w-3.5" />
-              Resident profile
-            </Link>
-          ) : (
-            <span className="text-sm text-slate-500 dark:text-slate-400">No linked resident</span>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {followupActionError ? (
-          <div className="lg:col-span-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+          <div className="lg:col-span-2 rounded-[8px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {followupActionError}
           </div>
         ) : null}
         {followupActionMessage ? (
-          <div className="lg:col-span-2 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+          <div className="lg:col-span-2 rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
             {followupActionMessage}
           </div>
         ) : null}
         {incidentActionError ? (
-          <div className="lg:col-span-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+          <div className="lg:col-span-2 rounded-[8px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
             {incidentActionError}
           </div>
         ) : null}
         {incidentActionMessage ? (
-          <div className="lg:col-span-2 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+          <div className="lg:col-span-2 rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
             {incidentActionMessage}
           </div>
         ) : null}
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              {workflowSummary.tone === "clear" ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-              )}
-              Workflow Summary
-            </CardTitle>
-            <CardDescription>{workflowSummary.summary}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <RecordDetailSection
+          className="lg:col-span-2"
+          title="Workflow Summary"
+          description={workflowSummary.summary}
+        >
+          <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+              <Badge variant="outline" className="bg-muted text-muted-foreground">
                 {workflowSummary.openFollowups} open follow-up{workflowSummary.openFollowups === 1 ? "" : "s"}
               </Badge>
-              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
                 {workflowSummary.overdueFollowups} overdue
               </Badge>
-              <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+              <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning">
                 {workflowSummary.unassignedFollowups} unassigned
               </Badge>
-              <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">
+              <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning">
                 {workflowSummary.escalatedFollowups} escalated
               </Badge>
-              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              <Badge variant="outline" className="border-info/20 bg-info/10 text-info">
                 RCA {workflowSummary.rcaLabel}
               </Badge>
-              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+              <Badge variant="outline" className="border-info/20 bg-info/10 text-info">
                 {workflowSummary.openObligations} reporting / notification item{workflowSummary.openObligations === 1 ? "" : "s"}
               </Badge>
             </div>
 
             {workflowSummary.nextActions.length > 0 ? (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Next actions</p>
-                <ul className="mt-2 list-inside list-disc text-sm text-slate-700 dark:text-slate-300">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Next actions</p>
+                <ul className="mt-2 list-inside list-disc text-sm text-foreground">
                   {workflowSummary.nextActions.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               </div>
             ) : (
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+              <p className="text-sm text-success">
                 This incident is operationally clear. Follow-ups, reporting, RCA, and care-plan expectations are in a good state.
               </p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
 
         {watchInstances.length > 0 ? (
-          <Card className="border-cyan-200/60 shadow-soft dark:border-cyan-900/30 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <GitBranch className="h-4 w-4 text-cyan-600" />
-                Resident Assurance Timeline
-              </CardTitle>
-              <CardDescription>
-                Watch activity automatically or manually linked to this incident.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <RecordDetailSection
+            className="lg:col-span-2"
+            title="Resident Assurance Timeline"
+            description="Watch activity automatically or manually linked to this incident."
+          >
+            <div className="space-y-4">
               {watchInstances.map((watch) => (
                 <div
                   key={watch.id}
-                  className="rounded-lg border border-cyan-200/60 bg-cyan-50/40 p-4 dark:border-cyan-900/40 dark:bg-cyan-950/10"
+                  className="rounded-[8px] border border-cyan-500/20 bg-cyan-500/10 p-4"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="border-cyan-300 bg-cyan-50 text-cyan-800 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200"
-                        >
+                        <Badge variant="outline" className="border-cyan-500/20 bg-cyan-500/10 text-cyan-700">
                           {watch.resident_watch_protocols?.name ?? "Watch protocol"}
                         </Badge>
                         <Badge variant="outline" className="font-normal">
@@ -589,23 +547,11 @@ export default function AdminIncidentDetailPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Link
-                        href="/admin/rounding/watches"
-                        className={cn(
-                          buttonVariants({ variant: "outline", size: "sm" }),
-                          "border-cyan-300 bg-white/70 dark:border-cyan-900/40 dark:bg-slate-950/40",
-                        )}
-                      >
+                      <Link href="/admin/rounding/watches" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                         Open watch center
                       </Link>
                       {(watch.taskSummary.overdue > 0 || watch.taskSummary.missed > 0) ? (
-                        <Link
-                          href="/admin/rounding/escalations"
-                          className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
-                            "border-rose-300 bg-white/70 dark:border-rose-900/40 dark:bg-slate-950/40",
-                          )}
-                        >
+                        <Link href="/admin/rounding/escalations" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                           Review escalations
                         </Link>
                       ) : null}
@@ -613,31 +559,31 @@ export default function AdminIncidentDetailPage() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
                       {watch.taskSummary.total} total task{watch.taskSummary.total === 1 ? "" : "s"}
                     </Badge>
-                    <Badge variant="outline" className="border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
                       {watch.taskSummary.open} open
                     </Badge>
-                    <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                    <Badge variant="outline" className="border-warning/20 bg-warning/10 text-warning">
                       {watch.taskSummary.overdue} overdue
                     </Badge>
-                    <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                    <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
                       {watch.taskSummary.missed} missed
                     </Badge>
                   </div>
 
                   {watch.events.length > 0 ? (
                     <div className="mt-4 space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Watch events</p>
-                      <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Watch events</p>
+                      <ul className="space-y-2 text-sm text-foreground">
                         {watch.events.map((event) => (
-                          <li key={event.id} className="rounded-md border border-slate-200/80 bg-white/70 px-3 py-2 dark:border-slate-800 dark:bg-slate-950/40">
+                          <li key={event.id} className="rounded-[8px] border border-border bg-card px-3 py-2">
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                               <span className="font-medium">{event.event_type.replace(/_/g, " ")}</span>
-                              <span className="text-xs text-slate-500 dark:text-slate-400">{formatTs(event.occurred_at)}</span>
+                              <span className="text-xs tabular-nums text-muted-foreground">{formatTs(event.occurred_at)}</span>
                             </div>
-                            {event.note ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{event.note}</p> : null}
+                            {event.note ? <p className="mt-1 text-xs text-muted-foreground">{event.note}</p> : null}
                           </li>
                         ))}
                       </ul>
@@ -645,68 +591,50 @@ export default function AdminIncidentDetailPage() {
                   ) : null}
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         ) : null}
 
         {assuranceEscalations.length > 0 ? (
-          <Card className="border-rose-200/60 shadow-soft dark:border-rose-900/30 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <AlertTriangle className="h-4 w-4 text-rose-600" />
-                Active Resident Assurance Escalations
-              </CardTitle>
-              <CardDescription>
-                Open supervision work triggered by observation tasks linked to this incident.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <RecordDetailSection
+            className="lg:col-span-2"
+            title="Active Resident Assurance Escalations"
+            description="Open supervision work triggered by observation tasks linked to this incident."
+          >
+            <div className="space-y-3">
               {assuranceEscalations.map((escalation) => (
                 <div
                   key={escalation.id}
-                  className="rounded-lg border border-rose-200/60 bg-rose-50/50 p-4 dark:border-rose-900/30 dark:bg-rose-950/10"
+                  className="rounded-[8px] border border-destructive/20 bg-destructive/10 p-4"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                        <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
                           Level {escalation.escalation_level}
                         </Badge>
                         <Badge variant="outline">{escalation.escalation_type.replace(/_/g, " ")}</Badge>
                         <Badge variant="outline">{escalation.status.replace(/_/g, " ")}</Badge>
                         <Badge variant="outline">{escalation.task_status.replace(/_/g, " ")}</Badge>
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300">
+                      <p className="text-sm tabular-nums text-foreground">
                         Triggered {formatTs(escalation.triggered_at)} · Task due {formatTs(escalation.task_due_at)}
                       </p>
                       {escalation.resolution_note ? (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">{escalation.resolution_note}</p>
+                        <p className="text-sm text-muted-foreground">{escalation.resolution_note}</p>
                       ) : null}
                     </div>
-                    <Link
-                      href="/admin/rounding/escalations"
-                      className={cn(
-                        buttonVariants({ variant: "outline", size: "sm" }),
-                        "border-rose-300 bg-white/70 dark:border-rose-900/40 dark:bg-slate-950/40",
-                      )}
-                    >
+                    <Link href="/admin/rounding/escalations" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                       Open escalation queue
                     </Link>
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         ) : null}
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MapPin className="h-4 w-4 text-brand-600" />
-              Context
-            </CardTitle>
-            <CardDescription>When, where, and how the event was surfaced</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+        <RecordDetailSection title="Context" description="When, where, and how the event was surfaced">
+          <div className="space-y-3 text-sm">
             <DetailRow label="Occurred" value={formatTs(incident.occurred_at)} />
             <DetailRow label="Discovered" value={formatTs(incident.discovered_at)} />
             <DetailRow label="Shift" value={formatShift(incident.shift)} />
@@ -715,14 +643,11 @@ export default function AdminIncidentDetailPage() {
               <DetailRow label="Location type" value={formatSnake(incident.location_type)} />
             ) : null}
             <DetailRow label="Reported by" value={reporterName} />
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-lg">Resident</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        <RecordDetailSection title="Resident">
+          <div className="space-y-2 text-sm">
             {incident.resident_id && residentName ? (
               <>
                 <DetailRow label="Name" value={residentName} />
@@ -731,7 +656,7 @@ export default function AdminIncidentDetailPage() {
                   value={
                     <Link
                       href={`/admin/residents/${incident.resident_id}`}
-                      className="text-brand-700 underline-offset-4 hover:underline dark:text-teal-400"
+                      className="underline-offset-4 hover:underline"
                     >
                       Open profile
                     </Link>
@@ -739,74 +664,61 @@ export default function AdminIncidentDetailPage() {
                 />
               </>
             ) : (
-              <p className="text-slate-500 dark:text-slate-400">Environmental or unassigned resident context.</p>
+              <p className="text-muted-foreground">Environmental or unassigned resident context.</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg">Narrative</CardTitle>
-            <CardDescription>Structured capture from the reporting workflow</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+        <RecordDetailSection className="lg:col-span-2" title="Narrative" description="Structured capture from the reporting workflow">
+          <div className="space-y-4 text-sm">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Description</p>
-              <p className="mt-1 whitespace-pre-wrap text-slate-800 dark:text-slate-200">{incident.description}</p>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Description</p>
+              <p className="mt-1 whitespace-pre-wrap text-foreground">{incident.description}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Immediate actions</p>
-              <p className="mt-1 whitespace-pre-wrap text-slate-800 dark:text-slate-200">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Immediate actions</p>
+              <p className="mt-1 whitespace-pre-wrap text-foreground">
                 {incident.immediate_actions}
               </p>
             </div>
             {incident.contributing_factors?.length ? (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Contributing factors</p>
-                <ul className="mt-1 list-inside list-disc text-slate-700 dark:text-slate-300">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Contributing factors</p>
+                <ul className="mt-1 list-inside list-disc text-foreground">
                   {incident.contributing_factors.map((f) => (
                     <li key={f}>{f}</li>
                   ))}
                 </ul>
               </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
 
         {incident.injury_occurred ? (
-          <Card className="border-red-200/60 shadow-soft dark:border-red-900/40 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg text-red-800 dark:text-red-200">Injury</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+          <RecordDetailSection className="lg:col-span-2" title="Injury">
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
               <DetailRow label="Description" value={incident.injury_description ?? "—"} />
               <DetailRow label="Severity" value={incident.injury_severity ? formatSnake(incident.injury_severity) : "—"} />
               <DetailRow label="Body location" value={incident.injury_body_location ?? "—"} />
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         ) : null}
 
         {categoryUi === "fall" ? (
-          <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg">Fall specifics</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+          <RecordDetailSection className="lg:col-span-2" title="Fall specifics">
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
               <DetailRow
                 label="Witnessed"
                 value={incident.fall_witnessed == null ? "—" : incident.fall_witnessed ? "Yes" : "No"}
               />
               <DetailRow label="Fall type" value={incident.fall_type ? formatSnake(incident.fall_type) : "—"} />
               <DetailRow label="Activity" value={incident.fall_activity ? formatSnake(incident.fall_activity) : "—"} />
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         ) : null}
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg">Notifications &amp; regulatory</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <RecordDetailSection className="lg:col-span-2" title="Notifications &amp; regulatory">
+          <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <NotifyPill active={incident.nurse_notified} label="Nurse" />
               <NotifyPill active={incident.administrator_notified} label="Administrator" />
@@ -830,19 +742,19 @@ export default function AdminIncidentDetailPage() {
 
             {openObligations.length > 0 ? (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Open obligations</p>
-                <ul className="mt-2 list-inside list-disc text-sm text-slate-700 dark:text-slate-300">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Open obligations</p>
+                <ul className="mt-2 list-inside list-disc text-sm text-foreground">
                   {openObligations.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               </div>
             ) : (
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">All expected notification and reporting steps are complete for the current incident state.</p>
+              <p className="text-sm text-success">All expected notification and reporting steps are complete for the current incident state.</p>
             )}
 
-            <div className="rounded-lg border border-slate-200/70 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/40">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Workflow actions</p>
+            <div className="rounded-[8px] border border-border bg-muted/50 p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Workflow actions</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {!incident.nurse_notified ? (
                   <Button
@@ -997,66 +909,60 @@ export default function AdminIncidentDetailPage() {
                 ) : null}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
 
         {(incident.resolved_at || incident.resolution_notes) && (
-          <Card className="border-emerald-200/50 shadow-soft dark:border-emerald-900/30 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg">Resolution</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+          <RecordDetailSection className="lg:col-span-2" title="Resolution">
+            <div className="space-y-2 text-sm">
               {incident.resolved_at ? <DetailRow label="Resolved" value={formatTs(incident.resolved_at)} /> : null}
               {incident.resolution_notes ? (
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Notes</p>
-                  <p className="mt-1 text-slate-800 dark:text-slate-200">{incident.resolution_notes}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Notes</p>
+                  <p className="mt-1 text-foreground">{incident.resolution_notes}</p>
                 </div>
               ) : null}
               {incident.care_plan_update_notes ? (
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Care plan notes</p>
-                  <p className="mt-1 text-slate-800 dark:text-slate-200">{incident.care_plan_update_notes}</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Care plan notes</p>
+                  <p className="mt-1 text-foreground">{incident.care_plan_update_notes}</p>
                 </div>
               ) : null}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         )}
 
-        <Card className="border-slate-200/70 shadow-soft dark:border-slate-800 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ClipboardList className="h-4 w-4 text-brand-600" />
-              Follow-ups
-            </CardTitle>
-            <CardDescription>Open and completed tasks tied to this incident</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <RecordDetailSection
+          className="lg:col-span-2"
+          title="Follow-ups"
+          description="Open and completed tasks tied to this incident"
+        >
+          <div className="space-y-3">
             {followups.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No follow-up rows on file.</p>
+              <p className="text-sm text-muted-foreground">No follow-up rows on file.</p>
             ) : (
               <ul className="space-y-3">
                 {followups.map((f) => (
                   <li
                     key={f.id}
-                    className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/40"
+                    className="rounded-[8px] border border-border bg-muted/50 p-3"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         {f.taskType}
                       </span>
                       <Badge variant="outline" className="font-normal">
                         {f.statusLabel}
                       </Badge>
                     </div>
-                    <p className="mt-1 text-sm text-slate-800 dark:text-slate-200">{f.description}</p>
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-sm text-foreground">{f.description}</p>
+                    <p className="mt-2 text-xs tabular-nums text-muted-foreground">
                       Due {f.dueLabel}
                       {f.assignee ? ` · ${f.assignee}` : " · Unassigned"}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {f.isOverdue && !f.isCompleted ? (
-                        <Badge variant="outline" className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                        <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
                           {followupEscalationLabel(f.escalationLevel, f.hoursOverdue)}
                         </Badge>
                       ) : null}
@@ -1064,9 +970,9 @@ export default function AdminIncidentDetailPage() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+                            "border-warning/20 bg-warning/10 text-warning",
                             f.escalationLevel === "critical"
-                              ? "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+                              ? "border-destructive/20 bg-destructive/10 text-destructive"
                               : "",
                           )}
                         >
@@ -1102,7 +1008,7 @@ export default function AdminIncidentDetailPage() {
                                     [f.id]: event.target.value,
                                   }))
                                 }
-                                className="h-9 min-w-[12rem] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                                className="h-9 min-w-[12rem] rounded-[8px] border border-input bg-card px-3 text-sm text-foreground"
                               >
                                 <option value="">Unassigned</option>
                                 {assigneeOptions.map((option) => (
@@ -1127,7 +1033,7 @@ export default function AdminIncidentDetailPage() {
                           ) : null}
                         </>
                       ) : (
-                        <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                        <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
                           Completed
                         </Badge>
                       )}
@@ -1136,8 +1042,8 @@ export default function AdminIncidentDetailPage() {
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
       </div>
     </div>
   );
@@ -1543,8 +1449,8 @@ function buildIncidentWorkflowSummary(
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-      <span className="min-w-[8rem] text-xs font-medium uppercase tracking-wide text-slate-400">{label}</span>
-      <div className="text-slate-800 dark:text-slate-200">{value}</div>
+      <span className="min-w-[8rem] text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+      <div className="text-foreground">{value}</div>
     </div>
   );
 }
@@ -1556,9 +1462,9 @@ function NotifyPill({ active, label, warn }: { active: boolean; label: string; w
         "rounded-full border px-3 py-1 text-xs font-medium",
         active
           ? warn
-            ? "border-amber-300/60 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-            : "border-emerald-300/60 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-          : "border-slate-200/80 bg-slate-100/80 text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
+            ? "border-warning/20 bg-warning/10 text-warning"
+            : "border-success/20 bg-success/10 text-success"
+          : "border-border bg-muted text-muted-foreground",
       )}
     >
       {label}
@@ -1569,42 +1475,30 @@ function NotifyPill({ active, label, warn }: { active: boolean; label: string; w
 
 function CategoryBadge({ category }: { category: IncidentCategoryUi }) {
   const map: Record<IncidentCategoryUi, { label: string; className: string }> = {
-    fall: { label: "Fall", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    medication_error: {
-      label: "Medication",
-      className: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
-    },
-    behavioral: {
-      label: "Behavioral",
-      className: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-    },
-    elopement: {
-      label: "Elopement",
-      className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
-    },
-    other: { label: "Other", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+    fall: { label: "Fall", className: "border-warning/20 bg-warning/10 text-warning" },
+    medication_error: { label: "Medication", className: "border-info/20 bg-info/10 text-info" },
+    behavioral: { label: "Behavioral", className: "border-info/20 bg-info/10 text-info" },
+    elopement: { label: "Elopement", className: "border-destructive/20 bg-destructive/10 text-destructive" },
+    other: { label: "Other", className: "bg-muted text-muted-foreground" },
   };
-  return <Badge className={map[category].className}>{map[category].label}</Badge>;
+  return <Badge variant="outline" className={map[category].className}>{map[category].label}</Badge>;
 }
 
 function SeverityBadge({ severity }: { severity: IncidentSeverityUi }) {
   const map: Record<IncidentSeverityUi, { label: string; className: string }> = {
-    level_1: { label: "L1", className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
-    level_2: { label: "L2", className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    level_3: { label: "L3", className: "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300" },
-    level_4: { label: "L4", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+    level_1: { label: "L1", className: "bg-muted text-muted-foreground" },
+    level_2: { label: "L2", className: "border-warning/20 bg-warning/10 text-warning" },
+    level_3: { label: "L3", className: "border-warning/20 bg-warning/10 text-warning" },
+    level_4: { label: "L4", className: "border-destructive/20 bg-destructive/10 text-destructive" },
   };
-  return <Badge className={map[severity].className}>{map[severity].label}</Badge>;
+  return <Badge variant="outline" className={map[severity].className}>{map[severity].label}</Badge>;
 }
 
 function StatusBadge({ status }: { status: IncidentStatusUi }) {
   const map: Record<IncidentStatusUi, { label: string; className: string }> = {
-    open: { label: "Open", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
-    in_review: {
-      label: "In Review",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-    },
-    closed: { label: "Closed", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    open: { label: "Open", className: "border-destructive/20 bg-destructive/10 text-destructive" },
+    in_review: { label: "In Review", className: "border-warning/20 bg-warning/10 text-warning" },
+    closed: { label: "Closed", className: "border-success/20 bg-success/10 text-success" },
   };
-  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+  return <Badge variant="outline" className={map[status].className}>{map[status].label}</Badge>;
 }

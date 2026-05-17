@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeft, CalendarDays, Download } from "lucide-react";
+import { Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -12,7 +11,7 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -20,9 +19,10 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/v2-card";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 type ShiftAssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"];
 
@@ -230,108 +230,69 @@ export default function AdminScheduleWeekDetailPage() {
   const weekLabel = schedule ? formatWeekLabel(schedule.week_start_date) : "";
 
   return (
-    <div className="relative min-h-[70vh]">
-      <></>
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <div>
-          <Link
-            href="/admin/schedules"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 mb-4")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Schedule weeks
-          </Link>
+    <div className="space-y-6">
+      <RecordDetailHeader
+        title={schedule ? weekLabel : "Schedule week"}
+        subtitle={
+          schedule
+            ? `Published: ${schedule.published_at ? formatDateTime(schedule.published_at) : "—"}${schedule.notes ? ` · ${schedule.notes}` : ""}`
+            : undefined
+        }
+        statusChips={schedule ? <ScheduleStatusBadge status={schedule.status} /> : undefined}
+        backLink={{ label: "Schedule weeks", href: "/admin/schedules" }}
+        actions={
+          rawAssignments.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={exportingCsv}
+              aria-busy={exportingCsv}
+              onClick={() => exportAssignmentsCsv()}
+            >
+              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
+              {exportingCsv ? "Exporting…" : "Download assignments CSV"}
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {!facilityScopeOk ? (
+        <div
+          className="rounded-[8px] border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning"
+          role="status"
+        >
+          This schedule belongs to another facility. Choose the matching facility in the header to align with
+          operations context (RLS may still limit what you see).
         </div>
+      ) : null}
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-7 w-7 text-indigo-500" />
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {schedule ? weekLabel : "Schedule week"}
-            </h1>
-          </div>
-          {schedule ? (
-            <p className="text-sm font-mono text-slate-500 dark:text-slate-400">
-              Status: <ScheduleStatusBadge status={schedule.status} /> · Published:{" "}
-              {schedule.published_at ? formatDateTime(schedule.published_at) : "—"}
-            </p>
-          ) : null}
-          {schedule?.notes ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl">{schedule.notes}</p>
-          ) : null}
+      <div className="flex items-center gap-4 px-1 tabular-nums">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Shift assignments
+          </p>
+          <p className="text-2xl font-semibold text-foreground">{rows.length}</p>
+          <p className="text-xs text-muted-foreground">Up to 500 rows loaded for this week container.</p>
         </div>
+      </div>
 
-        {!facilityScopeOk ? (
-          <div
-            className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
-            role="status"
+      {isLoading ? <AdminTableLoadingState /> : null}
+      {!isLoading && error ? (
+        <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
+      ) : null}
+      {!isLoading && !schedule && !error ? (
+        <AdminEmptyState
+          title="Schedule not found"
+          description="This week may have been removed or you may not have access."
+        />
+      ) : null}
+
+      {!isLoading && schedule ? (
+          <RecordDetailSection
+            title="Assignments"
+            description="Read-only list for this schedule week. Full builder grid ships in a later slice."
           >
-            This schedule belongs to another facility. Choose the matching facility in the header to align with
-            operations context (RLS may still limit what you see).
-          </div>
-        ) : null}
-
-        <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-          <div className="col-span-1 md:col-span-2 h-[120px]">
-            <V2Card hoverColor="indigo" className="p-5 lg:p-6">
-              <MonolithicWatermark value={rows.length} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
-              <div className="relative z-10 flex h-full flex-col justify-center">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                  <></> Shift assignments
-                </h3>
-                <p className="text-3xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400 pb-1">
-                  {rows.length}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Up to 500 rows loaded for this week container.</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 h-[120px]">
-            <V2Card hoverColor="blue" className="p-5 lg:p-6">
-              <div className="relative z-10 flex h-full w-full flex-col justify-center">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">Export</p>
-                <></>
-              </div>
-            </V2Card>
-          </div>
-        </KineticGrid>
-
-        {isLoading ? <AdminTableLoadingState /> : null}
-        {!isLoading && error ? (
-          <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
-        ) : null}
-        {!isLoading && !schedule && !error ? (
-          <AdminEmptyState
-            title="Schedule not found"
-            description="This week may have been removed or you may not have access."
-          />
-        ) : null}
-
-        {!isLoading && schedule ? (
-          <div className="relative overflow-visible z-10 w-full mt-2">
-            <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  Assignments
-                </h3>
-                <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
-                  Read-only list for this schedule week. Full builder grid ships in a later slice.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
-                disabled={exportingCsv || rawAssignments.length === 0}
-                aria-busy={exportingCsv}
-                onClick={() => exportAssignmentsCsv()}
-              >
-                <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
-                {exportingCsv ? "Exporting…" : "Download assignments CSV"}
-              </Button>
-            </div>
-
             {rows.length === 0 ? (
               <AdminEmptyState
                 title="No shift assignments yet"
@@ -341,19 +302,19 @@ export default function AdminScheduleWeekDetailPage() {
               <MotionList className="space-y-3">
                 {rows.map((row) => (
                   <MotionItem key={row.id}>
-                    <div className="p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex w-full flex-col gap-3 rounded-[8px] border border-border bg-card p-4 transition-[transform,box-shadow] duration-[var(--motion-duration)] hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                       <div className="flex flex-col gap-1">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">{row.staffName}</span>
-                        <span className="text-xs text-slate-500">{formatIsoDate(row.shiftDate)}</span>
+                        <span className="font-semibold text-foreground">{row.staffName}</span>
+                        <span className="text-xs text-muted-foreground">{formatIsoDate(row.shiftDate)}</span>
                       </div>
-                      <div className="flex flex-wrap gap-2 items-center">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge className="font-mono text-[9px] uppercase tracking-wider">{row.shiftType}</Badge>
                         <Badge variant="outline" className="font-mono text-[9px]">
                           {row.shiftClassification}
                         </Badge>
                         <AssignmentStatusBadge status={row.status} />
                         {row.notes ? (
-                          <span className="text-xs text-slate-500 max-w-md truncate" title={row.notes}>
+                          <span className="max-w-md truncate text-xs text-muted-foreground" title={row.notes}>
                             {row.notes}
                           </span>
                         ) : null}
@@ -363,9 +324,8 @@ export default function AdminScheduleWeekDetailPage() {
                 ))}
               </MotionList>
             )}
-          </div>
+          </RecordDetailSection>
         ) : null}
-      </div>
     </div>
   );
 }
@@ -396,15 +356,15 @@ function formatIsoDate(isoDate: string): string {
 
 function ScheduleStatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    draft: { label: "Draft", className: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300" },
+    draft: { label: "Draft", className: "bg-muted text-muted-foreground" },
     published: {
       label: "Published",
-      className: "bg-emerald-500/20 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400",
+      className: "bg-success/10 text-success",
     },
-    archived: { label: "Archived", className: "bg-slate-200/50 text-slate-800" },
+    archived: { label: "Archived", className: "bg-muted text-muted-foreground" },
   };
   const m = map[status] ?? { label: status, className: "bg-slate-100 text-slate-600" };
-  return <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold border-0", m.className)}>{m.label}</Badge>;
+  return <Badge className={cn("uppercase tracking-wider text-[9px] font-bold border-0", m.className)}>{m.label}</Badge>;
 }
 
 function AssignmentStatusBadge({ status }: { status: string }) {

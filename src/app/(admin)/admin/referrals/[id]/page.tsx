@@ -7,13 +7,13 @@ import { ArrowRight, Loader2 } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { buttonVariants, Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 type LeadDetail = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
@@ -174,107 +174,101 @@ export default function AdminReferralLeadDetailPage() {
     }
   }
 
+  const leadActions = lead ? (
+    <div className="flex items-center gap-2">
+      {linkedAdmissionCaseId ? (
+        <Link href={`/admin/admissions/${linkedAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
+          Open admission case
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Link>
+      ) : lead && !lead.converted_resident_id ? (
+        <Link href={`/admin/admissions/new?lead=${lead.id}`} className={cn(buttonVariants({ size: "sm" }))}>
+          Start admission
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Link>
+      ) : null}
+      <Link href="/admin/referrals" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+        Back to pipeline
+      </Link>
+    </div>
+  ) : null;
+
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300">
-            <Link href="/admin/referrals" className="hover:text-brand-600 dark:hover:text-brand-400">
-              Referrals
-            </Link>{" "}
-            / Lead
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Lead detail
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Pipeline workspace for status, handoff, and prospect context.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {linkedAdmissionCaseId ? (
-            <Link href={`/admin/admissions/${linkedAdmissionCaseId}`} className={cn(buttonVariants({ size: "sm" }))}>
-              Open admission case
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          ) : lead && !lead.converted_resident_id ? (
-            <Link href={`/admin/admissions/new?lead=${lead.id}`} className={cn(buttonVariants({ size: "sm" }))}>
-              Start admission
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          ) : null}
-          <Link href="/admin/referrals" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            Back to pipeline
-          </Link>
-        </div>
-      </div>
+      <RecordDetailHeader
+        title="Lead detail"
+        subtitle="Pipeline workspace for status, handoff, and prospect context."
+        backLink={{ label: "Referrals", href: "/admin/referrals" }}
+        actions={leadActions}
+      />
 
       <ReferralsHubNav />
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           Loading lead…
         </div>
       ) : error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : !lead ? (
-        <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-          <CardContent className="py-10 text-center text-sm text-slate-600 dark:text-slate-300">
+        <div className="rounded-[8px] border border-border bg-card p-[14px]">
+          <p className="py-8 text-center text-sm text-muted-foreground">
             No lead found for this id, or you do not have access.
-          </CardContent>
-        </Card>
+          </p>
+        </div>
       ) : (
         <>
           {actionError ? (
-            <p className="rounded-lg border border-red-200/80 bg-red-50/50 px-4 py-3 text-sm text-red-950 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-100">
+            <p className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {actionError}
             </p>
           ) : null}
           {actionMessage ? (
-            <p className="rounded-lg border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+            <p className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
               {actionMessage}
             </p>
           ) : null}
           {wrongFacility ? (
-            <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="rounded-[8px] border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
               This lead belongs to another facility. Switch the facility in the header to{" "}
               <span className="font-mono text-xs">{lead.facility_id}</span> to align context.
             </p>
           ) : null}
 
           {linkedAdmissionCaseId ? (
-            <p className="rounded-lg border border-indigo-200/80 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-950 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-100">
+            <p className="rounded-[8px] border border-info/20 bg-info/10 px-4 py-3 text-sm text-info">
               This lead already has an active admission case. Continue the workflow from that case instead of starting a duplicate handoff.
             </p>
           ) : null}
 
-          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {lead.first_name} {lead.last_name}
-                {lead.preferred_name ? (
-                  <span className="ml-2 text-base font-normal text-slate-600 dark:text-slate-400">
-                    (“{lead.preferred_name}”)
-                  </span>
-                ) : null}
-              </CardTitle>
-              <p className="font-mono text-xs break-all text-slate-600 dark:text-slate-300">{lead.id}</p>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
-              <div className="rounded-lg border border-indigo-200/70 bg-indigo-50/60 px-4 py-4 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+          <RecordDetailSection title="Lead identity">
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="text-xl font-semibold text-foreground">
+                  {lead.first_name} {lead.last_name}
+                  {lead.preferred_name ? (
+                    <span className="ml-2 text-base font-normal text-muted-foreground">
+                      (&ldquo;{lead.preferred_name}&rdquo;)
+                    </span>
+                  ) : null}
+                </p>
+                <p className="font-mono text-xs break-all text-muted-foreground mt-1">{lead.id}</p>
+              </div>
+
+              <div className="rounded-[8px] border border-border bg-muted/10 px-4 py-4">
                 <div className="grid gap-4 md:grid-cols-[1fr_auto]">
                   <div className="space-y-2">
-                    <label htmlFor="lead-status" className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <label htmlFor="lead-status" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Pipeline status
                     </label>
                     <select
                       id="lead-status"
                       value={statusDraft}
                       onChange={(event) => setStatusDraft(event.target.value as EditableLeadStatus)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       {STATUS_OPTIONS.map((option) => (
                         <option
@@ -287,7 +281,7 @@ export default function AdminReferralLeadDetailPage() {
                       ))}
                     </select>
                     {cannotSetConverted ? (
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                      <p className="text-xs text-warning">
                         `Converted` requires a linked resident conversion record. Use the admissions workflow first.
                       </p>
                     ) : null}
@@ -307,122 +301,127 @@ export default function AdminReferralLeadDetailPage() {
 
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</dt>
-                  <dd className="mt-0.5 capitalize text-slate-900 dark:text-slate-100">{formatStatus(lead.status)}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</dt>
+                  <dd className="mt-0.5 capitalize text-foreground">{formatStatus(lead.status)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">PII tier</dt>
-                  <dd className="mt-0.5 font-mono text-xs text-slate-900 dark:text-slate-100">{lead.pii_access_tier}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">PII tier</dt>
+                  <dd className="mt-0.5 text-xs text-foreground">{lead.pii_access_tier}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Referral source</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{lead.referral_sources?.name ?? "—"}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Referral source</dt>
+                  <dd className="mt-0.5 text-foreground">{lead.referral_sources?.name ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Date of birth</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{lead.date_of_birth ?? "—"}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date of birth</dt>
+                  <dd className="mt-0.5 text-foreground">{lead.date_of_birth ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Phone</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{lead.phone ?? "—"}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Phone</dt>
+                  <dd className="mt-0.5 text-foreground">{lead.phone ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</dt>
-                  <dd className="mt-0.5 break-all text-slate-900 dark:text-slate-100">{lead.email ?? "—"}</dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tour workflow</dt>
-                  <dd className="mt-2 space-y-3 rounded-lg border border-slate-200/70 bg-slate-50/60 px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <label className="space-y-1">
-                        <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tour scheduled for</span>
-                        <input
-                          type="datetime-local"
-                          value={tourScheduledDraft}
-                          onChange={(event) => setTourScheduledDraft(event.target.value)}
-                          className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </label>
-                      <label className="space-y-1">
-                        <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tour completed at</span>
-                        <input
-                          type="datetime-local"
-                          value={tourCompletedDraft}
-                          onChange={(event) => setTourCompletedDraft(event.target.value)}
-                          className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </label>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={actionLoading === "status"}
-                        onClick={() =>
-                          void (() => {
-                            const scheduledIso = tourScheduledDraft ? new Date(tourScheduledDraft).toISOString() : null;
-                            const completedIso = tourCompletedDraft ? new Date(tourCompletedDraft).toISOString() : null;
-                            const nextStatus = syncTourStatus(statusDraft, scheduledIso, completedIso);
-                            return updateLead(
-                              {
-                                status: nextStatus,
-                                tour_scheduled_for: scheduledIso,
-                                tour_completed_at: completedIso,
-                                tour_owner_user_id: user?.id ?? null,
-                              },
-                              "status",
-                              nextStatus === statusDraft ? "Tour workflow saved." : `Tour workflow saved and status moved to ${formatStatus(nextStatus)}.`,
-                            );
-                          })()
-                        }
-                      >
-                        {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save tour details"}
-                      </Button>
-                    </div>
-                  </dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Notes</dt>
-                  <dd className="mt-2 space-y-3">
-                    <textarea
-                      value={notesDraft}
-                      onChange={(event) => setNotesDraft(event.target.value)}
-                      rows={5}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={actionLoading === "notes" || notesDraft === (lead.notes ?? "")}
-                        onClick={() => void updateLead({ notes: notesDraft.trim() || null }, "notes", "Lead notes saved.")}
-                      >
-                        {actionLoading === "notes" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save notes"}
-                      </Button>
-                    </div>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Converted resident</dt>
-                  <dd className="mt-0.5 font-mono text-xs text-slate-900 dark:text-slate-100">
-                    {lead.converted_resident_id ?? "—"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Converted at</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(lead.converted_at)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Created</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(lead.created_at)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Updated</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(lead.updated_at)}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</dt>
+                  <dd className="mt-0.5 break-all text-foreground">{lead.email ?? "—"}</dd>
                 </div>
               </dl>
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
+
+          <RecordDetailSection title="Tour workflow">
+            <div className="space-y-4 text-sm">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour scheduled for</span>
+                  <input
+                    type="datetime-local"
+                    value={tourScheduledDraft}
+                    onChange={(event) => setTourScheduledDraft(event.target.value)}
+                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour completed at</span>
+                  <input
+                    type="datetime-local"
+                    value={tourCompletedDraft}
+                    onChange={(event) => setTourCompletedDraft(event.target.value)}
+                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </label>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={actionLoading === "status"}
+                  onClick={() =>
+                    void (() => {
+                      const scheduledIso = tourScheduledDraft ? new Date(tourScheduledDraft).toISOString() : null;
+                      const completedIso = tourCompletedDraft ? new Date(tourCompletedDraft).toISOString() : null;
+                      const nextStatus = syncTourStatus(statusDraft, scheduledIso, completedIso);
+                      return updateLead(
+                        {
+                          status: nextStatus,
+                          tour_scheduled_for: scheduledIso,
+                          tour_completed_at: completedIso,
+                          tour_owner_user_id: user?.id ?? null,
+                        },
+                        "status",
+                        nextStatus === statusDraft ? "Tour workflow saved." : `Tour workflow saved and status moved to ${formatStatus(nextStatus)}.`,
+                      );
+                    })()
+                  }
+                >
+                  {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save tour details"}
+                </Button>
+              </div>
+            </div>
+          </RecordDetailSection>
+
+          <RecordDetailSection title="Notes">
+            <div className="space-y-3">
+              <textarea
+                value={notesDraft}
+                onChange={(event) => setNotesDraft(event.target.value)}
+                rows={5}
+                className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={actionLoading === "notes" || notesDraft === (lead.notes ?? "")}
+                  onClick={() => void updateLead({ notes: notesDraft.trim() || null }, "notes", "Lead notes saved.")}
+                >
+                  {actionLoading === "notes" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save notes"}
+                </Button>
+              </div>
+            </div>
+          </RecordDetailSection>
+
+          <RecordDetailSection title="Conversion">
+            <dl className="grid gap-3 sm:grid-cols-2 text-sm">
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Converted resident</dt>
+                <dd className="mt-0.5 font-mono text-xs text-foreground">
+                  {lead.converted_resident_id ?? "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Converted at</dt>
+                <dd className="mt-0.5 text-foreground">{formatTs(lead.converted_at)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
+                <dd className="mt-0.5 text-foreground">{formatTs(lead.created_at)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
+                <dd className="mt-0.5 text-foreground">{formatTs(lead.updated_at)}</dd>
+              </div>
+            </dl>
+          </RecordDetailSection>
         </>
       )}
     </div>

@@ -3,16 +3,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, GitBranch, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, RotateCcw, Save } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 const STORAGE_PREFIX = "haven-rca-draft-v1:";
 
@@ -595,203 +598,146 @@ export default function AdminIncidentRcaPage() {
           <ArrowLeft className="h-4 w-4" />
           Incident queue
         </Link>
-        <Card>
-          <CardHeader>
-            <CardTitle>RCA unavailable</CardTitle>
-            <CardDescription>Incident not found or outside your facility filter.</CardDescription>
-          </CardHeader>
-        </Card>
+        <RecordDetailSection title="RCA unavailable" description="Incident not found or outside your facility filter.">
+          <span />
+        </RecordDetailSection>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <Link
-            href={`/admin/incidents/${incident.id}`}
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 px-0")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {incident.incident_number}
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 dark:border-violet-900/50 dark:bg-violet-950/40">
-              <GitBranch className="h-5 w-5 text-violet-700 dark:text-violet-300" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                Root cause workspace
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Structured RCA per spec 07 — persisted on save; marking complete records operator attestation (not a
-                regulatory sign-off).
-              </p>
-            </div>
+    <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
+      <RecordDetailHeader
+        title="Root cause workspace"
+        subtitle="Structured RCA per spec 07 — persisted on save; marking complete records operator attestation (not a regulatory sign-off)."
+        statusChips={
+          <>
+            <Badge variant="outline" className="tabular-nums text-xs">
+              {incident.incident_number}
+            </Badge>
+            {investigationStatus === "complete" ? (
+              <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
+                Investigation complete
+              </Badge>
+            ) : investigationStatus === "draft" ? (
+              <Badge variant="outline" className="font-normal">
+                Draft
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="font-normal text-muted-foreground">
+                Not saved
+              </Badge>
+            )}
+          </>
+        }
+        backLink={{ label: incident.incident_number, href: `/admin/incidents/${incident.id}` }}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {!locked ? (
+              <>
+                <Button type="button" size="sm" variant="secondary" onClick={() => void saveRca()} disabled={saving} className="gap-1.5">
+                  <Save className="h-3.5 w-3.5" />
+                  {savedFlash ? "Saved" : saving ? "Saving…" : "Save draft"}
+                </Button>
+                <Button type="button" size="sm" onClick={() => void completeInvestigation()} disabled={completing} className="gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {completing ? "Completing…" : "Mark investigation complete"}
+                </Button>
+              </>
+            ) : (
+              <Button type="button" size="sm" variant="outline" onClick={() => void reopenInvestigation()} disabled={reopening} className="gap-1.5">
+                <RotateCcw className="h-3.5 w-3.5" />
+                {reopening ? "Reopening…" : "Reopen for edits"}
+              </Button>
+            )}
           </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Badge variant="outline" className="font-mono text-xs">
-            {incident.incident_number}
-          </Badge>
-          {investigationStatus === "complete" ? (
-            <Badge
-              variant="outline"
-              className="border-emerald-300/60 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-            >
-              Investigation complete
-            </Badge>
-          ) : investigationStatus === "draft" ? (
-            <Badge variant="outline" className="font-normal">
-              Draft
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="font-normal text-slate-500">
-              Not saved
-            </Badge>
-          )}
-          {!locked ? (
-            <>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => void saveRca()}
-                disabled={saving}
-                className="gap-1.5"
-              >
-                <Save className="h-3.5 w-3.5" />
-                {savedFlash ? "Saved" : saving ? "Saving…" : "Save draft"}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void completeInvestigation()}
-                disabled={completing}
-                className="gap-1.5"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {completing ? "Completing…" : "Mark investigation complete"}
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void reopenInvestigation()}
-              disabled={reopening}
-              className="gap-1.5"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              {reopening ? "Reopening…" : "Reopen for edits"}
-            </Button>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {locked && completedAt ? (
-        <Card className="border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/25">
-          <CardContent className="py-4 text-sm text-emerald-950 dark:text-emerald-100">
-            <p className="font-medium">This investigation is marked complete.</p>
-            <p className="mt-1 text-emerald-900/90 dark:text-emerald-200/90">
-              {new Intl.DateTimeFormat("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              }).format(new Date(completedAt))}
-              {completerName ? ` · ${completerName}` : ""}
-            </p>
-            <p className="mt-2 text-xs text-emerald-900/80 dark:text-emerald-300/80">
-              Reopen only if corrections are required; changes after completion should be rare and documented in
-              follow-up tasks when applicable.
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {completionErrors.length > 0 ? (
-        <Card className="border-amber-200/80 bg-amber-50/50 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <CardContent className="py-3 text-sm text-amber-950 dark:text-amber-100">
-            <p className="font-medium">Before you can mark complete:</p>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-amber-900/90 dark:text-amber-200/90">
-              {completionErrors.map((msg) => (
-                <li key={msg}>{msg}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {followupActionMessage ? (
-        <Card className="border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/25">
-          <CardContent className="py-3 text-sm text-emerald-950 dark:text-emerald-100">
-            {followupActionMessage}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {!locked ? (
-        <Card className="border-slate-200/70 dark:border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Completion checklist</CardTitle>
-            <CardDescription>All items must pass to attest investigation complete (UAT / audit bar).</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-700 dark:text-slate-300">
-            <ul className="list-inside list-disc space-y-1">
-              <li>At least one contributing factor selected ({selected.size} selected)</li>
-              <li>Root cause narrative ≥ {MIN_ROOT_LEN} characters (currently {rootCauseNarrative.trim().length})</li>
-              <li>Corrective actions ≥ {MIN_CORRECTIVE_LEN} characters (currently {correctiveActions.trim().length})</li>
-              <li>Preventative actions ≥ {MIN_PREVENTATIVE_LEN} characters (currently{" "}
-              {preventativeActions.trim().length})</li>
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card className="border-slate-200/70 shadow-soft dark:border-slate-800">
-        <CardHeader>
-          <CardTitle className="text-lg">Incident snapshot</CardTitle>
-          <CardDescription>Read-only context from the master record</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
-          <p>
-            <span className="text-slate-500 dark:text-slate-400">Occurred:</span>{" "}
+        <div className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-4 text-sm text-success">
+          <p className="font-medium">This investigation is marked complete.</p>
+          <p className="mt-1 tabular-nums">
             {new Intl.DateTimeFormat("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",
               hour: "numeric",
               minute: "2-digit",
-            }).format(new Date(incident.occurred_at))}
+            }).format(new Date(completedAt))}
+            {completerName ? ` · ${completerName}` : ""}
+          </p>
+          <p className="mt-2 text-xs opacity-80">
+            Reopen only if corrections are required; changes after completion should be rare and documented in
+            follow-up tasks when applicable.
+          </p>
+        </div>
+      ) : null}
+
+      {completionErrors.length > 0 ? (
+        <div className="rounded-[8px] border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
+          <p className="font-medium">Before you can mark complete:</p>
+          <ul className="mt-2 list-inside list-disc space-y-1 opacity-90">
+            {completionErrors.map((msg) => (
+              <li key={msg}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {followupActionMessage ? (
+        <div className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+          {followupActionMessage}
+        </div>
+      ) : null}
+
+      {!locked ? (
+        <RecordDetailSection
+          title="Completion checklist"
+          description="All items must pass to attest investigation complete (UAT / audit bar)."
+        >
+          <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+            <li>At least one contributing factor selected ({selected.size} selected)</li>
+            <li>Root cause narrative ≥ {MIN_ROOT_LEN} characters (currently {rootCauseNarrative.trim().length})</li>
+            <li>Corrective actions ≥ {MIN_CORRECTIVE_LEN} characters (currently {correctiveActions.trim().length})</li>
+            <li>Preventative actions ≥ {MIN_PREVENTATIVE_LEN} characters (currently{" "}
+            {preventativeActions.trim().length})</li>
+          </ul>
+        </RecordDetailSection>
+      ) : null}
+
+      <RecordDetailSection title="Incident snapshot" description="Read-only context from the master record">
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            <span className="text-muted-foreground">Occurred:</span>{" "}
+            <span className="tabular-nums text-foreground">{new Intl.DateTimeFormat("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            }).format(new Date(incident.occurred_at))}</span>
           </p>
           <p>
-            <span className="text-slate-500 dark:text-slate-400">Category:</span>{" "}
-            {incident.category.replace(/_/g, " ")}
+            <span className="text-muted-foreground">Category:</span>{" "}
+            <span className="text-foreground">{incident.category.replace(/_/g, " ")}</span>
           </p>
-          <p className="whitespace-pre-wrap text-slate-600 dark:text-slate-400">{incident.description}</p>
-        </CardContent>
-      </Card>
+          <p className="whitespace-pre-wrap">{incident.description}</p>
+        </div>
+      </RecordDetailSection>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {FACTOR_GROUPS.map((group) => (
-          <Card key={group.title} className="border-slate-200/70 dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-base">{group.title}</CardTitle>
-              <CardDescription>{group.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2">
+          <RecordDetailSection key={group.title} title={group.title} description={group.description}>
+            <div className="grid gap-2 sm:grid-cols-2">
               {group.options.map((opt) => (
                 <label
                   key={opt.id}
-                  className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5 text-sm dark:border-slate-800 dark:bg-slate-900/40"
+                  className="flex cursor-pointer items-start gap-2 rounded-[8px] border border-border bg-muted/50 p-2.5 text-sm"
                 >
                   <input
                     type="checkbox"
-                    className="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    className="mt-0.5 size-4 rounded border-border text-primary focus:ring-ring"
                     checked={selected.has(opt.id)}
                     disabled={locked}
                     onChange={() => toggle(opt.id)}
@@ -799,19 +745,18 @@ export default function AdminIncidentRcaPage() {
                   <span>{opt.label}</span>
                 </label>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         ))}
       </div>
 
-      <Card className="border-slate-200/70 dark:border-slate-800 lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-lg">Analysis &amp; actions</CardTitle>
-          <CardDescription>Stored with the incident; visible to authorized staff across devices.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <RecordDetailSection
+        title="Analysis &amp; actions"
+        description="Stored with the incident; visible to authorized staff across devices."
+      >
+        <div className="space-y-4">
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Root cause narrative
             </label>
             <textarea
@@ -823,7 +768,7 @@ export default function AdminIncidentRcaPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Corrective actions (immediate)
             </label>
             <textarea
@@ -835,7 +780,7 @@ export default function AdminIncidentRcaPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Preventative actions (systemic)
             </label>
             <textarea
@@ -847,11 +792,11 @@ export default function AdminIncidentRcaPage() {
             />
           </div>
           {!locked ? (
-            <div className="rounded-lg border border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+            <div className="rounded-[8px] border border-info/20 bg-info/10 p-4">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-info">
                 Operationalize RCA
               </p>
-              <p className="mt-1 text-sm text-indigo-900 dark:text-indigo-100">
+              <p className="mt-1 text-sm text-foreground">
                 Turn corrective or preventative action text into follow-up tasks on the incident workspace.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -874,10 +819,10 @@ export default function AdminIncidentRcaPage() {
               </div>
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted-foreground">
         Factors from the incident record that are not in the checklist above remain in the database; selected IDs
         here may include both checklist keys and legacy values ({[...selected].filter((id) => !allOptionIds.has(id)).length}{" "}
         extra).

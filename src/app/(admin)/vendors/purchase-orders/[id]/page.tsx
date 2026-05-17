@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { VendorHubNav } from "../../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
@@ -108,30 +107,25 @@ export default function PurchaseOrderDetailPage() {
     <div className="space-y-6">
       <VendorHubNav />
       {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {loadError}
         </p>
       )}
       {loading && !po ? (
-        <p className="text-sm text-slate-600">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : po ? (
         <>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{po.po_number}</h1>
-              <p className="text-sm capitalize text-slate-600 dark:text-slate-400">{po.status.replace(/_/g, " ")}</p>
-            </div>
-            <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/vendors/purchase-orders">
-              Back
-            </Link>
-          </div>
+          <RecordDetailHeader
+            title={po.po_number}
+            subtitle={po.status.replace(/_/g, " ")}
+            backLink={{ label: "Back to purchase orders", href: "/admin/vendors/purchase-orders" }}
+          />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Workflow</CardTitle>
-              <CardDescription>Submit for approval, approve as org admin, then record receipts.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
+          <RecordDetailSection
+            title="Workflow"
+            description="Submit for approval, approve as org admin, then record receipts."
+          >
+            <div className="flex flex-wrap gap-2">
               {po.status === "draft" && (
                 <button
                   type="button"
@@ -182,29 +176,23 @@ export default function PurchaseOrderDetailPage() {
                   Cancel
                 </button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                <p>Order date: {po.order_date}</p>
-                <p>Total: {formatUsdFromCents(po.total_cents)}</p>
-              </CardContent>
-            </Card>
-          </div>
+          <RecordDetailSection title="Summary">
+            <div className="space-y-1 text-sm">
+              <p>Order date: {po.order_date}</p>
+              <p>
+                Total: <span className="tabular-nums">{formatUsdFromCents(po.total_cents)}</span>
+              </p>
+            </div>
+          </RecordDetailSection>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Line items</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
+          <RecordDetailSection title="Line items">
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <tr className="border-b border-border">
                     <th className="pb-2 pr-4 font-medium">#</th>
                     <th className="pb-2 pr-4 font-medium">Description</th>
                     <th className="pb-2 pr-4 font-medium">Qty</th>
@@ -214,7 +202,7 @@ export default function PurchaseOrderDetailPage() {
                 </thead>
                 <tbody>
                   {lines.map((l) => (
-                    <tr key={l.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <tr key={l.id} className="border-b border-border/50">
                       <td className="py-2 pr-4 tabular-nums">{l.line_number}</td>
                       <td className="py-2 pr-4">{l.description}</td>
                       <td className="py-2 pr-4 tabular-nums">{l.quantity}</td>
@@ -236,13 +224,13 @@ export default function PurchaseOrderDetailPage() {
                           </button>
                         </div>
                       </td>
-                      <td className="py-2">{formatUsdFromCents(l.line_total_cents)}</td>
+                      <td className="py-2 tabular-nums">{formatUsdFromCents(l.line_total_cents)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         </>
       ) : null}
     </div>

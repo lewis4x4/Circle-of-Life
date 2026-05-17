@@ -1,19 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, CalendarClock, CheckCircle2, FileText, Loader2, NotebookPen } from "lucide-react";
+import { CalendarClock, CheckCircle2, FileText, Loader2, NotebookPen } from "lucide-react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { cn } from "@/lib/utils";
 import type { DocumentAudience, DocumentAuditEventRow, DocumentRow, DocumentStatus } from "@/features/knowledge/lib/types";
 import {
   adminUpdateDocument,
   createObsidianDraft,
   fetchDocumentAuditEvents,
 } from "@/features/knowledge/lib/knowledge-api";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 type ReviewDocument = Pick<
   DocumentRow,
@@ -288,238 +287,229 @@ export default function KnowledgeDocumentReviewPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <div className="space-y-2">
-        <Link
-          href="/admin/knowledge/admin"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Knowledge Base Admin
-        </Link>
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">Doctrine Review</h1>
-          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-            Review a KB upload, create or revisit its Obsidian draft, and move it through the doctrine workflow.
-          </p>
-        </div>
-      </div>
+      <RecordDetailHeader
+        title="Doctrine Review"
+        subtitle="Review a KB upload, create or revisit its Obsidian draft, and move it through the doctrine workflow."
+        backLink={{ label: "Knowledge Base Admin", href: "/admin/knowledge/admin" }}
+      />
 
       {loading || authLoading ? (
-        <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-10 text-sm text-slate-500 dark:text-zinc-400 flex items-center justify-center gap-3">
+        <div className="rounded-[8px] border border-border bg-card p-[14px] text-sm text-muted-foreground flex items-center justify-center gap-3 min-h-[120px]">
           <Loader2 className="h-5 w-5 animate-spin" />
           Loading doctrine review…
         </div>
       ) : error || !document ? (
-        <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-4 text-sm text-red-800 dark:text-red-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-4 text-sm text-destructive flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="font-medium">Could not load doctrine review.</div>
-            <div className="text-red-700/90 dark:text-red-200/90">{error ?? "Document not found."}</div>
+            <div className="text-destructive/80">{error ?? "Document not found."}</div>
           </div>
-          <Button type="button" variant="outline" onClick={() => void load()} className="border-red-300 text-red-800 hover:bg-red-100 dark:border-red-800 dark:text-red-200 dark:hover:bg-red-950/60">
+          <Button type="button" variant="outline" onClick={() => void load()}>
             Retry review
           </Button>
         </div>
       ) : (
         <>
           {actionError && (
-            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+            <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {actionError}
             </div>
           )}
           {actionMessage && (
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            <div className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
               {actionMessage}
             </div>
           )}
 
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-6">
-              <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
+              <RecordDetailSection title="Document">
                 <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-slate-400 mt-0.5" />
+                  <FileText className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100">{document.title}</h2>
-                    <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
+                    <p className="text-xl font-semibold leading-tight text-foreground">{document.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                       {document.summary || "No summary is available yet. Review the content and metadata before promotion."}
                     </p>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{STATUS_LABELS[document.status as DocumentStatus] ?? document.status}</div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[8px] border border-border bg-muted/10 p-3">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Status</div>
+                    <div className="mt-1 text-sm font-medium text-foreground">{STATUS_LABELS[document.status as DocumentStatus] ?? document.status}</div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Audience</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{AUDIENCE_LABELS[document.audience as DocumentAudience] ?? document.audience}</div>
+                  <div className="rounded-[8px] border border-border bg-muted/10 p-3">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Audience</div>
+                    <div className="mt-1 text-sm font-medium text-foreground">{AUDIENCE_LABELS[document.audience as DocumentAudience] ?? document.audience}</div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Words</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{document.word_count?.toLocaleString() ?? "—"}</div>
+                  <div className="rounded-[8px] border border-border bg-muted/10 p-3">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Words</div>
+                    <div className="mt-1 text-sm font-medium tabular-nums text-foreground">{document.word_count?.toLocaleString() ?? "—"}</div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Mime Type</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{document.mime_type ?? "unknown"}</div>
+                  <div className="rounded-[8px] border border-border bg-muted/10 p-3">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Mime Type</div>
+                    <div className="mt-1 text-sm font-medium text-foreground">{document.mime_type ?? "unknown"}</div>
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-indigo-200/60 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-100">
+                <div className="mt-4 rounded-[8px] border border-border bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
                   Workflow: upload to review to Obsidian draft to doctrine promotion. A document should not jump straight from raw upload to Published without this review pass.
                 </div>
-              </div>
+              </RecordDetailSection>
 
-              <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <NotebookPen className="h-5 w-5 text-violet-500" />
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">Review Actions</h2>
-                </div>
+              <RecordDetailSection title="Review actions">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <NotebookPen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">Actions</span>
+                  </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" disabled={actionLoading === "assign"} onClick={() => void assignToMe()}>
-                    {actionLoading === "assign" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign to me"}
-                  </Button>
-                  <Button type="button" variant="outline" disabled={actionLoading === "draft"} onClick={() => void handleDraft()}>
-                    {actionLoading === "draft" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create / refresh draft"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={actionLoading === "review_complete"}
-                    onClick={() => void markReviewComplete()}
-                  >
-                    {actionLoading === "review_complete" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark review complete"}
-                  </Button>
-                  <Button type="button" variant="outline" disabled={actionLoading === "pending_review"} onClick={() => void transitionStatus("pending_review")}>
-                    {actionLoading === "pending_review" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pending review"}
-                  </Button>
-                  <Button type="button" disabled={actionLoading === "published" || !publishReady} onClick={() => void transitionStatus("published")}>
-                    {actionLoading === "published" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publish to Grace"}
-                  </Button>
-                  <Button type="button" variant="secondary" disabled={actionLoading === "archived"} onClick={() => void transitionStatus("archived")}>
-                    {actionLoading === "archived" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Archive"}
-                  </Button>
-                </div>
-
-                <div className="rounded-lg border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 text-sm text-emerald-900 dark:text-emerald-100">
-                  <p className="font-medium">Publish readiness</p>
-                  <ul className="mt-2 space-y-1">
-                    {publishChecks.map((check) => (
-                      <li key={check.key} className={check.passed ? "text-emerald-900 dark:text-emerald-100" : "text-amber-800 dark:text-amber-200"}>
-                        {check.passed ? "✓" : "•"} {check.label}
-                      </li>
-                    ))}
-                  </ul>
-                  {!publishReady ? (
-                    <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
-                      Complete the missing review steps before publishing this document to Grace.
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                  <div className="space-y-2">
-                    <label htmlFor="review-owner" className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">
-                      Review Owner
-                    </label>
-                    <select
-                      id="review-owner"
-                      value={reviewOwner}
-                      onChange={(event) => setReviewOwner(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" disabled={actionLoading === "assign"} onClick={() => void assignToMe()}>
+                      {actionLoading === "assign" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign to me"}
+                    </Button>
+                    <Button type="button" variant="outline" disabled={actionLoading === "draft"} onClick={() => void handleDraft()}>
+                      {actionLoading === "draft" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create / refresh draft"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={actionLoading === "review_complete"}
+                      onClick={() => void markReviewComplete()}
                     >
-                      <option value="">Unassigned</option>
-                      {reviewerOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label} ({option.appRole})
-                        </option>
+                      {actionLoading === "review_complete" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark review complete"}
+                    </Button>
+                    <Button type="button" variant="outline" disabled={actionLoading === "pending_review"} onClick={() => void transitionStatus("pending_review")}>
+                      {actionLoading === "pending_review" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pending review"}
+                    </Button>
+                    <Button type="button" disabled={actionLoading === "published" || !publishReady} onClick={() => void transitionStatus("published")}>
+                      {actionLoading === "published" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publish to Grace"}
+                    </Button>
+                    <Button type="button" variant="secondary" disabled={actionLoading === "archived"} onClick={() => void transitionStatus("archived")}>
+                      {actionLoading === "archived" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Archive"}
+                    </Button>
+                  </div>
+
+                  <div className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+                    <p className="font-medium">Publish readiness</p>
+                    <ul className="mt-2 space-y-1">
+                      {publishChecks.map((check) => (
+                        <li key={check.key} className={check.passed ? "text-success" : "text-warning"}>
+                          {check.passed ? "✓" : "•"} {check.label}
+                        </li>
                       ))}
-                    </select>
-                  </div>
-                  <div className="flex items-end">
-                    <Button type="button" variant="outline" disabled={actionLoading === "owner"} onClick={() => void saveReviewOwner()}>
-                      {actionLoading === "owner" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save owner"}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                  <div className="space-y-2">
-                    <label htmlFor="review-due" className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">
-                      Review Due Date
-                    </label>
-                    <input
-                      id="review-due"
-                      type="date"
-                      value={reviewDueAt}
-                      onChange={(event) => setReviewDueAt(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button type="button" variant="outline" disabled={actionLoading === "due"} onClick={() => void saveReviewDueDate()}>
-                      {actionLoading === "due" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save due date"}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Review Owner</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">{currentReviewerLabel}</div>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Due</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">
-                      {document.review_due_at ? new Date(document.review_due_at).toLocaleDateString() : "Not set"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 dark:border-zinc-800 p-3">
-                    <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Review Completion</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 dark:text-zinc-100">
-                      {reviewCompletedCurrent
-                        ? latestReviewCompletedEvent
-                          ? new Date(latestReviewCompletedEvent.created_at).toLocaleString()
-                          : "Recorded"
-                        : "Not recorded"}
-                    </div>
-                    {reviewCompletedCurrent && latestReviewCompletedEvent?.actor_user_id ? (
-                      <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-                        By {userLabels[latestReviewCompletedEvent.actor_user_id] ?? latestReviewCompletedEvent.actor_user_id}
-                      </div>
+                    </ul>
+                    {!publishReady ? (
+                      <p className="mt-2 text-xs text-warning">
+                        Complete the missing review steps before publishing this document to Grace.
+                      </p>
                     ) : null}
                   </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <div className="space-y-2">
+                      <label htmlFor="review-owner" className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Review Owner
+                      </label>
+                      <select
+                        id="review-owner"
+                        value={reviewOwner}
+                        onChange={(event) => setReviewOwner(event.target.value)}
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">Unassigned</option>
+                        {reviewerOptions.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label} ({option.appRole})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button type="button" variant="outline" disabled={actionLoading === "owner"} onClick={() => void saveReviewOwner()}>
+                        {actionLoading === "owner" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save owner"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    <div className="space-y-2">
+                      <label htmlFor="review-due" className="text-xs uppercase tracking-wider text-muted-foreground">
+                        Review Due Date
+                      </label>
+                      <input
+                        id="review-due"
+                        type="date"
+                        value={reviewDueAt}
+                        onChange={(event) => setReviewDueAt(event.target.value)}
+                        className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button type="button" variant="outline" disabled={actionLoading === "due"} onClick={() => void saveReviewDueDate()}>
+                        {actionLoading === "due" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save due date"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[8px] border border-border bg-muted/10 p-3">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Review Owner</div>
+                      <div className="mt-1 text-sm font-medium text-foreground">{currentReviewerLabel}</div>
+                    </div>
+                    <div className="rounded-[8px] border border-border bg-muted/10 p-3">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Due</div>
+                      <div className="mt-1 text-sm font-medium tabular-nums text-foreground">
+                        {document.review_due_at ? new Date(document.review_due_at).toLocaleDateString() : "Not set"}
+                      </div>
+                    </div>
+                    <div className="rounded-[8px] border border-border bg-muted/10 p-3 sm:col-span-2">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Review Completion</div>
+                      <div className="mt-1 text-sm font-medium tabular-nums text-foreground">
+                        {reviewCompletedCurrent
+                          ? latestReviewCompletedEvent
+                            ? new Date(latestReviewCompletedEvent.created_at).toLocaleString()
+                            : "Recorded"
+                          : "Not recorded"}
+                      </div>
+                      {reviewCompletedCurrent && latestReviewCompletedEvent?.actor_user_id ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          By {userLabels[latestReviewCompletedEvent.actor_user_id] ?? latestReviewCompletedEvent.actor_user_id}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </RecordDetailSection>
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <CalendarClock className="h-5 w-5 text-indigo-500" />
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">Audit Trail</h2>
+              <RecordDetailSection title="Audit trail">
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarClock className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
                   {auditEvents.length === 0 ? (
-                    <div className="text-sm text-slate-500 dark:text-zinc-400">No document events recorded yet.</div>
+                    <div className="text-sm text-muted-foreground">No document events recorded yet.</div>
                   ) : (
                     auditEvents.map((event) => {
                       const lines = formatMetadata(event.metadata);
                       return (
-                        <div key={event.id} className="rounded-lg border border-slate-200 dark:border-zinc-800 p-4">
+                        <div key={event.id} className="rounded-[8px] border border-border bg-muted/10 p-4">
                           <div className="flex items-center justify-between gap-3">
-                            <div className="text-sm font-medium text-slate-900 dark:text-zinc-100 capitalize">
+                            <div className="text-sm font-medium text-foreground capitalize">
                               {formatEventTitle(event.event_type)}
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-zinc-400">
+                            <div className="text-xs tabular-nums text-muted-foreground">
                               {new Date(event.created_at).toLocaleString()}
                             </div>
                           </div>
-                          <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+                          <div className="mt-1 text-xs text-muted-foreground">
                             {event.actor_user_id ? `Actor: ${userLabels[event.actor_user_id] ?? event.actor_user_id}` : "Actor unavailable"}
                           </div>
                           {lines.length > 0 && (
-                            <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-zinc-400">
+                            <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                               {lines.map((line) => (
                                 <li key={line}>{line}</li>
                               ))}
@@ -530,9 +520,9 @@ export default function KnowledgeDocumentReviewPage() {
                     })
                   )}
                 </div>
-              </div>
+              </RecordDetailSection>
 
-              <div className="rounded-xl border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 text-sm text-emerald-900 dark:text-emerald-100 flex items-start gap-3">
+              <div className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success flex items-start gap-3">
                 <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
                 <div>
                   Recommended path:

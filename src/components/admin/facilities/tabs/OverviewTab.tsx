@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Loader2, Calendar, Phone, Mail, AlertTriangle, Clock } from "lucide-react";
+import { Loader2, Phone, Mail, AlertTriangle } from "lucide-react";
 import { useFacility } from "@/hooks/useFacility";
 import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { OccupancyGauge } from "../shared/OccupancyGauge";
 import { formatColLabel } from "@/lib/col-labels";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 interface OverviewTabProps {
   facilityId: string;
@@ -57,14 +58,14 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error || !facility) {
     return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+      <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3">
         <p className="text-sm text-destructive">{error ?? "Failed to load facility details"}</p>
       </div>
     );
@@ -76,108 +77,84 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Left and right columns */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left Column: Occupancy Gauge */}
-        <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 space-y-6">
-          <h3 className="text-sm font-semibold text-white">Census</h3>
+        <RecordDetailSection title="Census">
           <div className="flex justify-center">
             <OccupancyGauge occupied={occupiedBeds} total={licensedBeds} size="lg" />
           </div>
-          <div className="space-y-3 border-t border-white/5 pt-4">
+          <div className="space-y-3 border-t border-border pt-4">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Current Occupancy</span>
-              <span className="font-medium">{occupiedBeds} residents</span>
+              <span className="text-muted-foreground">Current occupancy</span>
+              <span className="font-medium tabular-nums text-foreground">{occupiedBeds} residents</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Licensed Capacity</span>
-              <span className="font-medium">{licensedBeds} beds</span>
+              <span className="text-muted-foreground">Licensed capacity</span>
+              <span className="font-medium tabular-nums text-foreground">{licensedBeds} beds</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Available Beds</span>
-              <span className="font-medium">{licensedBeds - occupiedBeds}</span>
+              <span className="text-muted-foreground">Available beds</span>
+              <span className="font-medium tabular-nums text-foreground">{licensedBeds - occupiedBeds}</span>
             </div>
           </div>
-        </div>
+        </RecordDetailSection>
 
-        {/* Right Column: Key Contacts */}
-        <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 space-y-6">
-          <h3 className="text-sm font-semibold text-white">Key Contacts</h3>
+        <RecordDetailSection title="Key contacts">
           <div className="space-y-4">
-            {/* Administrator */}
-            <div className="flex items-start gap-3 pb-4 border-b border-white/5">
-              <div className="rounded-full bg-teal-500/100/20 p-2 flex-shrink-0">
-                <Phone className="h-4 w-4 text-teal-400" />
+            <div className="flex items-start gap-3 pb-4 border-b border-border">
+              <div className="rounded-[8px] bg-muted/10 p-2 flex-shrink-0">
+                <Phone className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Administrator</p>
-                <p className="mt-1 text-sm font-medium text-slate-200">{facility.administrator_name ?? "N/A"}</p>
-                <p className="text-xs text-slate-400">{facility.phone ?? "No phone"}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Administrator</p>
+                <p className="mt-1 text-sm font-medium text-foreground">{facility.administrator_name ?? "N/A"}</p>
+                <p className="text-xs text-muted-foreground">{facility.phone ?? "No phone"}</p>
               </div>
             </div>
 
-            {/* Contact Email */}
             <div className="flex items-start gap-3">
-              <div className="rounded-full bg-teal-500/100/20 p-2 flex-shrink-0">
-                <Mail className="h-4 w-4 text-teal-400" />
+              <div className="rounded-[8px] bg-muted/10 p-2 flex-shrink-0">
+                <Mail className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Contact Email</p>
-                <p className="mt-1 text-sm font-medium text-slate-200 truncate">{facility.email ?? "N/A"}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact email</p>
+                <p className="mt-1 text-sm font-medium text-foreground truncate">{facility.email ?? "N/A"}</p>
               </div>
             </div>
           </div>
-        </div>
+        </RecordDetailSection>
       </div>
 
-      {/* Bottom Row: Alerts and Expirations */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Recent Alerts */}
-        <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-400" />
-            Recent Alerts
-          </h3>
-          <div className="space-y-2">
-            <p className="text-sm text-slate-400">No active alerts</p>
+        <RecordDetailSection title="Recent alerts">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0" />
+            No active alerts
           </div>
-        </div>
+        </RecordDetailSection>
 
-        {/* Upcoming Expirations */}
-        <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Clock className="h-5 w-5 text-teal-500" />
-            Upcoming Expirations
-          </h3>
-          <div className="space-y-2">
-            {facility.ahca_license_expiration ? (
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">AHCA License</span>
-                <span className="font-medium">
-                  {new Date(facility.ahca_license_expiration).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">No expirations scheduled</p>
-            )}
-          </div>
-        </div>
+        <RecordDetailSection title="Upcoming expirations">
+          {facility.ahca_license_expiration ? (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">AHCA License</span>
+              <span className="font-medium tabular-nums text-foreground">
+                {new Date(facility.ahca_license_expiration).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No expirations scheduled</p>
+          )}
+        </RecordDetailSection>
       </div>
 
-      {/* Last Survey Result */}
-      <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-teal-500" />
-          Last Survey
-        </h3>
+      <RecordDetailSection title="Last survey">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400">Survey Date</span>
-            <span className="font-medium">
+            <span className="text-muted-foreground">Survey date</span>
+            <span className="font-medium text-foreground">
               {facility.last_survey_date
                 ? new Date(facility.last_survey_date).toLocaleDateString("en-US", {
                     month: "long",
@@ -189,35 +166,34 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
           </div>
           {facility.last_survey_result && (
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Result</span>
-              <span className="font-medium">{facility.last_survey_result}</span>
+              <span className="text-muted-foreground">Result</span>
+              <span className="font-medium text-foreground">{facility.last_survey_result}</span>
             </div>
           )}
         </div>
-      </div>
+      </RecordDetailSection>
 
-      <div className="rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-semibold text-white">Standup bed availability model</h3>
-            <p className="mt-1 text-sm text-slate-400">
-              These settings drive the standup bed-by-category breakdown. Keep them current as rooms change or are blocked.
-            </p>
-          </div>
-          <div className="text-[10px] uppercase tracking-wider font-mono text-slate-500">
+      <RecordDetailSection
+        title="Standup bed availability model"
+        action={
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {canEdit ? `${appRole.replace(/_/g, " ")} can edit` : "Read only"}
-          </div>
-        </div>
+          </span>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          These settings drive the standup bed-by-category breakdown. Keep them current as rooms change or are blocked.
+        </p>
 
         {bedsLoading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading bed inventory…
           </div>
         ) : bedsError ? (
-          <p className="text-sm text-rose-400">{bedsError}</p>
+          <p className="text-sm text-destructive">{bedsError}</p>
         ) : beds.length === 0 ? (
-          <p className="text-sm text-slate-400">No beds found for this facility.</p>
+          <p className="text-sm text-muted-foreground">No beds found for this facility.</p>
         ) : (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
@@ -229,9 +205,9 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                 ["Blocked", bedSummary.blocked],
                 ["Needs Assignment", bedSummary.unclassified],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-                  <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
+                <div key={label as string} className="rounded-[8px] border border-border bg-muted/10 px-4 py-3">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label as string}</div>
+                  <div className="mt-2 text-2xl tabular-nums font-semibold text-foreground">{value as number}</div>
                 </div>
               ))}
             </div>
@@ -247,10 +223,10 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
                   key={value}
                   type="button"
                   onClick={() => setBedFilter(value as "all" | "open" | "blocked" | "unclassified")}
-                  className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest transition ${
+                  className={`rounded-[8px] border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest transition ${
                     bedFilter === value
-                      ? "border-teal-400 bg-teal-500/15 text-teal-200"
-                      : "border-white/10 bg-black/20 text-slate-400 hover:bg-white/5"
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-border bg-transparent text-muted-foreground hover:bg-muted/10"
                   }`}
                 >
                   {label}
@@ -258,100 +234,100 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
               ))}
             </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                  <th className="px-3 py-2">Room</th>
-                  <th className="px-3 py-2">Bed</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Availability type</th>
-                  <th className="px-3 py-2">Blocked</th>
-                  <th className="px-3 py-2">Reason</th>
-                  <th className="px-3 py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBeds.map((bed) => (
-                  <tr key={bed.id} className="border-b border-white/5 align-top">
-                    <td className="px-3 py-3 text-slate-200">{bed.room_number}</td>
-                    <td className="px-3 py-3 text-slate-200">{bed.bed_label}</td>
-                    <td className="px-3 py-3 text-slate-400">{getBedStatusLabel(bed)}</td>
-                    <td className="px-3 py-3">
-                      <select
-                        className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100"
-                        value={bed.standup_availability_class ?? ""}
-                        disabled={!canEdit || bedsSaving}
-                        onChange={(event) =>
-                          void updateBed(bed.id, {
-                            standup_availability_class:
-                              event.target.value === ""
-                                ? null
-                                : (event.target.value as "private" | "sp_female" | "sp_male" | "sp_flexible"),
-                            is_temporarily_blocked: bed.is_temporarily_blocked,
-                            blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
-                          })
-                        }
-                      >
-                        <option value="">Needs assignment</option>
-                        <option value="private">{STANDUP_CLASS_LABELS.private}</option>
-                        <option value="sp_female">{STANDUP_CLASS_LABELS.sp_female}</option>
-                        <option value="sp_male">{STANDUP_CLASS_LABELS.sp_male}</option>
-                        <option value="sp_flexible">{STANDUP_CLASS_LABELS.sp_flexible}</option>
-                      </select>
-                    </td>
-                    <td className="px-3 py-3">
-                      <label className="inline-flex items-center gap-2 text-slate-300">
-                        <input
-                          type="checkbox"
-                          checked={bed.is_temporarily_blocked}
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-2">Room</th>
+                    <th className="px-3 py-2">Bed</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Availability type</th>
+                    <th className="px-3 py-2">Blocked</th>
+                    <th className="px-3 py-2">Reason</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBeds.map((bed) => (
+                    <tr key={bed.id} className="border-b border-border/50 align-top">
+                      <td className="px-3 py-3 text-foreground">{bed.room_number}</td>
+                      <td className="px-3 py-3 text-foreground">{bed.bed_label}</td>
+                      <td className="px-3 py-3 text-muted-foreground">{getBedStatusLabel(bed)}</td>
+                      <td className="px-3 py-3">
+                        <select
+                          className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
+                          value={bed.standup_availability_class ?? ""}
                           disabled={!canEdit || bedsSaving}
                           onChange={(event) =>
                             void updateBed(bed.id, {
-                              standup_availability_class: bed.standup_availability_class,
-                              is_temporarily_blocked: event.target.checked,
+                              standup_availability_class:
+                                event.target.value === ""
+                                  ? null
+                                  : (event.target.value as "private" | "sp_female" | "sp_male" | "sp_flexible"),
+                              is_temporarily_blocked: bed.is_temporarily_blocked,
                               blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
                             })
                           }
+                        >
+                          <option value="">Needs assignment</option>
+                          <option value="private">{STANDUP_CLASS_LABELS.private}</option>
+                          <option value="sp_female">{STANDUP_CLASS_LABELS.sp_female}</option>
+                          <option value="sp_male">{STANDUP_CLASS_LABELS.sp_male}</option>
+                          <option value="sp_flexible">{STANDUP_CLASS_LABELS.sp_flexible}</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-3">
+                        <label className="inline-flex items-center gap-2 text-foreground">
+                          <input
+                            type="checkbox"
+                            checked={bed.is_temporarily_blocked}
+                            disabled={!canEdit || bedsSaving}
+                            onChange={(event) =>
+                              void updateBed(bed.id, {
+                                standup_availability_class: bed.standup_availability_class,
+                                is_temporarily_blocked: event.target.checked,
+                                blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
+                              })
+                            }
+                          />
+                          Yes
+                        </label>
+                      </td>
+                      <td className="px-3 py-3">
+                        <input
+                          className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
+                          value={blockedReasonDrafts[bed.id] ?? bed.blocked_reason ?? ""}
+                          disabled={!canEdit || bedsSaving}
+                          placeholder="Blocked reason"
+                          onChange={(event) =>
+                            setBlockedReasonDrafts((current) => ({ ...current, [bed.id]: event.target.value }))
+                          }
                         />
-                        Yes
-                      </label>
-                    </td>
-                    <td className="px-3 py-3">
-                      <input
-                        className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100"
-                        value={blockedReasonDrafts[bed.id] ?? bed.blocked_reason ?? ""}
-                        disabled={!canEdit || bedsSaving}
-                        placeholder="Blocked reason"
-                        onChange={(event) =>
-                          setBlockedReasonDrafts((current) => ({ ...current, [bed.id]: event.target.value }))
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <button
-                        type="button"
-                        className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-200 hover:bg-white/5 disabled:opacity-50"
-                        disabled={!canEdit || bedsSaving}
-                        onClick={() =>
-                          void updateBed(bed.id, {
-                            standup_availability_class: bed.standup_availability_class,
-                            is_temporarily_blocked: bed.is_temporarily_blocked,
-                            blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
-                          })
-                        }
-                      >
-                        Save
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <button
+                          type="button"
+                          className="rounded-[8px] border border-border px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground hover:bg-muted/10 disabled:opacity-50"
+                          disabled={!canEdit || bedsSaving}
+                          onClick={() =>
+                            void updateBed(bed.id, {
+                              standup_availability_class: bed.standup_availability_class,
+                              is_temporarily_blocked: bed.is_temporarily_blocked,
+                              blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
+                            })
+                          }
+                        >
+                          Save
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
+      </RecordDetailSection>
     </div>
   );
 }

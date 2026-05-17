@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -97,7 +97,7 @@ export default function InsurancePolicyDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-slate-600 dark:text-slate-400">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -106,7 +106,7 @@ export default function InsurancePolicyDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error ?? "Not found."}
         </p>
         <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/policies">
@@ -119,50 +119,48 @@ export default function InsurancePolicyDetailPage() {
   return (
     <div className="space-y-6">
       <InsuranceHubNav />
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{policy.carrier_name}</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {entityName} · {policy.policy_type.replace(/_/g, " ")} · {policy.policy_number}
-        </p>
-      </div>
+      <RecordDetailHeader
+        title={policy.carrier_name}
+        subtitle={`${entityName} · ${policy.policy_type.replace(/_/g, " ")} · ${policy.policy_number}`}
+        backLink={{ label: "Back to policies", href: "/admin/insurance/policies" }}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Coverage</CardTitle>
-          <CardDescription>Effective {policy.effective_date} through {policy.expiration_date}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 text-sm md:grid-cols-2">
+      <RecordDetailSection
+        title="Coverage"
+        description={`Effective ${policy.effective_date} through ${policy.expiration_date}`}
+      >
+        <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
-            <span className="text-slate-500">Status:</span> {policy.status.replace(/_/g, " ")}
+            <span className="text-muted-foreground">Status:</span> {policy.status.replace(/_/g, " ")}
           </p>
           <p>
-            <span className="text-slate-500">Premium:</span> {formatUsdFromCents(policy.premium_cents)}
+            <span className="text-muted-foreground">Premium:</span>{" "}
+            <span className="tabular-nums">{formatUsdFromCents(policy.premium_cents)}</span>
           </p>
           {policy.broker_name && (
             <p>
-              <span className="text-slate-500">Broker:</span> {policy.broker_name}
+              <span className="text-muted-foreground">Broker:</span> {policy.broker_name}
             </p>
           )}
           {policy.notes && (
             <p className="md:col-span-2">
-              <span className="text-slate-500">Notes:</span> {policy.notes}
+              <span className="text-muted-foreground">Notes:</span> {policy.notes}
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Renewals</CardTitle>
-          <CardDescription>Milestones and premiums for this policy.</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
+      <RecordDetailSection
+        title="Renewals"
+        description="Milestones and premiums for this policy."
+      >
+        <div className="overflow-x-auto">
           {renewals.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No renewals recorded.</p>
+            <p className="text-sm text-muted-foreground">No renewals recorded.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800">
+                <tr className="border-b border-border">
                   <th className="py-2 pr-4 font-medium">Target effective</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 pr-4 font-medium">Quoted</th>
@@ -171,7 +169,7 @@ export default function InsurancePolicyDetailPage() {
               </thead>
               <tbody>
                 {renewals.map((r) => (
-                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                  <tr key={r.id} className="border-b border-border/50">
                     <td className="py-2 pr-4">{r.target_effective_date}</td>
                     <td className="py-2 pr-4">{r.status.replace(/_/g, " ")}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.quoted_premium_cents)}</td>
@@ -181,21 +179,20 @@ export default function InsurancePolicyDetailPage() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Premium allocations</CardTitle>
-          <CardDescription>Facility splits for internal reporting.</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
+      <RecordDetailSection
+        title="Premium allocations"
+        description="Facility splits for internal reporting."
+      >
+        <div className="overflow-x-auto">
           {allocs.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No allocations.</p>
+            <p className="text-sm text-muted-foreground">No allocations.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800">
+                <tr className="border-b border-border">
                   <th className="py-2 pr-4 font-medium">Period</th>
                   <th className="py-2 pr-4 font-medium">Method</th>
                   <th className="py-2 font-medium">Allocated</th>
@@ -203,7 +200,7 @@ export default function InsurancePolicyDetailPage() {
               </thead>
               <tbody>
                 {allocs.map((a) => (
-                  <tr key={a.id} className="border-b border-slate-100 dark:border-slate-900">
+                  <tr key={a.id} className="border-b border-border/50">
                     <td className="py-2 pr-4">
                       {a.period_start} – {a.period_end}
                     </td>
@@ -214,31 +211,30 @@ export default function InsurancePolicyDetailPage() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Linked claims</CardTitle>
-          <CardDescription>Corporate GL claims on this policy.</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
+      <RecordDetailSection
+        title="Linked claims"
+        description="Corporate GL claims on this policy."
+      >
+        <div className="overflow-x-auto">
           {claims.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No linked claims.</p>
+            <p className="text-sm text-muted-foreground">No linked claims.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800">
+                <tr className="border-b border-border">
                   <th className="py-2 pr-4 font-medium">Loss date</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 pr-4 font-medium">Reserve</th>
-                  <th className="py-2 font-medium">Paid</th>
+                  <th className="py-2 pr-4 font-medium">Paid</th>
                   <th className="py-2" />
                 </tr>
               </thead>
               <tbody>
                 {claims.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-100 dark:border-slate-900">
+                  <tr key={c.id} className="border-b border-border/50">
                     <td className="py-2 pr-4">{c.date_of_loss ?? "—"}</td>
                     <td className="py-2 pr-4">{c.status.replace(/_/g, " ")}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.reserve_cents)}</td>
@@ -253,12 +249,8 @@ export default function InsurancePolicyDetailPage() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
-
-      <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/policies">
-        Back to list
-      </Link>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

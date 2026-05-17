@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { VendorHubNav } from "../../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -94,30 +93,25 @@ export default function VendorInvoiceDetailPage() {
     <div className="space-y-6">
       <VendorHubNav />
       {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {loadError}
         </p>
       )}
       {loading && !inv ? (
-        <p className="text-sm text-slate-600">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : inv ? (
         <>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{inv.invoice_number}</h1>
-              <p className="text-sm capitalize text-slate-600 dark:text-slate-400">{inv.status}</p>
-            </div>
-            <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/vendors/invoices">
-              Back
-            </Link>
-          </div>
+          <RecordDetailHeader
+            title={inv.invoice_number}
+            subtitle={inv.status}
+            backLink={{ label: "Back to invoices", href: "/admin/vendors/invoices" }}
+          />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Workflow</CardTitle>
-              <CardDescription>Org admin approves match after PO and receipt alignment.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
+          <RecordDetailSection
+            title="Workflow"
+            description="Org admin approves match after PO and receipt alignment."
+          >
+            <div className="flex flex-wrap gap-2">
               {inv.status === "draft" && (
                 <button
                   type="button"
@@ -158,28 +152,24 @@ export default function VendorInvoiceDetailPage() {
                   Mark paid
                 </button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Totals</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm">
+          <RecordDetailSection title="Totals">
+            <div className="text-sm">
               <p>Invoice date: {inv.invoice_date}</p>
               <p>Due: {inv.due_date}</p>
-              <p>Total: {formatUsdFromCents(inv.total_cents)}</p>
-            </CardContent>
-          </Card>
+              <p>
+                Total: <span className="tabular-nums">{formatUsdFromCents(inv.total_cents)}</span>
+              </p>
+            </div>
+          </RecordDetailSection>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Lines</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
+          <RecordDetailSection title="Lines">
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <tr className="border-b border-border">
                     <th className="pb-2 pr-4 font-medium">#</th>
                     <th className="pb-2 pr-4 font-medium">Description</th>
                     <th className="pb-2 font-medium">Amount</th>
@@ -187,16 +177,16 @@ export default function VendorInvoiceDetailPage() {
                 </thead>
                 <tbody>
                   {lines.map((l) => (
-                    <tr key={l.id} className="border-b border-slate-100 dark:border-slate-900">
-                      <td className="py-2 pr-4">{l.line_number}</td>
+                    <tr key={l.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 tabular-nums">{l.line_number}</td>
                       <td className="py-2 pr-4">{l.description}</td>
-                      <td className="py-2">{formatUsdFromCents(l.line_total_cents)}</td>
+                      <td className="py-2 tabular-nums">{formatUsdFromCents(l.line_total_cents)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
         </>
       ) : null}
     </div>

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ClipboardCheck, Plus } from "lucide-react";
+import { ClipboardCheck, Plus } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -13,6 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 const TYPE_LABELS: Record<string, string> = {
   katz_adl: "Katz ADL",
@@ -26,19 +30,19 @@ function formatType(t: string): string {
 }
 
 const RISK_COLORS: Record<string, string> = {
-  low: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  standard: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  high: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
-  level_1: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  level_2: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  level_3: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
-  none: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  mild: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  moderate: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  very_high: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
-  minimal: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  moderately_severe: "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  severe: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  low: "border-success/20 bg-success/10 text-success",
+  standard: "border-warning/20 bg-warning/10 text-warning",
+  high: "border-destructive/30 bg-destructive/10 text-destructive",
+  level_1: "border-success/20 bg-success/10 text-success",
+  level_2: "border-warning/20 bg-warning/10 text-warning",
+  level_3: "border-destructive/30 bg-destructive/10 text-destructive",
+  none: "border-success/20 bg-success/10 text-success",
+  mild: "border-success/20 bg-success/10 text-success",
+  moderate: "border-warning/20 bg-warning/10 text-warning",
+  very_high: "border-destructive/30 bg-destructive/10 text-destructive",
+  minimal: "border-success/20 bg-success/10 text-success",
+  moderately_severe: "border-warning/20 bg-warning/10 text-warning",
+  severe: "border-destructive/30 bg-destructive/10 text-destructive",
 };
 
 type Row = {
@@ -68,7 +72,6 @@ export default function ResidentAssessmentHistoryPage() {
     try {
       const facilityFilter = isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : undefined;
 
-      // Fetch resident name
       const { data: resident } = await supabase
         .from("residents")
         .select("first_name, last_name")
@@ -76,7 +79,6 @@ export default function ResidentAssessmentHistoryPage() {
         .maybeSingle();
       if (resident) setResidentName(`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim());
 
-      // Fetch assessments
       let q = supabase
         .from("assessments")
         .select("id, assessment_type, assessment_date, total_score, risk_level, assessed_by")
@@ -89,7 +91,6 @@ export default function ResidentAssessmentHistoryPage() {
       const { data, error: qErr } = await q;
       if (qErr) throw new Error(qErr.message);
 
-      // Fetch assessor names
       const userIds = [...new Set((data ?? []).map((a) => a.assessed_by).filter(Boolean))];
       const nameMap = new Map<string, string>();
       if (userIds.length > 0) {
@@ -133,33 +134,20 @@ export default function ResidentAssessmentHistoryPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-3">
-             <Link
-               href={`/admin/residents/${residentId}`}
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-             >
-                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO PROFILE
-             </Link>
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Assessments <span className="font-semibold text-brand-600 dark:text-brand-400 opacity-60 ml-2">/ {residentName}</span>
-             </h1>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-               {rows.length} assessment{rows.length !== 1 ? "s" : ""} on record
-            </p>
-          </div>
-          <div>
+      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-[var(--motion-duration)]">
+        <RecordDetailHeader
+          title="Assessments"
+          subtitle={`${rows.length} assessment${rows.length !== 1 ? "s" : ""} on record${residentName ? ` · ${residentName}` : ""}`}
+          backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
+          actions={
             <Link
               href={`/admin/residents/${residentId}/assessments/new`}
-              className={cn(buttonVariants({ size: "default" }), "h-14 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center gap-2")}
+              className={cn(buttonVariants({ size: "sm" }), "font-medium")}
             >
-              <Plus className="h-4 w-4" /> New Assessment
+              <Plus className="h-4 w-4 mr-1.5" /> New assessment
             </Link>
-          </div>
-        </header>
+          }
+        />
 
         <AdminFilterBar
           searchPlaceholder="Filter by type…"
@@ -177,61 +165,63 @@ export default function ResidentAssessmentHistoryPage() {
             description="Complete the first assessment to establish baseline scores."
           />
         )}
-        
+
         {!isLoading && !error && filtered.length > 0 && (
-          <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-2xl overflow-hidden p-6 md:p-8 relative">
-             <div className="hidden lg:grid grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-right first:text-left [&>*:nth-child(2)]:text-left [&>*:nth-child(3)]:text-left">
-               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-left min-w-[120px]">Date</div>
-               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 flex items-center gap-2"><ClipboardCheck className="w-3.5 h-3.5 text-slate-400" /> Type</div>
-               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Risk Level</div>
-               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Score</div>
-               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Assessed By</div>
-             </div>
+          <RecordDetailSection title="Assessment history">
+            <div className="w-full overflow-hidden">
+              <div className="hidden lg:grid grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 px-2 pb-3 border-b border-border text-right first:text-left [&>*:nth-child(2)]:text-left [&>*:nth-child(3)]:text-left">
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-left min-w-[120px]">Date</div>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2"><ClipboardCheck className="w-3.5 h-3.5 text-muted-foreground" /> Type</div>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Risk level</div>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Score</div>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground text-right">Assessed by</div>
+              </div>
 
-             <div className="space-y-4 mt-6 relative z-10">
-               <MotionList className="space-y-4">
-               {filtered.map((r) => (
-                  <MotionItem key={r.id}>
-                    <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 lg:items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
-                      
-                      <div className="flex flex-col min-w-[120px]">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Date</span>
-                        <span className="font-mono text-sm text-slate-900 dark:text-slate-100">{r.assessmentDate}</span>
-                      </div>
+              <div className="space-y-2 mt-3">
+                <MotionList className="space-y-2">
+                  {filtered.map((r) => (
+                    <MotionItem key={r.id}>
+                      <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr_0.5fr_1fr] gap-4 lg:items-center p-[14px] rounded-[8px] bg-card border border-border shadow-[var(--shadow-card)] tap-responsive group hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration)] w-full outline-none">
 
-                      <div className="flex flex-col">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Type</span>
-                        <span className="font-semibold text-lg text-slate-900 dark:text-white truncate tracking-tight">{formatType(r.assessmentType)}</span>
-                      </div>
-                      
-                      <div className="flex flex-col items-start lg:items-start">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Risk Level</span>
-                        {r.riskLevel ? (
-                            <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider shadow-none", RISK_COLORS[r.riskLevel] ?? "bg-slate-100 text-slate-600 border-slate-200")}>
-                               {r.riskLevel.replace(/_/g, " ")}
+                        <div className="flex flex-col min-w-[120px]">
+                          <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Date</span>
+                          <span className="tabular-nums text-sm text-foreground">{r.assessmentDate}</span>
+                        </div>
+
+                        <div className="flex flex-col">
+                          <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Type</span>
+                          <span className="font-semibold text-base text-foreground truncate tracking-tight">{formatType(r.assessmentType)}</span>
+                        </div>
+
+                        <div className="flex flex-col items-start lg:items-start">
+                          <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Risk level</span>
+                          {r.riskLevel ? (
+                            <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider shadow-none", RISK_COLORS[r.riskLevel] ?? "bg-muted text-muted-foreground border-border")}>
+                              {r.riskLevel.replace(/_/g, " ")}
                             </Badge>
-                         ) : (
-                            <span className="text-slate-400">—</span>
-                         )}
-                      </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </div>
 
-                      <div className="flex flex-col lg:items-end">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Score</span>
-                        <span className="text-xl font-medium text-slate-900 dark:text-slate-100">{r.totalScore !== null ? r.totalScore : "—"}</span>
-                      </div>
+                        <div className="flex flex-col lg:items-end">
+                          <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Score</span>
+                          <span className="tabular-nums text-xl font-medium text-foreground">{r.totalScore !== null ? r.totalScore : "—"}</span>
+                        </div>
 
-                      <div className="flex flex-row justify-between lg:justify-end items-center">
-                        <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Assessed By</span>
-                        <span className="text-sm font-medium text-slate-500 dark:text-zinc-400">
-                          {r.assessedBy}
-                        </span>
+                        <div className="flex flex-row justify-between lg:justify-end items-center">
+                          <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Assessed by</span>
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {r.assessedBy}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </MotionItem>
-               ))}
-               </MotionList>
-             </div>
-          </div>
+                    </MotionItem>
+                  ))}
+                </MotionList>
+              </div>
+            </div>
+          </RecordDetailSection>
         )}
       </div>
     </div>

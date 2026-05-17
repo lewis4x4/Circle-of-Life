@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -171,7 +171,7 @@ export default function RenewalPackageDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           Invalid package id.
         </p>
         <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/renewal-packages">
@@ -185,7 +185,7 @@ export default function RenewalPackageDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-slate-600 dark:text-slate-400">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -194,7 +194,7 @@ export default function RenewalPackageDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error ?? "Not found."}
         </p>
         <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/renewal-packages">
@@ -210,65 +210,55 @@ export default function RenewalPackageDetailPage() {
   return (
     <div className="space-y-6">
       <InsuranceHubNav />
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Renewal data package</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {row.insurance_policies?.policy_number ?? "Policy"} · {row.insurance_policies?.carrier_name}
-        </p>
-        <p className="mt-1 font-mono text-xs text-slate-500">
-          {row.period_start} → {row.period_end}
-        </p>
-      </div>
+      <RecordDetailHeader
+        title="Renewal data package"
+        subtitle={`${row.insurance_policies?.policy_number ?? "Policy"} · ${row.insurance_policies?.carrier_name ?? ""} · ${row.period_start} → ${row.period_end}`}
+        backLink={{ label: "Back to packages", href: "/admin/insurance/renewal-packages" }}
+      />
 
       {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Underwriting snapshot</CardTitle>
-          <CardDescription>Metrics assembled for this period (JSON payload version {payload?.version ?? "—"}).</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 text-sm md:grid-cols-2">
+      <RecordDetailSection
+        title="Underwriting snapshot"
+        description={`Metrics assembled for this period (JSON payload version ${payload?.version ?? "—"}).`}
+      >
+        <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
-            <span className="text-slate-500">Active residents:</span> {metrics?.active_residents ?? "—"}
+            <span className="text-muted-foreground">Active residents:</span> {metrics?.active_residents ?? "—"}
           </p>
           <p>
-            <span className="text-slate-500">Incidents in period:</span> {metrics?.incidents_in_period ?? "—"}
+            <span className="text-muted-foreground">Incidents in period:</span> {metrics?.incidents_in_period ?? "—"}
           </p>
           <p>
-            <span className="text-slate-500">Active staff:</span> {metrics?.active_staff ?? "—"}
+            <span className="text-muted-foreground">Active staff:</span> {metrics?.active_staff ?? "—"}
           </p>
           <p>
-            <span className="text-slate-500">Invoice total (period overlap):</span>{" "}
-            {metrics != null ? formatUsdFromCents(metrics.invoice_total_cents) : "—"}
+            <span className="text-muted-foreground">Invoice total (period overlap):</span>{" "}
+            <span className="tabular-nums">
+              {metrics != null ? formatUsdFromCents(metrics.invoice_total_cents) : "—"}
+            </span>
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Payload (JSON)</CardTitle>
-          <CardDescription>Auditable source metrics; treat as internal until narrative is reviewed and published.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <pre className="max-h-64 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-800 dark:bg-slate-950">
-            {JSON.stringify(row.payload, null, 2)}
-          </pre>
-        </CardContent>
-      </Card>
+      <RecordDetailSection
+        title="Payload (JSON)"
+        description="Auditable source metrics; treat as internal until narrative is reviewed and published."
+      >
+        <pre className="max-h-64 overflow-auto rounded-[8px] border border-border bg-muted p-3 text-xs">
+          {JSON.stringify(row.payload, null, 2)}
+        </pre>
+      </RecordDetailSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Narrative</CardTitle>
-          <CardDescription>
-            Generate a draft from package metrics (optional OpenAI when configured). Human review is required before
-            external use. Only owner / org admin may generate or edit (RLS).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <RecordDetailSection
+        title="Narrative"
+        description="Generate a draft from package metrics (optional OpenAI when configured). Human review is required before external use. Only owner / org admin may generate or edit (RLS)."
+      >
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="narr">Narrative draft</Label>
             <textarea
@@ -283,7 +273,7 @@ export default function RenewalPackageDetailPage() {
             />
           </div>
           {lastSource ? (
-            <p className="text-xs text-slate-500" role="status">
+            <p className="text-xs text-muted-foreground" role="status">
               Last generation: {lastSource === "openai" ? "model-assisted" : "template (set OPENAI_API_KEY for model draft)"}.
             </p>
           ) : null}
@@ -314,9 +304,9 @@ export default function RenewalPackageDetailPage() {
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-slate-600 dark:text-slate-400">View-only: narrative edits require owner or org admin.</p>
+            <p className="text-sm text-muted-foreground">View-only: narrative edits require owner or org admin.</p>
           )}
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-muted-foreground">
             {row.narrative_reviewed_at ? (
               <p>Reviewed {new Date(row.narrative_reviewed_at).toLocaleString()}</p>
             ) : (
@@ -328,12 +318,8 @@ export default function RenewalPackageDetailPage() {
               <p>Not published</p>
             )}
           </div>
-        </CardContent>
-      </Card>
-
-      <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/renewal-packages">
-        ← Back to packages
-      </Link>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

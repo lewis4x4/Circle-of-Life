@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Printer, RefreshCw } from "lucide-react";
 
@@ -19,6 +18,7 @@ import {
   fetchStandupSnapshotDetail,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import { RecordDetailHeader } from "@/design-system/components/record-detail";
 
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
@@ -117,107 +117,101 @@ export default function ExecutiveStandupBoardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-950">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-6 py-8 print:px-4">
-        <div className="mb-8 flex items-start justify-between gap-4 print:hidden">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Board packet</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">Executive Standup Board View</h1>
-            <p className="mt-2 text-sm text-slate-600">Print or save this page as PDF for a board-ready packet.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" onClick={() => void load()} disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            <Button type="button" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print / Save PDF
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
-              {downloadingPdf ? "Generating PDF…" : "Download PDF"}
-            </Button>
-            <Button type="button" variant="outline" onClick={onExportBoardPacket}>
-              Export HTML packet
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
-              {savingBoardReport ? "Saving…" : "Save in executive reports"}
-            </Button>
-            <Link
-              href={`/admin/executive/standup/${week}`}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-300 px-4 text-xs font-semibold uppercase tracking-wider text-slate-700"
-            >
-              Back to draft
-            </Link>
-          </div>
+        <div className="print:hidden">
+          <RecordDetailHeader
+            title="Executive Standup Board View"
+            subtitle="Print or save this page as PDF for a board-ready packet."
+            backLink={{ label: "Back to draft", href: `/admin/executive/standup/${week}` }}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" onClick={() => void load()} disabled={loading}>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+                <Button type="button" onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print / Save PDF
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
+                  {downloadingPdf ? "Generating PDF…" : "Download PDF"}
+                </Button>
+                <Button type="button" variant="outline" onClick={onExportBoardPacket}>
+                  Export HTML packet
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
+                  {savingBoardReport ? "Saving…" : "Save in executive reports"}
+                </Button>
+              </div>
+            }
+          />
         </div>
 
-        {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        {error ? <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
 
         {loading ? (
-          <div className="text-sm text-slate-500">Loading board packet…</div>
+          <div className="text-sm text-muted-foreground">Loading board packet…</div>
         ) : !detail ? (
-          <div className="text-sm text-slate-500">No standup data found for this week.</div>
+          <div className="text-sm text-muted-foreground">No standup data found for this week.</div>
         ) : (
           <div className="space-y-8">
-            <section className="overflow-hidden rounded-lg border border-slate-200 px-8 py-10 text-white shadow-none">
+            <section className="overflow-hidden rounded-[8px] border border-border bg-card px-8 py-10">
               <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">Haven executive standup packet</p>
-                  <h2 className="mt-3 text-2xl font-semibold tracking-tight">{packet?.title ?? "Executive Standup Pack"}</h2>
-                  <p className="mt-2 text-sm uppercase tracking-[0.18em] text-slate-400">Week of {detail.snapshot.weekOf}</p>
-                  <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-300">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Haven executive standup packet</p>
+                  <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{packet?.title ?? "Executive Standup Pack"}</p>
+                  <p className="mt-2 text-sm uppercase tracking-[0.18em] text-muted-foreground">Week of {detail.snapshot.weekOf}</p>
+                  <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">
                     {packet?.subtitle ?? "Owner and board operating packet"}. Designed for fast comprehension, defensible trust, and immediate action.
                   </p>
                   <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Status</div>
-                      <div className="mt-2 text-xl font-semibold capitalize">{detail.snapshot.status}</div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Confidence</div>
-                      <div className="mt-2 text-xl font-semibold capitalize">{detail.snapshot.confidenceBand}</div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Completeness</div>
-                      <div className="mt-2 text-xl font-semibold">{detail.snapshot.completenessPct.toFixed(0)}%</div>
-                    </div>
+                    {[
+                      { label: "Status", value: <span className="capitalize">{detail.snapshot.status}</span> },
+                      { label: "Confidence", value: <span className="capitalize">{detail.snapshot.confidenceBand}</span> },
+                      { label: "Completeness", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="rounded-[8px] border border-border bg-muted/10 px-4 py-4">
+                        <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+                        <div className="mt-2 text-xl font-semibold tabular-nums text-foreground">{value}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="grid gap-4">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-5 text-sm text-slate-200">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Prepared</div>
-                    <div className="mt-2 text-xl font-semibold text-white">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
-                    <div className="mt-2">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                  <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
+                    <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Prepared</div>
+                    <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-5 text-sm text-slate-200">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Published</div>
-                    <div className="mt-2 text-xl font-semibold text-white">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
-                    <div className="mt-2">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
-                    <div className="mt-2 text-slate-400">Version {detail.snapshot.publishedVersion}</div>
+                  <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
+                    <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Published</div>
+                    <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">Version {detail.snapshot.publishedVersion}</div>
                   </div>
                 </div>
               </div>
             </section>
 
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-              <Card className="border-slate-200 shadow-none">
+              <Card className="border-border shadow-none">
                 <CardHeader>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Primary focus</div>
+                  <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Primary focus</div>
                   <CardTitle className="text-3xl tracking-tight">{packet?.focusStatement ?? "No focus statement available."}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-slate-600">
+                <CardContent className="text-sm text-muted-foreground">
                   Executive packet summary for the current week. This is the fastest read on what leadership should pay attention to right now.
                 </CardContent>
               </Card>
               {packet?.spotlightFacility ? (
-                <Card className="border-slate-200 shadow-none">
+                <Card className="border-border shadow-none">
                   <CardHeader>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Facility spotlight</div>
+                    <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Facility spotlight</div>
                     <CardTitle className="text-3xl tracking-tight">{packet.spotlightFacility.facilityName}</CardTitle>
                     <CardDescription>{packet.spotlightFacility.topConcern}</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm text-slate-700">
+                  <CardContent className="space-y-2 text-sm text-foreground">
                     {packet.spotlightFacility.interventions.map((item) => (
                       <p key={item}>{item}</p>
                     ))}
@@ -230,14 +224,14 @@ export default function ExecutiveStandupBoardPage() {
               {packet?.summaryCards.map((card) => {
                 if (!card) return null;
                 return (
-                  <Card key={card.key} className="border-slate-200 shadow-none">
+                  <Card key={card.key} className="border-border shadow-none">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{card.label}</CardTitle>
+                      <CardTitle className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{card.label}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-semibold text-slate-900">{card.value}</div>
-                      <div className="mt-2 text-sm text-indigo-600">{card.delta}</div>
-                      <div className="mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">{card.confidenceBand} confidence</div>
+                      <div className="text-2xl font-semibold tabular-nums text-foreground">{card.value}</div>
+                      <div className="mt-2 text-sm text-muted-foreground">{card.delta}</div>
+                      <div className="mt-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{card.confidenceBand} confidence</div>
                     </CardContent>
                   </Card>
                 );
@@ -245,7 +239,7 @@ export default function ExecutiveStandupBoardPage() {
             </section>
 
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              <Card className="border-slate-200 shadow-none">
+              <Card className="border-border shadow-none">
                 <CardHeader>
                   <CardTitle>Facility ranking</CardTitle>
                 </CardHeader>
@@ -254,25 +248,25 @@ export default function ExecutiveStandupBoardPage() {
                     .slice()
                     .sort((a, b) => b.pressureScore - a.pressureScore)
                     .map((facility, index) => (
-                      <div key={facility.facilityId} className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm last:border-none">
+                      <div key={facility.facilityId} className="flex items-center justify-between border-b border-border pb-3 text-sm last:border-none">
                         <div>
-                          <div className="font-semibold text-slate-900">{index + 1}. {facility.facilityName}</div>
-                          <div className="text-slate-600">{facility.topConcern}</div>
+                          <div className="font-semibold text-foreground">{index + 1}. {facility.facilityName}</div>
+                          <div className="text-muted-foreground">{facility.topConcern}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Pressure</div>
-                          <div className="font-semibold text-slate-900">{facility.pressureScore}</div>
+                          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Pressure</div>
+                          <div className="font-semibold tabular-nums text-foreground">{facility.pressureScore}</div>
                         </div>
                       </div>
                     ))}
                 </CardContent>
               </Card>
 
-              <Card className="border-slate-200 shadow-none">
+              <Card className="border-border shadow-none">
                 <CardHeader>
                   <CardTitle>Executive insights</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm text-slate-700">
+                <CardContent className="space-y-3 text-sm text-foreground">
                   {packet ? (
                     <>
                       <p className="font-semibold">{packet.narrative.headline}</p>
@@ -289,31 +283,31 @@ export default function ExecutiveStandupBoardPage() {
 
             {packet ? (
               <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Card className="border-slate-200 shadow-none">
+                <Card className="border-border shadow-none">
                   <CardHeader>
                     <CardTitle>Changes since last published week</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-slate-700">
+                  <CardContent className="space-y-3 text-sm text-foreground">
                     {(packet.narrative.changes.length > 0 ? packet.narrative.changes : ["No prior published week available for comparison."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
                 </Card>
-                <Card className="border-slate-200 shadow-none">
+                <Card className="border-border shadow-none">
                   <CardHeader>
                     <CardTitle>Data quality</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-slate-700">
+                  <CardContent className="space-y-3 text-sm text-foreground">
                     {(packet.narrative.dataQuality.length > 0 ? packet.narrative.dataQuality : ["No data quality warnings."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
                 </Card>
-                <Card className="border-slate-200 shadow-none">
+                <Card className="border-border shadow-none">
                   <CardHeader>
                     <CardTitle>Intervention queue</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-slate-700">
+                  <CardContent className="space-y-3 text-sm text-foreground">
                     {(packet.narrative.actions.length > 0 ? packet.narrative.actions : ["No intervention recommendations."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
@@ -324,19 +318,19 @@ export default function ExecutiveStandupBoardPage() {
 
             {packet && packet.narrative.facilityActions.length > 0 ? (
               <section className="space-y-4">
-                <h3 className="text-2xl font-semibold tracking-tight">Why this is red</h3>
+                <h3 className="text-2xl font-semibold tracking-tight text-foreground">Why this is red</h3>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   {packet.narrative.facilityActions.slice(0, 6).map((action) => (
-                    <Card key={action.facilityId} className="border-slate-200 shadow-none">
+                    <Card key={action.facilityId} className="border-border shadow-none">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between gap-3">
                           <span>{action.facilityName}</span>
-                          <span className="text-sm font-medium text-slate-500">Pressure {action.pressureScore}</span>
+                          <span className="text-sm font-medium tabular-nums text-muted-foreground">Pressure {action.pressureScore}</span>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4 text-sm text-slate-700">
+                      <CardContent className="space-y-4 text-sm text-foreground">
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Why red</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Why red</div>
                           <ul className="mt-2 space-y-1">
                             {(action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the summary concern."]).map((item) => (
                               <li key={item}>{item}</li>
@@ -344,7 +338,7 @@ export default function ExecutiveStandupBoardPage() {
                           </ul>
                         </div>
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Variance flags</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Variance flags</div>
                           <ul className="mt-2 space-y-1">
                             {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material week-over-week delta against the prior published packet."]).map((item) => (
                               <li key={item}>{item}</li>
@@ -352,7 +346,7 @@ export default function ExecutiveStandupBoardPage() {
                           </ul>
                         </div>
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Interventions</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Interventions</div>
                           <ul className="mt-2 space-y-1">
                             {action.interventions.map((item) => (
                               <li key={item}>{item}</li>
@@ -367,21 +361,21 @@ export default function ExecutiveStandupBoardPage() {
             ) : null}
 
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <Card className="border-slate-200 shadow-none">
+              <Card className="border-border shadow-none">
                 <CardHeader>
                   <CardTitle>Legend</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-slate-700">
+                <CardContent className="space-y-2 text-sm text-foreground">
                   {(packet?.legend ?? []).map((item) => (
                     <p key={item.label}><strong>{item.label}</strong>: {item.description}</p>
                   ))}
                 </CardContent>
               </Card>
-              <Card className="border-slate-200 shadow-none">
+              <Card className="border-border shadow-none">
                 <CardHeader>
                   <CardTitle>Methodology</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-slate-700">
+                <CardContent className="space-y-2 text-sm text-foreground">
                   {(packet?.methodology ?? []).map((item) => (
                     <p key={item}>{item}</p>
                   ))}
@@ -392,21 +386,21 @@ export default function ExecutiveStandupBoardPage() {
             {packet?.reviewNotes || packet?.draftNotes ? (
               <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {packet.reviewNotes ? (
-                  <Card className="border-slate-200 shadow-none">
+                  <Card className="border-border shadow-none">
                     <CardHeader>
                       <CardTitle>Review notes</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-slate-700">
+                    <CardContent className="text-sm text-foreground">
                       <p>{packet.reviewNotes}</p>
                     </CardContent>
                   </Card>
                 ) : null}
                 {packet.draftNotes ? (
-                  <Card className="border-slate-200 shadow-none">
+                  <Card className="border-border shadow-none">
                     <CardHeader>
                       <CardTitle>Draft notes</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-slate-700">
+                    <CardContent className="text-sm text-foreground">
                       <p>{packet.draftNotes}</p>
                     </CardContent>
                   </Card>
@@ -416,12 +410,12 @@ export default function ExecutiveStandupBoardPage() {
 
             {packet?.comparison ? (
               <section className="space-y-4">
-                <h3 className="text-2xl font-semibold tracking-tight">Comparison appendix</h3>
-                <Card className="border-slate-200 shadow-none">
+                <h3 className="text-2xl font-semibold tracking-tight text-foreground">Comparison appendix</h3>
+                <Card className="border-border shadow-none">
                   <CardHeader>
                     <CardTitle>{packet.comparison.headline}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm text-slate-700">
+                  <CardContent className="space-y-3 text-sm text-foreground">
                     {(packet.comparison.portfolioDeltas.length > 0 ? packet.comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
@@ -429,16 +423,16 @@ export default function ExecutiveStandupBoardPage() {
                 </Card>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   {packet.comparison.facilityComparisons.slice(0, 6).map((facility) => (
-                    <Card key={facility.facilityId} className="border-slate-200 shadow-none">
+                    <Card key={facility.facilityId} className="border-border shadow-none">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between gap-3">
                           <span>{facility.facilityName}</span>
-                          <span className="text-sm font-medium text-slate-500">
+                          <span className="text-sm font-medium tabular-nums text-muted-foreground">
                             {facility.pressureDelta > 0 ? "+" : ""}{facility.pressureDelta} pressure
                           </span>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3 text-sm text-slate-700">
+                      <CardContent className="space-y-3 text-sm text-foreground">
                         <p>{packet.comparison!.fromWeek}: {facility.concernFrom}</p>
                         <p>{packet.comparison!.toWeek}: {facility.concernTo}</p>
                         <ul className="space-y-1">
@@ -457,32 +451,32 @@ export default function ExecutiveStandupBoardPage() {
               if (section.metrics.length === 0) return null;
               return (
                 <section key={section.sectionKey}>
-                  <h3 className="mb-4 text-2xl font-semibold tracking-tight">{section.sectionLabel}</h3>
+                  <h3 className="mb-4 text-2xl font-semibold tracking-tight text-foreground">{section.sectionLabel}</h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse text-sm">
                       <thead>
-                        <tr className="border-b border-slate-300">
-                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Metric</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Previous</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Current</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Delta</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Source</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-600">Confidence</th>
+                        <tr className="border-b border-border">
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Previous</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Current</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Source</th>
+                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Confidence</th>
                         </tr>
                       </thead>
                       <tbody>
                         {section.metrics.map((metric) => {
                           return (
-                            <tr key={metric.key} className="border-b border-slate-100 align-top">
+                            <tr key={metric.key} className="border-b border-border/50 align-top">
                               <td className="px-3 py-3">
-                                <div className="font-medium text-slate-900">{metric.label}</div>
-                                <div className="mt-1 text-xs text-slate-500">{metric.description}</div>
+                                <div className="font-medium text-foreground">{metric.label}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{metric.description}</div>
                               </td>
-                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.fromValue}</td>
-                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.toValue}</td>
-                              <td className="px-3 py-3 text-indigo-600">{metric.delta}</td>
-                              <td className="px-3 py-3 text-slate-700">{metric.sourceMode}</td>
-                              <td className="px-3 py-3 text-slate-700">{metric.confidenceBand}</td>
+                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.fromValue}</td>
+                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.toValue}</td>
+                              <td className="px-3 py-3 tabular-nums text-muted-foreground">{metric.delta}</td>
+                              <td className="px-3 py-3 text-muted-foreground">{metric.sourceMode}</td>
+                              <td className="px-3 py-3 text-muted-foreground">{metric.confidenceBand}</td>
                             </tr>
                           );
                         })}
@@ -494,11 +488,11 @@ export default function ExecutiveStandupBoardPage() {
             })}
 
             <section className="space-y-4">
-              <h3 className="text-2xl font-semibold tracking-tight">Workbook appendix</h3>
+              <h3 className="text-2xl font-semibold tracking-tight text-foreground">Workbook appendix</h3>
               {packet?.appendixSections.map((section) => {
                 if (section.metrics.length === 0) return null;
                 return (
-                  <Card key={`appendix-${section.sectionKey}`} className="border-slate-200 shadow-none">
+                  <Card key={`appendix-${section.sectionKey}`} className="border-border shadow-none">
                     <CardHeader>
                       <CardTitle>{section.sectionLabel}</CardTitle>
                       <CardDescription>Full section listing, including low-signal or incomplete rows intentionally kept out of the primary packet.</CardDescription>
@@ -506,27 +500,27 @@ export default function ExecutiveStandupBoardPage() {
                     <CardContent className="overflow-x-auto">
                       <table className="min-w-full border-collapse text-sm">
                         <thead>
-                          <tr className="border-b border-slate-300">
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Metric</th>
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Previous</th>
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Current</th>
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Delta</th>
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Source</th>
-                            <th className="px-3 py-2 text-left font-semibold text-slate-600">Confidence</th>
+                          <tr className="border-b border-border">
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Previous</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Current</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Source</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Confidence</th>
                           </tr>
                         </thead>
                         <tbody>
                           {section.metrics.map((metric) => (
-                            <tr key={`appendix-${metric.key}`} className="border-b border-slate-100 align-top">
+                            <tr key={`appendix-${metric.key}`} className="border-b border-border/50 align-top">
                               <td className="px-3 py-3">
-                                <div className="font-medium text-slate-900">{metric.label}</div>
-                                <div className="mt-1 text-xs text-slate-500">{metric.description}</div>
+                                <div className="font-medium text-foreground">{metric.label}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{metric.description}</div>
                               </td>
-                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.fromValue}</td>
-                              <td className="px-3 py-3 font-semibold text-slate-900">{metric.toValue}</td>
-                              <td className="px-3 py-3 text-indigo-600">{metric.delta}</td>
-                              <td className="px-3 py-3 text-slate-700">{metric.sourceMode}</td>
-                              <td className="px-3 py-3 text-slate-700">{metric.confidenceBand}</td>
+                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.fromValue}</td>
+                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.toValue}</td>
+                              <td className="px-3 py-3 tabular-nums text-muted-foreground">{metric.delta}</td>
+                              <td className="px-3 py-3 text-muted-foreground">{metric.sourceMode}</td>
+                              <td className="px-3 py-3 text-muted-foreground">{metric.confidenceBand}</td>
                             </tr>
                           ))}
                         </tbody>

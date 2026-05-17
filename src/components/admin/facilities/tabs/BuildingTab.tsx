@@ -9,6 +9,7 @@ import {
   GENERATOR_FUEL_TYPES,
 } from "@/lib/admin/facilities/facility-constants";
 import type { BuildingProfileInput } from "@/lib/validation/facility-admin";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 interface BuildingTabProps {
   facilityId: string;
@@ -47,6 +48,8 @@ function profileToDraft(profile: Record<string, unknown> | null): Partial<Buildi
   };
 }
 
+const inputCls = "mt-1 w-full rounded-[8px] border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+
 export function BuildingTab({ facilityId }: BuildingTabProps) {
   const { profile, isLoading, error, saveProfile, isSaving } = useFacilityBuildingProfile(facilityId);
   const baseDraft = useMemo(
@@ -67,7 +70,7 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -77,35 +80,34 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
   }
 
   return (
-    <form onSubmit={onSave} className="space-y-8">
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Construction</h3>
+    <form onSubmit={onSave} className="space-y-4">
+      <RecordDetailSection title="Construction">
         <div className="grid gap-3 sm:grid-cols-3">
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Year built
             <input
               type="number"
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.year_built ?? ""}
               onChange={(e) =>
                 setDraft((d) => ({ ...d, year_built: e.target.value ? Number(e.target.value) : undefined }))
               }
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Floors
             <input
               type="number"
               min={1}
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.number_of_floors ?? 1}
               onChange={(e) => setDraft((d) => ({ ...d, number_of_floors: Number(e.target.value) || 1 }))}
             />
           </label>
-          <label className="text-sm">
-            Construction
+          <label className="text-sm text-foreground">
+            Construction type
             <select
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.construction_type ?? ""}
               onChange={(e) =>
                 setDraft((d) => ({
@@ -118,22 +120,19 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
             >
               <option value="">—</option>
               {CONSTRUCTION_TYPES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </label>
         </div>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Fire & safety</h3>
+      <RecordDetailSection title="Fire &amp; safety">
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Suppression
             <select
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.fire_suppression_type ?? ""}
               onChange={(e) =>
                 setDraft((d) => ({
@@ -146,35 +145,32 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
             >
               <option value="">—</option>
               {FIRE_SUPPRESSION_TYPES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Fire alarm monitoring
             <input
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.fire_alarm_monitoring_company ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, fire_alarm_monitoring_company: e.target.value }))}
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Last fire inspection
             <input
               type="date"
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.last_fire_inspection_date ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, last_fire_inspection_date: e.target.value || undefined }))}
             />
           </label>
         </div>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Generator</h3>
-        <label className="flex items-center gap-2 text-sm">
+      <RecordDetailSection title="Generator">
+        <label className="flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
             checked={merged.has_generator ?? false}
@@ -183,10 +179,10 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
           Has generator
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
-            Fuel
+          <label className="text-sm text-foreground">
+            Fuel type
             <select
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.generator_fuel_type ?? ""}
               onChange={(e) =>
                 setDraft((d) => ({
@@ -199,94 +195,92 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
             >
               <option value="">—</option>
               {GENERATOR_FUEL_TYPES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Service vendor
             <input
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.generator_service_vendor ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, generator_service_vendor: e.target.value }))}
             />
           </label>
         </div>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Utilities (building profile)</h3>
+      <RecordDetailSection title="Utilities">
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Electric provider
             <input
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.electric_provider ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, electric_provider: e.target.value }))}
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Electric phone
             <input
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.electric_phone ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, electric_phone: e.target.value }))}
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Gas provider
             <input
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.gas_provider ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, gas_provider: e.target.value }))}
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Gas phone
             <input
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.gas_phone ?? ""}
               onChange={(e) => setDraft((d) => ({ ...d, gas_phone: e.target.value }))}
             />
           </label>
         </div>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Elopement / storm</h3>
-        <label className="text-sm block">
-          Door alarm system
-          <input
-            className="mt-1 w-full rounded border px-2 py-2"
-            value={merged.door_alarm_system ?? ""}
-            onChange={(e) => setDraft((d) => ({ ...d, door_alarm_system: e.target.value }))}
-          />
-        </label>
-        <label className="text-sm block">
-          Perimeter description
-          <textarea
-            className="mt-1 w-full rounded border px-2 py-2"
-            rows={2}
-            value={merged.perimeter_description ?? ""}
-            onChange={(e) => setDraft((d) => ({ ...d, perimeter_description: e.target.value }))}
-          />
-        </label>
-        <label className="text-sm block">
-          Evacuation partner facility
-          <input
-            className="mt-1 w-full rounded border px-2 py-2"
-            value={merged.evacuation_partner_facility ?? ""}
-            onChange={(e) => setDraft((d) => ({ ...d, evacuation_partner_facility: e.target.value }))}
-          />
-        </label>
-      </section>
+      <RecordDetailSection title="Elopement / storm">
+        <div className="space-y-3">
+          <label className="text-sm text-foreground block">
+            Door alarm system
+            <input
+              className={inputCls}
+              value={merged.door_alarm_system ?? ""}
+              onChange={(e) => setDraft((d) => ({ ...d, door_alarm_system: e.target.value }))}
+            />
+          </label>
+          <label className="text-sm text-foreground block">
+            Perimeter description
+            <textarea
+              className={inputCls}
+              rows={2}
+              value={merged.perimeter_description ?? ""}
+              onChange={(e) => setDraft((d) => ({ ...d, perimeter_description: e.target.value }))}
+            />
+          </label>
+          <label className="text-sm text-foreground block">
+            Evacuation partner facility
+            <input
+              className={inputCls}
+              value={merged.evacuation_partner_facility ?? ""}
+              onChange={(e) => setDraft((d) => ({ ...d, evacuation_partner_facility: e.target.value }))}
+            />
+          </label>
+        </div>
+      </RecordDetailSection>
 
       <button
         type="submit"
         disabled={isSaving}
-        className="rounded-[1.5rem] bg-teal-600 px-6 py-2 text-white disabled:opacity-50"
+        className="rounded-[8px] bg-primary px-6 py-2 text-sm text-primary-foreground disabled:opacity-50"
       >
         {isSaving ? "Saving…" : "Save building profile"}
       </button>

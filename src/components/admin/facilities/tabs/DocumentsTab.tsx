@@ -5,10 +5,13 @@ import { Loader2, Upload, FileText, Trash2 } from "lucide-react";
 import { useFacilityDocuments } from "@/hooks/useFacilityDocuments";
 import { DOCUMENT_CATEGORIES, DOCUMENT_CATEGORY_LABELS } from "@/lib/admin/facilities/facility-constants";
 import { ExpirationBadge } from "../shared/ExpirationBadge";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 interface DocumentsTabProps {
   facilityId: string;
 }
+
+const inputCls = "w-full px-3 py-2 rounded-[8px] border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function DocumentsTab({ facilityId }: DocumentsTabProps) {
   const { documents, isLoading, error, uploadDocument, isUploading } = useFacilityDocuments(facilityId);
@@ -47,14 +50,14 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+      <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3">
         <p className="text-sm text-destructive">{error}</p>
       </div>
     );
@@ -62,35 +65,30 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Upload Section */}
-      <div className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold flex items-center gap-2">
-          <Upload className="h-5 w-5 text-teal-500" />
-          Upload Document
-        </h3>
-
+      <RecordDetailSection
+        title="Upload document"
+        action={<Upload className="h-4 w-4 text-muted-foreground" />}
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* File input */}
           <div>
-            <label className="block text-sm font-medium mb-2">Select File</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Select file</label>
             <input
               ref={fileInputRef}
               type="file"
               onChange={handleFileSelect}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:px-3 file:py-2 file:border file:border-gray-300 file:rounded-lg file:text-sm file:font-medium file:bg-slate-50/50 dark:bg-white/5 hover:file:bg-gray-100"
+              className="block w-full text-sm text-muted-foreground file:mr-4 file:px-3 file:py-2 file:border file:border-border file:rounded-[8px] file:text-sm file:font-medium file:bg-muted/10 file:text-foreground hover:file:bg-muted/20"
             />
-            {selectedFile && <p className="mt-2 text-sm text-teal-400">{selectedFile.name}</p>}
+            {selectedFile && <p className="mt-2 text-sm text-foreground">{selectedFile.name}</p>}
           </div>
 
-          {/* Category select */}
           <div>
-            <label className="block text-sm font-medium mb-2">Category</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Category</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className={inputCls}
             >
-              <option value="">Select category...</option>
+              <option value="">Select category…</option>
               {DOCUMENT_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
                   {DOCUMENT_CATEGORY_LABELS[cat]}
@@ -99,39 +97,36 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
             </select>
           </div>
 
-          {/* Expiration date */}
           <div>
-            <label className="block text-sm font-medium mb-2">Expiration Date (optional)</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Expiration date (optional)</label>
             <input
               type="date"
               value={expirationDate}
               onChange={(e) => setExpirationDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className={inputCls}
             />
           </div>
 
-          {/* Upload button */}
           <div className="flex items-end">
             <button
-              onClick={handleUpload}
+              onClick={() => void handleUpload()}
               disabled={!selectedFile || !selectedCategory || isUploading}
-              className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors font-medium"
+              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-[8px] disabled:opacity-50 font-medium text-sm"
             >
-              {isUploading ? "Uploading..." : "Upload"}
+              {isUploading ? "Uploading…" : "Upload"}
             </button>
           </div>
         </div>
-      </div>
+      </RecordDetailSection>
 
-      {/* Category Filter */}
       {documents.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-2">
           <button
             onClick={() => setCategoryFilter("")}
-            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`px-3 py-1 rounded-[8px] text-sm font-medium transition-colors whitespace-nowrap ${
               categoryFilter === ""
-                ? "bg-teal-500/100/20 text-teal-700"
-                : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
+                ? "bg-primary/10 border border-primary/30 text-primary"
+                : "bg-muted/10 border border-border text-muted-foreground hover:bg-muted/20"
             }`}
           >
             All
@@ -140,8 +135,10 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                categoryFilter === cat ? "bg-teal-500/100/20 text-teal-700" : "bg-gray-100 text-slate-700 dark:text-slate-300 hover:bg-gray-200"
+              className={`px-3 py-1 rounded-[8px] text-sm font-medium transition-colors whitespace-nowrap ${
+                categoryFilter === cat
+                  ? "bg-primary/10 border border-primary/30 text-primary"
+                  : "bg-muted/10 border border-border text-muted-foreground hover:bg-muted/20"
               }`}
             >
               {cat}
@@ -150,27 +147,26 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
         </div>
       )}
 
-      {/* Documents Grid */}
       {filteredDocuments.length === 0 ? (
-        <div className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-8 text-center">
-          <FileText className="h-8 w-8 mx-auto mb-3 text-slate-500 dark:text-slate-400" />
-          <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">No documents uploaded</p>
+        <div className="rounded-[8px] border border-border bg-muted/10 p-8 text-center">
+          <FileText className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+          <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">No documents uploaded</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="rounded-lg border border-slate-200/50 dark:border-white/10 bg-white p-4 space-y-3 hover:shadow-md transition-shadow">
+            <div key={doc.id} className="rounded-[8px] border border-border bg-card p-4 space-y-3 transition-all duration-[var(--motion-duration)] hover:-translate-y-0.5">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2 flex-1 min-w-0">
-                  <FileText className="h-5 w-5 text-teal-500 flex-shrink-0 mt-0.5" />
+                  <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm truncate">{doc.name}</p>
-                    <span className="inline-block mt-1 px-2 py-1 bg-gray-100 text-slate-700 dark:text-slate-300 rounded text-xs font-medium">
+                    <p className="font-medium text-sm truncate text-foreground">{doc.name}</p>
+                    <span className="inline-block mt-1 px-2 py-1 bg-muted/10 border border-border rounded-[8px] text-xs font-medium text-muted-foreground">
                       {doc.category}
                     </span>
                   </div>
                 </div>
-                <button className="text-slate-500 dark:text-slate-400 hover:text-red-600 transition-colors p-1 flex-shrink-0">
+                <button className="text-muted-foreground hover:text-destructive transition-colors p-1 flex-shrink-0">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -181,7 +177,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
                 </div>
               )}
 
-              <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 border-t border-slate-200/40 dark:border-white/5 pt-2">
+              <div className="text-xs text-muted-foreground space-y-1 border-t border-border pt-2">
                 <p>Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}</p>
                 <p>By: {doc.uploaded_by}</p>
               </div>

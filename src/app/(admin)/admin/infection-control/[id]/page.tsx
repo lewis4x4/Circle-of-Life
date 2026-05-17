@@ -5,9 +5,10 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 export default function InfectionSurveillanceDetailPage() {
   const params = useParams<{ id: string }>();
@@ -18,7 +19,11 @@ export default function InfectionSurveillanceDetailPage() {
 
   const load = useCallback(async () => {
     setError(null);
-    const { data, error: qErr } = await supabase.from("infection_surveillance").select("*").eq("id", id).maybeSingle();
+    const { data, error: qErr } = await supabase
+      .from("infection_surveillance")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
     if (qErr) {
       setError(qErr.message);
       return;
@@ -34,40 +39,46 @@ export default function InfectionSurveillanceDetailPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link href="/admin/infection-control" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs")}>
-        ← Infection control
-      </Link>
-      <h1 className="text-2xl font-semibold tracking-tight">Surveillance record</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <RecordDetailHeader
+        title="Surveillance record"
+        backLink={{ label: "Infection control", href: "/admin/infection-control" }}
+      />
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       {row && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Summary</CardTitle>
-            <CardDescription>ID: {String(row.id)}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        <RecordDetailSection
+          title="Summary"
+          description={`ID: ${String(row.id)}`}
+        >
+          <div className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Type:</span> {String(row.infection_type)}
+              <span className="text-muted-foreground">Type:</span>{" "}
+              {String(row.infection_type)}
             </p>
             <p>
-              <span className="text-slate-500">Status:</span> {String(row.status)}
+              <span className="text-muted-foreground">Status:</span>{" "}
+              {String(row.status)}
             </p>
             <p>
-              <span className="text-slate-500">Onset:</span> {String(row.onset_date)}
+              <span className="text-muted-foreground">Onset:</span>{" "}
+              {String(row.onset_date)}
             </p>
             {row.outbreak_id ? (
               <p>
-                <span className="text-slate-500">Outbreak:</span>{" "}
+                <span className="text-muted-foreground">Outbreak:</span>{" "}
                 <Link
                   href={`/admin/infection-control/outbreaks/${String(row.outbreak_id)}`}
-                  className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0")}
+                  className="text-sm font-medium underline-offset-4 hover:underline"
                 >
                   View
                 </Link>
               </p>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
       )}
     </div>
   );

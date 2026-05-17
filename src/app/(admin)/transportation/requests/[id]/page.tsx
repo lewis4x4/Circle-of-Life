@@ -6,9 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { addHours, format, parseISO } from "date-fns";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { triggerFileDownload } from "@/lib/csv-export";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -357,7 +357,7 @@ export default function EditResidentTransportRequestPage() {
     const rn = row.residents
       ? `${row.residents.first_name} ${row.residents.last_name}`
       : "Resident";
-    const params = {
+    const calParams = {
       title: `Transport: ${rn} — ${destinationName}`,
       details: [purpose.trim(), notes.trim()].filter(Boolean).join("\n\n") || undefined,
       location: [destinationName.trim(), destinationAddress.trim()].filter(Boolean).join(" — ") || undefined,
@@ -365,8 +365,8 @@ export default function EditResidentTransportRequestPage() {
       end,
     };
     return {
-      google: buildGoogleCalendarTemplateUrl(params),
-      outlook: buildOutlookCalendarComposeUrl(params),
+      google: buildGoogleCalendarTemplateUrl(calParams),
+      outlook: buildOutlookCalendarComposeUrl(calParams),
     };
   }, [row, appointmentDate, appointmentTime, destinationName, destinationAddress, purpose, notes]);
 
@@ -401,24 +401,24 @@ export default function EditResidentTransportRequestPage() {
 
   if (!facilityReady) {
     return (
-      <div className="mx-auto max-w-xl p-6">
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+      <div className="mx-auto max-w-2xl p-6">
+        <p className="text-sm text-warning">Select a facility first.</p>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-xl p-6">
-        <p className="text-sm text-slate-600">Loading…</p>
+      <div className="mx-auto max-w-2xl p-6">
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
 
   if (loadError || !row) {
     return (
-      <div className="mx-auto max-w-xl space-y-4 p-6">
-        <p className="text-sm text-red-600">{loadError ?? "Not found."}</p>
+      <div className="mx-auto max-w-2xl space-y-4 p-6">
+        <p className="text-sm text-destructive">{loadError ?? "Not found."}</p>
         <Link href="/admin/transportation" className={cn(buttonVariants({ variant: "outline" }))}>
           Back to transportation
         </Link>
@@ -432,188 +432,159 @@ export default function EditResidentTransportRequestPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
-            Transport request
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-300">{residentName}</p>
-        </div>
-        <Link href="/admin/transportation" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
-          Back
-        </Link>
-      </div>
+      <RecordDetailHeader
+        title="Transport request"
+        subtitle={residentName}
+        backLink={{ label: "Back to transportation", href: "/admin/transportation" }}
+      />
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <p className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
 
-      <Card className="border-slate-200/80 dark:border-slate-800">
-        <CardHeader>
-          <CardTitle>Schedule & assignment</CardTitle>
-          <CardDescription>
-            Assign vehicle/driver on site; license and wheelchair rules validated on save (spec 15).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={(e) => void save(e)}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Appointment date</Label>
-                <Input
-                  type="date"
-                  required
-                  value={appointmentDate}
-                  onChange={(e) => setAppointmentDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Appointment time</Label>
-                <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
-              </div>
-            </div>
-            {/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate) ? (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                <Link
-                  href={`/admin/transportation/calendar?date=${encodeURIComponent(appointmentDate)}`}
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  View on transportation calendar
-                </Link>
-                <span className="text-slate-500"> — week containing this appointment.</span>
-              </p>
-            ) : null}
-            {externalCalendarHandoff ? (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                <span className="text-slate-500">Add to calendar: </span>
-                <a
-                  href={externalCalendarHandoff.google}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  Google
-                </a>
-                <span className="text-slate-400"> · </span>
-                <a
-                  href={externalCalendarHandoff.outlook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  Outlook
-                </a>
-                <span className="text-slate-400"> · </span>
-                <button
-                  type="button"
-                  onClick={() => downloadTripIcs()}
-                  className="inline bg-transparent p-0 font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  Download .ics
-                </button>
-                <span className="text-slate-500">
-                  {" "}
-                  — one-way handoff, not a live sync. Use .ics for Apple Calendar.
-                </span>
-              </p>
-            ) : null}
-
+      <RecordDetailSection
+        title="Schedule & assignment"
+        description="Assign vehicle/driver on site; license and wheelchair rules validated on save (spec 15)."
+      >
+        <form className="space-y-4" onSubmit={(e) => void save(e)}>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="tt">Transport type</Label>
-              <select
-                id="tt"
-                className={selectClass}
-                value={transportType}
-                onChange={(e) => setTransportType(e.target.value as TransportType)}
+              <Label>Appointment date</Label>
+              <Input
+                type="date"
+                required
+                value={appointmentDate}
+                onChange={(e) => setAppointmentDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Appointment time</Label>
+              <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
+            </div>
+          </div>
+          {/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate) ? (
+            <p className="text-sm text-muted-foreground">
+              <Link
+                href={`/admin/transportation/calendar?date=${encodeURIComponent(appointmentDate)}`}
+                className="font-medium text-primary underline-offset-4 hover:underline"
               >
-                {TRANSPORT_TYPES.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                View on transportation calendar
+              </Link>
+              <span className="text-muted-foreground"> — week containing this appointment.</span>
+            </p>
+          ) : null}
+          {externalCalendarHandoff ? (
+            <p className="text-sm text-muted-foreground">
+              <span>Add to calendar: </span>
+              <a
+                href={externalCalendarHandoff.google}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Google
+              </a>
+              <span className="text-muted-foreground"> · </span>
+              <a
+                href={externalCalendarHandoff.outlook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Outlook
+              </a>
+              <span className="text-muted-foreground"> · </span>
+              <button
+                type="button"
+                onClick={() => downloadTripIcs()}
+                className="inline bg-transparent p-0 font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Download .ics
+              </button>
+              <span className="text-muted-foreground">
+                {" "}
+                — one-way handoff, not a live sync. Use .ics for Apple Calendar.
+              </span>
+            </p>
+          ) : null}
 
-            <div className="space-y-2">
-              <Label htmlFor="dest">Destination name</Label>
-              <Input id="dest" required value={destinationName} onChange={(e) => setDestinationName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="desta">Destination address</Label>
-              <Input id="desta" value={destinationAddress} onChange={(e) => setDestinationAddress(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="purp">Purpose</Label>
-              <Input id="purp" required value={purpose} onChange={(e) => setPurpose(e.target.value)} />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="tt">Transport type</Label>
+            <select
+              id="tt"
+              className={selectClass}
+              value={transportType}
+              onChange={(e) => setTransportType(e.target.value as TransportType)}
+            >
+              {TRANSPORT_TYPES.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={wheelchairRequired}
-                  onChange={(e) => setWheelchairRequired(e.target.checked)}
-                  className="rounded border-input"
-                />
-                Wheelchair required
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={escortRequired}
-                  onChange={(e) => setEscortRequired(e.target.checked)}
-                  className="rounded border-input"
-                />
-                Escort required
-              </label>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="dest">Destination name</Label>
+            <Input id="dest" required value={destinationName} onChange={(e) => setDestinationName(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="desta">Destination address</Label>
+            <Input id="desta" value={destinationAddress} onChange={(e) => setDestinationAddress(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="purp">Purpose</Label>
+            <Input id="purp" required value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Vehicle</Label>
-                <select className={selectClass} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
-                  <option value="">— None —</option>
-                  {(wheelchairRequired ? fleetOptions.filter((v) => v.wheelchair_accessible) : fleetOptions).map(
-                    (v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name}
-                        {v.wheelchair_accessible ? " (WC)" : ""}
-                      </option>
-                    ),
-                  )}
-                </select>
-                {wheelchairRequired ? (
-                  <p className="text-xs text-slate-500">Only wheelchair-accessible units are listed.</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label>Driver (staff)</Label>
-                <select
-                  className={selectClass}
-                  value={driverStaffId}
-                  onChange={(e) => setDriverStaffId(e.target.value)}
-                >
-                  <option value="">— None —</option>
-                  {staffOptions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.last_name}, {s.first_name}
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={wheelchairRequired}
+                onChange={(e) => setWheelchairRequired(e.target.checked)}
+                className="rounded border-input"
+              />
+              Wheelchair required
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={escortRequired}
+                onChange={(e) => setEscortRequired(e.target.checked)}
+                className="rounded border-input"
+              />
+              Escort required
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Vehicle</Label>
+              <select className={selectClass} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+                <option value="">— None —</option>
+                {(wheelchairRequired ? fleetOptions.filter((v) => v.wheelchair_accessible) : fleetOptions).map(
+                  (v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                      {v.wheelchair_accessible ? " (WC)" : ""}
                     </option>
-                  ))}
-                </select>
-                {driverStaffId && !driverLicenseOk ? (
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    No valid license/medical card on file for this driver (or credentials missing).
-                  </p>
-                ) : null}
-              </div>
+                  ),
+                )}
+              </select>
+              {wheelchairRequired ? (
+                <p className="text-xs text-muted-foreground">Only wheelchair-accessible units are listed.</p>
+              ) : null}
             </div>
-
             <div className="space-y-2">
-              <Label>Escort (optional)</Label>
-              <select className={selectClass} value={escortStaffId} onChange={(e) => setEscortStaffId(e.target.value)}>
+              <Label>Driver (staff)</Label>
+              <select
+                className={selectClass}
+                value={driverStaffId}
+                onChange={(e) => setDriverStaffId(e.target.value)}
+              >
                 <option value="">— None —</option>
                 {staffOptions.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -621,105 +592,122 @@ export default function EditResidentTransportRequestPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Pickup time</Label>
-                <Input type="time" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Return time</Label>
-                <Input type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <select
-                className={selectClass}
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TransportStatus)}
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {status === "cancelled" ? (
-              <div className="space-y-2">
-                <Label>Cancellation reason</Label>
-                <Input value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </div>
-
-            {showMileageHint ? (
-              <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/50 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/30">
-                <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
-                  Optional mileage log (staff personal vehicle)
-                </h3>
-                <p className="mt-1 text-xs text-indigo-800/90 dark:text-indigo-200/90">
-                  If you set status to Completed, you can log reimbursable miles linked to this request. Effective rate:{" "}
-                  <strong>{formatCentsPerMileUsd(orgMileageRateCents)}</strong> per mile (snapshotted on the mileage log).{" "}
-                  <Link href="/admin/transportation/settings" className="underline underline-offset-2 hover:text-indigo-950 dark:hover:text-white">
-                    Organization reimbursement settings
-                  </Link>
-                  . Leave miles blank to skip.
+              {driverStaffId && !driverLicenseOk ? (
+                <p className="text-xs text-warning">
+                  No valid license/medical card on file for this driver (or credentials missing).
                 </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Trip origin</Label>
-                    <Input value={mileageOrigin} onChange={(e) => setMileageOrigin(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Trip destination label</Label>
-                    <Input value={mileageDestination} onChange={(e) => setMileageDestination(e.target.value)} />
-                  </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Escort (optional)</Label>
+            <select className={selectClass} value={escortStaffId} onChange={(e) => setEscortStaffId(e.target.value)}>
+              <option value="">— None —</option>
+              {staffOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.last_name}, {s.first_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Pickup time</Label>
+              <Input type="time" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Return time</Label>
+              <Input type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <select
+              className={selectClass}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TransportStatus)}
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {status === "cancelled" ? (
+            <div className="space-y-2">
+              <Label>Cancellation reason</Label>
+              <Input value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+            </div>
+          ) : null}
+
+          <div className="space-y-2">
+            <Label>Notes</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+
+          {showMileageHint ? (
+            <div className="rounded-[8px] border border-border bg-muted/40 p-[14px]">
+              <h3 className="text-sm font-semibold text-foreground">
+                Optional mileage log (staff personal vehicle)
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                If you set status to Completed, you can log reimbursable miles linked to this request. Effective rate:{" "}
+                <strong>{formatCentsPerMileUsd(orgMileageRateCents)}</strong> per mile (snapshotted on the mileage log).{" "}
+                <Link href="/admin/transportation/settings" className="underline underline-offset-2 hover:text-foreground">
+                  Organization reimbursement settings
+                </Link>
+                . Leave miles blank to skip.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Trip origin</Label>
+                  <Input value={mileageOrigin} onChange={(e) => setMileageOrigin(e.target.value)} />
                 </div>
-                <div className="mt-2 flex flex-wrap items-end gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Miles (one-way)</Label>
-                    <Input
-                      inputMode="decimal"
-                      value={mileageMiles}
-                      onChange={(e) => setMileageMiles(e.target.value)}
-                      placeholder="e.g. 12.5"
-                    />
-                  </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={mileageRoundTrip}
-                      onChange={(e) => setMileageRoundTrip(e.target.checked)}
-                      className="rounded border-input"
-                    />
-                    Round trip (doubles miles)
-                  </label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Trip destination label</Label>
+                  <Input value={mileageDestination} onChange={(e) => setMileageDestination(e.target.value)} />
                 </div>
               </div>
-            ) : null}
-
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={saving}>
-                {saving ? "Saving…" : "Save"}
-              </Button>
-              <Link href={`/admin/residents/${row.resident_id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
-                View resident
-              </Link>
+              <div className="mt-2 flex flex-wrap items-end gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Miles (one-way)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={mileageMiles}
+                    onChange={(e) => setMileageMiles(e.target.value)}
+                    placeholder="e.g. 12.5"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={mileageRoundTrip}
+                    onChange={(e) => setMileageRoundTrip(e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  Round trip (doubles miles)
+                </label>
+              </div>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          ) : null}
 
-      <p className="text-xs text-slate-500">
+          <div className="flex gap-2 pt-2">
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+            <Link href={`/admin/residents/${row.resident_id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
+              View resident
+            </Link>
+          </div>
+        </form>
+      </RecordDetailSection>
+
+      <p className="text-xs text-muted-foreground">
         Created {format(parseISO(row.created_at), "PPp")}. Facility: {facilityName}.
       </p>
     </div>

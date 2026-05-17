@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { cn } from "@/lib/utils";
 
@@ -20,23 +20,21 @@ export default async function ReportTemplateDetailPage({
   return (
     <div className="space-y-6">
       <ReportsHubNav />
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{template.name}</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{template.description}</p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Definition</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+      <RecordDetailHeader
+        title={template.name}
+        subtitle={template.description}
+        backLink={{ label: "Back to templates", href: "/admin/reports/templates" }}
+      />
+      <RecordDetailSection title="Definition">
+        <div className="space-y-3 text-sm text-foreground">
           <p>
-            <span className="font-medium text-slate-900 dark:text-slate-100">Audience:</span> {template.audience}
+            <span className="font-medium">Audience:</span> {template.audience}
           </p>
           <p>
-            <span className="font-medium text-slate-900 dark:text-slate-100">Category:</span> {template.category}
+            <span className="font-medium">Category:</span> {template.category}
           </p>
           <p>
-            <span className="font-medium text-slate-900 dark:text-slate-100">Default range:</span>{" "}
+            <span className="font-medium">Default range:</span>{" "}
             {template.defaultRange}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -60,8 +58,8 @@ export default async function ReportTemplateDetailPage({
               Add to pack
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { FinanceHubNav } from "../../finance-hub-nav";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { createClient } from "@/lib/supabase/client";
 import { checkPeriodOpenForPosting } from "@/lib/finance/gl-period-close";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
@@ -318,23 +317,27 @@ export default function JournalEntryDetailPage() {
   }
   const balanced = debitSum === creditSum && debitSum > 0;
 
+  const headerSubtitle = loading
+    ? "Loading…"
+    : header
+      ? `${header.entry_date} · ${header.status}`
+      : "—";
+
+  const selectCls = cn(
+    "flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm",
+  );
+
   return (
     <div className="space-y-6">
       <FinanceHubNav />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Journal entry</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            {loading ? "Loading…" : header ? `${header.entry_date} · ${header.status}` : "—"}
-          </p>
-        </div>
-        <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/finance/journal-entries">
-          Back to list
-        </Link>
-      </div>
+      <RecordDetailHeader
+        title="Journal entry"
+        subtitle={headerSubtitle}
+        backLink={{ label: "Back to list", href: "/admin/finance/journal-entries" }}
+      />
 
       {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
@@ -343,23 +346,20 @@ export default function JournalEntryDetailPage() {
         <>
           {canEditDraft ? (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Header</CardTitle>
-                  <CardDescription>Entity is fixed for this entry. Adjust date, memo, and optional facility.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
+              <RecordDetailSection
+                title="Header"
+                description="Entity is fixed for this entry. Adjust date, memo, and optional facility."
+              >
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
                     <Label>Entity</Label>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{entityName || header.entity_id}</p>
+                    <p className="text-sm text-foreground">{entityName || header.entity_id}</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="je-fac-edit">Facility (optional)</Label>
                     <select
                       id="je-fac-edit"
-                      className={cn(
-                        "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
-                      )}
+                      className={selectCls}
                       value={formFacilityId}
                       onChange={(e) => setFormFacilityId(e.target.value)}
                     >
@@ -384,7 +384,7 @@ export default function JournalEntryDetailPage() {
                     <Label htmlFor="je-memo-edit">Memo</Label>
                     <Input id="je-memo-edit" value={formMemo} onChange={(e) => setFormMemo(e.target.value)} placeholder="Optional" />
                   </div>
-                  <div className="md:col-span-2 text-sm text-slate-700 dark:text-slate-300">
+                  <div className="md:col-span-2 text-sm text-foreground">
                     Line totals: debit {formatCents(debitSum)} · credit {formatCents(creditSum)}{" "}
                     {balanced ? (
                       <span className="text-emerald-700 dark:text-emerald-400">(balanced)</span>
@@ -392,23 +392,20 @@ export default function JournalEntryDetailPage() {
                       <span className="text-amber-700 dark:text-amber-400">(not balanced)</span>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </RecordDetailSection>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Lines</CardTitle>
-                  <CardDescription>Each line is debit XOR credit (USD). Minimum two lines.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <RecordDetailSection
+                title="Lines"
+                description="Each line is debit XOR credit (USD). Minimum two lines."
+              >
+                <div className="space-y-4">
                   {formLines.map((line, i) => (
                     <div key={line._key} className="grid gap-2 md:grid-cols-5 md:items-end">
                       <div className="space-y-1 md:col-span-2">
                         <Label>Account</Label>
                         <select
-                          className={cn(
-                            "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
-                          )}
+                          className={selectCls}
                           value={line.gl_account_id}
                           onChange={(e) => setLine(i, { gl_account_id: e.target.value })}
                         >
@@ -441,7 +438,7 @@ export default function JournalEntryDetailPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="text-slate-600"
+                          className="text-muted-foreground"
                           disabled={formLines.length <= 2}
                           onClick={() => removeLine(line._key)}
                         >
@@ -453,8 +450,8 @@ export default function JournalEntryDetailPage() {
                   <Button type="button" variant="outline" size="sm" onClick={addLine}>
                     Add line
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </RecordDetailSection>
 
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="button" onClick={() => void saveDraft()} disabled={saving}>
@@ -468,7 +465,7 @@ export default function JournalEntryDetailPage() {
                     {posting ? "Posting…" : "Post entry"}
                   </Button>
                 ) : (
-                  <span className="text-sm text-slate-500">Only owner / org admin can post entries.</span>
+                  <span className="text-sm text-muted-foreground">Only owner / org admin can post entries.</span>
                 )}
                 {canPostEntry && !balanced ? (
                   <span className="text-sm text-amber-800 dark:text-amber-300">
@@ -479,12 +476,8 @@ export default function JournalEntryDetailPage() {
             </>
           ) : (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Header</CardTitle>
-                  <CardDescription>{header.memo ?? "No memo"}</CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm text-slate-700 dark:text-slate-300">
+              <RecordDetailSection title="Header" description={header.memo ?? "No memo"}>
+                <div className="space-y-1 text-sm text-foreground">
                   <p>Entity: {entityName || header.entity_id}</p>
                   <p>Status: {header.status}</p>
                   {header.posted_at ? <p>Posted: {header.posted_at}</p> : null}
@@ -496,14 +489,11 @@ export default function JournalEntryDetailPage() {
                       <span className="text-amber-700 dark:text-amber-400">(not balanced)</span>
                     )}
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+              </RecordDetailSection>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Lines</CardTitle>
-                </CardHeader>
-                <CardContent>
+              <RecordDetailSection title="Lines">
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -532,17 +522,17 @@ export default function JournalEntryDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </div>
+              </RecordDetailSection>
 
               {header.status === "posted" ? (
-                <p className="text-sm text-slate-600 dark:text-slate-400">Posted entries are read-only.</p>
+                <p className="text-sm text-muted-foreground">Posted entries are read-only.</p>
               ) : null}
               {header.status === "voided" ? (
-                <p className="text-sm text-slate-600 dark:text-slate-400">Voided entries are read-only.</p>
+                <p className="text-sm text-muted-foreground">Voided entries are read-only.</p>
               ) : null}
               {header.status === "draft" && !canEditDraft ? (
-                <p className="text-sm text-slate-600 dark:text-slate-400">Draft (read-only for your role).</p>
+                <p className="text-sm text-muted-foreground">Draft (read-only for your role).</p>
               ) : null}
             </>
           )}

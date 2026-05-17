@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Activity, ArrowLeft, Brain, CalendarClock } from "lucide-react";
+import { ArrowLeft, Brain, CalendarClock } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -26,6 +26,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 const STATUS_RANK: Record<string, number> = {
   active: 0,
@@ -192,7 +196,6 @@ export default function AdminResidentCarePlanPage() {
         throw new Error(data.error || "Failed to approve care plan");
       }
 
-      // Reload the page to show updated status
       await load();
       setSigningOpen(false);
       setSignatureData(null);
@@ -205,7 +208,7 @@ export default function AdminResidentCarePlanPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <Link
           href={`/admin/residents/${residentId}`}
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
@@ -220,7 +223,7 @@ export default function AdminResidentCarePlanPage() {
 
   if (notFound) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <Link
           href="/admin/residents"
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
@@ -228,20 +231,19 @@ export default function AdminResidentCarePlanPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to census
         </Link>
-        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/70 dark:border-slate-800 bg-slate-50/50 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Resident not found</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+        <RecordDetailSection title="Resident not found">
+          <p className="text-sm text-muted-foreground">
             This care plan route is tied to a resident record. Adjust your facility filter or return to the
             census list.
           </p>
-        </div>
+        </RecordDetailSection>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <Link
           href={`/admin/residents/${residentId}`}
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
@@ -263,25 +265,13 @@ export default function AdminResidentCarePlanPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-3">
-             <Link
-               href={`/admin/residents/${residentId}`}
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-             >
-                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO PROFILE
-             </Link>
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Care Plan <span className="font-semibold text-brand-600 dark:text-brand-400 opacity-60 ml-2">/ {residentName}</span>
-             </h1>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-               Structured needs and interventions mapped to ADLs and behavioral goals.
-            </p>
-          </div>
-        </header>
+      <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)] ease-[var(--motion-ease)]">
+
+        <RecordDetailHeader
+          title="Care plan"
+          subtitle={`Structured needs and interventions mapped to ADLs and behavioral goals${residentName ? ` · ${residentName}` : ""}`}
+          backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
+        />
 
         {noPlan || !plan?.id ? (
           <AdminEmptyState
@@ -290,66 +280,60 @@ export default function AdminResidentCarePlanPage() {
           />
         ) : (
           <div className="space-y-6">
-            
-            <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
-              <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                   <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">Plan Configuration</h3>
-                   <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
-                      Operational metadata
-                   </p>
-                </div>
-                
+
+            <RecordDetailSection
+              title="Plan configuration"
+              description="Operational metadata"
+              action={
                 <div className="flex flex-wrap items-center gap-2">
                   {plan?.status ? <CarePlanStatusBadge status={plan.status} /> : null}
                   {plan && plan.version != null && (
-                    <Badge variant="outline" className="font-mono text-[10px] uppercase font-bold tracking-wider bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 px-3">
+                    <Badge variant="outline" className="tabular-nums text-[10px] uppercase font-bold tracking-wider bg-muted border-border px-3">
                       v{plan.version}
                     </Badge>
                   )}
                   {reviewState ? (
-                    <Badge variant="outline" className={cn("font-mono text-[10px] uppercase font-bold tracking-wider px-3 border border-transparent", reviewState.className)}>
+                    <Badge variant="outline" className={cn("tabular-nums text-[10px] uppercase font-bold tracking-wider px-3 border", reviewState.className)}>
                       Review: {reviewState.label}
                     </Badge>
                   ) : null}
-                  {/* Review & Sign button - only show for draft or under_review plans */}
                   {plan?.status && (plan.status === "draft" || plan.status === "under_review") && (
                     <button
                       type="button"
                       onClick={() => setSigningOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold uppercase tracking-wider transition-colors duration-[var(--motion-duration-micro)] shadow-[var(--shadow-card)]"
                     >
-                      Review & Sign
+                      Review &amp; sign
                     </button>
                   )}
                 </div>
+              }
+            >
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="bg-muted p-[14px] rounded-[8px] border border-border shadow-[var(--shadow-card)]">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-2">
+                    <CalendarClock className="w-3.5 h-3.5" /> Effective date
+                  </p>
+                  <p className="tabular-nums text-base font-medium text-foreground">
+                    {formatDate(plan?.effective_date ?? null)}
+                  </p>
+                </div>
+                <div className="bg-muted p-[14px] rounded-[8px] border border-border shadow-[var(--shadow-card)]">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-2">
+                    <CalendarClock className="w-3.5 h-3.5" /> Next review
+                  </p>
+                  <p className="tabular-nums text-base font-medium text-foreground">
+                    {formatDate(plan?.review_due_date ?? null)}
+                  </p>
+                </div>
+                {plan?.notes ? (
+                  <div className="sm:col-span-2 lg:col-span-3 bg-muted p-[14px] rounded-[8px] border border-border shadow-[var(--shadow-card)]">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Documentation notes</p>
+                    <p className="text-sm font-medium text-foreground">{plan.notes}</p>
+                  </div>
+                ) : null}
               </div>
-              
-              <div className="grid gap-6 pt-2 sm:grid-cols-2 lg:grid-cols-3">
-                 <div className="bg-white dark:bg-slate-950/50 p-5 rounded-lg border border-slate-200/90 dark:border-white/5 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-2">
-                       <CalendarClock className="w-3.5 h-3.5" /> Effective Date
-                    </p>
-                    <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
-                       {formatDate(plan?.effective_date ?? null)}
-                    </p>
-                 </div>
-                 <div className="bg-white dark:bg-slate-950/50 p-5 rounded-lg border border-slate-200/90 dark:border-white/5 shadow-sm">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-2">
-                       <CalendarClock className="w-3.5 h-3.5" /> Next Review
-                    </p>
-                    <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
-                       {formatDate(plan?.review_due_date ?? null)}
-                    </p>
-                 </div>
-                 {plan?.notes ? (
-                   <div className="sm:col-span-2 lg:col-span-3 bg-white dark:bg-slate-950/50 p-5 rounded-lg border border-slate-200/90 dark:border-white/5 shadow-sm">
-                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Documentation Notes</p>
-                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{plan.notes}</p>
-                   </div>
-                 ) : null}
-              </div>
-            </div>
+            </RecordDetailSection>
 
             {items.length === 0 ? (
               <AdminEmptyState
@@ -359,90 +343,81 @@ export default function AdminResidentCarePlanPage() {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {Array.from(groupedItems.entries()).map(([category, rows]) => (
-                  <div key={category} className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
-                    
-                    <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-                       <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-3">
-                          <Activity className="w-5 h-5 text-brand-500" />
-                          {formatCategoryLabel(category)}
-                       </h3>
-                       <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase font-bold">
-                          {rows.length} Configured Rule{rows.length > 1 && "s"}
-                       </p>
-                    </div>
+                  <RecordDetailSection
+                    key={category}
+                    title={formatCategoryLabel(category)}
+                    description={`${rows.length} configured rule${rows.length > 1 ? "s" : ""}`}
+                  >
+                    <MotionList className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {rows.map((row) => (
+                        <MotionItem key={row.id}>
+                          <div className="group flex flex-col h-full justify-between p-[14px] rounded-[8px] border border-border bg-card shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] outline-none relative overflow-hidden focus-within:ring-2 focus-within:ring-ring hover:border-primary/20 hover:-translate-y-0.5">
+                            <div className="space-y-4 relative z-10">
+                              <div className="flex items-start justify-between gap-3">
+                                <h4 className="font-semibold text-foreground leading-tight pr-4">
+                                  {row.title ?? "—"}
+                                </h4>
+                                {row.assistance_level ? (
+                                  <Badge className="bg-muted text-muted-foreground border-border uppercase tracking-wider text-[9px] font-bold px-2.5 py-0.5 shadow-none whitespace-nowrap">
+                                    {formatSnakeLabel(row.assistance_level)}
+                                  </Badge>
+                                ) : null}
+                              </div>
 
-                    <div className="relative z-10 pt-2">
-                       <MotionList className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {rows.map((row) => (
-                             <MotionItem key={row.id}>
-                                <div className="group flex flex-col h-full justify-between p-6 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transition-all outline-none relative overflow-hidden focus-within:ring-2 focus-within:ring-brand-500/50 hover:border-brand-300 dark:hover:border-brand-500/40 hover:shadow-md">
-                                   <div className="space-y-4 relative z-10">
-                                      <div className="flex items-start justify-between gap-3">
-                                         <h4 className="font-semibold text-slate-900 dark:text-white leading-tight pr-4">
-                                            {row.title ?? "—"}
-                                         </h4>
-                                         {row.assistance_level ? (
-                                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold px-2.5 py-0.5 shadow-none whitespace-nowrap">
-                                               {formatSnakeLabel(row.assistance_level)}
-                                            </Badge>
-                                         ) : null}
-                                      </div>
-                                      
-                                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                         {row.description ?? "—"}
-                                      </p>
-                                      
-                                      {row.frequency && (
-                                         <div className="pt-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Frequency</span>
-                                            <span className="text-sm font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded inline-block text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800">
-                                               {row.frequency}
-                                            </span>
-                                         </div>
-                                      )}
+                              <p className="text-sm font-medium text-muted-foreground">
+                                {row.description ?? "—"}
+                              </p>
 
-                                      {row.interventions?.length ? (
-                                         <div className="pt-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Prescribed Interventions</span>
-                                            <ul className="space-y-1.5 w-full">
-                                               {row.interventions.filter(Boolean).map((iv) => (
-                                                  <li key={iv} className="text-sm text-slate-700 dark:text-slate-300 flex items-start">
-                                                     <span className="text-brand-500 mr-2 mt-0.5">•</span>
-                                                     <span className="flex-1">{iv}</span>
-                                                  </li>
-                                               ))}
-                                            </ul>
-                                         </div>
-                                      ) : null}
-
-                                      {row.goal && (
-                                         <div className="pt-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Outcome Goal</span>
-                                            <p className="text-sm text-brand-700 dark:text-brand-400 font-medium">
-                                               {row.goal}
-                                            </p>
-                                         </div>
-                                      )}
-                                      
-                                      {row.special_instructions && (
-                                         <div className="pt-4 mt-auto">
-                                            <div className="rounded-[1rem] border border-amber-200/80 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4">
-                                               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block mb-1.5 flex items-center gap-1.5">
-                                                  <Brain className="w-3.5 h-3.5" /> High-Priority Protocol
-                                               </span>
-                                               <p className="text-xs font-medium text-amber-900 dark:text-amber-200">
-                                                  {row.special_instructions}
-                                               </p>
-                                            </div>
-                                         </div>
-                                      )}
-                                   </div>
+                              {row.frequency && (
+                                <div className="pt-2">
+                                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground block mb-1">Frequency</span>
+                                  <span className="tabular-nums text-sm bg-muted px-2 py-1 rounded inline-block text-foreground border border-border">
+                                    {row.frequency}
+                                  </span>
                                 </div>
-                             </MotionItem>
-                          ))}
-                       </MotionList>
-                    </div>
-                  </div>
+                              )}
+
+                              {row.interventions?.length ? (
+                                <div className="pt-2">
+                                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground block mb-1">Prescribed interventions</span>
+                                  <ul className="space-y-1.5 w-full">
+                                    {row.interventions.filter(Boolean).map((iv) => (
+                                      <li key={iv} className="text-sm text-foreground flex items-start">
+                                        <span className="text-primary mr-2 mt-0.5">•</span>
+                                        <span className="flex-1">{iv}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ) : null}
+
+                              {row.goal && (
+                                <div className="pt-2">
+                                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground block mb-1">Outcome goal</span>
+                                  <p className="text-sm text-primary font-medium">
+                                    {row.goal}
+                                  </p>
+                                </div>
+                              )}
+
+                              {row.special_instructions && (
+                                <div className="pt-4 mt-auto">
+                                  <div className="rounded-[8px] border border-warning/30 bg-warning/10 p-[14px]">
+                                    <span className="text-[11px] font-medium uppercase tracking-wider text-warning block mb-1.5 flex items-center gap-1.5">
+                                      <Brain className="w-3.5 h-3.5" /> High-priority protocol
+                                    </span>
+                                    <p className="text-xs font-medium text-foreground">
+                                      {row.special_instructions}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </MotionItem>
+                      ))}
+                    </MotionList>
+                  </RecordDetailSection>
                 ))}
               </div>
             )}
@@ -454,7 +429,7 @@ export default function AdminResidentCarePlanPage() {
       <Dialog open={signingOpen} onOpenChange={setSigningOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Approve Care Plan</DialogTitle>
+            <DialogTitle>Approve care plan</DialogTitle>
             <DialogDescription>
               Sign to approve this care plan and mark it as active. This action will be logged.
             </DialogDescription>
@@ -462,29 +437,29 @@ export default function AdminResidentCarePlanPage() {
 
           <div className="space-y-4 py-4">
             {submitError && (
-              <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl text-sm text-rose-800 dark:text-rose-300">
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-[8px] text-sm text-destructive">
                 {submitError}
               </div>
             )}
 
-            <div className="bg-slate-50 dark:bg-slate-900/30 rounded-xl p-4 space-y-2">
+            <div className="bg-muted rounded-[8px] p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Resident:</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">{residentName}</span>
+                <span className="text-muted-foreground">Resident:</span>
+                <span className="font-medium text-foreground">{residentName}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Version:</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">v{plan?.version ?? "—"}</span>
+                <span className="text-muted-foreground">Version:</span>
+                <span className="tabular-nums font-medium text-foreground">v{plan?.version ?? "—"}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Effective:</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">{formatDate(plan?.effective_date ?? null)}</span>
+                <span className="text-muted-foreground">Effective:</span>
+                <span className="tabular-nums font-medium text-foreground">{formatDate(plan?.effective_date ?? null)}</span>
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-3">
-                Digital Signature <span className="text-rose-500">*</span>
+              <label className="text-sm font-medium text-foreground block mb-3">
+                Digital signature <span className="text-destructive">*</span>
               </label>
               <SignaturePad
                 onSignatureChange={setSignatureData}
@@ -508,9 +483,8 @@ export default function AdminResidentCarePlanPage() {
             <Button
               onClick={handleApprove}
               disabled={!signatureData || isSubmitting}
-              className="bg-indigo-600 hover:bg-indigo-700"
             >
-              {isSubmitting ? "Approving..." : "Confirm & Approve"}
+              {isSubmitting ? "Approving..." : "Confirm & approve"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -564,33 +538,33 @@ function getReviewBadgeState(isoDate: string): { label: string; className: strin
   const due = new Date(`${isoDate}T23:59:59Z`);
   const now = new Date();
   if (Number.isNaN(due.getTime())) {
-    return { label: formatDate(isoDate), className: "border-slate-300 dark:border-slate-600" };
+    return { label: formatDate(isoDate), className: "border-border" };
   }
   if (due < now) {
     return {
       label: `${formatDate(isoDate)} (overdue)`,
-      className: "border-red-300 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200",
+      className: "border-destructive/30 bg-destructive/10 text-destructive",
     };
   }
   const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (days <= 14) {
     return {
       label: `${formatDate(isoDate)} (${days}d)`,
-      className: "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200",
+      className: "border-warning/30 bg-warning/10 text-warning",
     };
   }
   return {
     label: formatDate(isoDate),
-    className: "border-slate-300 dark:border-slate-600",
+    className: "border-border",
   };
 }
 
 function CarePlanStatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    active: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200 border-emerald-200 dark:border-emerald-500/20",
-    draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700",
-    under_review: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200 border-amber-200 dark:border-amber-500/20",
-    archived: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700",
+    active: "bg-success/10 text-success border-success/20",
+    draft: "bg-muted text-muted-foreground border-border",
+    under_review: "bg-warning/10 text-warning border-warning/20",
+    archived: "bg-muted text-muted-foreground border-border",
   };
-  return <Badge className={cn("font-mono text-[10px] uppercase font-bold tracking-wider px-3 border shadow-none", map[status] ?? "bg-slate-100 text-slate-700")}>{formatSnakeLabel(status)}</Badge>;
+  return <Badge className={cn("text-[10px] uppercase font-bold tracking-wider px-3 border shadow-none", map[status] ?? "bg-muted text-muted-foreground")}>{formatSnakeLabel(status)}</Badge>;
 }

@@ -6,14 +6,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { DischargeHubNav } from "../discharge-hub-nav";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
-import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: { first_name: string; last_name: string; discharge_target_date: string | null; hospice_status: string } | null;
@@ -160,76 +162,57 @@ export default function AdminDischargeDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300">
-            <Link href="/admin/discharge" className="hover:text-brand-600 dark:hover:text-brand-400">
-              Discharge
-            </Link>{" "}
-            / Reconciliation
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Med reconciliation
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Operational workspace for discharge reconciliation, pharmacist attestation, and transition notes.
-          </p>
-        </div>
-        <Link href="/admin/discharge" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-          Back to pipeline
-        </Link>
-      </div>
+      <RecordDetailHeader
+        title="Med reconciliation"
+        subtitle="Operational workspace for discharge reconciliation, pharmacist attestation, and transition notes."
+        backLink={{ label: "Back to pipeline", href: "/admin/discharge" }}
+      />
 
       <DischargeHubNav />
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           Loading…
         </div>
       ) : error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : !row ? (
-        <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-          <CardContent className="py-10 text-center text-sm text-slate-600 dark:text-slate-300">
-            No row found for this id, or you do not have access.
-          </CardContent>
-        </Card>
+        <div className="rounded-[8px] border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+          No row found for this id, or you do not have access.
+        </div>
       ) : (
         <>
           {actionError ? (
-            <p className="rounded-lg border border-red-200/80 bg-red-50/50 px-4 py-3 text-sm text-red-950 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-100">
+            <p className="rounded-[8px] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {actionError}
             </p>
           ) : null}
           {actionMessage ? (
-            <p className="rounded-lg border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-950 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+            <p className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
               {actionMessage}
             </p>
           ) : null}
           {wrongFacility ? (
-            <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="rounded-[8px] border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
               This record belongs to another facility. Switch the facility in the header to align context.
             </p>
           ) : null}
 
-          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
-              </CardTitle>
-              <p className="font-mono text-xs break-all text-slate-600 dark:text-slate-300">{row.id}</p>
-            </CardHeader>
-            <CardContent className="space-y-6 text-sm">
+          <RecordDetailSection
+            title={row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
+            description={row.id}
+          >
+            <div className="space-y-6 text-sm">
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</dt>
-                  <dd className="mt-0.5 capitalize text-slate-900 dark:text-slate-100">{formatStatus(row.status)}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</dt>
+                  <dd className="mt-0.5 capitalize text-foreground">{formatStatus(row.status)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Discharge target (resident)
                   </dt>
                   <dd className="mt-2 space-y-2">
@@ -237,7 +220,7 @@ export default function AdminDischargeDetailPage() {
                       type="date"
                       value={dischargeTargetDraft}
                       onChange={(event) => setDischargeTargetDraft(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <Button
                       type="button"
@@ -256,14 +239,14 @@ export default function AdminDischargeDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Hospice (resident)
                   </dt>
                   <dd className="mt-2 space-y-2">
                     <select
                       value={hospiceStatusDraft}
                       onChange={(event) => setHospiceStatusDraft(event.target.value as Database["public"]["Enums"]["hospice_status"])}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       {HOSPICE_OPTIONS.map((option) => (
                         <option key={option} value={option}>
@@ -288,18 +271,18 @@ export default function AdminDischargeDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Pharmacist reviewed
                   </dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(row.pharmacist_reviewed_at)}</dd>
+                  <dd className="mt-0.5 text-foreground">{formatTs(row.pharmacist_reviewed_at)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pharmacist NPI</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pharmacist NPI</dt>
                   <dd className="mt-2 space-y-2">
                     <input
                       value={pharmacistNpiDraft}
                       onChange={(event) => setPharmacistNpiDraft(event.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <Button
                       type="button"
@@ -318,13 +301,13 @@ export default function AdminDischargeDetailPage() {
                   </dd>
                 </div>
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pharmacist notes</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pharmacist notes</dt>
                   <dd className="mt-2 space-y-3">
                     <textarea
                       value={pharmacistNotesDraft}
                       onChange={(event) => setPharmacistNotesDraft(event.target.value)}
                       rows={4}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <div className="flex justify-end">
                       <Button
@@ -344,13 +327,13 @@ export default function AdminDischargeDetailPage() {
                   </dd>
                 </div>
                 <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Nurse reconciliation notes</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nurse reconciliation notes</dt>
                   <dd className="mt-2 space-y-3">
                     <textarea
                       value={nurseNotesDraft}
                       onChange={(event) => setNurseNotesDraft(event.target.value)}
                       rows={4}
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <div className="flex justify-end">
                       <Button
@@ -370,72 +353,62 @@ export default function AdminDischargeDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Updated</dt>
-                  <dd className="mt-0.5 text-slate-900 dark:text-slate-100">{formatTs(row.updated_at)}</dd>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
+                  <dd className="mt-0.5 text-foreground">{formatTs(row.updated_at)}</dd>
                 </div>
               </dl>
-            </CardContent>
-          </Card>
+            </div>
+          </RecordDetailSection>
 
-          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-lg">Med snapshot (JSON)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {snapshotStr ? (
-                <pre className="max-h-64 overflow-auto rounded-lg border border-slate-200/80 bg-slate-50 p-3 text-xs dark:border-slate-800 dark:bg-slate-900">
-                  {snapshotStr}
-                </pre>
-              ) : (
-                <p className="text-sm text-slate-600 dark:text-slate-300">No snapshot stored.</p>
-              )}
-            </CardContent>
-          </Card>
+          <RecordDetailSection title="Med snapshot (JSON)">
+            {snapshotStr ? (
+              <pre className="max-h-64 overflow-auto rounded-[8px] border border-border bg-muted p-3 text-xs">
+                {snapshotStr}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">No snapshot stored.</p>
+            )}
+          </RecordDetailSection>
 
-          <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-lg">Workflow actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={row.status === "draft" || !!actionLoading}
-                  onClick={() => void updateReconciliation({ status: "draft" }, "Reconciliation moved to draft.")}
-                >
-                  {actionLoading === "Reconciliation moved to draft." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to draft"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={row.status === "pharmacist_review" || !!actionLoading}
-                  onClick={() => void updateReconciliation({ status: "pharmacist_review" }, "Reconciliation moved to pharmacist review.")}
-                >
-                  {actionLoading === "Reconciliation moved to pharmacist review." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pharmacist review"}
-                </Button>
-                <Button
-                  type="button"
-                  disabled={row.status === "complete" || !!actionLoading}
-                  onClick={() =>
-                    void updateReconciliation(
-                      {
-                        status: "complete",
-                        pharmacist_reviewed_at: row.pharmacist_reviewed_at ?? new Date().toISOString(),
-                        pharmacist_reviewed_by: row.pharmacist_reviewed_by ?? user?.id ?? null,
-                      },
-                      "Reconciliation marked complete.",
-                    )
-                  }
-                >
-                  {actionLoading === "Reconciliation marked complete." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark complete"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <RecordDetailSection title="Workflow actions">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={row.status === "draft" || !!actionLoading}
+                onClick={() => void updateReconciliation({ status: "draft" }, "Reconciliation moved to draft.")}
+              >
+                {actionLoading === "Reconciliation moved to draft." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to draft"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={row.status === "pharmacist_review" || !!actionLoading}
+                onClick={() => void updateReconciliation({ status: "pharmacist_review" }, "Reconciliation moved to pharmacist review.")}
+              >
+                {actionLoading === "Reconciliation moved to pharmacist review." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Move to pharmacist review"}
+              </Button>
+              <Button
+                type="button"
+                disabled={row.status === "complete" || !!actionLoading}
+                onClick={() =>
+                  void updateReconciliation(
+                    {
+                      status: "complete",
+                      pharmacist_reviewed_at: row.pharmacist_reviewed_at ?? new Date().toISOString(),
+                      pharmacist_reviewed_by: row.pharmacist_reviewed_by ?? user?.id ?? null,
+                    },
+                    "Reconciliation marked complete.",
+                  )
+                }
+              >
+                {actionLoading === "Reconciliation marked complete." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark complete"}
+              </Button>
+            </div>
+          </RecordDetailSection>
 
           {row.resident_id ? (
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+            <p className="text-sm text-muted-foreground">
               <Link
                 href={`/admin/residents/${row.resident_id}`}
                 className="font-medium text-brand-700 underline-offset-2 hover:underline dark:text-brand-300"

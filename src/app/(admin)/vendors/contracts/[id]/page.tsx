@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { VendorHubNav } from "../../vendor-hub-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
@@ -76,46 +75,43 @@ export default function VendorContractDetailPage() {
     <div className="space-y-6">
       <VendorHubNav />
       {loadError && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {loadError}
         </p>
       )}
       {loading && !contract ? (
-        <p className="text-sm text-slate-600">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : contract ? (
         <>
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">{contract.title}</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/vendors/${contract.vendor_id}`}>
-                {contract.vendor_name ?? "Vendor"}
-              </Link>
-              {" · "}
-              <span className="capitalize">{contract.contract_type}</span>
-            </p>
-          </div>
+          <RecordDetailHeader
+            title={contract.title}
+            subtitle={`${contract.vendor_name ?? "Vendor"} · ${contract.contract_type}`}
+            backLink={{ label: "Back to contracts", href: "/admin/vendors/contracts" }}
+          />
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Terms</CardTitle>
-                <CardDescription>Effective {contract.effective_date}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
+            <RecordDetailSection
+              title="Terms"
+              description={`Effective ${contract.effective_date}`}
+            >
+              <div className="space-y-1 text-sm">
                 <p>Expires: {contract.expiration_date ?? "—"}</p>
                 <p>Auto-renew: {contract.auto_renew ? "Yes" : "No"}</p>
-                <p>Total value: {formatUsdFromCents(contract.total_value_cents)}</p>
+                <p>
+                  Total value:{" "}
+                  <span className="tabular-nums">{formatUsdFromCents(contract.total_value_cents)}</span>
+                </p>
                 {contract.payment_terms && <p>Payment terms: {contract.payment_terms}</p>}
                 {contract.document_storage_path && (
-                  <p className="break-all text-slate-600">Document path: {contract.document_storage_path}</p>
+                  <p className="break-all text-muted-foreground">
+                    Document path: {contract.document_storage_path}
+                  </p>
                 )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Structured terms</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-slate-600 dark:text-slate-400">
+              </div>
+            </RecordDetailSection>
+
+            <RecordDetailSection title="Structured terms">
+              <div className="text-sm text-muted-foreground">
                 {terms ? (
                   <ul className="list-inside list-disc space-y-1">
                     {terms.sla_response_hours != null && <li>SLA response: {terms.sla_response_hours}h</li>}
@@ -125,29 +121,26 @@ export default function VendorContractDetailPage() {
                 ) : (
                   <p>No structured terms row.</p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </RecordDetailSection>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Alerts</CardTitle>
-              <CardDescription>Renewal and compliance reminders.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {alerts.length === 0 ? (
-                <p className="text-sm text-slate-500">No alerts.</p>
-              ) : (
-                <ul className="space-y-2 text-sm">
-                  {alerts.map((a) => (
-                    <li key={a.id} className="rounded-md border border-slate-200 p-2 dark:border-slate-800">
-                      <span className="font-medium">{a.title}</span> — {a.alert_date} ({a.alert_type}) — {a.status}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+          <RecordDetailSection
+            title="Alerts"
+            description="Renewal and compliance reminders."
+          >
+            {alerts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No alerts.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {alerts.map((a) => (
+                  <li key={a.id} className="rounded-[8px] border border-border p-[14px]">
+                    <span className="font-medium">{a.title}</span> — {a.alert_date} ({a.alert_type}) — {a.status}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </RecordDetailSection>
         </>
       ) : null}
     </div>

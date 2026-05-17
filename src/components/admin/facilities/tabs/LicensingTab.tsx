@@ -5,6 +5,7 @@ import { Loader2, Shield } from "lucide-react";
 import { useFacility } from "@/hooks/useFacility";
 import { useFacilitySurveys } from "@/hooks/useFacilitySurveys";
 import { CARE_SERVICES, CARE_SERVICE_LABELS } from "@/lib/admin/facilities/facility-constants";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 interface LicensingTabProps {
   facilityId: string;
@@ -12,7 +13,7 @@ interface LicensingTabProps {
 
 function PendingBadge() {
   return (
-    <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+    <span className="ml-2 inline-flex items-center rounded-[8px] bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
       Pending
     </span>
   );
@@ -37,7 +38,7 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
   if (isLoading || !facility) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -50,43 +51,48 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
   const licensePending = !licenseNum;
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-          <Shield className="h-5 w-5 text-teal-400" />
-          AHCA licensing
-        </h3>
+    <div className="space-y-4">
+      <RecordDetailSection
+        title="AHCA licensing"
+        action={<Shield className="h-4 w-4 text-muted-foreground" />}
+        description="Use Document Vault for license PDFs. Enter definitive license numbers here when received from COL."
+      >
         <div className="grid gap-4 sm:grid-cols-2 text-sm">
           <div>
-            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">License number</p>
-            <p className="font-medium">
+            <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">License number</p>
+            <p className="font-medium text-foreground mt-1">
               {licenseNum ?? "—"}
               {licensePending && <PendingBadge />}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">License authority</p>
-            <p className="font-medium">{facility.license_authority ?? "—"}</p>
+            <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">License authority</p>
+            <p className="font-medium text-foreground mt-1">{facility.license_authority ?? "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">Last survey result</p>
-            <p className="font-medium">{facility.last_survey_result ?? "—"}</p>
+            <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Last survey result</p>
+            <p className="font-medium text-foreground mt-1">{facility.last_survey_result ?? "—"}</p>
           </div>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          Use Document Vault for license PDFs. Enter definitive license numbers here when received from COL.
-        </p>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Care services offered</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          COL uses <strong>Enhanced ALF Services</strong> — avoid legacy unit marketing labels in compliance-facing
-          outputs (see Haven verification checklist).
-        </p>
+      <RecordDetailSection
+        title="Care services offered"
+        description="COL uses Enhanced ALF Services — avoid legacy unit marketing labels in compliance-facing outputs (see Haven verification checklist)."
+        action={
+          <button
+            type="button"
+            onClick={() => void saveCareServices()}
+            disabled={isUpdating}
+            className="rounded-[8px] bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
+          >
+            {isUpdating ? "Saving…" : "Save"}
+          </button>
+        }
+      >
         <div className="flex flex-wrap gap-3">
           {CARE_SERVICES.map((s) => (
-            <label key={s} className="flex items-center gap-2 text-sm">
+            <label key={s} className="flex items-center gap-2 text-sm text-foreground">
               <input
                 type="checkbox"
                 checked={(care ?? (facility.care_services_offered as string[] | undefined) ?? []).includes(s)}
@@ -100,45 +106,35 @@ export function LicensingTab({ facilityId }: LicensingTabProps) {
             </label>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => void saveCareServices()}
-          disabled={isUpdating}
-          className="rounded-[1.5rem] bg-teal-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          {isUpdating ? "Saving…" : "Save care services"}
-        </button>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 shadow-sm backdrop-blur-2xl">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Survey history</h3>
+      <RecordDetailSection title="Survey history">
         {surveysLoading ? (
-          <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         ) : surveys.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">No survey records yet.</p>
+          <p className="text-sm text-muted-foreground">No survey records yet.</p>
         ) : (
-          <ul className="divide-y">
+          <ul className="divide-y divide-border">
             {surveys.map((s) => (
               <li key={s.id} className="py-3 flex justify-between gap-4 text-sm">
                 <div>
-                  <p className="font-medium">{s.survey_date}</p>
-                  <p className="text-[10px] font-mono tracking-wider uppercase font-semibold text-slate-500 dark:text-slate-400">
+                  <p className="font-medium text-foreground">{s.survey_date}</p>
+                  <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground mt-0.5">
                     {s.survey_type} — {s.result}
                   </p>
                 </div>
                 {s.citation_count > 0 && (
-                  <span className="text-amber-700 text-xs">{s.citation_count} citations</span>
+                  <span className="tabular-nums text-warning text-xs">{s.citation_count} citations</span>
                 )}
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-dashed border-slate-300/50 dark:border-white/20 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-sm text-slate-500 dark:text-slate-400">
-        Compliance calendar (fire drills, elopement drills) will tie to operational thresholds and scheduling in a
-        follow-up pass.
-      </section>
+      <div className="rounded-[8px] border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+        Compliance calendar (fire drills, elopement drills) will tie to operational thresholds and scheduling in a follow-up pass.
+      </div>
     </div>
   );
 }

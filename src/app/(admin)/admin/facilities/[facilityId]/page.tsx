@@ -1,10 +1,11 @@
 "use client";
 
 import React, { Suspense, useCallback } from "react";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
+import { Badge } from "@/components/ui/badge";
 import { FacilityHeader } from "@/components/admin/facilities/FacilityHeader";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
 import { OverviewTab } from "@/components/admin/facilities/tabs/OverviewTab";
@@ -19,6 +20,7 @@ import { StaffingTab } from "@/components/admin/facilities/tabs/StaffingTab";
 import { CommunicationTab } from "@/components/admin/facilities/tabs/CommunicationTab";
 import { ThresholdsTab } from "@/components/admin/facilities/tabs/ThresholdsTab";
 import { TimelineTab } from "@/components/admin/facilities/tabs/TimelineTab";
+import { RecordDetailHeader } from "@/design-system/components/record-detail";
 import {
   FACILITY_TABS,
   FACILITY_TAB_LABELS,
@@ -53,7 +55,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -61,14 +63,10 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   if (error || !facility) {
     return (
       <div className="space-y-6 p-6">
-        <Link
-          href="/admin/facilities"
-          className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Facilities
+        <Link href="/admin/facilities" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          ← Facilities
         </Link>
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+        <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3">
           <p className="text-sm text-destructive">{error ?? "Facility not found"}</p>
         </div>
       </div>
@@ -106,27 +104,30 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
     }
   };
 
+  const statusChip = (() => {
+    if (facility.status === "inactive") return <Badge variant="secondary">Inactive</Badge>;
+    if (facility.status === "under_renovation") return <Badge variant="outline" className="border-warning/50 text-warning">Under renovation</Badge>;
+    if (facility.status === "archived") return <Badge variant="outline">Archived</Badge>;
+    return <Badge variant="default">Active</Badge>;
+  })();
+
   return (
-    <>
-      <></>
-      <div className="space-y-6 pt-4 p-6 relative z-10 max-w-7xl mx-auto">
-        <Link
-          href="/admin/facilities"
-          className="inline-flex items-center gap-2 text-[10px] font-mono tracking-wider uppercase font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors"
-        >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Facilities
-      </Link>
+    <div className="space-y-6 pt-4 p-6 max-w-7xl mx-auto">
+      <RecordDetailHeader
+        title={facility.name}
+        subtitle={facility.entity_name ?? "Organization"}
+        backLink={{ label: "Facilities", href: "/admin/facilities" }}
+        statusChips={statusChip}
+      />
 
       <FacilityHeader facility={facility} />
 
-      <div className="border-b border-slate-200/50 dark:border-white/10 overflow-x-auto relative">
+      <div className="border-b border-border overflow-x-auto">
         <FacilityTabNav activeTab={activeTab} onTabChange={onTabChange} tabs={TABS} />
       </div>
 
       <div className="pt-4">{renderTabContent()}</div>
     </div>
-    </>
   );
 }
 
@@ -142,14 +143,10 @@ function FacilityRouteResolver() {
   if (!id) {
     return (
       <div className="space-y-6 p-6">
-        <Link
-          href="/admin/facilities"
-          className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Facilities
+        <Link href="/admin/facilities" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          ← Facilities
         </Link>
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+        <div className="rounded-[8px] border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
           Missing facility in the URL. Use Command → Facilities and select a site again.
         </div>
       </div>
@@ -161,10 +158,10 @@ function FacilityRouteResolver() {
 
 export default function FacilityDetailPage() {
   return (
-    <Suspense
+      <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }
     >

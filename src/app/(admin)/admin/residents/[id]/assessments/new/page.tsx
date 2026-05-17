@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { assessmentFormSchema, type AssessmentFormData } from "@/lib/validation/assessment";
@@ -21,7 +20,6 @@ import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -32,6 +30,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 const TYPE_LABELS: Record<string, string> = {
   katz_adl: "Katz ADL Index",
@@ -41,19 +43,19 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const RISK_COLORS: Record<string, string> = {
-  low: "bg-emerald-900/60 text-emerald-200",
-  standard: "bg-amber-900/60 text-amber-200",
-  high: "bg-red-900/60 text-red-200",
-  level_1: "bg-emerald-900/60 text-emerald-200",
-  level_2: "bg-amber-900/60 text-amber-200",
-  level_3: "bg-red-900/60 text-red-200",
-  none: "bg-emerald-900/60 text-emerald-200",
-  mild: "bg-emerald-900/60 text-emerald-200",
-  moderate: "bg-amber-900/60 text-amber-200",
-  very_high: "bg-red-900/60 text-red-200",
-  minimal: "bg-emerald-900/60 text-emerald-200",
-  moderately_severe: "bg-orange-900/60 text-orange-200",
-  severe: "bg-red-900/60 text-red-200",
+  low: "bg-success/10 text-success",
+  standard: "bg-warning/10 text-warning",
+  high: "bg-destructive/10 text-destructive",
+  level_1: "bg-success/10 text-success",
+  level_2: "bg-warning/10 text-warning",
+  level_3: "bg-destructive/10 text-destructive",
+  none: "bg-success/10 text-success",
+  mild: "bg-success/10 text-success",
+  moderate: "bg-warning/10 text-warning",
+  very_high: "bg-destructive/10 text-destructive",
+  minimal: "bg-success/10 text-success",
+  moderately_severe: "bg-warning/10 text-warning",
+  severe: "bg-destructive/10 text-destructive",
 };
 
 function todayLocal(): string {
@@ -115,7 +117,6 @@ export default function AssessmentEntryPage() {
     setLoading(true);
     setError(null);
     try {
-      // Get user role
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       const { data: profile } = await supabase
@@ -126,7 +127,6 @@ export default function AssessmentEntryPage() {
       if (!profile) throw new Error("No user profile");
       setOrganizationId(profile.organization_id ?? "");
 
-      // Get resident + facility
       const { data: resident } = await supabase
         .from("residents")
         .select("first_name, last_name, facility_id")
@@ -136,7 +136,6 @@ export default function AssessmentEntryPage() {
       setResidentName(`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim());
       setFacilityId(resident.facility_id);
 
-      // Load templates, filter by user role
       const { data: tpls, error: tplErr } = await supabase
         .from("assessment_templates")
         .select("*")
@@ -144,7 +143,6 @@ export default function AssessmentEntryPage() {
       if (tplErr) throw new Error(tplErr.message);
 
       const role = profile.app_role ?? "";
-      // Seed templates only list nurse/caregiver/facility_admin; owner/org_admin must see catalog too.
       const privilegedRoles = new Set(["owner", "org_admin"]);
       const allowed = (tpls ?? []).filter((t) => {
         if (privilegedRoles.has(role)) return true;
@@ -181,7 +179,6 @@ export default function AssessmentEntryPage() {
       const riskLevel = lookupRiskLevel(totalScore, selectedTemplate.risk_thresholds);
       const nextDueDate = computeNextDueDate(data.assessmentDate, selectedTemplate.default_frequency_days);
 
-      // Insert assessment
       const { error: insertErr } = await supabase.from("assessments").insert({
         resident_id: residentId,
         facility_id: facilityId,
@@ -199,7 +196,6 @@ export default function AssessmentEntryPage() {
       });
       if (insertErr) throw new Error(insertErr.message);
 
-      // Post-save: update resident acuity + fall risk
       await updateResidentFromAssessment(data.assessmentType, totalScore, riskLevel);
 
       setSuccess(true);
@@ -211,15 +207,12 @@ export default function AssessmentEntryPage() {
   }
 
   async function updateResidentFromAssessment(type: string, totalScore: number, riskLevel: string) {
-    // Update fall_risk_level if Morse Fall
     if (type === "morse_fall") {
       const fallRisk = mapMorseToFallRisk(totalScore);
       await supabase.from("residents").update({ fall_risk_level: fallRisk }).eq("id", residentId);
     }
 
-    // Recompute acuity if Katz, Morse, or Braden
     if (["katz_adl", "morse_fall", "braden"].includes(type)) {
-      // Fetch latest of each type
       const { data: latestAssessments } = await supabase
         .from("assessments")
         .select("assessment_type, total_score, risk_level")
@@ -245,7 +238,6 @@ export default function AssessmentEntryPage() {
       }).eq("id", residentId);
     }
 
-    // Check if risk worsened → create review alert
     const { data: priorAssessments } = await supabase
       .from("assessments")
       .select("risk_level")
@@ -258,7 +250,6 @@ export default function AssessmentEntryPage() {
     const prior = priorAssessments && priorAssessments.length > 1 ? priorAssessments[1] : null;
 
     if (prior && didRiskWorsen(type, riskLevel, prior.risk_level)) {
-      // Find active care plan for this resident
       const { data: activePlan } = await supabase
         .from("care_plans")
         .select("id")
@@ -276,7 +267,6 @@ export default function AssessmentEntryPage() {
           trigger_type: "assessment_threshold",
           trigger_detail: `${TYPE_LABELS[type] ?? type} risk changed from ${prior.risk_level} to ${riskLevel}`,
         } as never);
-        // idx_cpra_dedup: ignore unique violation when an open/acknowledged alert already exists
         const pgCode = alertErr ? (alertErr as { code?: string }).code : undefined;
         const isUniqueViolation = pgCode === "23505" || alertErr?.message?.toLowerCase().includes("unique");
         if (alertErr && !isUniqueViolation) {
@@ -286,72 +276,59 @@ export default function AssessmentEntryPage() {
     }
   }
 
-  // --- Render ---
-
   if (success) {
     return (
       <div className="mx-auto max-w-lg space-y-6 pt-8">
-        <Card className="border-emerald-700/50 bg-emerald-950/30">
-          <CardContent className="flex flex-col items-center gap-4 pt-8 pb-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-emerald-400" />
-            <CardTitle className="text-xl text-emerald-100">Assessment Saved</CardTitle>
-            <CardDescription className="text-emerald-300/80">
+        <RecordDetailSection title="Assessment saved" className="border-success/20 bg-success/10">
+          <div className="flex flex-col items-center gap-4 py-4 text-center">
+            <CheckCircle2 className="h-12 w-12 text-success" />
+            <p className="text-base font-semibold text-foreground">
               {TYPE_LABELS[selectedType] ?? selectedType} — Score: {liveTotal} — Risk: {liveRiskLevel?.replace(/_/g, " ")}
-            </CardDescription>
+            </p>
             <div className="flex gap-3 pt-2">
-              <Link href={`/admin/residents/${residentId}/assessments`}>
-                <Button variant="outline" size="sm">View History</Button>
-              </Link>
+              <a href={`/admin/residents/${residentId}/assessments`}>
+                <Button variant="outline" size="sm">View history</Button>
+              </a>
               <Button size="sm" onClick={() => { setSuccess(false); setSelectedType(""); form.reset(); }}>
-                New Assessment
+                New assessment
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </RecordDetailSection>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/admin/residents/${residentId}/assessments`}
-          className={cn("inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200")}
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Assessments
-        </Link>
-      </div>
+      <RecordDetailHeader
+        title="New assessment"
+        subtitle={residentName || undefined}
+        backLink={{ label: "Back to assessments", href: `/admin/residents/${residentId}/assessments` }}
+      />
 
-      <Card className="border-slate-700/50 bg-slate-900/80">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg text-slate-100">
-            <ClipboardCheck className="h-5 w-5 text-cyan-400" />
-            New Assessment{residentName ? ` — ${residentName}` : ""}
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Select an assessment type, answer each item, and submit to record the score.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
+      <RecordDetailSection
+        title="Assessment form"
+        description="Select an assessment type, answer each item, and submit to record the score."
+      >
+        <div className="space-y-6">
           {loading && (
-            <div className="flex items-center justify-center gap-2 py-12 text-slate-400">
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" /> Loading templates…
             </div>
           )}
 
           {error && !loading && (
-            <div className="rounded-lg border border-red-700/50 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+            <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
-              <Button variant="ghost" size="sm" onClick={load} className="ml-2 text-red-300">
+              <Button variant="ghost" size="sm" onClick={load} className="ml-2 text-destructive">
                 Retry
               </Button>
             </div>
           )}
 
           {!loading && !error && templates.length === 0 && (
-            <div className="py-8 text-center text-slate-400">
+            <div className="py-8 text-center text-muted-foreground">
               No assessment types available for your role.
             </div>
           )}
@@ -362,11 +339,11 @@ export default function AssessmentEntryPage() {
                 <button
                   key={t.assessment_type}
                   onClick={() => handleTypeSelect(t.assessment_type)}
-                  className="rounded-lg border border-slate-700/50 bg-slate-800/50 px-4 py-4 text-left transition hover:border-cyan-600/50 hover:bg-slate-800"
+                  className="rounded-[8px] border border-border bg-card px-4 py-4 text-left transition-colors duration-[var(--motion-duration-micro)] hover:border-primary/30 hover:bg-muted"
                 >
-                  <div className="font-medium text-slate-100">{t.name}</div>
-                  <div className="mt-1 text-sm text-slate-400">{t.description}</div>
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="font-medium text-foreground">{t.name}</div>
+                  <div className="mt-1 text-sm text-muted-foreground">{t.description}</div>
+                  <div className="mt-2 tabular-nums text-xs text-muted-foreground">
                     Score range: {t.score_range_min}–{t.score_range_max} · Every {t.default_frequency_days} days
                   </div>
                 </button>
@@ -377,29 +354,27 @@ export default function AssessmentEntryPage() {
           {!loading && !error && selectedTemplate && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Assessment date */}
                 <FormField
                   control={form.control}
                   name="assessmentDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Assessment Date</FormLabel>
+                      <FormLabel>Assessment date</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} className="max-w-xs bg-slate-800 text-slate-100" />
+                        <Input type="date" {...field} className="max-w-xs" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Live score bar */}
-                <div className="flex items-center gap-4 rounded-lg border border-slate-700/50 bg-slate-800/50 px-4 py-3">
-                  <div className="text-sm text-slate-400">
-                    Score: <span className="font-mono text-lg text-slate-100">{liveTotal ?? "—"}</span>
-                    <span className="text-slate-500"> / {selectedTemplate.score_range_max}</span>
+                <div className="flex items-center gap-4 rounded-[8px] border border-border bg-muted px-4 py-3">
+                  <div className="text-sm text-muted-foreground">
+                    Score: <span className="tabular-nums text-lg font-semibold text-foreground">{liveTotal ?? "—"}</span>
+                    <span className="text-muted-foreground"> / {selectedTemplate.score_range_max}</span>
                   </div>
                   {liveRiskLevel && (
-                    <Badge className={cn("text-xs", RISK_COLORS[liveRiskLevel] ?? "bg-slate-700 text-slate-300")}>
+                    <Badge className={cn("text-xs", RISK_COLORS[liveRiskLevel] ?? "bg-muted text-muted-foreground")}>
                       {liveRiskLevel.replace(/_/g, " ")}
                     </Badge>
                   )}
@@ -407,14 +382,13 @@ export default function AssessmentEntryPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="ml-auto text-xs text-slate-500"
+                    className="ml-auto text-xs text-muted-foreground"
                     onClick={() => { setSelectedType(""); form.setValue("scores", {}); }}
                   >
                     Change type
                   </Button>
                 </div>
 
-                {/* Assessment items */}
                 <div className="space-y-5">
                   {selectedTemplate.items.map((item: AssessmentTemplateItem) => (
                     <FormField
@@ -422,18 +396,21 @@ export default function AssessmentEntryPage() {
                       control={form.control}
                       name={`scores.${item.key}`}
                       render={({ field }) => (
-                        <FormItem className="rounded-lg border border-slate-700/40 bg-slate-800/30 p-4">
-                          <FormLabel className="text-sm font-medium text-slate-200">{item.label}</FormLabel>
+                        <FormItem className="rounded-[8px] border border-border bg-card p-4">
+                          <FormLabel className="text-sm font-medium text-foreground">
+                            <ClipboardCheck className="inline h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                            {item.label}
+                          </FormLabel>
                           <FormControl>
                             <div className="mt-2 space-y-2">
                               {item.options.map((opt) => (
                                 <label
                                   key={opt.value}
                                   className={cn(
-                                    "flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm transition",
+                                    "flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm transition-colors duration-[var(--motion-duration-micro)]",
                                     field.value === opt.value
-                                      ? "border-cyan-600/60 bg-cyan-950/30 text-cyan-100"
-                                      : "border-slate-700/40 text-slate-300 hover:border-slate-600",
+                                      ? "border-info/60 bg-info/10 text-foreground"
+                                      : "border-border text-foreground hover:border-border/80 hover:bg-muted",
                                   )}
                                 >
                                   <input
@@ -445,7 +422,7 @@ export default function AssessmentEntryPage() {
                                     className="accent-cyan-500"
                                   />
                                   <span>{opt.label}</span>
-                                  <span className="ml-auto font-mono text-xs text-slate-500">{opt.value}</span>
+                                  <span className="ml-auto tabular-nums text-xs text-muted-foreground">{opt.value}</span>
                                 </label>
                               ))}
                             </div>
@@ -457,18 +434,17 @@ export default function AssessmentEntryPage() {
                   ))}
                 </div>
 
-                {/* Notes */}
                 <FormField
                   control={form.control}
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Notes (optional)</FormLabel>
+                      <FormLabel>Notes (optional)</FormLabel>
                       <FormControl>
                         <textarea
                           {...field}
                           rows={3}
-                          className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+                          className="w-full rounded-[8px] border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
                           placeholder="Clinical observations, context for scores…"
                         />
                       </FormControl>
@@ -477,7 +453,6 @@ export default function AssessmentEntryPage() {
                   )}
                 />
 
-                {/* Submit */}
                 <div className="flex justify-end gap-3">
                   <Button
                     type="button"
@@ -492,15 +467,15 @@ export default function AssessmentEntryPage() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…
                       </>
                     ) : (
-                      "Save Assessment"
+                      "Save assessment"
                     )}
                   </Button>
                 </div>
               </form>
             </Form>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

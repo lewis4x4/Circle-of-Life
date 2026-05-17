@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CreditCard } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,6 +13,10 @@ import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { BillingInvoiceLedger, PayerTypeBadge, mapDbPayerTypeToUi } from "../../../billing/billing-invoice-ledger";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 type SupabaseResident = {
   id: string;
@@ -196,15 +199,14 @@ export default function ResidentBillingPage() {
   if (!residentId || notFound) {
     return (
       <div className="space-y-6 p-1">
-        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm">
-          <div className="mb-4 border-b border-slate-200 dark:border-white/5 pb-4">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Resident not found</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Check the ID or facility selector.</p>
+        <RecordDetailSection title="Resident not found">
+          <p className="text-sm text-muted-foreground">Check the ID or facility selector.</p>
+          <div className="mt-4">
+            <Link href="/admin/residents" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+              Back to residents
+            </Link>
           </div>
-          <Link href="/admin/residents" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            Back to residents
-          </Link>
-        </div>
+        </RecordDetailSection>
       </div>
     );
   }
@@ -219,159 +221,133 @@ export default function ResidentBillingPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      
-      <div className="relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-3">
-             <Link
-               href={`/admin/residents/${residentId}`}
-               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-             >
-                 <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO PROFILE
-             </Link>
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Billing <span className="font-semibold text-brand-600 dark:text-brand-400 opacity-60 ml-2">/ {residentName}</span>
-             </h1>
-            <p className="mt-2 text-sm font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-               Invoices and payer coverage records.
-            </p>
-          </div>
-        </header>
+      <div className="relative z-10 space-y-8 animate-in fade-in duration-[var(--motion-duration)] ease-[var(--motion-ease)]">
+        <RecordDetailHeader
+          title="Billing"
+          subtitle={`Invoices and payer coverage records${residentName ? ` · ${residentName}` : ""}`}
+          backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
+        />
 
-      <header>
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          Billing
-        </h2>
-        <p className="mt-1 text-slate-500 dark:text-slate-400">Invoices and payer coverage for this resident.</p>
-      </header>
+        <RecordDetailSection
+          title="Payers on file"
+          description="Primary and secondary coverage"
+          action={
+            <button
+              type="button"
+              onClick={() => void addMedicaidPayer()}
+              disabled={savingPayerId === "new" || !residentOrganizationId || !residentFacilityId}
+              className="rounded-[8px] border border-info/30 bg-info/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-info disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {savingPayerId === "new" ? "Adding…" : "+ Medicaid payer"}
+            </button>
+          }
+        >
+          {actionError ? <p className="mb-4 text-sm text-destructive">{actionError}</p> : null}
+          {actionMessage ? <p className="mb-4 text-sm text-success">{actionMessage}</p> : null}
 
-        <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
-          <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between gap-3">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1 flex items-center gap-3">
-              <CreditCard className="h-5 w-5 text-brand-500" />
-              Payers on File
-            </h3>
-            <div className="flex items-center gap-3">
-              <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
-                Primary and secondary coverage
-              </p>
-              <button
-                type="button"
-                onClick={() => void addMedicaidPayer()}
-                disabled={savingPayerId === "new" || !residentOrganizationId || !residentFacilityId}
-                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingPayerId === "new" ? "Adding…" : "+ Medicaid payer"}
-              </button>
-            </div>
-          </div>
-          {actionError ? <p className="mb-4 text-sm text-rose-600 dark:text-rose-400">{actionError}</p> : null}
-          {actionMessage ? <p className="mb-4 text-sm text-emerald-700 dark:text-emerald-300">{actionMessage}</p> : null}
-          
-          <div className="relative z-10 w-full overflow-hidden">
+          <div className="w-full overflow-hidden">
             {payers.length === 0 ? (
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 py-4">No payer records returned.</p>
+              <p className="text-sm font-medium text-muted-foreground py-4">No payer records returned.</p>
             ) : (
               <>
-                 <div className="hidden lg:grid grid-cols-[1fr_2fr_1fr_1fr_1fr_2fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left">
-                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Type</div>
-                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Name</div>
-                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Effective</div>
-                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">End</div>
-                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mt-0.5">Role</div>
-                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Medicaid details</div>
-                 </div>
-                 
-                 <div className="space-y-4 mt-6 relative z-10">
-                   <MotionList className="space-y-4">
-                     {payers.map((p) => (
-                       <MotionItem key={p.id}>
-                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr_1fr_1fr_2fr] gap-4 lg:items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
-                           
-                           <div className="flex flex-col">
-                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Type</span>
-                             <div className="flex items-start"><PayerTypeBadge payerType={mapDbPayerTypeToUi(p.payer_type)} /></div>
-                           </div>
+                <div className="hidden lg:grid grid-cols-[1fr_2fr_1fr_1fr_1fr_2fr] gap-4 px-2 pb-3 border-b border-border text-left">
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Type</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Name</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Effective</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">End</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Role</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Medicaid details</div>
+                </div>
 
-                           <div className="flex flex-col">
-                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Name</span>
-                             <span className="font-semibold text-lg text-slate-900 dark:text-slate-100 tracking-tight">{p.payer_name?.trim() || "—"}</span>
-                           </div>
+                <div className="space-y-2 mt-3">
+                  <MotionList className="space-y-2">
+                    {payers.map((p) => (
+                      <MotionItem key={p.id}>
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr_1fr_1fr_2fr] gap-4 lg:items-center p-[14px] rounded-[8px] bg-card border border-border shadow-[var(--shadow-card)] tap-responsive group hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration)] w-full outline-none">
 
-                           <div className="flex flex-col">
-                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Effective</span>
-                             <span className="font-mono text-sm text-slate-600 dark:text-slate-400">{formatDate(p.effective_date)}</span>
-                           </div>
+                          <div className="flex flex-col">
+                            <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Type</span>
+                            <div className="flex items-start"><PayerTypeBadge payerType={mapDbPayerTypeToUi(p.payer_type)} /></div>
+                          </div>
 
-                           <div className="flex flex-col">
-                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">End</span>
-                             <span className="font-mono text-sm text-slate-600 dark:text-slate-400">{p.end_date ? formatDate(p.end_date) : "—"}</span>
-                           </div>
+                          <div className="flex flex-col">
+                            <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Name</span>
+                            <span className="font-semibold text-base text-foreground tracking-tight">{p.payer_name?.trim() || "—"}</span>
+                          </div>
 
-                           <div className="flex flex-col items-start lg:items-start">
-                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Role</span>
-                             {p.is_primary ? (
-                               <div className="inline-flex px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-[1rem] font-bold text-[10px] uppercase tracking-wider">
-                                 Primary
-                               </div>
-                             ) : (
-                               <span className="text-slate-400">—</span>
-                             )}
-                           </div>
+                          <div className="flex flex-col">
+                            <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Effective</span>
+                            <span className="tabular-nums text-sm text-muted-foreground">{formatDate(p.effective_date)}</span>
+                          </div>
 
-                           <div className="flex flex-col gap-2">
-                             <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Medicaid details</span>
-                             {mapDbPayerTypeToUi(p.payer_type) === "medicaid" ? (
-                               <div className="space-y-2">
-                                 <div className="grid gap-2 sm:grid-cols-2">
-                                   <select
-                                     value={p.facility_medicaid_provider_id ?? ""}
-                                     onChange={(event) => {
-                                       const providerId = event.target.value || null;
-                                       const provider = providers.find((item) => item.id === providerId);
-                                       const rateUnit = provider?.rate_unit ?? p.medicaid_rate_unit ?? "monthly";
-                                       void saveMedicaidFields(p.id, rateUnit, providerId);
-                                     }}
-                                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900"
-                                   >
-                                     <option value="">Select provider/MCO</option>
-                                     {providers.map((provider) => (
-                                       <option key={provider.id} value={provider.id}>
-                                         {provider.provider_name}
-                                       </option>
-                                     ))}
-                                   </select>
-                                   <select
-                                     value={p.medicaid_rate_unit ?? "monthly"}
-                                     onChange={(event) => void saveMedicaidFields(p.id, event.target.value, p.facility_medicaid_provider_id)}
-                                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900"
-                                   >
-                                     <option value="monthly">Monthly</option>
-                                     <option value="daily">Daily</option>
-                                     <option value="weekly">Weekly</option>
-                                     <option value="per_billable_day">Per Billable Day</option>
-                                   </select>
-                                 </div>
-                                 <p className="text-xs text-slate-500">
-                                   Current: {providers.find((item) => item.id === p.facility_medicaid_provider_id)?.provider_name ?? "—"} · {formatRateUnitLabel(p.medicaid_rate_unit)}
-                                 </p>
-                                 {savingPayerId === p.id ? <p className="text-xs text-slate-400">Saving…</p> : null}
-                               </div>
-                             ) : (
-                               <span className="text-slate-400">—</span>
-                             )}
-                           </div>
+                          <div className="flex flex-col">
+                            <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">End</span>
+                            <span className="tabular-nums text-sm text-muted-foreground">{p.end_date ? formatDate(p.end_date) : "—"}</span>
+                          </div>
 
-                         </div>
-                       </MotionItem>
-                     ))}
-                   </MotionList>
-                 </div>
+                          <div className="flex flex-col items-start lg:items-start">
+                            <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Role</span>
+                            {p.is_primary ? (
+                              <div className="inline-flex px-3 py-1 bg-info/10 border border-info/20 text-info rounded-[8px] font-bold text-[10px] uppercase tracking-wider">
+                                Primary
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medicaid details</span>
+                            {mapDbPayerTypeToUi(p.payer_type) === "medicaid" ? (
+                              <div className="space-y-2">
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                  <select
+                                    value={p.facility_medicaid_provider_id ?? ""}
+                                    onChange={(event) => {
+                                      const providerId = event.target.value || null;
+                                      const provider = providers.find((item) => item.id === providerId);
+                                      const rateUnit = provider?.rate_unit ?? p.medicaid_rate_unit ?? "monthly";
+                                      void saveMedicaidFields(p.id, rateUnit, providerId);
+                                    }}
+                                    className="w-full rounded-[8px] border border-border bg-card px-3 py-2 text-xs text-foreground"
+                                  >
+                                    <option value="">Select provider/MCO</option>
+                                    {providers.map((provider) => (
+                                      <option key={provider.id} value={provider.id}>
+                                        {provider.provider_name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={p.medicaid_rate_unit ?? "monthly"}
+                                    onChange={(event) => void saveMedicaidFields(p.id, event.target.value, p.facility_medicaid_provider_id)}
+                                    className="w-full rounded-[8px] border border-border bg-card px-3 py-2 text-xs text-foreground"
+                                  >
+                                    <option value="monthly">Monthly</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="per_billable_day">Per Billable Day</option>
+                                  </select>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Current: {providers.find((item) => item.id === p.facility_medicaid_provider_id)?.provider_name ?? "—"} · {formatRateUnitLabel(p.medicaid_rate_unit)}
+                                </p>
+                                {savingPayerId === p.id ? <p className="text-xs text-muted-foreground">Saving…</p> : null}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
+
+                        </div>
+                      </MotionItem>
+                    ))}
+                  </MotionList>
+                </div>
               </>
             )}
           </div>
-        </div>
+        </RecordDetailSection>
 
         <BillingInvoiceLedger
           title="Invoices"

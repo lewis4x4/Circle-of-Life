@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useFacilityCommunicationSettings } from "@/hooks/useFacilityCommunicationSettings";
 import type { CommunicationSettingsInput } from "@/lib/validation/facility-admin";
+import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 interface CommunicationTabProps {
   facilityId: string;
@@ -41,6 +42,8 @@ function settingsToBase(settings: Record<string, unknown> | null): Partial<Commu
   };
 }
 
+const inputCls = "mt-1 w-full rounded-[8px] border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+
 export function CommunicationTab({ facilityId }: CommunicationTabProps) {
   const { settings, capabilities, isLoading, error, saveSettings, isSaving } =
     useFacilityCommunicationSettings(facilityId);
@@ -75,7 +78,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -87,30 +90,29 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
   const canMarketing = capabilities?.can_edit_marketing ?? false;
 
   return (
-    <form onSubmit={onSave} className="space-y-8">
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Visitation</h3>
+    <form onSubmit={onSave} className="space-y-4">
+      <RecordDetailSection title="Visitation">
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             Start
             <input
               type="time"
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.visiting_hours_start ?? "09:00"}
               onChange={(e) => setDraft((d) => ({ ...d, visiting_hours_start: e.target.value }))}
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm text-foreground">
             End
             <input
               type="time"
-              className="mt-1 w-full rounded border px-2 py-2"
+              className={inputCls}
               value={merged.visiting_hours_end ?? "20:00"}
               onChange={(e) => setDraft((d) => ({ ...d, visiting_hours_end: e.target.value }))}
             />
           </label>
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
             checked={merged.visitor_check_in_required ?? true}
@@ -118,7 +120,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
           />
           Visitor check-in required
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
             checked={merged.visitor_screening_enabled ?? false}
@@ -126,11 +128,10 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
           />
           Illness / screening rules enabled
         </label>
-      </section>
+      </RecordDetailSection>
 
-      <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-        <h3 className="font-semibold">Family notifications</h3>
-        <label className="flex items-center gap-2 text-sm">
+      <RecordDetailSection title="Family notifications">
+        <label className="flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
             checked={merged.care_plan_update_notifications ?? true}
@@ -138,7 +139,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
           />
           Care plan update notifications
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
             checked={merged.photo_sharing_enabled ?? true}
@@ -146,7 +147,7 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
           />
           Photo sharing enabled
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-foreground">
           <input
             type="checkbox"
             checked={merged.message_approval_required ?? false}
@@ -154,49 +155,50 @@ export function CommunicationTab({ facilityId }: CommunicationTabProps) {
           />
           Message approval required
         </label>
-      </section>
+      </RecordDetailSection>
 
       {canMarketing && (
-        <section className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-white/40 dark:bg-black/20 p-6 sm:p-8 space-y-4 shadow-sm backdrop-blur-2xl">
-          <h3 className="font-semibold">Online presence (owner / org_admin)</h3>
-          <label className="text-sm block">
-            Google Business Profile URL
-            <input
-              type="url"
-              className="mt-1 w-full rounded border px-2 py-2"
-              value={merged.google_business_profile_url ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, google_business_profile_url: e.target.value }))}
-            />
-          </label>
-          <label className="text-sm block">
-            Yelp
-            <input
-              type="url"
-              className="mt-1 w-full rounded border px-2 py-2"
-              value={merged.yelp_listing_url ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, yelp_listing_url: e.target.value }))}
-            />
-          </label>
-          <label className="text-sm block">
-            Tagline
-            <input
-              className="mt-1 w-full rounded border px-2 py-2"
-              value={merged.facility_tagline ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, facility_tagline: e.target.value }))}
-            />
-          </label>
-        </section>
+        <RecordDetailSection title="Online presence (owner / org_admin)">
+          <div className="space-y-3">
+            <label className="text-sm text-foreground block">
+              Google Business Profile URL
+              <input
+                type="url"
+                className={inputCls}
+                value={merged.google_business_profile_url ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, google_business_profile_url: e.target.value }))}
+              />
+            </label>
+            <label className="text-sm text-foreground block">
+              Yelp
+              <input
+                type="url"
+                className={inputCls}
+                value={merged.yelp_listing_url ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, yelp_listing_url: e.target.value }))}
+              />
+            </label>
+            <label className="text-sm text-foreground block">
+              Tagline
+              <input
+                className={inputCls}
+                value={merged.facility_tagline ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, facility_tagline: e.target.value }))}
+              />
+            </label>
+          </div>
+        </RecordDetailSection>
       )}
 
       {!capabilities?.can_edit && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">You do not have permission to edit communication settings.</p>
+        <p className="text-sm text-muted-foreground">You do not have permission to edit communication settings.</p>
       )}
 
       {capabilities?.can_edit && (
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-[1.5rem] bg-teal-600 px-6 py-2 text-white disabled:opacity-50"
+          className="rounded-[8px] bg-primary px-6 py-2 text-sm text-primary-foreground disabled:opacity-50"
         >
           {isSaving ? "Saving…" : "Save communication settings"}
         </button>

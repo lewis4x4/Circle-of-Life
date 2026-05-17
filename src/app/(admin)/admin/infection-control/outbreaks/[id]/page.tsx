@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 export default function OutbreakDetailPage() {
   const params = useParams<{ id: string }>();
@@ -21,7 +21,12 @@ export default function OutbreakDetailPage() {
     setError(null);
     const [o, a] = await Promise.all([
       supabase.from("infection_outbreaks").select("*").eq("id", id).maybeSingle(),
-      supabase.from("outbreak_actions").select("*").eq("outbreak_id", id).is("deleted_at", null).order("sort_order"),
+      supabase
+        .from("outbreak_actions")
+        .select("*")
+        .eq("outbreak_id", id)
+        .is("deleted_at", null)
+        .order("sort_order"),
     ]);
     if (o.error) {
       setError(o.error.message);
@@ -40,37 +45,36 @@ export default function OutbreakDetailPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link href="/admin/infection-control" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs")}>
-        ← Infection control
-      </Link>
-      <h1 className="text-2xl font-semibold tracking-tight">Outbreak</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {out && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{String(out.infection_type)}</CardTitle>
-            <CardDescription>Status: {String(out.status)} · Cases: {String(out.total_cases ?? "—")}</CardDescription>
-          </CardHeader>
-        </Card>
+      <RecordDetailHeader
+        title={out ? String(out.infection_type) : "Outbreak"}
+        subtitle={
+          out
+            ? `Status: ${String(out.status)} · Cases: ${String(out.total_cases ?? "—")}`
+            : undefined
+        }
+        backLink={{ label: "Infection control", href: "/admin/infection-control" }}
+      />
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Action checklist</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+      <RecordDetailSection title="Action checklist">
+        <div className="text-sm">
           {actions.length === 0 ? (
-            <p className="text-slate-500">No actions loaded.</p>
+            <p className="text-muted-foreground">No actions loaded.</p>
           ) : (
             <ul className="list-inside list-disc space-y-1">
               {actions.map((x) => (
                 <li key={String(x.id)}>
-                  {String(x.title)} — <span className="text-slate-500">{String(x.status)}</span>
+                  {String(x.title)} —{" "}
+                  <span className="text-muted-foreground">{String(x.status)}</span>
                 </li>
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

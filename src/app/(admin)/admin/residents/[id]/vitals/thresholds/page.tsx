@@ -1,17 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 export default function VitalThresholdsPage() {
   const params = useParams<{ id: string }>();
@@ -33,7 +34,11 @@ export default function VitalThresholdsPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data: res } = await supabase.from("residents").select("facility_id, organization_id").eq("id", residentId).maybeSingle();
+      const { data: res } = await supabase
+        .from("residents")
+        .select("facility_id, organization_id")
+        .eq("id", residentId)
+        .maybeSingle();
       if (!res) {
         setError("Resident not found");
         return;
@@ -100,7 +105,11 @@ export default function VitalThresholdsPage() {
           .eq("id", rowId);
         if (uErr) throw uErr;
       } else {
-        const { data: ins, error: iErr } = await supabase.from("vital_sign_alert_thresholds").insert(payload).select("id").single();
+        const { data: ins, error: iErr } = await supabase
+          .from("vital_sign_alert_thresholds")
+          .insert(payload)
+          .select("id")
+          .single();
         if (iErr) throw iErr;
         setRowId((ins as { id: string }).id);
       }
@@ -113,25 +122,19 @@ export default function VitalThresholdsPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <div>
-        <Link
-          href={`/admin/residents/${residentId}/vitals`}
-          className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs")}
-        >
-          ← Vitals
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Alert thresholds</h1>
-      </div>
+      <RecordDetailHeader
+        title="Alert thresholds"
+        backLink={{ label: "Vitals", href: `/admin/residents/${residentId}/vitals` }}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Per-resident limits</CardTitle>
-          <CardDescription>When vitals exceed these values, alerts are generated after save (server evaluation).</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && <p className="text-sm text-red-600">{error}</p>}
+      <RecordDetailSection
+        title="Per-resident limits"
+        description="When vitals exceed these values, alerts are generated after save (server evaluation)."
+      >
+        <div className="space-y-4">
+          {error && <p className="text-sm text-destructive">{error}</p>}
           {loading ? (
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           ) : (
             <>
               <div className="space-y-2">
@@ -159,8 +162,8 @@ export default function VitalThresholdsPage() {
               </Button>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

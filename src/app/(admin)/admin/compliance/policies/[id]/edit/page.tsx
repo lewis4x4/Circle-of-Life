@@ -1,16 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 
 export default function EditPolicyPage() {
   const params = useParams();
@@ -148,15 +146,15 @@ export default function EditPolicyPage() {
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   if (error && !title) {
     return (
-      <div>
-        <p className="text-red-600">{error}</p>
-        <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline" }), "mt-4")}>
+      <div className="space-y-4">
+        <p className="text-destructive">{error}</p>
+        <Button variant="outline" onClick={() => router.push("/admin/compliance/policies")}>
           Back
-        </Link>
+        </Button>
       </div>
     );
   }
@@ -165,29 +163,22 @@ export default function EditPolicyPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <Link href="/admin/compliance/policies" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
-          ← Policies
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Edit policy</h1>
-          <Badge>{status}</Badge>
-        </div>
-      </div>
+      <RecordDetailHeader
+        title="Edit policy"
+        statusChips={<Badge>{status}</Badge>}
+        backLink={{ label: "Policies", href: "/admin/compliance/policies" }}
+      />
 
       {ackInfo ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Acknowledgments</CardTitle>
-            <CardDescription>
-              {ackInfo.acknowledged} of {ackInfo.eligible} eligible staff have acknowledged (live denominator).
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <RecordDetailSection title="Acknowledgments">
+          <p className="text-sm text-muted-foreground">
+            {ackInfo.acknowledged} of {ackInfo.eligible} eligible staff have acknowledged (live denominator).
+          </p>
+        </RecordDetailSection>
       ) : null}
 
-      <Card>
-        <CardContent className="space-y-4 pt-6">
+      <RecordDetailSection title="Policy content">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} disabled={readOnly} />
@@ -196,13 +187,13 @@ export default function EditPolicyPage() {
             <Label htmlFor="content">Content</Label>
             <textarea
               id="content"
-              className="min-h-[220px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+              className="min-h-[220px] w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               disabled={readOnly}
             />
           </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {!readOnly ? (
             <div className="flex flex-wrap gap-2">
               <Button type="button" disabled={saving} onClick={() => void save()}>
@@ -213,13 +204,13 @@ export default function EditPolicyPage() {
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">Published policies are read-only here. Create a new version from the list when you need changes.</p>
+            <p className="text-sm text-muted-foreground">Published policies are read-only here. Create a new version from the list when you need changes.</p>
           )}
           <Button type="button" variant="outline" onClick={() => router.push("/admin/compliance/policies")}>
             Done
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }

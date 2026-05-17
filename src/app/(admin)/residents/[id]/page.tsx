@@ -4,13 +4,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  Activity,
   ArrowLeft,
   Brain,
   ClipboardList,
   FileText,
-  ListChecks,
-  MapPin,
   Stethoscope,
   User,
   CheckCircle2,
@@ -24,10 +21,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  RecordDetailHeader,
+  RecordDetailSection,
+} from "@/design-system/components/record-detail";
 
 type Acuity = 1 | 2 | 3;
 type ResidencyStatus = "active" | "hospital" | "loa";
@@ -155,14 +156,13 @@ export default function AdminResidentDetailPage() {
     void load();
   }, [load]);
 
-  // Refresh feed after logging via modal
   const onAfterLog = useCallback(() => {
     void load();
   }, [load]);
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <div className="flex items-center gap-3">
           <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
             <ArrowLeft className="h-4 w-4" /> Census
@@ -175,11 +175,11 @@ export default function AdminResidentDetailPage() {
 
   if (notFound) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
           <ArrowLeft className="h-4 w-4" /> Back to census
         </Link>
-        <Card className="border-slate-200/70 dark:border-slate-800">
+        <Card className="border-border">
           <CardHeader>
             <CardTitle className="text-xl">Resident not found</CardTitle>
             <CardDescription>This profile may be outside your current facility filter, removed from the census, or the link may be invalid.</CardDescription>
@@ -191,7 +191,7 @@ export default function AdminResidentDetailPage() {
 
   if (error || !detail) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
           <ArrowLeft className="h-4 w-4" /> Back to census
         </Link>
@@ -200,7 +200,6 @@ export default function AdminResidentDetailPage() {
     );
   }
 
-  // Aggregate exceptions for the center feed
   const feedItems = [
     ...detail.recentConditionChanges.map(c => ({ type: 'condition', time: new Date(c.reportedLabel).getTime() || 0, label: c.reportedLabel, content: c })),
     ...detail.recentBehavior.map(b => ({ type: 'behavior', time: new Date(b.occurredLabel).getTime() || 0, label: b.occurredLabel, content: b })),
@@ -208,224 +207,213 @@ export default function AdminResidentDetailPage() {
   ].sort((a, b) => b.time - a.time);
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4 animate-in fade-in duration-500 pb-2">
-      {/* HEADER NAV */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between shrink-0 pl-1">
-        <div className="flex gap-4 items-center">
-          <Link href="/admin/residents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "px-2 h-8")}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Census 
-          </Link>
-          <div className="flex items-center gap-3">
-             <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-               {detail.fullName}
-               {detail.status === "hospital" && <Badge variant="destructive" className="ml-2 font-mono text-[10px]">HOSPITAL HOLD</Badge>}
-             </h1>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {['Assessments', 'Care Plan', 'Medications', 'Vitals', 'Billing'].map(tab => (
-            <Link key={tab} href={`/admin/residents/${detail.id}/${tab.toLowerCase().replace(' ', '-')}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-[11px] font-medium")}>
-              {tab}
-            </Link>
-          ))}
-        </div>
-      </div>
+    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4 animate-in fade-in duration-[var(--motion-duration)] pb-2">
 
-      {/* ─── TOP ACTION BAR ────────────────────────────────────────────────────── */}
-      <div className="flex gap-3 pb-2">
+      {/* HEADER */}
+      <RecordDetailHeader
+        title={detail.fullName}
+        statusChips={
+          detail.status === "hospital"
+            ? <Badge variant="destructive" className="text-[10px] font-bold uppercase tracking-wider">HOSPITAL HOLD</Badge>
+            : undefined
+        }
+        backLink={{ label: "Census", href: "/admin/residents" }}
+        actions={
+          <div className="flex gap-2 flex-wrap">
+            {['Assessments', 'Care Plan', 'Medications', 'Vitals', 'Billing'].map(tab => (
+              <Link key={tab} href={`/admin/residents/${detail.id}/${tab.toLowerCase().replace(' ', '-')}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-[11px] font-medium")}>
+                {tab}
+              </Link>
+            ))}
+          </div>
+        }
+        className="shrink-0"
+      />
+
+      {/* ─── TOP ACTION BAR ─────────────────────────────────────────────────────── */}
+      <div className="flex gap-3 pb-2 shrink-0">
         <Button
           type="button"
           onClick={() => setBehaviorModalOpen(true)}
-          className="h-12 flex-1 text-white hover: hover: shadow-lg shadow-violet-500/20 font-medium text-sm sm:text-base"
+          className="h-12 flex-1 font-medium text-sm sm:text-base"
         >
           <Brain className="mr-2 h-5 w-5" />
-          <span className="hidden sm:inline">Log Behavior</span>
+          <span className="hidden sm:inline">Log behavior</span>
           <span className="sm:hidden">Behavior</span>
         </Button>
         <Button
           type="button"
           onClick={() => setConditionModalOpen(true)}
-          className="h-12 flex-1 text-white hover: hover: shadow-lg shadow-rose-500/20 font-medium text-sm sm:text-base"
+          className="h-12 flex-1 font-medium text-sm sm:text-base"
         >
           <Stethoscope className="mr-2 h-5 w-5" />
-          <span className="hidden sm:inline">Log Condition</span>
+          <span className="hidden sm:inline">Log condition</span>
           <span className="sm:hidden">Condition</span>
         </Button>
         <Button
           type="button"
           onClick={() => setGeneralNoteModalOpen(true)}
-          className="h-12 flex-1 text-white hover: hover: shadow-lg shadow-teal-500/20 font-medium text-sm sm:text-base"
+          className="h-12 flex-1 font-medium text-sm sm:text-base"
         >
           <FileText className="mr-2 h-5 w-5" />
-          <span className="hidden sm:inline">General Note</span>
+          <span className="hidden sm:inline">General note</span>
           <span className="sm:hidden">Note</span>
         </Button>
       </div>
 
       {/* COCKPIT 3-COLUMN GRID */}
       <div className="flex-1 min-h-0 grid lg:grid-cols-12 gap-5 px-1">
-        
+
         {/* LEFT COLUMN: Face Sheet */}
         <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
-          <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950 overflow-y-auto scrollbar-hide">
-             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-16 w-16 shadow-sm border border-slate-200 dark:border-slate-700">
-                    <AvatarImage src={detail.photoUrl!} alt={detail.fullName} />
-                    <AvatarFallback className="bg-slate-100 text-slate-500 dark:bg-slate-800 font-medium text-lg">{detail.initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-1.5 mt-1">
-                    <span className="text-xs font-mono text-slate-500">M/F: {detail.gender ? detail.gender.charAt(0).toUpperCase() : 'U'} · DOB: {detail.dobLabel}</span>
-                    <ResidentStatusBadge status={detail.status} />
-                    <AcuityBadge acuity={detail.acuity} />
-                  </div>
+          <div className="flex flex-col h-full rounded-[8px] border border-border bg-card shadow-[var(--shadow-card)] overflow-y-auto scrollbar-hide">
+            <div className="bg-muted/50 border-b border-border pb-4 p-[14px]">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-16 w-16 shadow-[var(--shadow-card)] border border-border">
+                  <AvatarImage src={detail.photoUrl!} alt={detail.fullName} />
+                  <AvatarFallback className="bg-muted text-muted-foreground font-medium text-lg">{detail.initials}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <span className="tabular-nums text-xs text-muted-foreground">M/F: {detail.gender ? detail.gender.charAt(0).toUpperCase() : 'U'} · DOB: {detail.dobLabel}</span>
+                  <ResidentStatusBadge status={detail.status} />
+                  <AcuityBadge acuity={detail.acuity} />
                 </div>
-             </CardHeader>
-             <CardContent className="p-4 space-y-5">
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Code Status</p>
-                   <p className="font-semibold text-rose-600 dark:text-rose-400">{formatCodeStatus(detail.codeStatus)}</p>
-                </div>
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Allergies</p>
-                   {detail.allergiesLine !== "—" ? (
-                     <Badge variant="destructive" className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 hover:bg-rose-100 border-0">{detail.allergiesLine}</Badge>
-                   ) : <span className="text-sm text-slate-600">NKA</span>}
-                </div>
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Primary Dx</p>
-                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.primaryDiagnosis || "—"}</p>
-                </div>
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Contacts</p>
-                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.emergency1Name || "—"}</p>
-                   <p className="text-xs text-slate-500">{detail.emergency1Relationship} · {detail.emergency1Phone}</p>
-                </div>
-             </CardContent>
-          </Card>
+              </div>
+            </div>
+            <div className="p-[14px] space-y-5">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Code status</p>
+                <p className="font-semibold text-destructive">{formatCodeStatus(detail.codeStatus)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Allergies</p>
+                {detail.allergiesLine !== "—" ? (
+                  <Badge variant="destructive" className="bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/10 border">{detail.allergiesLine}</Badge>
+                ) : <span className="text-sm text-muted-foreground">NKA</span>}
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Primary Dx</p>
+                <p className="text-sm font-medium text-foreground">{detail.primaryDiagnosis || "—"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Contacts</p>
+                <p className="text-sm font-medium text-foreground">{detail.emergency1Name || "—"}</p>
+                <p className="text-xs text-muted-foreground">{detail.emergency1Relationship} · {detail.emergency1Phone}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* CENTER COLUMN: Triage Feed */}
         <div className="lg:col-span-6 flex flex-col h-full overflow-hidden">
-          <Card className="flex flex-col h-full border-slate-200 shadow-sm dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-            <CardHeader className="shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                <Activity className="w-4 h-4 text-brand-500" /> Exception & Activity Timeline
-              </CardTitle>
-            </CardHeader>
-             <CardContent className="flex-1 p-0 min-h-0 bg-transparent flex flex-col">
-               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                 {feedItems.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                       <CheckCircle2 className="w-8 h-8 mb-2 opacity-50" />
-                       <p className="text-sm font-medium">No recent exceptions or behavioral triggers.</p>
-                    </div>
-                 ) : (
-                    feedItems.map((item, idx) => {
-                       if (item.type === 'condition') {
-                          const c = item.content as ConditionEventContent;
-                          return (
-                             <div key={`cond-${c.id}-${idx}`} className="flex gap-4">
-                               <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 flex items-center justify-center shrink-0">
-                                 <Stethoscope className="w-4 h-4" />
-                               </div>
-                               <div className="flex-1 rounded-xl border border-rose-200 dark:border-rose-800/80 bg-white dark:bg-slate-950 p-3 shadow-sm">
-                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{c.typeLabel} <span className="uppercase text-[10px] text-rose-500 ml-1 font-bold">({c.severity})</span></span>
-                                    <span className="text-[10px] text-slate-400">{item.label}</span>
-                                 </div>
-                                 <p className="text-xs text-slate-600 dark:text-slate-300 mb-2">{c.description}</p>
-                                 <p className="text-[10px] text-slate-400 font-mono">By {c.loggedByLabel} {c.nurseNotified && '· MD Notified'}</p>
-                               </div>
-                             </div>
-                          )
-                       } else if (item.type === 'behavior') {
-                          const b = item.content as BehaviorEventContent;
-                          return (
-                             <div key={`beh-${b.id}-${idx}`} className="flex gap-4">
-                               <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center shrink-0">
-                                 <Brain className="w-4 h-4" />
-                               </div>
-                               <div className="flex-1 rounded-xl border border-amber-200 dark:border-amber-800/80 bg-white dark:bg-slate-950 p-3 shadow-sm">
-                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{b.typeLabel}</span>
-                                    <span className="text-[10px] text-slate-400">{item.label}</span>
-                                 </div>
-                                 <p className="text-xs text-slate-600 dark:text-slate-300 mb-2">{b.behaviorText}</p>
-                                 <p className="text-[10px] text-slate-400 font-mono">By {b.loggedByLabel} {b.injuryOccurred && "· INJURY REPORTED"}</p>
-                               </div>
-                             </div>
-                          )
-                       } else {
-                          const a = item.content as ADLEventContent;
-                          return (
-                             <div key={`adl-${a.id}-${idx}`} className="flex gap-4">
-                               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                                 <User className="w-4 h-4" />
-                               </div>
-                               <div className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 shadow-sm">
-                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">{a.summary}</span>
-                                    <span className="text-[10px] text-slate-400">{item.label}</span>
-                                 </div>
-                                 <p className="text-[10px] text-slate-400 font-mono mt-1">Logged by {a.loggedByLabel}</p>
-                               </div>
-                             </div>
-                          )
-                       }
-                    })
-                 )}
-               </div>
-             </CardContent>
-          </Card>
+          <RecordDetailSection
+            title="Activity timeline"
+            className="flex flex-col h-full overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto space-y-4 min-h-0 -mx-[14px] px-[14px]">
+              {feedItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                  <CheckCircle2 className="w-8 h-8 mb-2 opacity-50" />
+                  <p className="text-sm font-medium">No recent exceptions or behavioral triggers.</p>
+                </div>
+              ) : (
+                feedItems.map((item, idx) => {
+                  if (item.type === 'condition') {
+                    const c = item.content as ConditionEventContent;
+                    return (
+                      <div key={`cond-${c.id}-${idx}`} className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                          <Stethoscope className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 rounded-[8px] border border-destructive/20 bg-card p-3 shadow-[var(--shadow-card)]">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-sm text-foreground">{c.typeLabel} <span className="uppercase text-[10px] text-destructive ml-1 font-bold">({c.severity})</span></span>
+                            <span className="tabular-nums text-[10px] text-muted-foreground">{item.label}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">{c.description}</p>
+                          <p className="text-[10px] text-muted-foreground">By {c.loggedByLabel} {c.nurseNotified && '· MD Notified'}</p>
+                        </div>
+                      </div>
+                    );
+                  } else if (item.type === 'behavior') {
+                    const b = item.content as BehaviorEventContent;
+                    return (
+                      <div key={`beh-${b.id}-${idx}`} className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0">
+                          <Brain className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 rounded-[8px] border border-warning/20 bg-card p-3 shadow-[var(--shadow-card)]">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-sm text-foreground">{b.typeLabel}</span>
+                            <span className="tabular-nums text-[10px] text-muted-foreground">{item.label}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">{b.behaviorText}</p>
+                          <p className="text-[10px] text-muted-foreground">By {b.loggedByLabel} {b.injuryOccurred && "· INJURY REPORTED"}</p>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    const a = item.content as ADLEventContent;
+                    return (
+                      <div key={`adl-${a.id}-${idx}`} className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 rounded-[8px] border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-sm text-foreground">{a.summary}</span>
+                            <span className="tabular-nums text-[10px] text-muted-foreground">{item.label}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">Logged by {a.loggedByLabel}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                })
+              )}
+            </div>
+          </RecordDetailSection>
         </div>
 
         {/* RIGHT COLUMN: Context Vectors */}
         <div className="lg:col-span-3 flex flex-col h-full gap-4 overflow-hidden">
-          <Card className="border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950">
-             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 pb-3 pt-4">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                  <MapPin className="w-4 h-4 text-brand-500" /> Location Context
-                </CardTitle>
-             </CardHeader>
-             <CardContent className="p-4 space-y-4">
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-0.5">Unit</p>
-                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.unitName}</p>
-                </div>
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-0.5">Room & Bed</p>
-                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.roomLabel}</p>
-                </div>
-             </CardContent>
-          </Card>
+          <RecordDetailSection title="Location context">
+            <div className="space-y-4">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Unit</p>
+                <p className="text-sm font-medium text-foreground">{detail.unitName}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5">Room &amp; bed</p>
+                <p className="tabular-nums text-sm font-medium text-foreground">{detail.roomLabel}</p>
+              </div>
+            </div>
+          </RecordDetailSection>
 
-          <Card className="flex-1 border-slate-200 shadow-sm dark:border-slate-800 bg-white dark:bg-slate-950 overflow-y-auto scrollbar-hide">
-             <CardHeader className="bg-slate-50/50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-800 pb-3 pt-4 sticky top-0 z-10">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                  <ListChecks className="w-4 h-4 text-brand-500" /> Active Orders
-                </CardTitle>
-             </CardHeader>
-             <CardContent className="p-4 space-y-5">
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Diet Order</p>
-                   <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{detail.dietOrder || "Regular"}</p>
+          <RecordDetailSection
+            title="Active orders"
+            className="flex-1 overflow-y-auto scrollbar-hide"
+          >
+            <div className="space-y-5">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Diet order</p>
+                <p className="text-sm font-medium text-foreground">{detail.dietOrder || "Regular"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Fall risk</p>
+                {detail.fallRiskLabel ? (
+                  <Badge variant="outline" className="border-warning/30 text-warning font-medium">{detail.fallRiskLabel}</Badge>
+                ) : <span className="text-sm text-muted-foreground">Not assessed</span>}
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2 mt-4 inline-flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5"/> Care plan status</p>
+                <div className="p-3 bg-muted border border-border rounded-[8px]">
+                  <p className="text-sm font-medium text-foreground mb-1">Active (v3)</p>
+                  <p className="tabular-nums text-[10px] text-muted-foreground">Effective Since: Oct 12, 2024</p>
                 </div>
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Fall Risk</p>
-                   {detail.fallRiskLabel ? (
-                     <Badge variant="outline" className="border-amber-300 text-amber-800 dark:bg-amber-950/30 font-medium">{detail.fallRiskLabel}</Badge>
-                   ) : <span className="text-sm text-slate-500">Not assessed</span>}
-                </div>
-                <div>
-                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 mt-4 inline-flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5"/> Care Plan Status</p>
-                   <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg">
-                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-1">Active (v3)</p>
-                      <p className="text-[10px] text-slate-500">Effective Since: Oct 12, 2024</p>
-                   </div>
-                </div>
-             </CardContent>
-          </Card>
+              </div>
+            </div>
+          </RecordDetailSection>
         </div>
 
       </div>
@@ -888,27 +876,27 @@ function conditionChangeTypeLabel(value: string): string {
 
 function AcuityBadge({ acuity }: { acuity: Acuity }) {
   if (acuity === 3) {
-    return <Badge className="bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300">Acuity 3</Badge>;
+    return <Badge className="bg-destructive/10 text-destructive border-destructive/20 border">Acuity 3</Badge>;
   }
   if (acuity === 2) {
-    return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">Acuity 2</Badge>;
+    return <Badge className="bg-warning/10 text-warning border-warning/20 border">Acuity 2</Badge>;
   }
-  return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">Acuity 1</Badge>;
+  return <Badge className="bg-success/10 text-success border-success/20 border">Acuity 1</Badge>;
 }
 
 function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
   const map: Record<ResidencyStatus, { label: string; className: string }> = {
     active: {
       label: "In Facility",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+      className: "bg-success/10 text-success border-success/20 border",
     },
     hospital: {
       label: "Hospital",
-      className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+      className: "bg-destructive/10 text-destructive border-destructive/20 border",
     },
     loa: {
       label: "LOA",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+      className: "bg-warning/10 text-warning border-warning/20 border",
     },
   };
 

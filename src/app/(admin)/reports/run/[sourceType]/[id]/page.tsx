@@ -1,16 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Building2 } from "lucide-react";
 
 import { AdminFacilityScopeDropdown } from "@/components/common/admin-facility-scope-dropdown";
 import { ReportRunResult } from "@/components/reports/report-run-result";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import {
@@ -218,52 +217,34 @@ export default function ReportRunPage() {
   return (
     <div className="space-y-6">
       <ReportsHubNav />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-            Run report: {template?.name ?? sourceId}
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Source type: <Badge variant="outline">{sourceType}</Badge>
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/admin/reports/templates"
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Back to templates
-          </Link>
-        </div>
-      </div>
+      <RecordDetailHeader
+        title={`Run report: ${template?.name ?? sourceId}`}
+        subtitle={`Source type: ${sourceType}`}
+        backLink={{ label: "Back to templates", href: "/admin/reports/templates" }}
+      />
 
       {error && (
-        <p className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400">
+        <p className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
 
-      <div className="relative z-10 mb-6 w-full overflow-visible rounded-lg border border-slate-200 bg-card p-6 shadow-sm transition-all dark:border-white/5 sm:p-8">
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Execution
-          </h3>
-          <p className="font-mono text-sm text-slate-500 dark:text-slate-400">
-            Set scope and run now. Every run is recorded in report history.
-          </p>
-        </div>
+      <RecordDetailSection
+        title="Execution"
+        description="Set scope and run now. Every run is recorded in report history."
+      >
         <div className="space-y-6">
           <div className="grid max-w-lg gap-2">
             <Label
               htmlFor="report-facility-scope"
-              className="flex items-center gap-2 text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400"
+              className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
             >
-              <Building2 className="h-3.5 w-3.5 text-indigo-500" aria-hidden />
+              <Building2 className="h-3.5 w-3.5" aria-hidden />
               Facility scope
             </Label>
             <p
               id="report-facility-scope-hint"
-              className="text-xs leading-relaxed text-slate-600 dark:text-slate-400"
+              className="text-xs leading-relaxed text-muted-foreground"
             >
               Run for one site or across all facilities in your organization. When the header has a
               single facility selected, this scope starts aligned with it—you can switch to
@@ -279,12 +260,10 @@ export default function ReportRunPage() {
               loadFailed={facilitiesLoadFailed}
               onRetry={() => void loadFacilityOptions()}
               disabled={running}
-              triggerClassName="rounded-2xl border-slate-200 bg-white/70 py-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-black/30"
             />
           </div>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button
-              className="h-10 rounded-full border-0 bg-indigo-600 px-8 font-mono text-[10px] font-semibold uppercase tracking-wider text-white shadow-lg hover:-translate-y-0.5 hover:bg-indigo-700"
               onClick={() => void onRun()}
               disabled={running || !orgId}
             >
@@ -292,7 +271,6 @@ export default function ReportRunPage() {
             </Button>
             <Button
               variant="secondary"
-              className="h-10 rounded-full border border-slate-200 bg-slate-100 px-6 font-mono text-[10px] uppercase tracking-wider text-slate-900 shadow-sm hover:-translate-y-0.5 hover:bg-slate-200 dark:border-white/10 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
               onClick={() => void onExportCsv()}
               disabled={!result}
             >
@@ -300,7 +278,6 @@ export default function ReportRunPage() {
             </Button>
             <Button
               variant="outline"
-              className="h-10 rounded-full border border-slate-300 bg-transparent px-6 font-mono text-[10px] uppercase tracking-wider text-slate-700 hover:-translate-y-0.5 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
               onClick={() => void onPrint()}
               disabled={!result}
             >
@@ -308,32 +285,29 @@ export default function ReportRunPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </RecordDetailSection>
 
       {result && (
-        <div className="relative z-10 w-full overflow-visible rounded-lg border border-slate-200 bg-card p-6 shadow-sm transition-all dark:border-white/5 sm:p-8">
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
-              Run result
-            </h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Scope: <span className="font-medium text-slate-800 dark:text-slate-200">{scopeLabel}</span>
-            </p>
+        <RecordDetailSection
+          title="Run result"
+          description={`Scope: ${scopeLabel}`}
+        >
+          <div className="space-y-6">
+            <ReportRunResult summary={result.summary} detailRows={result.rows} />
+            {result.footnotes && result.footnotes.length > 0 && (
+              <div className="rounded-[8px] border border-border bg-muted/40 p-[14px]">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Notes
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {result.footnotes.map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          <ReportRunResult summary={result.summary} detailRows={result.rows} />
-          {result.footnotes && result.footnotes.length > 0 && (
-            <div className="mt-8 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Notes
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
-                {result.footnotes.map((f, i) => (
-                  <li key={i}>{f}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+        </RecordDetailSection>
       )}
     </div>
   );

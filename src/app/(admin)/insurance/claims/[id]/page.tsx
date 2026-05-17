@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -66,7 +66,7 @@ export default function InsuranceClaimDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-slate-600 dark:text-slate-400">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function InsuranceClaimDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error ?? "Not found."}
         </p>
         <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/claims">
@@ -88,34 +88,35 @@ export default function InsuranceClaimDetailPage() {
   return (
     <div className="space-y-6">
       <InsuranceHubNav />
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Claim</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {claim.claim_number ?? "No claim number"} · {claim.status.replace(/_/g, " ")}
-        </p>
-      </div>
+      <RecordDetailHeader
+        title="Claim"
+        subtitle={`${claim.claim_number ?? "No claim number"} · ${claim.status.replace(/_/g, " ")}`}
+        backLink={{ label: "Back to claims", href: "/admin/insurance/claims" }}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Summary</CardTitle>
-          <CardDescription>Reserves and payments in USD (integer cents in database).</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 text-sm md:grid-cols-2">
+      <RecordDetailSection
+        title="Summary"
+        description="Reserves and payments in USD (integer cents in database)."
+      >
+        <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
-            <span className="text-slate-500">Date of loss:</span> {claim.date_of_loss ?? "—"}
+            <span className="text-muted-foreground">Date of loss:</span> {claim.date_of_loss ?? "—"}
           </p>
           <p>
-            <span className="text-slate-500">Reported:</span> {claim.reported_at ? new Date(claim.reported_at).toLocaleString() : "—"}
+            <span className="text-muted-foreground">Reported:</span>{" "}
+            {claim.reported_at ? new Date(claim.reported_at).toLocaleString() : "—"}
           </p>
           <p>
-            <span className="text-slate-500">Reserve:</span> {formatUsdFromCents(claim.reserve_cents)}
+            <span className="text-muted-foreground">Reserve:</span>{" "}
+            <span className="tabular-nums">{formatUsdFromCents(claim.reserve_cents)}</span>
           </p>
           <p>
-            <span className="text-slate-500">Paid:</span> {formatUsdFromCents(claim.paid_cents)}
+            <span className="text-muted-foreground">Paid:</span>{" "}
+            <span className="tabular-nums">{formatUsdFromCents(claim.paid_cents)}</span>
           </p>
           {claim.incident_id && (
             <p className="md:col-span-2">
-              <span className="text-slate-500">Incident:</span>{" "}
+              <span className="text-muted-foreground">Incident:</span>{" "}
               <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/incidents/${claim.incident_id}`}>
                 Open incident
               </Link>
@@ -123,24 +124,23 @@ export default function InsuranceClaimDetailPage() {
           )}
           {claim.description && (
             <p className="md:col-span-2">
-              <span className="text-slate-500">Description:</span> {claim.description}
+              <span className="text-muted-foreground">Description:</span> {claim.description}
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </RecordDetailSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Activities</CardTitle>
-          <CardDescription>Notes from adjusters and internal staff.</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
+      <RecordDetailSection
+        title="Activities"
+        description="Notes from adjusters and internal staff."
+      >
+        <div className="overflow-x-auto">
           {activities.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No activities logged.</p>
+            <p className="text-sm text-muted-foreground">No activities logged.</p>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800">
+                <tr className="border-b border-border">
                   <th className="py-2 pr-4 font-medium">Date</th>
                   <th className="py-2 pr-4 font-medium">Type</th>
                   <th className="py-2 font-medium">Description</th>
@@ -148,7 +148,7 @@ export default function InsuranceClaimDetailPage() {
               </thead>
               <tbody>
                 {activities.map((a) => (
-                  <tr key={a.id} className="border-b border-slate-100 dark:border-slate-900">
+                  <tr key={a.id} className="border-b border-border/50">
                     <td className="py-2 pr-4 align-top">{a.activity_date}</td>
                     <td className="py-2 pr-4 align-top">{a.activity_type}</td>
                     <td className="py-2 align-top">{a.description}</td>
@@ -157,12 +157,8 @@ export default function InsuranceClaimDetailPage() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
-
-      <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/claims">
-        Back to claims
-      </Link>
+        </div>
+      </RecordDetailSection>
     </div>
   );
 }
