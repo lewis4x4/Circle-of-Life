@@ -112,12 +112,12 @@ export default function ExecutiveLeaguePageClient({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Portfolio-wide league table and board handoff
           </p>
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Executive league</h1>
-            <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
+            <h1 className="text-2xl font-semibold text-foreground">Executive league</h1>
+            <p className="max-w-3xl text-sm text-muted-foreground">
               Rank facilities with one board-facing score that blends operational risk, financial pressure, occupancy,
               and insurance readiness. This route is portfolio-wide by design and feeds board-pack conversations.
             </p>
@@ -210,7 +210,7 @@ export default function ExecutiveLeaguePageClient({
               <CardContent className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800">
+                    <tr className="border-b border-border">
                       <th className="pb-2 pr-4 font-medium">Facility</th>
                       <th className="pb-2 pr-4 font-medium">League</th>
                       <th className="pb-2 pr-4 font-medium">Risk</th>
@@ -222,28 +222,28 @@ export default function ExecutiveLeaguePageClient({
                   </thead>
                   <tbody>
                     {rows.map((row) => (
-                      <tr key={row.facilityId} className="border-b border-slate-100 dark:border-slate-900">
+                      <tr key={row.facilityId} className="border-b border-border">
                         <td className="py-3 pr-4">
-                          <div className="font-medium text-slate-900 dark:text-white">{row.facilityName}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">{row.entityName}</div>
+                          <div className="font-medium text-foreground">{row.facilityName}</div>
+                          <div className="text-xs text-muted-foreground">{row.entityName}</div>
                         </td>
                         <td className="py-3 pr-4">
-                          <div className="font-semibold">{row.leagueScore}/100</div>
-                          <div className="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{row.leagueLabel}</div>
+                          <div className="font-semibold tabular-nums">{row.leagueScore}/100</div>
+                          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{row.leagueLabel}</div>
                         </td>
                         <td className="py-3 pr-4">
-                          <div>{row.riskScore != null ? `${row.riskScore}/100` : "—"}</div>
-                          <div className="text-xs capitalize text-slate-500 dark:text-slate-400">{row.riskLevel ?? "no nightly score"}</div>
+                          <div className="tabular-nums">{row.riskScore != null ? `${row.riskScore}/100` : "—"}</div>
+                          <div className="text-xs capitalize text-muted-foreground">{row.riskLevel ?? "no nightly score"}</div>
                         </td>
-                        <td className="py-3 pr-4">{row.occupancyPct != null ? `${row.occupancyPct}%` : "—"}</td>
+                        <td className="py-3 pr-4 tabular-nums">{row.occupancyPct != null ? `${row.occupancyPct}%` : "—"}</td>
                         <td className="py-3 pr-4">
-                          <div>{formatCents(row.totalBalanceDueCents)}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">{row.openInvoicesCount} open invoice(s)</div>
+                          <div className="tabular-nums">{formatCents(row.totalBalanceDueCents)}</div>
+                          <div className="text-xs text-muted-foreground">{row.openInvoicesCount} open invoice(s)</div>
                         </td>
-                        <td className="py-3 pr-4">{row.insuranceScore}/100</td>
+                        <td className="py-3 pr-4 tabular-nums">{row.insuranceScore}/100</td>
                         <td className="py-3">
-                          <div className="text-sm text-slate-700 dark:text-slate-300">{row.primaryConcern}</div>
-                          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{row.boardNote}</div>
+                          <div className="text-sm text-foreground">{row.primaryConcern}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{row.boardNote}</div>
                         </td>
                       </tr>
                     ))}
@@ -283,7 +283,7 @@ export default function ExecutiveLeaguePageClient({
             <CardContent className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <tr className="border-b border-border">
                     <th className="pb-2 pr-4 font-medium">Entity</th>
                     <th className="pb-2 pr-4 font-medium">Readiness</th>
                     <th className="pb-2 pr-4 font-medium">Active policies</th>
@@ -295,15 +295,15 @@ export default function ExecutiveLeaguePageClient({
                 </thead>
                 <tbody>
                   {insuranceRows.map((row) => (
-                    <tr key={row.entityId} className="border-b border-slate-100 dark:border-slate-900">
+                    <tr key={row.entityId} className="border-b border-border">
                       <td className="py-3 pr-4">{row.entityName}</td>
                       <td className="py-3 pr-4">
-                        <div className="font-medium">{row.readinessScore}/100</div>
-                        <div className="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{row.readinessLabel}</div>
+                        <div className="font-medium tabular-nums">{row.readinessScore}/100</div>
+                        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{row.readinessLabel}</div>
                       </td>
-                      <td className="py-3 pr-4">{row.activePolicies}</td>
-                      <td className="py-3 pr-4">{row.expiringPolicies60d}</td>
-                      <td className="py-3 pr-4">{row.pendingRenewals}</td>
+                      <td className="py-3 pr-4 tabular-nums">{row.activePolicies}</td>
+                      <td className="py-3 pr-4 tabular-nums">{row.expiringPolicies60d}</td>
+                      <td className="py-3 pr-4 tabular-nums">{row.pendingRenewals}</td>
                       <td className="py-3 pr-4">{row.latestPacketAt ? new Date(row.latestPacketAt).toLocaleDateString() : "—"}</td>
                       <td className="py-3">{row.primaryConcern}</td>
                     </tr>
@@ -340,22 +340,22 @@ function LeagueMetricCard({
 }) {
   const toneClass =
     tone === "red"
-      ? "border-red-200/80 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/20"
+      ? "border-destructive/30 bg-destructive/10"
       : tone === "amber"
-        ? "border-amber-200/80 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20"
+        ? "border-warning/30 bg-warning/10"
         : tone === "emerald"
-          ? "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-          : "border-indigo-200/80 bg-indigo-50/60 dark:border-indigo-900/40 dark:bg-indigo-950/20";
+          ? "border-success/30 bg-success/10"
+          : "border-info/30 bg-info/10";
 
   return (
     <Card className={toneClass}>
       <CardContent className="flex items-start justify-between gap-4 p-5">
         <div className="space-y-1.5">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
-          <p className="text-2xl font-semibold text-slate-900 dark:text-white">{value}</p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className="text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+          <p className="text-sm text-muted-foreground">{detail}</p>
         </div>
-        <div className="rounded-xl border border-white/50 bg-white/70 p-3 text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-200">
+        <div className="rounded-[var(--radius)] border border-border bg-muted p-3 text-foreground shadow-[var(--shadow-card)]">
           <Icon className="h-5 w-5" />
         </div>
       </CardContent>
@@ -365,9 +365,9 @@ function LeagueMetricCard({
 
 function LeagueValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/70 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/50">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-2 text-base font-medium text-slate-900 dark:text-white">{value}</p>
+    <div className="rounded-[var(--radius)] border border-border bg-muted/40 p-4">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-2 text-base font-medium text-foreground">{value}</p>
     </div>
   );
 }

@@ -19,8 +19,8 @@ import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot"
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { cn } from "@/lib/utils";
 
-// ── COLORS ──
-const CC = { emerald: "#10b981", rose: "#f43f5e", amber: "#f59e0b", blue: "#3b82f6", indigo: "#6366f1", grid: "rgba(255,255,255,0.05)", axis: "rgba(255,255,255,0.3)" };
+// ── COLORS (chart series — recharts requires hex; these are var(--chart-1…5) equivalents) ──
+const CC = { emerald: "#10b981", rose: "#f43f5e", amber: "#f59e0b", blue: "#3b82f6", indigo: "#6366f1", grid: "rgba(0,0,0,0.06)", axis: "hsl(var(--muted-foreground))" };
 
 // ── BASELINE (COL current approximations) ──
 const BASELINE = {
@@ -53,7 +53,7 @@ const PRESETS = [
 const fmtM = (v: number) => `$${(v / 1_000_000).toFixed(1)}M`;
 const fmtK = (v: number) => `$${(v / 1_000).toFixed(0)}K`;
 const Panel = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={cn("rounded-2xl border border-white/5 bg-slate-900/50 backdrop-blur p-6 shadow-lg", className)}>{children}</div>
+  <div className={cn("rounded-[var(--radius)] border border-border bg-card p-6 shadow-[var(--shadow-card)]", className)}>{children}</div>
 );
 
 // ── PROJECTION ENGINE ──
@@ -124,8 +124,8 @@ function AssumptionSlider({ label, value, onChange, min, max, step, unit, descri
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <label className="text-xs font-mono uppercase tracking-wider text-slate-400">{label}</label>
-        <span className={cn("text-sm font-mono font-bold", value > 0 ? "text-emerald-400" : value < 0 ? "text-rose-400" : "text-slate-300")}>
+        <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</label>
+        <span className={cn("text-sm font-semibold tabular-nums", value > 0 ? "text-success" : value < 0 ? "text-destructive" : "text-foreground")}>
           {value > 0 ? "+" : ""}{value}{unit}
         </span>
       </div>
@@ -136,9 +136,9 @@ function AssumptionSlider({ label, value, onChange, min, max, step, unit, descri
         step={step}
         value={value}
         onChange={e => onChange(Number(e.target.value))}
-        className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer accent-indigo-500"
+        className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
       />
-      {description && <p className="text-[10px] text-slate-500">{description}</p>}
+      {description && <p className="text-[10px] text-muted-foreground">{description}</p>}
     </div>
   );
 }
@@ -160,14 +160,14 @@ export default function ExecutiveScenariosPage() {
 
       <div className="relative z-10">
         <header className="px-6 sm:px-12 py-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-6 mb-4">
             <div>
-              <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-3">
+              <Link href="/admin/executive" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors duration-[var(--motion-duration-micro)] mb-3">
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Executive Overview
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
-                  <Calculator className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-[var(--radius)] flex items-center justify-center shadow-[var(--shadow-card)] bg-muted">
+                  <Calculator className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
                   <TitleH1>Scenario Modeling</TitleH1>
@@ -193,10 +193,10 @@ export default function ExecutiveScenariosPage() {
             {/* Assumptions Panel */}
             <Panel className="lg:col-span-1 space-y-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-indigo-400" /> Assumptions
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-primary" /> Assumptions
                 </h3>
-                <button onClick={() => setAssumptions(DEFAULT_ASSUMPTIONS)} className="text-[10px] text-slate-500 hover:text-white transition-colors flex items-center gap-1">
+                <button onClick={() => setAssumptions(DEFAULT_ASSUMPTIONS)} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors duration-[var(--motion-duration-micro)] flex items-center gap-1">
                   <RefreshCw className="w-3 h-3" /> Reset
                 </button>
               </div>
@@ -207,7 +207,7 @@ export default function ExecutiveScenariosPage() {
                   <button
                     key={p.name}
                     onClick={() => setAssumptions(p.assumptions)}
-                    className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-indigo-500/30 text-slate-300 transition-all"
+                    className="px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border border-border bg-card hover:bg-muted hover:border-primary/20 text-muted-foreground transition-all duration-[var(--motion-duration-micro)]"
                   >
                     {p.name}
                   </button>
@@ -253,8 +253,8 @@ export default function ExecutiveScenariosPage() {
               </div>
 
               {summary.breakEvenMonth != null && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                  <p className="text-xs text-rose-400 font-semibold">
+                <div className="p-3 rounded-[var(--radius)] bg-destructive/10 border border-destructive/20">
+                  <p className="text-xs text-destructive font-semibold">
                     Warning: Cash flow goes negative in month {summary.breakEvenMonth}
                   </p>
                 </div>
@@ -265,18 +265,18 @@ export default function ExecutiveScenariosPage() {
             <Panel className="lg:col-span-2 space-y-6">
               {/* Revenue vs Labor vs NOI */}
               <div>
-                <h3 className="text-sm font-semibold text-white mb-1">Revenue, Labor &amp; NOI Projection</h3>
-                <p className="text-xs text-slate-400 mb-4">Monthly projected values over {assumptions.horizonMonths} months</p>
+                <h3 className="text-sm font-semibold text-foreground mb-1">Revenue, Labor &amp; NOI Projection</h3>
+                <p className="text-xs text-muted-foreground mb-4">Monthly projected values over {assumptions.horizonMonths} months</p>
                 <div className="h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => fmtM(v as number)} />
-                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--card-foreground))", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
                       <Area type="monotone" dataKey="revenue" stroke={CC.emerald} fill={CC.emerald} fillOpacity={0.15} strokeWidth={2} name="Revenue" />
                       <Area type="monotone" dataKey="labor" stroke={CC.rose} fill={CC.rose} fillOpacity={0.15} strokeWidth={2} name="Labor" />
-                      <Line type="monotone" dataKey="noi" stroke={CC.amber} strokeWidth={3} dot={{ r: 3, fill: "#0f172a" }} name="NOI" />
+                      <Line type="monotone" dataKey="noi" stroke={CC.amber} strokeWidth={3} dot={{ r: 3, fill: "hsl(var(--card))" }} name="NOI" />
                       <Legend wrapperStyle={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px" }} />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -285,15 +285,15 @@ export default function ExecutiveScenariosPage() {
 
               {/* Cash Flow */}
               <div>
-                <h3 className="text-sm font-semibold text-white mb-1">Monthly Cash Flow</h3>
-                <p className="text-xs text-slate-400 mb-4">NOI minus debt service ({fmtK(BASELINE.monthlyDebtService)}/mo)</p>
+                <h3 className="text-sm font-semibold text-foreground mb-1">Monthly Cash Flow</h3>
+                <p className="text-xs text-muted-foreground mb-4">NOI minus debt service ({fmtK(BASELINE.monthlyDebtService)}/mo)</p>
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => fmtK(v as number)} />
-                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8, color: "#fff", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--card-foreground))", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
                       <Bar dataKey="cashFlow" radius={[4, 4, 0, 0]} name="Cash Flow">
                         {data.map((entry, i) => (
                           <rect key={i} fill={entry.cashFlow >= 0 ? CC.emerald : CC.rose} fillOpacity={0.7} />
@@ -306,28 +306,28 @@ export default function ExecutiveScenariosPage() {
 
               {/* Projection Table */}
               <div>
-                <h3 className="text-sm font-semibold text-white mb-3">Monthly Detail</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-3">Monthly Detail</h3>
                 <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
                   <table className="w-full text-left">
-                    <thead className="sticky top-0 bg-slate-900/90 backdrop-blur">
-                      <tr className="border-b border-white/5">
-                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Month</th>
-                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Revenue</th>
-                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Labor</th>
-                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">NOI</th>
-                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Cash Flow</th>
-                        <th className="text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2">Occ %</th>
+                    <thead className="sticky top-0 bg-card/90">
+                      <tr className="border-b border-border">
+                        <th className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">Month</th>
+                        <th className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">Revenue</th>
+                        <th className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">Labor</th>
+                        <th className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">NOI</th>
+                        <th className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">Cash Flow</th>
+                        <th className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground px-3 py-2">Occ %</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.map((d, i) => (
-                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02]">
-                          <td className="px-3 py-2 text-xs font-mono text-slate-300">{d.month}</td>
-                          <td className="px-3 py-2 text-xs font-mono text-emerald-400">{fmtK(d.revenue)}</td>
-                          <td className="px-3 py-2 text-xs font-mono text-rose-400">{fmtK(d.labor)}</td>
-                          <td className={cn("px-3 py-2 text-xs font-mono font-bold", d.noi >= 0 ? "text-amber-400" : "text-rose-400")}>{fmtK(d.noi)}</td>
-                          <td className={cn("px-3 py-2 text-xs font-mono font-bold", d.cashFlow >= 0 ? "text-emerald-400" : "text-rose-400")}>{fmtK(d.cashFlow)}</td>
-                          <td className="px-3 py-2 text-xs font-mono text-slate-300">{d.occupancy.toFixed(1)}%</td>
+                        <tr key={i} className="border-b border-border hover:bg-muted/20">
+                          <td className="px-3 py-2 text-xs text-muted-foreground">{d.month}</td>
+                          <td className="px-3 py-2 text-xs tabular-nums text-success">{fmtK(d.revenue)}</td>
+                          <td className="px-3 py-2 text-xs tabular-nums text-destructive">{fmtK(d.labor)}</td>
+                          <td className={cn("px-3 py-2 text-xs tabular-nums font-semibold", d.noi >= 0 ? "text-warning" : "text-destructive")}>{fmtK(d.noi)}</td>
+                          <td className={cn("px-3 py-2 text-xs tabular-nums font-semibold", d.cashFlow >= 0 ? "text-success" : "text-destructive")}>{fmtK(d.cashFlow)}</td>
+                          <td className="px-3 py-2 text-xs tabular-nums text-muted-foreground">{d.occupancy.toFixed(1)}%</td>
                         </tr>
                       ))}
                     </tbody>

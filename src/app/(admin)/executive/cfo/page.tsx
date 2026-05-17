@@ -38,7 +38,7 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/5 bg-slate-900/50 p-6 shadow-lg backdrop-blur",
+        "rounded-[var(--radius)] border border-border bg-card p-6 shadow-[var(--shadow-card)]",
         className,
       )}
     >
@@ -50,8 +50,8 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
 function SectionTitle({ children, sub }: { children: ReactNode; sub?: string }) {
   return (
     <div className="mb-4">
-      <h3 className="text-sm font-semibold text-white">{children}</h3>
-      {sub ? <p className="mt-1 text-xs text-slate-400">{sub}</p> : null}
+      <h3 className="text-sm font-semibold text-card-foreground">{children}</h3>
+      {sub ? <p className="mt-1 text-xs text-muted-foreground">{sub}</p> : null}
     </div>
   );
 }
@@ -61,7 +61,7 @@ function SourceStatusPanel({ loading, error }: { loading: boolean; error: string
     return (
       <Panel>
         <SectionTitle sub="Waiting for the live executive KPI query to finish.">Loading live CFO data</SectionTitle>
-        <p className="text-sm text-slate-400">Finance values stay empty while the live source is loading.</p>
+        <p className="text-sm text-muted-foreground">Finance values stay empty while the live source is loading.</p>
       </Panel>
     );
   }
@@ -70,8 +70,8 @@ function SourceStatusPanel({ loading, error }: { loading: boolean; error: string
     return (
       <Panel>
         <SectionTitle sub="The live CFO source returned an error.">Unable to load live CFO data</SectionTitle>
-        <p className="text-sm text-rose-300">{error}</p>
-        <p className="mt-2 text-sm text-slate-400">No finance fallback is shown.</p>
+        <p className="text-sm text-destructive">{error}</p>
+        <p className="mt-2 text-sm text-muted-foreground">No finance fallback is shown.</p>
       </Panel>
     );
   }
@@ -85,8 +85,8 @@ function EmptyFinanceSourcePanel({ tab }: { tab: string }) {
   return (
     <Panel className="flex min-h-[320px] items-center justify-center">
       <div className="max-w-xl space-y-3 text-center">
-        <p className="text-lg font-semibold text-white">Live {sourceLabel} is not loaded</p>
-        <p className="text-sm text-slate-400">
+        <p className="text-lg font-semibold text-card-foreground">Live {sourceLabel} is not loaded</p>
+        <p className="text-sm text-muted-foreground">
           This CFO tab stays empty until real finance data is connected. No mock facility rows, AR aging tables, charts, budget values, or scenario assumptions are shown.
         </p>
       </div>
@@ -110,7 +110,7 @@ export default function CfoDashboardPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full">
       <></>
       <div className="relative z-10">
-        <div className="border-b border-white/5">
+        <div className="border-b border-border">
           <ExecutiveNavV2
             showTopNav={false}
             activeTopNav="finance"
@@ -120,9 +120,9 @@ export default function CfoDashboardPage() {
           />
         </div>
         <header className="px-6 py-8 sm:px-12">
-          <div className="mb-4 flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
+          <div className="mb-4 flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <Link href="/admin/executive" className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-400 transition-colors hover:text-white">
+              <Link href="/admin/executive" className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Executive Overview
               </Link>
               
@@ -165,16 +165,16 @@ export default function CfoDashboardPage() {
           {tab === "Haven Insight" ? (
             <Panel className="flex min-h-[300px] items-center justify-center">
               <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20">
-                  <Brain className="h-7 w-7 text-violet-400" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[var(--radius)] border border-border bg-muted/40">
+                  <Brain className="h-7 w-7 text-muted-foreground" />
                 </div>
-                <p className="text-lg font-semibold text-white">Haven Insight</p>
-                <p className="mx-auto max-w-md text-sm text-slate-400">
+                <p className="text-lg font-semibold text-card-foreground">Haven Insight</p>
+                <p className="mx-auto max-w-md text-sm text-muted-foreground">
                   Ask questions about live finance data after source tables and imports are connected.
                 </p>
                 <Link
                   href="/admin/executive/nlq"
-                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover: hover:"
+                  className="inline-flex items-center gap-2 rounded-[var(--radius)] bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] hover:opacity-90"
                 >
                   <Brain className="h-4 w-4" /> Open Haven Insight
                 </Link>

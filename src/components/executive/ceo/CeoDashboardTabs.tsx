@@ -17,7 +17,7 @@ function Panel({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/5 bg-slate-900/50 p-6 shadow-lg backdrop-blur",
+        "rounded-[var(--radius)] border border-border bg-card p-6 shadow-[var(--shadow-card)]",
         className,
       )}
     >
@@ -35,8 +35,8 @@ function SectionTitle({
 }) {
   return (
     <div className="mb-4">
-      <h3 className="text-sm font-semibold text-white">{children}</h3>
-      {sub ? <p className="mt-1 text-xs text-slate-400">{sub}</p> : null}
+      <h3 className="text-sm font-semibold text-card-foreground">{children}</h3>
+      {sub ? <p className="mt-1 text-xs text-muted-foreground">{sub}</p> : null}
     </div>
   );
 }
@@ -51,8 +51,8 @@ function EmptyLiveSourcePanel({
   return (
     <Panel className="flex min-h-[300px] items-center justify-center">
       <div className="max-w-xl space-y-3 text-center">
-        <p className="text-lg font-semibold text-white">{title}</p>
-        <p className="text-sm text-slate-400">{detail}</p>
+        <p className="text-lg font-semibold text-card-foreground">{title}</p>
+        <p className="text-sm text-muted-foreground">{detail}</p>
       </div>
     </Panel>
   );
@@ -60,9 +60,9 @@ function EmptyLiveSourcePanel({
 
 function EmptyAlertsState() {
   return (
-    <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
-      <p className="text-sm font-semibold text-white">No live CEO alerts</p>
-      <p className="mt-2 text-xs text-slate-400">
+    <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-8 text-center">
+      <p className="text-sm font-semibold text-foreground">No live CEO alerts</p>
+      <p className="mt-2 text-xs text-muted-foreground">
         Executive alerts will appear here after the live alert source returns rows.
       </p>
     </div>
@@ -89,44 +89,44 @@ export default function CeoDashboardTabs({
             {displayAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-white/[0.02]"
+                className="flex items-start gap-3 rounded-[var(--radius)] px-4 py-3 transition-colors duration-[var(--motion-duration-micro)] hover:bg-muted/20"
               >
                 <div
                   className={cn(
                     "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                     alert.severity === "critical"
-                      ? "bg-rose-500/20"
+                      ? "bg-destructive/10"
                       : alert.severity === "warning"
-                        ? "bg-amber-500/20"
-                        : "bg-sky-500/20",
+                        ? "bg-warning/10"
+                        : "bg-info/10",
                   )}
                 >
                   <AlertTriangle
                     className={cn(
                       "h-4 w-4",
                       alert.severity === "critical"
-                        ? "text-rose-400"
+                        ? "text-destructive"
                         : alert.severity === "warning"
-                          ? "text-amber-400"
-                          : "text-sky-400",
+                          ? "text-warning"
+                          : "text-info",
                     )}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white">{alert.title}</p>
-                  <p className="mt-1 text-xs text-slate-400">{alert.description}</p>
-                  <p className="mt-1 text-[10px] text-slate-500">
+                  <p className="text-sm font-semibold text-card-foreground">{alert.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{alert.description}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     {alert.facility} · {alert.age}
                   </p>
                 </div>
                 <span
                   className={cn(
-                    "shrink-0 rounded-full border border-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                    "shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
                     alert.severity === "critical"
-                      ? "bg-rose-500/20 text-rose-400"
+                      ? "border-destructive/30 bg-destructive/10 text-destructive"
                       : alert.severity === "warning"
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-sky-500/20 text-sky-400",
+                        ? "border-warning/30 bg-warning/10 text-warning"
+                        : "border-info/30 bg-info/10 text-info",
                   )}
                 >
                   {alert.severity}
@@ -161,16 +161,16 @@ export default function CeoDashboardTabs({
     return (
       <Panel className="flex min-h-[300px] items-center justify-center">
         <div className="space-y-4 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20">
-            <Brain className="h-7 w-7 text-violet-400" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[var(--radius)] border border-border bg-muted/40">
+            <Brain className="h-7 w-7 text-muted-foreground" />
           </div>
-          <p className="text-lg font-semibold text-white">Haven Insight</p>
-          <p className="mx-auto max-w-md text-sm text-slate-400">
+          <p className="text-lg font-semibold text-card-foreground">Haven Insight</p>
+          <p className="mx-auto max-w-md text-sm text-muted-foreground">
             Ask questions about your portfolio in plain English and get AI-powered answers from your live data.
           </p>
           <Link
             href="/admin/executive/nlq"
-            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all hover: hover:"
+            className="inline-flex items-center gap-2 rounded-[var(--radius)] bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] hover:opacity-90"
           >
             <Brain className="h-4 w-4" /> Open Haven Insight
           </Link>

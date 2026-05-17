@@ -29,7 +29,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 function KpiStrip(props: { kpi: ExecKpiPayload }) {
   const { kpi } = props;
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
       <span>
         Census: {kpi.census.occupiedResidents}/{kpi.census.licensedBeds} beds
         {kpi.census.occupancyPct != null ? ` · ${kpi.census.occupancyPct}%` : ""}
@@ -147,23 +147,23 @@ export default function ExecutiveFacilityDetailPage() {
         {entityId ? (
           <Link
             href={`/admin/executive/entity/${entityId}`}
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-fit gap-1 -ml-2 text-slate-600")}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-fit gap-1 -ml-2 text-muted-foreground")}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
             Entity: {entityName ?? "…"}
           </Link>
         ) : null}
         <div className="flex items-start gap-3">
-          <Building2 className="h-8 w-8 shrink-0 text-slate-600 dark:text-slate-300" aria-hidden />
+          <Building2 className="h-8 w-8 shrink-0 text-muted-foreground" aria-hidden />
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-semibold text-foreground">
               {loading ? <Skeleton className="inline-block h-8 w-56" /> : facilityName ?? "Facility"}
             </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Facility drill-down (Module 24) — same KPI engine as the command center, scoped to this site.
             </p>
             {entityName ? (
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Legal entity: {entityName}
                 {entityId ? (
                   <>
@@ -250,28 +250,28 @@ export default function ExecutiveFacilityDetailPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-7 gap-2">
               {assuranceTrend.points.map((point) => (
-                <div key={point.date} className="rounded-lg border border-slate-200/80 bg-slate-50/60 p-3 text-center dark:border-slate-800 dark:bg-slate-900/40">
+                <div key={point.date} className="rounded-[var(--radius)] border border-border bg-muted/40 p-3 text-center">
                   <div className="mx-auto flex h-20 w-8 items-end justify-center">
                     <div
                       className={cn(
                         "w-full rounded-t-md",
                         point.heatBand === "critical"
-                          ? "bg-rose-500"
+                          ? "bg-destructive"
                           : point.heatBand === "elevated"
-                            ? "bg-orange-500"
+                            ? "bg-warning"
                             : point.heatBand === "watch"
-                              ? "bg-amber-500"
-                              : "bg-emerald-500",
+                              ? "bg-warning/70"
+                              : "bg-success",
                       )}
                       style={{ height: `${Math.max(10, Math.min(100, point.heatScore * 7))}%` }}
                     />
                   </div>
-                  <p className="mt-2 text-[10px] font-mono text-slate-500 dark:text-slate-400">{point.date.slice(5)}</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{point.heatScore}</p>
+                  <p className="mt-2 text-[10px] font-medium text-muted-foreground">{point.date.slice(5)}</p>
+                  <p className="text-sm font-semibold tabular-nums text-foreground">{point.heatScore}</p>
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
               <Badge variant="outline">Latest {assuranceTrend.latestHeatScore}</Badge>
               <Badge variant="outline">Peak {assuranceTrend.peakHeatScore}</Badge>
               <Badge variant="outline">Avg {assuranceTrend.avgHeatScore.toFixed(1)}</Badge>
@@ -290,12 +290,12 @@ export default function ExecutiveFacilityDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
-              <span className="text-slate-500">Total:</span>{" "}
+              <span className="text-muted-foreground">Total:</span>{" "}
               <span className="font-semibold tabular-nums">{money.format(tcor.tcorCents / 100)}</span>
               {" · "}
-              <span className="text-slate-500">Premiums:</span> {money.format(tcor.premiumsCents / 100)}
+              <span className="text-muted-foreground">Premiums:</span> {money.format(tcor.premiumsCents / 100)}
               {" · "}
-              <span className="text-slate-500">Incurred losses:</span> {money.format(tcor.incurredLossesCents / 100)}
+              <span className="text-muted-foreground">Incurred losses:</span> {money.format(tcor.incurredLossesCents / 100)}
             </p>
             <Link className="text-primary text-sm underline-offset-4 hover:underline" href="/admin/insurance">
               Open insurance hub <ExternalLink className="inline h-3.5 w-3.5" aria-hidden />

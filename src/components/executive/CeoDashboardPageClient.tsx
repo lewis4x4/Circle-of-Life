@@ -20,8 +20,8 @@ const CeoDashboardTabs = dynamic(
     ssr: false,
     loading: () => (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="h-[360px] animate-pulse rounded-2xl border border-white/5 bg-slate-900/40" />
-        <div className="h-[360px] animate-pulse rounded-2xl border border-white/5 bg-slate-900/40" />
+        <div className="h-[360px] animate-pulse rounded-[var(--radius)] border border-border bg-card" />
+        <div className="h-[360px] animate-pulse rounded-[var(--radius)] border border-border bg-card" />
       </div>
     ),
   },
@@ -58,7 +58,7 @@ export default function CeoDashboardPageClient({
     <div className="relative min-h-[calc(100vh-64px)] w-full">
       <></>
       <div className="relative z-10">
-        <div className="border-b border-white/5">
+        <div className="border-b border-border">
           <ExecutiveNavV2
             showTopNav={false}
             activeTopNav="command"
@@ -69,11 +69,11 @@ export default function CeoDashboardPageClient({
         </div>
 
         <header className="px-6 py-8 sm:px-12">
-          <div className="mb-4 flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
+          <div className="mb-4 flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
             <div>
               <Link
                 href="/admin/executive"
-                className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+                className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Executive Overview
               </Link>

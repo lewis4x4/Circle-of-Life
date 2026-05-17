@@ -55,13 +55,13 @@ function CohortBarRow({
       <span className="w-36 shrink-0 truncate font-medium sm:w-44" title={label}>
         {label}
       </span>
-      <div className="h-2.5 min-w-[72px] flex-1 rounded-full bg-slate-100 dark:bg-slate-800">
+      <div className="h-2.5 min-w-[72px] flex-1 rounded-full bg-muted">
         <div
-          className="h-2.5 rounded-full bg-primary/90 transition-[width] duration-300"
+          className="h-2.5 rounded-full bg-info/70 transition-[width] duration-[var(--motion-duration)]"
           style={{ width: `${widthPct}%` }}
         />
       </div>
-      <span className="w-24 shrink-0 text-right tabular-nums text-slate-600 dark:text-slate-400">{display}</span>
+      <span className="w-24 shrink-0 text-right tabular-nums text-muted-foreground">{display}</span>
     </div>
   );
 }
@@ -168,7 +168,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
 
   async function onRemove(row: CohortRow) {
     if (!canManage || !orgId) return;
-    if (!window.confirm(`Remove benchmark cohort “${row.name}”?`)) return;
+    if (!window.confirm(`Remove benchmark cohort "${row.name}"?`)) return;
     setBusyId(row.id);
     setLocalError(null);
     try {
@@ -280,10 +280,10 @@ export default function ExecutiveBenchmarkCohortsPageClient({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-slate-600 dark:text-slate-300" aria-hidden />
+          <BarChart3 className="h-8 w-8 text-muted-foreground" aria-hidden />
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Benchmark cohorts</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <h1 className="text-2xl font-semibold text-foreground">Benchmark cohorts</h1>
+            <p className="text-sm text-muted-foreground">
               Define peer groups of facilities for future KPI comparisons. Minimum cohort size must be at least 5 sites
               before peer benchmarks can be surfaced (privacy).
             </p>
@@ -315,7 +315,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
       )}
 
       {!loading && (
-        <Card className="border-sky-200 bg-sky-50/70 dark:border-sky-900/40 dark:bg-sky-950/20">
+        <Card className="border-info/30 bg-info/10">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -336,31 +336,31 @@ export default function ExecutiveBenchmarkCohortsPageClient({
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
               External peer KPIs are not available in Haven today. Opt-in only records governance intent, legal/privacy
               acknowledgement, and approval state for a future benchmark feed.
             </p>
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-md border border-sky-200/70 bg-white/70 px-3 py-2 dark:border-sky-900/30 dark:bg-slate-950/40">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Request</p>
+              <div className="rounded-md border border-info/20 bg-card px-3 py-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Request</p>
                 <p>{crossOperatorSetting?.requested_at ? new Date(crossOperatorSetting.requested_at).toLocaleString() : "Not recorded"}</p>
               </div>
-              <div className="rounded-md border border-sky-200/70 bg-white/70 px-3 py-2 dark:border-sky-900/30 dark:bg-slate-950/40">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Terms acknowledged</p>
+              <div className="rounded-md border border-info/20 bg-card px-3 py-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Terms acknowledged</p>
                 <p>
                   {crossOperatorSetting?.terms_acknowledged_at
                     ? new Date(crossOperatorSetting.terms_acknowledged_at).toLocaleString()
                     : "Pending"}
                 </p>
               </div>
-              <div className="rounded-md border border-sky-200/70 bg-white/70 px-3 py-2 dark:border-sky-900/30 dark:bg-slate-950/40">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Approval</p>
+              <div className="rounded-md border border-info/20 bg-card px-3 py-2">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Approval</p>
                 <p>{crossOperatorSetting?.approved_at ? new Date(crossOperatorSetting.approved_at).toLocaleString() : "Not approved"}</p>
               </div>
             </div>
             {crossOperatorSetting?.notes ? (
-              <p className="rounded-md border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+              <p className="rounded-md border border-border bg-card/80 px-3 py-2 text-xs text-muted-foreground">
                 {crossOperatorSetting.notes}
               </p>
             ) : null}
@@ -380,7 +380,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
       )}
 
       {!canManage && !loading && (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
+        <p className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
           Benchmark cohorts are managed by organization administrators.
         </p>
       )}
@@ -414,9 +414,8 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                   onChange={(e) => setFormDescription(e.target.value)}
                   rows={2}
                   className={cn(
-                    "flex min-h-[72px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm",
-                    "placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
-                    "dark:border-slate-800 dark:bg-slate-950",
+                    "flex min-h-[72px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm shadow-sm",
+                    "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   )}
                 />
               </div>
@@ -433,15 +432,15 @@ export default function ExecutiveBenchmarkCohortsPageClient({
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-medium leading-none">Facilities</span>
-                <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border border-border p-3">
                   {facilities.length === 0 ? (
-                    <p className="text-sm text-slate-500">No facilities in this organization.</p>
+                    <p className="text-sm text-muted-foreground">No facilities in this organization.</p>
                   ) : (
                     facilities.map((f) => (
                       <label key={f.id} className="flex cursor-pointer items-center gap-2 text-sm">
                         <input
                           type="checkbox"
-                          className="rounded border-slate-300"
+                          className="rounded border-border"
                           checked={formFacilityIds.has(f.id)}
                           onChange={() => toggleFacility(f.id)}
                         />
@@ -476,7 +475,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
           </CardHeader>
           <CardContent>
             {rows.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No benchmark cohorts yet.</p>
+              <p className="text-sm text-muted-foreground">No benchmark cohorts yet.</p>
             ) : (
               <Table>
                 <TableHeader>
@@ -497,13 +496,13 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                         <TableCell className="font-medium">
                           {r.name}
                           {r.description ? (
-                            <span className="mt-1 block text-xs font-normal text-slate-500">{r.description}</span>
+                            <span className="mt-1 block text-xs font-normal text-muted-foreground">{r.description}</span>
                           ) : null}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{r.minimum_n}</Badge>
                         </TableCell>
-                        <TableCell className="max-w-md text-sm text-slate-600 dark:text-slate-400">
+                        <TableCell className="max-w-md text-sm text-muted-foreground">
                           {(r.facility_ids?.length ?? 0) === 0
                             ? "—"
                             : labels || `${r.facility_ids?.length} selected`}
@@ -532,7 +531,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                               </Button>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">View only</span>
+                            <span className="text-xs text-muted-foreground">View only</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -560,7 +559,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                 <Label htmlFor="compare-cohort">Cohort</Label>
                 <select
                   id="compare-cohort"
-                  className="flex h-10 min-w-[200px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                  className="flex h-10 min-w-[200px] rounded-md border border-border bg-background px-3 py-2 text-sm"
                   value={compareCohortId}
                   onChange={(e) => {
                     setCompareCohortId(e.target.value);
@@ -590,12 +589,12 @@ export default function ExecutiveBenchmarkCohortsPageClient({
             {compareData && (
               <div className="space-y-3">
                 {compareData.cohort.facility_ids.length < compareData.cohort.minimum_n && (
-                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+                  <p className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
                     This cohort has fewer than <strong>{compareData.cohort.minimum_n}</strong> facilities — peer
                     benchmarks are not statistically surfaced; table is for operational review only.
                   </p>
                 )}
-                <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+                <div className="overflow-x-auto rounded-md border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -608,7 +607,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow className="bg-slate-50/80 dark:bg-slate-900/50">
+                      <TableRow className="bg-muted/40">
                         <TableCell className="font-medium">Organization (portfolio)</TableCell>
                         <TableCell className="text-right tabular-nums">
                           {compareData.orgKpi.census.occupancyPct ?? "—"}
@@ -666,19 +665,19 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                     1,
                   );
                   return (
-                    <div className="space-y-6 rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                    <div className="space-y-6 rounded-[var(--radius)] border border-border bg-muted/40 p-4">
                       <div>
-                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                        <p className="text-sm font-medium text-foreground">
                           Visual comparison (CSS bars)
                         </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           Occupancy uses 0–100%. Incidents, deficiencies, and AR scale to the highest value in this
                           cohort plus portfolio row (operational view, not statistical inference).
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Occupancy</p>
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Occupancy</p>
                         <div className="space-y-1.5">
                           {series.map((s, idx) => {
                             const occ = s.kpi.census.occupancyPct;
@@ -701,7 +700,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                           Open incidents (vs max {maxInc})
                         </p>
                         <div className="space-y-1.5">
@@ -720,7 +719,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                           Open deficiencies (vs max {maxDef})
                         </p>
                         <div className="space-y-1.5">
@@ -739,7 +738,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                           AR balance (vs max {money.format(maxAr / 100)})
                         </p>
                         <div className="space-y-1.5">

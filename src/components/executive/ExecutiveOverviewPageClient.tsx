@@ -577,7 +577,7 @@ function ExecutiveDashboardBody({
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <div className="max-h-[480px] overflow-auto">
               <table className="w-full text-[13px]">
-                <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur">
+                <thead className="sticky top-0 z-10 bg-background/95">
                   <tr className="border-b border-border">
                     <th className="h-9 px-3 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                       Facility
@@ -831,7 +831,7 @@ function ExecutiveDashboardBody({
                           title={`${point.date}: heat ${point.heatScore}`}
                         />
                       </div>
-                      <span className="text-[10px] font-mono text-muted-foreground">
+                      <span className="text-[10px] font-medium text-muted-foreground">
                         {point.date.slice(5)}
                       </span>
                     </div>
