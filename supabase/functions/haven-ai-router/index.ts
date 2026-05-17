@@ -190,6 +190,41 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Insufficient permissions for Haven AI" }, 403, origin);
   }
 
+  // --- Resolve accessible facility ids once per request (KB-NEXT-02) ---
+  // Org-wide roles (owner / org_admin) see every facility in the org, mirroring
+  // the haven.accessible_facility_ids() helper. Other roles see whatever rows
+  // user_facility_access grants them. This is computed once and passed into
+  // dispatch / runToolLoop on every tool RPC.
+  let facilityIds: string[] = [];
+  try {
+    if (role === "owner" || role === "org_admin") {
+      const { data, error } = await admin
+        .from("facilities")
+        .select("id")
+        .eq("organization_id", organizationId)
+        .is("deleted_at", null);
+      if (error) {
+        t.log({ event: "facility_lookup_failed", outcome: "error", error_message: error.message });
+      } else {
+        facilityIds = ((data ?? []) as { id: string }[]).map((r) => r.id);
+      }
+    } else {
+      const { data, error } = await admin
+        .from("user_facility_access")
+        .select("facility_id")
+        .eq("user_id", userId)
+        .eq("organization_id", organizationId)
+        .is("revoked_at", null);
+      if (error) {
+        t.log({ event: "facility_lookup_failed", outcome: "error", error_message: error.message });
+      } else {
+        facilityIds = ((data ?? []) as { facility_id: string }[]).map((r) => r.facility_id);
+      }
+    }
+  } catch (err) {
+    t.log({ event: "facility_lookup_threw", outcome: "error", error_message: String(err) });
+  }
+
   // --- Classify intent (with cache) ---
   let intent: IntentClassification;
   const cacheKey = `${role}::${normalizeQuestion(question)}`;
@@ -247,6 +282,7 @@ Deno.serve(async (req) => {
       userId: userId,
       selectedFacilityId,
       moduleContext,
+      facilityIds,
     });
 
     const lowConfidence = intent.confidence < SPECULATIVE_DISPATCH_THRESHOLD;
@@ -265,6 +301,7 @@ Deno.serve(async (req) => {
         userId,
         selectedFacilityId,
         moduleContext,
+        facilityIds,
       });
       if (!fallbackResult.refusal && fallbackResult.answer.length > 0) {
         dispatchResult = fallbackResult;

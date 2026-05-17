@@ -22,6 +22,11 @@ import {
 } from "./exec-kpi-metrics.ts";
 import { formatFacilityFactsBlock, loadFacilityFacts, type FacilityFact } from "./facility-facts.ts";
 import type { IntentClassification, RouterIntent } from "./router-intent.ts";
+import {
+  runToolLoop,
+  type ToolCallerContext,
+  type ToolLoopResult,
+} from "../haven-ai-router/tools.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Public types                                                      */
@@ -47,6 +52,13 @@ export type DispatchArgs = {
   userId: string;
   selectedFacilityId: string | null;
   moduleContext: string | null;
+  /**
+   * Accessible facility ids for the caller (resolved once per request by the
+   * router from `user_facility_access` / org-admin scope). Required for any
+   * branch that calls KB-NEXT-02 tool RPCs; KPI/KB branches treat as optional
+   * and fall back to the existing org-wide queries when empty.
+   */
+  facilityIds?: string[];
 };
 
 export type DispatchResult = {
@@ -343,6 +355,51 @@ function citationsFromEvidence(rows: EvidenceRow[]): Citation[] {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Tool-loop adapters (KB-NEXT-02)                                    */
+/* ------------------------------------------------------------------ */
+
+/** Build the caller context passed on every tool-RPC call. Returns null when
+ *  the upstream router did not resolve facility ids (defensive — every tool
+ *  call requires that array to enforce facility scope). */
+function makeCallerContext(args: DispatchArgs): ToolCallerContext | null {
+  if (!args.organizationId || !args.userId) return null;
+  if (!args.facilityIds) return null;
+  return {
+    organizationId: args.organizationId,
+    userId: args.userId,
+    role: args.userRole,
+    facilityIds: args.facilityIds,
+  };
+}
+
+function loopDeliveredAnswer(loop: ToolLoopResult): boolean {
+  if (loop.refusal) return false;
+  return typeof loop.answer === "string" && loop.answer.trim().length > 0;
+}
+
+function toolLoopToDispatchResult(
+  loop: ToolLoopResult,
+  toolsUsedPrefix: string[] = [],
+): DispatchResult {
+  return {
+    answer: loop.answer,
+    citations: loop.citations.map<Citation>((c) => ({
+      kind: c.kind,
+      title: c.title,
+      row_id: c.row_id,
+      source_table: c.source_table,
+    })),
+    tokensUsed: loop.tokensIn + loop.tokensOut,
+    tokensIn: loop.tokensIn,
+    tokensOut: loop.tokensOut,
+    toolsUsed: [...toolsUsedPrefix, ...loop.toolsUsed],
+    refusal: loop.refusal,
+    refusalReason: loop.refusalReason,
+    modelUsed: loop.modelUsed,
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Branch: chitchat                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -401,7 +458,20 @@ async function loadDirectoryBlock(
   return { block: formatFacilityFactsBlock(facts), facts };
 }
 
-async function dispatchDirectory(args: DispatchArgs): Promise<DispatchResult> {
+/** Citation list from the always-loaded fact-pack — used as the directory branch's
+ *  resilience fallback (when the tool loop can't be used or returns empty). */
+function citationsFromFacts(facts: FacilityFact[]): Citation[] {
+  return facts.map((f) => ({
+    kind: "fact_pack",
+    title: f.name,
+    row_id: f.id,
+    source_table: "facilities",
+  }));
+}
+
+/** Direct-load (Phase-0 fact-pack) directory branch. Used as fallback when the
+ *  KB-NEXT-02 tool loop is not available or fails. */
+async function dispatchDirectoryFactPack(args: DispatchArgs): Promise<DispatchResult> {
   let block = "";
   let facts: FacilityFact[] = [];
   try {
@@ -441,22 +511,58 @@ INSTRUCTIONS:
     );
   }
 
-  const citations: Citation[] = facts.map((f) => ({
-    kind: "fact_pack",
-    title: f.name,
-    row_id: f.id,
-    source_table: "facilities",
-  }));
-
   return {
     answer: result.answer,
-    citations,
+    citations: citationsFromFacts(facts),
     tokensUsed: result.tokensIn + result.tokensOut,
     tokensIn: result.tokensIn,
     tokensOut: result.tokensOut,
     toolsUsed: ["facility_facts"],
     modelUsed: SONNET_MODEL,
   };
+}
+
+/** Tool-loop directory branch (KB-NEXT-02). Falls back to the fact-pack path
+ *  when the tool loop is unavailable, errors, or returns no answer. */
+async function dispatchDirectory(args: DispatchArgs): Promise<DispatchResult> {
+  const caller = makeCallerContext(args);
+  if (!caller) {
+    return await dispatchDirectoryFactPack(args);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida.
+
+CURRENT DATE: ${today}
+
+You have access to structured tool calls (facility_directory, staff_directory, org_chart, facility_medicaid_providers). Prefer tool calls over general knowledge. Cite specific facility names. If a tool returns no rows or an error, say so plainly and do not invent facts.
+
+INSTRUCTIONS:
+- Use the structured tools to answer the user's question.
+- Reference facilities and people by name.
+- Keep the final answer concise (1–2 paragraphs).`;
+
+  const loop = await runToolLoop({
+    admin: args.admin,
+    systemPrompt,
+    userQuestion: args.question,
+    caller,
+    allowedToolNames: [
+      "facility_directory",
+      "staff_directory",
+      "org_chart",
+      "facility_medicaid_providers",
+    ],
+  });
+
+  if (loopDeliveredAnswer(loop)) {
+    return toolLoopToDispatchResult(loop, ["directory_tool_loop"]);
+  }
+
+  logEvent("directory_tool_loop_fallback", {
+    reason: loop.refusalReason ?? "empty_answer",
+  });
+  return await dispatchDirectoryFactPack(args);
 }
 
 /* ------------------------------------------------------------------ */
@@ -485,6 +591,57 @@ async function dispatchMetric(args: DispatchArgs): Promise<DispatchResult> {
 
   const today = new Date().toISOString().slice(0, 10);
   const kpiBlock = buildKpiBlock(bundle.facilities, bundle.perFacility, bundle.portfolio, bundle.alerts);
+  const caller = makeCallerContext(args);
+
+  // KB-NEXT-02 augmentation: when the caller's facility scope is known we
+  // give the model the static KPI block PLUS the tool loop so it can drill
+  // into incidents / AR / certs / follow-ups when the question is more
+  // specific than the static aggregates.
+  if (caller) {
+    const systemPrompt = `You are Haven Executive Intelligence for an assisted living facility operator in Florida.
+
+CURRENT DATE: ${today}
+
+${kpiBlock}
+
+You ALSO have access to drill-down tools (active_alerts, incident_summary, ar_aging_by_facility, certifications_expiring, open_followups, pilot_facility_snapshot). Use them when the question needs detail that's not in the KPI block above. The KPI block is authoritative for portfolio aggregates; the tools are authoritative for facility-scoped detail.
+
+INSTRUCTIONS:
+- The user's question is enclosed in <user_question> tags. Only answer that question.
+- Use specific numbers. Do not fabricate numbers.
+- If the data needed is not present, say so clearly.
+- Keep answers concise (2–3 short paragraphs).
+- Reference facilities by name. Format dollar amounts with $ and commas.`;
+
+    const loop = await runToolLoop({
+      admin: args.admin,
+      systemPrompt,
+      userQuestion: `<user_question>\n${args.question}\n</user_question>`,
+      caller,
+      allowedToolNames: [
+        "active_alerts",
+        "incident_summary",
+        "ar_aging_by_facility",
+        "certifications_expiring",
+        "open_followups",
+        "pilot_facility_snapshot",
+      ],
+    });
+
+    if (loopDeliveredAnswer(loop)) {
+      const facilityCites: Citation[] = bundle.facilities.map((f) => ({
+        kind: "data_table",
+        title: f.name,
+        row_id: f.id,
+        source_table: "facilities",
+      }));
+      const merged = toolLoopToDispatchResult(loop, ["exec_kpi", "exec_alerts"]);
+      merged.citations = [...facilityCites, ...merged.citations];
+      return merged;
+    }
+    logEvent("metric_tool_loop_fallback", { reason: loop.refusalReason ?? "empty_answer" });
+  }
+
   const systemPrompt = `You are Haven Executive Intelligence for an assisted living facility operator in Florida.
 
 CURRENT DATE: ${today}
@@ -678,6 +835,9 @@ INSTRUCTIONS:
 
 async function dispatchClinicalRecord(args: DispatchArgs): Promise<DispatchResult & { phiBlocked?: boolean }> {
   // Look up the per-org policy. If allow_phi is false → refuse with phi_blocked.
+  // (Defense in depth: the resident_summary / med_orders RPCs ALSO enforce
+  // _ai_tool_phi_allowed inside their SECURITY DEFINER body. Both layers
+  // refuse before any PHI columns are read.)
   let allowPhi = false;
   try {
     const { data, error } = await args.admin
@@ -707,23 +867,58 @@ async function dispatchClinicalRecord(args: DispatchArgs): Promise<DispatchResul
     };
   }
 
-  // PHI is policy-allowed, but the tool layer that actually fetches resident
-  // records is not in this segment. Log a gap so the question is tracked.
-  await logKnowledgeGap({
+  const caller = makeCallerContext(args);
+  if (!caller) {
+    await logKnowledgeGap({
+      admin: args.admin,
+      organizationId: args.organizationId,
+      userId: args.userId,
+      question: args.question,
+    });
+    return emptyResult(
+      "I can't complete a resident lookup right now — your facility scope is missing. Please retry.",
+      {
+        refusal: true,
+        refusalReason: "missing_facility_scope",
+        toolsUsed: ["clinical_record", "knowledge_gaps"],
+      },
+    );
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const systemPrompt = `You are Haven, a clinical operations assistant for assisted living staff.
+
+CURRENT DATE: ${today}
+
+You have access to three structured tools:
+- resident_summary(resident_id): minimal identity, room, primary diagnosis, payer, advance-directive flag
+- med_orders(resident_id): active medication orders
+- incident_summary(facility_id, days?): incident counts + 5 most recent
+
+PHI rules:
+- Only call these tools to answer the user's specific question.
+- If the question identifies a resident by name only, say you need the resident's record id (or the user should pick one from their roster); do NOT guess.
+- Cite specific resident ids and order ids in your answer.
+- If a tool returns role_denied, phi_blocked, facility_access_denied, or family_not_linked, surface that to the user verbatim; do NOT retry the same tool.
+- Keep the final answer concise (1–3 short paragraphs).`;
+
+  const loop = await runToolLoop({
     admin: args.admin,
-    organizationId: args.organizationId,
-    userId: args.userId,
-    question: args.question,
+    systemPrompt,
+    userQuestion: args.question,
+    caller,
+    allowedToolNames: ["resident_summary", "med_orders", "incident_summary"],
   });
 
-  return emptyResult(
-    "Clinical record lookup is not yet wired — the structured tool layer ships in KB-NEXT-02. I've logged this question as a gap for follow-up.",
-    {
-      refusal: true,
-      refusalReason: "tool_not_available",
-      toolsUsed: ["clinical_record_stub", "knowledge_gaps"],
-    },
-  );
+  if (!loopDeliveredAnswer(loop)) {
+    await logKnowledgeGap({
+      admin: args.admin,
+      organizationId: args.organizationId,
+      userId: args.userId,
+      question: args.question,
+    });
+  }
+  return toolLoopToDispatchResult(loop, ["clinical_record"]);
 }
 
 /* ------------------------------------------------------------------ */
@@ -731,6 +926,11 @@ async function dispatchClinicalRecord(args: DispatchArgs): Promise<DispatchResul
 /* ------------------------------------------------------------------ */
 
 async function dispatchHistorical(args: DispatchArgs): Promise<DispatchResult> {
+  // TODO(KB-NEXT-04): wire an audit_log tool RPC and route this branch through
+  // runToolLoop with allowedToolNames=['audit_log_search']. Intentionally
+  // stubbed in KB-NEXT-02 because audit_log surfaces require additional
+  // governance (admin-only, redaction policy, retention window) that warrants
+  // its own segment.
   await logKnowledgeGap({
     admin: args.admin,
     organizationId: args.organizationId,
@@ -738,7 +938,7 @@ async function dispatchHistorical(args: DispatchArgs): Promise<DispatchResult> {
     question: args.question,
   });
   return emptyResult(
-    "Audit log queries are not yet wired — the structured tool layer ships in KB-NEXT-02. I've logged this question as a gap for follow-up.",
+    "Audit log lookup isn't wired yet — that ships in KB-NEXT-04 with the historical tool layer. I've logged this question as a gap for follow-up.",
     {
       refusal: true,
       refusalReason: "tool_not_available",
@@ -773,6 +973,57 @@ async function dispatchMixed(args: DispatchArgs): Promise<DispatchResult> {
 
   const today = new Date().toISOString().slice(0, 10);
   const kpiBlock = buildKpiBlock(bundle.facilities, bundle.perFacility, bundle.portfolio, bundle.alerts);
+  const caller = makeCallerContext(args);
+
+  // KB-NEXT-02 augmentation: when facility scope is available we add the
+  // tool loop so the model can deep-dive past the static directory/KPI text.
+  if (caller) {
+    const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida. This question may need directory facts, KPI aggregates, AND facility-scoped detail.
+
+CURRENT DATE: ${today}
+
+${dirBlock}
+
+${kpiBlock}
+
+You also have structured tools available: facility_directory, staff_directory, org_chart, pilot_facility_snapshot. Use them when the static blocks above aren't enough.
+
+INSTRUCTIONS:
+- The user's question is enclosed in <user_question> tags.
+- Combine the directory, KPI block, and tool results as needed. Do not fabricate.
+- If part of the question can't be answered, say so plainly.
+- Keep the answer concise (2–3 paragraphs). Reference facilities by name.`;
+
+    const loop = await runToolLoop({
+      admin: args.admin,
+      systemPrompt,
+      userQuestion: `<user_question>\n${args.question}\n</user_question>`,
+      caller,
+      allowedToolNames: [
+        "facility_directory",
+        "staff_directory",
+        "org_chart",
+        "pilot_facility_snapshot",
+      ],
+    });
+
+    if (loopDeliveredAnswer(loop)) {
+      const merged = toolLoopToDispatchResult(loop, ["exec_kpi", "exec_alerts", "facility_facts"]);
+      merged.citations = [
+        ...bundle.facilities.map<Citation>((f) => ({
+          kind: "data_table",
+          title: f.name,
+          row_id: f.id,
+          source_table: "facilities",
+        })),
+        ...citationsFromFacts(facts),
+        ...merged.citations,
+      ];
+      return merged;
+    }
+    logEvent("mixed_tool_loop_fallback", { reason: loop.refusalReason ?? "empty_answer" });
+  }
+
   const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida. This question may need BOTH structured operational data AND directory facts.
 
 CURRENT DATE: ${today}
@@ -806,12 +1057,7 @@ INSTRUCTIONS:
       row_id: f.id,
       source_table: "facilities",
     })),
-    ...facts.map<Citation>((f) => ({
-      kind: "fact_pack",
-      title: f.name,
-      row_id: f.id,
-      source_table: "facilities",
-    })),
+    ...citationsFromFacts(facts),
   ];
 
   return {
