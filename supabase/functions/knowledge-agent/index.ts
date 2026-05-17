@@ -3226,6 +3226,51 @@ Hard rules:
 - Keep responses concise and operationally useful.`;
 }
 
+/**
+ * KB-NEXT-06: a "citation anchor" is the deep-link payload the UI needs to
+ * jump directly to the chunk of a KB document that supports an answer. We
+ * compute it server-side so every Edge function emits a consistent format:
+ *
+ *   { document_id, chunk_id, section_title, page_number, compliance_category,
+ *     regulation_citation, href }
+ *
+ * `href` is the canonical in-app deep link. For now we point at the read-only
+ * KB document viewer added in this segment; route stable for the v1 UI.
+ */
+type CitationAnchor = {
+  document_id: string | null;
+  chunk_id: string | null;
+  section_title: string | null;
+  page_number: number | null;
+  compliance_category: string | null;
+  regulation_citation: string | null;
+  href: string | null;
+};
+
+function buildCitationAnchor(row: {
+  document_id?: string | null;
+  chunk_id?: string | null;
+  section_title?: string | null;
+  page_number?: number | null;
+  compliance_category?: string | null;
+  regulation_citation?: string | null;
+}): CitationAnchor {
+  const documentId = row.document_id ?? null;
+  const chunkId = row.chunk_id ?? null;
+  const href = documentId
+    ? `/admin/knowledge/documents/${documentId}${chunkId ? `?anchor=${chunkId}` : ""}`
+    : null;
+  return {
+    document_id: documentId,
+    chunk_id: chunkId,
+    section_title: row.section_title ?? null,
+    page_number: row.page_number ?? null,
+    compliance_category: row.compliance_category ?? null,
+    regulation_citation: row.regulation_citation ?? null,
+    href,
+  };
+}
+
 async function preloadKnowledgeEvidence(
   question: string,
   ctx: ToolContext,
@@ -3236,6 +3281,7 @@ async function preloadKnowledgeEvidence(
     excerpt: string;
     confidence: number;
     section_title: string | null;
+    anchor: CitationAnchor;
   }[];
 }> {
   const raw = await executeTool("semantic_kb_search", { query: question, limit: 4 }, ctx);
@@ -3248,6 +3294,11 @@ async function preloadKnowledgeEvidence(
     excerpt: string;
     confidence: number;
     section_title: string | null;
+    document_id?: string | null;
+    chunk_id?: string | null;
+    page_number?: number | null;
+    compliance_category?: string | null;
+    regulation_citation?: string | null;
   }[];
 
   const sources = rows.map((row) => ({
@@ -3255,6 +3306,7 @@ async function preloadKnowledgeEvidence(
     excerpt: row.excerpt,
     confidence: row.confidence,
     section_title: row.section_title,
+    anchor: buildCitationAnchor(row),
   }));
 
   const evidenceText = rows
@@ -3278,6 +3330,7 @@ async function runAgentLoop(
     excerpt: string;
     confidence: number;
     section_title: string | null;
+    anchor: CitationAnchor;
   }[];
   toolsUsed: string[];
   tokensIn: number;
@@ -3343,6 +3396,7 @@ async function runAgentLoop(
     excerpt: string;
     confidence: number;
     section_title: string | null;
+    anchor: CitationAnchor;
   }[] = [];
   const preloadedEvidence = tools.some((tool) => tool.name === "semantic_kb_search")
     ? await preloadKnowledgeEvidence(effectiveQuestion, ctx)
@@ -3431,11 +3485,22 @@ async function runAgentLoop(
 
         if (block.name === "semantic_kb_search" && Array.isArray(toolResult)) {
           sources.push(
-            ...toolResult.map((r: { source_title: string; excerpt: string; confidence: number; section_title: string | null }) => ({
+            ...toolResult.map((r: {
+              source_title: string;
+              excerpt: string;
+              confidence: number;
+              section_title: string | null;
+              document_id?: string | null;
+              chunk_id?: string | null;
+              page_number?: number | null;
+              compliance_category?: string | null;
+              regulation_citation?: string | null;
+            }) => ({
               title: r.source_title,
               excerpt: r.excerpt,
               confidence: r.confidence,
               section_title: r.section_title,
+              anchor: buildCitationAnchor(r),
             })),
           );
         }
