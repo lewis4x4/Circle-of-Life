@@ -34,6 +34,7 @@ import {
   Building2,
   Check,
   ChevronDown,
+  LineChart,
   Loader2,
   LogOut,
   MessageSquare,
@@ -503,9 +504,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         "hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
       aria-label="Ask Grace"
-      title="Ask Grace"
+      title="Ask Grace (⌘G)"
     >
       <MessageSquare className="size-4" aria-hidden />
+    </button>
+  );
+
+  const renderHavenInsightTrigger = () => (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent("haven-insight:open"))}
+      className={cn(
+        "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors",
+        "hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
+      aria-label="Open Haven Insight"
+      title="Haven Insight (⌘⇧I)"
+    >
+      <LineChart className="size-4" aria-hidden />
     </button>
   );
 
@@ -706,6 +722,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-1">
           {renderSearchTrigger()}
           {renderGraceTrigger()}
+          {renderHavenInsightTrigger()}
           {renderReportIncidentButton()}
           <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
           {renderNotificationsButton()}

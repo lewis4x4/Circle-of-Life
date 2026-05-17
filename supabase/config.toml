@@ -424,6 +424,37 @@ verify_jwt = true
 [functions."facility-launch-promote"]
 verify_jwt = true
 
+# Cron / webhook callers — gateway JWT off; in-function x-cron-secret or vendor signature auth.
+[functions."risk-nightly-scorer"]
+verify_jwt = false
+
+[functions."oce-task-scheduler"]
+verify_jwt = false
+
+[functions."oce-escalation-scanner"]
+verify_jwt = false
+
+[functions."oce-staffing-adequacy-computer"]
+verify_jwt = false
+
+[functions."observation-task-generator"]
+verify_jwt = false
+
+[functions."observation-escalation-engine"]
+verify_jwt = false
+
+[functions."resident-safety-scorer"]
+verify_jwt = false
+
+[functions."grace-redteam-nightly"]
+verify_jwt = false
+
+[functions."resident-assurance-ai"]
+verify_jwt = false
+
+[functions."boldsign-webhook"]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

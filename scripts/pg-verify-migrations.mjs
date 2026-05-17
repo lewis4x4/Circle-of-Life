@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Apply all SQL migrations in order to a throwaway Postgres 16 container (Docker).
+ * Apply all SQL migrations in order to a throwaway Postgres 17 container (Docker).
+ * Matches supabase/config.toml major_version = 17.
  * Catches DDL errors and most dependency issues; uses auth.* stubs (not a full Supabase clone).
  *
  * SKIP: set SKIP_PG_VERIFY=1
@@ -60,7 +61,7 @@ async function main() {
       "-e",
       "POSTGRES_HOST_AUTH_METHOD=trust",
       // pgvector required for migration 126 (Knowledge Base embeddings)
-      "pgvector/pgvector:pg16",
+      "pgvector/pgvector:pg17",
     ],
     { stdio: "pipe" },
   );
