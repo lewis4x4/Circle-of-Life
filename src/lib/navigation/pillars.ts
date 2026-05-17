@@ -94,6 +94,7 @@ export const PILLARS: Pillar[] = [
       { key: "executive", href: "/admin/executive", label: "Executive summary", icon: LineChart },
       { key: "reports", href: "/admin/reports", label: "Reports hub", icon: FileText },
       { key: "facilities", href: "/admin/facilities", label: "Facilities", icon: Hotel },
+      { key: "billing", href: "/admin/billing", label: "Billing & AR", icon: CreditCard },
     ],
   },
   {
@@ -149,6 +150,7 @@ export const PILLARS: Pillar[] = [
       { key: "certifications", href: "/admin/certifications", label: "Certifications", icon: Award },
       { key: "training", href: "/admin/training", label: "Training", icon: GraduationCap },
       { key: "time-records", href: "/admin/time-records", label: "Time records", icon: Clock },
+      { key: "payroll", href: "/admin/payroll", label: "Payroll", icon: Banknote },
     ],
   },
   {
@@ -169,11 +171,9 @@ export const PILLARS: Pillar[] = [
  * pillar.
  */
 export const AUXILIARY_ROUTES: PillarItem[] = [
-  { key: "billing", href: "/admin/billing", label: "Billing & AR", icon: CreditCard },
   { key: "finance", href: "/admin/finance", label: "Finance hub", icon: Landmark },
   { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
   { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
-  { key: "payroll", href: "/admin/payroll", label: "Payroll", icon: Banknote },
   { key: "users", href: "/admin/settings/users", label: "User management", icon: Users },
   { key: "settings-notifications", href: "/admin/settings/notifications", label: "Notification settings", icon: Settings },
   { key: "pilot-feedback", href: "/admin/feedback", label: "Pilot feedback", icon: MessageSquare },
