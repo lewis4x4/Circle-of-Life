@@ -731,6 +731,11 @@ async function logKnowledgeGap(args: {
   // KB-NEXT-11: route through _kb_record_gap so frequency / merging happens
   // server-side. Signal=router_no_grounded_source identifies router-tier
   // misses (vs knowledge-agent kb_empty or chat thumbs_down).
+  //
+  // NOTE: p_workspace_id is TEXT in the function signature (not uuid).
+  // The KB tables (documents, chunks, knowledge_gaps, chat_*) all store
+  // workspace_id as text; the function was patched 2026-05-17 (commit
+  // 8aca7c8) to match. Pass a string; do not cast to uuid.
   try {
     const { error } = await args.admin.rpc("_kb_record_gap", {
       p_workspace_id: args.organizationId,

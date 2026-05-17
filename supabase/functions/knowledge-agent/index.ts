@@ -3846,6 +3846,11 @@ Deno.serve(async (req) => {
           // merges into the same dedupe/frequency keyspace as the router
           // and the thumbs-down trigger. log_knowledge_gap is left for
           // back-compat callers but is no longer the chat path.
+          //
+          // NOTE: p_workspace_id is TEXT in the function signature (not uuid).
+          // The KB tables (documents, chunks, knowledge_gaps, chat_*) all
+          // store workspace_id as text; the function was patched 2026-05-17
+          // (commit 8aca7c8) to match. Pass a string; do not cast to uuid.
           const { error: gapErr } = await admin.rpc("_kb_record_gap", {
             p_workspace_id: workspaceId,
             p_user_id: user.id,
