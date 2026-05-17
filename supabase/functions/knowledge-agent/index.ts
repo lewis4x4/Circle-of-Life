@@ -3842,10 +3842,18 @@ Deno.serve(async (req) => {
         }
 
         if (result.kbSearchMiss) {
-          const { error: gapErr } = await admin.rpc("log_knowledge_gap", {
+          // KB-NEXT-11: switch to _kb_record_gap so the chat surface
+          // merges into the same dedupe/frequency keyspace as the router
+          // and the thumbs-down trigger. log_knowledge_gap is left for
+          // back-compat callers but is no longer the chat path.
+          const { error: gapErr } = await admin.rpc("_kb_record_gap", {
             p_workspace_id: workspaceId,
             p_user_id: user.id,
             p_question: message,
+            p_signal: "kb_empty",
+            p_surface: "knowledge_agent",
+            p_intent: null,
+            p_facility_id: null,
             p_trace_id: traceId,
           });
           if (gapErr) {

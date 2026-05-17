@@ -725,14 +725,22 @@ async function logKnowledgeGap(args: {
   organizationId: string;
   userId: string;
   question: string;
+  intent?: string | null;
+  facilityId?: string | null;
 }): Promise<void> {
+  // KB-NEXT-11: route through _kb_record_gap so frequency / merging happens
+  // server-side. Signal=router_no_grounded_source identifies router-tier
+  // misses (vs knowledge-agent kb_empty or chat thumbs_down).
   try {
-    const normalized = args.question.toLowerCase().trim().replace(/\s+/g, " ");
-    const { error } = await args.admin.from("knowledge_gaps").insert({
-      workspace_id: args.organizationId,
-      user_id: args.userId,
-      question: args.question.slice(0, 2000),
-      question_normalized: normalized.slice(0, 2000),
+    const { error } = await args.admin.rpc("_kb_record_gap", {
+      p_workspace_id: args.organizationId,
+      p_user_id: args.userId,
+      p_question: args.question.slice(0, 2000),
+      p_signal: "router_no_grounded_source",
+      p_surface: "router",
+      p_intent: args.intent ?? null,
+      p_facility_id: args.facilityId ?? null,
+      p_trace_id: null,
     });
     if (error) {
       logError("knowledge_gap_insert_failed", error);
