@@ -6,6 +6,9 @@
  * Dual navigation system for executive dashboards:
  * - Top navigation: Major domains (Command, Pipeline, Clinical Ops, Quality & Risk, Knowledge, Workforce, Finance)
  * - Pill menu: Executive view switching within domain (Overview, CEO View, CFO View, COO View, Alerts, Reports, Benchmarks, Haven Insight)
+ *
+ * Quiet Operator treatment: solid bg-card surfaces, semantic token borders,
+ * no glass/blur. Active pill uses bg-secondary + left-bar accent via border-l-2.
  */
 
 import React from "react";
@@ -126,13 +129,13 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex items-center bg-slate-900/50 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 h-12 gap-6">
+    <div className="flex items-center bg-card border-b border-border px-4 sm:px-6 h-12 gap-6">
       {/* Haven Brand */}
       <Link href="/admin/executive" className="flex items-center gap-3 mr-4 group">
-        <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-bold text-sm group-hover:bg-indigo-400 transition-colors">
+        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm group-hover:bg-primary/80 transition-colors duration-[var(--motion-duration-micro)]">
           H
         </div>
-        <span className="font-bold text-slate-100 text-base group-hover:text-white transition-colors">
+        <span className="font-bold text-card-foreground text-base group-hover:text-foreground transition-colors duration-[var(--motion-duration-micro)]">
           Haven
         </span>
       </Link>
@@ -146,10 +149,11 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
             href={tab.href}
             onClick={() => onTabChange?.(tab.id)}
             className={cn(
-              "flex items-center gap-2 text-sm font-semibold h-full transition-all duration-200 border-b-2",
+              "flex items-center gap-2 text-sm font-semibold h-full transition-all duration-[var(--motion-duration-micro)] border-b-2",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isActive
-                ? "text-white border-indigo-400"
-                : "text-slate-400 border-transparent hover:text-slate-200"
+                ? "text-foreground border-primary"
+                : "text-muted-foreground border-transparent hover:text-foreground"
             )}
           >
             <tab.icon className="w-3.5 h-3.5" />
@@ -179,14 +183,18 @@ interface PillMenuProps {
 
 function PillMenu({ activeTab, onTabChange, tabs }: PillMenuProps) {
   return (
-    <div className="flex flex-wrap items-center bg-white/[0.03] border border-white/5 rounded-full px-1 py-1 gap-1">
+    // Solid bg-card container with semantic border; rounded-[var(--radius)] matches Dashboard 10px
+    <div className="flex flex-wrap items-center bg-card border border-border rounded-[var(--radius)] px-1 py-1 gap-1">
       {tabs.map((tab) => {
         const href = PILL_LINKS[tab];
+        const isActive = activeTab === tab;
+        // Active: solid bg-secondary + 2px brand-primary left accent bar
         const cls = cn(
-          "px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300",
-          activeTab === tab
-            ? "bg-white/10 text-white shadow-[0_2px_10px_rgba(0,0,0,0.2)]"
-            : "text-slate-400 hover:text-white"
+          "px-4 py-1.5 rounded-[calc(var(--radius)-2px)] text-xs font-semibold transition-all duration-[var(--motion-duration)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isActive
+            ? "bg-secondary text-foreground border-l-2 border-primary pl-[calc(1rem-2px)]"
+            : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
         );
         if (href) {
           return (

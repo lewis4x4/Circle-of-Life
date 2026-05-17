@@ -5,6 +5,9 @@
  *
  * Dropdown component for selecting time ranges for executive dashboards.
  * Supports MTD, YTD, Last 30 Days, Last 90 Days, and Custom Range options.
+ *
+ * Quiet Operator treatment: solid bg-card dropdown, semantic token borders,
+ * bg-primary active state, no glass/blur. Motion uses micro-duration tier.
  */
 
 import React, { useState } from "react";
@@ -90,18 +93,20 @@ export function TimeRangeSelector({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex items-center gap-2 px-4 py-2 text-xs font-semibold",
-          "bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-slate-600",
-          "rounded-lg transition-all duration-200",
-          isOpen && "ring-2 ring-indigo-500/50"
+          "bg-card hover:bg-secondary border border-border",
+          "rounded-[var(--radius)] transition-all duration-[var(--motion-duration-micro)]",
+          "text-foreground",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isOpen && "ring-2 ring-ring/50"
         )}
       >
-        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-        <span className="text-slate-200">
+        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+        <span>
           {TIME_RANGE_LABELS[value]}
         </span>
         <ChevronDown
           className={cn(
-            "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
+            "w-3.5 h-3.5 text-muted-foreground transition-transform duration-[var(--motion-duration-micro)]",
             isOpen && "rotate-180"
           )}
         />
@@ -118,15 +123,16 @@ export function TimeRangeSelector({
 
           {/* Menu */}
           <div className="absolute top-full left-0 mt-2 z-50 min-w-[160px]">
-            <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden">
+            <div className="bg-card border border-border rounded-[var(--radius)] shadow-[var(--shadow-lift)] overflow-hidden">
               {TIME_RANGES.map((range) => (
                 <button
                   key={range}
                   onClick={() => handleRangeChange(range)}
                   className={cn(
-                    "w-full px-4 py-2 text-left text-xs font-semibold transition-colors duration-150",
-                    "hover:bg-slate-800",
-                    value === range && "bg-indigo-500/20 text-indigo-300"
+                    "w-full px-4 py-2 text-left text-xs font-semibold transition-colors duration-[var(--motion-duration-micro)]",
+                    "text-foreground",
+                    "hover:bg-secondary",
+                    value === range && "bg-primary/10 text-primary"
                   )}
                 >
                   {TIME_RANGE_LABELS[range]}
@@ -140,44 +146,44 @@ export function TimeRangeSelector({
       {/* Custom Date Range Picker */}
       {showDatePicker && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — warm near-black scrim, no blur */}
           <div
-            className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-[color:var(--overlay)]"
             onClick={handleCustomRangeCancel}
           />
 
           {/* Date Picker Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-              className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-md w-full"
+              className="bg-card border border-border rounded-[var(--radius)] shadow-[var(--shadow-lift)] p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-sm font-semibold text-slate-200 mb-4">
+              <h3 className="text-sm font-semibold text-card-foreground mb-4">
                 Custom Date Range
               </h3>
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">
+                  <label className="text-xs text-muted-foreground mb-1 block">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={startDate ? startDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => setStartDate(new Date(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-sm bg-background border border-input rounded-[var(--radius)] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">
+                  <label className="text-xs text-muted-foreground mb-1 block">
                     End Date
                   </label>
                   <input
                     type="date"
                     value={endDate ? endDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => setEndDate(new Date(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-sm bg-background border border-input rounded-[var(--radius)] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
               </div>
@@ -185,7 +191,7 @@ export function TimeRangeSelector({
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={handleCustomRangeCancel}
-                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors duration-[var(--motion-duration-micro)]"
                 >
                   Cancel
                 </button>
@@ -193,10 +199,10 @@ export function TimeRangeSelector({
                   onClick={handleCustomRangeApply}
                   disabled={!startDate || !endDate}
                   className={cn(
-                    "px-4 py-2 text-xs font-semibold text-slate-900 rounded-lg transition-colors",
+                    "px-4 py-2 text-xs font-semibold rounded-[var(--radius)] transition-colors duration-[var(--motion-duration-micro)]",
                     startDate && endDate
-                      ? "bg-white hover:bg-slate-100"
-                      : "bg-slate-700 cursor-not-allowed"
+                      ? "bg-primary hover:bg-primary/80 text-primary-foreground"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
                   )}
                 >
                   Apply

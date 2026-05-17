@@ -3,16 +3,16 @@
 /**
  * Moonshot Metric Card
  *
- * Enhanced metric card component for moonshot-quality executive dashboards.
- * Features neon glow borders, hover animations, sparkline area charts,
- * gradient fills, text shadows, and click-to-action support.
+ * Enhanced metric card component for executive dashboards.
+ * Quiet Operator treatment: solid bg-card surface, semantic tokens,
+ * 2px hover lift, no glass/blur/gradient chrome.
  */
 
 import React from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type MoonshotColor, getMoonshotDimColor, createGlowShadow } from "@/lib/moonshot-theme";
+import { type MoonshotColor } from "@/lib/moonshot-theme";
 import { MonoLabel, MetricValue } from "@/components/ui/typography";
 // ── TYPES ──
 
@@ -61,34 +61,29 @@ export function MetricCardMoonshot({
   disabled = false,
 }: MetricCardMoonshotProps) {
   // Sparkline JSX was stripped during the Phase D D1 codemod sweep (the
-  // `Sparkline` component was a null-return stub). `sparklineVariant` and
-  // `colorHex` are no longer referenced.
-  const dimColorHex = getMoonshotDimColor(color);
-  const glowShadow = createGlowShadow(color);
+  // `Sparkline` component was a null-return stub). `sparklineVariant` is no
+  // longer referenced.
 
   const isInteractive = !disabled && (onClick || href);
 
   const content = (
     <div
       className={cn(
-        "relative overflow-hidden transition-all duration-300",
-        "rounded-2xl p-5 h-[120px] flex flex-col justify-between",
-        "border border-white/5",
-        "bg-[rgba(18, 25, 43, 0.5)] backdrop-blur-xl",
+        "relative overflow-hidden transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)]",
+        "rounded-[var(--radius)] p-[15px] h-[120px] flex flex-col justify-between",
+        "bg-card text-card-foreground border border-border",
+        "shadow-[var(--shadow-card)]",
         compact && "h-[100px] p-4",
         isInteractive &&
-          "cursor-pointer hover:-translate-y-[2px] hover:shadow-xl hover:border-white/10",
+          "cursor-pointer hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]",
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}
-      style={{
-        boxShadow: isInteractive ? glowShadow : undefined,
-      }}
       onClick={isInteractive ? onClick : undefined}
     >
-      {/* Background Sparkline */}
+      {/* Background Sparkline placeholder — no-op stub */}
       {showSparkline && (
-        <div className="absolute bottom-0 left-0 right-0 h-20 opacity-15 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none">
           <></>
         </div>
       )}
@@ -97,25 +92,23 @@ export function MetricCardMoonshot({
       <div className="relative z-10 flex items-center justify-between gap-2">
         <MonoLabel color={color}>{label}</MonoLabel>
         {trend && (
-          <div className="flex items-center gap-1 text-[10px] font-semibold">
+          <div
+            className={cn(
+              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+              trend === "up" && "bg-success/10 text-success",
+              trend === "down" && "bg-destructive/10 text-destructive",
+              trend === "flat" && "bg-muted text-muted-foreground"
+            )}
+          >
             {trend === "up" && (
-              <TrendingUp className="w-3 h-3 text-emerald-400" />
+              <TrendingUp className="w-3 h-3" />
             )}
             {trend === "down" && (
-              <TrendingDown className="w-3 h-3 text-rose-400" />
+              <TrendingDown className="w-3 h-3" />
             )}
-            {trend === "flat" && <Minus className="w-3 h-3 text-slate-400" />}
+            {trend === "flat" && <Minus className="w-3 h-3" />}
             {trendValue && (
-              <span
-                className={cn(
-                  "font-mono",
-                  trend === "up" && "text-emerald-400",
-                  trend === "down" && "text-rose-400",
-                  trend === "flat" && "text-slate-400"
-                )}
-              >
-                {trendValue}
-              </span>
+              <span>{trendValue}</span>
             )}
           </div>
         )}
@@ -126,31 +119,21 @@ export function MetricCardMoonshot({
         <MetricValue
           color={color}
           size={compact ? "2xl" : "3xl"}
-          className="transition-all duration-300"
+          className="transition-all duration-[var(--motion-duration)]"
         >
           {value}
         </MetricValue>
         {isInteractive && (
-          <ArrowUpRight className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <ArrowUpRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--motion-duration)]" />
         )}
       </div>
-
-      {/* Hover Glow Effect */}
-      {isInteractive && (
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-screen"
-          style={{
-            background: `radial-gradient(circle at top, ${dimColorHex} 0%, transparent 70%)`,
-          }}
-        />
-      )}
     </div>
   );
 
   // Wrap in Link if href is provided
   if (href && !disabled) {
     return (
-      <Link href={href} className="block h-full w-full group outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-2xl">
+      <Link href={href} className="block h-full w-full group outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-offset-2 rounded-[var(--radius)]">
         {content}
       </Link>
     );

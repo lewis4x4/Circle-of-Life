@@ -7,6 +7,18 @@
  * - X-axis: L3/L4 critical incidents
  * - Y-axis: Public reputation score (inverse)
  * - Quadrant analysis: High Risk, High Incidents, Poor Reputation, Safe Zone
+ *
+ * Quiet Operator treatment: solid bg-popover tooltip, semantic border,
+ * semantic status colors for risk levels, no glass/blur.
+ *
+ * Note: recharts tick.fill and stroke props accept only resolved CSS color
+ * strings (SVG attribute, not style prop). Values below are resolved from
+ * globals.css tokens: --muted-foreground=40 6% 55%, --border=36 6% 14%,
+ * --warning=32 58% 60%, --destructive=8 48% 54%, --success=92 25% 49%.
+ *
+ * MAINTENANCE: If globals.css --warning, --destructive, --success,
+ * --muted-foreground, or --border are retuned, update RISK_COLORS and the
+ * inline `hsla()` cursor fill below. SVG attributes do not process `var()`.
  */
 
 import React from "react";
@@ -24,7 +36,7 @@ import {
 } from "recharts";
 import type { TooltipContentProps } from "recharts";
 import { cn } from "@/lib/utils";
-import { MOONSHOT_COLORS, type MoonshotColor } from "@/lib/moonshot-theme";
+import { type MoonshotColor } from "@/lib/moonshot-theme";
 
 // ── TYPES ──
 
@@ -51,6 +63,18 @@ export interface CeoRiskIndexChartProps {
   /** Additional CSS classes */
   className?: string;
 }
+
+// ── RESOLVED SEMANTIC COLORS (from globals.css tokens) ──
+// These match the --warning, --destructive, --success, --border, --muted-foreground values.
+const RISK_COLORS: Record<string, string> = {
+  rose: "hsl(8, 48%, 54%)",       // --destructive
+  amber: "hsl(32, 58%, 60%)",      // --warning
+  emerald: "hsl(92, 25%, 49%)",    // --success
+};
+const AXIS_TICK_COLOR = "hsl(40, 6%, 55%)";  // --muted-foreground
+const GRID_STROKE_COLOR = "hsl(36, 6%, 14%)"; // --border
+const REF_LINE_COLOR = "hsl(32, 58%, 60%)";   // --warning
+const REF_AREA_COLOR = "hsl(8, 48%, 54%)";    // --destructive
 
 // ── RISK LEVEL CALCULATOR ──
 
@@ -85,36 +109,36 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     const riskLevel = getRiskLevel(data.criticalIncidents, data.reputationInverse);
 
     return (
-      <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-3 rounded-lg shadow-2xl">
-        <p className="text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">
+      <div className="bg-popover border border-border p-3 rounded-[var(--radius)] shadow-[var(--shadow-lift)]">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
           {data.facility}
         </p>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: MOONSHOT_COLORS.rose }}
+              style={{ backgroundColor: RISK_COLORS.rose }}
             />
-            <span className="text-sm font-semibold text-slate-100">
-              L3/L4 Incidents: <span className="font-mono">{data.criticalIncidents}</span>
+            <span className="text-sm font-semibold text-foreground">
+              L3/L4 Incidents: <span>{data.criticalIncidents}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: MOONSHOT_COLORS.amber }}
+              style={{ backgroundColor: RISK_COLORS.amber }}
             />
-            <span className="text-sm font-semibold text-slate-100">
-              Reputation: <span className="font-mono">{data.reputationScore || (50 - data.reputationInverse).toFixed(1)}</span>
+            <span className="text-sm font-semibold text-foreground">
+              Reputation: <span>{data.reputationScore || (50 - data.reputationInverse).toFixed(1)}</span>
             </span>
           </div>
-          <div className="pt-1 border-t border-slate-700 mt-2">
+          <div className="pt-1 border-t border-border mt-2">
             <span
               className={cn(
-                "text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded",
-                riskLevel.color === "emerald" && "bg-emerald-500/20 text-emerald-300",
-                riskLevel.color === "amber" && "bg-amber-500/20 text-amber-300",
-                riskLevel.color === "rose" && "bg-rose-500/20 text-rose-300"
+                "text-[11px] font-medium uppercase tracking-wider px-2 py-0.5 rounded",
+                riskLevel.color === "emerald" && "bg-success/10 text-success",
+                riskLevel.color === "amber" && "bg-warning/10 text-warning",
+                riskLevel.color === "rose" && "bg-destructive/10 text-destructive"
               )}
             >
               {riskLevel.level}
@@ -137,7 +161,7 @@ export function CeoRiskIndexChart({
   onFacilityClick,
   className,
 }: CeoRiskIndexChartProps) {
-  // Enrich data with risk levels and colors
+  // Enrich data with risk levels and semantic colors
   const enrichedData = React.useMemo(
     () =>
       data.map((item) => {
@@ -149,7 +173,7 @@ export function CeoRiskIndexChart({
         );
         return {
           ...item,
-          color: MOONSHOT_COLORS[riskLevel.color],
+          color: RISK_COLORS[riskLevel.color] || RISK_COLORS.amber,
         };
       }),
     [data, highIncidentsThreshold, poorReputationThreshold]
@@ -164,36 +188,36 @@ export function CeoRiskIndexChart({
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke={MOONSHOT_COLORS.border}
+            stroke={GRID_STROKE_COLOR}
             vertical={false}
           />
           <XAxis
             dataKey="facility"
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 10, fill: MOONSHOT_COLORS.textDim }}
+            tick={{ fontSize: 10, fill: AXIS_TICK_COLOR }}
             dy={10}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 10, fill: MOONSHOT_COLORS.textDim }}
+            tick={{ fontSize: 10, fill: AXIS_TICK_COLOR }}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(244,63,94,0.05)" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsla(8, 48%, 54%, 0.05)" }} />
 
           {/* Quadrant Reference Lines */}
           {showQuadrants && (
             <>
               <ReferenceLine
                 y={poorReputationThreshold}
-                stroke={MOONSHOT_COLORS.amber}
+                stroke={REF_LINE_COLOR}
                 strokeDasharray="5 5"
                 strokeWidth={1}
                 opacity={0.3}
               />
               <ReferenceLine
                 x={highIncidentsThreshold}
-                stroke={MOONSHOT_COLORS.amber}
+                stroke={REF_LINE_COLOR}
                 strokeDasharray="5 5"
                 strokeWidth={1}
                 opacity={0.3}
@@ -208,7 +232,7 @@ export function CeoRiskIndexChart({
               x2={Infinity}
               y1={0}
               y2={poorReputationThreshold}
-              fill={MOONSHOT_COLORS.rose}
+              fill={REF_AREA_COLOR}
               fillOpacity={0.05}
             />
           )}
