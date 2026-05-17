@@ -13,17 +13,20 @@ import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type InvRow = Database["public"]["Tables"]["vendor_invoices"]["Row"];
 
-const STATUS_CLASSES: Record<string, string> = {
-  pending: "bg-warning/10 text-warning border-warning/20",
-  approved: "bg-info/10 text-info border-info/20",
-  paid: "bg-success/10 text-success border-success/20",
-  rejected: "bg-destructive/10 text-destructive border-destructive/20",
-};
+type InvoiceTone = "neutral" | "warning" | "destructive";
+
+function invoiceStatusTone(status: string): InvoiceTone {
+  if (status === "rejected") return "destructive";
+  if (status === "pending") return "warning";
+  return "neutral";
+}
 
 export default function VendorInvoicesPage() {
   const supabase = createClient();
@@ -82,30 +85,24 @@ export default function VendorInvoicesPage() {
           <AdminEmptyState title="No vendor invoices" description="Vendor invoices will appear here once entered." />
         ) : (
           <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-            {/* Header row */}
-            <div className="flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className={TABLE_HEADER_CLASS}>
               <span className="w-[140px] shrink-0">Invoice #</span>
               <span className="w-[100px] shrink-0">Status</span>
               <span className="w-[110px] shrink-0">Date</span>
               <span className="flex-1">Total</span>
             </div>
-            <MotionList className="space-y-1">
+            <MotionList className="space-y-1 p-1">
               {rows.map((r) => (
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/vendors/invoices/${r.id}`}
-                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                    className={cn(TABLE_ROW_CLASS, "group")}
                   >
                     <span className="w-[140px] shrink-0 font-mono text-[12px] text-foreground font-medium truncate">
                       {r.invoice_number}
                     </span>
                     <span className="w-[100px] shrink-0">
-                      <span className={cn(
-                        "inline-flex text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 rounded-full border",
-                        STATUS_CLASSES[r.status] ?? "bg-muted text-muted-foreground border-border"
-                      )}>
-                        {r.status}
-                      </span>
+                      <StatusPill tone={invoiceStatusTone(r.status)}>{r.status}</StatusPill>
                     </span>
                     <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
                       {r.invoice_date}

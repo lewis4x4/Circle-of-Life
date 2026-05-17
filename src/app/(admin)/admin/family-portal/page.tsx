@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
@@ -403,9 +404,15 @@ export default function AdminFamilyPortalPage() {
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
                           <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400">
+                          <StatusPill
+                            tone={
+                              row.triage_status === "pending_review" || row.triage_status === "in_review"
+                                ? "warning"
+                                : "neutral"
+                            }
+                          >
                             {formatStatus(row.triage_status)}
-                          </span>
+                          </StatusPill>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">
@@ -565,9 +572,9 @@ export default function AdminFamilyPortalPage() {
                         
                         <div className="flex flex-row justify-between lg:justify-start items-center">
                           <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-muted text-muted-foreground border-border">
+                          <StatusPill tone="neutral">
                             {formatStatus(row.status)}
-                          </span>
+                          </StatusPill>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-start items-center">

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Pill, Utensils } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -375,18 +376,16 @@ export default function DietaryClinicalReviewPage() {
                                 {m.instructions?.trim() ? ` — ${m.instructions}` : ""}
                               </p>
                             </div>
-                            <span
-                              className={cn(
-                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider shrink-0",
-                                m.status === "active"
-                                  ? "bg-success/10 text-success border border-success/30"
-                                  : m.status === "discontinued"
-                                    ? "bg-muted text-muted-foreground border border-border"
-                                    : "bg-warning/10 text-warning border border-warning/30",
-                              )}
+                            <StatusPill
+                              tone={
+                                m.status === "active" || m.status === "discontinued"
+                                  ? "neutral"
+                                  : "warning"
+                              }
+                              className="shrink-0"
                             >
                               {m.status.replace(/_/g, " ")}
-                            </span>
+                            </StatusPill>
                           </div>
                         </li>
                       ))}

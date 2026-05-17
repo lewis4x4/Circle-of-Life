@@ -22,6 +22,8 @@ import Link from "next/link";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
@@ -477,43 +479,42 @@ export default function ReportsOverviewPage() {
                 </Link>
               </div>
             ) : (
-              <ul className="space-y-2">
-                {recentRuns.map((run) => {
-                  const detailHref = `/admin/reports/run/${encodeURIComponent(run.source_type)}/${encodeURIComponent(run.source_id)}`;
-                  const statusOk = run.status === "completed";
-                  const statusFail = run.status === "failed";
+              <div>
+                <div className={TABLE_HEADER_CLASS}>
+                  <span className="flex-1 min-w-0">Source</span>
+                  <span className="w-[90px] shrink-0">Status</span>
+                  <span className="w-[110px] shrink-0 text-right">Started</span>
+                </div>
+                <ul className="space-y-1 p-1">
+                  {recentRuns.map((run) => {
+                    const detailHref = `/admin/reports/run/${encodeURIComponent(run.source_type)}/${encodeURIComponent(run.source_id)}`;
+                    const statusOk = run.status === "completed";
+                    const statusFail = run.status === "failed";
 
-                  return (
-                    <li key={run.id}>
-                      <Link
-                        href={detailHref}
-                        className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="truncate font-mono text-xs font-medium text-foreground">{run.source_type}</span>
+                    return (
+                      <li key={run.id}>
+                        <Link href={detailHref} className={cn(TABLE_ROW_CLASS, "group")}>
+                          <span className="flex-1 min-w-0 truncate font-mono text-[12px] font-medium text-foreground">
+                            {run.source_type}
+                          </span>
+                          <span className="w-[90px] shrink-0">
                             {statusOk ? (
-                              <Badge className="rounded-full border border-success/30 bg-success/10 text-[10px] text-success">
-                                Done
-                              </Badge>
+                              <StatusPill tone="neutral">Done</StatusPill>
                             ) : statusFail ? (
-                              <Badge className="rounded-full border border-destructive/30 bg-destructive/10 text-[10px] text-destructive">
-                                Failed
-                              </Badge>
+                              <StatusPill tone="destructive">Failed</StatusPill>
                             ) : (
-                              <Badge className="rounded-full border border-warning/30 bg-warning/10 text-[10px] text-warning">
-                                {run.status}
-                              </Badge>
+                              <StatusPill tone="warning">{run.status}</StatusPill>
                             )}
-                          </div>
-                          <p className="mt-0.5 text-xs text-muted-foreground">{formatRunTime(run.started_at)} · NY</p>
-                        </div>
-                        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+                          </span>
+                          <span className="w-[110px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
+                            {formatRunTime(run.started_at)}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </section>
         </div>

@@ -12,6 +12,7 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -205,23 +206,25 @@ export default function AdminQualityHubPage() {
              <p className="text-sm opacity-80 mt-1">Use &apos;Define a measure&apos; to populate standard telemetry data.</p>
           </div>
         ) : (
-          <MotionList className="space-y-2">
-            {measures.map((m) => (
-              <MotionItem key={m.id} className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[13px] font-medium text-foreground">{m.name}</span>
-                  <div className="flex items-center gap-2">
-                     <span className="text-[10px] font-mono tracking-wider uppercase text-slate-400 bg-white dark:bg-black/40 px-2 py-0.5 rounded shadow-sm">{m.measure_key}</span>
-                     {m.domain && <span className="text-xs text-slate-500">{m.domain}</span>}
-                  </div>
-                </div>
-                <div className="text-right flex flex-col items-end">
-                   <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Unit</span>
-                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{m.unit ?? "—"}</span>
-                </div>
-              </MotionItem>
-            ))}
-          </MotionList>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className={TABLE_HEADER_CLASS}>
+              <span className="flex-[2] min-w-0">Measure</span>
+              <span className="flex-1 min-w-0">Key / Domain</span>
+              <span className="w-[90px] shrink-0 text-right">Unit</span>
+            </div>
+            <MotionList className="space-y-1 p-1">
+              {measures.map((m) => (
+                <MotionItem key={m.id} className={cn(TABLE_ROW_CLASS, "group")}>
+                  <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">{m.name}</span>
+                  <span className="flex-1 min-w-0 flex items-center gap-2">
+                    <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground truncate">{m.measure_key}</span>
+                    {m.domain ? <span className="text-[11px] text-muted-foreground truncate">· {m.domain}</span> : null}
+                  </span>
+                  <span className="w-[90px] shrink-0 text-right text-[12px] font-medium text-foreground">{m.unit ?? "—"}</span>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </div>
         )}
       </div>
 
@@ -239,21 +242,26 @@ export default function AdminQualityHubPage() {
              <p className="text-sm opacity-80 mt-1">Import or enter results in a facility follow-up.</p>
           </div>
         ) : (
-          <MotionList className="space-y-2">
-            {latest.map((r) => (
-              <MotionItem key={r.id ?? `${r.quality_measure_id}-${r.period_end}`} className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[13px] font-medium text-foreground">{r.quality_measures?.name ?? r.quality_measure_id ?? "—"}</span>
-                  <span className="text-xs text-slate-500 font-mono">
-                    {r.period_start ?? "—"} <span className="opacity-50">→</span> {r.period_end ?? "—"}
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className={TABLE_HEADER_CLASS}>
+              <span className="flex-[2] min-w-0">Measure</span>
+              <span className="flex-1 min-w-0">Period</span>
+              <span className="w-[110px] shrink-0 text-right">Value</span>
+            </div>
+            <MotionList className="space-y-1 p-1">
+              {latest.map((r) => (
+                <MotionItem key={r.id ?? `${r.quality_measure_id}-${r.period_end}`} className={cn(TABLE_ROW_CLASS, "group")}>
+                  <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">{r.quality_measures?.name ?? r.quality_measure_id ?? "—"}</span>
+                  <span className="flex-1 min-w-0 text-[11px] text-muted-foreground font-mono tabular-nums truncate">
+                    {r.period_start ?? "—"} → {r.period_end ?? "—"}
                   </span>
-                </div>
-                <span className="text-xl font-mono font-medium text-emerald-700 dark:text-emerald-400 tabular-nums bg-white dark:bg-black/40 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-900 shadow-sm">
-                   {r.value_numeric != null ? String(r.value_numeric) : (r.value_text ?? "—")}
-                </span>
-              </MotionItem>
-            ))}
-          </MotionList>
+                  <span className="w-[110px] shrink-0 text-right text-[13px] font-medium text-foreground font-mono tabular-nums">
+                    {r.value_numeric != null ? String(r.value_numeric) : (r.value_text ?? "—")}
+                  </span>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </div>
         )}
       </div>
 
@@ -272,28 +280,26 @@ export default function AdminQualityHubPage() {
              <p className="text-xs opacity-80 mt-1">Generation ships in Enhanced.</p>
           </div>
         ) : (
-          <MotionList className="space-y-2">
-            {pbjRows.map((p) => (
-              <MotionItem key={p.id} className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group">
-                <div className="flex flex-col gap-1 w-1/3">
-                  <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Period</span>
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200 font-mono tracking-tight">{p.period_start} → {p.period_end}</span>
-                </div>
-                <div className="flex flex-col gap-1 w-1/4">
-                  <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Status</span>
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200 capitalize">{p.status.replace(/_/g, " ")}</span>
-                </div>
-                <div className="flex flex-col gap-1 w-1/4 items-end">
-                  <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Rows</span>
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 tabular-nums">{p.row_count ?? "—"}</span>
-                </div>
-                <div className="flex flex-col gap-1 w-1/4 items-end">
-                   <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Created</span>
-                   <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
-                </div>
-              </MotionItem>
-            ))}
-          </MotionList>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className={TABLE_HEADER_CLASS}>
+              <span className="flex-[2] min-w-0">Period</span>
+              <span className="flex-1 min-w-0">Status</span>
+              <span className="w-[80px] shrink-0 text-right">Rows</span>
+              <span className="w-[140px] shrink-0 text-right">Created</span>
+            </div>
+            <MotionList className="space-y-1 p-1">
+              {pbjRows.map((p) => (
+                <MotionItem key={p.id} className={cn(TABLE_ROW_CLASS, "group")}>
+                  <span className="flex-[2] min-w-0 text-[12px] font-mono text-foreground tabular-nums truncate">{p.period_start} → {p.period_end}</span>
+                  <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{p.status.replace(/_/g, " ")}</span>
+                  <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{p.row_count ?? "—"}</span>
+                  <span className="w-[140px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
+                    {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                  </span>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </div>
         )}
       </div>
 

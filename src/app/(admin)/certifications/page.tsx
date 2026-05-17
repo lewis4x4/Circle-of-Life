@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { Award, ChevronRight, Download } from "lucide-react";
+import { Award, Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -14,6 +14,8 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -305,26 +307,68 @@ export default function AdminCertificationsPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card hoverColor="orange" className="border-warning/20">
+            <V2Card
+              hoverColor="orange"
+              className={cn(expiringCount > 0 ? "border-warning/20" : "border-border")}
+            >
               <></>
-              <MonolithicWatermark value={expiringCount} className="text-warning/10 opacity-50" />
+              <MonolithicWatermark
+                value={expiringCount}
+                className={cn(
+                  "opacity-50",
+                  expiringCount > 0 ? "text-warning/10" : "text-muted-foreground/10",
+                )}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] tracking-wider uppercase text-warning flex items-center gap-2">
+                <h3
+                  className={cn(
+                    "text-[10px] tracking-wider uppercase flex items-center gap-2",
+                    expiringCount > 0 ? "text-warning" : "text-muted-foreground",
+                  )}
+                >
                   <Award className="h-3.5 w-3.5" /> {windowFilter === "30d" ? "Expiring (30D)" : "Expiring (60D)"}
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-warning pb-1">{expiringCount}</p>
+                <p
+                  className={cn(
+                    "text-4xl font-mono tracking-tighter pb-1",
+                    expiringCount > 0 ? "text-warning" : "text-foreground",
+                  )}
+                >
+                  {expiringCount}
+                </p>
               </div>
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="rose" className="border-destructive/20">
+            <V2Card
+              hoverColor="rose"
+              className={cn(expiredCount > 0 ? "border-destructive/20" : "border-border")}
+            >
               <></>
-              <MonolithicWatermark value={expiredCount} className="text-destructive/10 opacity-50" />
+              <MonolithicWatermark
+                value={expiredCount}
+                className={cn(
+                  "opacity-50",
+                  expiredCount > 0 ? "text-destructive/10" : "text-muted-foreground/10",
+                )}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] tracking-wider uppercase text-destructive flex items-center gap-2">
+                <h3
+                  className={cn(
+                    "text-[10px] tracking-wider uppercase flex items-center gap-2",
+                    expiredCount > 0 ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
                    Expired / Revoked
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-destructive pb-1">{expiredCount}</p>
+                <p
+                  className={cn(
+                    "text-4xl font-mono tracking-tighter pb-1",
+                    expiredCount > 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  {expiredCount}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -441,51 +485,42 @@ export default function AdminCertificationsPage() {
             </Button>
           </div>
           
-          <MotionList className="space-y-3">
-            {filteredRows.map((row) => (
-              <MotionItem key={row.id}>
-                <Link
-                  href={`/admin/staff/${row.staffId}`}
-                  className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 group w-full"
-                >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-                      
-                      <div className="flex flex-col min-w-[200px]">
-                         <span className="font-semibold text-[13px] text-foreground">{row.staffName}</span>
-                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground my-1 w-fit px-2 py-0.5 rounded-[4px] bg-muted">{row.certificationName}</span>
-                         <span className="text-[12px] text-muted-foreground">{formatCertTypeLabel(row.certificationType)}</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full md:w-3/4 items-center">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Timeline</span>
-                          <div><TimelineBadge timeline={row.timeline} /></div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Record Status</span>
-                          <div><DbStatusBadge status={row.dbStatus} /></div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Issued</span>
-                          <span className="tabular-nums text-[12px] text-foreground">{formatIsoDate(row.issueDate)}</span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Expires</span>
-                          <span className="tabular-nums text-[12px] text-foreground uppercase">{row.expirationDate ? formatIsoDate(row.expirationDate) : "No expiry"}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="hidden sm:flex shrink-0">
-                         <div className="w-8 h-8 rounded-full bg-muted/40 flex items-center justify-center group-hover:bg-primary/10 transition-colors duration-[var(--motion-duration-micro)]">
-                           <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                         </div>
-                      </div>
-
-                    </div>
-                </Link>
-              </MotionItem>
-            ))}
-          </MotionList>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className={TABLE_HEADER_CLASS}>
+              <span className="flex-[2] min-w-0">Staff / Credential</span>
+              <span className="w-[140px] shrink-0">Timeline</span>
+              <span className="w-[140px] shrink-0">Record</span>
+              <span className="w-[110px] shrink-0">Issued</span>
+              <span className="w-[110px] shrink-0 text-right">Expires</span>
+            </div>
+            <MotionList className="space-y-1 p-1">
+              {filteredRows.map((row) => (
+                <MotionItem key={row.id}>
+                  <Link
+                    href={`/admin/staff/${row.staffId}`}
+                    className={cn(TABLE_ROW_CLASS, "group")}
+                  >
+                    <span className="flex-[2] min-w-0 flex items-baseline gap-2">
+                      <span className="text-[13px] font-medium text-foreground truncate">{row.staffName}</span>
+                      <span className="hidden md:inline text-[11px] text-muted-foreground truncate">{row.certificationName}</span>
+                    </span>
+                    <span className="w-[140px] shrink-0">
+                      <TimelinePill timeline={row.timeline} />
+                    </span>
+                    <span className="w-[140px] shrink-0">
+                      <DbStatusPill status={row.dbStatus} />
+                    </span>
+                    <span className="w-[110px] shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums truncate">
+                      {formatIsoDate(row.issueDate)}
+                    </span>
+                    <span className="w-[110px] shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums text-right truncate">
+                      {row.expirationDate ? formatIsoDate(row.expirationDate) : "No expiry"}
+                    </span>
+                  </Link>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </div>
         </div>
       ) : null}
       </div>
@@ -563,44 +598,33 @@ function formatIsoDate(isoDate: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
 }
 
-function formatCertTypeLabel(type: string): string {
-  return type
-    .split(/[_-]+/g)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
+/**
+ * Healthy default = `current` → neutral. `expiring_soon` = warning. `expired` = destructive.
+ */
+function TimelinePill({ timeline }: { timeline: TimelineUi }) {
+  switch (timeline) {
+    case "expired":
+      return <StatusPill tone="destructive">Expired</StatusPill>;
+    case "expiring_soon":
+      return <StatusPill tone="warning">Expiring soon</StatusPill>;
+    case "current":
+    default:
+      return <StatusPill tone="neutral">Current</StatusPill>;
+  }
 }
 
-function TimelineBadge({ timeline }: { timeline: TimelineUi }) {
-  const map: Record<TimelineUi, { label: string; className: string }> = {
-    current: { label: "Current", className: "bg-success/10 text-success uppercase tracking-wider text-[9px] font-semibold border-0" },
-    expiring_soon: {
-      label: "Expiring soon",
-      className: "bg-warning/10 text-warning uppercase tracking-wider text-[9px] font-semibold border-0",
-    },
-    expired: { label: "Expired", className: "bg-destructive/10 text-destructive uppercase tracking-wider text-[9px] font-semibold border-0" },
-  };
-  return <Badge className={map[timeline].className}>{map[timeline].label}</Badge>;
-}
-
-function DbStatusBadge({ status }: { status: string }) {
-  const label =
-    status === "pending_renewal"
-      ? "Pending renewal"
-      : status === "active"
-        ? "Active"
-        : status === "expired"
-          ? "Expired"
-          : status === "revoked"
-            ? "Revoked"
-            : status;
-  const className =
-    status === "active"
-      ? "bg-muted/40 text-muted-foreground uppercase tracking-wider text-[9px] font-semibold border-0"
-      : status === "pending_renewal"
-        ? "bg-warning/10 text-warning uppercase tracking-wider text-[9px] font-semibold border-0"
-        : status === "expired" || status === "revoked"
-          ? "bg-destructive/10 text-destructive uppercase tracking-wider text-[9px] font-semibold border-0"
-          : "bg-muted/40 text-muted-foreground uppercase tracking-wider text-[9px] font-semibold border-0";
-  return <Badge className={className}>{label}</Badge>;
+/**
+ * Healthy default = `active` → neutral. `pending_renewal` = warning. `expired`/`revoked` = destructive.
+ */
+function DbStatusPill({ status }: { status: string }) {
+  if (status === "expired" || status === "revoked") {
+    return <StatusPill tone="destructive">{status === "revoked" ? "Revoked" : "Expired"}</StatusPill>;
+  }
+  if (status === "pending_renewal") {
+    return <StatusPill tone="warning">Pending renewal</StatusPill>;
+  }
+  if (status === "active") {
+    return <StatusPill tone="neutral">Active</StatusPill>;
+  }
+  return <StatusPill tone="neutral">{status}</StatusPill>;
 }

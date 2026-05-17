@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { Utensils } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -593,32 +595,36 @@ export default function AdminDietaryHubPage() {
             {!loading && displayRows.length > 0 && rosterRows.length > 0 && (
               <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
-                <MotionList className="space-y-3">
-                  {rosterRows.map((row) => (
-                    <MotionItem
-                      key={row.id}
-                      className="flex items-center justify-between gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-foreground tracking-tight truncate flex items-center gap-2">
+                <div className="rounded-lg border border-border bg-card overflow-hidden">
+                  <div className={TABLE_HEADER_CLASS}>
+                    <span className="flex-[2] min-w-0">Resident</span>
+                    <span className="flex-1 min-w-0">Food</span>
+                    <span className="flex-1 min-w-0">Fluids</span>
+                    <span className="w-[110px] shrink-0 text-right">Fluid status</span>
+                  </div>
+                  <MotionList className="space-y-1 p-1">
+                    {rosterRows.map((row) => (
+                      <MotionItem key={row.id} className={cn(TABLE_ROW_CLASS, "group")}>
+                        <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
                           {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
-                        </p>
-                        <p className="text-[12px] font-medium text-muted-foreground truncate capitalize mt-1">
-                          Food: {row.iddsi_food_level.replace(/_/g, " ")} &middot; Fluids: {row.iddsi_fluid_level.replace(/_/g, " ")}
-                        </p>
-                      </div>
-                      {fluidIsThickened(row.iddsi_fluid_level) ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400 px-3 py-1.5 rounded-full shrink-0 h-fit">
-                          Thickened
                         </span>
-                      ) : (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 border border-slate-200 dark:bg-white/5 dark:border-white/10 px-3 py-1.5 rounded-full shrink-0 h-fit">
-                          Standard
+                        <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
+                          {row.iddsi_food_level.replace(/_/g, " ")}
                         </span>
-                      )}
-                    </MotionItem>
-                  ))}
-                </MotionList>
+                        <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
+                          {row.iddsi_fluid_level.replace(/_/g, " ")}
+                        </span>
+                        <span className="w-[110px] shrink-0 flex justify-end">
+                          {fluidIsThickened(row.iddsi_fluid_level) ? (
+                            <StatusPill tone="warning">Thickened</StatusPill>
+                          ) : (
+                            <StatusPill tone="neutral">Standard</StatusPill>
+                          )}
+                        </span>
+                      </MotionItem>
+                    ))}
+                  </MotionList>
+                </div>
               </div>
             )}
             

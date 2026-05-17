@@ -6,89 +6,128 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * StatusPill — small status indicator with optional colored dot.
+ * StatusPill — Quiet Operator status indicator.
  *
- * Used for transient operational state where the consumer wants to
- * surface "currently doing X" / "currently in Y" without a full Badge.
- * In the caregiver portal, this primitive backs the sync-state indicator
- * in the header (Synced / Syncing / Queued / Offline).
+ * Binding rule (component-rules.md §Tables rule 3):
+ *   "Status uses dot + label, never label alone."
  *
- * Variants:
- *   - default    — neutral, `border-border text-muted-foreground`
- *   - success    — synced / online — green dot, neutral text
- *   - warning    — syncing / queued — amber dot
- *   - destructive — offline / failed — red dot
+ * The dot is rendered by default. `showDot={false}` is a deliberate escape
+ * hatch — use only when the surrounding cell already carries a status
+ * indicator (e.g. a row-level color stripe).
  *
- * The `dot` prop renders an inline 8×8 circle in the variant color,
- * optionally `pulsing` (CSS `animate-pulse`). The pill itself stays
- * neutral so consumers can stack multiple pills without color shouting.
+ * Decorative-color rule (anti-patterns.md):
+ *   "Decorative use of color — color carries clinical meaning (red/amber/
+ *   green) and must not be applied for aesthetic variety."
  *
- * Variants use semantic tokens — `bg-success`, `bg-warning`, `bg-destructive`
- * — and resolve correctly in both light + dark.
+ *   - Healthy / default / "nothing to do" values use `tone="neutral"`:
+ *     muted gray dot, muted-foreground label, neutral pill chrome.
+ *     (e.g. ACTIVE staff, CURRENT certs, LOW overtime risk, Acuity 1,
+ *     In facility, On schedule.)
+ *   - Color is reserved for exceptions that warrant operator attention:
+ *     `tone="warning"`   amber (expiring cert, medium overtime risk, LOA)
+ *     `tone="destructive"` red   (expired cert, high overtime, severity 4)
+ *     `tone="info"`      steel-blue (informational, e.g. assisted ADL)
+ *     `tone="success"`   green — RESERVED for "successfully resolved /
+ *                              acknowledged" outcomes only, NOT for healthy
+ *                              default state. (Use `neutral` for default.)
+ *
+ * Typography: 10px uppercase tracking-wider. Sits comfortably inside a 36px
+ * Table / List row without lifting it.
  *
  * Usage:
- *   <StatusPill variant="success" dot>Synced</StatusPill>
- *   <StatusPill variant="warning" dot pulsing>Syncing</StatusPill>
- *   <StatusPill variant="destructive" dot>Offline · 3</StatusPill>
+ *   <StatusPill tone="neutral">Active</StatusPill>           // healthy/default
+ *   <StatusPill tone="warning">Expiring soon</StatusPill>    // exception
+ *   <StatusPill tone="destructive">Expired</StatusPill>      // exception
+ *   <StatusPill tone="warning" pulsing>Syncing</StatusPill>  // transient
  *
- * Wrap externally with a `<button>` when the pill is clickable. The
- * primitive is a `<span>` by default — it does not assume interaction.
+ * Backward-compat `variant` prop maps onto the new `tone` API:
+ *   variant="default"     → tone="neutral"
+ *   variant="success"     → tone="success"
+ *   variant="warning"     → tone="warning"
+ *   variant="destructive" → tone="destructive"
  */
 
-const dotVariants = cva("inline-block h-2 w-2 rounded-full", {
+type Tone = "neutral" | "success" | "warning" | "destructive" | "info";
+
+const dotVariants = cva("inline-block h-1.5 w-1.5 rounded-full shrink-0", {
   variants: {
-    variant: {
-      default: "bg-muted-foreground",
+    tone: {
+      neutral: "bg-muted-foreground/60",
       success: "bg-success",
       warning: "bg-warning",
       destructive: "bg-destructive",
-    },
+      info: "bg-info",
+    } satisfies Record<Tone, string>,
     pulsing: {
       true: "animate-pulse",
       false: "",
     },
   },
   defaultVariants: {
-    variant: "default",
+    tone: "neutral",
     pulsing: false,
   },
 });
 
 const pillVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+  "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors whitespace-nowrap",
   {
     variants: {
-      variant: {
-        default: "border-border bg-background text-muted-foreground",
-        success: "border-success/30 bg-success/10 text-foreground",
-        warning: "border-warning/30 bg-warning/10 text-foreground",
-        destructive: "border-destructive/30 bg-destructive/10 text-foreground",
-      },
+      tone: {
+        // Healthy / default — no color, just neutral chrome + gray dot.
+        neutral: "border-border bg-transparent text-muted-foreground",
+        // Exceptions — soft tint chrome at /10 bg + /30 border (S8 policy).
+        success: "border-success/30 bg-success/10 text-success",
+        warning: "border-warning/30 bg-warning/10 text-warning",
+        destructive: "border-destructive/30 bg-destructive/10 text-destructive",
+        info: "border-info/30 bg-info/10 text-info",
+      } satisfies Record<Tone, string>,
     },
     defaultVariants: {
-      variant: "default",
+      tone: "neutral",
     },
   },
 );
 
-type StatusPillProps = React.HTMLAttributes<HTMLSpanElement> &
+type LegacyVariant = "default" | "success" | "warning" | "destructive";
+
+const legacyVariantToTone: Record<LegacyVariant, Tone> = {
+  default: "neutral",
+  success: "success",
+  warning: "warning",
+  destructive: "destructive",
+};
+
+type StatusPillProps = Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> &
   VariantProps<typeof pillVariants> & {
+    /**
+     * Backward-compat alias for `tone`. New code should pass `tone` directly.
+     */
+    variant?: LegacyVariant;
+    /**
+     * Default `true` — the dot is the convention (component-rules.md §Tables
+     * rule 3). Pass `false` only when the surrounding cell already conveys
+     * status visually (e.g. row-level color stripe).
+     */
     dot?: boolean;
     pulsing?: boolean;
     children: React.ReactNode;
   };
 
 export function StatusPill({
+  tone,
   variant,
-  dot = false,
+  dot = true,
   pulsing = false,
   className,
   children,
   ...props
 }: StatusPillProps) {
+  const resolvedTone: Tone = tone ?? (variant ? legacyVariantToTone[variant] : "neutral");
+
   return (
-    <span className={cn(pillVariants({ variant }), className)} {...props}>
-      {dot && <span aria-hidden className={dotVariants({ variant, pulsing })} />}
+    <span className={cn(pillVariants({ tone: resolvedTone }), className)} {...props}>
+      {dot && <span aria-hidden className={dotVariants({ tone: resolvedTone, pulsing })} />}
       {children}
     </span>
   );

@@ -9,6 +9,8 @@ import { ArrowRight, CircleDollarSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
@@ -75,8 +77,7 @@ export default function LedgerPage() {
         ) : null}
 
         <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-          {/* Header row */}
-          <div className="flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className={TABLE_HEADER_CLASS}>
             <span className="flex-1 min-w-0">Memo</span>
             <span className="w-[140px] shrink-0">Entry date</span>
             <span className="w-[160px] shrink-0 text-right">
@@ -90,12 +91,12 @@ export default function LedgerPage() {
               <p className="text-sm text-muted-foreground mt-1">Period close processes or active journals will populate here.</p>
             </div>
           ) : (
-            <MotionList className="space-y-1">
+            <MotionList className="space-y-1 p-1">
               {rows.map((r) => (
                 <MotionItem key={r.id}>
                   <Link
                     href={`/admin/finance/journal-entries/${r.id}`}
-                    className="group flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                    className={cn(TABLE_ROW_CLASS, "group")}
                   >
                     <div className="flex-1 min-w-0 flex items-center gap-3">
                       <CircleDollarSign className="w-4 h-4 text-muted-foreground shrink-0 group-hover:text-success transition-colors" />

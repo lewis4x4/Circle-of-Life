@@ -7,6 +7,8 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { format, parseISO } from "date-fns";
@@ -83,67 +85,66 @@ export default function StaffIllnessListPage() {
              <span className="text-[12px] text-muted-foreground">{loading ? "Loading…" : `${rows.length} shown`}</span>
            </div>
 
-           <MotionList className="space-y-3">
-             {loading ? (
-               <p className="text-[13px] text-muted-foreground pl-2">Loading records…</p>
-             ) : rows.length === 0 ? (
-               <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-                  <p className="font-semibold text-[13px] text-foreground">All Clear</p>
-                 <p className="text-[12px] opacity-80 mt-1">No staff illnesses reported recently.</p>
+           {loading ? (
+             <p className="text-[13px] text-muted-foreground pl-2">Loading records…</p>
+           ) : rows.length === 0 ? (
+             <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
+                <p className="font-semibold text-[13px] text-foreground">All Clear</p>
+               <p className="text-[12px] opacity-80 mt-1">No staff illnesses reported recently.</p>
+             </div>
+           ) : (
+             <>
+               <div className={TABLE_HEADER_CLASS}>
+                 <span className="w-[220px] shrink-0">Status</span>
+                 <span className="flex-[2] min-w-0">Staff</span>
+                 <span className="flex-1 min-w-0">Illness type</span>
+                 <span className="flex-[1.5] min-w-0">Absence</span>
+                 <span className="w-[110px] shrink-0">Reported</span>
+                 <span className="w-[110px] shrink-0 text-right">Action</span>
                </div>
-             ) : (
-               rows.map((r) => {
-                 const name = r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : "Unknown Staff";
-                 const stillOut = !r.return_cleared;
-                 const formatD = (d: string) => format(parseISO(d.length <= 10 ? `${d}T12:00:00.000Z` : d), "MMM d, yyyy");
-                 return (
-                   <MotionItem
-                     key={r.id}
-                     className={cn(
-                       "flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 overflow-hidden relative",
-                       "flex-col sm:flex-row sm:items-center justify-between",
-                       stillOut 
-                         ? "border-destructive/30 hover:bg-destructive/10"
-                         : "border-border hover:bg-muted/40"
-                     )}
-                   >
-                     {stillOut && <div className="absolute left-0 top-0 w-1.5 h-full bg-destructive" />}
-                     <div className="flex-1 min-w-0 pl-1">
-                       <div className="flex items-center gap-3 mb-1">
-                         <span className={cn(
-                           "text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-[4px] border",
-                           stillOut 
-                             ? "bg-destructive/10 text-destructive border-destructive/20" 
-                             : "bg-success/10 text-success border-success/20"
-                         )}>
-                           {stillOut ? "Absent / Pending Clearance" : "Cleared to work"}
-                         </span>
-                         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                           Reported {formatD(r.reported_date)}
-                         </span>
-                       </div>
-                       <p className="text-[13px] font-semibold text-foreground tracking-tight mt-2">{name}</p>
-                       <p className="text-[12px] text-muted-foreground capitalize mt-1 flex items-center gap-2">
-                         <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded-[4px] text-[11px]">{r.illness_type}</span>
-                         Absence: {formatD(r.absent_from)} {r.absent_to ? `→ ${formatD(r.absent_to)}` : "→ Present"}
-                       </p>
-                     </div>
-                     <div className="shrink-0 flex items-center gap-3 pl-1 sm:pl-0">
-                       <Link
-                         href={`/admin/staff/${r.staff_id}`}
-                         className={cn(
-                           buttonVariants({ variant: "outline", size: "sm" }),
-                           "h-8 px-3 text-[10px] font-semibold uppercase tracking-wider"
+               <MotionList className="space-y-1 mt-2">
+                 {rows.map((r) => {
+                   const name = r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : "Unknown Staff";
+                   const stillOut = !r.return_cleared;
+                   const formatD = (d: string) => format(parseISO(d.length <= 10 ? `${d}T12:00:00.000Z` : d), "MMM d, yyyy");
+                   return (
+                     <MotionItem key={r.id} className={cn(TABLE_ROW_CLASS, "group")}>
+                       <div className="w-[220px] shrink-0">
+                         {stillOut ? (
+                           <StatusPill tone="destructive">Absent / Pending Clearance</StatusPill>
+                         ) : (
+                           <StatusPill tone="neutral">Cleared to work</StatusPill>
                          )}
-                       >
-                         View Staff
-                       </Link>
-                     </div>
-                   </MotionItem>
-                 );
-               })
-             )}
-           </MotionList>
+                       </div>
+                       <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
+                         {name}
+                       </span>
+                       <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
+                         {r.illness_type}
+                       </span>
+                       <span className="flex-[1.5] min-w-0 truncate font-mono text-[12px] tabular-nums text-muted-foreground">
+                         {formatD(r.absent_from)} {r.absent_to ? `→ ${formatD(r.absent_to)}` : "→ Present"}
+                       </span>
+                       <span className="w-[110px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                         {formatD(r.reported_date)}
+                       </span>
+                       <div className="w-[110px] shrink-0 flex justify-end">
+                         <Link
+                           href={`/admin/staff/${r.staff_id}`}
+                           className={cn(
+                             buttonVariants({ variant: "outline", size: "sm" }),
+                             "h-7 px-2.5 text-[10px] font-semibold uppercase tracking-wider"
+                           )}
+                         >
+                           View Staff
+                         </Link>
+                       </div>
+                     </MotionItem>
+                   );
+                 })}
+               </MotionList>
+             </>
+           )}
         </div>
       </div>
     </div>

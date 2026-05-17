@@ -8,6 +8,8 @@ import { Banknote, Download, Search } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -65,6 +67,12 @@ function buildPayrollBatchesCsv(rows: BatchRow[]): string {
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
+}
+
+function batchStatusTone(status: string): "neutral" | "warning" | "destructive" {
+  if (status === "failed") return "destructive";
+  if (status === "voided") return "warning";
+  return "neutral";
 }
 
 export default function AdminPayrollHubPage() {
@@ -297,44 +305,37 @@ export default function AdminPayrollHubPage() {
         ) : displayRows.length === 0 ? (
            <p className="text-sm text-muted-foreground">No batches match this search.</p>
         ) : (
-          <MotionList className="space-y-3">
-             {displayRows.map((row) => (
-               <MotionItem key={row.id}>
-                 <Link
-                   href={`/admin/payroll/${row.id}`}
-                   className="flex flex-col md:flex-row md:items-center gap-4 min-h-[36px] px-[13px] py-2 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full justify-between"
-                 >
-                    
-                    <div className="flex flex-col min-w-[200px] gap-1">
-                       <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Period</span>
-                       <span className="font-bold font-mono text-foreground uppercase tracking-wider text-xs tabular-nums">
-                          {row.period_start} → {row.period_end}
-                       </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full items-center">
-                       <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Provider</span>
-                          <span className="text-xs font-bold text-foreground uppercase tracking-wider">{row.provider}</span>
-                       </div>
-                       <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Status</span>
-                          <span className={cn("text-xs font-bold uppercase tracking-wider", row.status === "exported" ? "text-success" : "text-warning")}>
-                             {formatStatus(row.status)}
-                          </span>
-                       </div>
-                       <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Updated</span>
-                          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider tabular-nums">
-                             {format(new Date(row.updated_at), "MMM d, yyyy")}
-                          </span>
-                       </div>
-                    </div>
-                    
-                 </Link>
-               </MotionItem>
-             ))}
-          </MotionList>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className={TABLE_HEADER_CLASS}>
+              <span className="flex-[2] min-w-0">Period</span>
+              <span className="flex-1 min-w-0">Provider</span>
+              <span className="w-[120px] shrink-0">Status</span>
+              <span className="w-[120px] shrink-0 text-right">Updated</span>
+            </div>
+            <MotionList className="space-y-1 p-1">
+              {displayRows.map((row) => (
+                <MotionItem key={row.id}>
+                  <Link
+                    href={`/admin/payroll/${row.id}`}
+                    className={cn(TABLE_ROW_CLASS, "group")}
+                  >
+                    <span className="flex-[2] min-w-0 font-mono text-[12px] text-foreground tabular-nums truncate">
+                      {row.period_start} → {row.period_end}
+                    </span>
+                    <span className="flex-1 min-w-0 text-[12px] text-foreground truncate">
+                      {row.provider}
+                    </span>
+                    <span className="w-[120px] shrink-0">
+                      <StatusPill tone={batchStatusTone(row.status)}>{formatStatus(row.status)}</StatusPill>
+                    </span>
+                    <span className="w-[120px] shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums text-right">
+                      {format(new Date(row.updated_at), "MMM d, yyyy")}
+                    </span>
+                  </Link>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </div>
         )}
       </div>
       </div>

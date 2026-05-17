@@ -22,6 +22,8 @@ import {
 } from "@/lib/residents/load-residents";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -340,7 +342,7 @@ export function AdminResidentsPageClient({
 
       {!isLoading && !error && filteredRows.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className={cn("hidden lg:flex", TABLE_HEADER_CLASS)}>
             <div className="flex-[3]">Resident</div>
             <div className="flex-1">Location</div>
             <div className="flex-1">Acuity</div>
@@ -353,37 +355,37 @@ export function AdminResidentsPageClient({
               <MotionItem key={resident.id}>
                 <Link
                   href={`/admin/residents/${resident.id}`}
-                  className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                  className={cn(TABLE_ROW_CLASS, "group")}
                 >
-                  <div className="flex-[3] flex items-center gap-3 min-w-0">
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-semibold text-foreground">
+                  <div className="flex-[3] flex items-center gap-2.5 min-w-0">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary text-[10px] font-semibold text-foreground">
                       {resident.initials}
                     </span>
-                    <div className="flex flex-col leading-tight min-w-0">
+                    <div className="flex items-baseline gap-2 min-w-0">
                       <span className="truncate text-[13px] font-medium text-foreground">
                         {resident.name}
                       </span>
-                      <span className="truncate text-[11px] text-muted-foreground">
+                      <span className="hidden md:inline truncate text-[11px] text-muted-foreground">
                         {resident.careSummary}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex-1 flex flex-col leading-tight">
-                    <span className="text-[13px] font-medium text-foreground">{resident.room}</span>
-                    <span className="text-[11px] text-muted-foreground tabular-nums">{resident.unit}</span>
+                  <div className="flex-1 flex items-baseline gap-2 min-w-0">
+                    <span className="text-[13px] font-medium text-foreground truncate">{resident.room}</span>
+                    <span className="hidden md:inline text-[11px] text-muted-foreground tabular-nums truncate">{resident.unit}</span>
                   </div>
 
                   <div className="flex-1">
-                    <AcuityBadge acuity={resident.acuity} />
+                    <AcuityPill acuity={resident.acuity} />
                   </div>
 
                   <div className="flex-1">
-                    <AdlBadge status={resident.adlStatus} />
+                    <AdlPill status={resident.adlStatus} />
                   </div>
 
                   <div className="flex-1">
-                    <ResidentStatusBadge status={resident.status} />
+                    <ResidentStatusPill status={resident.status} />
                   </div>
 
                   <div className="flex-1 flex justify-end">
@@ -401,58 +403,41 @@ export function AdminResidentsPageClient({
   );
 }
 
-const CHIP_BASE =
-  "inline-flex h-5 items-center rounded border px-1.5 text-[10px] font-medium uppercase tracking-wider";
-
-function AcuityBadge({ acuity }: { acuity: Acuity }) {
-  if (acuity === 3) {
-    return (
-      <span className={cn(CHIP_BASE, "gap-1 border-destructive/30 bg-destructive/10 text-destructive")}>
-        <></>
-        Acuity 3
-      </span>
-    );
-  }
-  if (acuity === 2) {
-    return <span className={cn(CHIP_BASE, "border-warning/30 bg-warning/10 text-warning")}>Acuity 2</span>;
-  }
-  return <span className={cn(CHIP_BASE, "border-success/30 bg-success/10 text-success")}>Acuity 1</span>;
+/**
+ * Healthy default = Acuity 1 → neutral. Acuity 2 = warning, Acuity 3 = destructive.
+ */
+function AcuityPill({ acuity }: { acuity: Acuity }) {
+  if (acuity === 3) return <StatusPill tone="destructive">Acuity 3</StatusPill>;
+  if (acuity === 2) return <StatusPill tone="warning">Acuity 2</StatusPill>;
+  return <StatusPill tone="neutral">Acuity 1</StatusPill>;
 }
 
-function AdlBadge({ status }: { status: AdlStatus }) {
-  const map: Record<AdlStatus, { label: string; className: string }> = {
-    independent: {
-      label: "Independent",
-      className: "border-border bg-secondary/60 text-muted-foreground",
-    },
-    assisted: {
-      label: "Assisted",
-      className: "border-info/30 bg-info/10 text-info",
-    },
-    dependent: {
-      label: "Dependent",
-      className: "border-warning/30 bg-warning/10 text-warning",
-    },
-  };
-
-  return <span className={cn(CHIP_BASE, map[status].className)}>{map[status].label}</span>;
+/**
+ * Independent default = neutral. Assisted = info. Dependent = warning.
+ */
+function AdlPill({ status }: { status: AdlStatus }) {
+  switch (status) {
+    case "dependent":
+      return <StatusPill tone="warning">Dependent</StatusPill>;
+    case "assisted":
+      return <StatusPill tone="info">Assisted</StatusPill>;
+    case "independent":
+    default:
+      return <StatusPill tone="neutral">Independent</StatusPill>;
+  }
 }
 
-function ResidentStatusBadge({ status }: { status: ResidencyStatus }) {
-  const map: Record<ResidencyStatus, { label: string; className: string }> = {
-    active: {
-      label: "In facility",
-      className: "border-success/30 bg-success/10 text-success",
-    },
-    hospital: {
-      label: "Hospital",
-      className: "border-destructive/30 bg-destructive/10 text-destructive",
-    },
-    loa: {
-      label: "LOA",
-      className: "border-warning/30 bg-warning/10 text-warning",
-    },
-  };
-
-  return <span className={cn(CHIP_BASE, map[status].className)}>{map[status].label}</span>;
+/**
+ * Healthy default = `active` (in facility) → neutral. Hospital = destructive. LOA = warning.
+ */
+function ResidentStatusPill({ status }: { status: ResidencyStatus }) {
+  switch (status) {
+    case "hospital":
+      return <StatusPill tone="destructive">Hospital</StatusPill>;
+    case "loa":
+      return <StatusPill tone="warning">LOA</StatusPill>;
+    case "active":
+    default:
+      return <StatusPill tone="neutral">In facility</StatusPill>;
+  }
 }

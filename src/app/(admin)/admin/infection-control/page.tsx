@@ -85,14 +85,32 @@ export default function AdminInfectionControlHubPage() {
 
         <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card className="border-destructive/20" hoverColor="red">
+            <V2Card
+              className={cn(activeInf > 0 ? "border-destructive/20" : "border-border")}
+              hoverColor="red"
+            >
               <></>
-              <MonolithicWatermark value={loading ? 0 : activeInf} className="text-destructive/10 opacity-50" />
+              <MonolithicWatermark
+                value={loading ? 0 : activeInf}
+                className={cn("opacity-50", activeInf > 0 ? "text-destructive/10" : "text-muted-foreground/10")}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] tracking-wider uppercase text-destructive flex items-center gap-2">
+                <h3
+                  className={cn(
+                    "text-[10px] tracking-wider uppercase flex items-center gap-2",
+                    activeInf > 0 ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
                    Active Infections
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-destructive pb-1">{loading ? "—" : activeInf}</p>
+                <p
+                  className={cn(
+                    "text-4xl font-mono tracking-tighter pb-1",
+                    activeInf > 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  {loading ? "—" : activeInf}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -100,15 +118,30 @@ export default function AdminInfectionControlHubPage() {
           <div className="h-[160px]">
             <V2Card className={activeOut > 0 ? "border-warning/30" : "border-border"} hoverColor="amber">
               <></>
-              <MonolithicWatermark value={loading ? 0 : activeOut} className="text-warning/10 opacity-50" />
+              <MonolithicWatermark
+                value={loading ? 0 : activeOut}
+                className={cn("opacity-50", activeOut > 0 ? "text-warning/10" : "text-muted-foreground/10")}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] tracking-wider uppercase text-warning flex items-center gap-2">
+                  <h3
+                    className={cn(
+                      "text-[10px] tracking-wider uppercase flex items-center gap-2",
+                      activeOut > 0 ? "text-warning" : "text-muted-foreground",
+                    )}
+                  >
                      Active Outbreaks
                   </h3>
                   {activeOut > 0 && <></>}
                 </div>
-                <p className="text-4xl font-mono tracking-tighter text-warning pb-1">{loading ? "—" : activeOut}</p>
+                <p
+                  className={cn(
+                    "text-4xl font-mono tracking-tighter pb-1",
+                    activeOut > 0 ? "text-warning" : "text-foreground",
+                  )}
+                >
+                  {loading ? "—" : activeOut}
+                </p>
               </div>
             </V2Card>
           </div>

@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Plus, Check, Link2, Globe, Building2, User, HelpCircle, Server } from "lucide-react";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -254,52 +256,48 @@ export default function AdminReferralSourcesPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="hidden sm:grid grid-cols-[1.5fr_1fr_1fr_0.5fr] gap-4 px-[13px] pb-4 border-b border-border text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                       <div>Name</div>
-                       <div>Type</div>
-                       <div>Scope</div>
-                       <div className="text-right">Active</div>
+                    <div className={cn("hidden sm:flex", TABLE_HEADER_CLASS)}>
+                      <div className="flex-[1.5]">Name</div>
+                      <div className="flex-1">Type</div>
+                      <div className="flex-1">Scope</div>
+                      <div className="flex-[0.5] text-right">Status</div>
                     </div>
 
-                    <div className="space-y-3 mt-4">
-                       <MotionList className="space-y-3">
+                    <div className="space-y-1 p-1">
+                      <MotionList className="space-y-1">
                           {rows.length === 0 ? (
                             <div className="p-12 text-center text-muted-foreground text-[13px] bg-muted/40 rounded-lg border border-dashed border-border">
                                No sources yet. Add one or ask an org admin to create channels.
                             </div>
                           ) : (
-                             rows.map((r) => {
+                            rows.map((r) => {
                                 const TypeIcon = r.source_type === "hospital" ? Building2 : r.source_type === "agency" ? Server : r.source_type === "web" ? Globe : r.source_type === "family" ? User : HelpCircle;
                                 return (
-                                 <MotionItem key={r.id}>
-                                    <div className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full">
-                                      <div className="flex-[1.5] flex flex-col">
-                                         <span className="font-semibold text-[13px] text-foreground tracking-tight leading-tight">{r.name}</span>
+                                  <MotionItem key={r.id}>
+                                    <div className={cn(TABLE_ROW_CLASS, "w-full")}>
+                                      <div className="flex-[1.5] min-w-0">
+                                        <span className="font-medium text-[13px] text-foreground truncate block">{r.name}</span>
                                       </div>
                                       <div className="flex-1 flex items-center gap-2">
-                                         <Badge className="bg-muted/40 hover:bg-muted text-muted-foreground border-none text-[10px] uppercase font-semibold tracking-wider">
-                                            <TypeIcon className="w-3 h-3 mr-1.5 opacity-50" />
-                                            {r.source_type.replace(/_/g, " ")}
-                                         </Badge>
+                                        <Badge className="bg-muted/40 hover:bg-muted text-muted-foreground border-none text-[10px] uppercase font-semibold tracking-wider">
+                                          <TypeIcon className="w-3 h-3 mr-1.5 opacity-50" />
+                                          {r.source_type.replace(/_/g, " ")}
+                                        </Badge>
                                       </div>
-                                      <div className="flex-1 flex flex-col">
-                                         <span className="text-[12px] text-muted-foreground">
-                                           {r.facility_id ? "This Facility" : "Organization"}
-                                         </span>
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-[12px] text-muted-foreground truncate block">
+                                          {r.facility_id ? "This Facility" : "Organization"}
+                                        </span>
                                       </div>
-                                      <div className="flex-[0.5] flex flex-col items-end">
-                                         {r.is_active ? (
-                                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-success/10 text-success self-start sm:self-auto">
-                                              <Check className="h-3.5 w-3.5" />
-                                            </span>
-                                         ) : (
-                                            <span className="inline-flex h-6 px-2.5 items-center justify-center rounded-[4px] bg-muted/40 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider self-start sm:self-auto">
-                                              No
-                                            </span>
-                                         )}
+                                      <div className="flex-[0.5] flex justify-end">
+                                        {r.is_active ? (
+                                          <StatusPill tone="neutral">Active</StatusPill>
+                                        ) : (
+                                          <StatusPill tone="warning">Inactive</StatusPill>
+                                        )}
                                       </div>
                                     </div>
-                                 </MotionItem>
+                                  </MotionItem>
                                 );
                              })
                           )}

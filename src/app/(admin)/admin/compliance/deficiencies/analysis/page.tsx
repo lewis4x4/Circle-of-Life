@@ -37,6 +37,9 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
+import { cn } from "@/lib/utils";
 import { V2Card } from "@/components/ui/v2-card";
 /* MAINTENANCE: CHART_COLORS uses hex literals required by Recharts SVG attrs
    (stroke, fill, tick.fill). These cannot be replaced with CSS variables because
@@ -350,7 +353,7 @@ export default function DeficienciesAnalysisPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr className={TABLE_HEADER_CLASS}>
                         <th className="text-left w-24 font-semibold">Tag</th>
                         <th className="text-left flex-1 font-semibold">Title</th>
                         <th className="text-center w-28 font-semibold">Occurrences</th>
@@ -360,20 +363,22 @@ export default function DeficienciesAnalysisPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recurringTags.map((recurrence) => (
-                        <tr key={recurrence.tag_number} tabIndex={0} className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 mt-1">
+                      {recurringTags.map((recurrence) => {
+                        const lastStatus = recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? "unknown";
+                        return (
+                        <tr key={recurrence.tag_number} tabIndex={0} className={cn(TABLE_ROW_CLASS, "mt-1")}>
                           <td className="w-24">
                             <Badge variant="outline" className="font-mono">
                               Tag {recurrence.tag_number}
                             </Badge>
                           </td>
-                          <td className="flex-1 text-[13px] text-foreground">{recurrence.tag_title}</td>
+                          <td className="flex-1 text-[13px] text-foreground truncate">{recurrence.tag_title}</td>
                           <td className="w-28 text-center font-mono font-bold text-[13px] text-foreground tabular-nums">
                             {recurrence.total_occurrences}
                           </td>
                           <td className="w-32 text-center">
                             {recurrence.days_between_average > 0 ? (
-                              <span className="font-mono text-[12px] text-amber-600 dark:text-amber-400">
+                              <span className="font-mono text-[12px] text-warning">
                                 ~{recurrence.days_between_average} days
                               </span>
                             ) : (
@@ -381,15 +386,15 @@ export default function DeficienciesAnalysisPage() {
                             )}
                           </td>
                           <td className="w-28 text-center">
-                            <Badge variant={
-                              recurrence.occurrences[recurrence.occurrences.length - 1]?.status === 'verified'
-                                ? 'default'
-                                : recurrence.occurrences[recurrence.occurrences.length - 1]?.status === 'corrected'
-                                ? 'secondary'
-                                : 'destructive'
-                            }>
-                              {recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? 'unknown'}
-                            </Badge>
+                            <StatusPill
+                              tone={
+                                lastStatus === "verified" || lastStatus === "corrected"
+                                  ? "neutral"
+                                  : "destructive"
+                              }
+                            >
+                              {lastStatus}
+                            </StatusPill>
                           </td>
                           <td className="w-24 text-center">
                             <Button variant="outline" size="sm" className="text-[10px] uppercase tracking-wider">
@@ -397,7 +402,8 @@ export default function DeficienciesAnalysisPage() {
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

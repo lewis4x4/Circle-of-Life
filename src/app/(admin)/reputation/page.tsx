@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { Star } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
@@ -372,13 +374,33 @@ export default function AdminReputationHubPage() {
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="red" className={draftReplies.length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
-              <MonolithicWatermark value={draftReplies.length} className="text-destructive/10 opacity-50" />
+            <V2Card
+              hoverColor="red"
+              className={draftReplies.length > 0 ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
+            >
+              <MonolithicWatermark
+                value={draftReplies.length}
+                className={draftReplies.length > 0 ? "text-destructive/10 opacity-50" : "text-muted-foreground/10 opacity-50"}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                <h3
+                  className={
+                    draftReplies.length > 0
+                      ? "text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2"
+                      : "text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2"
+                  }
+                >
                    Draft Replies
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{draftReplies.length}</p>
+                <p
+                  className={
+                    draftReplies.length > 0
+                      ? "text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1"
+                      : "text-4xl font-mono tracking-tighter text-foreground pb-1"
+                  }
+                >
+                  {draftReplies.length}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -537,22 +559,31 @@ export default function AdminReputationHubPage() {
             
             {/* Posted Feed */}
             {postedReplies.length > 0 && (
-              <MotionList className="mt-8 space-y-2 opacity-60 hover:opacity-100 transition-opacity">
-                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recently Posted</h4>
-                 {postedReplies.slice(0, 3).map((row) => (
-                   <MotionItem key={row.id}>
-                     <div className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
-                       <div className="flex-1 min-w-0">
-                         <p className="text-xs font-medium text-foreground truncate">{row.reputation_accounts?.label}</p>
-                         <p className="text-[10px] text-muted-foreground truncate">{row.reply_body}</p>
-                       </div>
-                       <span className="text-[10px] font-mono text-success shrink-0">
-                         {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
-                       </span>
-                     </div>
-                   </MotionItem>
-                 ))}
-              </MotionList>
+              <div className="mt-8 space-y-2 opacity-60 hover:opacity-100 transition-opacity">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recently Posted</h4>
+                <div className={TABLE_HEADER_CLASS}>
+                  <span className="flex-1 min-w-0">Listing</span>
+                  <span className="flex-[2] min-w-0">Reply</span>
+                  <span className="w-[80px] shrink-0 text-right">Posted</span>
+                </div>
+                <MotionList className="space-y-1 p-1 rounded-lg border border-border bg-card">
+                  {postedReplies.slice(0, 3).map((row) => (
+                    <MotionItem key={row.id}>
+                      <div className={cn(TABLE_ROW_CLASS, "w-full")}>
+                        <span className="flex-1 min-w-0 text-[12px] font-medium text-foreground truncate">
+                          {row.reputation_accounts?.label}
+                        </span>
+                        <span className="flex-[2] min-w-0 text-[11px] text-muted-foreground truncate">
+                          {row.reply_body}
+                        </span>
+                        <span className="w-[80px] shrink-0 text-right font-mono text-[11px] text-muted-foreground tabular-nums">
+                          {row.posted_to_platform_at ? format(new Date(row.posted_to_platform_at), "MMM d") : "Done"}
+                        </span>
+                      </div>
+                    </MotionItem>
+                  ))}
+                </MotionList>
+              </div>
             )}
             
           </div>
@@ -570,24 +601,32 @@ export default function AdminReputationHubPage() {
             ) : accounts.length === 0 ? (
                <p className="text-sm text-muted-foreground">No connected accounts.</p>
             ) : (
-               <div className="space-y-2">
-                 {accounts.map(row => (
-                   <div
-                     key={row.id}
-                     className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
-                   >
-                     <div className="flex-1 min-w-0">
-                       <p className="text-xs font-semibold text-foreground truncate">{row.label}</p>
-                       <p className="text-[9px] font-mono text-muted-foreground mt-0.5 uppercase">{formatPlatform(row.platform)}</p>
-                     </div>
-                     {row.is_active ? (
-                       <span className="w-2 h-2 rounded-full bg-success shrink-0" />
-                     ) : (
-                       <span className="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0" />
-                     )}
-                   </div>
-                 ))}
-               </div>
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <div className={TABLE_HEADER_CLASS}>
+                  <span className="flex-1 min-w-0">Listing</span>
+                  <span className="w-[110px] shrink-0">Platform</span>
+                  <span className="w-[90px] shrink-0 text-right">Status</span>
+                </div>
+                <div className="space-y-1 p-1">
+                  {accounts.map((row) => (
+                    <div key={row.id} className={cn(TABLE_ROW_CLASS, "w-full")}>
+                      <span className="flex-1 min-w-0 text-[12px] font-medium text-foreground truncate">
+                        {row.label}
+                      </span>
+                      <span className="w-[110px] shrink-0 text-[11px] font-mono text-muted-foreground uppercase tracking-wider truncate">
+                        {formatPlatform(row.platform)}
+                      </span>
+                      <span className="w-[90px] shrink-0 flex justify-end">
+                        {row.is_active ? (
+                          <StatusPill tone="neutral">Active</StatusPill>
+                        ) : (
+                          <StatusPill tone="warning">Inactive</StatusPill>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

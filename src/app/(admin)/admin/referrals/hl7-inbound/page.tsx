@@ -7,6 +7,7 @@ import { Activity, Ban, Check, Radio, Search, Server, UserPlus, X } from "lucide
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { Input } from "@/components/ui/input";
@@ -408,15 +409,17 @@ export default function AdminReferralsHl7InboundPage() {
                                 </div>
                                 <div className="flex flex-col">
                                    <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Status</span>
-                                   <span className={cn(
-                                     "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider w-fit capitalize",
-                                     row.status === "processed" ? "bg-success/10 text-success border border-success/30" :
-                                     row.status === "failed" ? "bg-destructive/10 text-destructive border border-destructive/30" :
-                                     row.status === "ignored" ? "bg-muted text-muted-foreground border border-border" :
-                                     "bg-warning/10 text-warning border border-warning/30"
-                                   )}>
+                                   <StatusPill
+                                     tone={
+                                       row.status === "failed"
+                                         ? "destructive"
+                                         : row.status === "processed" || row.status === "ignored"
+                                           ? "neutral"
+                                           : "warning"
+                                     }
+                                   >
                                      {formatStatus(row.status)}
-                                   </span>
+                                   </StatusPill>
                                 </div>
                                 <div className="flex flex-col">
                                    <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Trigger</span>

@@ -189,13 +189,33 @@ export default function AdminInsuranceHubPage() {
             </V2Card>
           </div>
           <div className="h-[160px]">
-            <V2Card hoverColor="red" className={openClaims ? "border-destructive/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : ""}>
-              <MonolithicWatermark value={openClaims ?? 0} className="text-destructive/10 opacity-50" />
+            <V2Card
+              hoverColor="red"
+              className={openClaims && openClaims > 0 ? "border-destructive/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
+            >
+              <MonolithicWatermark
+                value={openClaims ?? 0}
+                className={openClaims && openClaims > 0 ? "text-destructive/10 opacity-50" : "text-muted-foreground/10 opacity-50"}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+                <h3
+                  className={
+                    openClaims && openClaims > 0
+                      ? "text-[10px] font-mono tracking-wider uppercase text-red-600 dark:text-red-400 flex items-center gap-2"
+                      : "text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2"
+                  }
+                >
                    Open Claims
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1">{loading ? "…" : openClaims ?? "—"}</p>
+                <p
+                  className={
+                    openClaims && openClaims > 0
+                      ? "text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1"
+                      : "text-4xl font-mono tracking-tighter text-foreground pb-1"
+                  }
+                >
+                  {loading ? "…" : openClaims ?? "—"}
+                </p>
               </div>
             </V2Card>
           </div>

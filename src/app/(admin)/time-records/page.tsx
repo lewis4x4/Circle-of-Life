@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ChevronRight, Clock, Download } from "lucide-react";
+import { Clock, Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -11,8 +11,9 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -306,14 +307,39 @@ export default function AdminTimeRecordsPage() {
 
         <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
-            <V2Card hoverColor="orange" className="border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]">
+            <V2Card
+              hoverColor="orange"
+              className={cn(
+                pendingApproval > 0
+                  ? "border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]"
+                  : "border-border",
+              )}
+            >
               <></>
-              <MonolithicWatermark value={pendingApproval} className="text-warning/10 opacity-50" />
+              <MonolithicWatermark
+                value={pendingApproval}
+                className={cn(
+                  "opacity-50",
+                  pendingApproval > 0 ? "text-warning/10" : "text-muted-foreground/10",
+                )}
+              />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-medium tracking-wider uppercase text-warning flex items-center gap-2">
+                <h3
+                  className={cn(
+                    "text-[10px] font-medium tracking-wider uppercase flex items-center gap-2",
+                    pendingApproval > 0 ? "text-warning" : "text-muted-foreground",
+                  )}
+                >
                   <Clock className="h-3.5 w-3.5" /> Pending Approval
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-warning pb-1 tabular-nums">{pendingApproval}</p>
+                <p
+                  className={cn(
+                    "text-4xl font-mono tracking-tighter pb-1 tabular-nums",
+                    pendingApproval > 0 ? "text-warning" : "text-foreground",
+                  )}
+                >
+                  {pendingApproval}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -399,51 +425,45 @@ export default function AdminTimeRecordsPage() {
               </Button>
             </div>
           </div>
-          <MotionList className="space-y-3">
-            {filteredRows.map((row) => (
-              <MotionItem key={row.id}>
-                <Link href={`/admin/staff/${row.staffId}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 rounded-[9px]">
-                  <div className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] cursor-pointer w-full justify-between">
-                     <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
-                       <div className="min-w-[150px]">
-                         <span className="font-bold text-foreground">{row.staffName}</span>
-                       </div>
-                       
-                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full items-center">
-                          <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Clock In</span>
-                             <span className="font-mono text-xs text-foreground tabular-nums">{formatDateTime(row.clockIn)}</span>
-                          </div>
-                          <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Clock Out</span>
-                             <span className="font-mono text-xs text-foreground tabular-nums">{row.clockOut ? formatDateTime(row.clockOut) : "—"}</span>
-                          </div>
-                          <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Hours</span>
-                             <span className="font-mono text-xs font-bold text-info tabular-nums">{row.actualHours != null ? Number(row.actualHours).toFixed(2) : "—"}</span>
-                          </div>
-                          <div className="flex flex-col gap-1.5">
-                             <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Approved</span>
-                             <div>
-                               {row.approved ? (
-                                  <Badge className="bg-success/10 text-success border border-success/30 uppercase tracking-wider font-medium text-[9px] font-bold shadow-sm px-2">Yes</Badge>
-                               ) : (
-                                  <Badge className="bg-warning/10 text-warning border border-warning/30 uppercase tracking-wider font-medium text-[9px] font-bold shadow-sm px-2">No</Badge>
-                               )}
-                             </div>
-                          </div>
-                       </div>
-                     </div>
-                     <div className="hidden sm:flex shrink-0 ml-4">
-                        <div className="w-8 h-8 rounded-full bg-muted/40 flex items-center justify-center transition-colors">
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                     </div>
-                  </div>
-                </Link>
-              </MotionItem>
-            ))}
-          </MotionList>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className={TABLE_HEADER_CLASS}>
+              <span className="flex-[2] min-w-0">Staff</span>
+              <span className="w-[130px] shrink-0">Clock In</span>
+              <span className="w-[130px] shrink-0">Clock Out</span>
+              <span className="w-[70px] shrink-0 text-right">Hours</span>
+              <span className="w-[100px] shrink-0">Approved</span>
+            </div>
+            <MotionList className="space-y-1 p-1">
+              {filteredRows.map((row) => (
+                <MotionItem key={row.id}>
+                  <Link
+                    href={`/admin/staff/${row.staffId}`}
+                    className={cn(TABLE_ROW_CLASS, "group")}
+                  >
+                    <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
+                      {row.staffName}
+                    </span>
+                    <span className="w-[130px] shrink-0 font-mono text-[11px] text-foreground tabular-nums truncate">
+                      {formatDateTime(row.clockIn)}
+                    </span>
+                    <span className="w-[130px] shrink-0 font-mono text-[11px] text-foreground tabular-nums truncate">
+                      {row.clockOut ? formatDateTime(row.clockOut) : "—"}
+                    </span>
+                    <span className="w-[70px] shrink-0 text-right font-mono text-[12px] font-medium text-foreground tabular-nums">
+                      {row.actualHours != null ? Number(row.actualHours).toFixed(2) : "—"}
+                    </span>
+                    <span className="w-[100px] shrink-0">
+                      {row.approved ? (
+                        <StatusPill tone="neutral">Yes</StatusPill>
+                      ) : (
+                        <StatusPill tone="warning">No</StatusPill>
+                      )}
+                    </span>
+                  </Link>
+                </MotionItem>
+              ))}
+            </MotionList>
+          </div>
         </div>
       ) : null}
       </div>

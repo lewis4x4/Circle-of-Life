@@ -10,8 +10,8 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -592,19 +592,14 @@ function formatDateTime(iso: string): string {
   }).format(d);
 }
 
+/**
+ * Approved / cancelled are healthy default outcomes → neutral.
+ * Pending = operator attention (warning). Denied = destructive. Claimed = info.
+ */
 function SwapStatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
-  const map: Record<string, string> = {
-    pending: "bg-warning/10 text-warning border border-warning/30",
-    claimed: "bg-info/10 text-info border border-info/30",
-    approved: "bg-success/10 text-success border border-success/30",
-    denied: "bg-destructive/10 text-destructive border border-destructive/30",
-    cancelled: "bg-muted text-muted-foreground border border-border",
-  };
-  const cls = map[s] ?? "bg-muted text-muted-foreground border border-border";
-  return (
-    <Badge className={`shrink-0 uppercase tracking-wider font-medium text-[9px] font-bold ${cls}`}>
-      {status}
-    </Badge>
-  );
+  if (s === "pending") return <StatusPill tone="warning">{status}</StatusPill>;
+  if (s === "denied") return <StatusPill tone="destructive">{status}</StatusPill>;
+  if (s === "claimed") return <StatusPill tone="info">{status}</StatusPill>;
+  return <StatusPill tone="neutral">{status}</StatusPill>;
 }

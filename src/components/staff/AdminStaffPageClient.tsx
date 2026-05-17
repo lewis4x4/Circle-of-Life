@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowUpDown, ChevronRight, Download, UserRoundCheck } from "lucide-react";
+import { ChevronRight, Download, UserRoundCheck, ShieldAlert } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -14,6 +14,7 @@ import {
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import {
   fetchStaffFromSupabase,
   type CertificationStatus,
@@ -23,13 +24,11 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/v2-card";
+
 const DEFAULT_FILTERS = {
   search: "",
   role: "all",
@@ -269,56 +268,65 @@ export function AdminStaffPageClient({
 
   const activeCount = rows.filter((row) => row.status === "active").length;
   const certRiskCount = rows.filter((row) => row.certifications !== "current").length;
+  const certNeedsAttention = certRiskCount > 0;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-      <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-              Staffing Roster {certRiskCount > 0 && <></>}
-            </h2>
-          </div>
-        </header>
+    <div className="flex flex-col gap-6">
+      {/* Page header — flat, dense. */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
+            Staffing roster
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Roster from staff, certifications, and upcoming shift assignments.
+          </p>
+        </div>
+        <Link
+          href="/admin/staff/new"
+          className={cn(
+            buttonVariants({ size: "default" }),
+            "h-9 px-3 text-[12px] font-medium",
+          )}
+        >
+          New staff member
+        </Link>
+      </div>
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
-            <V2Card hoverColor="blue">
-              <></>
-              <MonolithicWatermark value={activeCount} className="text-info/10 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] tracking-wider uppercase text-muted-foreground flex items-center gap-2">
-                  <UserRoundCheck className="h-3.5 w-3.5" /> Total Active Roster
-                </h3>
-                <p className="text-4xl font-mono tracking-tighter pb-1">{activeCount}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="h-[160px]">
-            <V2Card hoverColor="orange" className="border-warning/20">
-              <></>
-              <MonolithicWatermark value={certRiskCount} className="text-warning/10 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] tracking-wider uppercase text-warning flex items-center gap-2">
-                   Cert Attention
-                </h3>
-                <p className="text-4xl font-mono tracking-tighter text-warning pb-1">{certRiskCount}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-2 h-[180px]">
-            <V2Card hoverColor="indigo" className="p-5 lg:p-6">
-              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Certification-aware workforce array with predictive shift tracking.</p>
-                 <Link href="/admin/staff/new" className={cn(buttonVariants({ size: "default" }), "uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
-                   + Add Staff Member
-                 </Link>
-              </div>
-            </V2Card>
-          </div>
-        </KineticGrid>
+      {/* KPI strip — flat tiles, tabular-nums, decorative-color guard. */}
+      <div className="grid max-w-2xl grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <UserRoundCheck className="size-3.5" aria-hidden /> Active roster
+          </span>
+          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+            {activeCount}
+          </span>
+        </div>
+        <div
+          className={cn(
+            "flex flex-col gap-1.5 rounded-lg border bg-card p-4",
+            certNeedsAttention ? "border-warning/30" : "border-border",
+          )}
+        >
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider",
+              certNeedsAttention ? "text-warning" : "text-muted-foreground",
+            )}
+          >
+            <ShieldAlert className="size-3.5" aria-hidden /> Cert attention
+          </span>
+          <span
+            className={cn(
+              "text-2xl font-semibold tabular-nums tracking-tight",
+              certNeedsAttention ? "text-warning" : "text-foreground",
+            )}
+          >
+            {certRiskCount}
+          </span>
+        </div>
+      </div>
 
       <AdminFilterBar
         searchValue={search}
@@ -377,127 +385,141 @@ export function AdminStaffPageClient({
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="relative overflow-visible z-10 w-full mt-4">
-          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-border bg-card flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-foreground mb-1">Team Directory</h3>
-              <p className="text-[13px] text-muted-foreground">
-                Roster from staff, certifications, and upcoming shift assignments.
-              </p>
-            </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between gap-3 px-[13px] py-2 border-b border-border bg-card/60">
+            <h2 className="text-[13px] font-medium text-foreground">Team directory</h2>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
+              className="h-7 shrink-0 text-[11px]"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportStaffRosterCsv()}
             >
-              <Download className="mr-2 h-3.5 w-3.5" aria-hidden />
+              <Download className="mr-1.5 size-3" aria-hidden />
               {exportingCsv ? "Exporting…" : "Download roster CSV"}
             </Button>
           </div>
-          
-          <MotionList className="space-y-3">
+
+          <div className={cn("hidden lg:flex", TABLE_HEADER_CLASS)}>
+            <div className="flex-[3]">Staff</div>
+            <div className="flex-1">Status</div>
+            <div className="flex-1">Certifications</div>
+            <div className="flex-1">Next shift</div>
+            <div className="flex-1">Overtime risk</div>
+            <div className="w-6" aria-hidden />
+          </div>
+
+          <MotionList className="space-y-1 p-1">
             {filteredRows.map((staff) => (
               <MotionItem key={staff.id}>
                 <Link
                   href={`/admin/staff/${staff.id}`}
-                  className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 group w-full"
+                  className={cn(TABLE_ROW_CLASS, "group")}
                 >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-                      
-                      {/* Avatar and Name */}
-                      <div className="flex items-center gap-4 min-w-[220px]">
-                        {staff.photoUrl ? (
-                          <Avatar size="default">
-                            <AvatarImage src={staff.photoUrl} alt={staff.name} />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {staff.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <div
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-[13px] font-semibold text-muted-foreground"
-                            aria-hidden
-                          >
-                            {staff.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div className="flex flex-col">
-                           <span className="font-semibold text-foreground text-[13px]">{staff.name}</span>
-                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{staff.roleLabel}</span>
-                        </div>
-                      </div>
-
-                      {/* Role & Status Data */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-3/4 items-center">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Status</span>
-                          <div><StatusBadge status={staff.status} /></div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Certifications</span>
-                          <div><CertificationBadge certifications={staff.certifications} /></div>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Next Shift</span>
-                          <span className="tabular-nums text-[12px] text-foreground">{staff.nextShift}</span>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">Overtime Risk <ArrowUpDown className="h-2.5 w-2.5" /></span>
-                          <div><OvertimeRiskBadge risk={staff.overtimeRisk} /></div>
-                        </div>
-                      </div>
-                      
-                      <div className="hidden sm:flex shrink-0">
-                         <div className="w-8 h-8 rounded-full bg-muted/40 flex items-center justify-center group-hover:bg-primary/10 transition-colors duration-[var(--motion-duration-micro)]">
-                           <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                         </div>
-                      </div>
-
+                  {/* Staff (avatar + name) — single line, columns share the row height. */}
+                  <div className="flex-[3] flex items-center gap-2.5 min-w-0">
+                    {staff.photoUrl ? (
+                      <Avatar size="sm">
+                        <AvatarImage src={staff.photoUrl} alt={staff.name} />
+                        <AvatarFallback className="bg-secondary text-[10px] text-foreground">
+                          {staff.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <span
+                        className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary text-[10px] font-semibold text-foreground"
+                        aria-hidden
+                      >
+                        {staff.initials || staff.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="flex items-baseline gap-2 min-w-0">
+                      <span className="truncate text-[13px] font-medium text-foreground">
+                        {staff.name}
+                      </span>
+                      <span className="hidden md:inline truncate text-[11px] text-muted-foreground">
+                        {staff.roleLabel}
+                      </span>
                     </div>
+                  </div>
+
+                  <div className="flex-1">
+                    <StaffStatusPill status={staff.status} />
+                  </div>
+                  <div className="flex-1">
+                    <CertificationStatusPill certifications={staff.certifications} />
+                  </div>
+                  <div className="flex-1 text-[12px] tabular-nums text-foreground truncate">
+                    {staff.nextShift}
+                  </div>
+                  <div className="flex-1">
+                    <OvertimeRiskPill risk={staff.overtimeRisk} />
+                  </div>
+
+                  <div className="w-6 flex justify-end">
+                    <ChevronRight
+                      className="size-4 text-muted-foreground/60 transition-colors group-hover:text-foreground"
+                      aria-hidden
+                    />
+                  </div>
                 </Link>
               </MotionItem>
             ))}
           </MotionList>
         </div>
       ) : null}
-      </div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: StaffStatus }) {
-  const map: Record<StaffStatus, { label: string; className: string }> = {
-    active: { label: "Active", className: "bg-success/10 text-success uppercase tracking-widest text-[9px] font-semibold border-0" },
-    off_shift: {
-      label: "Off Shift",
-      className: "bg-muted/40 text-muted-foreground uppercase tracking-widest text-[9px] font-semibold border-0",
-    },
-    on_leave: { label: "On Leave", className: "bg-warning/10 text-warning uppercase tracking-widest text-[9px] font-semibold border-0" },
-  };
-  return <Badge className={map[status].className}>{map[status].label}</Badge>;
+/**
+ * Healthy default = `active` → neutral pill + gray dot. Exceptions:
+ *   `off_shift` → neutral (calm, no nag — not an exception, just not on)
+ *   `on_leave`  → warning (operator attention needed for scheduling)
+ *
+ * Decorative-color rule: healthy "active" must NOT render green. Green is
+ * reserved for "successfully resolved" outcomes, not for default state.
+ */
+function StaffStatusPill({ status }: { status: StaffStatus }) {
+  switch (status) {
+    case "on_leave":
+      return <StatusPill tone="warning">On leave</StatusPill>;
+    case "off_shift":
+      return <StatusPill tone="neutral">Off shift</StatusPill>;
+    case "active":
+    default:
+      return <StatusPill tone="neutral">Active</StatusPill>;
+  }
 }
 
-function CertificationBadge({ certifications }: { certifications: CertificationStatus }) {
-  const map: Record<CertificationStatus, { label: string; className: string }> = {
-    current: { label: "Current", className: "bg-success/10 text-success uppercase tracking-widest text-[9px] font-semibold border-0" },
-    expiring_soon: {
-      label: "Expiring Soon",
-      className: "bg-warning/10 text-warning uppercase tracking-widest text-[9px] font-semibold border-0",
-    },
-    expired: { label: "Expired", className: "bg-destructive/10 text-destructive uppercase tracking-widest text-[9px] font-semibold border-0" },
-  };
-  return <Badge className={map[certifications].className}>{map[certifications].label}</Badge>;
+/**
+ * Healthy default = `current` → neutral. Exceptions earn color.
+ */
+function CertificationStatusPill({ certifications }: { certifications: CertificationStatus }) {
+  switch (certifications) {
+    case "expired":
+      return <StatusPill tone="destructive">Expired</StatusPill>;
+    case "expiring_soon":
+      return <StatusPill tone="warning">Expiring soon</StatusPill>;
+    case "current":
+    default:
+      return <StatusPill tone="neutral">Current</StatusPill>;
+  }
 }
 
-function OvertimeRiskBadge({ risk }: { risk: "low" | "medium" | "high" }) {
-  const map = {
-    low: { label: "Low", className: "bg-success/10 text-success uppercase tracking-widest text-[9px] font-semibold border-0" },
-    medium: { label: "Medium", className: "bg-warning/10 text-warning uppercase tracking-widest text-[9px] font-semibold border-0" },
-    high: { label: "High", className: "bg-destructive/10 text-destructive uppercase tracking-widest text-[9px] font-semibold border-0" },
-  } as const;
-  return <Badge className={map[risk].className}>{map[risk].label}</Badge>;
+/**
+ * Healthy default = `low` → neutral. Risk earns color only when present.
+ */
+function OvertimeRiskPill({ risk }: { risk: "low" | "medium" | "high" }) {
+  switch (risk) {
+    case "high":
+      return <StatusPill tone="destructive">High</StatusPill>;
+    case "medium":
+      return <StatusPill tone="warning">Medium</StatusPill>;
+    case "low":
+    default:
+      return <StatusPill tone="neutral">Low</StatusPill>;
+  }
 }

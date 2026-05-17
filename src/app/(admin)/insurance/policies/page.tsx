@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { createClient } from "@/lib/supabase/client";
@@ -158,63 +160,68 @@ export default function InsurancePoliciesPage() {
             <span className="text-xs font-medium text-muted-foreground">{loading ? "Loading…" : `${rows.length} policies`}</span>
           </div>
 
-          <MotionList className="space-y-3">
-             {loading ? (
-               <p className="text-sm font-mono text-muted-foreground pl-2">Loading policies…</p>
-             ) : rows.length === 0 ? (
-               <div className="p-12 text-center rounded-lg border border-dashed border-border bg-muted/20">
-                  <p className="font-semibold text-lg text-foreground">No Policies Found</p>
-                 <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or adding a new policy.</p>
-               </div>
-             ) : (
-               rows.map((r) => {
-                 const isActive = r.status === "active";
-                 const formattedDate = r.expiration_date ? format(parseISO(r.expiration_date.length <= 10 ? `${r.expiration_date}T12:00:00.000Z` : r.expiration_date), "MMM d, yyyy") : "—";
-                 
-                 return (
-                   <MotionItem
-                     key={r.id}
-                     className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] relative overflow-hidden"
-                   >
-                     {isActive && <div className="absolute left-0 top-0 w-1 h-full bg-success rounded-l-lg" />}
-                     <div className="flex-1 min-w-0 pl-1 flex flex-col sm:flex-row sm:items-center gap-3">
-                       <div className="flex items-center gap-3">
-                         <span className={cn(
-                           "text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border",
-                           isActive 
-                             ? "bg-success/10 text-success border-success/20"
-                             : "bg-muted text-muted-foreground border-border"
-                         )}>
-                           {r.status.replace(/_/g, " ")}
-                         </span>
-                         <span className="text-sm font-semibold text-foreground tracking-tight">{r.carrier_name}</span>
-                       </div>
-                       <div className="flex gap-3 items-center text-xs text-muted-foreground">
-                         <span className="bg-muted px-2 py-0.5 rounded-md">{r.policy_type.replace(/_/g, " ")}</span>
-                         <span>{entityName(r.entity_id)}</span>
-                         <span className="font-mono tracking-wider uppercase">Expires: {formattedDate}</span>
-                       </div>
-                     </div>
-                     <div className="shrink-0 flex items-center gap-4">
-                       <div className="flex flex-col items-end">
-                         <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground">Premium</span>
-                         <span className="font-semibold text-foreground tabular-nums">{formatUsdFromCents(r.premium_cents)}</span>
-                       </div>
-                       <Link
-                         href={`/admin/insurance/policies/${r.id}`}
-                         className={cn(
-                           buttonVariants({ variant: "outline", size: "sm" }),
-                           "font-mono uppercase tracking-wider text-[10px]"
-                         )}
-                       >
-                         View
-                       </Link>
-                     </div>
-                   </MotionItem>
-                 );
-               })
-             )}
-           </MotionList>
+          {loading ? (
+            <p className="text-sm font-mono text-muted-foreground pl-2">Loading policies…</p>
+          ) : rows.length === 0 ? (
+            <div className="p-12 text-center rounded-lg border border-dashed border-border bg-muted/20">
+               <p className="font-semibold text-lg text-foreground">No Policies Found</p>
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or adding a new policy.</p>
+            </div>
+          ) : (
+            <>
+              <div className={TABLE_HEADER_CLASS}>
+                <span className="w-[110px] shrink-0">Status</span>
+                <span className="flex-[2] min-w-0">Carrier</span>
+                <span className="flex-1 min-w-0">Type</span>
+                <span className="flex-1 min-w-0">Entity</span>
+                <span className="w-[110px] shrink-0">Expires</span>
+                <span className="w-[120px] shrink-0 text-right">Premium</span>
+                <span className="w-[72px] shrink-0 text-right">Action</span>
+              </div>
+              <MotionList className="space-y-1 mt-2">
+                {rows.map((r) => {
+                  const isActive = r.status === "active";
+                  const formattedDate = r.expiration_date ? format(parseISO(r.expiration_date.length <= 10 ? `${r.expiration_date}T12:00:00.000Z` : r.expiration_date), "MMM d, yyyy") : "—";
+
+                  return (
+                    <MotionItem key={r.id} className={cn(TABLE_ROW_CLASS, "group")}>
+                      <div className="w-[110px] shrink-0">
+                        <StatusPill tone={isActive ? "neutral" : "warning"}>
+                          {r.status.replace(/_/g, " ")}
+                        </StatusPill>
+                      </div>
+                      <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
+                        {r.carrier_name}
+                      </span>
+                      <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
+                        {r.policy_type.replace(/_/g, " ")}
+                      </span>
+                      <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground">
+                        {entityName(r.entity_id)}
+                      </span>
+                      <span className="w-[110px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                        {formattedDate}
+                      </span>
+                      <span className="w-[120px] shrink-0 text-right font-mono text-[13px] font-medium tabular-nums text-foreground">
+                        {formatUsdFromCents(r.premium_cents)}
+                      </span>
+                      <div className="w-[72px] shrink-0 flex justify-end">
+                        <Link
+                          href={`/admin/insurance/policies/${r.id}`}
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "h-7 px-2.5 font-mono uppercase tracking-wider text-[10px]"
+                          )}
+                        >
+                          View
+                        </Link>
+                      </div>
+                    </MotionItem>
+                  );
+                })}
+              </MotionList>
+            </>
+          )}
         </div>
       </div>
     </div>

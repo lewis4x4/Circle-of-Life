@@ -7,6 +7,8 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TABLE_HEADER_CLASS, TABLE_ROW_CLASS } from "@/lib/design/row-classes";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { format, parseISO } from "date-fns";
@@ -95,56 +97,55 @@ export default function PoliciesListPage() {
                <p className="text-[12px] opacity-80 mt-1">Upload and version your operational policies.</p>
              </div>
            ) : (
-             <MotionList className="space-y-3">
-               {rows.map((r) => {
-                 const isDraft = r.status === "draft";
-                 return (
-                   <MotionItem
-                     key={r.id}
-                     className={cn(
-                       "flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 overflow-hidden relative",
-                       "flex-col sm:flex-row sm:items-center justify-between",
-                       isDraft 
-                         ? "border-warning/30 hover:bg-warning/10"
-                         : "border-border hover:bg-muted/40"
-                     )}
-                   >
-                     {isDraft && <div className="absolute left-0 top-0 w-1.5 h-full bg-warning" />}
-                     <div className="flex-1 min-w-0 pl-1">
-                       <div className="flex items-center gap-3 mb-1">
-                         <span className={cn(
-                           "text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-[4px] border",
-                           isDraft 
-                             ? "bg-warning/10 text-warning border-warning/20" 
-                             : "bg-success/10 text-success border-success/20"
-                         )}>
+             <>
+               <div className={TABLE_HEADER_CLASS}>
+                 <span className="w-[112px] shrink-0">Status</span>
+                 <span className="flex-[2] min-w-0">Title</span>
+                 <span className="flex-1 min-w-0">Category</span>
+                 <span className="w-[60px] shrink-0">Version</span>
+                 <span className="w-[160px] shrink-0">Published</span>
+                 <span className="w-[88px] shrink-0 text-right">Action</span>
+               </div>
+               <MotionList className="space-y-1 mt-2">
+                 {rows.map((r) => {
+                   const isDraft = r.status === "draft";
+                   return (
+                     <MotionItem key={r.id} className={cn(TABLE_ROW_CLASS, "group")}>
+                       <div className="w-[112px] shrink-0">
+                         <StatusPill tone={isDraft ? "warning" : "neutral"}>
                            {r.status}
-                         </span>
-                         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                           {r.published_at ? `Published ${format(parseISO(r.published_at.length <= 10 ? `${r.published_at}T12:00:00.000Z` : r.published_at), "MMM d, yyyy")}` : "Not Published"}
-                         </span>
+                         </StatusPill>
                        </div>
-                       <p className="text-[13px] font-semibold text-foreground tracking-tight mt-2">{r.title}</p>
-                       <p className="text-[12px] text-muted-foreground mt-1 flex items-center gap-2">
-                         <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded-[4px] text-[11px]">{r.category}</span>
-                         <span className="tabular-nums text-[11px]">v{r.version}</span>
-                       </p>
-                     </div>
-                     <div className="shrink-0 flex items-center gap-3 pl-1 sm:pl-0">
-                       <Link
-                         href={`/admin/compliance/policies/${r.id}/edit`}
-                         className={cn(
-                           buttonVariants({ variant: "outline", size: "sm" }),
-                           "h-8 px-3 text-[10px] font-semibold uppercase tracking-wider"
-                         )}
-                       >
-                         Manage
-                       </Link>
-                     </div>
-                   </MotionItem>
-                 );
-               })}
-             </MotionList>
+                       <span className="flex-[2] min-w-0 truncate text-[13px] font-medium text-foreground">
+                         {r.title}
+                       </span>
+                       <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
+                         {r.category}
+                       </span>
+                       <span className="w-[60px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                         v{r.version}
+                       </span>
+                       <span className="w-[160px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
+                         {r.published_at
+                           ? format(parseISO(r.published_at.length <= 10 ? `${r.published_at}T12:00:00.000Z` : r.published_at), "MMM d, yyyy")
+                           : "—"}
+                       </span>
+                       <div className="w-[88px] shrink-0 flex justify-end">
+                         <Link
+                           href={`/admin/compliance/policies/${r.id}/edit`}
+                           className={cn(
+                             buttonVariants({ variant: "outline", size: "sm" }),
+                             "h-7 px-2.5 text-[10px] font-semibold uppercase tracking-wider"
+                           )}
+                         >
+                           Manage
+                         </Link>
+                       </div>
+                     </MotionItem>
+                   );
+                 })}
+               </MotionList>
+             </>
            )}
         </div>
       </div>
