@@ -36,7 +36,6 @@ import {
   ChevronDown,
   Loader2,
   LogOut,
-  Monitor,
   Moon,
   Search,
   Settings,
@@ -521,6 +520,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </Tooltip>
   );
 
+  // Icon-only theme toggle. Shows the icon of the theme you'll switch INTO
+  // (Mercury convention) — so on light you see a moon, and tapping it goes
+  // dark. Active theme is reflected in the aria-label so screen readers know
+  // the current state. Persistence + cross-tab sync is handled by next-themes
+  // (localStorage key `theme`).
+  const renderThemeToggle = () => {
+    // Avoid SSR / first-paint mismatch — render an empty placeholder until
+    // next-themes has resolved the stored preference.
+    if (!mounted) {
+      return <span aria-hidden className="size-9" />;
+    }
+    const isDark = theme === "dark";
+    const nextTheme = isDark ? "light" : "dark";
+    const Icon = isDark ? Sun : Moon;
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          aria-label={`Toggle theme (currently ${isDark ? "dark" : "light"})`}
+          onClick={() => setTheme(nextTheme)}
+          className={cn(
+            "grid size-9 place-items-center rounded-md text-muted-foreground",
+            "transition-colors hover:bg-secondary hover:text-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
+        >
+          <Icon className="size-4" aria-hidden />
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Switch to {nextTheme} mode</TooltipContent>
+      </Tooltip>
+    );
+  };
+
   const renderProfileMenu = () => (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -549,39 +580,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => router.push("/admin/settings/notifications")}
           >
             <Settings className="size-3.5 text-muted-foreground" /> Account settings
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="my-1" />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Theme
-          </DropdownMenuLabel>
-          <DropdownMenuItem
-            onClick={() => setTheme("light")}
-            className="flex h-8 cursor-pointer items-center justify-between rounded-md px-2 text-[13px]"
-          >
-            <span className="flex items-center gap-2">
-              <Sun className="size-3.5" /> Light
-            </span>
-            {mounted && theme === "light" && <Check className="size-3.5 text-success" />}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setTheme("dark")}
-            className="flex h-8 cursor-pointer items-center justify-between rounded-md px-2 text-[13px]"
-          >
-            <span className="flex items-center gap-2">
-              <Moon className="size-3.5" /> Dark
-            </span>
-            {mounted && theme === "dark" && <Check className="size-3.5 text-success" />}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setTheme("system")}
-            className="flex h-8 cursor-pointer items-center justify-between rounded-md px-2 text-[13px]"
-          >
-            <span className="flex items-center gap-2">
-              <Monitor className="size-3.5" /> System
-            </span>
-            {mounted && theme === "system" && <Check className="size-3.5 text-success" />}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="my-1" />
@@ -680,6 +678,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {renderReportIncidentButton()}
           <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
           {renderNotificationsButton()}
+          {renderThemeToggle()}
           {renderProfileMenu()}
         </div>
       </header>

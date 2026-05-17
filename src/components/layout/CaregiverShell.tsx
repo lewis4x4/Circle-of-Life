@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AlertTriangle, ClipboardList, Clock3, Home, Pill, User } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -48,10 +47,8 @@ function deriveSyncState({
 }
 
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
-  const { setTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const themeSet = useRef(false);
   const { appRole, loading, organizationId, user } = useHavenAuth();
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState("Shift");
@@ -116,20 +113,11 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
     [pathname],
   );
 
-  // Caregiver portal is dark-only by design: shifts include night rotations
-  // (11P-7A) and bedside use in dim resident rooms; a light flash mid-shift
-  // is both glare-painful and a clinical-misread risk. The `dark` class on
-  // the outer wrapper enforces dark-variant tokens even if a future theme
-  // toggle or `useTheme` race momentarily flips the theme state.
-  // `setTheme("dark")` below remains for cross-component side effects
-  // (portals rendering outside this wrapper) but is no longer the only
-  // guardrail.
-  useEffect(() => {
-    if (!themeSet.current) {
-      setTheme("dark");
-      themeSet.current = true;
-    }
-  }, [setTheme]);
+  // Caregiver portal is dark-locked at the route group layout
+  // (`src/app/(caregiver)/layout.tsx` wraps in `<div className="dark">`).
+  // We intentionally do NOT call `setTheme("dark")` here — that would
+  // clobber the user's admin theme choice when navigating between shells.
+  // The CSS variable cascade from the wrapping `.dark` class is sufficient.
 
   useEffect(() => {
     if (isHousekeeper && !isHousekeeperAllowedPath(pathname)) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
@@ -13,7 +13,6 @@ import {
   MessageSquare,
   UserCircle2,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
@@ -29,10 +28,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
-  const { setTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const themeSet = useRef(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -48,20 +45,12 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
     }
   }, [router]);
 
-  // Family portal is light-only by design: older residents and family members
-  // read this on tablets in living-room settings. A late-night dark flash on
-  // grandma's iPad is the same kind of mistake as the caregiver light flash —
-  // wrong tool for the context. The `light` class on the outer wrapper
-  // enforces light-variant tokens even if a future theme toggle or `useTheme`
-  // race momentarily flips the theme state. `setTheme("light")` below remains
-  // for cross-component side effects (portals rendering outside this wrapper)
-  // but is no longer the only guardrail.
-  useEffect(() => {
-    if (!themeSet.current) {
-      setTheme("light");
-      themeSet.current = true;
-    }
-  }, [setTheme]);
+  // Family portal is light-locked at the route group layout
+  // (`src/app/(family)/layout.tsx` wraps in `<div className="light">`). We
+  // intentionally do NOT call `setTheme("light")` here — that would clobber
+  // the user's admin theme choice when navigating between the two shells.
+  // The CSS variable cascade from the wrapping `.light` class is sufficient
+  // for every element rendered inside this tree.
 
   useEffect(() => {
     const supabase = createClient();
@@ -123,8 +112,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="light">
-      <div className="relative flex min-h-screen flex-col bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] font-sans text-foreground antialiased">
+    <div className="family-shell relative flex min-h-screen flex-col bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] font-sans text-foreground antialiased">
         <div className="absolute right-4 top-4 z-50 flex items-center gap-2 md:right-6 md:top-6">
           <PilotFeedbackLauncher shellKind="family" compact />
           <button
@@ -188,7 +176,6 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
             />
           ))}
         </BottomNav>
-      </div>
     </div>
   );
 }

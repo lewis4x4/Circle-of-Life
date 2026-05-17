@@ -106,196 +106,230 @@
 }
 
 /* =============================================================================
-   Quiet Operator — operator-product theme (operator dark by default).
+   Quiet Operator — operator-product theme.
    Source of truth: HANDOFFS/2026-05-16__haven-alf-operations__visual-forge-handoff/
      design-system/{constitution,visual-direction,design-tokens.css}
-   Existing semantic token names (--background, --primary, --card, ...) are
-   retained for shadcn compatibility; values are retuned to Quiet Operator.
-   New operator tokens (--surface, --surface-raised, --text-secondary, etc.)
-   are added in Quiet Operator hex/rgba notation per design-tokens.css.
-   `:root` and `.dark` mirror each other — operator surfaces are dark whether
-   system theme is light or dark; warmth lives only on the family portal
-   (`.light` wrapper used by FamilyShell).
+
+   ADMIN DEFAULT IS LIGHT (warm paper, not cold white — Mercury feel preserved).
+   Operators can toggle to dark via the AppShell top-bar theme toggle. Family
+   portal is hard-locked light at the route-group layout; caregiver portal is
+   hard-locked dark (low-light overnight context). Both locks bypass user
+   preference — context matters more than choice on those surfaces.
+
+   :root  carries the LIGHT palette (warm paper) + light-mode extension tokens
+          + light-mode domain status colors.
+   .light mirrors :root so the FamilyShell wrapper still works under any parent.
+   .dark  carries the Quiet Operator dark palette + dark extension + dark
+          domain status (matches the previous :root).
+
+   Motion + radius tokens are theme-independent and live on :root only.
 
    BRAND / ACCENT MAPPING:
-   - The Quiet Operator constitution ("one accent color") maps to `--primary`
-     in this system. `bg-primary` / `text-primary` are the brand steel-blue.
-   - `--accent` is the shadcn chip-surface slot (a muted warm-near-black). It
-     is NOT the brand accent. Do not use `bg-accent` to indicate emphasis or
-     brand presence — use `bg-primary` for that.
+   - The Quiet Operator constitution ("one accent color") maps to `--primary`.
+     `bg-primary` / `text-primary` are the brand steel-blue (deepened on light
+     for AA contrast).
+   - `--accent` is the shadcn chip-surface slot, NOT brand emphasis. Use
+     `bg-primary` for brand presence.
    - `--ring`, `--border-accent`, `--sidebar-primary`, `--sidebar-ring` all
-     resolve to the same brand steel-blue so focus rings carry brand cue.
+     resolve to the brand steel-blue so focus rings carry brand cue.
    ========================================================================= */
 :root {
-  --background: 30 9% 4%;
-  --foreground: 42 35% 94%;
-  --card: 42 6% 9%;
-  --card-foreground: 42 35% 94%;
-  --popover: 42 6% 9%;
-  --popover-foreground: 42 35% 94%;
-  --primary: 205 27% 54%;
-  --primary-foreground: 23 53% 7%;
-  --secondary: 42 6% 10%;
-  --secondary-foreground: 42 35% 94%;
-  --muted: 42 6% 10%;
-  --muted-foreground: 40 6% 55%;
-  --accent: 42 6% 14%;
-  --accent-foreground: 42 35% 94%;
-  --destructive: 8 48% 54%;
-  --destructive-foreground: 42 35% 94%;
-  --success: 92 25% 49%;
-  --warning: 32 58% 60%;
-  --info: 204 26% 54%;
-  --border: 36 6% 14%;
-  --input: 36 6% 14%;
-  --ring: 205 27% 54%;
+  /* Warm paper floor — #FAF7F0 base, pure white card, terracotta destructive */
+  --background: 42 33% 97%;
+  --foreground: 30 14% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 30 14% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 30 14% 12%;
+  --primary: 205 27% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 42 20% 92%;
+  --secondary-foreground: 30 14% 12%;
+  --muted: 42 20% 94%;
+  --muted-foreground: 30 8% 38%;
+  --accent: 205 27% 42%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 8 56% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 88 25% 38%;
+  --warning: 30 60% 45%;
+  --info: 204 26% 45%;
+  --border: 30 10% 88%;
+  --input: 30 10% 88%;
+  --ring: 205 27% 42%;
   --radius: 0.625rem;
 
-  /* Charts — pinned to the Quiet Operator palette */
-  --chart-1: 205 27% 54%;
-  --chart-2: 92 25% 49%;
-  --chart-3: 32 58% 60%;
-  --chart-4: 8 48% 54%;
-  --chart-5: 204 26% 54%;
+  /* Charts — deepened for AA contrast on warm paper */
+  --chart-1: 205 27% 42%;
+  --chart-2: 88 25% 38%;
+  --chart-3: 30 60% 45%;
+  --chart-4: 8 56% 48%;
+  --chart-5: 204 26% 45%;
 
-  /* Sidebar tokens — operator dark surfaces */
-  --sidebar: 30 9% 4%;
-  --sidebar-foreground: 42 35% 94%;
-  --sidebar-primary: 205 27% 54%;
-  --sidebar-primary-foreground: 23 53% 7%;
-  --sidebar-accent: 42 6% 10%;
-  --sidebar-accent-foreground: 42 35% 94%;
-  --sidebar-border: 36 6% 14%;
-  --sidebar-ring: 205 27% 54%;
+  /* Sidebar — warm paper surfaces, deeper accent for cream contrast */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 30 14% 12%;
+  --sidebar-primary: 205 27% 42%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 42 20% 92%;
+  --sidebar-accent-foreground: 30 14% 12%;
+  --sidebar-border: 30 10% 88%;
+  --sidebar-ring: 205 27% 42%;
 
-  /* Haven domain status tokens — retuned to Quiet Operator semantic palette.
-     Severity meaning preserved (red/amber/green still reads correctly on the
-     warm-near-black background); emar-held keeps its purple as a distinct
+  /* Haven domain status tokens — light-mode deepened so red/amber/green carry
+     AA contrast on warm paper. emar-held keeps purple as a distinct
      regulatory signal (orthogonal to brand). */
-  --acuity-1: #7A9B5E;
-  --acuity-2: #D49B5C;
-  --acuity-3: #C26152;
-  --severity-1: #7A9B5E;
-  --severity-2: #D49B5C;
-  --severity-3: #928E85;
-  --severity-4: #C26152;
-  --bed-available: #7A9B5E;
-  --bed-occupied: #928E85;
-  --bed-hold: #D49B5C;
-  --bed-maintenance: #928E85;
-  --emar-scheduled: #928E85;
-  --emar-given: #7A9B5E;
-  --emar-refused: #D49B5C;
-  --emar-held: #a78bfa;
-  --emar-unavailable: #C26152;
-  --compliance-good: #7A9B5E;
-  --compliance-warning: #D49B5C;
-  --compliance-critical: #C26152;
+  --acuity-1: #5F7A4A;
+  --acuity-2: #B7762F;
+  --acuity-3: #BA503F;
+  --severity-1: #5F7A4A;
+  --severity-2: #B7762F;
+  --severity-3: #6F6A60;
+  --severity-4: #BA503F;
+  --bed-available: #5F7A4A;
+  --bed-occupied: #6F6A60;
+  --bed-hold: #B7762F;
+  --bed-maintenance: #6F6A60;
+  --emar-scheduled: #6F6A60;
+  --emar-given: #5F7A4A;
+  --emar-refused: #B7762F;
+  --emar-held: #6E4FD1;
+  --emar-unavailable: #BA503F;
+  --compliance-good: #5F7A4A;
+  --compliance-warning: #B7762F;
+  --compliance-critical: #BA503F;
 
-  /* Quiet Operator extension tokens — these augment, not replace, the
-     semantic tokens above. Hex/rgba per design-tokens.css. */
-  --surface: rgba(22, 22, 19, 0.6);
-  --surface-raised: #1A1A17;
-  --text-secondary: #C5C0B5;
-  --text-muted: #928E85;
-  /* `--text-faint` is intentionally below body-copy contrast on operator-dark.
-     Use ONLY for decorative dividers, disabled labels, or "AAA-irrelevant"
-     metadata. Never use it as the sole foreground for actionable text. */
-  --text-faint: #5C5953;
-  --text-on-accent: #1A0F08;
-  --accent-deep: #436b87;
-  --accent-hover: #779fbb;
-  --accent-glow: rgba(103, 143, 171, 0.18);
-  --accent-glow-strong: rgba(103, 143, 171, 0.35);
+  /* Quiet Operator extension tokens — light-mode equivalents. Same semantic
+     meaning as the dark set (raised surface, secondary/muted text, scrim, glow);
+     inverted lightness so they read correctly on warm paper. */
+  --surface: rgba(255, 252, 247, 0.7);
+  --surface-raised: #FFFFFF;
+  --text-secondary: #3A352D;
+  --text-muted: #645F58;
+  /* `--text-faint` is intentionally below body-copy contrast. Decorative
+     dividers, disabled labels, AAA-irrelevant metadata only. */
+  --text-faint: #9A938A;
+  --text-on-accent: #FFFFFF;
+  --accent-deep: #3F6377;
+  --accent-hover: #355569;
+  --accent-glow: rgba(79, 118, 145, 0.16);
+  --accent-glow-strong: rgba(79, 118, 145, 0.32);
   --highlight: #F4E5C1;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-accent: rgba(103, 143, 171, 0.4);
-  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 36px -20px rgba(0, 0, 0, 0.5);
-  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 28px 56px -24px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 0 1px rgba(103, 143, 171, 0.4), 0 0 24px rgba(103, 143, 171, 0.18);
-  /* Modal / sheet scrim — warm near-black per constitution rule 9 ("warm
-     near-black sets the floor"); never pure black, never blurred. Consumed
-     via `bg-[color:var(--overlay)]` in dialog / sheet primitives. */
-  --overlay: rgba(11, 11, 9, 0.78);
+  --border-subtle: rgba(34, 30, 24, 0.08);
+  --border-strong: rgba(34, 30, 24, 0.14);
+  --border-accent: rgba(79, 118, 145, 0.4);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 8px 24px -16px rgba(34, 30, 24, 0.18);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 20px 40px -20px rgba(34, 30, 24, 0.25);
+  --shadow-glow: 0 0 0 1px rgba(79, 118, 145, 0.4), 0 0 18px rgba(79, 118, 145, 0.18);
+  /* Modal / sheet scrim — warm near-black, less opacity than dark so cream
+     under-content still glows through. Consumed via `bg-[color:var(--overlay)]`. */
+  --overlay: rgba(11, 11, 9, 0.55);
+
   --motion-duration: 240ms;
   /* Micro-interaction tier — color/opacity transitions on dense surfaces
      (nav hover, chip state). 100ms keeps operational density tight without
-     feeling abrupt. Consumed via `duration-[var(--motion-duration-micro)]`. */
+     feeling abrupt. */
   --motion-duration-micro: 100ms;
   /* Exit-only tier — popups/menus close faster than they open so dismissal
-     never lingers. Per Quiet Operator constitution rule on motion economy. */
+     never lingers. */
   --motion-duration-exit: 150ms;
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* =============================================================================
-   Family warm-light theme — re-applies a warm cream palette regardless of any
-   parent `.dark` class. Used by FamilyShell (tablet portal — older family
-   members read in living-room conditions). The shell wraps content in
-   `<div className="light">`; without this, the semantic tokens would inherit
-   from the `.dark` block on `<html>` and the wrapper would render dark anyway.
-
-   Per the visual-direction handoff, warmth is reserved for the family portal;
-   admin surfaces are restrained. Mirror this block whenever `:root` changes.
-   ========================================================================= */
-.light {
-  --background: 42 35% 94%;
-  --foreground: 30 9% 4%;
-  --card: 42 50% 97%;
-  --card-foreground: 30 9% 4%;
-  --popover: 42 50% 97%;
-  --popover-foreground: 30 9% 4%;
-  --primary: 205 27% 54%;
-  --primary-foreground: 23 53% 7%;
-  --secondary: 42 25% 88%;
-  --secondary-foreground: 30 9% 4%;
-  --muted: 42 25% 88%;
-  --muted-foreground: 30 6% 35%;
-  --accent: 42 25% 88%;
-  --accent-foreground: 30 9% 4%;
-  --destructive: 8 48% 50%;
-  --destructive-foreground: 42 50% 97%;
-  --success: 92 25% 38%;
-  --warning: 32 58% 45%;
-  --info: 204 26% 45%;
-  --border: 36 12% 82%;
-  --input: 36 12% 82%;
-  --ring: 205 27% 54%;
-  --radius: 0.625rem;
-  /* Family-light scrim — same warm-near-black overlay used by operator dark;
-     darkens cream into deep warmth without color shift. */
-  --overlay: rgba(11, 11, 9, 0.55);
-
-  /* Motion tiers mirror operator-dark so micro / exit timings are stable
-     across themes (family portal still feels Quiet Operator). */
-  --motion-duration-micro: 100ms;
-  --motion-duration-exit: 150ms;
-
-  /* Charts — darker variants tuned for AA contrast on cream */
-  --chart-1: 205 27% 44%;
-  --chart-2: 92 25% 38%;
-  --chart-3: 32 58% 45%;
-  --chart-4: 8 48% 50%;
-  --chart-5: 204 26% 45%;
-
-  /* Sidebar — light cream surfaces (family portal) */
-  --sidebar: 42 50% 97%;
-  --sidebar-foreground: 30 9% 4%;
-  --sidebar-primary: 205 27% 44%;
-  --sidebar-primary-foreground: 42 50% 97%;
-  --sidebar-accent: 42 25% 88%;
-  --sidebar-accent-foreground: 30 9% 4%;
-  --sidebar-border: 36 12% 82%;
-  --sidebar-ring: 205 27% 44%;
 
   color-scheme: light;
 }
 
 /* =============================================================================
-   Operator dark — mirrors `:root` so admin/caregiver/dietary/med-tech surfaces
-   look identical whether next-themes resolves to system-light or system-dark.
-   Quiet Operator is the brand; we do not offer a light operator surface.
+   Explicit `.light` class — mirrors `:root` so FamilyShell's
+   `<div className="light">` wrapper renders correctly even when nested under
+   a parent that has `.dark` applied (e.g. a future shared root).
+   Always keep these two blocks in lock-step.
+   ========================================================================= */
+.light {
+  --background: 42 33% 97%;
+  --foreground: 30 14% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 30 14% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 30 14% 12%;
+  --primary: 205 27% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 42 20% 92%;
+  --secondary-foreground: 30 14% 12%;
+  --muted: 42 20% 94%;
+  --muted-foreground: 30 8% 38%;
+  --accent: 205 27% 42%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 8 56% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 88 25% 38%;
+  --warning: 30 60% 45%;
+  --info: 204 26% 45%;
+  --border: 30 10% 88%;
+  --input: 30 10% 88%;
+  --ring: 205 27% 42%;
+
+  --chart-1: 205 27% 42%;
+  --chart-2: 88 25% 38%;
+  --chart-3: 30 60% 45%;
+  --chart-4: 8 56% 48%;
+  --chart-5: 204 26% 45%;
+
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 30 14% 12%;
+  --sidebar-primary: 205 27% 42%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 42 20% 92%;
+  --sidebar-accent-foreground: 30 14% 12%;
+  --sidebar-border: 30 10% 88%;
+  --sidebar-ring: 205 27% 42%;
+
+  --acuity-1: #5F7A4A;
+  --acuity-2: #B7762F;
+  --acuity-3: #BA503F;
+  --severity-1: #5F7A4A;
+  --severity-2: #B7762F;
+  --severity-3: #6F6A60;
+  --severity-4: #BA503F;
+  --bed-available: #5F7A4A;
+  --bed-occupied: #6F6A60;
+  --bed-hold: #B7762F;
+  --bed-maintenance: #6F6A60;
+  --emar-scheduled: #6F6A60;
+  --emar-given: #5F7A4A;
+  --emar-refused: #B7762F;
+  --emar-held: #6E4FD1;
+  --emar-unavailable: #BA503F;
+  --compliance-good: #5F7A4A;
+  --compliance-warning: #B7762F;
+  --compliance-critical: #BA503F;
+
+  --surface: rgba(255, 252, 247, 0.7);
+  --surface-raised: #FFFFFF;
+  --text-secondary: #3A352D;
+  --text-muted: #645F58;
+  --text-faint: #9A938A;
+  --text-on-accent: #FFFFFF;
+  --accent-deep: #3F6377;
+  --accent-hover: #355569;
+  --accent-glow: rgba(79, 118, 145, 0.16);
+  --accent-glow-strong: rgba(79, 118, 145, 0.32);
+  --highlight: #F4E5C1;
+  --border-subtle: rgba(34, 30, 24, 0.08);
+  --border-strong: rgba(34, 30, 24, 0.14);
+  --border-accent: rgba(79, 118, 145, 0.4);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 8px 24px -16px rgba(34, 30, 24, 0.18);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 20px 40px -20px rgba(34, 30, 24, 0.25);
+  --shadow-glow: 0 0 0 1px rgba(79, 118, 145, 0.4), 0 0 18px rgba(79, 118, 145, 0.18);
+  --overlay: rgba(11, 11, 9, 0.55);
+
+  color-scheme: light;
+}
+
+/* =============================================================================
+   Operator dark — Quiet Operator dark palette. Applied by:
+     - User toggle from AppShell (next-themes sets `.dark` on <html>).
+     - Caregiver route group (hard-lock via `<div className="dark">` in
+       `src/app/(caregiver)/layout.tsx`) — low-light overnight context.
    ========================================================================= */
 .dark {
   --background: 30 9% 4%;
@@ -336,7 +370,7 @@
   --sidebar-border: 36 6% 14%;
   --sidebar-ring: 205 27% 54%;
 
-  /* Domain status (mirror of :root) */
+  /* Domain status — dark-mode hex (lighter for legibility on near-black) */
   --acuity-1: #7A9B5E;
   --acuity-2: #D49B5C;
   --acuity-3: #C26152;
@@ -356,6 +390,28 @@
   --compliance-good: #7A9B5E;
   --compliance-warning: #D49B5C;
   --compliance-critical: #C26152;
+
+  /* Extension tokens — dark-mode (inverted alphas, near-black surfaces) */
+  --surface: rgba(22, 22, 19, 0.6);
+  --surface-raised: #1A1A17;
+  --text-secondary: #C5C0B5;
+  --text-muted: #928E85;
+  --text-faint: #5C5953;
+  --text-on-accent: #1A0F08;
+  --accent-deep: #436b87;
+  --accent-hover: #779fbb;
+  --accent-glow: rgba(103, 143, 171, 0.18);
+  --accent-glow-strong: rgba(103, 143, 171, 0.35);
+  --highlight: #F4E5C1;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(103, 143, 171, 0.4);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 16px 36px -20px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 28px 56px -24px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 0 1px rgba(103, 143, 171, 0.4), 0 0 24px rgba(103, 143, 171, 0.18);
+  --overlay: rgba(11, 11, 9, 0.78);
+
+  color-scheme: dark;
 }
 
 /* =============================================================================
@@ -415,7 +471,7 @@
 }
 
 .family-shell {
-  --background: 42 35% 94%;
+  --background: 42 33% 97%;
   background-image:
     radial-gradient(ellipse at 0% 0%, rgba(244, 229, 193, 0.35) 0%, transparent 60%);
   background-attachment: fixed;

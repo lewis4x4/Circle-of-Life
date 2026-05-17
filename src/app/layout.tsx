@@ -49,13 +49,16 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // `light` is the admin default per Quiet Operator (warm paper). Family
+      // route group hard-locks light at its layout; caregiver route group
+      // hard-locks dark. The user can toggle dark via the AppShell top bar.
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased light`}
     >
       <body className="min-h-full font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <TooltipProvider delay={250} closeDelay={100}>
