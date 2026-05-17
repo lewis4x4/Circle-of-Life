@@ -115,11 +115,11 @@ async function seed() {
   `, false);
 
   psql(`
-    INSERT INTO public.documents (id, workspace_id, title, audience, status, raw_text, created_at)
+    INSERT INTO public.documents (id, workspace_id, title, audience, status, raw_text, compliance_category, created_at)
     VALUES
-      ('${docA}', '${org}', 'Fall Prevention Policy',      'company_wide', 'published', 'fall prevention text', now()),
-      ('${docB}', '${org}', 'Medication Pass Procedure',   'company_wide', 'published', 'medication pass text', now()),
-      ('${docC}', '${org}', 'Resident Assessment Form 1823','company_wide', 'published', 'assessment form 1823', now())
+      ('${docA}', '${org}', 'Fall Prevention Policy',      'facility_scoped', 'published', 'fall prevention text', 'sop', now()),
+      ('${docB}', '${org}', 'Medication Pass Procedure',   'company_wide',    'published', 'medication pass text', 'medication_admin_policy', now()),
+      ('${docC}', '${org}', 'Resident Assessment Form 1823','company_wide',   'published', 'assessment form 1823', 'ahca_regulation', now())
     ON CONFLICT (id) DO NOTHING;
   `, false);
 
@@ -143,13 +143,15 @@ async function seed() {
 async function runEval({ org, embA, embC, docA, docB, docC }) {
   const cases = [
     {
-      name: "semantic-leans-A keyword-matches-A",
+      name: "v1 semantic-leans-A keyword-matches-A",
+      fn: "retrieve_evidence_hybrid",
       embedding: embA,
       keyword: "fall incident report",
       expectedTopDoc: docA,
     },
     {
-      name: "semantic-leans-C keyword-matches-B",
+      name: "v1 semantic-leans-C keyword-matches-B",
+      fn: "retrieve_evidence_hybrid",
       embedding: embC,
       keyword: "medication pass eMAR",
       // RRF should still surface B because keyword rank #1 contributes 1/(60+1)
@@ -157,35 +159,95 @@ async function runEval({ org, embA, embC, docA, docB, docC }) {
       expectedInTopK: docB,
     },
     {
-      name: "form-1823 lookup (keyword-only)",
-      embedding: embA, // adversarial: dense vector disagrees
+      name: "v1 form-1823 lookup (keyword-only)",
+      fn: "retrieve_evidence_hybrid",
+      embedding: embA,
       keyword: "Form 1823 Florida ALF admission",
       expectedInTopK: docC,
+    },
+    {
+      // Use embA (self-cosine = 1 vs docA chunk) so semantic always passes
+      // threshold for docA. We assert audience filter narrows results.
+      name: "v2 audience=facility_scoped narrows to docA",
+      fn: "retrieve_evidence_hybrid_v2",
+      embedding: embA,
+      keyword: "fall incident report medication eMAR Form 1823",
+      audience: ["facility_scoped"],
+      expectedExclusively: [docA],
+    },
+    {
+      name: "v2 compliance_category=ahca_regulation narrows to docC",
+      fn: "retrieve_evidence_hybrid_v2",
+      embedding: embC,
+      keyword: "Form 1823 Florida assessment fall medication",
+      compliance: ["ahca_regulation"],
+      expectedExclusively: [docC],
+      // Use the v2 default semantic_threshold via NULL? No, the function sig
+      // requires a non-NULL value. Use 0.0 here; embC self-matches docC
+      // (sem_rank=1) and keyword hits docC, so it passes the floor easily.
+    },
+    {
+      name: "v2 NULL filters behave like v1 baseline",
+      fn: "retrieve_evidence_hybrid_v2",
+      embedding: embA,
+      keyword: "fall incident report",
+      expectedTopDoc: docA,
     },
   ];
   const failures = [];
   for (const c of cases) {
     const safeKeyword = c.keyword.replace(/'/g, "''");
-    const sql = `
-      SELECT document_id, source_title, rrf_score, sem_rank, kw_rank
-      FROM public.retrieve_evidence_hybrid(
-        '${c.embedding}'::text,
-        '${safeKeyword}'::text,
-        'nurse'::text,
-        5,
-        0.0,
-        60,
-        '${org}'::uuid
-      )
-      ORDER BY rrf_score DESC;
-    `;
+    let sql;
+    if (c.fn === "retrieve_evidence_hybrid") {
+      sql = `
+        SELECT document_id, source_title, rrf_score, sem_rank, kw_rank
+        FROM public.retrieve_evidence_hybrid(
+          '${c.embedding}'::text,
+          '${safeKeyword}'::text,
+          'nurse'::text,
+          5,
+          0.0,
+          60,
+          '${org}'::uuid
+        )
+        ORDER BY rrf_score DESC;
+      `;
+    } else {
+      const audArg = c.audience ? `ARRAY[${c.audience.map((a) => `'${a}'`).join(",")}]::text[]` : "NULL::text[]";
+      const compArg = c.compliance ? `ARRAY[${c.compliance.map((a) => `'${a}'`).join(",")}]::text[]` : "NULL::text[]";
+      sql = `
+        SELECT document_id, source_title, rrf_score, sem_rank, kw_rank, compliance_category
+        FROM public.retrieve_evidence_hybrid_v2(
+          '${c.embedding}'::text,
+          '${safeKeyword}'::text,
+          'nurse'::text,
+          10,
+          0.0,
+          60,
+          '${org}'::uuid,
+          ${audArg},
+          ${compArg},
+          NULL::uuid[],
+          NULL::date
+        )
+        ORDER BY rrf_score DESC;
+      `;
+    }
     const out = psql(sql, false);
     const lines = out.split("\n").filter((l) => l.includes("-") && l.includes("|"));
     const docs = lines.map((l) => l.split("|")[0].trim());
     const top = docs[0];
     const inTopK = c.expectedInTopK ? docs.includes(c.expectedInTopK) : null;
     const topOk = c.expectedTopDoc ? top === c.expectedTopDoc : null;
-    const pass = (c.expectedTopDoc ? topOk : true) && (c.expectedInTopK ? inTopK : true);
+    const exclusiveOk = c.expectedExclusively
+      ? docs.length > 0 &&
+        docs.every((d) => c.expectedExclusively.includes(d)) &&
+        c.expectedExclusively.every((d) => docs.includes(d))
+      : null;
+    const pass =
+      (c.expectedTopDoc ? topOk : true) &&
+      (c.expectedInTopK ? inTopK : true) &&
+      (c.expectedExclusively ? exclusiveOk : true);
     console.log(`${pass ? "[PASS]" : "[FAIL]"} ${c.name}`);
     console.log(`         top=${top ?? "(none)"} all=${JSON.stringify(docs)}`);
     if (!pass) failures.push(c.name);

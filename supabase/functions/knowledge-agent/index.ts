@@ -7,6 +7,7 @@ import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { redactString, redactValue } from "../_shared/redact-pii.ts";
 import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
+import { rerankWithCohere } from "../_shared/cohere-rerank.ts";
 import {
   decideGraceSafeMode,
   formatCountOnlyCensusAnswer,
@@ -539,12 +540,24 @@ const TOOL_REGISTRY: ToolDefinition[] = [
   {
     name: "semantic_kb_search",
     description:
-      "Search uploaded knowledge-base documents such as handbooks, policies, procedures, and compliance references.",
+      "Search uploaded knowledge-base documents such as handbooks, policies, procedures, and compliance references. Supports optional audience and compliance_categories filters when the user is asking about a specific regulatory or audience scope.",
     input_schema: {
       type: "object",
       properties: {
         query: { type: "string", description: "Natural language search query" },
         limit: { type: "number", description: "Optional result limit" },
+        audience: {
+          type: "array",
+          items: { type: "string", enum: ["company_wide", "facility_scoped"] },
+          description:
+            "Optional. Restrict to documents tagged with these audiences (default: no restriction).",
+        },
+        compliance_categories: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Optional. Restrict to documents tagged with these compliance categories (e.g. 'ahca_regulation', 'sop', 'medication_admin_policy'). Use only when the user explicitly asks about a regulatory or compliance scope.",
+        },
       },
       required: ["query"],
     },
@@ -2447,18 +2460,33 @@ async function executeTool(
 
       // KB-NEXT-04: prefer Reciprocal Rank Fusion over the legacy
       // sequential-fallback `retrieve_evidence`. Both semantic and keyword
-      // run, then fuse with k=60. Loosened semantic_threshold (0.3) because
-      // RRF re-ranks anyway — weak semantic hits that also have strong
-      // keyword overlap should bubble up.
+      // run, then fuse with k=60.
+      // KB-NEXT-05: use v2 to accept optional metadata filters (audience,
+      // compliance_category, document_ids, min_effective_date) and pull
+      // compliance_category + regulation_citation through for the reranker.
+      // The tool's input contract intentionally only exposes 'audience' and
+      // 'compliance_categories' to the LLM today; the rest are reserved for
+      // internal callers (e.g. citation-anchor re-runs in KB-NEXT-06).
       const matchCount = getRequestedLimit(input, 8, 12);
-      const { data, error } = await admin.rpc("retrieve_evidence_hybrid", {
+      const overFetch = Math.min(matchCount * 3, 24);
+      const audienceFilter = Array.isArray((input as Record<string, unknown>).audience)
+        ? ((input as Record<string, unknown>).audience as string[]).filter((v) => typeof v === "string" && v.length > 0)
+        : null;
+      const complianceFilter = Array.isArray((input as Record<string, unknown>).compliance_categories)
+        ? ((input as Record<string, unknown>).compliance_categories as string[]).filter((v) => typeof v === "string" && v.length > 0)
+        : null;
+      const { data, error } = await admin.rpc("retrieve_evidence_hybrid_v2", {
         query_embedding: `[${embedding.join(",")}]`,
         keyword_query: expandedKeywordQuery,
         user_role: userRole,
-        match_count: matchCount,
+        match_count: overFetch,
         semantic_threshold: 0.3,
         rrf_k: 60,
         p_workspace_id: workspaceId,
+        p_audience: audienceFilter && audienceFilter.length > 0 ? audienceFilter : null,
+        p_compliance_categories: complianceFilter && complianceFilter.length > 0 ? complianceFilter : null,
+        p_document_ids: null,
+        p_min_effective_date: null,
       });
 
       if (error) return { error: error.message };
@@ -2474,6 +2502,9 @@ async function executeTool(
         rrf_score?: number;
         sem_rank?: number | null;
         kw_rank?: number | null;
+        // KB-NEXT-05 v2 passthrough — surfaces compliance metadata for citations.
+        compliance_category?: string | null;
+        regulation_citation?: string | null;
       }[];
 
       const filteredRows = rows.filter((row) => {
@@ -2481,11 +2512,21 @@ async function executeTool(
         return !runtimeContext.suppressedDocumentIds.has(row.document_id);
       });
 
-      if (filteredRows.length > 3) {
-        return await rerankResults(filteredRows, query);
+      // KB-NEXT-05: Cohere reranker as the final pass over the (over-fetched)
+      // RRF candidates. Falls back to RRF order when COHERE_API_KEY isn't set
+      // or the API errors out, so this stays safe to deploy without the key.
+      const reranked = await rerankWithCohere(query, filteredRows, {
+        topN: matchCount,
+        onWarn: (msg, meta) => {
+          console.warn(JSON.stringify({ event: "kb_rerank_warn", reason: msg, ...(meta ?? {}) }));
+        },
+      });
+
+      if (reranked.length > 3) {
+        return await rerankResults(reranked, query);
       }
 
-      return filteredRows;
+      return reranked;
     }
     case "resident_lookup": {
       const query = sanitizeSearchQuery(input.query);
