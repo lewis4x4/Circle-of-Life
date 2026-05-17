@@ -91,7 +91,7 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_gaps_org_signal_freq
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public._kb_record_gap(
-  p_workspace_id uuid,
+  p_workspace_id text,
   p_user_id uuid,
   p_question text,
   p_signal text DEFAULT 'kb_empty',
@@ -139,12 +139,12 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public._kb_record_gap(uuid, uuid, text, text, text, text, uuid, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public._kb_record_gap(uuid, uuid, text, text, text, text, uuid, uuid) TO service_role;
+REVOKE ALL ON FUNCTION public._kb_record_gap(text, uuid, text, text, text, text, uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public._kb_record_gap(text, uuid, text, text, text, text, uuid, uuid) TO service_role;
 -- Authenticated users do NOT get EXECUTE here; the only browser-side path
 -- (thumbs-down) goes through a SECURITY DEFINER trigger on chat_messages.
 
-COMMENT ON FUNCTION public._kb_record_gap(uuid, uuid, text, text, text, text, uuid, uuid) IS
+COMMENT ON FUNCTION public._kb_record_gap(text, uuid, text, text, text, text, uuid, uuid) IS
   'KB-NEXT-11: idempotent gap recorder. Upserts knowledge_gaps by (workspace, normalized question, signal), bumping frequency.';
 
 -- ---------------------------------------------------------------------------
@@ -289,7 +289,7 @@ SELECT
   END                                               AS review_overdue
 FROM public.documents d
 WHERE d.deleted_at IS NULL
-  AND d.workspace_id = haven.organization_id();
+  AND d.workspace_id = haven.organization_id()::text;
 
 GRANT SELECT ON public.vw_kb_freshness TO authenticated;
 
@@ -330,7 +330,7 @@ gaps AS (
     COUNT(*) FILTER (WHERE resolved = false AND signal = 'router_no_grounded_source')   AS open_gaps_router_no_source,
     COUNT(*) FILTER (WHERE resolved = true  AND resolved_at >= now() - interval '30 days') AS resolved_last_30d
   FROM public.knowledge_gaps
-  WHERE workspace_id = haven.organization_id()
+  WHERE workspace_id = haven.organization_id()::text
 ),
 freshness AS (
   SELECT
