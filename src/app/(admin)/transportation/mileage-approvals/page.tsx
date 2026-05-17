@@ -276,23 +276,23 @@ export default function MileageApprovalsPage() {
       <></>
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
           <div className="space-y-2">
             
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-              <CircleDollarSign className="h-8 w-8 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+              <CircleDollarSign className="h-8 w-8 text-success shrink-0" />
               Mileage approvals
             </h1>
-            <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
+            <p className="mt-1 font-medium tracking-wide text-muted-foreground max-w-2xl text-sm">
               Approve staff reimbursement rows before payroll export. Rates and amounts were fixed when each trip was
               logged.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="whitespace-nowrap font-bold uppercase tracking-wider">CSV</span>
               <select
-                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
+                className="rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-xs text-foreground"
                 value={mileageCsvScope}
                 onChange={(e) => setMileageCsvScope(e.target.value as MileageCsvScope)}
                 aria-label="Mileage CSV scope"
@@ -308,7 +308,7 @@ export default function MileageApprovalsPage() {
               type="button"
               variant="outline"
               disabled={!facilityReady || exportingCsv}
-              className="h-11 gap-2 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              className="h-11 gap-2 rounded-[var(--radius)] text-[10px] font-bold uppercase tracking-wider"
               onClick={() => void exportMileageLogsCsv()}
             >
               <Download className="h-4 w-4" aria-hidden />
@@ -318,7 +318,7 @@ export default function MileageApprovalsPage() {
               href="/admin/transportation"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
+                "h-11 rounded-[var(--radius)] gap-2 text-[10px] font-bold uppercase tracking-wider",
               )}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -328,43 +328,43 @@ export default function MileageApprovalsPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
             Select a facility first.
           </p>
         )}
 
         {error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+          <p className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm text-destructive">
             {error}
           </p>
         )}
 
         {facilityReady && (
           <>
-            <div className="flex flex-wrap gap-2 border-b border-slate-200/80 pb-4 dark:border-white/10">
+            <div className="flex flex-wrap gap-2 border-b border-border pb-4">
               <button
                 type="button"
                 onClick={() => setTab("pending")}
                 className={cn(
-                  "rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  "rounded-[var(--radius)] px-5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
                   tab === "pending"
-                    ? "bg-emerald-600 text-white shadow"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300",
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
               >
                 Needs approval
                 {pendingCount > 0 ? (
-                  <span className="ml-2 rounded-md bg-white/20 px-1.5 py-0.5 tabular-nums">{pendingCount}</span>
+                  <span className="ml-2 rounded-md bg-card/20 px-1.5 py-0.5 tabular-nums">{pendingCount}</span>
                 ) : null}
               </button>
               <button
                 type="button"
                 onClick={() => setTab("approved")}
                 className={cn(
-                  "rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  "rounded-[var(--radius)] px-5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors",
                   tab === "approved"
-                    ? "bg-emerald-600 text-white shadow"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300",
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
               >
                 Recently approved
@@ -372,16 +372,16 @@ export default function MileageApprovalsPage() {
             </div>
 
             {!canApprove && actorRole !== null && (
-              <p className="text-sm text-amber-800 dark:text-amber-200 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+              <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
                 Your role ({actorRole.replace(/_/g, " ")}) can view this list; approval is limited to owner, org admin,
                 facility admin, and nurse.
               </p>
             )}
 
             {loading ? (
-              <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
+              <p className="text-sm text-muted-foreground pl-2">Loading…</p>
             ) : list.length === 0 ? (
-              <p className="text-sm text-slate-600 dark:text-slate-400 pl-2">
+              <p className="text-sm text-muted-foreground pl-2">
                 {tab === "pending" ? "No mileage logs awaiting approval." : "No approved trips in the recent window."}
               </p>
             ) : (
@@ -393,24 +393,24 @@ export default function MileageApprovalsPage() {
                   return (
                     <MotionItem
                       key={row.id}
-                      className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
+                      className="flex items-start gap-3 min-h-[36px] px-[13px] py-4 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 space-y-1">
-                          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{driver}</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <p className="text-lg font-semibold text-foreground">{driver}</p>
+                          <p className="text-sm text-muted-foreground">
                             {format(parseISO(`${row.trip_date}T12:00:00.000Z`), "MMM d, yyyy")} · {row.purpose}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             {row.origin} → {row.destination}
                             {row.round_trip ? " · round trip" : ""}
                           </p>
                           {res ? (
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Resident: {res}</p>
+                            <p className="text-xs font-medium text-muted-foreground">Resident: {res}</p>
                           ) : null}
-                          <p className="text-sm font-mono text-slate-700 dark:text-slate-300">
+                          <p className="text-sm font-mono text-foreground tabular-nums">
                             {row.miles} mi · {formatUsd(row.reimbursement_amount_cents)}
-                            <span className="text-slate-400 dark:text-slate-500">
+                            <span className="text-muted-foreground">
                               {" "}
                               @ {(row.reimbursement_rate_cents / 100).toFixed(2)}/mi
                             </span>
@@ -418,14 +418,14 @@ export default function MileageApprovalsPage() {
                           {row.transport_request_id ? (
                             <Link
                               href={`/admin/transportation/requests/${row.transport_request_id}`}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-info hover:text-info/80"
                             >
                               <Bus className="h-3.5 w-3.5" />
                               Open transport request
                             </Link>
                           ) : null}
                           {!isPending && row.approved_at ? (
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                               Approved {format(parseISO(row.approved_at), "MMM d, yyyy h:mm a")}
                               {row.payroll_export_id ? " · marked for payroll export" : ""}
                             </p>
@@ -439,7 +439,7 @@ export default function MileageApprovalsPage() {
                               onClick={() => void approve(row)}
                               className={cn(
                                 buttonVariants({ size: "default" }),
-                                "h-10 gap-2 rounded-full bg-emerald-600 px-5 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-700 text-white",
+                                "h-10 gap-2 rounded-[var(--radius)] bg-success px-5 text-[10px] font-bold uppercase tracking-wider hover:bg-success/90 text-primary-foreground",
                               )}
                             >
                               <CheckCircle2 className="h-4 w-4" />
@@ -453,7 +453,7 @@ export default function MileageApprovalsPage() {
                               onClick={() => void unapprove(row)}
                               className={cn(
                                 buttonVariants({ variant: "outline", size: "default" }),
-                                "h-10 gap-2 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                                "h-10 gap-2 rounded-[var(--radius)] text-[10px] font-bold uppercase tracking-wider",
                               )}
                             >
                               <Undo2 className="h-4 w-4" />

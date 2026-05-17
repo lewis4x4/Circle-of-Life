@@ -12,7 +12,6 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -326,7 +325,7 @@ export default function AdminIncidentObligationsPage() {
   });
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <div className="space-y-2">
         <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
           <ArrowLeft className="h-4 w-4" />
@@ -334,23 +333,23 @@ export default function AdminIncidentObligationsPage() {
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">Incident Lifecycle Blockers</h1>
-            <p className="text-sm text-slate-500 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold text-foreground">Incident Lifecycle Blockers</h1>
+            <p className="text-sm text-muted-foreground">
               Work notification, reporting, RCA, and care-plan blockers without drilling into every incident first.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">{counts.all} active</Badge>
-            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">{counts.notifications} notifications</Badge>
-            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">{counts.regulatory} reporting</Badge>
-            <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">{counts.rca} RCA</Badge>
-            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">{counts.carePlan} care plan</Badge>
+            <Badge variant="outline" className="border-border bg-muted text-muted-foreground">{counts.all} active</Badge>
+            <Badge variant="outline" className="border-info/30 bg-info/10 text-info">{counts.notifications} notifications</Badge>
+            <Badge variant="outline" className="border-info/30 bg-info/10 text-info">{counts.regulatory} reporting</Badge>
+            <Badge variant="outline" className="border-border bg-muted text-muted-foreground">{counts.rca} RCA</Badge>
+            <Badge variant="outline" className="border-success/30 bg-success/10 text-success">{counts.carePlan} care plan</Badge>
           </div>
         </div>
       </div>
 
-      {actionError ? <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">{actionError}</div> : null}
-      {actionMessage ? <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">{actionMessage}</div> : null}
+      {actionError ? <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{actionError}</div> : null}
+      {actionMessage ? <div className="rounded-[var(--radius)] border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">{actionMessage}</div> : null}
 
       {loading ? (
         <AdminTableLoadingState />
@@ -376,10 +375,10 @@ export default function AdminIncidentObligationsPage() {
                 type="button"
                 onClick={() => setQueueFilter(option.key as QueueFilter)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                   queueFilter === option.key
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
               >
                 {option.label}
@@ -388,11 +387,11 @@ export default function AdminIncidentObligationsPage() {
           </div>
           {severityFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
                 Severity filter: {severityFilter.replace("level_", "L")}
               </Badge>
               {scopeFilter !== "all" ? (
-                <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
                   Scope: {scopeFilter === "open" ? "open only" : "active only"}
                 </Badge>
               ) : null}
@@ -402,7 +401,7 @@ export default function AdminIncidentObligationsPage() {
             </div>
           ) : scopeFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
                 Scope: {scopeFilter === "open" ? "open only" : "active only"}
               </Badge>
               <Link href="/admin/incidents/obligations" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
@@ -411,51 +410,60 @@ export default function AdminIncidentObligationsPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {visibleRows.map((row) => (
-              <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
-                <CardHeader className="pb-3">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+              <div
+                key={row.id}
+                className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+              >
+                <div
+                  className={cn(
+                    "h-2 w-2 rounded-full shrink-0",
+                    row.missingNotificationActions.length > 0 || row.missingRegulatoryActions.length > 0
+                      ? "bg-warning"
+                      : row.rootCausePending
+                        ? "bg-muted-foreground/40"
+                        : "bg-success",
+                  )}
+                />
+                <div className="flex-1 min-w-0 py-2">
+                  <div className="flex flex-wrap items-start justify-between gap-3 pb-2">
                     <div>
-                      <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                        {row.incidentNumber}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
+                      <p className="font-semibold text-foreground">{row.incidentNumber}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {row.residentName} · {formatOccurredAt(row.occurredAt)}
-                      </CardDescription>
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                      <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
                         {row.severity.replace("level_", "L")}
                       </Badge>
                       {row.missingNotificationActions.length > 0 ? (
-                        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                        <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                           {row.missingNotificationActions.length} notify
                         </Badge>
                       ) : null}
                       {row.missingRegulatoryActions.length > 0 ? (
-                        <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                        <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                           {row.missingRegulatoryActions.length} reporting
                         </Badge>
                       ) : null}
                       {row.rootCausePending ? (
-                        <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">
+                        <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
                           RCA pending
                         </Badge>
                       ) : null}
                       {row.carePlanPending ? (
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                        <Badge variant="outline" className="bg-success/10 text-success border border-success/30">
                           Care plan pending
                         </Badge>
                       ) : null}
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   {row.openObligations.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-wide text-slate-400">Open obligations</p>
-                      <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                    <div className="space-y-2 pb-3">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Open obligations</p>
+                      <ul className="space-y-1 text-sm text-foreground">
                         {row.openObligations.map((item) => (
                           <li key={item}>• {item}</li>
                         ))}
@@ -522,8 +530,8 @@ export default function AdminIncidentObligationsPage() {
                       Incident detail
                     </Link>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>

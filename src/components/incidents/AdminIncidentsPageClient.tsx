@@ -75,10 +75,10 @@ export function AdminIncidentsPageClient({
       <div className="space-y-6 pt-2 h-[calc(100vh-6rem)]">
         <Skeleton className="h-10 w-64 mb-6" />
         <div className="grid min-h-[12rem] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:h-full">
-          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
-          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
-          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
-          <Skeleton className="min-h-[10rem] rounded-2xl sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-[var(--radius)] sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-[var(--radius)] sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-[var(--radius)] sm:min-h-0 sm:h-full" />
+          <Skeleton className="min-h-[10rem] rounded-[var(--radius)] sm:min-h-0 sm:h-full" />
         </div>
       </div>
     );
@@ -87,10 +87,10 @@ export function AdminIncidentsPageClient({
   if (error) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <div className="text-center p-8 bg-rose-50 rounded-2xl">
-          <ShieldAlert className="w-8 h-8 text-rose-600 mx-auto mb-3" />
-          <h2 className="text-lg font-semibold text-rose-800">Connection Failed</h2>
-          <p className="text-sm text-rose-700/80 mb-4">{error}</p>
+        <div className="text-center p-8 bg-destructive/10 rounded-[var(--radius)]">
+          <ShieldAlert className="w-8 h-8 text-destructive mx-auto mb-3" />
+          <h2 className="text-lg font-semibold text-destructive">Connection Failed</h2>
+          <p className="text-sm text-destructive/70 mb-4">{error}</p>
           <Button variant="outline" onClick={() => void loadIncidents()}>Retry</Button>
         </div>
       </div>
@@ -116,10 +116,10 @@ export function AdminIncidentsPageClient({
     return matchesSeverity && matchesScope;
   });
   const columns: { id: IncidentStatus; label: string; dot: string }[] = [
-    { id: "new", label: "New (Triage)", dot: "bg-rose-500" },
-    { id: "investigating", label: "Investigating", dot: "bg-amber-500" },
-    { id: "regulatory_review", label: "Regulatory Review", dot: "bg-blue-500" },
-    { id: "closed", label: "Closed / Signed off", dot: "bg-slate-400" },
+    { id: "new", label: "New (Triage)", dot: "bg-destructive" },
+    { id: "investigating", label: "Investigating", dot: "bg-warning" },
+    { id: "regulatory_review", label: "Regulatory Review", dot: "bg-info" },
+    { id: "closed", label: "Closed / Signed off", dot: "bg-muted-foreground/40" },
   ];
   const followupPressure = visibleRows
     .filter((row) => row.overdueFollowups > 0 || row.unassignedFollowups > 0 || row.openObligations > 0 || row.rootCausePending || row.carePlanPending)
@@ -201,18 +201,18 @@ export function AdminIncidentsPageClient({
   }).length;
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-6">
+    <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-[var(--motion-duration)] pb-6">
       <></>
       <header className="relative z-10 shrink-0 flex items-end justify-between px-1">
         <div>
            
-           <h2 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+           <h2 className="text-4xl font-semibold tracking-tight text-foreground flex items-center gap-3">
              Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <></>}
            </h2>
         </div>
         <div className="flex items-center gap-2">
           <Link href={level4BadgeHref}>
-            <Badge variant="outline" className="h-8 px-3 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 cursor-pointer">
               {level4ExceptionCount} Level-4 Exceptions
             </Badge>
           </Link>
@@ -223,7 +223,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/overdue-followups?severity=${severityFilter}`
               : `/admin/incidents/overdue-followups?severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
@@ -234,7 +234,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`
               : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
           </Link>
@@ -245,7 +245,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/followups?severity=${severityFilter}`
               : `/admin/incidents/followups?severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-info/30 bg-info/10 text-info hover:bg-info/20 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
             </Badge>
           </Link>
@@ -256,7 +256,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/obligations?severity=${severityFilter}`
               : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-info/30 bg-info/10 text-info hover:bg-info/20 cursor-pointer">
               {visibleRows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
             </Badge>
           </Link>
@@ -267,7 +267,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}`
               : `/admin/incidents/followups?filter=unassigned&severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-border bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.unassignedFollowups, 0)} Unassigned follow-ups
             </Badge>
           </Link>
@@ -276,12 +276,12 @@ export function AdminIncidentsPageClient({
       {severityFilter !== "all" || scopeFilter !== "all" ? (
         <div className="relative z-10 flex items-center gap-2 px-1">
           {scopeFilter !== "all" ? (
-            <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+            <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
               Scope: {scopeFilter === "open" ? "open only" : "active only"}
             </Badge>
           ) : null}
           {severityFilter !== "all" ? (
-            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+            <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
               Severity filter: {severityFilter.replace("level_", "L")}
             </Badge>
           ) : null}
@@ -291,26 +291,26 @@ export function AdminIncidentsPageClient({
         </div>
       ) : null}
       {rows.length === 0 ? (
-        <div className="relative z-10 rounded-2xl border border-slate-200/70 bg-white/70 p-4 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300">
+        <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
           No live incident records returned for this scope. No fallback incident cards are shown.
         </div>
       ) : null}
 
       {followupPressure.length > 0 && (
-        <div className="relative z-10 rounded-lg border border-amber-200/70 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-4 sm:p-5">
+        <div className="relative z-10 rounded-[var(--radius)] border border-warning/20 bg-warning/10 p-4 sm:p-5">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Follow-up pressure</p>
-                <p className="text-sm text-amber-900 dark:text-amber-100">
+                <p className="text-[10px] uppercase tracking-wider font-medium text-warning">Follow-up pressure</p>
+                <p className="text-sm text-foreground">
                   These incidents still have unresolved follow-up, reporting, RCA, or care-plan workflow pressure.
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-amber-300 bg-white/70 text-amber-800 dark:border-amber-800 dark:text-amber-200">
+                <Badge variant="outline" className="bg-warning/10 text-warning border border-warning/30">
                   {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
                 </Badge>
-                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-amber-300 bg-white/70 text-amber-800 hover:bg-white dark:border-amber-800 dark:text-amber-200 dark:hover:bg-black/30")}>
+                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-warning/30 bg-warning/10 text-warning hover:bg-warning/20")}>
                   Open backlog
                 </Link>
                 <Link
@@ -323,7 +323,7 @@ export function AdminIncidentsPageClient({
                         ? `/admin/incidents/obligations?severity=${severityFilter}`
                         : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`
                   }
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-blue-300 bg-white/70 text-blue-800 hover:bg-white dark:border-blue-800 dark:text-blue-200 dark:hover:bg-black/30")}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-info/30 bg-info/10 text-info hover:bg-info/20")}
                 >
                   Work obligations
                 </Link>
@@ -335,25 +335,25 @@ export function AdminIncidentsPageClient({
                 <Link
                   key={incident.id}
                   href={`/admin/incidents/${incident.id}`}
-                  className="rounded-xl border border-amber-200/70 bg-white/80 dark:border-amber-900/40 p-4 transition-colors hover:bg-white dark:hover:bg-black/30"
+                  className="rounded-[var(--radius)] border border-border bg-card p-4 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 hover:-translate-y-px"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-mono tracking-wider text-slate-500">{incident.incidentNumber}</p>
-                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{incident.residentName}</p>
+                      <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">{incident.incidentNumber}</p>
+                      <p className="mt-1 font-semibold text-foreground">{incident.residentName}</p>
                     </div>
-                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
                       {incident.openFollowups} open
                     </Badge>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {incident.overdueFollowups > 0 ? (
-                      <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border border-destructive/30">
                         {incident.overdueFollowups} overdue
                       </Badge>
                     ) : null}
                     {incident.unassignedFollowups > 0 ? (
-                      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                      <Badge variant="outline" className="bg-warning/10 text-warning border border-warning/30">
                         {incident.unassignedFollowups} unassigned
                       </Badge>
                     ) : null}
@@ -361,8 +361,8 @@ export function AdminIncidentsPageClient({
                       <Badge
                         variant="outline"
                         className={cn(
-                          "border-orange-200 bg-orange-50 text-orange-700",
-                          incident.criticalFollowups > 0 && "border-rose-200 bg-rose-50 text-rose-700",
+                          "bg-warning/10 text-warning border border-warning/30",
+                          incident.criticalFollowups > 0 && "bg-destructive/10 text-destructive border border-destructive/30",
                         )}
                       >
                         {incident.criticalFollowups > 0
@@ -371,22 +371,22 @@ export function AdminIncidentsPageClient({
                       </Badge>
                     ) : null}
                     {incident.followupDueStr !== "—" ? (
-                      <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                      <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                         Next due {incident.followupDueStr}
                       </Badge>
                     ) : null}
                     {incident.openObligations > 0 ? (
-                      <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+                      <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                         {incident.openObligations} reporting open
                       </Badge>
                     ) : null}
                     {incident.rootCausePending ? (
-                      <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">
+                      <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
                         RCA pending
                       </Badge>
                     ) : null}
                     {incident.carePlanPending ? (
-                      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <Badge variant="outline" className="bg-success/10 text-success border border-success/30">
                         Care plan pending
                       </Badge>
                     ) : null}
@@ -403,18 +403,18 @@ export function AdminIncidentsPageClient({
         {columns.map((col) => {
           const colRows = visibleRows.filter(r => r.status === col.id);
           return (
-            <div key={col.id} className="flex-1 min-w-[340px] flex flex-col rounded-lg border border-white/20 dark:border-white/5 overflow-hidden shadow-2xl relative bg-white/30">
-               <div className="shrink-0 p-5 border-b border-white/20 dark:border-white/5 flex items-center justify-between bg-card dark:bg-black/40 backdrop-blur-md relative z-10">
+            <div key={col.id} className="flex-1 min-w-[340px] flex flex-col rounded-[var(--radius)] border border-border overflow-hidden bg-card/40">
+               <div className="shrink-0 p-4 border-b border-border flex items-center justify-between bg-card">
                  <div className="flex items-center gap-3">
-                   <div className={cn("w-3 h-3 rounded-full shadow-sm", col.dot)}></div>
-                   <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm tracking-wider uppercase font-mono">{col.label}</h3>
+                   <div className={cn("w-3 h-3 rounded-full shrink-0", col.dot)}></div>
+                   <h3 className="text-[11px] font-medium text-foreground tracking-wider uppercase">{col.label}</h3>
                  </div>
-                 <Badge variant="secondary" className="bg-card dark:bg-white/10 text-slate-800 dark:text-slate-200 shadow-none font-mono">{colRows.length}</Badge>
+                 <Badge variant="secondary" className="bg-muted text-muted-foreground shadow-none">{colRows.length}</Badge>
                </div>
                
                <ScrollArea className="flex-1 p-3">
                  {colRows.length === 0 ? (
-                   <div className="mt-8 text-center text-slate-400">
+                   <div className="mt-8 text-center text-muted-foreground">
                      <CheckCircle2 className="w-8 h-8 opacity-20 mx-auto mb-2" />
                      <p className="text-xs font-medium">Queue Empty</p>
                    </div>
@@ -444,19 +444,19 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
     const hoursLeft = (incident.followupDueMs - now) / 3600000;
     if (hoursLeft < 0) {
       countdownRibbon = (
-        <div className="w-full bg-rose-500/10 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 py-2 flex justify-center border-b border-rose-500/20 font-mono text-[10px] tracking-wider font-bold">
-          <AlertCircle className="w-3.5 h-3.5 mr-2 animate-bounce" /> DOH DEADLINE BREACHED
+        <div className="w-full bg-destructive/10 text-destructive py-2 flex justify-center border-b border-destructive/20 font-medium text-[10px] tracking-wider font-bold">
+          <AlertCircle className="w-3.5 h-3.5 mr-2" /> DOH DEADLINE BREACHED
         </div>
       );
     } else if (hoursLeft <= 24) {
       countdownRibbon = (
-        <div className="w-full bg-rose-500 text-white py-2 flex justify-center font-mono text-[10px] tracking-wider font-bold shadow-sm">
+        <div className="w-full bg-destructive text-primary-foreground py-2 flex justify-center font-medium text-[10px] tracking-wider font-bold">
           <Clock className="w-3 h-3 mr-2 animate-pulse" /> {Math.ceil(hoursLeft)} HOURS TO DOH DEADLINE
         </div>
       );
     } else if (hoursLeft <= 72) {
       countdownRibbon = (
-        <div className="w-full bg-amber-100/50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 py-1.5 flex justify-center border-b border-amber-200/50 dark:border-amber-900/50 font-mono text-[10px] tracking-wider font-bold">
+        <div className="w-full bg-warning/10 text-warning py-1.5 flex justify-center border-b border-warning/20 font-medium text-[10px] tracking-wider font-bold">
            {Math.ceil(hoursLeft / 24)} DAYS TO REGULATORY DEADLINE
         </div>
       );
@@ -465,48 +465,48 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
 
   return (
     <Link href={`/admin/incidents/${incident.id}`} className="block">
-    <div className="relative overflow-hidden rounded-2xl group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer border border-white/40 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md">
+    <div className="relative overflow-hidden rounded-[var(--radius)] transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] cursor-pointer border border-border bg-card shadow-[var(--shadow-card)] hover:-translate-y-px hover:shadow-[var(--shadow-lift)]">
       {countdownRibbon}
       <div className="p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between">
            <div className="flex flex-col">
-             <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 mb-1">{incident.incidentNumber}</span>
-             <span className="font-bold text-slate-900 dark:text-slate-100 text-base">{incident.residentName}</span>
+             <span className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground mb-1">{incident.incidentNumber}</span>
+             <span className="font-bold text-foreground text-base">{incident.residentName}</span>
            </div>
            {incident.severity === "level_4" ? (
-             <Badge variant="destructive" className="h-6 px-2 text-[10px] font-mono tracking-wider font-bold rounded-md bg-rose-500">L4 SEVERE</Badge>
+             <Badge variant="destructive" className="h-6 px-2 text-[10px] tracking-wider font-bold rounded-md">L4 SEVERE</Badge>
            ) : incident.severity === "level_3" ? (
-             <Badge className="h-6 px-2 text-[10px] font-mono tracking-wider font-bold rounded-md bg-amber-500 text-white border-0 hover:bg-amber-600">L3 MAJOR</Badge>
+             <Badge className="h-6 px-2 text-[10px] tracking-wider font-bold rounded-md bg-warning text-primary-foreground border-0 hover:bg-warning/90">L3 MAJOR</Badge>
            ) : (
-             <Badge variant="secondary" className="h-6 px-2 text-[10px] font-mono tracking-wider font-bold rounded-md border-0 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300">{incident.severity.replace('level_', 'L')}</Badge>
+             <Badge variant="secondary" className="h-6 px-2 text-[10px] tracking-wider font-bold rounded-md border-0 bg-muted text-muted-foreground">{incident.severity.replace('level_', 'L')}</Badge>
            )}
         </div>
         
-        <div className="grid grid-cols-2 gap-3 text-xs bg-white/50 p-3 rounded-xl border border-white/20 dark:border-white/5">
+        <div className="grid grid-cols-2 gap-3 text-xs bg-muted/40 p-3 rounded-[var(--radius)] border border-border">
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400">Class</span>
-            <span className="font-medium capitalize text-slate-800 dark:text-slate-300">{incident.category.replace(/_/g, ' ')}</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Class</span>
+            <span className="font-medium capitalize text-foreground">{incident.category.replace(/_/g, ' ')}</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400">Reported</span>
-            <span className="font-medium text-slate-800 dark:text-slate-300">{incident.reportedAt}</span>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Reported</span>
+            <span className="font-medium text-foreground">{incident.reportedAt}</span>
           </div>
         </div>
 
         {(incident.openFollowups > 0 || incident.ahcaReportable) && (
           <div className="flex flex-wrap gap-2">
             {incident.openFollowups > 0 ? (
-              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                 {incident.openFollowups} open follow-up{incident.openFollowups === 1 ? "" : "s"}
               </Badge>
             ) : null}
             {incident.overdueFollowups > 0 ? (
-              <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700">
+              <Badge variant="outline" className="bg-destructive/10 text-destructive border border-destructive/30">
                 {incident.overdueFollowups} overdue
               </Badge>
             ) : null}
             {incident.unassignedFollowups > 0 ? (
-              <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+              <Badge variant="outline" className="bg-warning/10 text-warning border border-warning/30">
                 {incident.unassignedFollowups} unassigned
               </Badge>
             ) : null}
@@ -514,30 +514,30 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
               <Badge
                 variant="outline"
                 className={cn(
-                  "border-orange-200 bg-orange-50 text-orange-700",
-                  incident.criticalFollowups > 0 && "border-rose-200 bg-rose-50 text-rose-700",
+                  "bg-warning/10 text-warning border border-warning/30",
+                  incident.criticalFollowups > 0 && "bg-destructive/10 text-destructive border border-destructive/30",
                 )}
               >
                 {incident.criticalFollowups > 0 ? `${incident.criticalFollowups} critical` : `${incident.escalatedFollowups} escalated`}
               </Badge>
             ) : null}
             {incident.ahcaReportable && !incident.ahcaReported ? (
-              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+              <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                 AHCA reporting open
               </Badge>
             ) : null}
             {incident.openObligations > 0 ? (
-              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+              <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
                 {incident.openObligations} reporting / notify
               </Badge>
             ) : null}
             {incident.rootCausePending ? (
-              <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">
+              <Badge variant="outline" className="bg-muted text-muted-foreground border border-border">
                 RCA pending
               </Badge>
             ) : null}
             {incident.carePlanPending ? (
-              <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+              <Badge variant="outline" className="bg-success/10 text-success border border-success/30">
                 Care plan pending
               </Badge>
             ) : null}
@@ -546,24 +546,24 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
         
         <div className="pt-2 flex items-center justify-between">
            <div className="flex items-center gap-2.5">
-             <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-700 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20">
+             <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground border border-border">
                {incident.reportedBy.charAt(0) || "S"}
              </div>
-             <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[100px]">{incident.reportedBy}</span>
+             <span className="text-xs font-medium text-muted-foreground truncate max-w-[100px]">{incident.reportedBy}</span>
            </div>
            
            {incident.status === "new" && (
-             <Button size="sm" variant="default" className="h-8 text-xs px-3 shadow-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+             <Button size="sm" variant="default" className="h-8 text-xs px-3 font-semibold">
                Begin Triage <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
              </Button>
            )}
            {incident.status === "investigating" && (
-             <Button size="sm" variant="outline" className="h-8 text-xs px-3 shadow-none font-medium rounded-lg border-white/40 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-colors">
+             <Button size="sm" variant="outline" className="h-8 text-xs px-3 font-medium">
                Manage Follow-ups
              </Button>
            )}
            {incident.status === "regulatory_review" && (
-             <Button size="sm" variant="default" className="h-8 text-xs px-3 shadow-md font-semibold bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white">
+             <Button size="sm" variant="default" className="h-8 text-xs px-3 font-semibold">
                Review Next Steps <CheckCircle2 className="w-3.5 h-3.5 ml-1.5" />
              </Button>
            )}
@@ -573,4 +573,3 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
     </Link>
   );
 }
-

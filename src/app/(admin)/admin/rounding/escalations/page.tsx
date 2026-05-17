@@ -38,10 +38,10 @@ type EscalationRow = {
 };
 
 const STATUS_STYLES: Record<FollowUpStatus, string> = {
-  open: "border-rose-500/30 bg-rose-500/10 text-rose-200",
-  in_progress: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  resolved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-  dismissed: "border-slate-500/30 bg-slate-500/10 text-slate-300",
+  open: "border-destructive/30 bg-destructive/10 text-destructive",
+  in_progress: "border-warning/30 bg-warning/10 text-warning",
+  resolved: "border-success/30 bg-success/10 text-success",
+  dismissed: "border-border bg-muted text-muted-foreground",
 };
 
 function residentName(row: EscalationRow["residents"], fallback: string) {
@@ -246,14 +246,14 @@ export default function RoundingEscalationsPage() {
       <></>
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
           <div className="space-y-2">
             
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
               Observation Escalations
-              {counts.open > 0 ? <ShieldAlert className="h-8 w-8 text-rose-400" /> : null}
+              {counts.open > 0 ? <ShieldAlert className="h-8 w-8 text-destructive" /> : null}
             </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-3xl">
+            <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-3xl">
               Review critically overdue and missed observation work before it becomes a resident-safety blind spot.
             </p>
           </div>
@@ -263,7 +263,7 @@ export default function RoundingEscalationsPage() {
         </div>
 
         {!selectedFacilityId ? (
-          <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 px-6 py-10 text-center text-sm text-slate-600 dark:text-slate-300">
+          <div className="rounded-[var(--radius)] border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
             Select a facility in the admin header to open the escalation queue.
           </div>
         ) : null}
@@ -273,17 +273,17 @@ export default function RoundingEscalationsPage() {
         {error ? <Banner tone="error">{error}</Banner> : null}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Open" value={String(counts.open)} accent="text-rose-500" icon={<AlertTriangle className="h-5 w-5" />} pulse={counts.open > 0} />
-          <MetricCard label="In Progress" value={String(counts.in_progress)} accent="text-amber-500" icon={<Clock3 className="h-5 w-5" />} />
-          <MetricCard label="Resolved" value={String(counts.resolved)} accent="text-emerald-500" icon={<CheckCircle2 className="h-5 w-5" />} />
-          <MetricCard label="Dismissed" value={String(counts.dismissed)} accent="text-slate-400" icon={<XCircle className="h-5 w-5" />} />
+          <MetricCard label="Open" value={String(counts.open)} accent="text-destructive" icon={<AlertTriangle className="h-5 w-5" />} pulse={counts.open > 0} />
+          <MetricCard label="In Progress" value={String(counts.in_progress)} accent="text-warning" icon={<Clock3 className="h-5 w-5" />} />
+          <MetricCard label="Resolved" value={String(counts.resolved)} accent="text-success" icon={<CheckCircle2 className="h-5 w-5" />} />
+          <MetricCard label="Dismissed" value={String(counts.dismissed)} accent="text-muted-foreground" icon={<XCircle className="h-5 w-5" />} />
         </div>
 
         <V2Card hoverColor="rose" className="p-6 border-rose-500/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Supervisor escalation lane</h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+              <h2 className="text-lg font-semibold text-foreground">Supervisor escalation lane</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Open, triage, and close resident-observation escalations with preserved task evidence.
               </p>
             </div>
@@ -297,8 +297,8 @@ export default function RoundingEscalationsPage() {
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
                     filter === value
-                      ? "border-rose-500/30 bg-rose-500/10 text-rose-200"
-                      : "border-slate-200 bg-white/70 text-slate-600 hover:border-slate-300 dark:border-white/10 dark:bg-black/20 dark:text-zinc-400 dark:hover:border-white/20",
+                      ? "border-destructive/30 bg-destructive/10 text-destructive"
+                      : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted/40",
                   )}
                 >
                   {value === "all" ? "All" : value.replace("_", " ")}
@@ -309,10 +309,10 @@ export default function RoundingEscalationsPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-rose-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-destructive" />
             </div>
           ) : rows.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 px-4 py-10 text-center text-sm text-slate-500 dark:text-zinc-500">
+              <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
               No observation escalations match this filter.
             </div>
           ) : (
@@ -321,42 +321,42 @@ export default function RoundingEscalationsPage() {
                 const key = (action: string) => `${row.id}:${action}`;
                 const task = row.resident_observation_tasks;
                 return (
-                  <div key={row.id} className="rounded-lg border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 p-5 shadow-sm">
+                  <div key={row.id} className="min-h-[36px] px-[13px] py-4 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", STATUS_STYLES[row.status])}>
                             {row.status.replace("_", " ")}
                           </span>
-                          <span className="rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Level {row.escalation_level}
                           </span>
-                          <span className="rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                          <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             {row.escalation_type.replace(/_/g, " ")}
                           </span>
                           {row.watchSummary?.protocolName ? (
-                            <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+                            <span className="rounded-full border border-info/20 bg-info/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-info">
                               {row.watchSummary.protocolName}
                             </span>
                           ) : null}
                         </div>
 
                         <div>
-                          <h3 className="text-xl tracking-tight text-slate-900 dark:text-slate-100">
+                          <h3 className="text-xl tracking-tight text-foreground">
                             {residentName(row.residents, row.resident_id.slice(0, 8))}
                           </h3>
-                          <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                          <p className="mt-1 text-sm text-muted-foreground">
                             Triggered {new Date(row.triggered_at).toLocaleString()} · {relTime(row.triggered_at)}
                           </p>
                         </div>
 
-                        <div className="grid gap-3 md:grid-cols-2 text-sm text-slate-600 dark:text-zinc-400">
+                        <div className="grid gap-3 md:grid-cols-2 text-sm text-muted-foreground">
                           <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Task status</p>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Task status</p>
                             <p>{task?.status?.replace(/_/g, " ") ?? "Unavailable"}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Due window</p>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Due window</p>
                             <p>
                               {task ? `${new Date(task.due_at).toLocaleString()} -> ${new Date(task.grace_ends_at).toLocaleString()}` : "Unavailable"}
                             </p>
@@ -364,11 +364,11 @@ export default function RoundingEscalationsPage() {
                           {row.watchSummary ? (
                             <>
                               <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Watch source</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Watch source</p>
                                 <p>{row.watchSummary.triggeredByType.replace(/_/g, " ")}</p>
                               </div>
                               <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Watch status</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Watch status</p>
                                 <p>{row.watchSummary.watchStatus.replace(/_/g, " ")}</p>
                               </div>
                             </>
@@ -376,10 +376,10 @@ export default function RoundingEscalationsPage() {
                         </div>
 
                         {row.watchSummary?.incidentId ? (
-                          <div className="rounded-2xl border border-rose-200/50 dark:border-rose-500/20 bg-rose-50/70 dark:bg-rose-950/10 px-3.5 py-3 text-sm text-slate-600 dark:text-zinc-300">
+                          <div className="rounded-[var(--radius)] border border-destructive/20 bg-destructive/10 px-3.5 py-3 text-sm text-foreground">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                               <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Related incident</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Related incident</p>
                                 <p>
                                   {row.watchSummary.incidentNumber ?? row.watchSummary.incidentId}
                                   {row.watchSummary.incidentCategory ? ` · ${row.watchSummary.incidentCategory.replace(/_/g, " ")}` : ""}
@@ -387,7 +387,7 @@ export default function RoundingEscalationsPage() {
                               </div>
                               <Link
                                 href={`/admin/incidents/${row.watchSummary.incidentId}`}
-                                className="text-xs font-bold uppercase tracking-wider text-rose-700 hover:underline dark:text-rose-300"
+                                className="text-xs font-bold uppercase tracking-wider text-destructive hover:underline"
                               >
                                 Open incident
                               </Link>
@@ -396,13 +396,13 @@ export default function RoundingEscalationsPage() {
                         ) : null}
 
                         {task?.notes ? (
-                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 px-3.5 py-3 text-sm text-slate-600 dark:text-zinc-300">
+                          <div className="rounded-[var(--radius)] border border-border bg-card px-3.5 py-3 text-sm text-muted-foreground">
                             {task.notes}
                           </div>
                         ) : null}
 
                         {row.resolution_note ? (
-                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 px-3.5 py-3 text-sm text-slate-600 dark:text-zinc-300">
+                          <div className="rounded-[var(--radius)] border border-border bg-card px-3.5 py-3 text-sm text-muted-foreground">
                             {row.resolution_note}
                           </div>
                         ) : null}
@@ -414,7 +414,7 @@ export default function RoundingEscalationsPage() {
                           onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))}
                           rows={3}
                           placeholder="Review note or resolution context..."
-                          className="w-full rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-rose-500 dark:focus:ring-rose-500/10"
+                          className="w-full rounded-[var(--radius)] border border-border bg-card px-3.5 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
                         />
 
                         <div className="flex flex-wrap gap-2">
@@ -423,7 +423,7 @@ export default function RoundingEscalationsPage() {
                               type="button"
                               onClick={() => void runAction(row.id, "start_review")}
                               disabled={actionLoading === key("start_review")}
-                              className="rounded-full bg-amber-600 text-white hover:bg-amber-500"
+                              className="rounded-full bg-warning text-primary-foreground hover:bg-warning/90"
                             >
                               {actionLoading === key("start_review") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
                               Start review
@@ -482,12 +482,12 @@ function MetricCard({
   pulse?: boolean;
 }) {
   return (
-    <V2Card hoverColor="rose" className="p-5 border-slate-200 dark:border-white/5">
+    <V2Card hoverColor="rose" className="p-5 border-border">
       <div className="flex h-full flex-col justify-between gap-4">
         <div className={cn("flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider", accent)}>
           {icon}
           {label}
-          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-rose-500" /> : null}
+          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-destructive" /> : null}
         </div>
         <div className={cn("text-4xl tracking-tight", accent)}>{value}</div>
       </div>
@@ -505,10 +505,10 @@ function Banner({
   return (
     <div
       className={cn(
-        "rounded-2xl border px-4 py-3 text-sm",
+        "rounded-[var(--radius)] border px-4 py-3 text-sm",
         tone === "success"
-          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-          : "border-rose-500/20 bg-rose-500/10 text-rose-200",
+          ? "border-success/20 bg-success/10 text-success"
+          : "border-destructive/20 bg-destructive/10 text-destructive",
       )}
     >
       {children}

@@ -66,7 +66,7 @@ export function T8InboxThreaded({
                       aria-current={active ? "true" : undefined}
                       aria-label={`Open thread: ${item.title}`}
                       className={cn(
-                        "flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors",
+                        "flex w-full flex-col gap-1 min-h-[36px] px-[13px] py-2 text-left transition-colors",
                         active
                           ? "bg-surface-elevated text-text-primary"
                           : "text-text-secondary hover:bg-surface-elevated hover:text-text-primary",

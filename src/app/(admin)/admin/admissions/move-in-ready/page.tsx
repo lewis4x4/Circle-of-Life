@@ -131,7 +131,7 @@ export default function AdminMoveInReadyPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration-micro)]">
       <div className="space-y-2">
         <Link href="/admin/admissions" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
           <ArrowLeft className="h-4 w-4" />
@@ -139,12 +139,12 @@ export default function AdminMoveInReadyPage() {
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">Move-In Ready</h1>
-            <p className="text-sm text-slate-500 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold text-foreground">Move-In Ready</h1>
+            <p className="text-sm text-muted-foreground">
               Admission cases with core readiness items complete and ready to progress into operations.
             </p>
           </div>
-          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+          <Badge variant="outline" className="bg-success/10 text-success border-success/30">
             {rows.length} ready
           </Badge>
         </div>
@@ -162,34 +162,34 @@ export default function AdminMoveInReadyPage() {
       ) : (
         <div className="space-y-4">
           {actionError ? (
-            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+            <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {actionError}
             </div>
           ) : null}
           {actionMessage ? (
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            <div className="rounded-[var(--radius)] border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
               {actionMessage}
             </div>
           ) : null}
         <div className="grid gap-4">
           {rows.map((row) => (
-            <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
+            <Card key={row.id} className="rounded-[9px] border-border hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Home className="h-4 w-4 text-emerald-500" />
+                    <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Home className="h-4 w-4 text-success" />
                       {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unlinked case"}
                     </CardTitle>
                     <CardDescription className="mt-1">Admission case {row.id}</CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                       <CheckCircle2 className="mr-1 h-3 w-3" />
                       Ready
                     </Badge>
                     {row.target_move_in_date ? (
-                      <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                      <Badge variant="outline" className="bg-info/10 text-info border-info/30">
                         <CalendarDays className="mr-1 h-3 w-3" />
                         {row.target_move_in_date}
                       </Badge>
@@ -200,12 +200,12 @@ export default function AdminMoveInReadyPage() {
               <CardContent className="space-y-3">
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Last updated</div>
-                    <div className="mt-1 text-slate-900 dark:text-slate-100">{formatRelative(row.updated_at)}</div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Last updated</div>
+                    <div className="mt-1 text-foreground">{formatRelative(row.updated_at)}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Current status</div>
-                    <div className="mt-1 text-slate-900 dark:text-slate-100">{formatColLabel(row.status)}</div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Current status</div>
+                    <div className="mt-1 text-foreground">{formatColLabel(row.status)}</div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -217,7 +217,7 @@ export default function AdminMoveInReadyPage() {
                       type="button"
                       disabled={actionLoading === row.id}
                       onClick={() => void updateCase(row.id, { status: "bed_reserved" }, "Case advanced to bed reserved.")}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                      className="rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-all duration-[var(--motion-duration-micro)] hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to bed reserved"}
                     </button>
@@ -227,12 +227,12 @@ export default function AdminMoveInReadyPage() {
                       type="button"
                       disabled={actionLoading === row.id}
                       onClick={() => void updateCase(row.id, { status: "move_in" }, "Case advanced to move-in.")}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-[var(--radius)] bg-success px-3 py-2 text-xs font-medium text-background transition-all duration-[var(--motion-duration-micro)] hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to move-in"}
                     </button>
                   ) : (
-                    <span className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+                    <span className="rounded-[var(--radius)] bg-success/10 px-3 py-2 text-xs text-success">
                       Move-in status already set. Continue downstream onboarding.
                     </span>
                   )}

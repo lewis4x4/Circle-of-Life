@@ -158,13 +158,13 @@ export default function DietaryClinicalReviewPage() {
       <></>
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
           <div className="space-y-2">
             
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
               Diet order and medications
             </h1>
-            <p className="mt-1 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl text-sm">
+            <p className="mt-1 font-medium tracking-wide text-muted-foreground max-w-2xl text-sm">
               Read-only side-by-side view for nursing and kitchen alignment. Automated hints flag only obvious
               data-pattern cases (liquid vs thickened fluids; solid unit doses vs texture-modified diets IDDSI 3–6);
               pharmacy and prescriber confirmation still required.
@@ -183,19 +183,19 @@ export default function DietaryClinicalReviewPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
             Select a facility to load data.
           </p>
         )}
 
         {error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+          <p className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm text-destructive">
             {error}
           </p>
         )}
 
         {facilityReady && !loadingDiet && residentsOptions.length === 0 && (
-          <p className="rounded-lg border border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200">
+          <p className="rounded-[var(--radius)] border border-border bg-muted px-6 py-4 text-sm text-muted-foreground">
             No diet orders in this facility batch. Add a diet order first, then return here.
           </p>
         )}
@@ -203,13 +203,13 @@ export default function DietaryClinicalReviewPage() {
         {facilityReady && (loadingDiet || residentsOptions.length > 0) && (
           <div className="space-y-4">
             <label className="block max-w-md">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-2 block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">
                 Resident
               </span>
               <select
                 className={cn(
-                  "w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/50",
-                  "px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 shadow-sm",
+                  "w-full rounded-[var(--radius)] border border-border bg-background",
+                  "px-4 py-3 text-sm font-medium text-foreground shadow-sm",
                 )}
                 value={selectedResidentId ?? ""}
                 disabled={loadingDiet}
@@ -226,25 +226,25 @@ export default function DietaryClinicalReviewPage() {
 
             {selectedResidentId && thickenedFluidLiquidHint.show && (
               <div
-                className="rounded-lg border border-amber-300/80 bg-amber-50/90 dark:border-amber-800/60 dark:bg-amber-950/35 px-5 py-4 text-sm text-amber-950 dark:text-amber-100"
+                className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-5 py-4 text-sm text-warning"
                 role="status"
               >
-                <p className="font-semibold text-amber-950 dark:text-amber-50">Review: liquid-form medications vs thickened fluids</p>
+                <p className="font-semibold">Review: liquid-form medications vs thickened fluids</p>
                 {primaryOrder ? (
-                  <p className="text-[11px] font-mono mt-1 text-amber-800/85 dark:text-amber-300/90">
+                  <p className="text-[11px] font-medium mt-1">
                     Primary order fluid (IDDSI): {formatEnumLabel(primaryOrder.iddsi_fluid_level)}
                   </p>
                 ) : null}
-                <p className="mt-1 text-amber-900/90 dark:text-amber-200/95">
+                <p className="mt-1">
                   Diet lists modified/thickened fluids, but these active medications have a liquid-like dosage form
                   string. Confirm appropriateness (e.g. thickening, alternate formulation) with pharmacy — advisory
                   only, not a clinical determination.
                 </p>
-                <ul className="mt-2 list-disc pl-5 space-y-0.5 text-amber-950/90 dark:text-amber-100/95">
+                <ul className="mt-2 list-disc pl-5 space-y-0.5">
                   {thickenedFluidLiquidHint.matches.map((m) => (
                     <li key={m.id}>
                       <span className="font-medium">{m.medication_name}</span>
-                      {m.form?.trim() ? <span className="text-amber-800/95 dark:text-amber-200/90"> — {m.form}</span> : null}
+                      {m.form?.trim() ? <span> — {m.form}</span> : null}
                     </li>
                   ))}
                 </ul>
@@ -253,25 +253,25 @@ export default function DietaryClinicalReviewPage() {
 
             {selectedResidentId && solidOralTextureHint.show && (
               <div
-                className="rounded-lg border border-violet-300/80 bg-violet-50/90 dark:border-violet-800/60 dark:bg-violet-950/35 px-5 py-4 text-sm text-violet-950 dark:text-violet-100"
+                className="rounded-[var(--radius)] border border-info/30 bg-info/10 px-5 py-4 text-sm text-info"
                 role="status"
               >
-                <p className="font-semibold text-violet-950 dark:text-violet-50">Review: solid oral forms vs texture-modified diet</p>
+                <p className="font-semibold">Review: solid oral forms vs texture-modified diet</p>
                 {primaryOrder ? (
-                  <p className="text-[11px] font-mono mt-1 text-violet-800/85 dark:text-violet-300/90">
+                  <p className="text-[11px] font-medium mt-1">
                     Primary order food (IDDSI): {formatEnumLabel(primaryOrder.iddsi_food_level)}
                   </p>
                 ) : null}
-                <p className="mt-1 text-violet-900/90 dark:text-violet-200/95">
+                <p className="mt-1">
                   Diet lists IDDSI texture-modified foods (liquidized through soft bite–sized), but these active
                   medications have a solid oral dosage form string (e.g. tablet, capsule). Confirm crushing,
                   compounding, or alternatives with pharmacy — some products must not be altered; advisory only.
                 </p>
-                <ul className="mt-2 list-disc pl-5 space-y-0.5 text-violet-950/90 dark:text-violet-100/95">
+                <ul className="mt-2 list-disc pl-5 space-y-0.5">
                   {solidOralTextureHint.matches.map((m) => (
                     <li key={m.id}>
                       <span className="font-medium">{m.medication_name}</span>
-                      {m.form?.trim() ? <span className="text-violet-800/95 dark:text-violet-200/90"> — {m.form}</span> : null}
+                      {m.form?.trim() ? <span> — {m.form}</span> : null}
                     </li>
                   ))}
                 </ul>
@@ -281,62 +281,62 @@ export default function DietaryClinicalReviewPage() {
             {selectedResidentId && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <section
-                  className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] p-6 shadow-sm"
+                  className="rounded-[var(--radius)] border border-border bg-card p-6 shadow-sm"
                   aria-labelledby="diet-panel-title"
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <Utensils className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    <h2 id="diet-panel-title" className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    <Utensils className="h-5 w-5 text-info" />
+                    <h2 id="diet-panel-title" className="text-sm font-bold uppercase tracking-wider text-foreground">
                       Diet order
                     </h2>
                   </div>
                   {!primaryOrder ? (
-                    <p className="text-sm text-slate-600 dark:text-slate-400">No order found for this resident.</p>
+                    <p className="text-sm text-muted-foreground">No order found for this resident.</p>
                   ) : (
                     <dl className="space-y-3 text-sm">
                       <div>
-                        <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</dt>
-                        <dd className="font-medium capitalize text-slate-900 dark:text-slate-100">{primaryOrder.status}</dd>
+                        <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</dt>
+                        <dd className="font-medium capitalize text-foreground">{primaryOrder.status}</dd>
                       </div>
                       <div>
-                        <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Food (IDDSI)</dt>
-                        <dd className="text-slate-800 dark:text-slate-200">{formatEnumLabel(primaryOrder.iddsi_food_level)}</dd>
+                        <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Food (IDDSI)</dt>
+                        <dd className="text-foreground">{formatEnumLabel(primaryOrder.iddsi_food_level)}</dd>
                       </div>
                       <div>
-                        <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fluids (IDDSI)</dt>
-                        <dd className="text-slate-800 dark:text-slate-200">{formatEnumLabel(primaryOrder.iddsi_fluid_level)}</dd>
+                        <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fluids (IDDSI)</dt>
+                        <dd className="text-foreground">{formatEnumLabel(primaryOrder.iddsi_fluid_level)}</dd>
                       </div>
                       {primaryOrder.allergy_constraints.length > 0 && (
                         <div>
-                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Allergies</dt>
-                          <dd className="text-slate-800 dark:text-slate-200">{primaryOrder.allergy_constraints.join(", ")}</dd>
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Allergies</dt>
+                          <dd className="text-foreground">{primaryOrder.allergy_constraints.join(", ")}</dd>
                         </div>
                       )}
                       {primaryOrder.texture_constraints.length > 0 && (
                         <div>
-                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Texture constraints</dt>
-                          <dd className="text-slate-800 dark:text-slate-200">{primaryOrder.texture_constraints.join(", ")}</dd>
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Texture constraints</dt>
+                          <dd className="text-foreground">{primaryOrder.texture_constraints.join(", ")}</dd>
                         </div>
                       )}
                       {primaryOrder.requires_swallow_eval && (
-                        <p className="rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 px-3 py-2 text-rose-900 dark:text-rose-100 text-xs font-medium">
+                        <p className="rounded-[var(--radius)] bg-destructive/10 border border-destructive/30 px-3 py-2 text-destructive text-xs font-medium">
                           Swallow evaluation flagged.
                         </p>
                       )}
                       {primaryOrder.medication_texture_review_notes?.trim() && (
                         <div>
-                          <dt className="text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-info">
                             Med / texture review
                           </dt>
-                          <dd className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+                          <dd className="text-foreground whitespace-pre-wrap">
                             {primaryOrder.medication_texture_review_notes}
                           </dd>
                         </div>
                       )}
                       {primaryOrder.aspiration_notes?.trim() && (
                         <div>
-                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Aspiration notes</dt>
-                          <dd className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{primaryOrder.aspiration_notes}</dd>
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Aspiration notes</dt>
+                          <dd className="text-foreground whitespace-pre-wrap">{primaryOrder.aspiration_notes}</dd>
                         </div>
                       )}
                     </dl>
@@ -344,48 +344,50 @@ export default function DietaryClinicalReviewPage() {
                 </section>
 
                 <section
-                  className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] p-6 shadow-sm"
+                  className="rounded-[var(--radius)] border border-border bg-card p-6 shadow-sm"
                   aria-labelledby="meds-panel-title"
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <Pill className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    <h2 id="meds-panel-title" className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    <Pill className="h-5 w-5 text-info" />
+                    <h2 id="meds-panel-title" className="text-sm font-bold uppercase tracking-wider text-foreground">
                       Resident medications
                     </h2>
                   </div>
                   {loadingMeds ? (
-                    <p className="text-sm text-slate-500 font-mono">Loading medications…</p>
+                    <p className="text-sm text-muted-foreground font-medium">Loading medications…</p>
                   ) : meds.length === 0 ? (
-                    <p className="text-sm text-slate-600 dark:text-slate-400">No medication orders on file for this resident.</p>
+                    <p className="text-sm text-muted-foreground">No medication orders on file for this resident.</p>
                   ) : (
                     <ul className="space-y-3 max-h-[min(70vh,520px)] overflow-y-auto pr-1">
                       {meds.map((m) => (
                         <li
                           key={m.id}
-                          className="rounded-xl border border-slate-200/60 dark:border-white/5 bg-slate-50/80 dark:bg-slate-900/30 px-4 py-3"
+                          className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                         >
-                          <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <p className="font-semibold text-slate-900 dark:text-slate-100">{m.medication_name}</p>
+                          <div className="flex flex-1 flex-wrap items-baseline justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-foreground">{m.medication_name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {[m.strength, m.form, formatEnumLabel(m.route)].filter(Boolean).join(" · ")}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatEnumLabel(m.frequency)}
+                                {m.instructions?.trim() ? ` — ${m.instructions}` : ""}
+                              </p>
+                            </div>
                             <span
                               className={cn(
-                                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0",
+                                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider shrink-0",
                                 m.status === "active"
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
+                                  ? "bg-success/10 text-success border border-success/30"
                                   : m.status === "discontinued"
-                                    ? "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                    : "bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200",
+                                    ? "bg-muted text-muted-foreground border border-border"
+                                    : "bg-warning/10 text-warning border border-warning/30",
                               )}
                             >
                               {m.status.replace(/_/g, " ")}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                            {[m.strength, m.form, formatEnumLabel(m.route)].filter(Boolean).join(" · ")}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
-                            {formatEnumLabel(m.frequency)}
-                            {m.instructions?.trim() ? ` — ${m.instructions}` : ""}
-                          </p>
                         </li>
                       ))}
                     </ul>

@@ -322,10 +322,10 @@ export default function AdminShiftSwapsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6">
           
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             Shift swaps {pendingCount > 0 ? <></> : null}
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl">
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Oversight queue for COL’s shift swap workflow. Pending requests can be approved or denied when your role
             allows (facility admin or nurse per RLS). Export supports audits.
           </p>
@@ -334,18 +334,18 @@ export default function AdminShiftSwapsPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-2">
           <div className="h-[120px] md:col-span-2">
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
-              <MonolithicWatermark value={pendingCount} className="text-indigo-600/5 dark:text-indigo-400/5 opacity-50" />
+              <MonolithicWatermark value={pendingCount} className="text-info/10 opacity-50" />
               <div className="relative z-10 flex h-full flex-col justify-center">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-medium tracking-wider uppercase text-info flex items-center gap-2">
                   <ArrowLeftRight className="h-3.5 w-3.5" /> Pending
                 </h3>
-                <p className="text-3xl font-mono tracking-tighter text-indigo-600 dark:text-indigo-400">{pendingCount}</p>
+                <p className="text-3xl font-mono tracking-tighter text-info tabular-nums">{pendingCount}</p>
               </div>
             </V2Card>
           </div>
           <div className="h-[120px] flex items-stretch">
             <V2Card hoverColor="blue" className="w-full p-5 lg:p-6">
-              <p className="flex h-full items-center justify-center text-center text-xs font-mono text-slate-500">Up to 500 rows loaded; CSV matches list scope.</p>
+              <p className="flex h-full items-center justify-center text-center text-xs text-muted-foreground">Up to 500 rows loaded; CSV matches list scope.</p>
             </V2Card>
           </div>
         </KineticGrid>
@@ -377,7 +377,7 @@ export default function AdminShiftSwapsPage() {
 
         {notice ? (
           <div
-            className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+            className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning"
             role="status"
           >
             {notice}
@@ -392,16 +392,16 @@ export default function AdminShiftSwapsPage() {
           <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
         ) : null}
         {!isLoading && !loadError && filteredRows.length > 0 ? (
-          <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3 px-[13px] py-2 mb-4 rounded-[var(--radius)] border border-border bg-card/60 flex-col sm:flex-row sm:items-center sm:justify-between relative z-10">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Requests</h3>
-              <p className="text-sm font-mono text-slate-500">{filteredRows.length} shown</p>
+              <h3 className="text-lg font-semibold text-foreground">Requests</h3>
+              <p className="text-sm text-muted-foreground tabular-nums">{filteredRows.length} shown</p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
+              className="shrink-0 font-medium text-[10px] uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportShiftSwapsCsv()}
@@ -416,18 +416,18 @@ export default function AdminShiftSwapsPage() {
           <MotionList className="space-y-3">
             {filteredRows.map((row) => (
               <MotionItem key={row.id}>
-                <div className="p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-3 min-h-[36px] px-[13px] py-2 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] lg:flex-row lg:items-center lg:justify-between w-full">
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <span className="font-semibold text-foreground truncate">
                       {row.requestingName}
-                      <span className="text-slate-500 font-normal"> → </span>
+                      <span className="text-muted-foreground font-normal"> → </span>
                       {row.coveringName ?? "—"}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {formatDateTime(row.createdAt)} · {row.swapType}
                     </span>
                     {row.reason ? (
-                      <span className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{row.reason}</span>
+                      <span className="text-xs text-muted-foreground line-clamp-2">{row.reason}</span>
                     ) : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -436,7 +436,7 @@ export default function AdminShiftSwapsPage() {
                         <Button
                           type="button"
                           size="sm"
-                          className="font-mono text-[10px] uppercase tracking-wider"
+                          className="font-medium text-[10px] uppercase tracking-wider"
                           disabled={actionId !== null}
                           onClick={() => void approveSwap(row.id)}
                         >
@@ -449,7 +449,7 @@ export default function AdminShiftSwapsPage() {
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="font-mono text-[10px] uppercase tracking-wider"
+                          className="font-medium text-[10px] uppercase tracking-wider"
                           disabled={actionId !== null}
                           onClick={() => {
                             setDenyTargetId(row.id);
@@ -471,16 +471,16 @@ export default function AdminShiftSwapsPage() {
 
         {denyTargetId ? (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="deny-swap-title"
           >
-            <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-5 shadow-xl dark:bg-slate-900 dark:border-white/10">
-              <h3 id="deny-swap-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <div className="w-full max-w-md rounded-[var(--radius)] border border-border bg-card p-5 shadow-lg">
+              <h3 id="deny-swap-title" className="text-lg font-semibold text-foreground">
                 Deny swap request
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 mb-3">
+              <p className="text-sm text-muted-foreground mt-1 mb-3">
                 Provide a brief reason (stored on the record for audit).
               </p>
               <textarea
@@ -595,15 +595,15 @@ function formatDateTime(iso: string): string {
 function SwapStatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
   const map: Record<string, string> = {
-    pending: "bg-amber-500/20 text-amber-900 dark:text-amber-200",
-    claimed: "bg-blue-500/20 text-blue-900 dark:text-blue-200",
-    approved: "bg-emerald-500/20 text-emerald-900 dark:text-emerald-200",
-    denied: "bg-rose-500/20 text-rose-900 dark:text-rose-200",
-    cancelled: "bg-slate-200/50 text-slate-800 dark:bg-slate-800/50 dark:text-slate-300",
+    pending: "bg-warning/10 text-warning border border-warning/30",
+    claimed: "bg-info/10 text-info border border-info/30",
+    approved: "bg-success/10 text-success border border-success/30",
+    denied: "bg-destructive/10 text-destructive border border-destructive/30",
+    cancelled: "bg-muted text-muted-foreground border border-border",
   };
-  const cls = map[s] ?? "bg-slate-200/50 text-slate-800";
+  const cls = map[s] ?? "bg-muted text-muted-foreground border border-border";
   return (
-    <Badge className={`shrink-0 uppercase tracking-wider font-mono text-[9px] font-bold border-0 ${cls}`}>
+    <Badge className={`shrink-0 uppercase tracking-wider font-medium text-[9px] font-bold ${cls}`}>
       {status}
     </Badge>
   );

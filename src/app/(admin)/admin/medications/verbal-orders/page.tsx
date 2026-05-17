@@ -82,27 +82,27 @@ export default function AdminVerbalOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
         <div className="space-y-2">
           <Link
             href="/admin/medications"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 gap-1 px-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:hover:text-white")}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 gap-1 px-0 text-muted-foreground hover:bg-transparent hover:text-foreground")}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Medications
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 mb-2 block w-fit">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-info/10 border border-info/20 text-[10px] font-bold uppercase tracking-wider text-info mb-2 block w-fit">
               Verbal Orders
           </div>
-          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground">
             Verbal Orders Hub
           </h1>
-          <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-400 mt-2">
+          <p className="text-sm font-medium tracking-wide text-muted-foreground mt-2">
             Co-signature tracking and implementation status.
           </p>
         </div>
         <div>
-          <Link href="/admin/medications/verbal-orders/new" className={cn(buttonVariants(), "h-12 px-8 rounded-full font-bold uppercase tracking-wider text-xs tap-responsive bg-indigo-600 hover:bg-indigo-700 shadow-md text-white gap-2")}>
+          <Link href="/admin/medications/verbal-orders/new" className={cn(buttonVariants(), "h-12 px-8 rounded-[var(--radius)] font-bold uppercase tracking-wider text-xs tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground gap-2")}>
             <Plus className="h-4 w-4" />
             New Verbal Order
           </Link>
@@ -110,27 +110,26 @@ export default function AdminVerbalOrdersPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-amber-700 dark:text-amber-300">{error}</p>
+        <p className="text-sm text-warning">{error}</p>
       ) : null}
 
       {loading ? (
         <AdminTableLoadingState />
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 p-16 text-center shadow-sm">
-          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">No Verbal Orders</p>
-          <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">There are no pending verbal orders for this facility.</p>
+        <div className="rounded-[var(--radius)] border border-border bg-muted/40 p-16 text-center shadow-sm">
+          <p className="text-lg font-semibold text-foreground tracking-tight">No Verbal Orders</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">There are no pending verbal orders for this facility.</p>
         </div>
       ) : (
-        <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] p-6 md:p-8 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
+        <div className="border-border rounded-[var(--radius)] bg-card p-6 md:p-8 shadow-sm relative overflow-hidden">
           
-          <div className="hidden lg:grid grid-cols-[2fr_3fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Resident</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Order Context</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Prescriber</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Received</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Co-Sign Due</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Status</div>
+          <div className="hidden lg:grid grid-cols-[2fr_3fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-border relative z-10">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Resident</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Order Context</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Prescriber</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Received</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Co-Sign Due</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">Status</div>
           </div>
 
           <div className="relative z-10 space-y-4 mt-6">
@@ -148,64 +147,64 @@ export default function AdminVerbalOrdersPage() {
 
                 return (
                   <MotionItem key={r.id}>
-                    <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 w-full outline-none">
+                    <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr_1fr_1fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-3 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] tap-responsive w-full outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
                       
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Resident</span>
-                        <span className="font-semibold text-lg text-slate-900 dark:text-white tracking-tight">{name}</span>
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Resident</span>
+                        <span className="font-semibold text-lg text-foreground tracking-tight">{name}</span>
                       </div>
 
                       <div className="flex flex-col min-w-0 pr-4">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Order Context</span>
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400 truncate" title={r.order_text}>
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Order Context</span>
+                        <span className="text-sm font-medium text-muted-foreground truncate" title={r.order_text}>
                           {r.order_text}
                         </span>
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Prescriber</span>
-                        <span className="text-sm font-medium text-slate-800 dark:text-slate-300">{r.prescriber_name}</span>
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Prescriber</span>
+                        <span className="text-sm font-medium text-foreground">{r.prescriber_name}</span>
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Received</span>
-                        <span className="text-[11px] font-mono tracking-wider text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Received</span>
+                        <span className="text-[11px] font-mono tracking-wider text-muted-foreground whitespace-nowrap tabular-nums">
                           {formatDistanceToNow(new Date(r.received_at), { addSuffix: true })}
                         </span>
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Co-Sign Due</span>
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Co-Sign Due</span>
                         {r.cosignature_status === "pending" || r.cosignature_status === "expired" ? (
                           <span
                             className={cn(
-                              "text-[11px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border block w-fit",
+                              "text-[11px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded border block w-fit tabular-nums",
                               urgency === "bad"
-                                ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                                ? "bg-destructive/10 text-destructive border-destructive/20"
                                 : urgency === "warn"
-                                  ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
-                                  : "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                                  ? "bg-warning/10 text-warning border-warning/20"
+                                  : "bg-success/10 text-success border-success/20"
                             )}
                           >
                             {due.toLocaleString()}
                           </span>
                         ) : (
-                          <span className="text-[11px] font-mono text-slate-400">—</span>
+                          <span className="text-[11px] font-mono text-muted-foreground tabular-nums">—</span>
                         )}
                       </div>
 
                       <div className="flex flex-col lg:items-end justify-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Status</span>
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Status</span>
                         <div className="flex items-center gap-2 flex-wrap lg:justify-end">
                           <Badge variant="outline" className={cn("px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm",
-                                r.cosignature_status === "expired" && "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
-                                r.cosignature_status === "pending" && "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-                                r.cosignature_status === "signed" && "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                                r.cosignature_status === "expired" && "bg-destructive/10 text-destructive border-destructive/20",
+                                r.cosignature_status === "pending" && "bg-warning/10 text-warning border-warning/20",
+                                r.cosignature_status === "signed" && "bg-success/10 text-success border-success/20"
                           )}>
                             {r.cosignature_status}
                           </Badge>
                           {r.implemented && (
-                            <Badge variant="secondary" className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-400">
+                            <Badge variant="secondary" className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm border-info/20 bg-info/10 text-info">
                               Implemented
                             </Badge>
                           )}

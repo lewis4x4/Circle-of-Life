@@ -19,11 +19,11 @@ type FeedbackRow = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  new: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  triaged: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300",
-  planned: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
-  done: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  dismissed: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  new: "bg-warning/10 text-warning border border-warning/30",
+  triaged: "bg-info/10 text-info border border-info/30",
+  planned: "bg-muted text-muted-foreground border border-border",
+  done: "bg-success/10 text-success border border-success/30",
+  dismissed: "bg-muted text-muted-foreground border border-border",
 };
 
 export default function PilotFeedbackInboxPage() {
@@ -128,50 +128,50 @@ export default function PilotFeedbackInboxPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-12">
-      <div className="rounded-lg border border-slate-200/60 bg-card p-8 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+      <div className="rounded-[var(--radius)] border border-border bg-card p-8 shadow-sm">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           Pilot Feedback
         </div>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground">
           COL Feedback Inbox
         </h1>
-        <p className="mt-3 max-w-3xl text-sm text-slate-600 dark:text-zinc-400">
+        <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
           Structured likes, dislikes, bugs, confusion, and feature requests captured from live testing inside Haven.
         </p>
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-5 py-4 text-sm text-destructive">
           {error}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-card px-5 py-10 text-center text-sm text-slate-500 dark:border-white/10 dark:text-zinc-400">
+        <div className="rounded-[var(--radius)] border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground">
           Loading feedback…
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-card px-5 py-10 text-center text-sm text-slate-500 dark:border-white/10 dark:text-zinc-400">
+        <div className="rounded-[var(--radius)] border border-dashed border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground">
           No pilot feedback has been submitted yet.
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="grid gap-3 rounded-lg border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-white/10 md:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+          <div className="grid gap-3 rounded-[var(--radius)] border border-border bg-card p-4 shadow-sm md:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Search
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Title, detail, route, user…"
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
+                className="h-11 rounded-[var(--radius)] border border-border bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground"
               />
             </label>
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Category
               <select
                 value={categoryFilter}
                 onChange={(event) => setCategoryFilter(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
+                className="h-11 rounded-[var(--radius)] border border-border bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground"
               >
                 <option value="all">All</option>
                 <option value="bug">Bug</option>
@@ -181,12 +181,12 @@ export default function PilotFeedbackInboxPage() {
                 <option value="praise">Praise</option>
               </select>
             </label>
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Severity
               <select
                 value={severityFilter}
                 onChange={(event) => setSeverityFilter(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
+                className="h-11 rounded-[var(--radius)] border border-border bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground"
               >
                 <option value="all">All</option>
                 <option value="low">Low</option>
@@ -195,12 +195,12 @@ export default function PilotFeedbackInboxPage() {
                 <option value="critical">Critical</option>
               </select>
             </label>
-            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+            <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Shell
               <select
                 value={shellFilter}
                 onChange={(event) => setShellFilter(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 dark:border-white/10 dark:text-zinc-100"
+                className="h-11 rounded-[var(--radius)] border border-border bg-background px-3 text-sm font-normal normal-case tracking-normal text-foreground"
               >
                 <option value="all">All</option>
                 <option value="admin">Admin</option>
@@ -219,8 +219,8 @@ export default function PilotFeedbackInboxPage() {
                 onClick={() => setActiveStatusFilter(status)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
                   activeStatusFilter === status
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300 dark:hover:bg-white/[0.06]"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {status} {status === "all" ? `(${rows.length})` : `(${statusCounts[status] ?? 0})`}
@@ -234,28 +234,28 @@ export default function PilotFeedbackInboxPage() {
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${STATUS_STYLES[status] ?? STATUS_STYLES.new}`}>
                   {status}
                 </span>
-                <span className="text-sm text-slate-500 dark:text-zinc-400">{items.length} item{items.length === 1 ? "" : "s"}</span>
+                <span className="text-sm text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
               </div>
 
               <div className="grid gap-4">
                 {items.map((row) => (
-                  <div key={row.id} className="rounded-lg border border-slate-200/70 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                  <div key={row.id} className="min-h-[36px] rounded-[9px] border border-border bg-card px-[13px] py-2 hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             <Flag className="h-3.5 w-3.5" />
                             {row.category}
                           </span>
-                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:border-white/10 dark:text-zinc-300">
+                          <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             {row.severity}
                           </span>
-                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:border-white/10 dark:text-zinc-300">
+                          <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             {row.shell_kind}
                           </span>
                         </div>
-                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{row.title}</h2>
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-zinc-300">{row.detail}</p>
+                        <h2 className="text-lg font-semibold text-foreground">{row.title}</h2>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{row.detail}</p>
                         <div className="flex flex-wrap gap-2 pt-2">
                           {["new", "triaged", "planned", "done", "dismissed"].map((nextStatus) => (
                             <button
@@ -266,7 +266,7 @@ export default function PilotFeedbackInboxPage() {
                               className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
                                 nextStatus === row.status
                                   ? STATUS_STYLES[nextStatus] ?? STATUS_STYLES.new
-                                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-white/[0.06]"
+                                  : "border border-border bg-card text-muted-foreground hover:bg-muted"
                               }`}
                             >
                               {updatingId === row.id && nextStatus !== row.status ? "Updating…" : nextStatus}
@@ -275,11 +275,11 @@ export default function PilotFeedbackInboxPage() {
                         </div>
                       </div>
 
-                      <div className="min-w-[240px] rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-xs text-slate-600 dark:border-white/10 dark:text-zinc-400">
+                      <div className="min-w-[240px] rounded-[var(--radius)] border border-border bg-muted/10 px-4 py-3 text-xs text-muted-foreground">
                         <div>User: {row.user_email ?? "unknown"}</div>
                         <div>Role: {row.app_role}</div>
-                        <div>Route: <span className="font-mono">{row.route}</span></div>
-                        <div>Facility: <span className="font-mono">{row.facility_id ?? "none"}</span></div>
+                        <div>Route: <span className="font-medium">{row.route}</span></div>
+                        <div>Facility: <span className="font-medium">{row.facility_id ?? "none"}</span></div>
                         <div>Submitted: {new Date(row.created_at).toLocaleString()}</div>
                       </div>
                     </div>

@@ -243,19 +243,19 @@ export default function AdminReferralsInAdmissionsPage() {
 
   function phaseBadge(row: QueueRow) {
     if (row.handoffPhase === "blocked") {
-      return <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">Blocked</Badge>;
+      return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">Blocked</Badge>;
     }
     if (row.handoffPhase === "ready") {
-      return <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">Move-in ready</Badge>;
+      return <Badge variant="outline" className="bg-success/10 text-success border-success/30">Move-in ready</Badge>;
     }
     if (row.handoffPhase === "onboarding") {
-      return <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">Onboarding pending</Badge>;
+      return <Badge variant="outline" className="bg-info/10 text-info border-info/30">Onboarding pending</Badge>;
     }
-    return <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">Handoff stable</Badge>;
+    return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Handoff stable</Badge>;
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration-micro)]">
       <div className="space-y-2">
         <Link href="/admin/referrals" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}>
           <ArrowLeft className="h-4 w-4" />
@@ -263,12 +263,12 @@ export default function AdminReferralsInAdmissionsPage() {
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">Referral Handoff Queue</h1>
-            <p className="text-sm text-slate-500 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold text-foreground">Referral Handoff Queue</h1>
+            <p className="text-sm text-muted-foreground">
               Referral leads already handed off into admissions work.
             </p>
           </div>
-          <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
             {phaseFilter === "all" ? rows.length : visibleRows.length} {phaseFilter === "all" ? "active" : "visible"} handoff{(phaseFilter === "all" ? rows.length : visibleRows.length) === 1 ? "" : "s"}
           </Badge>
         </div>
@@ -298,10 +298,10 @@ export default function AdminReferralsInAdmissionsPage() {
                 type="button"
                 onClick={() => setPhaseFilter(option.value)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                   phaseFilter === option.value
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
               >
                 {option.label}
@@ -310,7 +310,7 @@ export default function AdminReferralsInAdmissionsPage() {
           </div>
           {phaseFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+              <Badge variant="outline" className="bg-info/10 text-info border-info/30">
                 Phase filter: {phaseFilter === "complete" ? "stable" : phaseFilter.replace(/_/g, " ")}
               </Badge>
               <Link href="/admin/referrals/in-admissions" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
@@ -328,15 +328,15 @@ export default function AdminReferralsInAdmissionsPage() {
           ) : visibleRows.map((row) => {
             const { lead, admissionCase } = row;
             return (
-            <Card key={lead.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
+            <Card key={lead.id} className="rounded-[9px] border-border hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-                      <UserPlus className="h-4 w-4 text-indigo-500" />
+                    <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-primary" />
                       {lead.first_name} {lead.last_name}
                       {lead.preferred_name ? (
-                        <span className="text-base font-normal text-slate-500 dark:text-zinc-400">({lead.preferred_name})</span>
+                        <span className="text-base font-normal text-muted-foreground">({lead.preferred_name})</span>
                       ) : null}
                     </CardTitle>
                     <CardDescription className="mt-1">
@@ -344,11 +344,11 @@ export default function AdminReferralsInAdmissionsPage() {
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
                       In admissions
                     </Badge>
                     {phaseBadge(row)}
-                    <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                    <Badge variant="outline" className="bg-info/10 text-info border-info/30">
                       {formatStatus(admissionCase.status)}
                     </Badge>
                   </div>
@@ -357,18 +357,18 @@ export default function AdminReferralsInAdmissionsPage() {
               <CardContent className="space-y-4">
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Lead updated</div>
-                    <div className="mt-1 text-slate-900 dark:text-zinc-100">{formatRelative(lead.updated_at)}</div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Lead updated</div>
+                    <div className="mt-1 text-foreground">{formatRelative(lead.updated_at)}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-slate-400">Case target move-in</div>
-                    <div className="mt-1 text-slate-900 dark:text-zinc-100">{admissionCase.target_move_in_date ?? "—"}</div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Case target move-in</div>
+                    <div className="mt-1 text-foreground">{admissionCase.target_move_in_date ?? "—"}</div>
                   </div>
                 </div>
                 {row.readinessMissing.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {row.readinessMissing.map((item) => (
-                      <Badge key={item} variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                      <Badge key={item} variant="outline" className="bg-warning/10 text-warning border-warning/30">
                         {item}
                       </Badge>
                     ))}
@@ -377,7 +377,7 @@ export default function AdminReferralsInAdmissionsPage() {
                 {row.onboardingMissing.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {row.onboardingMissing.map((item) => (
-                      <Badge key={item} variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                      <Badge key={item} variant="outline" className="bg-info/10 text-info border-info/30">
                         {item}
                       </Badge>
                     ))}

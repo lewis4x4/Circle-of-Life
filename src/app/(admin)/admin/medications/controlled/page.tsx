@@ -164,32 +164,32 @@ export default function AdminControlledSubstancesPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-6 md:p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between bg-card p-6 md:p-8 rounded-[var(--radius)] border border-border shadow-sm">
         <div className="space-y-2">
           <Link
             href="/admin/medications"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "mb-2 gap-1 px-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:hover:text-white"
+              "mb-2 gap-1 px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
             )}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Medications
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2 block w-fit">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20 text-[10px] font-bold uppercase tracking-wider text-success mb-2 block w-fit">
             <Shield className="w-3 h-3" /> Narcotics Log
           </div>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
             Controlled Substances
           </h1>
-          <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-sm font-medium tracking-wide text-muted-foreground mt-1">
             Shift reconciliation audit trail. Discrepancies require resolution.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             onClick={() => setCountModalOpen(true)}
-            className="bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20"
+            className="bg-success text-primary-foreground hover:bg-success/90"
           >
             <Plus className="mr-2 h-4 w-4" />
             Initiate Count
@@ -198,7 +198,7 @@ export default function AdminControlledSubstancesPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 px-6 py-4 text-sm text-rose-700 dark:text-rose-200 flex items-start gap-3">
+        <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm text-destructive flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
           {error}
         </div>
@@ -206,14 +206,14 @@ export default function AdminControlledSubstancesPage() {
 
       {/* Pending Discrepancies Banner */}
       {pendingCount > 0 && (
-        <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 px-6 py-4 flex items-center justify-between">
+        <div className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <AlertTriangle className="h-5 w-5 text-warning" />
             <div>
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+              <p className="text-sm font-semibold text-warning">
                 {pendingCount} unresolved {pendingCount === 1 ? "discrepancy" : "discrepancies"}
               </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300">
+              <p className="text-xs text-warning/80">
                 These counts require resolution before the next shift.
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function AdminControlledSubstancesPage() {
             onClick={openBatchResolutionModal}
             variant="outline"
             size="sm"
-            className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+            className="border-warning/30 text-warning hover:bg-warning/10"
           >
             Resolve All
           </Button>
@@ -232,24 +232,24 @@ export default function AdminControlledSubstancesPage() {
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-slate-500" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as FilterType)}
-            className="h-10 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-3 text-sm text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500/50"
+            className="h-10 rounded-[var(--radius)] border border-border bg-card px-3 text-sm text-foreground focus:ring-2 focus:ring-ring/50"
           >
             <option value="all">All Counts</option>
             <option value="discrepancies">With Discrepancies</option>
             <option value="pending">Pending Resolution</option>
           </select>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-muted-foreground tabular-nums">
             ({filteredRows.length} records)
           </span>
         </div>
-        <Button
+          <Button
           variant="outline"
           size="sm"
-          className="border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400"
+          className="border-border text-muted-foreground"
           onClick={() => {
             const csv = filteredRows.map((r) =>
               [
@@ -282,12 +282,12 @@ export default function AdminControlledSubstancesPage() {
       {loading ? (
         <AdminTableLoadingState />
       ) : filteredRows.length === 0 ? (
-        <div className="rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 p-16 text-center shadow-sm">
-          <Shield className="h-16 w-16 text-slate-300 dark:text-zinc-700 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+        <div className="rounded-[var(--radius)] border border-border bg-muted/40 p-16 text-center shadow-sm">
+          <Shield className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+          <p className="text-lg font-semibold text-foreground tracking-tight">
             {filter === "all" ? "No Count Records" : `No ${filter.replace(/_/g, " ")} counts`}
           </p>
-          <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">
+          <p className="text-sm font-medium text-muted-foreground mt-1">
             {filter === "all"
               ? "There are no controlled substance counts logged for this facility."
               : `No counts match the selected filter.`}
@@ -296,7 +296,7 @@ export default function AdminControlledSubstancesPage() {
             <Button
               variant="ghost"
               onClick={() => setFilter("all")}
-              className="mt-4 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+              className="mt-4 text-success hover:bg-success/10"
             >
               View all counts
             </Button>
@@ -304,28 +304,26 @@ export default function AdminControlledSubstancesPage() {
         </div>
       ) : (
         <div
-          className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] p-6 md:p-8 shadow-sm relative overflow-hidden"
+          className="border border-border rounded-[var(--radius)] bg-card p-6 md:p-8 shadow-sm relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
-
           {/* Table Header */}
-          <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+          <div className="hidden lg:grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 px-[13px] pb-4 border-b border-border relative z-10">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Medication
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               Date & Shift
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-center">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-center">
               Expected
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-center">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-center">
               Actual
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-center">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-center">
               Delta
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground text-right">
               Status
             </div>
           </div>
@@ -343,23 +341,23 @@ export default function AdminControlledSubstancesPage() {
                     <button
                       onClick={() => hot && openResolutionModal(r)}
                       className={cn(
-                        "w-full grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 items-center p-6 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm tap-responsive group hover:border-emerald-200 dark:hover:border-emerald-500/30 hover:shadow-lg dark:hover:bg-white/[0.05] transition-all duration-300 outline-none text-left",
-                        hot && "ring-1 ring-red-500/50 bg-red-50/50 dark:bg-red-500/5 hover:ring-red-500 dark:hover:ring-red-500 cursor-pointer",
-                        !hot && resolved && "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-500/5"
+                        "w-full grid grid-cols-1 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-3 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] tap-responsive group outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 text-left",
+                        hot && "ring-1 ring-destructive/50 bg-destructive/10 hover:ring-destructive cursor-pointer",
+                        !hot && resolved && "border-success/20 bg-success/10"
                       )}
                     >
                       <div className="flex flex-col min-w-0 pr-4">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">
                           Medication
                         </span>
                         <span
                           className={cn(
-                            "font-semibold text-lg text-slate-900 dark:text-white tracking-tight transition-colors",
+                            "font-semibold text-lg tracking-tight transition-colors",
                             hot
-                              ? "text-red-700 dark:text-red-400"
+                              ? "text-destructive"
                               : resolved
-                              ? "text-emerald-700 dark:text-emerald-500"
-                              : "group-hover:text-emerald-700 dark:group-hover:text-emerald-400"
+                              ? "text-success"
+                              : "text-foreground"
                           )}
                         >
                           {medName}
@@ -367,47 +365,47 @@ export default function AdminControlledSubstancesPage() {
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">
                           Date & Shift
                         </span>
-                        <span className="text-[11px] font-mono tracking-wider text-slate-500 dark:text-zinc-500 whitespace-nowrap">
+                        <span className="text-[11px] font-mono tracking-wider text-muted-foreground whitespace-nowrap tabular-nums">
                           {r.count_date}
                         </span>
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground mt-1">
                           {r.shift} Shift
                         </span>
                       </div>
 
                       <div className="flex flex-col lg:items-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">
                           Expected
                         </span>
-                        <span className="text-lg text-slate-600 dark:text-slate-400">
+                        <span className="text-lg text-muted-foreground tabular-nums">
                           {r.expected_count}
                         </span>
                       </div>
 
                       <div className="flex flex-col lg:items-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">
                           Actual
                         </span>
-                        <span className="text-lg text-slate-900 dark:text-slate-200">
+                        <span className="text-lg text-foreground tabular-nums">
                           {r.actual_count}
                         </span>
                       </div>
 
                       <div className="flex flex-col lg:items-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">
                           Delta
                         </span>
                         <span
                           className={cn(
-                            "text-lg font-medium",
+                            "text-lg font-medium tabular-nums",
                             hot
-                              ? "text-red-600 dark:text-red-400"
+                              ? "text-destructive"
                               : r.discrepancy === 0
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-amber-600 dark:text-amber-400"
+                              ? "text-success"
+                              : "text-warning"
                           )}
                         >
                           {r.discrepancy > 0 ? `+${r.discrepancy}` : r.discrepancy}
@@ -415,33 +413,33 @@ export default function AdminControlledSubstancesPage() {
                       </div>
 
                       <div className="flex flex-col lg:items-end lg:pr-2 justify-center">
-                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">
+                        <span className="lg:hidden text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">
                           Status
                         </span>
                         {hot ? (
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="destructive"
-                              className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400"
+                              className="px-2 py-0.5 text-[9px] uppercase font-semibold tracking-wider bg-destructive/10 text-destructive border border-destructive/30"
                             >
                               Open
                             </Badge>
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
                           </div>
                         ) : resolved && r.discrepancy !== 0 ? (
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="secondary"
-                              className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                              className="px-2 py-0.5 text-[9px] uppercase font-semibold tracking-wider bg-success/10 text-success border border-success/30"
                             >
                               Resolved
                             </Badge>
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <CheckCircle2 className="h-4 w-4 text-success" />
                           </div>
                         ) : (
                           <Badge
                             variant="secondary"
-                            className="px-2 py-0.5 text-[9px] uppercase font-bold tracking-wider shadow-sm border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                            className="px-2 py-0.5 text-[9px] uppercase font-semibold tracking-wider bg-success/10 text-success border border-success/30"
                           >
                             OK
                           </Badge>

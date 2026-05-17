@@ -91,23 +91,23 @@ const STATUS_STYLES: Record<
 > = {
   pending_approval: {
     label: "Pending approval",
-    className: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   active: {
     label: "Active",
-    className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+    className: "border-success/30 bg-success/10 text-success",
   },
   paused: {
     label: "Paused",
-    className: "border-slate-500/30 bg-slate-500/10 text-slate-200",
+    className: "border-border bg-muted text-muted-foreground",
   },
   ended: {
     label: "Ended",
-    className: "border-cyan-500/30 bg-cyan-500/10 text-cyan-200",
+    className: "border-info/30 bg-info/10 text-info",
   },
   cancelled: {
     label: "Cancelled",
-    className: "border-rose-500/30 bg-rose-500/10 text-rose-200",
+    className: "border-destructive/30 bg-destructive/10 text-destructive",
   },
 };
 
@@ -340,14 +340,14 @@ export default function ResidentAssuranceWatchCenterPage() {
       <></>
 
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
           <div className="space-y-2">
             
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
               Watch Protocols
-              {summary.pendingApprovals > 0 || summary.overdueTasks > 0 ? <ShieldAlert className="h-8 w-8 text-amber-400" /> : null}
+              {summary.pendingApprovals > 0 || summary.overdueTasks > 0 ? <ShieldAlert className="h-8 w-8 text-warning" /> : null}
             </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-3xl">
+            <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-3xl">
               Review active watch protocols, approve auto-triggered monitoring, and close the loop on resident-specific safety watches.
             </p>
           </div>
@@ -357,55 +357,55 @@ export default function ResidentAssuranceWatchCenterPage() {
         </div>
 
         {!selectedFacilityId ? (
-          <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 px-6 py-10 text-center text-sm text-slate-600 dark:text-slate-300">
+          <div className="rounded-[var(--radius)] border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
             Select a facility in the admin header to open the watch center.
           </div>
         ) : null}
 
         {actionMessage ? (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <div className="rounded-[var(--radius)] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
             {actionMessage}
           </div>
         ) : null}
         {actionError ? (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <div className="rounded-[var(--radius)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {actionError}
           </div>
         ) : null}
         {error ? (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <div className="rounded-[var(--radius)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <WatchMetricCard label="Active Protocols" value={String(summary.activeProtocols)} accent="text-cyan-500" icon={<Shield className="h-5 w-5" />} />
-          <WatchMetricCard label="Pending Approval" value={String(summary.pendingApprovals)} accent="text-amber-500" icon={<Clock3 className="h-5 w-5" />} pulse={summary.pendingApprovals > 0} />
-          <WatchMetricCard label="Active Watches" value={String(summary.activeWatches)} accent="text-emerald-500" icon={<Activity className="h-5 w-5" />} />
-          <WatchMetricCard label="Paused Watches" value={String(summary.pausedWatches)} accent="text-slate-400" icon={<PauseCircle className="h-5 w-5" />} />
-          <WatchMetricCard label="Overdue Tasks" value={String(summary.overdueTasks)} accent="text-rose-500" icon={<ShieldAlert className="h-5 w-5" />} pulse={summary.overdueTasks > 0} />
+          <WatchMetricCard label="Active Protocols" value={String(summary.activeProtocols)} accent="text-info" icon={<Shield className="h-5 w-5" />} />
+          <WatchMetricCard label="Pending Approval" value={String(summary.pendingApprovals)} accent="text-warning" icon={<Clock3 className="h-5 w-5" />} pulse={summary.pendingApprovals > 0} />
+          <WatchMetricCard label="Active Watches" value={String(summary.activeWatches)} accent="text-success" icon={<Activity className="h-5 w-5" />} />
+          <WatchMetricCard label="Paused Watches" value={String(summary.pausedWatches)} accent="text-muted-foreground" icon={<PauseCircle className="h-5 w-5" />} />
+          <WatchMetricCard label="Overdue Tasks" value={String(summary.overdueTasks)} accent="text-destructive" icon={<ShieldAlert className="h-5 w-5" />} pulse={summary.overdueTasks > 0} />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
           <V2Card hoverColor="cyan" className="p-6 border-cyan-500/10">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Actionable watch instances</h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                <h2 className="text-lg font-semibold text-foreground">Actionable watch instances</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Pending, active, and paused watches tied to live resident monitoring.
                 </p>
               </div>
-              <Link href="/admin/rounding/live" className="text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-300">
+              <Link href="/admin/rounding/live" className="text-xs font-bold uppercase tracking-wider text-info">
                 Open live board
               </Link>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
+                <Loader2 className="h-6 w-6 animate-spin text-info" />
               </div>
             ) : actionableInstances.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 px-4 py-10 text-center text-sm text-slate-500 dark:text-zinc-500">
+              <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
                 No actionable watch instances in this facility.
               </div>
             ) : (
@@ -417,42 +417,42 @@ export default function ResidentAssuranceWatchCenterPage() {
                   const actionKey = (action: string) => `${row.id}:${action}`;
 
                   return (
-                    <div key={row.id} className="rounded-lg border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 p-5 shadow-sm">
+                    <div key={row.id} className="min-h-[36px] px-[13px] py-4 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="space-y-3">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", statusStyle.className)}>
                               {statusStyle.label}
                             </span>
-                            <span className="rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                            <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                               {row.triggered_by_type.replace(/_/g, " ")}
                             </span>
                             {row.resident_watch_protocols?.approval_required ? (
-                              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                              <span className="rounded-full border border-warning/20 bg-warning/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-warning">
                                 Approval required
                               </span>
                             ) : null}
                           </div>
                           <div>
-                            <h3 className="text-xl tracking-tight text-slate-900 dark:text-slate-100">{residentName}</h3>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                            <h3 className="text-xl tracking-tight text-foreground">{residentName}</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
                               {row.residents?.room_number ? `Room ${row.residents.room_number} · ` : ""}
                               {row.resident_watch_protocols?.name ?? "Watch protocol"}
                             </p>
                           </div>
-                          <div className="flex flex-wrap gap-5 text-sm text-slate-600 dark:text-zinc-400">
+                          <div className="flex flex-wrap gap-5 text-sm text-muted-foreground">
                             <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Started</p>
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Started</p>
                               <p>{new Date(row.starts_at).toLocaleString()}</p>
                             </div>
                             <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Ends</p>
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ends</p>
                               <p>{row.ends_at ? `${new Date(row.ends_at).toLocaleString()} (${formatRelativeWindow(row.ends_at)})` : "Open-ended"}</p>
                             </div>
                           </div>
                         </div>
 
-                        <div className="grid min-w-[220px] grid-cols-2 gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 p-4 text-sm">
+                        <div className="grid min-w-[220px] grid-cols-2 gap-3 rounded-[var(--radius)] border border-border bg-card p-4 text-sm">
                           <WatchStat label="Open tasks" value={String(taskSummary.open)} />
                           <WatchStat label="Overdue" value={String(taskSummary.overdue)} danger={taskSummary.overdue > 0} />
                           <WatchStat label="Missed" value={String(taskSummary.missed)} danger={taskSummary.missed > 0} />
@@ -471,7 +471,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                           }
                           rows={2}
                           placeholder="Optional note for this watch action..."
-                          className="w-full rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-cyan-500 dark:focus:ring-cyan-500/10"
+                          className="w-full rounded-[var(--radius)] border border-border bg-card px-3.5 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
                         />
 
                         <div className="flex flex-wrap gap-2">
@@ -481,7 +481,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                                 type="button"
                                 onClick={() => void runAction(row.id, "approve")}
                                 disabled={actionLoading === actionKey("approve")}
-                                className="rounded-full bg-emerald-600 text-white hover:bg-emerald-500"
+                                className="rounded-[var(--radius)] bg-success text-primary-foreground hover:bg-success/90"
                               >
                                 {actionLoading === actionKey("approve") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                                 Approve watch
@@ -491,7 +491,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                                 variant="outline"
                                 onClick={() => void runAction(row.id, "cancel")}
                                 disabled={actionLoading === actionKey("cancel")}
-                                className="rounded-full"
+                                className="rounded-[var(--radius)]"
                               >
                                 {actionLoading === actionKey("cancel") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
                                 Cancel
@@ -506,7 +506,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                                 variant="outline"
                                 onClick={() => void runAction(row.id, "pause")}
                                 disabled={actionLoading === actionKey("pause")}
-                                className="rounded-full"
+                                className="rounded-[var(--radius)]"
                               >
                                 {actionLoading === actionKey("pause") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PauseCircle className="mr-2 h-4 w-4" />}
                                 Pause
@@ -516,7 +516,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                                 variant="outline"
                                 onClick={() => void runAction(row.id, "end")}
                                 disabled={actionLoading === actionKey("end")}
-                                className="rounded-full"
+                                className="rounded-[var(--radius)]"
                               >
                                 {actionLoading === actionKey("end") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <StopCircle className="mr-2 h-4 w-4" />}
                                 End watch
@@ -530,7 +530,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                                 type="button"
                                 onClick={() => void runAction(row.id, "resume")}
                                 disabled={actionLoading === actionKey("resume")}
-                                className="rounded-full bg-cyan-600 text-white hover:bg-cyan-500"
+                                className="rounded-[var(--radius)] bg-info text-primary-foreground hover:bg-info/90"
                               >
                                 {actionLoading === actionKey("resume") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
                                 Resume watch
@@ -540,7 +540,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                                 variant="outline"
                                 onClick={() => void runAction(row.id, "end")}
                                 disabled={actionLoading === actionKey("end")}
-                                className="rounded-full"
+                                className="rounded-[var(--radius)]"
                               >
                                 {actionLoading === actionKey("end") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <StopCircle className="mr-2 h-4 w-4" />}
                                 End watch
@@ -560,8 +560,8 @@ export default function ResidentAssuranceWatchCenterPage() {
             <V2Card hoverColor="amber" className="p-6 border-amber-500/10">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Protocol catalog</h2>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                  <h2 className="text-lg font-semibold text-foreground">Protocol catalog</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Facility-level watch definitions used for auto-triggered and manual monitoring.
                   </p>
                 </div>
@@ -569,20 +569,20 @@ export default function ResidentAssuranceWatchCenterPage() {
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-warning" />
                 </div>
               ) : protocols.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 px-4 py-8 text-center text-sm text-slate-500 dark:text-zinc-500">
+                <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
                   No watch protocols found for this facility.
                 </div>
               ) : (
                 <div className="mt-5 space-y-3">
                   {protocols.map((protocol) => (
-                    <div key={protocol.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 p-4">
+                    <div key={protocol.id} className="rounded-[var(--radius)] border border-border bg-card p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{protocol.name}</h3>
-                          <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                          <h3 className="text-base font-semibold text-foreground">{protocol.name}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
                             {protocol.trigger_type.replace(/_/g, " ")} · {getDurationLabel(protocol)}
                           </p>
                         </div>
@@ -590,14 +590,14 @@ export default function ResidentAssuranceWatchCenterPage() {
                           className={cn(
                             "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
                             protocol.active
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-                              : "border-slate-500/30 bg-slate-500/10 text-slate-300",
+                              ? "border-success/30 bg-success/10 text-success"
+                              : "border-border bg-muted text-muted-foreground",
                           )}
                         >
                           {protocol.active ? "Active" : "Inactive"}
                         </span>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+                      <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         <span>{protocol.approval_required ? "Requires approval" : "Auto-activates"}</span>
                         <span>•</span>
                         <span>{protocol.rule_definition_json?.steps?.length ?? 0} step{(protocol.rule_definition_json?.steps?.length ?? 0) === 1 ? "" : "s"}</span>
@@ -611,8 +611,8 @@ export default function ResidentAssuranceWatchCenterPage() {
             <V2Card hoverColor="rose" className="p-6 border-rose-500/10">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Recent watch events</h2>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                  <h2 className="text-lg font-semibold text-foreground">Recent watch events</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Recent approvals, auto-triggers, pauses, resumptions, and watch closures.
                   </p>
                 </div>
@@ -620,10 +620,10 @@ export default function ResidentAssuranceWatchCenterPage() {
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-rose-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-destructive" />
                 </div>
               ) : events.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 px-4 py-8 text-center text-sm text-slate-500 dark:text-zinc-500">
+                <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
                   No watch events have been recorded yet.
                 </div>
               ) : (
@@ -631,24 +631,24 @@ export default function ResidentAssuranceWatchCenterPage() {
                   {events.map((event) => {
                     const residentName = event.residents ? formatResidentName(event.residents) : event.watch_instance_id.slice(0, 8);
                     return (
-                      <div key={event.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 p-4">
+                      <div key={event.id} className="rounded-[var(--radius)] border border-border bg-card p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            <p className="text-sm font-semibold text-foreground">
                               {ACTION_LABELS[event.event_type] ?? event.event_type.replace(/_/g, " ")}
                             </p>
-                            <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
+                            <p className="mt-1 text-sm text-muted-foreground">
                               {residentName}
                               {event.residents?.room_number ? ` · Room ${event.residents.room_number}` : ""}
                             </p>
                           </div>
-                          <div className="text-right text-xs text-slate-500 dark:text-zinc-500">
+                          <div className="text-right text-xs text-muted-foreground">
                             <div>{new Date(event.occurred_at).toLocaleString()}</div>
                             <div>{formatRelativeWindow(event.occurred_at)}</div>
                           </div>
                         </div>
                         {event.note ? (
-                          <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-zinc-300">{event.note}</p>
+                          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{event.note}</p>
                         ) : null}
                       </div>
                     );
@@ -677,12 +677,12 @@ function WatchMetricCard({
   pulse?: boolean;
 }) {
   return (
-    <V2Card hoverColor="cyan" className="p-5 border-slate-200 dark:border-white/5">
+    <V2Card hoverColor="cyan" className="p-5 border-border">
       <div className="flex h-full flex-col justify-between gap-4">
         <div className={cn("flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider", accent)}>
           {icon}
           {label}
-          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-rose-500" /> : null}
+          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-destructive" /> : null}
         </div>
         <div className={cn("text-4xl tracking-tight", accent)}>{value}</div>
       </div>
@@ -701,8 +701,8 @@ function WatchStat({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">{label}</p>
-      <p className={cn("mt-1 text-xl tracking-tight text-slate-900 dark:text-slate-100", danger && "text-rose-500 dark:text-rose-300")}>{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={cn("mt-1 text-xl tracking-tight text-foreground", danger && "text-destructive")}>{value}</p>
     </div>
   );
 }

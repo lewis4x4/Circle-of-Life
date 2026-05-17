@@ -166,7 +166,7 @@ export default function AdminBlockedAdmissionsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration-micro)]">
       <div className="space-y-2">
         <Link
           href="/admin/admissions"
@@ -177,13 +177,13 @@ export default function AdminBlockedAdmissionsPage() {
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">Blocked Admissions</h1>
-            <p className="text-sm text-slate-500 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold text-foreground">Blocked Admissions</h1>
+            <p className="text-sm text-muted-foreground">
               Work the admission cases that are missing core move-in readiness steps.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
               {rows.length} blocked cases
             </Badge>
           </div>
@@ -202,20 +202,20 @@ export default function AdminBlockedAdmissionsPage() {
       ) : (
         <div className="space-y-4">
           {actionError ? (
-            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-800 dark:text-red-200">
+            <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {actionError}
             </div>
           ) : null}
           {actionMessage ? (
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            <div className="rounded-[var(--radius)] border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
               {actionMessage}
             </div>
           ) : null}
-          <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+          <div className="rounded-[var(--radius)] border border-border bg-card p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-zinc-500">Top blockers</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Top blockers</span>
               {blockerCounts.map(([label, count]) => (
-                <Badge key={label} variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                <Badge key={label} variant="outline" className="bg-muted text-muted-foreground border-border">
                   {label}: {count}
                 </Badge>
               ))}
@@ -235,10 +235,10 @@ export default function AdminBlockedAdmissionsPage() {
                 type="button"
                 onClick={() => setBlockerFilter(option.value)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                   blockerFilter === option.value
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
               >
                 {option.label}
@@ -253,12 +253,12 @@ export default function AdminBlockedAdmissionsPage() {
                 description="Try another blocker filter to view the remaining readiness work."
               />
             ) : visibleRows.map(({ row, residentLabel, blockers }) => (
-              <Card key={row.id} className="border-slate-200/70 shadow-soft dark:border-slate-800">
+              <Card key={row.id} className="rounded-[9px] border-border hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                 <CardHeader className="pb-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <Home className="h-4 w-4 text-indigo-500" />
+                      <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Home className="h-4 w-4 text-primary" />
                         {residentLabel}
                       </CardTitle>
                       <CardDescription className="mt-1">
@@ -267,12 +267,12 @@ export default function AdminBlockedAdmissionsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {row.target_move_in_date ? (
-                        <Badge variant="outline" className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                        <Badge variant="outline" className="bg-info/10 text-info border-info/30">
                           <CalendarDays className="mr-1 h-3 w-3" />
                           {row.target_move_in_date}
                         </Badge>
                       ) : null}
-                      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
                         <FileWarning className="mr-1 h-3 w-3" />
                         {blockers.length} blocker{blockers.length === 1 ? "" : "s"}
                       </Badge>
@@ -282,12 +282,12 @@ export default function AdminBlockedAdmissionsPage() {
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {blockers.map((blocker) => (
-                      <Badge key={blocker} variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                      <Badge key={blocker} variant="outline" className="bg-warning/10 text-warning border-warning/30">
                         {blocker}
                       </Badge>
                     ))}
                   </div>
-                  <div className="text-sm text-slate-500 dark:text-zinc-400">
+                  <div className="text-sm text-muted-foreground">
                     Updated {formatRelative(row.updated_at)}
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -305,10 +305,10 @@ export default function AdminBlockedAdmissionsPage() {
                         )
                       }
                       className={cn(
-                        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        "rounded-[var(--radius)] border px-3 py-2 text-sm font-medium transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                         Boolean(row.financial_clearance_at)
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+                          ? "border-success/30 bg-success/10 text-success"
+                          : "border-border bg-card text-foreground hover:bg-muted",
                       )}
                     >
                       {actionLoading === row.id && !row.financial_clearance_at ? (
@@ -326,10 +326,10 @@ export default function AdminBlockedAdmissionsPage() {
                         )
                       }
                       className={cn(
-                        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        "rounded-[var(--radius)] border px-3 py-2 text-sm font-medium transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                         Boolean(row.physician_orders_received_at)
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800",
+                          ? "border-success/30 bg-success/10 text-success"
+                          : "border-border bg-card text-foreground hover:bg-muted",
                       )}
                     >
                       {actionLoading === row.id && !row.physician_orders_received_at ? (
@@ -347,7 +347,7 @@ export default function AdminBlockedAdmissionsPage() {
                           [row.id]: event.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-[var(--radius)] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                     <button
                       type="button"
@@ -363,7 +363,7 @@ export default function AdminBlockedAdmissionsPage() {
                           "Target move-in date saved.",
                         )
                       }
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                      className="rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-all duration-[var(--motion-duration-micro)] hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save move-in date"}
                     </button>

@@ -165,7 +165,7 @@ export default function AdminPayrollHubPage() {
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Payroll Export
             </h2>
           </div>
@@ -175,12 +175,12 @@ export default function AdminPayrollHubPage() {
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
               <></>
-              <MonolithicWatermark value={displayRows.length} className="text-emerald-600/5 dark:text-emerald-400/5 opacity-50" />
+              <MonolithicWatermark value={displayRows.length} className="text-success/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                <h3 className="text-[10px] font-medium tracking-wider uppercase text-success flex items-center gap-2">
                   <Banknote className="h-3.5 w-3.5" /> Export Batches
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">
+                <p className="text-4xl font-mono tracking-tighter text-success pb-1 tabular-nums">
                   {displayRows.length}
                 </p>
               </div>
@@ -189,9 +189,9 @@ export default function AdminPayrollHubPage() {
           <div className="col-span-1 md:col-span-2 h-[180px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Batches for external payroll systems. Idempotency enforced.</p>
+                 <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Batches for external payroll systems. Idempotency enforced.</p>
                  <div className="flex w-full gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 border-none whitespace-nowrap")} >
+                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-medium uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
                      + New Batch
                    </Link>
                  </div>
@@ -201,24 +201,24 @@ export default function AdminPayrollHubPage() {
         </KineticGrid>
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+        <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
           Select a facility to load payroll export batches.
         </p>
       )}
 
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <p className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </p>
       )}
 
       <div className="relative overflow-visible z-10 w-full mt-4">
-        <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl">
+        <div className="relative z-10 px-[13px] py-3 mb-4 rounded-[var(--radius)] border border-border bg-card/60">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Batches</h3>
-                <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+                <h3 className="text-xl font-semibold text-foreground mb-1">Batches</h3>
+                <p className="text-sm tracking-wide text-muted-foreground">
                   Pay period window and provider label. Open a batch for line items and line-level CSV; list batch metadata
                   export below.
                 </p>
@@ -227,7 +227,7 @@ export default function AdminPayrollHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="h-11 shrink-0 gap-2 rounded-full font-mono text-[10px] font-bold uppercase tracking-wider"
+                className="h-11 shrink-0 gap-2 rounded-[var(--radius)] font-medium text-[10px] font-bold uppercase tracking-wider"
                 title={
                   (statusFilter === "all"
                     ? "Export up to 500 batches (all statuses), most recent period first."
@@ -243,21 +243,21 @@ export default function AdminPayrollHubPage() {
             {facilityReady ? (
               <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-md">
-                  <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                   <Input
                     type="search"
                     placeholder="Search period, provider, notes, id…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-white/10 dark:bg-white/5"
+                    className="h-9 rounded-[var(--radius)] border-border bg-card text-sm"
                     aria-label="Filter batches by text"
                   />
                 </label>
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Status</span>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
                   <select
                     className={cn(
-                      "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-100",
+                      "h-9 rounded-[var(--radius)] border border-border bg-card px-2.5 text-sm text-foreground outline-none",
                       "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
                     )}
                     value={statusFilter}
@@ -271,7 +271,7 @@ export default function AdminPayrollHubPage() {
                   </select>
                 </label>
                 {rows.length > 0 ? (
-                  <p className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">
+                  <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                     {searchQuery.trim() ? (
                       <>
                         Showing {displayRows.length} of {filteredRows.length} · Search
@@ -289,43 +289,43 @@ export default function AdminPayrollHubPage() {
         </div>
         
         {loading ? (
-           <p className="text-sm font-mono text-slate-500">Loading…</p>
+           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : !facilityReady ? null : rows.length === 0 ? (
-           <p className="text-sm font-mono text-slate-500">No payroll export batches for this facility yet.</p>
+           <p className="text-sm text-muted-foreground">No payroll export batches for this facility yet.</p>
         ) : filteredRows.length === 0 ? (
-           <p className="text-sm font-mono text-slate-500">No batches match this status filter.</p>
+           <p className="text-sm text-muted-foreground">No batches match this status filter.</p>
         ) : displayRows.length === 0 ? (
-           <p className="text-sm font-mono text-slate-500">No batches match this search.</p>
+           <p className="text-sm text-muted-foreground">No batches match this search.</p>
         ) : (
           <MotionList className="space-y-3">
              {displayRows.map((row) => (
                <MotionItem key={row.id}>
                  <Link
                    href={`/admin/payroll/${row.id}`}
-                   className="block p-4 sm:p-5 rounded-2xl group transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 hover:bg-white/70 dark:hover:bg-emerald-900/10 border border-white/20 dark:border-white/5 bg-card dark:bg-slate-900/40 w-full flex flex-col md:flex-row md:items-center justify-between gap-4"
+                   className="flex flex-col md:flex-row md:items-center gap-4 min-h-[36px] px-[13px] py-2 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full justify-between"
                  >
                     
                     <div className="flex flex-col min-w-[200px] gap-1">
-                       <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Period</span>
-                       <span className="font-bold font-mono text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs">
+                       <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Period</span>
+                       <span className="font-bold font-mono text-foreground uppercase tracking-wider text-xs tabular-nums">
                           {row.period_start} → {row.period_end}
                        </span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full items-center">
                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Provider</span>
-                          <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{row.provider}</span>
+                          <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Provider</span>
+                          <span className="text-xs font-bold text-foreground uppercase tracking-wider">{row.provider}</span>
                        </div>
                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
-                          <span className={cn("font-mono text-xs font-bold uppercase tracking-wider", row.status === "exported" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500")}>
+                          <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Status</span>
+                          <span className={cn("text-xs font-bold uppercase tracking-wider", row.status === "exported" ? "text-success" : "text-warning")}>
                              {formatStatus(row.status)}
                           </span>
                        </div>
                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Updated</span>
-                          <span className="font-mono text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground">Updated</span>
+                          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider tabular-nums">
                              {format(new Date(row.updated_at), "MMM d, yyyy")}
                           </span>
                        </div>

@@ -330,7 +330,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       key: "missing_draft",
       title: "No Obsidian draft yet",
       icon: NotebookPen,
-      tone: "text-violet-600 dark:text-violet-300",
+      tone: "text-info",
       items: buckets.missingDraft,
       actionLabel: "Create draft",
       action: runCreateDraft,
@@ -341,7 +341,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       key: "missing_reviewer",
       title: "No reviewer assigned",
       icon: UserRoundX,
-      tone: "text-amber-600 dark:text-amber-300",
+      tone: "text-warning",
       items: buckets.missingReviewer,
       actionLabel: "Assign to me",
       action: assignToMe,
@@ -352,7 +352,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       key: "overdue",
       title: "Review overdue",
       icon: CalendarClock,
-      tone: "text-rose-600 dark:text-rose-300",
+      tone: "text-destructive",
       items: buckets.overdue,
       actionLabel: "Open review",
       action: async () => {},
@@ -362,17 +362,17 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
   return (
     <div className="space-y-4">
       {actionError && (
-        <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-800 dark:text-red-200">
+        <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {actionError}
         </div>
       )}
       {actionMessage && (
-        <div className="rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/40 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+        <div className="rounded-[var(--radius)] border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
           {actionMessage}
         </div>
       )}
       {activeSectionHash ? (
-        <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-2 text-sm text-indigo-900 dark:text-indigo-100 flex items-center justify-between gap-3">
+        <div className="rounded-[var(--radius)] border border-info/30 bg-info/10 px-3 py-2 text-sm text-info flex items-center justify-between gap-3">
           <span>
             Focused section:{" "}
             <span className="font-medium">
@@ -386,7 +386,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             </span>
           </span>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-white/70 text-slate-700 border-slate-200 dark:bg-black/20 dark:text-zinc-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest">
+            <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-card text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
               {activeSectionHash === "#doctrine-blocked-review"
                 ? doctrineMetrics.blockedPending
                 : activeSectionHash === "#doctrine-ready-to-publish"
@@ -395,14 +395,14 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             </span>
             <Link
               href="/admin/knowledge/admin"
-              className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
+              className="rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors"
             >
               Clear section focus
             </Link>
           </div>
         </div>
       ) : null}
-      <div id="doctrine-blocked-review" className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
+      <div id="doctrine-blocked-review" className="rounded-[var(--radius)] border border-border bg-card p-6 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: "Pending review", value: doctrineMetrics.pendingDocs.length },
@@ -410,51 +410,51 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             { label: "Blocked in review", value: doctrineMetrics.blockedPending },
             { label: "Due soon / reviewed 7d", value: `${doctrineMetrics.dueSoon} / ${doctrineMetrics.reviewedThisWeek}` },
           ].map((metric) => (
-            <div key={metric.label} className="rounded-xl border border-slate-200 dark:border-zinc-800 p-4">
-              <div className="text-xs uppercase tracking-widest text-slate-500 dark:text-zinc-500">{metric.label}</div>
-              <div className="mt-1 text-2xl font-semibold text-slate-900 dark:text-zinc-100">{metric.value}</div>
+            <div key={metric.label} className="rounded-[var(--radius)] border border-border p-4">
+              <div className="text-xs uppercase tracking-widest text-muted-foreground">{metric.label}</div>
+              <div className="mt-1 text-2xl font-semibold text-foreground tabular-nums">{metric.value}</div>
             </div>
           ))}
         </div>
 
         {publishBlockers.length > 0 ? (
-          <div className="rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-3">
+          <div className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 p-4 space-y-3">
             <div>
-              <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-100">Top promotion blockers</h4>
-              <p className="text-xs text-amber-800 dark:text-amber-200">These pending-review docs still have missing prerequisites.</p>
+              <h4 className="text-sm font-semibold text-warning">Top promotion blockers</h4>
+              <p className="text-xs text-warning">These pending-review docs still have missing prerequisites.</p>
             </div>
             <div className="space-y-2">
               {publishBlockers.map(({ doc, blockers }) => (
                 <Link
                   key={doc.id}
                   href={`/admin/knowledge/admin/review/${doc.id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-amber-200/70 dark:border-amber-900/30 bg-white/80 dark:bg-black/20 px-3 py-2 text-sm transition-colors hover:bg-white dark:hover:bg-black/30"
+                  className="flex items-center justify-between gap-3 min-h-[36px] rounded-[9px] border border-border bg-card px-[13px] py-2 text-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                 >
-                  <span className="font-medium text-slate-900 dark:text-zinc-100">{doc.title}</span>
-                  <span className="text-xs text-amber-800 dark:text-amber-200">{blockers.join(" · ")}</span>
+                  <span className="font-medium text-foreground">{doc.title}</span>
+                  <span className="text-xs text-warning">{blockers.join(" · ")}</span>
                 </Link>
               ))}
             </div>
           </div>
         ) : null}
 
-        <div className="flex items-center gap-2">
-          <FileWarning className="h-5 w-5 text-amber-500" />
+          <div className="flex items-center gap-2">
+          <FileWarning className="h-5 w-5 text-warning" />
           <div>
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Stuck Uploads</h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">
+            <h3 className="text-sm font-semibold text-foreground">Stuck Uploads</h3>
+            <p className="text-xs text-muted-foreground">
               Uploaded documents that entered review but still need doctrine workflow actions.
             </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-sm text-slate-400 py-4 flex items-center gap-2">
+          <div className="text-sm text-muted-foreground py-4 flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading review backlog…
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-800 dark:text-red-200">
+          <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
           </div>
         ) : (
@@ -462,13 +462,13 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             {sections.map((section) => {
               const Icon = section.icon;
               return (
-                <div key={section.key} className="rounded-xl border border-slate-200 dark:border-zinc-800 p-4 space-y-3">
+                <div key={section.key} className="rounded-[var(--radius)] border border-border p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Icon className={`h-4 w-4 ${section.tone}`} />
-                      <div className="text-sm font-medium text-slate-900 dark:text-zinc-100">{section.title}</div>
+                      <div className="text-sm font-medium text-foreground">{section.title}</div>
                     </div>
-                    <div className="text-sm font-semibold text-slate-700 dark:text-zinc-300">{section.items.length}</div>
+                    <div className="text-sm font-semibold text-foreground tabular-nums">{section.items.length}</div>
                   </div>
                   {section.items.length > 1 && section.bulkAction && section.bulkActionLabel ? (
                     <Button
@@ -484,20 +484,20 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                     </Button>
                   ) : null}
                   {section.items.length === 0 ? (
-                    <div className="text-xs text-slate-500 dark:text-zinc-400">Nothing stuck here right now.</div>
+                    <div className="text-xs text-muted-foreground">Nothing stuck here right now.</div>
                   ) : (
                     <div className="space-y-2">
                       {section.items.slice(0, 4).map((doc) => (
-                        <div key={doc.id} className="rounded-lg bg-slate-50 dark:bg-zinc-800/60 p-3 space-y-2">
+                        <div key={doc.id} className="rounded-[9px] bg-muted p-3 space-y-2">
                           <div>
-                            <div className="text-sm font-medium text-slate-900 dark:text-zinc-100">{doc.title}</div>
-                            <div className="text-[11px] text-slate-500 dark:text-zinc-400">{dueDateLabel(doc.review_due_at)}</div>
+                            <div className="text-sm font-medium text-foreground">{doc.title}</div>
+                            <div className="text-[11px] text-muted-foreground">{dueDateLabel(doc.review_due_at)}</div>
                           </div>
                           <div className="flex items-center gap-2">
                             {section.key === "overdue" ? (
                               <Link
                                 href={`/admin/knowledge/admin/review/${doc.id}`}
-                                className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                                className="rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-primary hover:bg-muted transition-colors"
                               >
                                 Open review
                               </Link>
@@ -514,7 +514,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                             )}
                             <Link
                               href={`/admin/knowledge/admin/review/${doc.id}`}
-                              className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
+                              className="rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors"
                             >
                               Review
                             </Link>
@@ -522,7 +522,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                         </div>
                       ))}
                       {section.items.length > 4 ? (
-                        <div className="text-[11px] text-slate-500 dark:text-zinc-400">
+                        <div className="text-[11px] text-muted-foreground">
                           {section.items.length - 4} more document{section.items.length - 4 === 1 ? "" : "s"} in this bucket.
                         </div>
                       ) : null}
@@ -535,13 +535,13 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         )}
       </div>
 
-      <div id="doctrine-ready-to-publish" className="rounded-xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-6 space-y-4">
+      <div id="doctrine-ready-to-publish" className="rounded-[var(--radius)] border border-success/30 bg-success/10 p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+            <CheckCircle2 className="h-5 w-5 text-success" />
             <div>
-              <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Ready to Publish</h3>
-              <p className="text-xs text-emerald-800 dark:text-emerald-200">
+              <h3 className="text-sm font-semibold text-success">Ready to Publish</h3>
+              <p className="text-xs text-success">
                 Pending-review documents that already have an owner, a due date, an Obsidian draft, and a recorded review completion.
               </p>
             </div>
@@ -562,19 +562,19 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         </div>
 
         {doctrineMetrics.readyDocs.length === 0 ? (
-          <div className="text-xs text-emerald-800 dark:text-emerald-200">Nothing is ready for publication right now.</div>
+          <div className="text-xs text-success">Nothing is ready for publication right now.</div>
         ) : (
           <div className="space-y-2">
             {doctrineMetrics.readyDocs.slice(0, 6).map((doc) => (
-              <div key={doc.id} className="rounded-lg border border-emerald-200/70 dark:border-emerald-900/30 bg-white/80 dark:bg-black/20 p-3 space-y-2">
+              <div key={doc.id} className="min-h-[36px] rounded-[9px] border border-border bg-card px-[13px] py-2 hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-slate-900 dark:text-zinc-100">{doc.title}</div>
-                    <div className="text-[11px] text-slate-500 dark:text-zinc-400">{dueDateLabel(doc.review_due_at)}</div>
+                    <div className="text-sm font-medium text-foreground">{doc.title}</div>
+                    <div className="text-[11px] text-muted-foreground">{dueDateLabel(doc.review_due_at)}</div>
                   </div>
-                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Ready</div>
+                  <div className="text-xs font-semibold text-success">Ready</div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2">
                   <Button
                     type="button"
                     size="sm"
@@ -585,7 +585,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                   </Button>
                   <Link
                     href={`/admin/knowledge/admin/review/${doc.id}`}
-                    className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors"
+                    className="rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors"
                   >
                     Review
                   </Link>
@@ -593,7 +593,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
               </div>
             ))}
             {doctrineMetrics.readyDocs.length > 6 ? (
-              <div className="text-[11px] text-emerald-800 dark:text-emerald-200">
+              <div className="text-[11px] text-success">
                 {doctrineMetrics.readyDocs.length - 6} more ready document{doctrineMetrics.readyDocs.length - 6 === 1 ? "" : "s"} in this queue.
               </div>
             ) : null}
@@ -601,13 +601,13 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         )}
       </div>
 
-      <div id="doctrine-review-sla" className="rounded-xl border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-6 space-y-4">
+      <div id="doctrine-review-sla" className="rounded-[var(--radius)] border border-info/30 bg-info/10 p-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
+            <CalendarClock className="h-5 w-5 text-info" />
             <div>
-              <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">Review SLA</h3>
-              <p className="text-xs text-indigo-800 dark:text-indigo-200">
+              <h3 className="text-sm font-semibold text-info">Review SLA</h3>
+              <p className="text-xs text-info">
                 Pending-review documents that are due soon or already overdue.
               </p>
             </div>
@@ -623,10 +623,10 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                 type="button"
                 onClick={() => setSlaFilter(option.value)}
                 className={[
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
                   slaFilter === option.value
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:bg-muted",
                 ].join(" ")}
               >
                 {option.label}
@@ -636,22 +636,22 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         </div>
 
         {reviewSlaRows.length === 0 ? (
-          <div className="text-xs text-indigo-800 dark:text-indigo-200">No pending-review documents are near or past their due date right now.</div>
+          <div className="text-xs text-info">No pending-review documents are near or past their due date right now.</div>
         ) : visibleSlaRows.length === 0 ? (
-          <div className="text-xs text-indigo-800 dark:text-indigo-200">No doctrine reviews match this SLA filter.</div>
+          <div className="text-xs text-info">No doctrine reviews match this SLA filter.</div>
         ) : (
           <div className="space-y-2">
             {visibleSlaRows.slice(0, 6).map((item) => (
-              <div key={item.doc.id} className="rounded-lg border border-indigo-200/70 dark:border-indigo-900/30 bg-white/80 dark:bg-black/20 p-3 space-y-2">
+              <div key={item.doc.id} className="min-h-[36px] rounded-[9px] border border-border bg-card px-[13px] py-2 hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-slate-900 dark:text-zinc-100">{item.doc.title}</div>
-                    <div className="text-[11px] text-slate-500 dark:text-zinc-400">{dueDateLabel(item.doc.review_due_at)}</div>
+                    <div className="text-sm font-medium text-foreground">{item.doc.title}</div>
+                    <div className="text-[11px] text-muted-foreground">{dueDateLabel(item.doc.review_due_at)}</div>
                   </div>
                   <div
                     className={[
                       "text-xs font-semibold",
-                      item.status === "overdue" ? "text-rose-700 dark:text-rose-300" : "text-indigo-700 dark:text-indigo-300",
+                      item.status === "overdue" ? "text-destructive" : "text-info",
                     ].join(" ")}
                   >
                     {item.status === "overdue"
@@ -661,10 +661,10 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
                         : `Due in ${item.diffDays}d`}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2">
                   <Link
                     href={`/admin/knowledge/admin/review/${item.doc.id}`}
-                    className="rounded-lg px-2 py-1.5 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                    className="rounded-[var(--radius)] px-2 py-1.5 text-[11px] font-medium text-primary hover:bg-muted transition-colors"
                   >
                     Open review
                   </Link>
@@ -672,7 +672,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
               </div>
             ))}
             {visibleSlaRows.length > 6 ? (
-              <div className="text-[11px] text-indigo-800 dark:text-indigo-200">
+              <div className="text-[11px] text-info">
                 {visibleSlaRows.length - 6} more doctrine review{visibleSlaRows.length - 6 === 1 ? "" : "s"} in this SLA view.
               </div>
             ) : null}
