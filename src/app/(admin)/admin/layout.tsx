@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/layout/AdminShell";
+import { AppShell } from "@/components/layout/AppShell";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
 import { HavenAuthProvider } from "@/contexts/haven-auth-context";
 
@@ -9,10 +9,10 @@ export default function AdminLayout({
 }) {
   return (
     <HavenAuthProvider>
-      <AdminShell>
+      <AppShell>
         {children}
         <LazyOverlayShells />
-      </AdminShell>
+      </AppShell>
     </HavenAuthProvider>
   );
 }
