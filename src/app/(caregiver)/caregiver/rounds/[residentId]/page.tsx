@@ -72,7 +72,10 @@ export default function CaregiverResidentRoundPage() {
       const tasks = json.tasks ?? [];
       const selected =
         tasks.find((candidate) => candidate.id === taskIdFromQuery) ??
-        tasks.find((candidate) => candidate.derived_status !== "completed_on_time" && candidate.derived_status !== "completed_late") ??
+        tasks.find(
+          (candidate) =>
+            candidate.derived_status !== "completed_on_time" && candidate.derived_status !== "completed_late",
+        ) ??
         tasks[0] ??
         null;
 
@@ -136,7 +139,7 @@ export default function CaregiverResidentRoundPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading resident round…
       </div>
@@ -147,36 +150,45 @@ export default function CaregiverResidentRoundPage() {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Link href="/caregiver/rounds">
-          <Button variant="outline" className="min-h-11 border-zinc-800 bg-zinc-950 text-zinc-100 hover:bg-zinc-900">
+          <Button
+            variant="outline"
+            className="min-h-[44px] border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to rounds
           </Button>
         </Link>
-        {task?.derived_status ? <Badge variant="outline">{task.derived_status.replaceAll("_", " ")}</Badge> : null}
+        {task?.derived_status ? (
+          <Badge variant="outline" className="border-border text-foreground">
+            {task.derived_status.replaceAll("_", " ")}
+          </Badge>
+        ) : null}
       </div>
 
       {loadError ? (
-        <Card className="border-rose-800/60 bg-rose-950/30 text-rose-100">
+        <Card className="border-destructive/30 bg-destructive/10 text-foreground">
           <CardContent className="py-4 text-sm">{loadError}</CardContent>
         </Card>
       ) : null}
 
       {successMessage ? (
-        <Card className="border-emerald-800/60 bg-emerald-950/20 text-emerald-100">
+        <Card className="border-success/30 bg-success/10 text-foreground">
           <CardContent className="py-4 text-sm">{successMessage}</CardContent>
         </Card>
       ) : null}
 
       {!task || taskQueuedLocally ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
+        <Card className="border-border bg-card text-card-foreground">
           <CardContent className="space-y-3 py-6">
-            <p className="text-sm text-zinc-300">
+            <p className="text-sm text-muted-foreground">
               {taskQueuedLocally
                 ? "This round is already queued for sync from this device."
                 : "No active round was found for this resident in the current facility scope."}
             </p>
             <Link href="/caregiver/rounds">
-              <Button className="min-h-11 bg-emerald-600 text-white hover:bg-emerald-500">Return to live queue</Button>
+              <Button className="min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
+                Return to live queue
+              </Button>
             </Link>
           </CardContent>
         </Card>

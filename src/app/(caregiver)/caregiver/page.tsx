@@ -16,7 +16,7 @@ import {
   Waves,
   ChevronRight,
   ShieldAlert,
-  Activity
+  Activity,
 } from "lucide-react";
 
 import { fetchCaregiverShiftBrief, type CaregiverShiftBrief } from "@/lib/caregiver/shift-brief";
@@ -24,6 +24,9 @@ import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+type StatTone = "neutral" | "danger" | "warning" | "accent";
 
 export default function CaregiverHomePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -103,7 +106,7 @@ export default function CaregiverHomePage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-800/60 bg-rose-950/40 px-6 py-4 text-sm text-rose-100 backdrop-blur-md">
+      <div className="rounded-lg border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-foreground">
         {configError}
       </div>
     );
@@ -111,23 +114,23 @@ export default function CaregiverHomePage() {
 
   if (loading) {
     return (
-      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
-        <p className="text-sm font-medium tracking-wide uppercase">Initializing Shift Dashboard…</p>
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm font-medium uppercase tracking-wide">Initializing Shift Dashboard…</p>
       </div>
     );
   }
 
   if (loadError || !brief) {
     return (
-      <div className="space-y-4 max-w-md mx-auto mt-12">
-        <div className="rounded-xl border-rose-800/60 bg-rose-950/30 px-6 py-5 text-sm text-rose-100 text-center">
-          <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-rose-400" />
+      <div className="mx-auto mt-12 max-w-md space-y-4">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-5 text-center text-sm text-foreground">
+          <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-destructive" />
           <p>{loadError ?? "Shift brief unavailable."}</p>
         </div>
         <button
           type="button"
-          className="w-full h-12 rounded-xl bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+          className="h-12 w-full rounded-lg border border-border bg-card text-sm font-semibold text-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
           onClick={() => void load()}
         >
           Retry Connection
@@ -140,147 +143,123 @@ export default function CaregiverHomePage() {
   const emarWindow = brief.emarDueNow + brief.emarDueSoon;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 max-w-[1400px] mx-auto pb-6">
-      
-      {/* ─── ROW 1: MISSION CONTROL OVERVIEW ─────────────────────────────────── */}
-      <div className="rounded-lg md:col-span-full p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
-        {/* Ambient background glow */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-teal-500/10 rounded-full blur-[80px] pointer-events-none" />
-        
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 pb-6 md:grid-cols-4 md:gap-6">
+      {/* Row 1: Mission control overview */}
+      <div className="relative flex flex-col justify-between rounded-lg border border-border bg-card p-6 md:col-span-full md:p-8">
+        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <h2 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">Shift Overview</h2>
-            <p className="text-zinc-400 mt-1 uppercase tracking-wider text-xs font-semibold">{shiftLine}</p>
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Shift Overview</h2>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{shiftLine}</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-zinc-300 bg-white/5 px-4 py-2 rounded-full border border-white/10 w-fit">
-            <Activity className="w-4 h-4 text-emerald-400" /> 
+          <div className="flex w-fit items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm text-foreground">
+            <Activity className="h-4 w-4 text-success" />
             Live Census sync active
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <HeroStat
             label="My Residents"
             value={brief.census}
             icon={<UserRound />}
-            glowColor="rgba(255,255,255,0.05)"
+            tone="neutral"
             href="/caregiver/residents"
           />
           <HeroStat
             label="Urgent Alerts"
             value={brief.highSeverityConditionCount}
             icon={<ShieldAlert />}
-            glowColor={brief.highSeverityConditionCount > 0 ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)"}
-            danger={brief.highSeverityConditionCount > 0}
+            tone={brief.highSeverityConditionCount > 0 ? "danger" : "neutral"}
             href="/caregiver/followups"
           />
           <HeroStat
             label="Medications Due"
             value={emarWindow}
             icon={<Pill />}
-            glowColor={emarWindow > 0 ? "rgba(45,212,191,0.2)" : "rgba(255,255,255,0.05)"}
-            accent={emarWindow > 0}
+            tone={emarWindow > 0 ? "accent" : "neutral"}
             href="/caregiver/meds"
           />
           <HeroStat
             label="Notes To Finish"
             value={docPending}
             icon={<ClipboardList />}
-            glowColor={docPending > 0 ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)"}
-            warning={docPending > 0}
+            tone={docPending > 0 ? "warning" : "neutral"}
             href="/caregiver/prn-followup"
           />
         </div>
       </div>
 
-      {/* ─── ROW 2: QUICK ACTIONS & ALERTS ───────────────────────────────────── */}
-      <div className="rounded-lg md:col-span-2 p-6 flex flex-col border-t border-t-white/20">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-1.5 h-6 bg-teal-400 rounded-full" />
-          <h3 className="text-lg font-medium text-white">Work Now</h3>
+      {/* Row 2: Quick actions + alerts */}
+      <div className="flex flex-col rounded-lg border border-border bg-card p-6 md:col-span-2">
+        <div className="mb-6 flex items-center gap-2">
+          <div className="h-6 w-1.5 rounded-full bg-primary" />
+          <h3 className="text-lg font-medium text-foreground">Work Now</h3>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
-          <ActionTile 
-            href="/caregiver/meds" 
-            icon={<Pill className="text-teal-300" />} 
-            title="Medication Pass" 
-            gradient="from-teal-900/40 to-teal-950/40 hover:from-teal-800/60 hover:to-teal-900/60"
-            border="border-teal-500/30"
+        <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+          <ActionTile href="/caregiver/meds" icon={<Pill className="text-primary" />} title="Medication Pass" />
+          <ActionTile
+            href="/caregiver/incident-draft"
+            icon={<AlertTriangle className="text-warning" />}
+            title="Report An Incident"
           />
-          <ActionTile 
-            href="/caregiver/incident-draft" 
-            icon={<AlertTriangle className="text-amber-300" />} 
-            title="Report An Incident" 
-            gradient="from-amber-900/40 to-amber-950/40 hover:from-amber-800/60 hover:to-amber-900/60"
-            border="border-amber-500/30"
+          <ActionTile
+            href="/caregiver/rounds"
+            icon={<CheckCircle2 className="text-success" />}
+            title="Rounds & Checks"
           />
-          <ActionTile 
-            href="/caregiver/rounds" 
-            icon={<CheckCircle2 className="text-emerald-300" />} 
-            title="Rounds & Checks" 
-            gradient="from-emerald-900/40 to-emerald-950/40 hover:from-emerald-800/60 hover:to-emerald-900/60"
-            border="border-emerald-500/30"
-          />
-          <ActionTile 
-            href="/caregiver/clock" 
-            icon={<LogIn className="text-indigo-300" />} 
-            title="Shift Clock" 
-            gradient="from-indigo-900/40 to-indigo-950/40 hover:from-indigo-800/60 hover:to-indigo-900/60"
-            border="border-indigo-500/30"
-          />
+          <ActionTile href="/caregiver/clock" icon={<LogIn className="text-info" />} title="Shift Clock" />
         </div>
       </div>
 
-      {/* ALERTS COLUMN */}
-      <div className="md:col-span-2 flex flex-col gap-4 md:gap-6">
+      {/* Alerts column */}
+      <div className="flex flex-col gap-4 md:col-span-2 md:gap-6">
         {activeOutbreak && (
-          <div className="rounded-lg bg-rose-950/40 border border-rose-500/30 p-5 shadow-[0_0_30px_rgba(225,29,72,0.15)] relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <ShieldAlert className="w-24 h-24 text-rose-500" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-rose-200 font-semibold mb-1 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-rose-400" />
-                Active Protocol: {activeOutbreak.infection_type.replace(/_/g, " ")}
-              </h3>
-              <p className="text-sm text-rose-200/70 mb-3">
-                Strict facility protocols are in effect. Check your assigned task list.
-              </p>
-              {myOutbreakActions > 0 && (
-                <div className="inline-flex items-center gap-2 bg-rose-900/60 px-3 py-1.5 rounded-lg border border-rose-700/50">
-                  <CheckCircle2 className="w-4 h-4 text-rose-300" />
-                  <span className="text-xs font-semibold text-rose-100">{myOutbreakActions} tasks assigned to you</span>
-                </div>
-              )}
-            </div>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-5">
+            <h3 className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Active Protocol: {activeOutbreak.infection_type.replace(/_/g, " ")}
+            </h3>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Strict facility protocols are in effect. Check your assigned task list.
+            </p>
+            {myOutbreakActions > 0 && (
+              <div className="inline-flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-1.5">
+                <CheckCircle2 className="h-4 w-4 text-destructive" />
+                <span className="text-xs font-semibold text-foreground">
+                  {myOutbreakActions} tasks assigned to you
+                </span>
+              </div>
+            )}
           </div>
         )}
 
-        <div className="rounded-lg flex-1 p-6 flex flex-col">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-            <h3 className="text-lg font-medium text-white">Critical Updates</h3>
+        <div className="flex flex-1 flex-col rounded-lg border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-warning" />
+            <h3 className="text-lg font-medium text-foreground">Critical Updates</h3>
           </div>
-          
-          <div className="space-y-3 flex-1">
+
+          <div className="flex-1 space-y-3">
             {brief.criticalAlerts.length === 0 ? (
-              <div className="h-full flex items-center justify-center border-2 border-dashed border-white/10 rounded-xl p-6 text-center">
-                <p className="text-sm font-medium tracking-wide text-zinc-500">No high-priority conditions reported.</p>
+              <div className="flex h-full items-center justify-center rounded-lg border-2 border-dashed border-border p-6 text-center">
+                <p className="text-sm font-medium tracking-wide text-muted-foreground">
+                  No high-priority conditions reported.
+                </p>
               </div>
             ) : (
               brief.criticalAlerts.map((a) => (
                 <Link
                   key={a.id}
                   href={`/caregiver/resident/${a.residentId}/condition-change`}
-                  className="group flex flex-col rounded-xl border border-amber-900/40 bg-zinc-950/50 p-4 transition-all hover:bg-zinc-900/80 hover:border-amber-700/50 tap-responsive"
+                  className="group flex min-h-[44px] flex-col rounded-lg border border-warning/30 bg-warning/10 p-4 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-zinc-100 group-hover:text-amber-100 transition-colors">{a.title}</p>
-                    <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border border-amber-900/60 bg-amber-500/10 text-amber-400 shrink-0">
+                    <p className="text-sm font-medium text-foreground">{a.title}</p>
+                    <span className="shrink-0 rounded border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
                       {a.badge}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{a.detail}</p>
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{a.detail}</p>
                 </Link>
               ))
             )}
@@ -288,12 +267,14 @@ export default function CaregiverHomePage() {
         </div>
       </div>
 
-      {/* ─── ROW 3: WORKFLOWS & WATCHLIST ───────────────────────────────────── */}
-      <div className="rounded-lg md:col-span-2 p-6 flex flex-col">
-        <h3 className="text-lg font-medium text-white mb-1">Shift Workflows</h3>
-        <p className="text-xs tracking-wide text-zinc-400 uppercase mb-6 font-semibold">Routine & Follow-ups</p>
-        
-        <div className="flex flex-col gap-2 flex-1">
+      {/* Row 3: Workflows + watchlist */}
+      <div className="flex flex-col rounded-lg border border-border bg-card p-6 md:col-span-2">
+        <h3 className="mb-1 text-lg font-medium text-foreground">Shift Workflows</h3>
+        <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Routine &amp; Follow-ups
+        </p>
+
+        <div className="flex flex-1 flex-col gap-2">
           <WorkflowRow href="/caregiver/schedules" icon={<CalendarDays />} label="My Schedule" />
           <WorkflowRow href="/caregiver/followups" icon={<BellRing />} label="Condition Follow-ups" />
           <WorkflowRow href="/caregiver/handoff" icon={<MessageSquare />} label="Shift Handoff" />
@@ -301,128 +282,118 @@ export default function CaregiverHomePage() {
         </div>
       </div>
 
-      <div className="rounded-lg md:col-span-2 p-6 flex flex-col border border-zinc-800/80 bg-zinc-950/80">
-        <h3 className="text-lg font-medium text-white mb-1">Watchlist</h3>
-        <p className="text-xs tracking-wide text-zinc-400 uppercase mb-4 font-semibold">Elevated Acuity / Safety</p>
-        
-        <div className="flex-1 overflow-y-auto max-h-[300px] pr-2 space-y-3 premium-scrollbar">
+      <div className="flex flex-col rounded-lg border border-border bg-card p-6 md:col-span-2">
+        <h3 className="mb-1 text-lg font-medium text-foreground">Watchlist</h3>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Elevated Acuity / Safety
+        </p>
+
+        <div className="max-h-[300px] flex-1 space-y-3 overflow-y-auto pr-2">
           {brief.watchlist.length === 0 ? (
-            <p className="text-sm text-zinc-500 py-8 text-center bg-white/5 rounded-xl border border-white/5">Census stable. No elevated watch filters.</p>
+            <p className="rounded-lg border border-border bg-muted/40 py-8 text-center text-sm text-muted-foreground">
+              Census stable. No elevated watch filters.
+            </p>
           ) : (
             brief.watchlist.map((w) => (
               <Link
                 key={w.id}
                 href={`/caregiver/resident/${w.id}`}
-                className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.06] hover:border-white/10 cursor-pointer group"
+                className="group flex min-h-[44px] items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               >
                 <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <UserRound className="h-4 w-4 text-zinc-400 group-hover:text-white transition-colors" />
-                    <p className="text-sm font-semibold text-zinc-100">{w.name}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-mono">RM {w.room}</span>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <UserRound className="h-4 w-4 text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group-hover:text-foreground" />
+                    <p className="text-sm font-semibold text-foreground">{w.name}</p>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+                      RM {w.room}
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {w.flags.map((flag) => (
-                      <span key={flag} className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border border-zinc-700/50 bg-zinc-800/50 text-zinc-300">
-                        <Waves className="mr-1 h-2.5 w-2.5 text-zinc-500" />
+                      <span
+                        key={flag}
+                        className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground"
+                      >
+                        <Waves className="mr-1 h-2.5 w-2.5 text-muted-foreground" />
                         {flag}
                       </span>
                     ))}
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
+                <ChevronRight className="h-5 w-5 text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group-hover:text-foreground" />
               </Link>
             ))
           )}
         </div>
       </div>
-
     </div>
   );
 }
-
-/* ─── HELPER COMPONENTS ──────────────────────────────────────────────────── */
 
 function HeroStat({
   label,
   value,
   icon,
-  glowColor,
-  danger,
-  warning,
-  accent,
+  tone,
   href,
 }: {
   label: string;
   value: number | string;
   icon: React.ReactNode;
-  glowColor: string;
-  danger?: boolean;
-  warning?: boolean;
-  accent?: boolean;
+  tone: StatTone;
   href?: string;
 }) {
-  const valueColor = danger ? "text-rose-400" : warning ? "text-amber-400" : accent ? "text-teal-400" : "text-white";
+  const valueColor =
+    tone === "danger"
+      ? "text-destructive"
+      : tone === "warning"
+        ? "text-warning"
+        : tone === "accent"
+          ? "text-primary"
+          : "text-foreground";
   const inner = (
-    <div className="flex flex-col gap-1 z-10 relative">
-      <div className="flex items-center gap-2 mb-2 text-zinc-400">
-        <div className="w-5 h-5 opacity-80">{icon}</div>
+    <div className="relative z-10 flex flex-col gap-1">
+      <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+        <div className="h-5 w-5 opacity-80">{icon}</div>
         <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
       </div>
-      <div className={`text-2xl md:text-3xl font-medium tabular-nums tracking-tight ${valueColor}`}>
-        {value}
-      </div>
+      <div className={cn("text-2xl font-medium tabular-nums tracking-tight md:text-3xl", valueColor)}>{value}</div>
     </div>
   );
 
-  const baseClass = "relative rounded-2xl border border-white/10 bg-white/[0.03] p-5 overflow-hidden group";
-  const hoverClass = href ? " cursor-pointer hover:bg-white/[0.06] hover:border-white/20 transition-colors" : "";
+  const baseClass =
+    "group relative overflow-hidden rounded-lg border border-border bg-card p-5 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0";
+  const hoverClass = href ? " cursor-pointer hover:bg-muted/40" : "";
 
   if (href) {
     return (
-      <Link
-        href={href}
-        className={baseClass + hoverClass}
-        style={{ boxShadow: `inset 0 0 40px ${glowColor}` }}
-      >
+      <Link href={href} className={cn(baseClass, hoverClass)}>
         {inner}
       </Link>
     );
   }
 
-  return (
-    <div
-      className={baseClass}
-      style={{ boxShadow: `inset 0 0 40px ${glowColor}` }}
-    >
-      {inner}
-    </div>
-  );
+  return <div className={baseClass}>{inner}</div>;
 }
 
 function ActionTile({
   href,
   icon,
   title,
-  border,
 }: {
   href: string;
   icon: React.ReactNode;
   title: string;
-  /** Deprecated — kept for call-site compatibility; ignored. */
-  gradient?: string;
-  border: string;
 }) {
   return (
     <Link
       href={href}
-      className={`flex flex-col justify-center rounded-2xl border bg-card ${border} p-5 tap-responsive transition-colors duration-300 shadow-sm group relative overflow-hidden`}
+      className="group relative flex min-h-[44px] flex-col justify-center overflow-hidden rounded-lg border border-border bg-card p-5 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
     >
-      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300 pointer-events-none" />
-      <div className="bg-black/20 w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-inner">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted">
         {icon}
       </div>
-      <span className="text-sm font-semibold text-white tracking-wide">{title}</span>
+      <span className="text-sm font-semibold tracking-wide text-foreground">{title}</span>
     </Link>
   );
 }
@@ -431,15 +402,15 @@ function WorkflowRow({ href, icon, label }: { href: string; icon: React.ReactNod
   return (
     <Link
       href={href}
-      className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.08] hover:border-white/10 transition-all tap-responsive group"
+      className="group flex min-h-[44px] items-center justify-between rounded-lg border border-border bg-card p-4 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
     >
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-zinc-900 group-hover:bg-zinc-800 text-zinc-400 group-hover:text-white transition-colors">
+        <div className="rounded-lg border border-border bg-muted p-2 text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group-hover:text-foreground">
           {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-5 h-5" })}
         </div>
-        <span className="text-sm font-medium text-zinc-200 group-hover:text-white">{label}</span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
+      <ChevronRight className="h-5 w-5 text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group-hover:text-foreground" />
     </Link>
   );
 }

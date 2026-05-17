@@ -106,32 +106,36 @@ export default function CaregiverSchedulesPage() {
         title="Check your published shifts before or after the floor workflow changes."
         description="Use this view to confirm where you are expected next, then return to the shift home or clock if your assignment timing needs attention."
       />
-      <Card className="border-zinc-800 text-zinc-100">
+      <Card className="border-border bg-card text-card-foreground">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-xl">
-            <CalendarDays className="h-5 w-5 text-teal-400" />
+            <CalendarDays className="h-5 w-5 text-primary" />
             My schedule
           </CardTitle>
-          <CardDescription className="text-zinc-400">
-            {facilityName ? `Published shifts at ${facilityName} for the next few weeks.` : "Your published shift assignments."}
+          <CardDescription className="text-muted-foreground">
+            {facilityName
+              ? `Published shifts at ${facilityName} for the next few weeks.`
+              : "Your published shift assignments."}
           </CardDescription>
         </CardHeader>
       </Card>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12 text-zinc-400">
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           Loading…
         </div>
       ) : null}
 
       {error ? (
-        <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">{error}</div>
+        <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+          {error}
+        </div>
       ) : null}
 
       {!loading && !error && rows.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-8 text-center text-sm text-zinc-400">
+        <Card className="border-border bg-card text-card-foreground">
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
             No shift assignments in this window. Scheduling publishes from the admin console.
           </CardContent>
         </Card>
@@ -140,13 +144,18 @@ export default function CaregiverSchedulesPage() {
       {!loading && rows.length > 0 ? (
         <div className="space-y-2">
           {rows.map((r) => (
-            <Card key={r.id} className="border-zinc-800 bg-zinc-950/80 text-zinc-100">
-              <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
+            <Card
+              key={r.id}
+              className="border-border bg-card text-card-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40"
+            >
+              <CardContent className="flex min-h-[44px] flex-wrap items-center justify-between gap-2 p-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">{formatShiftDate(r.shift_date)}</p>
-                  <p className="text-xs text-zinc-400 capitalize">{String(r.shift_type).replace(/_/g, " ")}</p>
+                  <p className="text-sm font-semibold text-foreground">{formatShiftDate(r.shift_date)}</p>
+                  <p className="text-xs capitalize text-muted-foreground">
+                    {String(r.shift_type).replace(/_/g, " ")}
+                  </p>
                 </div>
-                <Badge variant="outline" className="border-zinc-600 capitalize text-zinc-200">
+                <Badge variant="outline" className="border-border capitalize text-foreground">
                   {r.status.replace(/_/g, " ")}
                 </Badge>
               </CardContent>
@@ -157,7 +166,7 @@ export default function CaregiverSchedulesPage() {
 
       <Link
         href={homeHref}
-        className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-sm font-medium text-zinc-200 hover:bg-zinc-800"
+        className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
       >
         Back to shift home
       </Link>

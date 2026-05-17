@@ -71,13 +71,15 @@ export default function FamilyInvoicesPage() {
 
   if (configError) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{configError}</div>
+      <div className="mx-auto mt-20 max-w-lg rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+        {configError}
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-stone-500">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading invoices…
       </div>
@@ -87,10 +89,15 @@ export default function FamilyInvoicesPage() {
   if (loadError) {
     return (
       <div className="space-y-3 pb-16 md:pb-0">
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{loadError}</div>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground">
+          {loadError}
+        </div>
         <button
           type="button"
-          className={cn(buttonVariants({ variant: "outline" }), "border-stone-300")}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-auto min-h-[44px] border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+          )}
           onClick={() => void load()}
         >
           Retry
@@ -109,41 +116,59 @@ export default function FamilyInvoicesPage() {
         description="Every visible statement in one place, with due dates and current balances."
         residentSummary={residentSummary || undefined}
       />
-      <Link href="/family/billing" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-stone-600 hover:text-stone-900")}>
+      <Link
+        href="/family/billing"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          "inline-flex h-auto min-h-[44px] gap-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+        )}
+      >
         <ArrowLeft className="h-4 w-4" />
         Back to billing summary
       </Link>
 
-      <div className="rounded-lg p-6 md:p-8 bg-white/70">
+      {/* Warm split-theme: bg-muted on family/caregiver surfaces softens cards
+          slightly compared to admin's stricter bg-card. */}
+      <div className="rounded-lg border border-border bg-muted p-6 md:p-8">
         <div className="mb-5 flex items-center gap-3">
-          <FileText className="h-6 w-6 text-amber-600" />
+          <FileText className="h-6 w-6 text-warning" />
           <div>
-            <h2 className="text-2xl font-serif text-stone-800">Invoices</h2>
-            <p className="text-sm text-stone-500">
-              Open balance across visible invoices: <span className="font-semibold text-stone-700">{formatUsd(data.totalBalanceDue)}</span>
+            <h2 className="text-2xl font-serif text-foreground">Invoices</h2>
+            <p className="text-sm text-muted-foreground">
+              Open balance across visible invoices:{" "}
+              <span className="font-semibold text-foreground">{formatUsd(data.totalBalanceDue)}</span>
             </p>
           </div>
         </div>
         <div className="space-y-3">
           {data.invoices.length === 0 ? (
-            <p className="py-10 text-center text-sm text-stone-600">
+            <p className="py-10 text-center text-sm text-muted-foreground">
               No invoices are visible right now, or your current family access does not include billing records.
             </p>
           ) : (
             data.invoices.map((inv) => (
-              <div key={inv.id} className="rounded-lg border border-stone-200 bg-card p-5 shadow-sm">
+              <div
+                key={inv.id}
+                className="min-h-[44px] rounded-lg border border-border bg-card p-5 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40"
+              >
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold">{inv.invoiceNumber}</p>
-                    <p className="text-lg font-serif text-stone-800">{inv.periodLabel}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {inv.invoiceNumber}
+                    </p>
+                    <p className="text-lg font-serif text-foreground">{inv.periodLabel}</p>
                   </div>
                   <Badge className={invoiceStatusBadgeClass(inv.status)}>{inv.statusLabel}</Badge>
                 </div>
-                <div className="pt-3 border-t border-stone-100 text-sm text-stone-600 space-y-1">
+                <div className="space-y-1 border-t border-border pt-3 text-sm text-muted-foreground">
                   <p>{inv.residentName}</p>
-                  <p>Total: {formatUsd(inv.total)}</p>
                   <p>
-                    {inv.status === "paid" ? "Paid in full" : `Due ${formatDue(inv.dueDate)} · Balance ${formatUsd(inv.balanceDue)}`}
+                    Total: <span className="tabular-nums text-foreground">{formatUsd(inv.total)}</span>
+                  </p>
+                  <p>
+                    {inv.status === "paid"
+                      ? "Paid in full"
+                      : `Due ${formatDue(inv.dueDate)} · Balance ${formatUsd(inv.balanceDue)}`}
                   </p>
                 </div>
               </div>

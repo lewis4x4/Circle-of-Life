@@ -55,49 +55,64 @@ export default function CaregiverPendingPoliciesPage() {
         description="Review policy tasks here, then return to your profile, schedule, or the active shift once you are caught up."
       />
       <div>
-        <Link href="/caregiver/me" className="text-sm text-zinc-400 hover:text-zinc-200">
+        <Link
+          href="/caregiver/me"
+          className="inline-flex min-h-[44px] items-center text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+        >
           ← Me
         </Link>
-        <h1 className="mt-2 text-xl font-semibold text-zinc-100">Policies to acknowledge</h1>
-        <p className="mt-1 text-sm text-zinc-400">Read and confirm each policy required for your facility.</p>
+        <h1 className="mt-2 text-xl font-semibold text-foreground">Policies to acknowledge</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Read and confirm each policy required for your facility.
+        </p>
       </div>
 
       <Link
         href={homeHref}
-        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800")}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          "h-auto min-h-[44px] w-full border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+        )}
       >
         Back to shift home
       </Link>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-zinc-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           Loading…
         </div>
       ) : rows.length === 0 ? (
-        <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
-          <CardContent className="py-8 text-center text-sm text-zinc-400">You are caught up. No pending policies.</CardContent>
+        <Card className="border-border bg-card text-card-foreground">
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            You are caught up. No pending policies.
+          </CardContent>
         </Card>
       ) : (
         <ul className="space-y-3">
           {rows.map((r) => (
             <li key={r.id}>
-              <Card className="border-zinc-800 bg-zinc-950/70 text-zinc-100">
+              <Card className="border-border bg-card text-card-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40">
                 <CardHeader className="pb-2">
                   <div className="flex items-start gap-2">
-                    <FileText className="mt-0.5 h-5 w-5 text-amber-500" />
+                    <FileText className="mt-0.5 h-5 w-5 text-warning" />
                     <div>
                       <CardTitle className="text-base">{r.title}</CardTitle>
-                      <CardDescription className="text-zinc-500">{r.category.replace(/_/g, " ")}</CardDescription>
+                      <CardDescription className="text-muted-foreground">
+                        {r.category.replace(/_/g, " ")}
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <Link
                     href={`/caregiver/policies/${r.id}`}
-                    className={cn(buttonVariants({ size: "sm" }), "bg-amber-700 hover:bg-amber-600")}
+                    className={cn(
+                      buttonVariants({ size: "sm" }),
+                      "h-auto min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+                    )}
                   >
-                    Review & acknowledge
+                    Review &amp; acknowledge
                   </Link>
                 </CardContent>
               </Card>

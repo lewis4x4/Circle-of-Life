@@ -7,6 +7,7 @@ import { fetchFamilyCalendarEvents, type FamilyCalendarEventRow } from "@/lib/fa
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
+import { cn } from "@/lib/utils";
 
 export default function FamilyCalendarPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -55,14 +56,16 @@ export default function FamilyCalendarPage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-card backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto mt-20">{configError}</div>
+      <div className="mx-auto mt-20 max-w-lg rounded-lg border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-foreground">
+        {configError}
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-48 text-stone-500 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-rose-400" />
+      <div className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm font-medium tracking-wide">Syncing itinerary…</p>
       </div>
     );
@@ -70,14 +73,17 @@ export default function FamilyCalendarPage() {
 
   if (loadError) {
     return (
-      <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-20">
-        <div className="rounded-2xl border border-rose-200 bg-white/70 px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <CalendarDays className="w-8 h-8 text-rose-400 mx-auto mb-3" />
+      <div className="mx-auto mt-20 max-w-md space-y-4 pb-16 text-center md:pb-0">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-6 text-sm text-foreground">
+          <CalendarDays className="mx-auto mb-3 h-8 w-8 text-destructive" />
           <p>{loadError}</p>
         </div>
         <button
           type="button"
-          className="w-full h-12 rounded-full bg-white text-stone-700 font-medium border border-stone-200 shadow-sm hover:bg-stone-50 transition-colors cursor-pointer tap-responsive"
+          className={cn(
+            "h-12 w-full rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+          )}
           onClick={() => void load()}
         >
           Retry Connection
@@ -87,7 +93,7 @@ export default function FamilyCalendarPage() {
   }
 
   return (
-    <div className="pb-8 flex flex-col items-center max-w-3xl mx-auto w-full px-4 pt-12 md:pt-20">
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 pb-8 pt-12 md:pt-20">
       <FamilySectionIntro
         active="calendar"
         title="Upcoming Moments"
@@ -97,16 +103,17 @@ export default function FamilyCalendarPage() {
 
       <div className="w-full space-y-6">
         {rows.length === 0 ? (
-          <div className="rounded-lg p-10 text-center border-dashed border-2 border-stone-200/50">
-            <p className="text-stone-600 font-serif text-xl italic mb-2">No scheduled activities.</p>
-            <p className="text-sm text-stone-500 max-w-md mx-auto">
-               We could not find any shared events in this window, or your current family access does not include calendar updates yet.
+          <div className="rounded-lg border-2 border-dashed border-border p-10 text-center">
+            <p className="mb-2 font-serif text-xl italic text-foreground">No scheduled activities.</p>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground">
+              We could not find any shared events in this window, or your current family access does not include
+              calendar updates yet.
             </p>
           </div>
         ) : (
           <div className="space-y-4">
             {rows.map((ev) => (
-               <CalendarEventCard key={ev.id} ev={ev} />
+              <CalendarEventCard key={ev.id} ev={ev} />
             ))}
           </div>
         )}
@@ -117,41 +124,59 @@ export default function FamilyCalendarPage() {
 
 function CalendarEventCard({ ev }: { ev: FamilyCalendarEventRow }) {
   const isCancelled = ev.cancelled;
-  
+
   return (
-    <div className={`rounded-xl p-6 shadow-sm transition-all relative ${isCancelled ? "opacity-60 bg-white/40" : "bg-white/70 hover:shadow-md"}`}>
+    <div
+      className={cn(
+        "relative rounded-lg border border-border p-6 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
+        isCancelled ? "bg-muted/60 opacity-60" : "bg-card hover:bg-muted/40",
+      )}
+    >
       <div className="flex items-start gap-5">
-         
-         {/* Date Callout Box */}
-         <div className="w-16 h-[4.5rem] rounded-2xl bg-stone-100 flex flex-col items-center justify-center shrink-0 border border-white shadow-inner">
-            <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-0.5">{ev.dayLabel.split(",")[0].substring(0,3)}</span> {/* e.g. Mon */}
-            <span className="text-xl font-serif text-stone-800">{ev.dayLabel.split(" ")[2] || "0"}</span> {/* e.g. 15 */}
-         </div>
+        {/* Date Callout Box — warm split-theme uses bg-muted (softer than admin's bg-card) */}
+        <div className="flex h-[4.5rem] w-16 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-muted">
+          <span className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {ev.dayLabel.split(",")[0].substring(0, 3)}
+          </span>
+          <span className="font-serif text-xl tabular-nums text-foreground">{ev.dayLabel.split(" ")[2] || "0"}</span>
+        </div>
 
-         <div className="flex-1 pt-1">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-               <h3 className={`text-lg font-serif ${isCancelled ? "line-through text-stone-500" : "text-stone-800"}`}>
-                  {ev.title}
-               </h3>
-               {ev.tag && (
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold ${isCancelled ? "bg-rose-100 text-rose-600" : "bg-violet-100 text-violet-700"}`}>
-                     {isCancelled ? "Cancelled" : ev.tag}
-                  </span>
-               )}
-            </div>
+        <div className="flex-1 pt-1">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3
+              className={cn(
+                "font-serif text-lg",
+                isCancelled ? "text-muted-foreground line-through" : "text-foreground",
+              )}
+            >
+              {ev.title}
+            </h3>
+            {ev.tag && (
+              <span
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                  isCancelled
+                    ? "border-destructive/30 bg-destructive/10 text-foreground"
+                    : "border-info/30 bg-info/10 text-foreground",
+                )}
+              >
+                {isCancelled ? "Cancelled" : ev.tag}
+              </span>
+            )}
+          </div>
 
-            <div className="space-y-1.5">
-               <p className="flex items-center gap-2 text-sm text-stone-500 font-medium">
-                  <Clock className="w-4 h-4 text-stone-300" />
-                  {ev.timeLabel}
-               </p>
-               <p className="flex items-center gap-2 text-sm text-stone-500 font-medium">
-                  <MapPin className="w-4 h-4 text-stone-300" />
-                  {ev.locationLine}
-               </p>
-            </div>
-         </div>
+          <div className="space-y-1.5">
+            <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              {ev.timeLabel}
+            </p>
+            <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              {ev.locationLine}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );
 }

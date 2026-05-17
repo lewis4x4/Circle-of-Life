@@ -11,6 +11,7 @@ import {
   type FamilyHomeSnapshot,
 } from "@/lib/family/family-feed";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 export default function FamilyHomePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -53,14 +54,16 @@ export default function FamilyHomePage() {
 
   if (configError) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-card backdrop-blur-md px-6 py-4 text-sm text-rose-800 shadow-sm max-w-lg mx-auto">{configError}</div>
+      <div className="mx-auto max-w-lg rounded-lg border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-foreground">
+        {configError}
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-48 text-stone-500 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-rose-400" />
+      <div className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm font-medium tracking-wide">Opening journal…</p>
       </div>
     );
@@ -68,14 +71,17 @@ export default function FamilyHomePage() {
 
   if (loadError) {
     return (
-      <div className="space-y-4 pb-16 md:pb-0 max-w-md mx-auto text-center mt-12">
-        <div className="rounded-xl border border-rose-200 bg-white/70 px-4 py-6 text-sm text-rose-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <Shield className="w-8 h-8 text-rose-400 mx-auto mb-3" />
+      <div className="mx-auto mt-12 max-w-md space-y-4 pb-16 text-center md:pb-0">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-6 text-sm text-foreground">
+          <Shield className="mx-auto mb-3 h-8 w-8 text-destructive" />
           <p>{loadError}</p>
         </div>
         <button
           type="button"
-          className="w-full h-12 rounded-full bg-white text-stone-700 font-medium border border-stone-200 shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
+          className={cn(
+            "h-12 w-full rounded-lg border border-border bg-card text-sm font-medium text-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+          )}
           onClick={() => void load()}
         >
           Retry Connection
@@ -92,9 +98,8 @@ export default function FamilyHomePage() {
   const firstName = snapshot.residentSummary ? snapshot.residentSummary.split(" ")[0] : "Resident";
 
   return (
-    <div className="pb-8 flex flex-col items-center">
-      
-      {/* ─── FULL BLEED COVER PHOTO ─── */}
+    <div className="flex flex-col items-center pb-8">
+      {/* Full bleed cover photo — kept as a warm cue per the family-shell warmth allowance */}
       <div className="absolute inset-x-0 top-0 z-0 h-48 w-full overflow-hidden md:h-64">
         <div className="relative h-full w-full">
           <Image
@@ -106,132 +111,138 @@ export default function FamilyHomePage() {
             className="object-cover object-center opacity-90 mix-blend-multiply"
           />
         </div>
-         {/* Fade to background color seamlessly */}
-         <div className="absolute inset-0 from-[#fffafa]"></div>
       </div>
 
-      <div className="w-full max-w-2xl px-4 relative z-10 mt-20 md:mt-32">
-         {/* ─── OVERLAPPING AVATAR ─── */}
-         <div className="text-center mb-10">
-           <div className="w-24 h-24 md:w-32 md:h-32 mx-auto bg-white rounded-full flex items-center justify-center p-2 shadow-[0_20px_40px_rgba(251,146,60,0.15)] mb-6 ring-1 ring-stone-900/5">
-              <div className="w-full h-full rounded-full border-2 border-stone-100 flex items-center justify-center">
-                 <span className="text-4xl md:text-2xl font-serif text-stone-600 font-semibold">{initial}</span>
-              </div>
-           </div>
-           
-           {snapshot.linkedResidents > 0 ? (
-             <>
-               <h1 className="text-4xl md:text-2xl font-serif text-stone-800 tracking-tight mb-2">
-                 <span className="font-medium text-stone-900">{snapshot.residentSummary}</span>
-               </h1>
-               <p className="text-stone-500/80 max-w-lg mx-auto text-base md:text-lg mb-8 font-serif italic">
-                 Care Journal
-               </p>
-             </>
-           ) : (
-             <>
-               <h1 className="text-4xl md:text-2xl font-serif text-stone-800 tracking-tight mb-2">
-                 Welcome
-               </h1>
-               <p className="text-stone-500 max-w-lg mx-auto text-sm md:text-base">
-                 Ask your facility for an invitation link to connect your loved one.
-               </p>
-             </>
-           )}
+      <div className="relative z-10 mt-20 w-full max-w-2xl px-4 md:mt-32">
+        {/* Overlapping avatar — warm split-theme keeps avatar visible above the cover image */}
+        <div className="mb-10 text-center">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-border bg-card p-2 md:h-32 md:w-32">
+            <div className="flex h-full w-full items-center justify-center rounded-full border border-border">
+              <span className="font-serif text-4xl font-semibold text-foreground md:text-2xl">{initial}</span>
+            </div>
+          </div>
 
-            {/* ─── QUICK GLANCE STATS ─── */}
-           {snapshot.linkedResidents > 0 && (
-             <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto w-full">
-               <StatChip label="Connected" value={snapshot.stats.linkedResidents} />
-               <StatChip label="Recent Clinical" value={snapshot.stats.clinicalWeek} />
-               {Number(snapshot.stats.billingOpen) > 0 && (
-                  <StatChip label="Open Invoices" value={snapshot.stats.billingOpen} />
-               )}
-             </div>
-           )}
-         </div>
+          {snapshot.linkedResidents > 0 ? (
+            <>
+              <h1 className="mb-2 font-serif text-4xl tracking-tight text-foreground md:text-2xl">
+                <span className="font-medium text-foreground">{snapshot.residentSummary}</span>
+              </h1>
+              <p className="mx-auto mb-8 max-w-lg font-serif text-base italic text-muted-foreground md:text-lg">
+                Care Journal
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="mb-2 font-serif text-4xl tracking-tight text-foreground md:text-2xl">Welcome</h1>
+              <p className="mx-auto max-w-lg text-sm text-muted-foreground md:text-base">
+                Ask your facility for an invitation link to connect your loved one.
+              </p>
+            </>
+          )}
 
-         {/* ─── THE JOURNAL FEED ─── */}
-         <div className="w-full mt-10 md:mt-16">
-           <div className="flex items-center justify-center mb-10">
-             <div className="h-px bg-stone-200 flex-1"></div>
-             <h2 className="text-2xl md:text-3xl font-serif text-stone-800 tracking-tight px-6 text-center">
-               {firstName}&apos;s Updates
-             </h2>
-             <div className="h-px bg-stone-200 flex-1"></div>
-           </div>
+          {/* Quick glance stats */}
+          {snapshot.linkedResidents > 0 && (
+            <div className="mx-auto flex w-full max-w-lg flex-wrap justify-center gap-2">
+              <StatChip label="Connected" value={snapshot.stats.linkedResidents} />
+              <StatChip label="Recent Clinical" value={snapshot.stats.clinicalWeek} />
+              {Number(snapshot.stats.billingOpen) > 0 && (
+                <StatChip label="Open Invoices" value={snapshot.stats.billingOpen} />
+              )}
+            </div>
+          )}
+        </div>
 
-           {snapshot.linkedResidents === 0 || snapshot.items.length === 0 ? (
-             <div className="flex flex-col items-center justify-center p-12 text-center">
-               <p className="text-stone-400 font-serif italic text-xl">The journal is quiet right now.</p>
-               <p className="text-sm text-stone-400 mt-2">Updates will flow in gently when your team posts them.</p>
-             </div>
-           ) : (
-             <div className="space-y-6 md:space-y-8">
-               {snapshot.items.map((item) => (
-                 <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
-               ))}
-             </div>
-           )}
-         </div>
+        {/* Journal feed */}
+        <div className="mt-10 w-full md:mt-16">
+          <div className="mb-10 flex items-center justify-center">
+            <div className="h-px flex-1 bg-border"></div>
+            <h2 className="px-6 text-center font-serif text-2xl tracking-tight text-foreground md:text-3xl">
+              {firstName}&apos;s Updates
+            </h2>
+            <div className="h-px flex-1 bg-border"></div>
+          </div>
+
+          {snapshot.linkedResidents === 0 || snapshot.items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <p className="font-serif text-xl italic text-muted-foreground">The journal is quiet right now.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Updates will flow in gently when your team posts them.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6 md:space-y-8">
+              {snapshot.items.map((item) => (
+                <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-/* ─── HELPER COMPONENTS ─── */
-
 function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
   const isInvoice = item.kind === "invoice";
   const isClinical = item.badge === "Clinical";
 
-  const colorConfig = isInvoice
-    ? { iconBg: "bg-amber-100", iconColor: "text-amber-700" }
+  const iconWrapClass = isInvoice
+    ? "bg-warning/10 border-warning/30"
     : isClinical
-    ? { iconBg: "bg-emerald-100", iconColor: "text-emerald-700" }
-    : { iconBg: "bg-sky-100", iconColor: "text-sky-700" };
+      ? "bg-success/10 border-success/30"
+      : "bg-info/10 border-info/30";
+
+  const iconColorClass = isInvoice ? "text-warning" : isClinical ? "text-success" : "text-info";
 
   const icon = isInvoice ? (
-    <Banknote className={`w-5 h-5 ${colorConfig.iconColor}`} />
+    <Banknote className={cn("h-5 w-5", iconColorClass)} />
   ) : isClinical ? (
-    <Heart className={`w-5 h-5 ${colorConfig.iconColor}`} />
+    <Heart className={cn("h-5 w-5", iconColorClass)} />
   ) : (
-    <FileText className={`w-5 h-5 ${colorConfig.iconColor}`} />
+    <FileText className={cn("h-5 w-5", iconColorClass)} />
   );
 
   const inner = (
-    <div className="rounded-lg p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgb(251,146,60,0.08)] transition-all duration-300 relative group bg-white/70">
-      
-      <div className="flex items-start justify-between gap-4 mb-4">
-         <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider text-stone-400 font-semibold mb-1">{item.timeLabel}</span>
-            <h3 className="text-xl font-serif text-stone-800 leading-tight">{item.title}</h3>
-         </div>
-         {/* Subtle Floating Badge */}
-         <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${colorConfig.iconBg}`}>
-            {icon}
-         </div>
+    <div className="group relative rounded-lg border border-border bg-card p-6 transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:bg-muted/40">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="flex flex-col">
+          <span className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {item.timeLabel}
+          </span>
+          <h3 className="font-serif text-xl leading-tight text-foreground">{item.title}</h3>
+        </div>
+        <div
+          className={cn(
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border",
+            iconWrapClass,
+          )}
+        >
+          {icon}
+        </div>
       </div>
-      
-      <p className="text-base text-stone-600 leading-relaxed font-semibold">
-         {item.detail} 
-      </p>
+
+      <p className="text-base font-semibold leading-relaxed text-foreground">{item.detail}</p>
 
       {isInvoice && (
-         <div className="mt-6 pt-4 border-t border-stone-200/60 flex justify-between items-center relative z-10 group/btn tap-responsive">
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-500 group-hover/btn:text-stone-900 transition-colors">Review Documentation</span>
-            <div className="w-8 h-8 rounded-full bg-stone-100 group-hover/btn:bg-stone-200 flex items-center justify-center transition-colors">
-               <ChevronRight className="w-4 h-4 text-stone-500" />
-            </div>
-         </div>
+        <div className="group/btn relative z-10 mt-6 flex items-center justify-between border-t border-border pt-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group-hover/btn:text-foreground">
+            Review Documentation
+          </span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] group-hover/btn:bg-muted/80">
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
       )}
     </div>
   );
 
   return (
-    <div className="relative group w-full">
+    <div className="relative w-full">
       {isInvoice ? (
-        <Link href={item.href} className="block outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-lg">
+        <Link
+          href={item.href}
+          className="block rounded-lg outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+        >
           {inner}
         </Link>
       ) : (
@@ -243,9 +254,9 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
 
 function StatChip({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl py-1.5 px-4">
-      <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400 mb-0.5">{label}</span>
-      <span className="text-lg font-serif text-stone-700">{value}</span>
+    <div className="flex flex-col items-center justify-center rounded-lg px-4 py-1.5">
+      <span className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="font-serif text-lg tabular-nums text-foreground">{value}</span>
     </div>
   );
 }
