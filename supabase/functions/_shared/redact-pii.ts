@@ -1,9 +1,20 @@
 export function redactString(input: string): string {
   return input
+    // SSN
     .replace(/\b\d{3}-\d{2}-\d{4}\b/g, "[REDACTED_SSN]")
+    // DEA registration number (2 letters + 7 digits). Must run BEFORE the
+    // generic 10-digit NPI regex so DEAs aren't eaten by it.
+    .replace(/\b[A-Z]{2}\d{7}\b/g, "[REDACTED_DEA]")
+    // Member/Medicare/Medicaid IDs with an explicit prefix
     .replace(/\b(?:medicare|medicaid|member|policy|mrn|medical record)\s*(?:id|number|#)?[:\s-]*[A-Z0-9-]{6,}\b/gi, "[REDACTED_MEMBER_ID]")
+    // DOB phrasing
     .replace(/\b(?:dob|date of birth|born)\b[:\s-]*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/gi, "[REDACTED_DOB]")
     .replace(/\b(?:dob|date of birth|born)\b[:\s-]*[A-Za-z]{3,9}\s+\d{1,2},\s+\d{4}\b/gi, "[REDACTED_DOB]")
+    // NPI: exactly 10 consecutive digits, not adjacent to other digits / dots.
+    // Runs AFTER the labeled member-id regex so labeled Medicaid IDs are
+    // captured under the more semantic [REDACTED_MEMBER_ID] tag first.
+    .replace(/(?<![\d.])\d{10}(?![\d.])/g, "[REDACTED_NPI]")
+    // Dosage phrasing
     .replace(/\b\d+\s*(?:mg|mcg|g|ml|units?)\s*(?:\/\s*\w+)?(?:\s+(?:by mouth|po|im|iv|subq|topical))?(?:\s+\w+){0,6}\b/gi, "[REDACTED_DOSAGE]")
     .trim();
 }

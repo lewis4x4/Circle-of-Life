@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { redactString, redactValue } from "../_shared/redact-pii.ts";
+import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -245,6 +246,18 @@ Deno.serve(async (req) => {
   const organizationId = profile?.organization_id as string | undefined;
   if (!organizationId) {
     return jsonResponse({ error: "Profile has no organization" }, 403, origin);
+  }
+
+  // KB-NEXT-03: per-user + per-org rate limiting so a single user (or all
+  // users on one org) can't flood Grace and burn budget. Defaults are the
+  // module defaults: 10/min user, 200/min org.
+  if (isRateLimited(user.id)) {
+    t.log({ event: "rate_limited", outcome: "blocked", scope: "user", user_id: user.id });
+    return jsonResponse({ error: "Rate limit exceeded. Try again in a minute." }, 429, origin);
+  }
+  if (isOrgRateLimited(organizationId)) {
+    t.log({ event: "rate_limited", outcome: "blocked", scope: "org", organization_id: organizationId });
+    return jsonResponse({ error: "Organization rate limit exceeded. Try again in a minute." }, 429, origin);
   }
 
   const tokensToday = await getTokensToday(admin, user.id);

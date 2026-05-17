@@ -6,6 +6,7 @@ import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supa
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { redactString, redactValue } from "../_shared/redact-pii.ts";
+import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
 import {
   decideGraceSafeMode,
   formatCountOnlyCensusAnswer,
@@ -752,11 +753,15 @@ async function logSearchAudit(
       app_role: ctx.userRole,
       tool_name: toolName,
       tool_tier: toolTier,
+      // KB-NEXT-03 G4: search_audit_log retains the raw user query so we can
+      // triage gaps later — redact PHI before persistence rather than just
+      // stripping punctuation. Other sanitizeSearchQuery sites (matching /
+      // normalization) keep the cheaper sanitizer.
       query_text:
         typeof input.query === "string"
-          ? sanitizeSearchQuery(input.query)
+          ? redactString(sanitizeSearchQuery(input.query))
           : typeof input.name === "string"
-            ? sanitizeSearchQuery(input.name)
+            ? redactString(sanitizeSearchQuery(input.name))
             : null,
       results_count: countToolResults(result),
       duration_ms: durationMs,
@@ -3462,6 +3467,17 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Profile has no organization" }, 403, origin);
   }
 
+  // KB-NEXT-03 G3: per-user + per-org rate limits so the KB chat surface can't
+  // burn org budget via a single user or a fan-out script.
+  if (isRateLimited(user.id)) {
+    t.log({ event: "rate_limited", outcome: "blocked", scope: "user", user_id: user.id });
+    return jsonResponse({ error: "Rate limit exceeded. Try again in a minute." }, 429, origin);
+  }
+  if (isOrgRateLimited(orgId)) {
+    t.log({ event: "rate_limited", outcome: "blocked", scope: "org", organization_id: orgId });
+    return jsonResponse({ error: "Organization rate limit exceeded. Try again in a minute." }, 429, origin);
+  }
+
   let body: { message?: string; conversation_id?: string; workspace_id?: string; grace?: boolean; route?: string };
   try {
     body = (await req.json()) as typeof body;
@@ -3744,6 +3760,49 @@ Deno.serve(async (req) => {
             outcome: "error",
             trace_id: traceId,
             error_message: analyticsErr.message,
+          });
+        }
+
+        // KB-NEXT-03 G1: write one ai_invocations row per knowledge-agent
+        // request so the AI audit surface is uniform with exec-nlq-executor
+        // and haven-ai-router. Non-blocking; failure must not break stream.
+        try {
+          const promptDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(message));
+          const promptHash = [...new Uint8Array(promptDigest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+          const responseDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(result.text ?? ""));
+          const responseHash = [...new Uint8Array(responseDigest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+          const { error: invErr } = await admin.from("ai_invocations").insert({
+            organization_id: workspaceId,
+            model: MODEL_FULL,
+            phi_class: "limited",
+            prompt_hash: promptHash,
+            response_hash: responseHash,
+            tokens_used: result.tokensIn + result.tokensOut,
+            created_by: user.id,
+            metadata_json: {
+              function: grace ? "grace-knowledge-agent" : "knowledge-agent",
+              trace_id: traceId,
+              tools_used: result.toolsUsed,
+              source_count: result.sources.length,
+              tokens_in: result.tokensIn,
+              tokens_out: result.tokensOut,
+              kb_search_miss: Boolean(result.kbSearchMiss),
+            },
+          });
+          if (invErr) {
+            t.log({
+              event: "ai_invocation_insert_failed",
+              outcome: "error",
+              trace_id: traceId,
+              error_message: invErr.message,
+            });
+          }
+        } catch (invHashErr) {
+          t.log({
+            event: "ai_invocation_insert_threw",
+            outcome: "error",
+            trace_id: traceId,
+            error_message: invHashErr instanceof Error ? invHashErr.message : String(invHashErr),
           });
         }
 

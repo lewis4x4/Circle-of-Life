@@ -21,7 +21,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
-import { isRateLimited } from "../_shared/rate-limit.ts";
+import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
+import { captureException, captureMessage } from "../_shared/sentry-edge.ts";
 import {
   classifyIntent,
   intentCache,
@@ -29,6 +30,14 @@ import {
   type IntentClassification,
 } from "../_shared/router-intent.ts";
 import { dispatch, type DispatchResult } from "../_shared/router-dispatch.ts";
+
+/* ------------------------------------------------------------------ */
+/*  Per-token pricing (Sonnet 4.5) — used for token-budget accounting */
+/* ------------------------------------------------------------------ */
+
+const SONNET_INPUT_USD_PER_TOKEN = 0.000003;   // $3 / 1M input tokens
+const SONNET_OUTPUT_USD_PER_TOKEN = 0.000015;  // $15 / 1M output tokens
+const PER_QUESTION_RESERVATION_USD = 0.05;     // conservative pre-flight reservation
 
 /* ------------------------------------------------------------------ */
 /*  Env                                                               */
@@ -120,6 +129,7 @@ Deno.serve(async (req) => {
     admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   } catch (err) {
     t.log({ event: "client_create_failed", outcome: "error", error_message: String(err) });
+    captureException(err, { event: "router_init_failed" });
     return routerFailureResponse(origin, "Router initialization failed");
   }
 
@@ -136,12 +146,13 @@ Deno.serve(async (req) => {
     userId = data.user.id;
   } catch (err) {
     t.log({ event: "auth_threw", outcome: "error", error_message: String(err) });
+    captureException(err, { event: "router_auth_failed" });
     return routerFailureResponse(origin, "Auth check failed");
   }
 
-  // --- Rate limit ---
+  // --- Rate limit (per-user + per-org, KB-NEXT-03 G3) ---
   if (isRateLimited(userId)) {
-    t.log({ event: "rate_limited", outcome: "blocked", user_id: userId });
+    t.log({ event: "rate_limited", outcome: "blocked", scope: "user", user_id: userId });
     return jsonResponse({ error: "Rate limit exceeded. Try again in a minute." }, 429, origin);
   }
 
@@ -179,6 +190,7 @@ Deno.serve(async (req) => {
     organizationId = (profile?.organization_id ?? null) as string | null;
   } catch (err) {
     t.log({ event: "profile_lookup_failed", outcome: "error", error_message: String(err) });
+    captureException(err, { event: "router_profile_lookup_failed" });
     return routerFailureResponse(origin, "Profile lookup failed");
   }
 
@@ -188,6 +200,79 @@ Deno.serve(async (req) => {
   if (!ALLOWED_ROLES.includes(role)) {
     t.log({ event: "role_denied", outcome: "blocked", role });
     return jsonResponse({ error: "Insufficient permissions for Haven AI" }, 403, origin);
+  }
+
+  if (isOrgRateLimited(organizationId)) {
+    t.log({ event: "rate_limited", outcome: "blocked", scope: "org", organization_id: organizationId });
+    return jsonResponse({ error: "Organization rate limit exceeded. Try again in a minute." }, 429, origin);
+  }
+
+  // --- Token budget pre-check (KB-NEXT-03 §D) ---
+  // Reserve a conservative cost up front; if the model later spends less, the
+  // reservation is fine (we don't refund). If the org is already over budget,
+  // refuse with 429 + Sentry alert. Falls open if the RPC errors out — safer
+  // than blocking on infra hiccups.
+  try {
+    const { data: budgetData, error: budgetErr } = await admin.rpc("_ai_token_budget_check", {
+      p_organization_id: organizationId,
+      p_cost_usd: PER_QUESTION_RESERVATION_USD,
+    });
+    if (budgetErr) {
+      t.log({
+        event: "budget_check_failed",
+        outcome: "error",
+        organization_id: organizationId,
+        error_message: budgetErr.message,
+      });
+    } else if (budgetData && typeof budgetData === "object") {
+      const allowed = (budgetData as Record<string, unknown>).allowed;
+      const softAlert = (budgetData as Record<string, unknown>).soft_alert;
+      if (allowed === false) {
+        captureMessage(
+          "AI org_budget_exceeded",
+          "error",
+          {
+            organization_id: organizationId,
+            user_id: userId,
+            daily_limit: (budgetData as Record<string, unknown>).daily_limit,
+            daily_usage: (budgetData as Record<string, unknown>).daily_usage,
+          },
+        );
+        t.log({
+          event: "org_budget_exceeded",
+          outcome: "blocked",
+          organization_id: organizationId,
+        });
+        return jsonResponse(
+          {
+            ok: false,
+            error: "org_budget_exceeded",
+            daily_limit: (budgetData as Record<string, unknown>).daily_limit,
+            daily_usage: (budgetData as Record<string, unknown>).daily_usage,
+          },
+          429,
+          origin,
+        );
+      }
+      if (softAlert === true) {
+        captureMessage(
+          "AI org budget soft alert (>=80% of daily limit)",
+          "warning",
+          {
+            organization_id: organizationId,
+            daily_limit: (budgetData as Record<string, unknown>).daily_limit,
+            daily_usage: (budgetData as Record<string, unknown>).daily_usage,
+          },
+        );
+      }
+    }
+  } catch (budgetThrew) {
+    t.log({
+      event: "budget_check_threw",
+      outcome: "error",
+      organization_id: organizationId,
+      error_message: String(budgetThrew),
+    });
   }
 
   // --- Resolve accessible facility ids once per request (KB-NEXT-02) ---
@@ -247,6 +332,7 @@ Deno.serve(async (req) => {
       });
     } catch (err) {
       t.log({ event: "classify_threw", outcome: "error", error_message: String(err) });
+      captureException(err, { event: "router_classify_failed", organization_id: organizationId });
       return routerFailureResponse(origin, "Intent classification failed");
     }
   }
@@ -310,7 +396,36 @@ Deno.serve(async (req) => {
     }
   } catch (err) {
     t.log({ event: "dispatch_threw", outcome: "error", error_message: String(err) });
+    captureException(err, {
+      event: "router_dispatch_failed",
+      organization_id: organizationId,
+      intent: intent.intent,
+    });
     return routerFailureResponse(origin, "Dispatch failed");
+  }
+
+  // --- Budget reconciliation (KB-NEXT-03 §D) ---
+  // Pre-flight reserved PER_QUESTION_RESERVATION_USD. If the real cost from
+  // token usage exceeds that, charge the delta. Underspend is left in place
+  // (small over-charge is acceptable; under-billing is not).
+  try {
+    const actualCost =
+      dispatchResult.tokensIn * SONNET_INPUT_USD_PER_TOKEN +
+      dispatchResult.tokensOut * SONNET_OUTPUT_USD_PER_TOKEN;
+    const delta = actualCost - PER_QUESTION_RESERVATION_USD;
+    if (delta > 0) {
+      await admin.rpc("_ai_token_budget_check", {
+        p_organization_id: organizationId,
+        p_cost_usd: delta,
+      });
+    }
+  } catch (reconErr) {
+    t.log({
+      event: "budget_reconcile_failed",
+      outcome: "error",
+      organization_id: organizationId,
+      error_message: String(reconErr),
+    });
   }
 
   // --- Audit: ai_invocations + exec_nlq_sessions ---

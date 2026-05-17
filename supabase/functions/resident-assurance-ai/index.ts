@@ -161,7 +161,7 @@ Respond with JSON only:
     await admin.from("ai_invocations").insert({
       organization_id: orgId, model: MODEL, phi_class: "phi", prompt_hash: promptHash,
       response_hash: await sha256(JSON.stringify(parsed)),
-      created_by: "00000000-0000-0000-0000-000000000000", tokens_used: tokensUsed,
+      created_by: "00000000-0000-0000-0000-000000000001", tokens_used: tokensUsed,
       metadata_json: { edge_fn: "resident-assurance-ai", resident_id: r.id },
     });
 
