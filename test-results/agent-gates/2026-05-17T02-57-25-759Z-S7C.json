@@ -1,0 +1,129 @@
+{
+  "segment": "S7C",
+  "timestamp": "2026-05-17T02:57:25.759Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 25,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 130,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 840,
+      "stdout": "# npm audit report\n\npostcss  <8.5.10\nSeverity: moderate\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nfix available via `npm audit fix --force`\nWill install next@9.3.3, which is a breaking change\nnode_modules/next/node_modules/postcss\n  next  9.3.4-canary.0 - 16.3.0-canary.5\n  Depends on vulnerable versions of postcss\n  node_modules/next\n    @sentry/nextjs  6.3.6 - 10.19.0\n    Depends on vulnerable versions of next\n    node_modules/@sentry/nextjs\n\n3 moderate severity vulnerabilities\n\nTo address issues that do not require attention, run:\n  npm audit fix\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "failed",
+      "duration_ms": 7610,
+      "stdout": "Finding:     * globals.css tokens: \u001b[1;3;mREDACTED\u001b[0m 6% 55%, --border=36...\nSecret:      \u001b[1;3;mREDACTED\u001b[0m\nRuleID:      generic-api-key\nEntropy:     3.689704\nFile:        src/components/executive/ceo-risk-index-chart.tsx\nLine:        16\nCommit:      c81112dcac0b0de496789129d10eb17e9ad97013\nAuthor:      Brian Lewis\nEmail:       blewis@lewisinsurance.com\nDate:        2026-05-17T00:17:30Z\nFingerprint: c81112dcac0b0de496789129d10eb17e9ad97013:src/components/executive/ceo-risk-index-chart.tsx:generic-api-key:16\n\nFinding:     key: \"\u001b[1;3;mREDACTED\u001b[0m\"\nSecret:      \u001b[1;3;mREDACTED\u001b[0m\nRuleID:      generic-api-key\nEntropy:     3.740602\nFile:        scripts/homewood/data-audit.mjs\nLine:        797\nCommit:      a32a0a4c7bd013f51e14f2ec181af788a32ae11e\nAuthor:      Brian Lewis\nEmail:       blewis@lewisinsurance.com\nDate:        2026-05-16T14:43:59Z\nFingerprint: a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic-api-key:797\n\nFinding:     key: \"\u001b[1;3;mREDACTED\u001b[0m\"\nSecret:      \u001b[1;3;mREDACTED\u001b[0m\nRuleID:      generic-api-key\nEntropy:     3.740602\nFile:        scripts/homewood/data-audit.mjs\nLine:        808\nCommit:      a32a0a4c7bd013f51e14f2ec181af788a32ae11e\nAuthor:      Brian Lewis\nEmail:       blewis@lewisinsurance.com\nDate:        2026-05-16T14:43:59Z\nFingerprint: a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic-api-key:808\n\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m2:57AM\u001b[0m \u001b[32mINF\u001b[0m 982 commits scanned.\n\u001b[90m2:57AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 6.6s\n\u001b[90m2:57AM\u001b[0m \u001b[31mWRN\u001b[0m leaks found: 3\n[gitleaks] FAIL: leaks detected or gitleaks error\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "failed",
+      "duration_ms": 23357,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/admissions/page.tsx\n  229:3  warning  'color' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/residents/[id]/medications/page.tsx\n  6:10  warning  'Pill' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/residents/[id]/vitals/page.tsx\n  5:10  warning  'Activity' is defined but never used  @typescript-eslint/no-unused-vars\n  5:20  warning  'BellRing' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/finance/journal-entries/[id]/page.tsx\n  3:8   warning  'Link' is defined but never used            @typescript-eslint/no-unused-vars\n  8:18  warning  'buttonVariants' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/residents/[id]/billing/page.tsx\n  6:10  warning  'CreditCard' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/residents/[id]/page.tsx\n   7:3   warning  'Activity' is defined but never used     @typescript-eslint/no-unused-vars\n  12:3   warning  'ListChecks' is defined but never used   @typescript-eslint/no-unused-vars\n  13:3   warning  'MapPin' is defined but never used       @typescript-eslint/no-unused-vars\n  27:16  warning  'CardContent' is defined but never used  @typescript-eslint/no-unused-vars\n\n✖ 11 problems (0 errors, 11 warnings)\n\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\nESLint found too many warnings (maximum: 0).\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 186,
+      "stdout": "[migrations:check] PASS: 233 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..232\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 32879,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 20260514180707_homewood_round2_employee_seed.sql\n ERROR:  insert or update on table \"staff\" violates foreign key constraint \"staff_created_by_fkey\"\nDETAIL:  Key (created_by)=(399c531e-2237-4c55-9a09-c9f0a1bc4558) is not present in table \"users\".\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default max_connections ... 100\nselecting default shared_buffers ... 128MB\nselecting default time zone ... Etc/UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-05-17 02:57:58.886 UTC [55] LOG:  starting PostgreSQL 16.13 (Debian 16.13-1.pgdg12+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit\n2026-05-17 02:57:58.887 UTC [55] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-05-17 02:57:58.893 UTC [58] LOG:  database system was shut down at 2026-05-17 02:57:58 UTC\n2026-05-17 02:57:58.896 UTC [55] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\nwaiting for server to shut down....2026-05-17 02:57:58.993 UTC [55] LOG:  received fast shutdown request\n2026-05-17 02:57:58.995 UTC [55] LOG:  aborting any active transactions\n2026-05-17 02:57:58.997 UTC [55] LOG:  background worker \"logical replication launcher\" (PID 61) exited with exit code 1\n2026-05-17 02:57:58.997 UTC [56] LOG:  shutting down\n2026-05-17 02:57:58.998 UTC [56] LOG:  checkpoint starting: shutdown immediate\n2026-05-17 02:57:59.002 UTC [56] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.005 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14EA210, redo lsn=0/14EA210\n2026-05-17 02:57:59.004 UTC [55] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 38899,
+      "stdout": "[migrations:check] PASS: 233 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..232\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.6 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n",
+      "stderr": "\n> Build error occurred\nError: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Circle-of-Life/.next/static/UTpUMtTuU6lOXOLVWbWfg/_buildManifest.js.tmp.2mzpy6xoglk'\n    at ignore-listed frames\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 465,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 4,
+    "skipped": 3,
+    "blocking_failures": [
+      "security.gitleaks",
+      "qa.eslint",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-05-17T02-57-25-759Z-S7C.json"
+  ]
+}
