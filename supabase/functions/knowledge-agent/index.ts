@@ -2445,12 +2445,19 @@ async function executeTool(
         return { error: "Embedding API returned no vector" };
       }
 
-      const { data, error } = await admin.rpc("retrieve_evidence", {
+      // KB-NEXT-04: prefer Reciprocal Rank Fusion over the legacy
+      // sequential-fallback `retrieve_evidence`. Both semantic and keyword
+      // run, then fuse with k=60. Loosened semantic_threshold (0.3) because
+      // RRF re-ranks anyway — weak semantic hits that also have strong
+      // keyword overlap should bubble up.
+      const matchCount = getRequestedLimit(input, 8, 12);
+      const { data, error } = await admin.rpc("retrieve_evidence_hybrid", {
         query_embedding: `[${embedding.join(",")}]`,
         keyword_query: expandedKeywordQuery,
         user_role: userRole,
-        match_count: getRequestedLimit(input, 8, 12),
-        semantic_threshold: 0.45,
+        match_count: matchCount,
+        semantic_threshold: 0.3,
+        rrf_k: 60,
         p_workspace_id: workspaceId,
       });
 
@@ -2463,6 +2470,10 @@ async function executeTool(
         section_title: string | null;
         document_id?: string;
         chunk_id?: string;
+        // KB-NEXT-04 RRF metadata — kept for future eval / debug payloads.
+        rrf_score?: number;
+        sem_rank?: number | null;
+        kw_rank?: number | null;
       }[];
 
       const filteredRows = rows.filter((row) => {
