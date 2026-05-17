@@ -68,9 +68,11 @@ function measureChunks() {
   walk(path.join(staticDir, "chunks"), "chunks");
   walk(path.join(staticDir, "css"), "css");
 
+  // Next can emit hashed sibling folders under .next/static/ (Turbopack / tooling).
+  // Labeling them by folder name makes the budget unstable (new build → new hash → CI noise).
   for (const sub of fs.readdirSync(staticDir, { withFileTypes: true })) {
     if (sub.isDirectory() && sub.name !== "chunks" && sub.name !== "css" && sub.name !== "media") {
-      walk(path.join(staticDir, sub.name), sub.name);
+      walk(path.join(staticDir, sub.name), "static_extras");
     }
   }
 

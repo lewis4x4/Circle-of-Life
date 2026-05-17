@@ -14,6 +14,7 @@ on:
       - "components.json"
       - ".github/workflows/ci-ui-gates.yml"
       - "scripts/bundle-size-check.mjs"
+      - "bundle-size-budget.json"
       - "scripts/visual-regression.mjs"
       - "scripts/a11y-authenticated.mjs"
       - "scripts/a11y-axe-routes.mjs"

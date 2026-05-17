@@ -1,8 +1,8 @@
 {
-  "totalBytes": 14782452,
+  "totalBytes": 13870416,
   "entries": {
-    "chunks": 14781738,
-    "_f7SWS76mYW0jolImMU-O": 714
+    "chunks": 13869702,
+    "static_extras": 714
   },
-  "recorded": "2026-05-13T22:30:32.374Z"
+  "recorded": "2026-05-17T23:39:00.489Z"
 }
