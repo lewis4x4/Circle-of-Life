@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
+
+import { Button, buttonVariants } from "@/components/ui/button";
+import { CriticalAlertBanner } from "@/design-system/components/critical-alert";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 export default function CaregiverError({
   error,
@@ -38,32 +43,26 @@ export default function CaregiverError({
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-8">
-      <div className="mx-auto max-w-md space-y-4 text-center">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Page error
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Something went wrong loading this page. Your data is safe.
-        </p>
-        {error.digest && (
-          <p className="font-mono text-xs text-slate-400">
-            Ref: {error.digest}
-          </p>
-        )}
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={reset}
-            className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
-          >
-            Try again
-          </button>
-          <Link
-            href={homeHref}
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            Home
-          </Link>
-        </div>
+      <div className="mx-auto w-full max-w-md">
+        <CriticalAlertBanner
+          title="Unable to load this page"
+          description="The page did not finish loading. Try refreshing or return home. Contact support if the issue persists."
+          icon={<AlertTriangle className="h-5 w-5" aria-hidden />}
+          reference={error.digest}
+          actions={
+            <>
+              <Button onClick={reset} variant="default">
+                Retry
+              </Button>
+              <Link
+                href={homeHref}
+                className={cn(buttonVariants({ variant: "outline" }))}
+              >
+                Home
+              </Link>
+            </>
+          }
+        />
       </div>
     </div>
   );
