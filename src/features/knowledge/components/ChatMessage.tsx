@@ -65,17 +65,62 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
             </button>
             {showSources && (
               <div className="mt-2 space-y-2">
-                {sources.map((s, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[8px] border border-border bg-background p-2"
-                  >
-                    <div className="text-xs font-medium text-foreground">{s.title}</div>
-                    {s.section_title && <div className="text-[10px] text-muted-foreground">{s.section_title}</div>}
-                    <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">{s.excerpt}</div>
-                    <div className="mt-1 text-[10px] text-muted-foreground">{Math.round(s.confidence * 100)}% match</div>
-                  </div>
-                ))}
+                {sources.map((s, i) => {
+                  const href = s.anchor?.href ?? null;
+                  const compliance = s.anchor?.compliance_category ?? null;
+                  const regCite = s.anchor?.regulation_citation ?? null;
+                  const page = s.anchor?.page_number ?? null;
+                  // KB-NEXT-10: render the source card as a link when we have
+                  // a document anchor, so users can click through to verify
+                  // the cited chunk. Fall back to a static card pre-NEXT-06.
+                  const card = (
+                    <div className="rounded-[8px] border border-border bg-background p-2 hover:bg-muted/40 transition-colors">
+                      <div className="text-xs font-medium text-foreground flex items-center gap-1.5 flex-wrap">
+                        <span>{s.title}</span>
+                        {compliance ? (
+                          <span className="text-[10px] rounded border border-border px-1 py-px text-muted-foreground">
+                            {compliance}
+                          </span>
+                        ) : null}
+                        {regCite ? (
+                          <span className="text-[10px] rounded border border-border px-1 py-px text-muted-foreground">
+                            {regCite}
+                          </span>
+                        ) : null}
+                      </div>
+                      {s.section_title || page != null ? (
+                        <div className="text-[10px] text-muted-foreground">
+                          {s.section_title ?? ""}
+                          {s.section_title && page != null ? " · " : ""}
+                          {page != null ? `page ${page}` : ""}
+                        </div>
+                      ) : null}
+                      <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+                        {s.excerpt}
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>{Math.round(s.confidence * 100)}% match</span>
+                        {href ? <span className="text-primary">open ↗</span> : null}
+                      </div>
+                    </div>
+                  );
+                  return (
+                    <div key={i}>
+                      {href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block no-underline"
+                        >
+                          {card}
+                        </a>
+                      ) : (
+                        card
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

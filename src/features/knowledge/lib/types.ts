@@ -12,11 +12,28 @@ export type DocumentAuditEventRow = Database["public"]["Tables"]["document_audit
 export type DocumentAudience = "company_wide" | "department_specific" | "leadership" | "admin_owner" | "owner_only";
 export type DocumentStatus = "draft" | "pending_review" | "published" | "archived" | "ingest_failed";
 
+/**
+ * KB-NEXT-06 + KB-NEXT-10: every assistant source now carries a
+ * `CitationAnchor` (document_id, chunk_id, page_number, etc.) plus the
+ * canonical `href` deep link so the chat UI can render verifiable
+ * click-through citations rather than plain text.
+ */
+export interface CitationAnchor {
+  document_id: string | null;
+  chunk_id: string | null;
+  section_title: string | null;
+  page_number: number | null;
+  compliance_category: string | null;
+  regulation_citation: string | null;
+  href: string | null;
+}
+
 export interface KBSource {
   title: string;
   excerpt: string;
   confidence: number;
   section_title: string | null;
+  anchor?: CitationAnchor | null;
 }
 
 export interface StreamMeta {
