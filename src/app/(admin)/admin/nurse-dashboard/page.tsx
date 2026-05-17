@@ -34,15 +34,15 @@ export default function NurseDashboardPage() {
   return (
     <div className="space-y-10 pb-12">
       {/* Header */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-[var(--shadow-card)]">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-100/50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 text-[10px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-muted-foreground border border-border text-[10px] font-medium uppercase tracking-wider mb-2">
             <Zap className="w-3.5 h-3.5" /> Medication Manager
           </div>
-          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl md:text-4xl font-semibold tracking-tight text-foreground">
             Medication Dashboard
           </h1>
-          <p className="text-slate-600 dark:text-zinc-400 font-medium tracking-wide mt-2">
+          <p className="text-muted-foreground font-medium tracking-wide mt-2">
             eMAR compliance, controlled substances, and clinical oversight
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function NurseDashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Active Watches" value={brief.residentAssurance.activeWatches} icon={ShieldCheck} urgency={brief.residentAssurance.activeWatches > 0 ? "normal" : "normal"} subLabel="Residents under active watch" href="/admin/rounding/watches" />
+        <StatCard title="Active Watches" value={brief.residentAssurance.activeWatches} icon={ShieldCheck} urgency="normal" subLabel="Residents under active watch" href="/admin/rounding/watches" />
         <StatCard title="Open Escalations" value={brief.residentAssurance.openEscalations} icon={AlertTriangle} urgency={brief.residentAssurance.openEscalations > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.openEscalations > 0 ? "Requires supervisor review" : "No active escalations"} href="/admin/rounding/escalations" />
         <StatCard title="Integrity Flags" value={brief.residentAssurance.openIntegrityFlags} icon={FileWarning} urgency={brief.residentAssurance.openIntegrityFlags > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.openIntegrityFlags > 0 ? "Late-entry review pending" : "Documentation lane clear"} href="/admin/rounding/integrity" />
         <StatCard title="Critical Safety" value={brief.residentAssurance.criticalSafetyResidents} icon={Zap} urgency={brief.residentAssurance.criticalSafetyResidents > 0 ? "critical" : "normal"} subLabel={brief.residentAssurance.criticalSafetyResidents > 0 ? "Immediate attention needed" : "No critical safety scores"} href="/admin/rounding/safety" />
@@ -65,49 +65,49 @@ export default function NurseDashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <ActionTile label="Open Med Pass" href="/med-tech" gradient="bg-teal-500" />
-        <ActionTile label="Controlled Counts" href="/med-tech/controlled-count" gradient="bg-rose-500" />
-        <ActionTile label="Med Error Review" href="/admin/medications/errors?review=unreviewed" gradient="bg-amber-500" />
-        <ActionTile label="Report Incident" href="/admin/incidents/new" gradient="bg-indigo-500" />
+        <ActionTile label="Open Med Pass" href="/med-tech" primary />
+        <ActionTile label="Controlled Counts" href="/med-tech/controlled-count" />
+        <ActionTile label="Med Error Review" href="/admin/medications/errors?review=unreviewed" />
+        <ActionTile label="Report Incident" href="/admin/incidents/new" />
       </div>
 
       {/* Bottom sections */}
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Missed Doses */}
-        <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-3">
-            <FileWarning className="w-5 h-5 text-amber-500" /> Dose Alerts Today
+        <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
+          <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+            <FileWarning className="w-5 h-5 text-warning" /> Dose Alerts Today
           </h3>
           <div className="space-y-3">
-            <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-lg border border-slate-100 dark:border-white/5">
-              <span className="text-[13px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Missed / Held Doses</span>
-              <span className="text-2xl font-medium text-amber-600 dark:text-amber-400 tabular-nums">{brief.missedDosesToday}</span>
+            <div className="flex justify-between items-center bg-muted/40 p-5 rounded-[var(--radius)] border border-border">
+              <span className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">Missed / Held Doses</span>
+              <span className="text-2xl font-semibold text-warning tabular-nums">{brief.missedDosesToday}</span>
             </div>
-            <div className="flex justify-between items-center bg-white dark:bg-black/40 p-5 rounded-lg border border-slate-100 dark:border-white/5">
-              <span className="text-[13px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">PRN Given (24h)</span>
-              <span className="text-2xl font-medium text-slate-900 dark:text-white tabular-nums">{brief.prnGiven24h}</span>
+            <div className="flex justify-between items-center bg-muted/40 p-5 rounded-[var(--radius)] border border-border">
+              <span className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">PRN Given (24h)</span>
+              <span className="text-2xl font-semibold text-foreground tabular-nums">{brief.prnGiven24h}</span>
             </div>
           </div>
         </div>
 
         {/* Clinical Watchlist */}
-        <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-3">
-            <Activity className="w-5 h-5 text-rose-500" /> Clinical Watchlist
+        <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
+          <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+            <Activity className="w-5 h-5 text-destructive" /> Clinical Watchlist
           </h3>
           {brief.watchlistResidents.length === 0 ? (
-            <div className="text-center p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-lg">
-              <p className="text-sm font-medium text-slate-500">No residents flagged for medication review.</p>
+            <div className="text-center p-8 border-2 border-dashed border-border rounded-[var(--radius)]">
+              <p className="text-sm font-medium text-muted-foreground">No residents flagged for medication review.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {brief.watchlistResidents.map((r) => (
-                <div key={r.id} className="flex items-center justify-between p-4 rounded-lg bg-white border border-slate-100 dark:border-white/5 shadow-sm">
+                <div key={r.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
                   <div>
-                    <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{r.name}</span>
-                    <span className="text-xs font-medium text-slate-500 dark:text-zinc-500 ml-2">{r.room === "—" ? "Safety watch" : `Room ${r.room}`}</span>
+                    <span className="text-[15px] font-semibold text-foreground">{r.name}</span>
+                    <span className="text-xs font-medium text-muted-foreground ml-2">{r.room === "—" ? "Safety watch" : `Room ${r.room}`}</span>
                   </div>
-                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{r.reason}</span>
+                  <span className="text-xs font-medium text-warning">{r.reason}</span>
                 </div>
               ))}
             </div>
@@ -121,29 +121,34 @@ export default function NurseDashboardPage() {
 function StatCard({ title, value, icon: Icon, urgency, subLabel, href }: {
   title: string; value: string | number; icon: React.ElementType<{ className?: string }>; urgency: "critical" | "normal"; subLabel: string; href: string;
 }) {
-  const bg = urgency === "critical" ? "bg-rose-50/80 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/30" : "bg-white/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/5";
-  const text = urgency === "critical" ? "text-rose-700 dark:text-rose-400" : "text-slate-800 dark:text-zinc-200";
+  const bg = urgency === "critical" ? "bg-destructive/10 border-destructive/30" : "bg-card border-border";
+  const text = urgency === "critical" ? "text-destructive" : "text-card-foreground";
 
   return (
     <Link href={href} className="block group">
-      <div className={cn("rounded-lg p-6 lg:p-8 border transition-all hover:shadow-lg min-h-[160px] flex flex-col justify-between", bg)}>
+      <div className={cn("rounded-[var(--radius)] p-6 lg:p-8 border shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] min-h-[160px] flex flex-col justify-between", bg)}>
         <div className="flex items-start justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">{title}</span>
-          <Icon className="w-5 h-5 text-slate-400" />
+          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{title}</span>
+          <Icon className="w-5 h-5 text-muted-foreground" />
         </div>
         <div>
-          <span className={cn("text-2xl font-medium tabular-nums tracking-tight", text)}>{value}</span>
-          <p className="text-xs font-semibold text-slate-600/80 dark:text-zinc-500 mt-1">{subLabel}</p>
+          <span className={cn("text-2xl font-semibold tabular-nums tracking-tight", text)}>{value}</span>
+          <p className="text-xs font-medium text-muted-foreground mt-1">{subLabel}</p>
         </div>
       </div>
     </Link>
   );
 }
 
-function ActionTile({ label, href, gradient }: { label: string; href: string; gradient: string }) {
+function ActionTile({ label, href, primary }: { label: string; href: string; primary?: boolean }) {
   return (
     <Link href={href} className="block group">
-      <div className={cn("rounded-lg p-5 text-white font-semibold tracking-wide flex items-center justify-center transition-all hover:shadow-lg hover:scale-[1.02] text-sm", gradient)}>
+      <div className={cn(
+        "rounded-[var(--radius)] p-[15px] border font-semibold tracking-wide flex items-center justify-center transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] text-sm",
+        primary
+          ? "bg-primary text-primary-foreground border-transparent hover:bg-[var(--accent-hover)]"
+          : "bg-card text-card-foreground border-border hover:bg-secondary"
+      )}>
         {label}
       </div>
     </Link>
@@ -153,9 +158,9 @@ function ActionTile({ label, href, gradient }: { label: string; href: string; gr
 function LoadingSkeleton() {
   return (
     <div className="space-y-8 pt-2">
-      <Skeleton className="h-32 w-full rounded-lg bg-slate-200 dark:bg-white/5" />
+      <Skeleton className="h-32 w-full rounded-[var(--radius)] bg-muted" />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36 w-full rounded-lg bg-slate-200 dark:bg-white/5" />)}
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36 w-full rounded-[var(--radius)] bg-muted" />)}
       </div>
     </div>
   );
@@ -165,8 +170,8 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex h-[60vh] items-center justify-center">
       <div className="text-center">
-        <p className="text-lg text-slate-600 dark:text-zinc-400 mb-4">Unable to load medication dashboard.</p>
-        <button onClick={onRetry} className="px-6 py-3 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700">Retry</button>
+        <p className="text-lg text-muted-foreground mb-4">Unable to load medication dashboard.</p>
+        <button onClick={onRetry} className="px-6 py-3 rounded-[var(--radius)] bg-primary text-primary-foreground font-semibold hover:bg-[var(--accent-hover)]">Retry</button>
       </div>
     </div>
   );
