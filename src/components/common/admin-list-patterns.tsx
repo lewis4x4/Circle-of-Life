@@ -5,6 +5,13 @@ import { AlertTriangle, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -23,11 +30,14 @@ type AdminFilterBarProps = {
   onSearchChange: (value: string) => void;
   filters: Array<{
     id: string;
+    ariaLabel?: string;
     value: string;
     options: FilterOption[];
     onChange: (value: string) => void;
   }>;
   onReset: () => void;
+  /** Hide reset until search or filters differ from defaults (first option per filter). */
+  suppressResetUnlessDirty?: boolean;
 };
 
 export function AdminFilterBar({
@@ -36,7 +46,16 @@ export function AdminFilterBar({
   onSearchChange,
   filters,
   onReset,
+  suppressResetUnlessDirty = false,
 }: AdminFilterBarProps) {
+  const filtersActive =
+    searchValue.trim().length > 0 ||
+    filters.some((f) => {
+      const first = f.options[0]?.value;
+      return first !== undefined && f.value !== first;
+    });
+  const showReset = !suppressResetUnlessDirty || filtersActive;
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-2 md:flex-row md:items-center md:justify-between">
       <div className="relative flex w-full items-center md:max-w-md">
@@ -51,34 +70,37 @@ export function AdminFilterBar({
 
       <div className="flex flex-wrap items-center gap-1.5">
         {filters.map((filter) => (
-          <select
-            key={filter.id}
-            value={filter.value}
-            onChange={(event) => filter.onChange(event.target.value)}
-            className={cn(
-              "h-8 rounded-md border border-input bg-card px-2.5 text-[13px] text-foreground",
-              "transition-colors hover:bg-secondary/60",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "tabular-nums",
-            )}
-          >
-            {filter.options.map((option) => (
-              <option key={option.value} value={option.value} className="bg-card">
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <Select key={filter.id} value={filter.value} onValueChange={filter.onChange}>
+            <SelectTrigger
+              className="h-8 w-[min(100vw-2rem,200px)] min-w-[140px] rounded-md border border-input bg-card text-[13px] text-foreground shadow-none"
+              aria-label={filter.ariaLabel ?? filter.id}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filter.options.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="text-[13px]">
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ))}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-[12px] text-muted-foreground hover:text-foreground"
-          onClick={onReset}
-        >
-          <X className="mr-1 size-3.5" aria-hidden />
-          Reset
-        </Button>
+        {showReset ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 px-2 text-[12px]",
+              filtersActive ? "text-foreground hover:text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={onReset}
+          >
+            <X className="mr-1 size-3.5" aria-hidden />
+            Reset
+          </Button>
+        ) : null}
       </div>
     </div>
   );

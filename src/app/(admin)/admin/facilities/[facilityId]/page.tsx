@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
 import { Badge } from "@/components/ui/badge";
 import { FacilityHeader } from "@/components/admin/facilities/FacilityHeader";
+import { FacilityComplianceMetricsStrip } from "@/components/admin/facilities/FacilityComplianceMetricsStrip";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
 import { OverviewTab } from "@/components/admin/facilities/tabs/OverviewTab";
 import { RatesTab } from "@/components/admin/facilities/tabs/RatesTab";
@@ -26,6 +27,7 @@ import {
   FACILITY_TAB_LABELS,
   type FacilityTab,
 } from "@/lib/admin/facilities/facility-constants";
+import { formatFacilityDetailSubtitle } from "@/lib/admin/facilities/format-facility-metadata";
 const TABS = FACILITY_TABS.map((id) => ({
   id,
   label: FACILITY_TAB_LABELS[id],
@@ -115,12 +117,21 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
     <div className="space-y-6 pt-4 p-6 max-w-7xl mx-auto">
       <RecordDetailHeader
         title={facility.name}
-        subtitle={facility.entity_name ?? "Organization"}
+        subtitle={formatFacilityDetailSubtitle({
+          city: facility.city,
+          county: facility.county,
+          licenseNumber: facility.ahca_license_number ?? facility.license_number ?? null,
+          facilityOperationalStatus: facility.status ?? "active",
+        })}
         backLink={{ label: "Facilities", href: "/admin/facilities" }}
         statusChips={statusChip}
       />
 
-      <FacilityHeader facility={facility} />
+      {activeTab === "licensing" ? (
+        <FacilityComplianceMetricsStrip facility={facility} />
+      ) : (
+        <FacilityHeader facility={facility} />
+      )}
 
       <div className="border-b border-border overflow-x-auto">
         <FacilityTabNav activeTab={activeTab} onTabChange={onTabChange} tabs={TABS} />

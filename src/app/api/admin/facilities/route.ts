@@ -7,20 +7,7 @@ import { listActorAccessibleFacilityIds, requireAdminApiActor } from "@/lib/admi
 import { listFacilitiesQuerySchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
-import { portfolioOccupancyPercent } from "@/lib/admin/facilities/portfolio-metrics";
-
-function pickSurveyReadinessPct(summaryJson: unknown): number | null {
-  if (!summaryJson || typeof summaryJson !== "object") return null;
-  const raw = (summaryJson as Record<string, unknown>).survey_readiness_pct;
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    return Math.max(0, Math.min(100, raw));
-  }
-  if (typeof raw === "string") {
-    const n = Number(raw);
-    if (Number.isFinite(n)) return Math.max(0, Math.min(100, n));
-  }
-  return null;
-}
+import { pickSurveyReadinessPct, portfolioOccupancyPercent } from "@/lib/admin/facilities/portfolio-metrics";
 
 type StaffAdminRow = {
   id: string;

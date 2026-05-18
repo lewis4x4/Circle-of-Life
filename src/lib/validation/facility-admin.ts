@@ -14,6 +14,7 @@ import {
   SURVEY_RESULTS,
   TIMELINE_EVENT_TYPES,
   CARE_SERVICES,
+  CARE_LICENSE_SCOPE,
   CONSTRUCTION_TYPES,
   FIRE_SUPPRESSION_TYPES,
   GENERATOR_FUEL_TYPES,
@@ -40,6 +41,11 @@ export const facilityDetailQuerySchema = z.object({
   tab: z.enum(FACILITY_TABS).default('overview'),
 });
 
+const alfLicenseTypeSchema = z
+  .string()
+  .refine((val): val is (typeof CARE_LICENSE_SCOPE)[number] =>
+    (CARE_LICENSE_SCOPE as readonly string[]).includes(val));
+
 // ─── Facility Core Update ────────────────────────────────────────────────────
 
 export const updateFacilitySchema = z.object({
@@ -61,6 +67,7 @@ export const updateFacilitySchema = z.object({
   waitlist_count: z.number().int().min(0).optional(),
   opening_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   total_licensed_beds: z.number().int().min(1).optional(),
+  alf_license_type: alfLicenseTypeSchema.optional(),
   status: z.enum(['active', 'inactive', 'under_renovation', 'archived']).optional(),
 }).strict().refine(
   (data) => Object.keys(data).length > 0,

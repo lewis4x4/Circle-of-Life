@@ -2,7 +2,11 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { portfolioOccupancyBarClass, portfolioOccupancyKpiTextClass } from "@/lib/admin/facilities/portfolio-metrics";
+import {
+  portfolioOccupancyBarClass,
+  portfolioOccupancyKpiTextClass,
+  portfolioOccupancyRingStrokeClass,
+} from "@/lib/admin/facilities/portfolio-metrics";
 
 interface OccupancyGaugeProps {
   occupied: number;
@@ -18,13 +22,13 @@ export function OccupancyGauge({ occupied, total, size = "sm", portfolioSemantic
 
   if (size === "lg") {
     const circumference = 2 * Math.PI * 45;
-    const offset = circumference - (percentage / 100) * circumference;
+    const offset = circumference - (rounded / 100) * circumference;
 
-    let colorClass = "text-success";
-    if (percentage >= 90 && percentage < 95) {
-      colorClass = "text-warning";
-    } else if (percentage >= 95) {
-      colorClass = "text-destructive";
+    let ringClass = legacyRingStrokeClass(rounded);
+    let centerPctClass = "text-success";
+    if (portfolioSemantics) {
+      ringClass = portfolioOccupancyRingStrokeClass(rounded);
+      centerPctClass = portfolioOccupancyKpiTextClass(rounded);
     }
 
     return (
@@ -50,13 +54,13 @@ export function OccupancyGauge({ occupied, total, size = "sm", portfolioSemantic
               strokeDasharray={circumference}
               strokeDashoffset={offset}
               strokeLinecap="round"
-              className={cn("transition-all duration-500", colorClass)}
+              className={cn("transition-all duration-500", ringClass)}
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-3xl font-semibold tabular-nums">{rounded}%</div>
-              <div className="text-xs text-muted-foreground">
+              <div className={cn("text-3xl font-semibold tabular-nums", centerPctClass)}>{rounded}%</div>
+              <div className="text-xs text-muted-foreground tabular-nums">
                 {occupied}/{total}
               </div>
             </div>
@@ -84,6 +88,12 @@ export function OccupancyGauge({ occupied, total, size = "sm", portfolioSemantic
       </div>
     </div>
   );
+}
+
+function legacyRingStrokeClass(percentage: number): string {
+  if (percentage >= 95) return "text-destructive";
+  if (percentage >= 90) return "text-warning";
+  return "text-success";
 }
 
 function occupancyLegBarClass(percentage: number): string {

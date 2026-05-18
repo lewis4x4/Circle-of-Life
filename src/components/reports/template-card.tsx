@@ -1,55 +1,123 @@
+"use client";
+
 import Link from "next/link";
+import { Star } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Props = {
+export type TemplateCardProps = {
   slug: string;
+  templateId: string | null;
   name: string;
-  category: string;
-  description: string;
   audience: string;
+  description: string;
+  category: string;
   defaultRange: string;
-  tags: string[];
+  isNew?: boolean;
+  isPinned?: boolean;
+  pinDisabled?: boolean;
+  onTogglePin: () => void;
+  pinBusy?: boolean;
+  /** Relative phrase only (e.g. "3 days ago"); shown as "Last run … by you". */
+  lastRunRelative?: string | null;
+  scheduledSummary?: string | null;
 };
 
-export function TemplateCard(props: Props) {
+function BottomStrip(props: {
+  category: string;
+  defaultRange: string;
+  lastRunRelative?: string | null;
+  scheduledSummary?: string | null;
+}) {
+  const parts: string[] = [props.category, props.defaultRange];
+  if (props.lastRunRelative) {
+    parts.push(`Last run ${props.lastRunRelative} by you`);
+  }
+  if (props.scheduledSummary) {
+    parts.push(props.scheduledSummary);
+  }
+  return <p className="text-[12px] leading-snug text-muted-foreground/75">{parts.join(" · ")}</p>;
+}
+
+export function TemplateCard(props: TemplateCardProps) {
   return (
-    <div className="p-6 rounded-xl border border-slate-200 dark:border-white/5 bg-white/40 dark:bg-black/20 flex flex-col gap-5  shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/10 transition-all duration-300 group hover:-translate-y-1">
-      <div>
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">{props.name}</h3>
-        <p className="text-sm font-mono text-slate-500 dark:text-slate-400 leading-relaxed">{props.description}</p>
+    <div
+      className={cn(
+        "group/card relative flex min-h-[260px] max-h-[320px] flex-col rounded-lg border border-border bg-card p-4 shadow-sm transition-[box-shadow,transform] duration-100 hover:shadow-md md:p-5",
+      )}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        disabled={props.pinDisabled || props.pinBusy}
+        aria-label={
+          props.pinDisabled
+            ? "Pin unavailable until template is synced"
+            : props.isPinned
+              ? "Unpin template"
+              : "Pin template"
+        }
+        aria-pressed={props.isPinned}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (props.pinDisabled) return;
+          props.onTogglePin();
+        }}
+        className={cn(
+          "absolute right-3 top-3 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground",
+          props.isPinned && "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300",
+          props.pinDisabled && "opacity-40 hover:text-muted-foreground",
+        )}
+      >
+        <Star className={cn("size-4", props.isPinned && "fill-current")} aria-hidden />
+      </Button>
+
+      <div className="flex min-h-0 flex-1 flex-col pr-8">
+        <div className="flex flex-wrap items-start gap-2">
+          <h3 className="text-base font-semibold leading-snug tracking-tight text-foreground">{props.name}</h3>
+          {props.isNew ? (
+            <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[11px] font-medium normal-case">
+              New
+            </Badge>
+          ) : null}
+        </div>
+
+        <p className="mt-1 text-sm text-muted-foreground">For {props.audience}</p>
+
+        <p className="mt-2 line-clamp-3 flex-1 text-sm font-normal leading-relaxed text-muted-foreground">
+          {props.description}
+        </p>
+
+        <div className="mt-4 min-h-0">
+          <BottomStrip
+            category={props.category}
+            defaultRange={props.defaultRange}
+            lastRunRelative={props.lastRunRelative}
+            scheduledSummary={props.scheduledSummary}
+          />
+        </div>
       </div>
 
-      <div className="space-y-1.5 text-[11px] uppercase tracking-wider font-mono text-slate-600 dark:text-slate-300">
-        <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-          <span className="font-bold text-slate-900 dark:text-white shrink-0">Category:</span>
-          <span className="text-slate-500 dark:text-slate-400">{props.category}</span>
-        </p>
-        <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-          <span className="font-bold text-slate-900 dark:text-white shrink-0">Audience:</span>
-          <span className="text-slate-500 dark:text-slate-400">{props.audience}</span>
-        </p>
-        <p className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-          <span className="font-bold text-slate-900 dark:text-white shrink-0">Default range:</span>
-          <span className="text-slate-500 dark:text-slate-400">{props.defaultRange}</span>
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-2 pt-1">
-        {props.tags.map((tag) => (
-          <Badge key={tag} className="bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border border-slate-200 dark:border-white/10 shadow-sm px-2">
-            {tag}
-          </Badge>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-200 dark:border-white/5 mt-auto">
-        <Link href={`/admin/reports/templates/${props.slug}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-white/50 dark:bg-white/5 font-mono uppercase tracking-wider text-[10px] w-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white")}>
+      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
+        <Link
+          href={`/admin/reports/templates/${props.slug}`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full rounded-md font-normal")}
+        >
           Preview
         </Link>
-        <Link href={`/admin/reports/run/template/${props.slug}`} className={cn(buttonVariants({ variant: "default", size: "sm" }), "font-mono uppercase tracking-wider text-[10px] w-full shadow-lg")}>
+        <Link
+          href={`/admin/reports/run/template/${props.slug}`}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "w-full rounded-md font-normal transition-colors",
+            "group-hover/card:border-primary group-hover/card:bg-primary group-hover/card:text-primary-foreground group-hover/card:shadow-sm",
+            "focus-visible:border-primary focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:shadow-sm",
+          )}
+        >
           Run now
         </Link>
       </div>

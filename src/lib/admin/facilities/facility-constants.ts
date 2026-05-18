@@ -172,7 +172,58 @@ export const SURVEY_RESULTS = [
 
 export type SurveyResult = (typeof SURVEY_RESULTS)[number];
 
-// ─── Timeline Event Types ────────────────────────────────────────────────────
+/** Canonical human labels for AHCA-assisted living survey/disposition outcomes stored as snake_case. */
+export function surveyResultDisplayLabel(raw: string | null | undefined): string {
+  if (raw == null || raw.trim() === "") return "—";
+  const key = raw.trim();
+  const aliases: Record<string, string> = {
+    NO_CITATIONS: "No citations",
+    citations_issued: "Citations issued",
+    deficiencies_cited: "Deficiencies cited",
+    immediate_jeopardy: "Immediate jeopardy",
+    conditional: "Conditional licensure",
+    under_review: "Under review",
+    with_citations: "With citations",
+    no_citations: "No citations",
+    PASSED_NO_CITATIONS: "Passed — no citations",
+    PASSED_WITH_CITATIONS: "Passed — with citations",
+    unknown: "Not recorded",
+  };
+  const direct = aliases[key] ?? aliases[key.toLowerCase()];
+  if (direct) return direct;
+  if ((SURVEY_RESULTS as readonly string[]).includes(key)) {
+    const mapByEnum: Record<SurveyResult, string> = {
+      no_citations: "No citations",
+      citations_issued: "Citations issued",
+      immediate_jeopardy: "Immediate jeopardy",
+      conditional: "Conditional licensure",
+    };
+    return mapByEnum[key as SurveyResult];
+  }
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function surveyTypeDisplayLabel(raw: string | null | undefined): string {
+  const s = (raw ?? "").trim();
+  if (!s) return "—";
+  const lower = s.toLowerCase();
+  const map: Record<string, string> = {
+    annual: "Annual inspection",
+    complaint: "Complaint survey",
+    follow_up: "Follow-up survey",
+    change_of_ownership: "Change of ownership",
+    initial: "Initial licensure survey",
+    abbreviated: "Abbreviated inspection",
+    routine: "Routine inspection",
+    other: "Other survey visit",
+  };
+  if (map[lower]) return map[lower]!;
+  return s
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export const TIMELINE_EVENT_TYPES = [
   'opened', 'ownership_change', 'administrator_change', 'renovation',
@@ -183,20 +234,35 @@ export const TIMELINE_EVENT_TYPES = [
 
 export type TimelineEventType = (typeof TIMELINE_EVENT_TYPES)[number];
 
-// ─── Care Services ───────────────────────────────────────────────────────────
-// CRITICAL: Never include 'memory_care' — COL uses 'enhanced_alf_services'
+// ─── Care / license scope ────────────────────────────────────────────────────
+// CRITICAL: Never include `memory_care` — COL uses Enhanced ALF or standard ALF nomenclature.
+// License pathway (exactly ONE per AHCA-assisted living license tier) ≠ optional add-ons.
 
-export const CARE_SERVICES = [
-  'standard_alf', 'enhanced_alf_services', 'respite_care', 'adult_day_services',
+export const CARE_LICENSE_SCOPE = [
+  'standard_alf',
+  'enhanced_alf_services',
+  'limited_mental_health',
+  'limited_nursing',
 ] as const;
+
+export type CareLicenseScope = (typeof CARE_LICENSE_SCOPE)[number];
+
+export const CARE_SERVICE_ADDONS = ['respite_care', 'adult_day_services'] as const;
+
+export type CareServiceAddon = (typeof CARE_SERVICE_ADDONS)[number];
+
+/** Union of selectable care rows in facility admin UI (radios + checkboxes combined on save). */
+export const CARE_SERVICES = [...CARE_LICENSE_SCOPE, ...CARE_SERVICE_ADDONS] as const;
 
 export type CareService = (typeof CARE_SERVICES)[number];
 
 export const CARE_SERVICE_LABELS: Record<CareService, string> = {
-  standard_alf: 'Standard ALF',
-  enhanced_alf_services: 'Enhanced ALF Services',
-  respite_care: 'Respite Care',
-  adult_day_services: 'Adult Day Services',
+  standard_alf: 'Standard ALF license',
+  enhanced_alf_services: 'Enhanced assisted living services',
+  limited_mental_health: 'Limited mental health (ALF tier)',
+  limited_nursing: 'Limited nursing services (ALF tier)',
+  respite_care: 'Respite care',
+  adult_day_services: 'Adult day services',
 };
 
 // ─── Building Profile Enums ──────────────────────────────────────────────────

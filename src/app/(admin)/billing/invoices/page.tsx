@@ -9,9 +9,9 @@ export default function AdminBillingInvoicesPage() {
       <BillingHubNav />
       <BillingInvoiceLedger
         title="Invoices"
-        description="Full invoice ledger with filters. Open a row for line items and totals."
+        layout="standard"
         cardTitle="All invoices"
-        cardDescription="Sorted by invoice date (newest first), scoped by facility when selected."
+        cardDescription="Full ledger with filters. Open a row for line items and totals. Sorted by invoice date (newest first); scoped when a facility is selected."
       />
     </div>
   );

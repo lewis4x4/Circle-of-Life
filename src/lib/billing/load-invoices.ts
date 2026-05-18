@@ -14,6 +14,8 @@ export type BillingRow = {
   payerType: PayerTypeUi;
   status: InvoiceStatusUi;
   amountDueCents: number;
+  /** YYYY-MM-DD from DB — aging buckets / semantics */
+  dueDateIso: string;
   dueDate: string;
   updatedAt: string;
 };
@@ -77,10 +79,29 @@ export async function fetchInvoicesFromSupabase(
       payerType: mapDbPayerTypeToUi(inv.payer_type),
       status: mapDbInvoiceStatusToUi(inv.status),
       amountDueCents: Math.max(0, inv.balance_due),
+      dueDateIso: inv.due_date?.slice(0, 10) ?? "",
       dueDate: formatDueDisplay(inv.due_date, inv.status),
       updatedAt: formatUpdatedAt(inv.updated_at),
     };
   });
+}
+
+/** Same resident cohort semantics as census / KPI reads (facility scope optional). */
+export async function fetchActiveResidentCountForBillingScope(
+  selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
+): Promise<number> {
+  let rq = supabase
+    .from("residents" as never)
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null)
+    .in("status", ["active", "hospital_hold", "loa"]);
+  if (isValidFacilityIdForQuery(selectedFacilityId)) {
+    rq = rq.eq("facility_id", selectedFacilityId!);
+  }
+  const result = await rq as unknown as { count: number | null; error: QueryError | null };
+  if (result.error || result.count == null) return 0;
+  return result.count;
 }
 
 export function mapDbPayerTypeToUi(value: string | null): PayerTypeUi {

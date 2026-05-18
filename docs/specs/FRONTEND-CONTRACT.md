@@ -274,3 +274,20 @@ Applies to **dense operational hub listings** where each row navigates as a prim
 
 - **Above the canvas:** **`AdminFilterBar`** for hub search/select filters; **`AdminTableLoadingState`**, **`AdminEmptyState`**, **`AdminLiveDataFallbackNotice`**, **`AdminErrorState`** remain the canonical non-row states.
 
+## 9) Facility detail — Admin Facilities (Quiet Operator · reference)
+
+Applies to **`/admin/facilities/[facilityId]`** (**`OverviewTab`**, **`LicensingTab`** where survey copy appears, and shared facility chrome).
+
+- **Typography:** **Sentence case**, Geist sans. **`tabular-nums`** only for quantities; **never** **`font-mono` + uppercase + wide tracking** on KPI labels, tabs, chips, buttons, or table headers unless the value itself is an identifier/code.
+
+- **Subtitle:** **`formatFacilityDetailSubtitle`** — facility facts (**`Facility · {city}, {county} · {n} licensed beds`**), not a legal-entity substitution for facility type.
+
+- **KPI strip:** Differentiated metrics vs Overview cards (**open incidents**, **labor_cost_mtd_pct**, **survey readiness**, **days since last survey**).
+
+- **Occupancy hues:** **`portfolioOccupancyKpiTextClass`** / **`portfolioOccupancyRingStrokeClass`** (**0 muted**, **&lt;60 warning**, **60–89 success**, **≥90 info**).
+
+- **Survey enums:** **`surveyResultDisplayLabel`** — no raw **`no_citations`** strings in UI copy.
+
+- **Quiet positives:** **`CircleCheck`** + **`text-success`** for stable “no alerts” states; **`OccupancyGauge` large ring** suppressed at **zero census** — explicit **pct · occupied / licensed** summary instead.
+
+- **Standup bed inventory:** One **vacant-bed assignment** headline (**X of Y open beds …**); inline breakdown of category counts; **`localeCompare` numeric** ordering for **`room_number`**. **Auto-save** on availability dropdown and blocked checkbox; **debounced persist** on blocked-reason inputs (drop per-row **Save**).

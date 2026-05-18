@@ -100,7 +100,7 @@ export function RecordDetailSection({
       {/* Section header row — title + optional action */}
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold tracking-normal normal-case text-foreground">{title}</h2>
+          <h2 className={cn("text-[14px] font-semibold tracking-normal normal-case text-foreground")}>{title}</h2>
           {description && (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           )}

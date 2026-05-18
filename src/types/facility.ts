@@ -98,6 +98,10 @@ export interface FacilityRow extends BaseFacilityRow {
   survey_readiness_pct?: number | null;
   portfolio_open_incidents_total?: number;
   portfolio_open_incidents_level_3?: number;
+  /** Survey deficiency rows not yet corrected/verified (detail API enrichment). */
+  open_survey_deficiencies_count?: number;
+  /** user_profiles.full_name from facilities.updated_by (detail API). */
+  profile_last_saved_by_full_name?: string | null;
   /** Labor dollars as percent of census revenue — pending finance aggregate; UI uses em-dash when null */
   labor_cost_mtd_pct?: number | null;
 }

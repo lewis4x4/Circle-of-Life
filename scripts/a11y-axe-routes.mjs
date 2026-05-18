@@ -104,7 +104,10 @@ async function main() {
       );
       let builder = new AxeBuilder({ page });
       if (hasAppRoot) {
-        builder = builder.include("#haven-app-root");
+        // Scoping to the app shell excludes <head>; document-level rules then false-positive.
+        builder = builder
+          .include("#haven-app-root")
+          .disableRules(["document-title", "html-has-lang"]);
       }
       const results = await builder.exclude("nextjs-portal").analyze();
       const serious = results.violations.filter((v) =>

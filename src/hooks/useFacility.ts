@@ -13,12 +13,23 @@ function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRo
     null;
   const occ = f.occupancy_count ?? f.current_occupancy ?? 0;
   const beds = f.total_beds ?? f.licensed_beds ?? f.total_licensed_beds ?? 0;
+
+  const openRaw = raw["open_survey_deficiencies_count"];
+  const openSurveyDeficiencies =
+    typeof openRaw === "number" && Number.isFinite(openRaw) ? openRaw : f.open_survey_deficiencies_count;
+
+  const profileSaver = raw["profile_last_saved_by_full_name"];
+  const profileResolved =
+    typeof profileSaver === "string" ? profileSaver : (f.profile_last_saved_by_full_name ?? null);
+
   return {
     ...f,
     entity_name: entityName,
     current_occupancy: occ,
     licensed_beds: beds,
     ahca_license_number: f.ahca_license_number ?? f.license_number ?? null,
+    open_survey_deficiencies_count: openSurveyDeficiencies,
+    profile_last_saved_by_full_name: profileResolved,
   } as FacilityDetailRow;
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface TabConfig {
   id: string;
@@ -15,16 +16,19 @@ interface FacilityTabNavProps {
 
 export function FacilityTabNav({ activeTab, onTabChange, tabs }: FacilityTabNavProps) {
   return (
-    <div className="flex gap-1 border-b border-gray-200 overflow-x-auto scrollbar-hide">
+    <div className="flex gap-1 overflow-x-auto border-b border-border scrollbar-hide">
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          type="button"
           onClick={() => onTabChange(tab.id)}
-          className={`px-6 py-4 text-[11px] font-mono tracking-widest uppercase font-semibold whitespace-nowrap transition-all border-b-[3px] -mb-[1px] relative top-[1px] ${
+          className={cn(
+            "relative whitespace-nowrap px-6 py-3 text-[13px] font-medium transition-colors",
+            "border-b-2 -mb-px rounded-none",
             activeTab === tab.id
-              ? "border-teal-500 text-teal-700 dark:text-teal-300 bg-teal-50/50 dark:bg-teal-500/10"
-              : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-amber-100 hover:bg-slate-50/50 dark:hover:bg-white/5"
-          }`}
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground",
+          )}
         >
           {tab.label}
         </button>

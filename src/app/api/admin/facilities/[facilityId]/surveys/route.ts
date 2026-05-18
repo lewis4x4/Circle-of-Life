@@ -87,7 +87,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
         survey_date: lastSurveyDate,
         survey_type: "annual",
         result: lastSurveyResult ?? "unknown",
-        citation_count: lastSurveyResult === "no_citations" ? 0 : 1,
+        citation_count: 0,
         citation_details: null,
         poc_submitted_date: null,
         poc_accepted_date: null,

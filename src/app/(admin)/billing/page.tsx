@@ -6,7 +6,11 @@ import {
   SELECTED_FACILITY_COOKIE,
   parseSelectedFacilityCookieValue,
 } from "@/lib/facilities/selected-facility-cookie";
-import { fetchInvoicesFromSupabase, type BillingRow } from "@/lib/billing/load-invoices";
+import {
+  fetchInvoicesFromSupabase,
+  fetchActiveResidentCountForBillingScope,
+  type BillingRow,
+} from "@/lib/billing/load-invoices";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminBillingPage() {
@@ -18,9 +22,11 @@ export default async function AdminBillingPage() {
   const supabase = await createClient();
   let initialRows: BillingRow[] = [];
   let initialError: string | null = null;
+  let initialCohortCount = 0;
 
   try {
     initialRows = await fetchInvoicesFromSupabase(initialFacilityId, null, supabase);
+    initialCohortCount = await fetchActiveResidentCountForBillingScope(initialFacilityId, supabase);
   } catch (error) {
     initialError = error instanceof Error ? error.message : "Failed to load data";
   }
@@ -30,9 +36,11 @@ export default async function AdminBillingPage() {
       <BillingHubNav />
 
       <BillingInvoiceLedger
+        layout="overview"
         initialRows={initialRows}
         initialError={initialError}
         initialFacilityId={initialFacilityId}
+        initialCohortResidentCount={initialCohortCount}
       />
     </div>
   );

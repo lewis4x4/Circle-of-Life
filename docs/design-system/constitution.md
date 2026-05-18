@@ -14,3 +14,9 @@ This file adds **repo-local execution rules** that extend the handoff. For the f
 **Theme locks:** Chrome variables are tuned per forced theme — operator light + family (forced-light warm canvas) share the deeper chrome bands; caregiver and admin-dark use slightly **lighter** chrome than light-mode defaults so hierarchy holds over a dark canvas.
 
 **Active rail items:** Background `--chrome-active`, **2px** leading edge `var(--primary)`, text/icons `--chrome-foreground`.
+
+## Typography — monospace scope (rule 12)
+
+Monospace is for **code-like values**: UUIDs, license numbers, account numbers, version strings, and ISO timestamps where machine-readability matters.
+
+Monospace is **not** for section labels, metadata labels, category or taxonomy values, audience labels, button text, navigation, or descriptions. When in doubt, use Geist Sans (default body / `font-sans`).

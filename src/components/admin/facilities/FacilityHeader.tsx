@@ -1,46 +1,80 @@
 "use client";
 
 import React from "react";
+import { cn } from "@/lib/utils";
 import type { FacilityRow } from "@/types/facility";
+import {
+  portfolioLaborCostTextClass,
+  portfolioOccupancyKpiTextClass,
+} from "@/lib/admin/facilities/portfolio-metrics";
 
-interface FacilityHeaderProps {
+function daysSinceLastSurvey(date: string | null | undefined): number | null {
+  if (date == null || typeof date !== "string" || date.trim() === "") return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  const diffMs = Date.now() - d.getTime();
+  return Math.max(0, Math.floor(diffMs / 86_400_000));
+}
+
+interface FacilityOperationsMetricsStripProps {
   facility: FacilityRow;
 }
 
-export function FacilityHeader({ facility }: FacilityHeaderProps) {
-  const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
-  const licensedBeds =
-    facility.total_licensed_beds ?? facility.licensed_beds ?? facility.total_beds ?? 0;
-  const occupancyPercent = licensedBeds > 0 ? Math.round((occupiedBeds / licensedBeds) * 100) : 0;
+/** Operations KPI strip for facility Overview and related contexts. */
+export function FacilityOperationsMetricsStrip({ facility }: FacilityOperationsMetricsStripProps) {
+  const openIncidents = facility.portfolio_open_incidents_total ?? 0;
+  const level3 = facility.portfolio_open_incidents_level_3 ?? 0;
+  const readiness = facility.survey_readiness_pct;
+  const laborPct = facility.labor_cost_mtd_pct;
+  const days = daysSinceLastSurvey(facility.last_survey_date);
+
+  const laborOk = typeof laborPct === "number" && Number.isFinite(laborPct);
+  const readinessOk = typeof readiness === "number" && Number.isFinite(readiness);
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Licensed beds</p>
-        <p className="mt-2 text-3xl tabular-nums font-semibold text-foreground">{licensedBeds}</p>
+        <p className="text-[13px] text-muted-foreground">Open incidents</p>
+        <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{openIncidents}</p>
+        {level3 > 0 ? (
+          <p className="mt-1 text-[12px] tabular-nums text-warning">{level3} level 3 open</p>
+        ) : null}
       </div>
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Occupancy</p>
-        <p className="mt-2 text-3xl tabular-nums font-semibold text-foreground">
-          {occupancyPercent}%
-          <span className="text-xs font-normal text-muted-foreground ml-2 tabular-nums">({occupiedBeds})</span>
+        <p className="text-[13px] text-muted-foreground">Labor cost (MTD)</p>
+        <p
+          className={cn(
+            "mt-2 text-3xl font-semibold tabular-nums",
+            laborOk ? portfolioLaborCostTextClass(laborPct!) : "text-muted-foreground",
+          )}
+        >
+          {laborOk ? `${Math.round(laborPct)}%` : "—"}
+        </p>
+        <p className="mt-1 text-[12px] text-muted-foreground">Share of census revenue</p>
+      </div>
+
+      <div className="rounded-[8px] border border-border bg-muted/10 p-5">
+        <p className="text-[13px] text-muted-foreground">Survey readiness</p>
+        <p
+          className={cn(
+            "mt-2 text-3xl font-semibold tabular-nums",
+            readinessOk ? portfolioOccupancyKpiTextClass(readiness!) : "text-muted-foreground",
+          )}
+        >
+          {readinessOk ? `${Math.round(readiness)}%` : "—"}
         </p>
       </div>
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Waitlist</p>
-        <p className="mt-2 text-3xl tabular-nums font-semibold text-foreground">{facility.waitlist_count ?? 0}</p>
-      </div>
-
-      <div className="rounded-[8px] border border-border bg-muted/10 p-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Last survey</p>
-        <p className="mt-3 text-sm font-semibold text-foreground">
-          {facility.last_survey_date
-            ? new Date(facility.last_survey_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-            : "Never"}
+        <p className="text-[13px] text-muted-foreground">Days since survey</p>
+        <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+          {typeof days === "number" ? days : "—"}
         </p>
       </div>
     </div>
   );
 }
+
+/** @deprecated Prefer `FacilityOperationsMetricsStrip`; kept for transitional imports on older routes. */
+export const FacilityHeader = FacilityOperationsMetricsStrip;

@@ -351,9 +351,8 @@ export default function ResidentBillingPage() {
 
         <BillingInvoiceLedger
           title="Invoices"
-          description={`Open and historical invoices for ${residentName}.`}
           cardTitle="Resident invoices"
-          cardDescription="Scoped to this resident; facility filter still applies when set."
+          cardDescription={`Open and historical invoices for ${residentName}. Scoped to this resident; facility selector still applies when set.`}
           residentIdFilter={residentId}
         />
       </div>

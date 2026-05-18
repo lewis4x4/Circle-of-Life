@@ -8,6 +8,7 @@ import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-au
 import { updateFacilitySchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { pickSurveyReadinessPct } from "@/lib/admin/facilities/portfolio-metrics";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -86,6 +87,67 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     if (b.is_occupied) occupancy_count++;
   }
 
+  let portfolio_open_incidents_total = 0;
+  let portfolio_open_incidents_level_3 = 0;
+  let survey_readiness_pct: number | null = null;
+
+  const orgId = actor.organization_id!;
+  const [incRes, riskLatestRes, deficienciesOpenCountRes] = await Promise.all([
+    untypedAdmin
+      .from("incidents")
+      .select("status, severity")
+      .eq("organization_id", orgId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null),
+    untypedAdmin
+      .from("risk_score_snapshots")
+      .select("summary_json")
+      .eq("organization_id", orgId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .order("computed_at", { ascending: false })
+      .limit(1),
+    untypedAdmin
+      .from("survey_deficiencies")
+      .select("id", { count: "exact", head: true })
+      .eq("facility_id", facilityId)
+      .eq("organization_id", orgId)
+      .is("deleted_at", null)
+      .not("status", "in", "(corrected,verified)"),
+  ]);
+
+  const incRows =
+    (((incRes as { data?: unknown }).data ?? []) as unknown as Array<{ status: string; severity: string }>) ?? [];
+
+  for (const inc of incRows) {
+    if (inc.status === "closed" || inc.status === "resolved") continue;
+    portfolio_open_incidents_total += 1;
+    if (inc.severity === "level_3") portfolio_open_incidents_level_3 += 1;
+  }
+
+  const riskLatestArray =
+    (((riskLatestRes as { data?: unknown }).data ?? []) as unknown as Array<{ summary_json: unknown }>) ?? [];
+  const latestRisk = riskLatestArray[0] ?? null;
+  if (latestRisk) survey_readiness_pct = pickSurveyReadinessPct(latestRisk.summary_json);
+
+  const defCountRaw = (deficienciesOpenCountRes as { count?: number | null }).count;
+  const open_survey_deficiencies_count =
+    typeof defCountRaw === "number" && Number.isFinite(defCountRaw) ? defCountRaw : 0;
+
+  let profile_last_saved_by_full_name: string | null = null;
+  const ub = (fac as { updated_by?: string | null }).updated_by;
+  const touchUid = typeof ub === "string" ? ub.trim() : "";
+  if (touchUid.length > 0) {
+    const { data: touchProfile } = await admin
+      .from("user_profiles")
+      .select("full_name")
+      .eq("id", touchUid)
+      .is("deleted_at", null)
+      .maybeSingle();
+    const fn = typeof touchProfile?.full_name === "string" ? touchProfile.full_name.trim() : "";
+    profile_last_saved_by_full_name = fn.length > 0 ? fn : null;
+  }
+
   const entityName =
     (entity?.legal_name as string | undefined) ??
     (entity?.dba_name as string | undefined) ??
@@ -102,6 +164,12 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
       licensed_beds: fac.total_licensed_beds ?? 0,
       ahca_license_number: fac.license_number ?? fac.ahca_license_number ?? null,
       ahca_license_expiration: fac.license_expiration ?? fac.ahca_license_expiration ?? null,
+      portfolio_open_incidents_total,
+      portfolio_open_incidents_level_3,
+      survey_readiness_pct,
+      labor_cost_mtd_pct: null as number | null,
+      open_survey_deficiencies_count,
+      profile_last_saved_by_full_name,
     },
   });
 }
@@ -151,7 +219,10 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   }
 
   // Build update payload
-  const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const updatePayload: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+    updated_by: actor.id,
+  };
   if (updates.name !== undefined) updatePayload.name = updates.name;
   if (updates.phone !== undefined) updatePayload.phone = updates.phone;
   if (updates.fax !== undefined) updatePayload.fax = updates.fax;
@@ -174,6 +245,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   if (updates.opening_date !== undefined) updatePayload.opening_date = updates.opening_date;
   if (updates.total_licensed_beds !== undefined) updatePayload.total_licensed_beds = updates.total_licensed_beds;
   if (updates.status !== undefined) updatePayload.status = updates.status;
+  if (updates.alf_license_type !== undefined) updatePayload.alf_license_type = updates.alf_license_type;
 
   const { data: updated, error: updateErr } = await admin
     .from("facilities")

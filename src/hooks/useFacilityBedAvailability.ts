@@ -80,7 +80,17 @@ export function useFacilityBedAvailability(facilityId: string) {
             is_temporarily_blocked: Boolean(row.is_temporarily_blocked),
             blocked_reason: row.blocked_reason,
           }))
-          .sort((a, b) => `${a.room_number}-${a.bed_label}`.localeCompare(`${b.room_number}-${b.bed_label}`)),
+          .sort((a, b) => {
+            const roomCmp = String(a.room_number).localeCompare(String(b.room_number), undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
+            if (roomCmp !== 0) return roomCmp;
+            return String(a.bed_label).localeCompare(String(b.bed_label), undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
+          }),
       );
     } catch (loadError) {
       setRows([]);

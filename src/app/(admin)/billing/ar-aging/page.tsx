@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Timer, UserCircle } from "lucide-react";
 
 import {
@@ -54,7 +55,21 @@ function daysPastDue(dueDate: string): number {
   return Math.max(0, Math.floor(ms / (24 * 60 * 60 * 1000)));
 }
 
-export default function AdminArAgingPage() {
+function bucketLabel(bucket: string | null): string | null {
+  if (!bucket) return null;
+  const labels: Record<string, string> = {
+    current: "Current (0–30 days past due)",
+    "31-60": "31–60 days past due",
+    "61-90": "61–90 days past due",
+    "91-plus": "91+ days past due",
+  };
+  return labels[bucket] ?? null;
+}
+
+function AdminArAgingPageContent() {
+  const searchParams = useSearchParams();
+  const bucketFilter = searchParams.get("bucket");
+
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<Row[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,6 +161,16 @@ export default function AdminArAgingPage() {
     );
   }, [rows]);
 
+  const filteredRows = useMemo(() => {
+    const b = bucketFilter;
+    if (!b) return rows;
+    if (b === "current") return rows.filter((r) => r.b0_30 > 0);
+    if (b === "31-60") return rows.filter((r) => r.b31_60 > 0);
+    if (b === "61-90") return rows.filter((r) => r.b61_90 > 0);
+    if (b === "91-plus") return rows.filter((r) => r.b91 > 0);
+    return rows;
+  }, [rows, bucketFilter]);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <></>
@@ -163,6 +188,16 @@ export default function AdminArAgingPage() {
             </p>
           </div>
         </header>
+
+        {bucketLabel(bucketFilter) ? (
+          <div className="rounded-lg border border-border bg-muted/30 px-4 py-2 text-[13px] text-muted-foreground">
+            Showing residents with open balances in:{" "}
+            <strong className="font-medium text-foreground">{bucketLabel(bucketFilter)}</strong>.{" "}
+            <Link href="/admin/billing/ar-aging" className="text-primary underline">
+              Clear filter
+            </Link>
+          </div>
+        ) : null}
 
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
@@ -213,19 +248,29 @@ export default function AdminArAgingPage() {
         {!isLoading && rows.length === 0 && !error ? (
           <AdminEmptyState title="No open AR" description="Paid, void, and zero-balance invoices are excluded." />
         ) : null}
-        
-        {!isLoading && rows.length > 0 ? (
-          <div className="p-6 sm:p-8 rounded-lg border border-border bg-card shadow-sm relative overflow-hidden transition-all">
-            <div className="mb-6 border-b border-border pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-foreground mt-1">Outstanding by Resident</h3>
-              <p className="text-[10px] font-mono tracking-wider text-muted-foreground mt-1 uppercase">
-                 Sorted descending
-              </p>
+
+        {!isLoading && rows.length > 0 && filteredRows.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card px-4 py-6 shadow-[var(--shadow-card)] ring-1 ring-border/60">
+            <p className="text-[13px] font-semibold text-foreground">No AR in this bucket</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+              No residents carry open balances in this aging window for the current scope.{" "}
+              <Link href="/admin/billing/ar-aging" className="text-primary underline">
+                Clear filter
+              </Link>
+            </p>
+          </div>
+        ) : null}
+
+        {!isLoading && filteredRows.length > 0 ? (
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
+            <div className="mb-6 flex flex-col justify-between gap-2 border-b border-border pb-4 sm:flex-row sm:items-center">
+              <h3 className="text-xl font-semibold text-foreground">Outstanding by resident</h3>
+              <p className="text-[12px] text-muted-foreground">Sorted by total descending</p>
             </div>
-            
+
             <div className="relative z-10">
-               <MotionList className="space-y-3">
-                  {rows.map((r) => (
+              <MotionList className="space-y-3">
+                {filteredRows.map((r) => (
                     <MotionItem key={r.residentId}>
                       <Link
                         href={`/admin/residents/${r.residentId}/billing`}
@@ -290,5 +335,15 @@ export default function AdminArAgingPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function AdminArAgingPage() {
+  return (
+    <Suspense
+      fallback={<div className="rounded-xl border border-border bg-card p-6 text-[13px] text-muted-foreground">Loading AR aging…</div>}
+    >
+      <AdminArAgingPageContent />
+    </Suspense>
   );
 }
