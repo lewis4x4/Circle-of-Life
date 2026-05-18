@@ -42,18 +42,22 @@ type ResidentRow = Pick<Database["public"]["Tables"]["residents"]["Row"], "id" |
 type FacilityEntityRow = Pick<Database["public"]["Tables"]["facilities"]["Row"], "id" | "entity_id">;
 type ObservationRow = Pick<
   Database["public"]["Tables"]["resident_observation_logs"]["Row"],
-  "quick_status" | "exception_present"
+  "resident_id" | "quick_status" | "exception_present"
 >;
-type IncidentRow = Pick<Database["public"]["Tables"]["incidents"]["Row"], "category" | "severity">;
+type IncidentRow = Pick<
+  Database["public"]["Tables"]["incidents"]["Row"],
+  "resident_id" | "category" | "severity"
+>;
 type EmarRow = Pick<
   Database["public"]["Tables"]["emar_records"]["Row"],
-  "status" | "is_prn" | "prn_effectiveness_result"
+  "resident_id" | "status" | "is_prn" | "prn_effectiveness_result"
 >;
 type AssessmentRow = Pick<
   Database["public"]["Tables"]["assessments"]["Row"],
-  "assessment_type" | "total_score"
+  "resident_id" | "assessment_type" | "total_score"
 >;
 type SafetyScoreRow = {
+  resident_id: string;
   score: number | null;
   risk_tier: string | null;
   score_delta: number | null;
@@ -181,63 +185,162 @@ export async function POST(request: Request) {
     ((facilityResult.data ?? []) as FacilityEntityRow[]).map((facility) => [facility.id, facility.entity_id]),
   );
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  let insightsGenerated = 0;
-  let alertsCreated = 0;
+  const residentIds = residents.map((resident) => resident.id);
 
-  for (const resident of residents) {
-    const [observationResult, incidentResult, emarResult, scoreResult, assessmentResult] = await Promise.all([
+  const [batchedObservationResult, batchedIncidentResult, batchedEmarResult, batchedScoreResult, batchedAssessmentResult] =
+    await Promise.all([
       auth.actor.admin
         .from("resident_observation_logs")
-        .select("quick_status, exception_present")
-        .eq("resident_id", resident.id)
+        .select("resident_id, quick_status, exception_present")
+        .in("resident_id", residentIds)
         .gte("observed_at", since)
         .is("deleted_at", null),
       auth.actor.admin
         .from("incidents")
-        .select("category, severity")
-        .eq("resident_id", resident.id)
+        .select("resident_id, category, severity")
+        .in("resident_id", residentIds)
         .gte("created_at", since)
         .is("deleted_at", null),
       auth.actor.admin
         .from("emar_records")
-        .select("status, is_prn, prn_effectiveness_result")
-        .eq("resident_id", resident.id)
+        .select("resident_id, status, is_prn, prn_effectiveness_result")
+        .in("resident_id", residentIds)
         .gte("scheduled_time", since)
         .is("deleted_at", null),
       (auth.actor.admin
         .from("resident_safety_scores" as never)
-        .select("score, risk_tier, score_delta")
-        .eq("resident_id" as never, resident.id as never)
+        .select("resident_id, score, risk_tier, score_delta, computed_at")
+        .in("resident_id" as never, residentIds as never)
         .is("deleted_at" as never, null as never)
-        .order("computed_at" as never, { ascending: false })
-        .limit(1)
-        .maybeSingle() as unknown as Promise<{
-        data: SafetyScoreRow | null;
+        .order("computed_at" as never, { ascending: false }) as unknown as Promise<{
+        data: SafetyScoreRow[] | null;
         error: { message: string } | null;
       }>),
       auth.actor.admin
         .from("assessments")
-        .select("assessment_type, total_score")
-        .eq("resident_id", resident.id)
+        .select("resident_id, assessment_type, total_score")
+        .in("resident_id", residentIds)
         .gte("created_at", since)
         .is("deleted_at", null),
     ]);
 
-    const loadError =
-      observationResult.error ??
-      incidentResult.error ??
-      emarResult.error ??
-      scoreResult.error ??
-      assessmentResult.error;
-    if (loadError) {
-      continue;
-    }
+  const batchedLoadError =
+    batchedObservationResult.error ??
+    batchedIncidentResult.error ??
+    batchedEmarResult.error ??
+    batchedScoreResult.error ??
+    batchedAssessmentResult.error;
 
-    const observations = (observationResult.data ?? []) as ObservationRow[];
-    const incidents = (incidentResult.data ?? []) as IncidentRow[];
-    const emars = (emarResult.data ?? []) as EmarRow[];
-    const latestScore = scoreResult.data;
-    const assessments = (assessmentResult.data ?? []) as AssessmentRow[];
+  const observationsByResident = new Map<string, ObservationRow[]>();
+  const incidentsByResident = new Map<string, IncidentRow[]>();
+  const emarsByResident = new Map<string, EmarRow[]>();
+  const assessmentsByResident = new Map<string, AssessmentRow[]>();
+  const latestScoreByResident = new Map<string, SafetyScoreRow>();
+
+  if (!batchedLoadError) {
+    for (const observation of (batchedObservationResult.data ?? []) as ObservationRow[]) {
+      if (!observation.resident_id) continue;
+      const bucket = observationsByResident.get(observation.resident_id) ?? [];
+      bucket.push(observation);
+      observationsByResident.set(observation.resident_id, bucket);
+    }
+    for (const incident of (batchedIncidentResult.data ?? []) as IncidentRow[]) {
+      if (!incident.resident_id) continue;
+      const bucket = incidentsByResident.get(incident.resident_id) ?? [];
+      bucket.push(incident);
+      incidentsByResident.set(incident.resident_id, bucket);
+    }
+    for (const emar of (batchedEmarResult.data ?? []) as EmarRow[]) {
+      if (!emar.resident_id) continue;
+      const bucket = emarsByResident.get(emar.resident_id) ?? [];
+      bucket.push(emar);
+      emarsByResident.set(emar.resident_id, bucket);
+    }
+    for (const assessment of (batchedAssessmentResult.data ?? []) as AssessmentRow[]) {
+      if (!assessment.resident_id) continue;
+      const bucket = assessmentsByResident.get(assessment.resident_id) ?? [];
+      bucket.push(assessment);
+      assessmentsByResident.set(assessment.resident_id, bucket);
+    }
+    for (const score of (batchedScoreResult.data ?? []) as SafetyScoreRow[]) {
+      if (!score.resident_id) continue;
+      if (!latestScoreByResident.has(score.resident_id)) {
+        latestScoreByResident.set(score.resident_id, score);
+      }
+    }
+  }
+
+  let insightsGenerated = 0;
+  let alertsCreated = 0;
+
+  for (const resident of residents) {
+    let observations: ObservationRow[] = [];
+    let incidents: IncidentRow[] = [];
+    let emars: EmarRow[] = [];
+    let latestScore: SafetyScoreRow | null = null;
+    let assessments: AssessmentRow[] = [];
+
+    if (!batchedLoadError) {
+      observations = observationsByResident.get(resident.id) ?? [];
+      incidents = incidentsByResident.get(resident.id) ?? [];
+      emars = emarsByResident.get(resident.id) ?? [];
+      latestScore = latestScoreByResident.get(resident.id) ?? null;
+      assessments = assessmentsByResident.get(resident.id) ?? [];
+    } else {
+      const [observationResult, incidentResult, emarResult, scoreResult, assessmentResult] = await Promise.all([
+        auth.actor.admin
+          .from("resident_observation_logs")
+          .select("resident_id, quick_status, exception_present")
+          .eq("resident_id", resident.id)
+          .gte("observed_at", since)
+          .is("deleted_at", null),
+        auth.actor.admin
+          .from("incidents")
+          .select("resident_id, category, severity")
+          .eq("resident_id", resident.id)
+          .gte("created_at", since)
+          .is("deleted_at", null),
+        auth.actor.admin
+          .from("emar_records")
+          .select("resident_id, status, is_prn, prn_effectiveness_result")
+          .eq("resident_id", resident.id)
+          .gte("scheduled_time", since)
+          .is("deleted_at", null),
+        (auth.actor.admin
+          .from("resident_safety_scores" as never)
+          .select("resident_id, score, risk_tier, score_delta, computed_at")
+          .eq("resident_id" as never, resident.id as never)
+          .is("deleted_at" as never, null as never)
+          .order("computed_at" as never, { ascending: false })
+          .limit(1)
+          .maybeSingle() as unknown as Promise<{
+          data: SafetyScoreRow | null;
+          error: { message: string } | null;
+        }>),
+        auth.actor.admin
+          .from("assessments")
+          .select("resident_id, assessment_type, total_score")
+          .eq("resident_id", resident.id)
+          .gte("created_at", since)
+          .is("deleted_at", null),
+      ]);
+
+      const loadError =
+        observationResult.error ??
+        incidentResult.error ??
+        emarResult.error ??
+        scoreResult.error ??
+        assessmentResult.error;
+      if (loadError) {
+        continue;
+      }
+
+      observations = (observationResult.data ?? []) as ObservationRow[];
+      incidents = (incidentResult.data ?? []) as IncidentRow[];
+      emars = (emarResult.data ?? []) as EmarRow[];
+      latestScore = scoreResult.data;
+      assessments = (assessmentResult.data ?? []) as AssessmentRow[];
+    }
 
     const statusDistribution: Record<string, number> = {};
     let exceptionCount = 0;
