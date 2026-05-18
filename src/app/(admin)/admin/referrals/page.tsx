@@ -44,8 +44,15 @@ type LeadRow = Pick<
   | "notes"
 > & {
   tour_scheduled_for: string | null;
-  tour_completed_at: string | null;
   referral_sources: { name: string } | null;
+};
+
+type UpcomingTourRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  status: ReferralLeadStatus;
+  tour_scheduled_for: string | null;
 };
 
 type HandoffPhase = "blocked" | "ready" | "onboarding" | "complete";
@@ -88,6 +95,9 @@ const LEAD_STATUS_FILTERS: { value: "all" | ReferralLeadStatus; label: string }[
   { value: "lost", label: "Lost" },
   { value: "merged", label: "Merged" },
 ];
+
+const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;
+const REFERRAL_UPCOMING_TOUR_LIMIT = 6;
 
 type LeadExportRow = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
@@ -212,6 +222,7 @@ export default function AdminReferralsHubPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<LeadRow[]>([]);
+  const [upcomingTours, setUpcomingTours] = useState<UpcomingTourRow[]>([]);
   const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<
     Record<string, ActiveAdmissionCase>
   >({});
@@ -270,21 +281,16 @@ export default function AdminReferralsHubPage() {
         if (priorityDelta !== 0) return priorityDelta;
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       })
-      .slice(0, 60);
+      .slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT);
   }, [activeAdmissionCaseByLeadId, displayRows]);
 
-  const upcomingTours = useMemo(() => {
-    return rows
-      .filter((row) => row.tour_scheduled_for && row.status !== "lost" && row.status !== "merged")
-      .sort((a, b) => new Date(a.tour_scheduled_for!).getTime() - new Date(b.tour_scheduled_for!).getTime())
-      .slice(0, 6);
-  }, [rows]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
+      setUpcomingTours([]);
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
       setHandoffRollup({ blocked: 0, ready: 0, onboarding: 0 });
@@ -293,11 +299,16 @@ export default function AdminReferralsHubPage() {
     }
 
     try {
-      const [{ data: list, error: listErr }, { data: outreachList, error: outreachErr }] = await Promise.all([
+      const nowIso = new Date().toISOString();
+      const [
+        { data: list, error: listErr },
+        { data: outreachList, error: outreachErr },
+        { data: upcomingTourList, error: upcomingToursErr },
+      ] = await Promise.all([
         (supabase
           .from("referral_leads" as never)
           .select(
-            "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, tour_completed_at, referral_sources(name)",
+            "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, referral_sources(name)",
           )
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
@@ -309,94 +320,103 @@ export default function AdminReferralsHubPage() {
           .is("deleted_at", null)
           .order("scheduled_for", { ascending: false })
           .limit(48),
+        (supabase
+          .from("referral_leads" as never)
+          .select("id, first_name, last_name, status, tour_scheduled_for")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .not("status", "in", "(lost,merged)")
+          .not("tour_scheduled_for", "is", null)
+          .gte("tour_scheduled_for", nowIso)
+          .order("tour_scheduled_for", { ascending: true })
+          .limit(REFERRAL_UPCOMING_TOUR_LIMIT)) as unknown as Promise<{
+          data: UpcomingTourRow[] | null;
+          error: { message: string } | null;
+        }>,
       ]);
 
       if (listErr) throw listErr;
       if (outreachErr) throw outreachErr;
+      if (upcomingToursErr) throw upcomingToursErr;
       const leadRows = (list ?? []) as LeadRow[];
       setRows(leadRows);
       setOutreachRows((outreachList ?? []) as OutreachRow[]);
       setOutreachStatusDrafts(Object.fromEntries(((outreachList ?? []) as OutreachRow[]).map((row) => [row.id, row.status])));
+      setUpcomingTours((upcomingTourList ?? []) as UpcomingTourRow[]);
 
-      const leadIds = leadRows.map((row) => row.id);
       let handoffBlocked = 0;
       let handoffReady = 0;
       let handoffOnboarding = 0;
-      if (leadIds.length > 0) {
-        const { data: admissionCases, error: admissionErr } = await supabase
-          .from("admission_cases")
-          .select("id, referral_lead_id, status, resident_id, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .in("referral_lead_id", leadIds)
-          .not("status", "eq", "cancelled");
-        if (admissionErr) throw admissionErr;
-        const admissionRows = (admissionCases ?? []) as AdmissionMini[];
-        const residentIds = Array.from(
-          new Set(
-            admissionRows
-              .map((row) => row.resident_id)
-              .filter((value): value is string => typeof value === "string" && value.length > 0),
-          ),
-        );
-        const [carePlansRes, medsRes, payersRes, consentsRes] =
-          residentIds.length > 0
-            ? await Promise.all([
-                supabase.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-                supabase.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-                supabase.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-                supabase.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-              ])
-            : [
-                { data: [], error: null },
-                { data: [], error: null },
-                { data: [], error: null },
-                { data: [], error: null },
-              ];
-        if (carePlansRes.error) throw carePlansRes.error;
-        if (medsRes.error) throw medsRes.error;
-        if (payersRes.error) throw payersRes.error;
-        if (consentsRes.error) throw consentsRes.error;
-
-        const carePlanIds = new Set((carePlansRes.data ?? []).map((row) => row.resident_id));
-        const medIds = new Set((medsRes.data ?? []).map((row) => row.resident_id));
-        const payerIds = new Set((payersRes.data ?? []).map((row) => row.resident_id));
-        const consentIds = new Set((consentsRes.data ?? []).map((row) => row.resident_id));
-
-        const activeMap = Object.fromEntries(
+      const { data: admissionCases, error: admissionErr } = await supabase
+        .from("admission_cases")
+        .select("id, referral_lead_id, status, resident_id, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .not("status", "eq", "cancelled");
+      if (admissionErr) throw admissionErr;
+      const admissionRows = (admissionCases ?? []) as AdmissionMini[];
+      const residentIds = Array.from(
+        new Set(
           admissionRows
-            .filter((row) => !!row.referral_lead_id)
-            .map((row) => {
-              let phase: HandoffPhase = "complete";
-              const blocked =
-                !row.financial_clearance_at ||
-                !row.physician_orders_received_at ||
-                !row.bed_id ||
-                !row.target_move_in_date;
-              if (blocked) {
-                phase = "blocked";
-                handoffBlocked += 1;
-              } else if (row.status !== "move_in") {
-                phase = "ready";
-                handoffReady += 1;
-              } else {
-                const onboardingMissing =
-                  !carePlanIds.has(row.resident_id) ||
-                  !medIds.has(row.resident_id) ||
-                  !payerIds.has(row.resident_id) ||
-                  !consentIds.has(row.resident_id);
-                if (onboardingMissing) {
-                  phase = "onboarding";
-                  handoffOnboarding += 1;
-                }
+            .map((row) => row.resident_id)
+            .filter((value): value is string => typeof value === "string" && value.length > 0),
+        ),
+      );
+      const [carePlansRes, medsRes, payersRes, consentsRes] =
+        residentIds.length > 0
+          ? await Promise.all([
+              supabase.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+              supabase.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+              supabase.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+              supabase.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+            ])
+          : [
+              { data: [], error: null },
+              { data: [], error: null },
+              { data: [], error: null },
+              { data: [], error: null },
+            ];
+      if (carePlansRes.error) throw carePlansRes.error;
+      if (medsRes.error) throw medsRes.error;
+      if (payersRes.error) throw payersRes.error;
+      if (consentsRes.error) throw consentsRes.error;
+
+      const carePlanIds = new Set((carePlansRes.data ?? []).map((row) => row.resident_id));
+      const medIds = new Set((medsRes.data ?? []).map((row) => row.resident_id));
+      const payerIds = new Set((payersRes.data ?? []).map((row) => row.resident_id));
+      const consentIds = new Set((consentsRes.data ?? []).map((row) => row.resident_id));
+
+      const activeMap = Object.fromEntries(
+        admissionRows
+          .filter((row) => !!row.referral_lead_id)
+          .map((row) => {
+            let phase: HandoffPhase = "complete";
+            const blocked =
+              !row.financial_clearance_at ||
+              !row.physician_orders_received_at ||
+              !row.bed_id ||
+              !row.target_move_in_date;
+            if (blocked) {
+              phase = "blocked";
+              handoffBlocked += 1;
+            } else if (row.status !== "move_in") {
+              phase = "ready";
+              handoffReady += 1;
+            } else {
+              const onboardingMissing =
+                !carePlanIds.has(row.resident_id) ||
+                !medIds.has(row.resident_id) ||
+                !payerIds.has(row.resident_id) ||
+                !consentIds.has(row.resident_id);
+              if (onboardingMissing) {
+                phase = "onboarding";
+                handoffOnboarding += 1;
               }
-              return [row.referral_lead_id as string, { id: row.id, phase }] as const;
-            }),
-        );
-        setActiveAdmissionCaseByLeadId(activeMap);
-      } else {
-        setActiveAdmissionCaseByLeadId({});
-      }
+            }
+            return [row.referral_lead_id as string, { id: row.id, phase }] as const;
+          }),
+      );
+      setActiveAdmissionCaseByLeadId(activeMap);
 
       setHandoffRollup({
         blocked: handoffBlocked,
@@ -423,6 +443,7 @@ export default function AdminReferralsHubPage() {
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       setRows([]);
+      setUpcomingTours([]);
       setOutreachRows([]);
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
@@ -675,9 +696,9 @@ export default function AdminReferralsHubPage() {
         <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="text-base font-bold text-foreground tracking-tight">Upcoming tours</p>
+              <p className="text-base font-bold text-foreground tracking-tight">Next scheduled tours</p>
               <p className="mt-1 text-sm text-muted-foreground tracking-wide">
-                Tour scheduling now lives on the lead record, so this queue becomes the operational source for the standup tour forecast.
+                Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours from lead records for the standup forecast.
               </p>
             </div>
             <Badge className="border-none bg-primary/10 text-primary">Standup source</Badge>

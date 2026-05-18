@@ -9,6 +9,7 @@ const readSource = (relativePath: string) =>
 const admissionsSource = readSource("src/app/(admin)/admin/admissions/page.tsx");
 const invoiceSource = readSource("src/app/(admin)/vendors/invoices/page.tsx");
 const purchaseOrderSource = readSource("src/app/(admin)/vendors/purchase-orders/page.tsx");
+const referralsSource = readSource("src/app/(admin)/admin/referrals/page.tsx");
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
@@ -32,5 +33,23 @@ describe("admin list query bounds", () => {
     expect(purchaseOrderSource).toContain('.select("id, po_number, status, order_date, total_cents")');
     expect(purchaseOrderSource).toContain(".limit(PURCHASE_ORDER_LIST_LIMIT)");
     expect(purchaseOrderSource).not.toContain('.select("*")');
+  });
+
+  it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {
+    expect(referralsSource).toContain("const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;");
+    expect(referralsSource).toContain("const REFERRAL_UPCOMING_TOUR_LIMIT = 6;");
+    expect(referralsSource).toContain(".slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT)");
+    expect(referralsSource).toContain(".gte(\"tour_scheduled_for\", nowIso)");
+    expect(referralsSource).toContain(".limit(REFERRAL_UPCOMING_TOUR_LIMIT)");
+    expect(referralsSource).toContain("Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours");
+
+    expect(referralsSource).not.toContain("tour_completed_at");
+    expect(referralsSource).not.toContain("const leadIds = leadRows.map");
+    expect(referralsSource).not.toContain('.in("referral_lead_id", leadIds)');
+
+    expect(referralsSource).toContain('.from("admission_cases")');
+    expect(referralsSource).toContain('.eq("facility_id", selectedFacilityId)');
+    expect(referralsSource).toContain('.is("deleted_at", null)');
+    expect(referralsSource).toContain('.not("status", "eq", "cancelled")');
   });
 });
