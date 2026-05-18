@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
+  Brain,
   ClipboardList,
   Eye,
   FileBarChart,
   LayoutDashboard,
   Shield,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,6 +34,8 @@ const NAV_ITEMS = [
   { href: "/admin/rounding/escalations", label: "Escalations", icon: AlertTriangle },
   { href: "/admin/rounding/integrity", label: "Integrity", icon: ShieldAlert },
   { href: "/admin/rounding/reports", label: "Reports", icon: FileBarChart },
+  { href: "/admin/rounding/safety", label: "Safety scores", icon: ShieldCheck },
+  { href: "/admin/rounding/insights", label: "Insights", icon: Brain },
 ] as const;
 
 export function RoundingHubNav() {

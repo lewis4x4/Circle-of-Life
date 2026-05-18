@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  RefreshCw,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -24,6 +26,7 @@ import {
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
   fetchResidentAssuranceFacilityHeatMap,
@@ -279,7 +282,7 @@ export function ExecutiveOverviewPageClient({
       </div>
 
       {isOrgEmpty ? (
-        <ExecutiveEmptyOnboarding facilityCount={facilities.length} />
+        <ExecutiveEmptyOnboarding facilityCount={facilities.length} onRefreshComplete={load} />
       ) : (
         <ExecutiveDashboardBody
           metrics={metrics}
@@ -300,33 +303,77 @@ export function ExecutiveOverviewPageClient({
   );
 }
 
-function ExecutiveEmptyOnboarding({ facilityCount }: { facilityCount: number }) {
-  const steps = [
+type ExecutiveRefreshState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "success"; message: string }
+  | { kind: "error"; message: string };
+
+function ExecutiveEmptyOnboarding({
+  facilityCount,
+  onRefreshComplete,
+}: {
+  facilityCount: number;
+  onRefreshComplete: () => Promise<void>;
+}) {
+  const router = useRouter();
+  const [refreshState, setRefreshState] = useState<ExecutiveRefreshState>({ kind: "idle" });
+  const isRefreshing = refreshState.kind === "loading";
+
+  const configurationLinks = [
     {
-      title: "Run the executive KPI snapshot",
-      body: "Generates occupancy, billed MTD, labor cost %, incident rate, and survey readiness from live operational data.",
+      title: "Executive snapshot settings",
+      body: "Adjust snapshot preferences for scheduled runs. Use the refresh button above to generate data now.",
       href: "/admin/executive/settings",
-      cta: "Open snapshot settings",
+      cta: "Open settings",
     },
     {
-      title: "Generate the first Smart Rounding rollup",
-      body: "Computes watch load, escalation pressure, and integrity flags per facility. Populates the heat map and 7-day trend chart.",
+      title: "Smart Rounding assurance hub",
+      body: "Review the operational assurance workspace. These settings tune the view; they do not run the scorer by themselves.",
       href: "/admin/rounding",
-      cta: "Open assurance hub",
+      cta: "Open hub",
     },
     {
-      title: "Configure executive alert rules",
-      body: "Define the thresholds that surface critical alerts in the watchlist (occupancy drop, labor overrun, severity-4 incident, etc.).",
+      title: "Executive alert rules",
+      body: "Define which live exceptions should rise into leadership watchlists after data exists.",
       href: "/admin/executive/alerts",
       cta: "Open alerts",
     },
     {
-      title: "Set facility-level metric thresholds",
-      body: "Each facility can carry its own occupancy / labor / incident thresholds. The dashboard colors these once they're set.",
+      title: "Facility metric thresholds",
+      body: "Set per-facility color thresholds for metrics produced by snapshots and rollups.",
       href: "/admin/settings/thresholds",
       cta: "Open thresholds",
     },
   ] as const;
+
+  const refreshExecutiveDashboard = useCallback(async () => {
+    setRefreshState({ kind: "loading" });
+
+    try {
+      const response = await fetch("/api/admin/executive/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || "Executive refresh failed.");
+      }
+
+      setRefreshState({
+        kind: "success",
+        message: "Refresh complete. Reloading the executive dashboard with the latest snapshot data.",
+      });
+      router.refresh();
+      await onRefreshComplete();
+    } catch (error) {
+      setRefreshState({
+        kind: "error",
+        message: error instanceof Error ? error.message : "Executive refresh failed.",
+      });
+    }
+  }, [onRefreshComplete, router]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 lg:p-6">
@@ -336,26 +383,71 @@ function ExecutiveEmptyOnboarding({ facilityCount }: { facilityCount: number }) 
         </h2>
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           {facilityCount > 0
-            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. Once the executive snapshot runs and the first rollups complete, this dashboard fills in automatically.`
-            : "Add a facility to start collecting operational data. Once it's in scope, the executive snapshot and rollups will populate this dashboard."}
+            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. Run the executive refresh to generate the latest KPI snapshot and resident safety scores from live operational data.`
+            : "Add a facility to start collecting operational data. Once it's in scope, run the executive refresh to populate this dashboard."}
         </p>
       </div>
 
-      <ol className="mt-5 flex flex-col gap-3">
-        {steps.map((step, i) => (
-          <li key={step.title} className="flex items-start gap-3">
-            <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
-              {i + 1}
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-                <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+      <div className="mt-5 rounded-lg border border-border/70 bg-secondary/30 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+              Generate dashboard data
+            </h3>
+            <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-muted-foreground">
+              Runs the executive KPI snapshot and resident safety scorer server-side, then refreshes this page.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="lg"
+            onClick={refreshExecutiveDashboard}
+            disabled={isRefreshing}
+            className="w-full sm:w-auto"
+          >
+            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} aria-hidden />
+            {isRefreshing ? "Refreshing dashboard…" : "Refresh executive dashboard now"}
+          </Button>
+        </div>
+        {refreshState.kind === "success" && (
+          <p className="mt-3 text-[12px] font-medium text-success" role="status">
+            {refreshState.message}
+          </p>
+        )}
+        {refreshState.kind === "error" && (
+          <p className="mt-3 text-[12px] font-medium text-destructive" role="alert">
+            {refreshState.message}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-5 rounded-lg border border-border/60 bg-card p-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-[13px] font-semibold tracking-tight text-foreground">
+            Configuration
+          </h3>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            Optional configuration — these tune the dashboard but don&rsquo;t generate data themselves.
+          </p>
+        </div>
+
+        <ol className="mt-4 grid gap-3 md:grid-cols-2">
+          {configurationLinks.map((step, i) => (
+            <li key={step.title} className="flex items-start gap-3">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
+                {i + 1}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <h4 className="text-[13px] font-semibold tracking-tight text-foreground">
                   {step.title}
-                </h3>
+                </h4>
+                <p className="text-[12px] leading-relaxed text-muted-foreground">
+                  {step.body}
+                </p>
                 <Link
                   href={step.href}
                   className={cn(
-                    "inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5",
+                    "inline-flex h-7 w-fit items-center gap-1 rounded-md border border-border bg-card px-2.5",
                     "text-[12px] font-medium text-muted-foreground transition-colors",
                     "hover:bg-secondary hover:text-foreground",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -364,13 +456,10 @@ function ExecutiveEmptyOnboarding({ facilityCount }: { facilityCount: number }) 
                   {step.cta} <ArrowRight className="size-3" aria-hidden />
                 </Link>
               </div>
-              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                {step.body}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ol>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       <div className="mt-5 flex items-center gap-2 border-t border-border/60 pt-4 text-[12px] text-muted-foreground">
         <CheckCircle2 className="size-3.5 text-success" aria-hidden />

@@ -18,6 +18,9 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { MetricCard } from "@/components/ui/metric-card";
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -38,11 +41,14 @@ type EscalationRow = {
   acknowledged_at: string | null;
   resolved_at: string | null;
   resolution_note: string | null;
+  resolution_rationale?: string | null;
   status: FollowUpStatus;
   residents?: {
     first_name: string;
     last_name: string;
     preferred_name: string | null;
+    acuity_level?: string | null;
+    acuity_score?: number | null;
   } | null;
   resident_observation_tasks?: {
     status: string;
@@ -73,7 +79,7 @@ type BoardState =
 
 type Tone = "default" | "warning" | "danger";
 
-type StatusFilter = "all" | FollowUpStatus;
+type StatusFilter = "all" | "open" | "resolved_today" | "dismissed" | "resolved_7d";
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -106,21 +112,36 @@ function statusLabel(status: FollowUpStatus): string {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
-function statusChipClasses(status: FollowUpStatus): string {
+function statusPillTone(status: FollowUpStatus): StatusPillTone {
   const tone = statusTone(status);
-  if (tone === "danger") return "border-danger/30 bg-danger/10 text-danger";
-  if (tone === "warning") return "border-warning/30 bg-warning/10 text-warning";
-  return "border-border bg-muted text-muted-foreground";
+  if (tone === "danger") return "danger";
+  if (tone === "warning") return "warning";
+  return "muted";
+}
+
+function hasHighAcuityResident(row: EscalationRow) {
+  const score = Number(row.residents?.acuity_score ?? 0);
+  const level = row.residents?.acuity_level?.toLowerCase() ?? "";
+  return score >= 3 || level.includes("high") || level.includes("critical") || level.includes("3");
+}
+
+function escalationSeverity(row: EscalationRow): { label: string; tone: StatusPillTone } {
+  if (row.escalation_level >= 5 && hasHighAcuityResident(row)) return { label: "Critical", tone: "danger" };
+  if (row.escalation_level >= 5) return { label: "High", tone: "danger" };
+  if (row.escalation_level >= 3) return { label: "Medium", tone: "warning" };
+  return { label: "Low", tone: "muted" };
+}
+
+function hoursOverdue(row: EscalationRow, nowMs: number) {
+  const anchor = row.resident_observation_tasks?.grace_ends_at ?? row.triggered_at;
+  const elapsedMs = Math.max(0, nowMs - new Date(anchor).getTime());
+  return `${(elapsedMs / (60 * 60 * 1000)).toFixed(1)} hr`;
 }
 
 function resolveOpenTone(count: number): Tone {
   if (count === 0) return "default";
   if (count <= 2) return "warning";
   return "danger";
-}
-
-function resolveInProgressTone(count: number): Tone {
-  return count > 0 ? "warning" : "default";
 }
 
 function deriveBoardState(args: {
@@ -142,7 +163,9 @@ function deriveBoardState(args: {
 
 export default function RoundingEscalationsPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const [rows, setRows] = useState<EscalationRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -150,6 +173,7 @@ export default function RoundingEscalationsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     setLoadState("loading");
@@ -162,7 +186,7 @@ export default function RoundingEscalationsPage() {
     }
 
     try {
-      let query = supabase
+      const query = supabase
         .from("resident_observation_escalations")
         .select(
           `
@@ -175,8 +199,9 @@ export default function RoundingEscalationsPage() {
           acknowledged_at,
           resolved_at,
           resolution_note,
+          resolution_rationale,
           status,
-          residents(first_name, last_name, preferred_name),
+          residents(first_name, last_name, preferred_name, acuity_level, acuity_score),
           resident_observation_tasks(status, due_at, grace_ends_at, notes, watch_instance_id)
         `,
         )
@@ -184,8 +209,6 @@ export default function RoundingEscalationsPage() {
         .is("deleted_at", null)
         .order("triggered_at", { ascending: false })
         .limit(100);
-
-      if (filter !== "all") query = query.eq("status", filter);
 
       const { data, error: queryError } = await query;
       if (queryError) throw queryError;
@@ -278,28 +301,48 @@ export default function RoundingEscalationsPage() {
 
       setRows(enriched);
       setLoadState("ready");
-    } catch (loadError) {
-      setErrorMessage(
-        loadError instanceof Error ? loadError.message : "Could not load escalations.",
-      );
+    } catch {
+      setErrorMessage("Could not load escalations. Confirm facility scope and retry.");
       setRows([]);
       setLoadState("error");
     }
-  }, [filter, selectedFacilityId, supabase]);
+  }, [selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const counts = useMemo(
-    () => ({
-      open: rows.filter((row) => row.status === "open").length,
-      in_progress: rows.filter((row) => row.status === "in_progress").length,
-      resolved: rows.filter((row) => row.status === "resolved").length,
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    const onFocus = () => setNowMs(Date.now());
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
+  const counts = useMemo(() => {
+    const today = new Date().toDateString();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return {
+      all: rows.length,
+      open: rows.filter((row) => row.status === "open" || row.status === "in_progress").length,
+      resolved_today: rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).toDateString() === today).length,
       dismissed: rows.filter((row) => row.status === "dismissed").length,
-    }),
-    [rows],
-  );
+      resolved_7d: rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).getTime() >= sevenDaysAgo).length,
+    };
+  }, [rows]);
+
+  const visibleRows = useMemo(() => {
+    if (filter === "all") return rows;
+    if (filter === "open") return rows.filter((row) => row.status === "open" || row.status === "in_progress");
+    if (filter === "dismissed") return rows.filter((row) => row.status === "dismissed");
+    const today = new Date().toDateString();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    if (filter === "resolved_today") return rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).toDateString() === today);
+    return rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).getTime() >= sevenDaysAgo);
+  }, [filter, rows]);
 
   const runAction = useCallback(
     async (id: string, action: "start_review" | "resolve" | "dismiss") => {
@@ -308,12 +351,18 @@ export default function RoundingEscalationsPage() {
       setActionMessage(null);
 
       try {
+        const note = notes[id]?.trim() ?? "";
+        if (action === "resolve" && note.length < 30) {
+          setErrorMessage("Add a resolution rationale of at least 30 characters before resolving.");
+          return;
+        }
+
         const response = await fetch(`/api/rounding/escalations/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action,
-            note: notes[id]?.trim() || undefined,
+            note: note || undefined,
           }),
         });
 
@@ -329,10 +378,8 @@ export default function RoundingEscalationsPage() {
         );
         setNotes((current) => ({ ...current, [id]: "" }));
         await load();
-      } catch (runError) {
-        setErrorMessage(
-          runError instanceof Error ? runError.message : "Could not update escalation.",
-        );
+      } catch {
+        setErrorMessage("Could not update escalation. Confirm it is still actionable and retry.");
       } finally {
         setActionLoading(null);
       }
@@ -343,7 +390,7 @@ export default function RoundingEscalationsPage() {
   const boardState = deriveBoardState({
     loadState,
     hasFacility: Boolean(selectedFacilityId),
-    rowCount: rows.length,
+    rowCount: visibleRows.length,
     filterApplied: filter !== "all",
   });
 
@@ -351,7 +398,7 @@ export default function RoundingEscalationsPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Observation escalations"
-        subtitle="Critically overdue and missed observation work — review, resolve, or dismiss with preserved task evidence."
+        subtitle={`Missed or overdue checks requiring operator review and survey-ready resolution at ${facilityName}.`}
         actions={
           <Button
             type="button"
@@ -399,16 +446,16 @@ export default function RoundingEscalationsPage() {
                 hint="Awaiting review"
               />
               <KpiCard
-                label="In progress"
-                value={counts.in_progress}
-                tone={resolveInProgressTone(counts.in_progress)}
-                hint="Under supervisor review"
+                label="Resolved today"
+                value={counts.resolved_today}
+                tone="default"
+                hint="Closed with rationale today"
               />
               <KpiCard
-                label="Resolved"
-                value={counts.resolved}
+                label="Resolved (7 days)"
+                value={counts.resolved_7d}
                 tone="default"
-                hint="Closed escalations"
+                hint="Closed with rationale in the last 7 days"
               />
               <KpiCard
                 label="Dismissed"
@@ -428,9 +475,7 @@ export default function RoundingEscalationsPage() {
               <div className="-mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
                 <FilterPill
                   label="All"
-                  count={
-                    counts.open + counts.in_progress + counts.resolved + counts.dismissed
-                  }
+                  count={counts.all}
                   tone="default"
                   active={filter === "all"}
                   onClick={() => setFilter("all")}
@@ -443,18 +488,18 @@ export default function RoundingEscalationsPage() {
                   onClick={() => setFilter(filter === "open" ? "all" : "open")}
                 />
                 <FilterPill
-                  label="In progress"
-                  count={counts.in_progress}
-                  tone={resolveInProgressTone(counts.in_progress)}
-                  active={filter === "in_progress"}
-                  onClick={() => setFilter(filter === "in_progress" ? "all" : "in_progress")}
+                  label="Resolved today"
+                  count={counts.resolved_today}
+                  tone="default"
+                  active={filter === "resolved_today"}
+                  onClick={() => setFilter(filter === "resolved_today" ? "all" : "resolved_today")}
                 />
                 <FilterPill
-                  label="Resolved"
-                  count={counts.resolved}
+                  label="Resolved (7 days)"
+                  count={counts.resolved_7d}
                   tone="default"
-                  active={filter === "resolved"}
-                  onClick={() => setFilter(filter === "resolved" ? "all" : "resolved")}
+                  active={filter === "resolved_7d"}
+                  onClick={() => setFilter(filter === "resolved_7d" ? "all" : "resolved_7d")}
                 />
                 <FilterPill
                   label="Dismissed"
@@ -478,12 +523,12 @@ export default function RoundingEscalationsPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoEscalationsEmptyState />
+            <NoEscalationsEmptyState facilityName={facilityName} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
             <ul className="flex flex-col gap-3" aria-label="Escalations">
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <li key={row.id}>
                   <EscalationCard
                     row={row}
@@ -492,6 +537,7 @@ export default function RoundingEscalationsPage() {
                       setNotes((current) => ({ ...current, [row.id]: value }))
                     }
                     actionLoading={actionLoading}
+                    nowMs={nowMs}
                     onAction={(action) => void runAction(row.id, action)}
                   />
                 </li>
@@ -513,26 +559,28 @@ function EscalationCard({
   note,
   onNoteChange,
   actionLoading,
+  nowMs,
   onAction,
 }: {
   row: EscalationRow;
   note: string;
   onNoteChange: (value: string) => void;
   actionLoading: string | null;
+  nowMs: number;
   onAction: (action: "start_review" | "resolve" | "dismiss") => void;
 }) {
   const task = row.resident_observation_tasks;
   const actionKey = (action: string) => `${row.id}:${action}`;
+  const severity = escalationSeverity(row);
+  const resolutionText = row.resolution_rationale ?? row.resolution_note;
 
   return (
     <article className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Chip className={statusChipClasses(row.status)}>{statusLabel(row.status)}</Chip>
-            <Chip className="border-border bg-muted text-muted-foreground">
-              Level {row.escalation_level}
-            </Chip>
+            <StatusPill tone={statusPillTone(row.status)}>{statusLabel(row.status)}</StatusPill>
+            <StatusPill tone={severity.tone}>{severity.label}</StatusPill>
             <Chip className="border-border bg-muted text-muted-foreground">
               {row.escalation_type.replace(/_/g, " ")}
             </Chip>
@@ -555,17 +603,14 @@ function EscalationCard({
 
           <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
             <DataPair
-              label="Task status"
-              value={task?.status?.replace(/_/g, " ") ?? "Unavailable"}
+              label="Missed check"
+              value={task?.status?.replace(/_/g, " ") ?? row.escalation_type.replace(/_/g, " ")}
             />
             <DataPair
-              label="Due window"
-              value={
-                task
-                  ? `${new Date(task.due_at).toLocaleString()} → ${new Date(task.grace_ends_at).toLocaleString()}`
-                  : "Unavailable"
-              }
+              label="Originally due"
+              value={task ? new Date(task.due_at).toLocaleString() : new Date(row.triggered_at).toLocaleString()}
             />
+            <DataPair label="Hours overdue" value={hoursOverdue(row, nowMs)} />
             {row.watchSummary ? (
               <>
                 <DataPair
@@ -609,10 +654,10 @@ function EscalationCard({
             </div>
           ) : null}
 
-          {row.resolution_note ? (
+          {resolutionText ? (
             <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px]">
-              <p className="text-[11px] font-medium text-muted-foreground">Resolution note</p>
-              <p className="mt-0.5 text-foreground">{row.resolution_note}</p>
+              <p className="text-[11px] font-medium text-muted-foreground">Resolution rationale</p>
+              <p className="mt-0.5 text-foreground">{resolutionText}</p>
             </div>
           ) : null}
         </div>
@@ -620,14 +665,14 @@ function EscalationCard({
         <div className="min-w-0 lg:w-[280px] lg:shrink-0">
           <div className="space-y-2">
             <label htmlFor={`note-${row.id}`} className="sr-only">
-              Review note
+              Resolution rationale
             </label>
             <textarea
               id={`note-${row.id}`}
               value={note}
               onChange={(event) => onNoteChange(event.target.value)}
               rows={3}
-              placeholder="Review note or resolution context…"
+              placeholder="Required resolution rationale for resolved escalations (30+ characters)…"
               className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
 
@@ -656,7 +701,7 @@ function EscalationCard({
                     variant="outline"
                     size="sm"
                     onClick={() => onAction("resolve")}
-                    disabled={actionLoading === actionKey("resolve")}
+                    disabled={actionLoading === actionKey("resolve") || note.trim().length < 30}
                   >
                     {actionLoading === actionKey("resolve") ? (
                       <Loader2 className="size-3.5 animate-spin" aria-hidden />
@@ -677,10 +722,16 @@ function EscalationCard({
                     ) : (
                       <XCircle className="size-3.5" aria-hidden />
                     )}
-                    Dismiss
+                    Dismiss as duplicate
                   </Button>
                 </>
               )}
+              <Link
+                href={`/admin/rounding/escalations/${row.id}/review`}
+                className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Escalate further
+              </Link>
             </div>
           </div>
         </div>
@@ -726,74 +777,8 @@ function KpiCard({
   tone: Tone;
   hint: string;
 }) {
-  return (
-    <article
-      aria-label={`${label}: ${value}`}
-      className={cn(
-        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
-        tone === "danger" && "border-danger/40",
-        tone === "warning" && "border-warning/40",
-        tone === "default" && "border-border",
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "danger" && "text-danger",
-          tone === "warning" && "text-warning",
-          tone === "default" && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-[11px] text-muted-foreground">{hint}</span>
-    </article>
-  );
-}
-
-function FilterPill({
-  label,
-  count,
-  tone,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  tone: Tone;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const showSemanticTint = tone !== "default" && count > 0;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active && tone === "danger" && "border-danger bg-danger/10 text-danger",
-        active && tone === "warning" && "border-warning bg-warning/10 text-warning",
-        active && tone === "default" && "border-border-strong bg-muted text-foreground",
-        !active &&
-          showSemanticTint &&
-          tone === "danger" &&
-          "border-danger/30 bg-card text-danger hover:bg-danger/5",
-        !active &&
-          showSemanticTint &&
-          tone === "warning" &&
-          "border-warning/30 bg-card text-warning hover:bg-warning/5",
-        !active &&
-          !showSemanticTint &&
-          "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
-      )}
-    >
-      <span>{label}</span>
-      <span className={cn("tabular-nums opacity-80", active && "opacity-100")}>({count})</span>
-    </button>
-  );
+  const thresholds = label === "Open" ? ({ type: "overdue-count" } as const) : ({ type: "informational" } as const);
+  return <MetricCard label={label} value={value} numericValue={value} thresholds={thresholds} tone={tone === "default" ? undefined : tone} hint={hint} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -884,17 +869,16 @@ function LoadErrorNotice({
   );
 }
 
-function NoEscalationsEmptyState() {
+function NoEscalationsEmptyState({ facilityName }: { facilityName: string }) {
   return (
     <section
       aria-label="No open escalations"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <CheckCircle2 className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No open escalations</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">No open escalations at {facilityName}</p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        Critically overdue and missed observations will appear here when they trigger an
-        escalation event.
+        Missed and overdue checks will appear here for review.
       </p>
     </section>
   );

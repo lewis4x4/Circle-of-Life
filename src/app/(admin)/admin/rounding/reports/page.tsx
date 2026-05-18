@@ -15,6 +15,16 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
+import { FormLabel } from "@/components/ui/form-label";
+import { MetricCard } from "@/components/ui/metric-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -49,6 +59,8 @@ type LoadState = "idle" | "loading" | "ready" | "error";
 type BoardState = "no_facility" | "loading" | "error" | "empty" | "populated";
 
 type Tone = "default" | "success" | "warning" | "danger";
+type DateRangePreset = "last_7" | "last_30" | "this_month" | "last_month" | "quarter_to_date" | "custom";
+type ReportType = "completion_rate" | "missed_checks" | "late_documentation" | "resident_history" | "caregiver_activity";
 
 const EMPTY_SUMMARY: ReportSummary = {
   expected: 0,
@@ -71,6 +83,65 @@ const EMPTY_BREAKDOWNS: {
   byStaff: [],
   byResident: [],
 };
+
+const DATE_RANGE_PRESETS: Array<{ value: DateRangePreset; label: string }> = [
+  { value: "last_7", label: "Last 7 days" },
+  { value: "last_30", label: "Last 30 days" },
+  { value: "this_month", label: "This month" },
+  { value: "last_month", label: "Last month" },
+  { value: "quarter_to_date", label: "Quarter to date" },
+  { value: "custom", label: "Custom range" },
+];
+
+const REPORT_TYPES: Array<{ value: ReportType; label: string; supported: boolean; format: "CSV" | "PDF" }> = [
+  { value: "completion_rate", label: "Completion rate report", supported: true, format: "CSV" },
+  { value: "missed_checks", label: "Missed checks audit", supported: false, format: "CSV" },
+  { value: "late_documentation", label: "Late documentation audit", supported: false, format: "CSV" },
+  { value: "resident_history", label: "Per-resident rounding history", supported: false, format: "PDF" },
+  { value: "caregiver_activity", label: "Per-caregiver activity report", supported: false, format: "CSV" },
+];
+
+function isoDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultLast7Days() {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6);
+  return { from: isoDate(start), to: isoDate(end) };
+}
+
+function rangeForPreset(preset: DateRangePreset) {
+  const today = new Date();
+  if (preset === "last_30") {
+    const start = new Date(today);
+    start.setDate(today.getDate() - 29);
+    return { from: isoDate(start), to: isoDate(today) };
+  }
+  if (preset === "this_month") {
+    return { from: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), to: isoDate(today) };
+  }
+  if (preset === "last_month") {
+    return {
+      from: isoDate(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+      to: isoDate(new Date(today.getFullYear(), today.getMonth(), 0)),
+    };
+  }
+  if (preset === "quarter_to_date") {
+    const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
+    return { from: isoDate(new Date(today.getFullYear(), quarterStartMonth, 1)), to: isoDate(today) };
+  }
+  return defaultLast7Days();
+}
+
+function dateStartIso(value: string) {
+  return new Date(`${value}T00:00:00`).toISOString();
+}
+
+function dateEndIso(value: string) {
+  return new Date(`${value}T23:59:59.999`).toISOString();
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Value-derived tone helpers                                                */
@@ -119,13 +190,14 @@ function deriveBoardState(args: {
 /* -------------------------------------------------------------------------- */
 
 export default function AdminRoundingReportsPage() {
-  const { selectedFacilityId } = useFacilityStore();
-  const [from, setFrom] = useState(() =>
-    new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-  );
-  const [to, setTo] = useState(() =>
-    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-  );
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
+  const initialRange = useMemo(() => defaultLast7Days(), []);
+  const [preset, setPreset] = useState<DateRangePreset>("last_7");
+  const [reportType, setReportType] = useState<ReportType>("completion_rate");
+  const [from, setFrom] = useState(initialRange.from);
+  const [to, setTo] = useState(initialRange.to);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [summary, setSummary] = useState<ReportSummary>(EMPTY_SUMMARY);
@@ -144,12 +216,12 @@ export default function AdminRoundingReportsPage() {
 
     try {
       const response = await fetch(
-        `/api/rounding/reports/completion?facilityId=${encodeURIComponent(selectedFacilityId)}&from=${encodeURIComponent(new Date(from).toISOString())}&to=${encodeURIComponent(new Date(to).toISOString())}`,
+        `/api/rounding/reports/completion?facilityId=${encodeURIComponent(selectedFacilityId)}&from=${encodeURIComponent(dateStartIso(from))}&to=${encodeURIComponent(dateEndIso(to))}`,
         { cache: "no-store" },
       );
       const json = (await response.json()) as {
         error?: string;
-        summary?: ReportSummary;
+        summary?: ReportSummary & { averageCompletionDelayMinutes?: number };
         breakdowns?: {
           byShift?: BreakdownRow[];
           byStaff?: BreakdownRow[];
@@ -169,7 +241,7 @@ export default function AdminRoundingReportsPage() {
           completionRate: s.completionRate ?? 0,
           onTimeRate: s.onTimeRate ?? 0,
           missedRate: s.missedRate ?? 0,
-          avgDelayMin: s.avgDelayMin ?? 0,
+          avgDelayMin: s.avgDelayMin ?? s.averageCompletionDelayMinutes ?? 0,
         });
         setBreakdowns({
           byShift: json.breakdowns?.byShift ?? [],
@@ -181,10 +253,8 @@ export default function AdminRoundingReportsPage() {
         setBreakdowns(EMPTY_BREAKDOWNS);
       }
       setLoadState("ready");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not load completion report data.",
-      );
+    } catch {
+      setErrorMessage("Could not load completion report. Confirm the range and retry.");
       setSummary(EMPTY_SUMMARY);
       setBreakdowns(EMPTY_BREAKDOWNS);
       setLoadState("error");
@@ -234,6 +304,14 @@ export default function AdminRoundingReportsPage() {
     return s;
   }
 
+  function handlePresetChange(value: DateRangePreset) {
+    setPreset(value);
+    if (value === "custom") return;
+    const next = rangeForPreset(value);
+    setFrom(next.from);
+    setTo(next.to);
+  }
+
   function exportCsv() {
     const text = csvRows.map((row) => row.map(csvCell).join(",")).join("\n");
     const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
@@ -257,7 +335,7 @@ export default function AdminRoundingReportsPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Completion reports"
-        subtitle="Expected, completed, on-time, late, and missed checks across shifts, staff, and residents."
+        subtitle={`Pre-configured exportable summaries for surveyor packets, internal QA, and executive review at ${facilityName}.`}
         actions={
           <>
             <Button
@@ -299,16 +377,42 @@ export default function AdminRoundingReportsPage() {
         />
       ) : (
         <>
-          {/* Date range pickers */}
-          <section aria-label="Report window">
-            <div className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2">
-              <DateField
-                id="report-from"
-                label="From"
-                value={from}
-                onChange={setFrom}
-              />
-              <DateField id="report-to" label="To" value={to} onChange={setTo} />
+          <section aria-label="Report controls">
+            <div className="grid grid-cols-1 gap-4 rounded-lg border border-border bg-card p-4 lg:grid-cols-4">
+              <FormField id="report-preset" label="Date range preset">
+                <Select value={preset} onValueChange={(value) => handlePresetChange(value as DateRangePreset)}>
+                  <SelectTrigger id="report-preset" className="h-10">
+                    <SelectValue placeholder="Select range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATE_RANGE_PRESETS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField id="report-type" label="Report type">
+                <Select value={reportType} onValueChange={(value) => setReportType(value as ReportType)}>
+                  <SelectTrigger id="report-type" className="h-10">
+                    <SelectValue placeholder="Select report" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REPORT_TYPES.map((option) => (
+                      <SelectItem key={option.value} value={option.value} disabled={!option.supported}>
+                        {option.label} · {option.format}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <DateField id="report-from" label="From" value={from} onChange={(value) => { setFrom(value); setPreset("custom"); }} />
+              <DateField id="report-to" label="To" value={to} onChange={(value) => { setTo(value); setPreset("custom"); }} />
+              <div className="flex items-end lg:col-span-4">
+                <Button type="button" onClick={() => void load()} disabled={loadState === "loading"}>
+                  {loadState === "loading" ? <RefreshCw className="size-4 animate-spin" aria-hidden /> : <FileBarChart className="size-4" aria-hidden />}
+                  Generate
+                </Button>
+              </div>
             </div>
           </section>
 
@@ -367,6 +471,8 @@ export default function AdminRoundingReportsPage() {
               />
             </>
           )}
+
+          <RecentReportsList />
         </>
       )}
     </div>
@@ -376,6 +482,15 @@ export default function AdminRoundingReportsPage() {
 /* -------------------------------------------------------------------------- */
 /*  Date field                                                                */
 /* -------------------------------------------------------------------------- */
+
+function FormField({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <FormLabel htmlFor={id}>{label}</FormLabel>
+      {children}
+    </div>
+  );
+}
 
 function DateField({
   id,
@@ -389,16 +504,9 @@ function DateField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label htmlFor={id} className="flex flex-col gap-1.5">
-      <span className="text-[12px] font-medium text-muted-foreground">{label}</span>
-      <input
-        id={id}
-        type="datetime-local"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground tabular-nums shadow-sm transition focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
-      />
-    </label>
+    <FormField id={id} label={label}>
+      <DatePicker id={id} value={value} onValueChange={onChange} calendarIconAlign="end" />
+    </FormField>
   );
 }
 
@@ -417,32 +525,7 @@ function KpiCard({
   tone: Tone;
   hint: string;
 }) {
-  return (
-    <article
-      aria-label={`${label}: ${value}`}
-      className={cn(
-        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
-        tone === "danger" && "border-danger/40",
-        tone === "warning" && "border-warning/40",
-        tone === "success" && "border-success/40",
-        tone === "default" && "border-border",
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "danger" && "text-danger",
-          tone === "warning" && "text-warning",
-          tone === "success" && "text-success",
-          tone === "default" && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-[11px] text-muted-foreground">{hint}</span>
-    </article>
-  );
+  return <MetricCard label={label} value={value} tone={tone === "default" ? undefined : tone} hint={hint} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -476,7 +559,7 @@ function BreakdownSection({
       {rows.length === 0 ? (
         <div className="px-4 py-8 text-center">
           <p className="text-[13px] text-muted-foreground">
-            No rows returned for this window.
+            No matching entries for this window.
           </p>
         </div>
       ) : (
@@ -547,6 +630,17 @@ function RatePill({ rate, tone }: { rate: number; tone: Tone }) {
   );
 }
 
+function RecentReportsList() {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4" aria-label="Recent reports">
+      <h2 className="text-sm font-semibold text-foreground">Recent reports</h2>
+      <p className="mt-2 text-[13px] text-muted-foreground">
+        No reports generated yet. Select a date range and report type to generate a summary.
+      </p>
+    </section>
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Notices + empty states                                                    */
 /* -------------------------------------------------------------------------- */
@@ -613,10 +707,10 @@ function NoDataEmptyState() {
     >
       <CheckCircle2 className="mx-auto size-8 text-muted-foreground" aria-hidden />
       <p className="mt-3 text-sm font-semibold text-foreground">
-        No completion data in this window
+        No reports generated yet
       </p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        Adjust the date range, or check that rounding cycles ran in the selected window.
+        Select a date range and report type to generate a summary.
       </p>
     </section>
   );

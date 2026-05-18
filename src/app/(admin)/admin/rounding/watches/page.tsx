@@ -21,6 +21,17 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { MetricCard } from "@/components/ui/metric-card";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -94,6 +105,7 @@ type LoadState = "idle" | "loading" | "ready" | "error";
 type BoardState = "no_facility" | "loading" | "error" | "populated";
 
 type Tone = "default" | "warning" | "danger";
+type WatchFilter = "all" | "pending" | "active" | "closed_today" | "paused";
 
 /* -------------------------------------------------------------------------- */
 /*  Constants + helpers                                                       */
@@ -167,12 +179,6 @@ function getDurationLabel(protocol: WatchProtocolRow) {
   return `${totalMinutes} minutes`;
 }
 
-function chipClasses(tone: Tone): string {
-  if (tone === "danger") return "border-danger/30 bg-danger/10 text-danger";
-  if (tone === "warning") return "border-warning/30 bg-warning/10 text-warning";
-  return "border-border bg-muted text-muted-foreground";
-}
-
 function resolvePendingTone(count: number): Tone {
   if (count === 0) return "default";
   if (count <= 2) return "warning";
@@ -183,6 +189,12 @@ function resolveOverdueTone(count: number): Tone {
   if (count === 0) return "default";
   if (count <= 3) return "warning";
   return "danger";
+}
+
+function toStatusPillTone(tone: Tone) {
+  if (tone === "danger") return "danger" as const;
+  if (tone === "warning") return "warning" as const;
+  return "muted" as const;
 }
 
 function deriveBoardState(args: {
@@ -199,9 +211,11 @@ function deriveBoardState(args: {
 /*  Page                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export default function ResidentAssuranceWatchCenterPage() {
+export default function SmartRoundingWatchesPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const [protocols, setProtocols] = useState<WatchProtocolRow[]>([]);
   const [instances, setInstances] = useState<WatchInstanceRow[]>([]);
   const [events, setEvents] = useState<WatchEventRow[]>([]);
@@ -214,6 +228,8 @@ export default function ResidentAssuranceWatchCenterPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
+  const [filter, setFilter] = useState<WatchFilter>("all");
+  const [pendingApproval, setPendingApproval] = useState<WatchInstanceRow | null>(null);
 
   const load = useCallback(async () => {
     setLoadState("loading");
@@ -322,10 +338,8 @@ export default function ResidentAssuranceWatchCenterPage() {
       }
 
       setLoadState("ready");
-    } catch (loadError) {
-      setErrorMessage(
-        loadError instanceof Error ? loadError.message : "Could not load watch center.",
-      );
+    } catch {
+      setErrorMessage("Could not load watches. Confirm facility scope and retry.");
       setLoadState("error");
     }
   }, [selectedFacilityId, supabase]);
@@ -350,17 +364,6 @@ export default function ResidentAssuranceWatchCenterPage() {
       overdueTasks,
     };
   }, [instances, protocols, taskSummaryByWatch]);
-
-  const actionableInstances = useMemo(
-    () =>
-      instances.filter(
-        (row) =>
-          row.status === "pending_approval" ||
-          row.status === "active" ||
-          row.status === "paused",
-      ),
-    [instances],
-  );
 
   const runAction = useCallback(
     async (
@@ -406,16 +409,34 @@ export default function ResidentAssuranceWatchCenterPage() {
         setActionMessage(`${verb}.${suffix}`);
         setReasonDrafts((current) => ({ ...current, [watchId]: "" }));
         await load();
-      } catch (runError) {
-        setActionError(
-          runError instanceof Error ? runError.message : "Could not update watch instance.",
-        );
+      } catch {
+        setActionError("Could not update watch. Confirm the watch is still actionable and retry.");
       } finally {
         setActionLoading(null);
       }
     },
     [load, reasonDrafts],
   );
+
+  const watchCounts = useMemo(() => {
+    const today = new Date().toDateString();
+    return {
+      all: instances.length,
+      pending: instances.filter((row) => row.status === "pending_approval").length,
+      active: instances.filter((row) => row.status === "active").length,
+      closed_today: instances.filter((row) => (row.status === "ended" || row.status === "cancelled") && row.ends_at && new Date(row.ends_at).toDateString() === today).length,
+      paused: instances.filter((row) => row.status === "paused").length,
+    };
+  }, [instances]);
+
+  const filteredInstances = useMemo(() => {
+    if (filter === "all") return instances;
+    if (filter === "pending") return instances.filter((row) => row.status === "pending_approval");
+    if (filter === "active") return instances.filter((row) => row.status === "active");
+    if (filter === "paused") return instances.filter((row) => row.status === "paused");
+    const today = new Date().toDateString();
+    return instances.filter((row) => (row.status === "ended" || row.status === "cancelled") && row.ends_at && new Date(row.ends_at).toDateString() === today);
+  }, [filter, instances]);
 
   const boardState = deriveBoardState({
     loadState,
@@ -425,8 +446,8 @@ export default function ResidentAssuranceWatchCenterPage() {
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
-        title="Watch protocols"
-        subtitle="Review active watches, approve auto-triggered monitoring, and close the loop on resident-specific safety protocols."
+        title="Watches"
+        subtitle={`Review active watches, approve auto-triggered monitoring, and close the loop on resident-specific safety protocols at ${facilityName}.`}
         actions={
           <Button
             type="button"
@@ -507,6 +528,16 @@ export default function ResidentAssuranceWatchCenterPage() {
             </div>
           </section>
 
+          <section aria-label="Filter watches">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <FilterPill label="All" count={watchCounts.all} active={filter === "all"} onClick={() => setFilter("all")} />
+              <FilterPill label="Pending approval" count={watchCounts.pending} tone="warning" active={filter === "pending"} onClick={() => setFilter(filter === "pending" ? "all" : "pending")} />
+              <FilterPill label="Active" count={watchCounts.active} active={filter === "active"} onClick={() => setFilter(filter === "active" ? "all" : "active")} />
+              <FilterPill label="Closed today" count={watchCounts.closed_today} active={filter === "closed_today"} onClick={() => setFilter(filter === "closed_today" ? "all" : "closed_today")} />
+              <FilterPill label="Paused" count={watchCounts.paused} active={filter === "paused"} onClick={() => setFilter(filter === "paused" ? "all" : "paused")} />
+            </div>
+          </section>
+
           <div className="grid gap-4 lg:grid-cols-[1.35fr_0.95fr]">
             {/* Actionable watch instances */}
             <section
@@ -531,19 +562,19 @@ export default function ResidentAssuranceWatchCenterPage() {
                 </Link>
               </header>
 
-              {actionableInstances.length === 0 ? (
+              {filteredInstances.length === 0 ? (
                 <div className="px-4 py-8 text-center">
                   <Shield className="mx-auto size-7 text-muted-foreground" aria-hidden />
                   <p className="mt-2 text-sm font-semibold text-foreground">
-                    No actionable watches
+                    No watches at {facilityName}
                   </p>
                   <p className="mt-1 text-[13px] text-muted-foreground">
-                    All active watches are clear of pending approvals or paused holds.
+                    Watches are created automatically when clinical triggers fire, or manually from a resident profile.
                   </p>
                 </div>
               ) : (
                 <ul className="divide-y divide-border">
-                  {actionableInstances.map((row) => {
+                  {filteredInstances.map((row) => {
                     const residentName = row.residents
                       ? formatResidentName(row.residents)
                       : row.resident_id.slice(0, 8);
@@ -565,6 +596,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                             setReasonDrafts((current) => ({ ...current, [row.id]: value }))
                           }
                           actionLoading={actionLoading}
+                          onRequestApprove={() => setPendingApproval(row)}
                           onAction={(action) => void runAction(row.id, action)}
                         />
                       </li>
@@ -611,15 +643,7 @@ export default function ResidentAssuranceWatchCenterPage() {
                               {getDurationLabel(protocol)}
                             </p>
                           </div>
-                          <Chip
-                            className={
-                              protocol.active
-                                ? "border-success/30 bg-success/10 text-success"
-                                : "border-border bg-muted text-muted-foreground"
-                            }
-                          >
-                            {protocol.active ? "Active" : "Inactive"}
-                          </Chip>
+                          <StatusPill value={protocol.active ? "Active" : "Inactive"} defaultValue="Active" tone={protocol.active ? "muted" : "warning"} />
                         </div>
                         <p className="mt-2 text-[11px] text-muted-foreground">
                           {protocol.approval_required ? "Requires approval" : "Auto-activates"}
@@ -695,6 +719,31 @@ export default function ResidentAssuranceWatchCenterPage() {
               </section>
             </div>
           </div>
+          <Dialog open={Boolean(pendingApproval)} onOpenChange={(open) => !open && setPendingApproval(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Approve watch?</DialogTitle>
+                <DialogDescription>
+                  {pendingApproval
+                    ? `Approve watch on ${pendingApproval.residents ? formatResidentName(pendingApproval.residents) : "resident"} for ${pendingApproval.resident_watch_protocols?.name ?? pendingApproval.triggered_by_type.replace(/_/g, " ")}? This will activate monitoring per the watch protocol.`
+                    : "This will activate monitoring per the watch protocol."}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPendingApproval(null)}>Cancel</Button>
+                <Button
+                  onClick={() => {
+                    if (!pendingApproval) return;
+                    const watchId = pendingApproval.id;
+                    setPendingApproval(null);
+                    void runAction(watchId, "approve");
+                  }}
+                >
+                  Approve watch
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>
@@ -712,6 +761,7 @@ function WatchInstanceRowCard({
   reasonDraft,
   onReasonChange,
   actionLoading,
+  onRequestApprove,
   onAction,
 }: {
   row: WatchInstanceRow;
@@ -720,6 +770,7 @@ function WatchInstanceRowCard({
   reasonDraft: string;
   onReasonChange: (value: string) => void;
   actionLoading: string | null;
+  onRequestApprove: () => void;
   onAction: (action: "approve" | "pause" | "resume" | "end" | "cancel") => void;
 }) {
   const actionKey = (action: string) => `${row.id}:${action}`;
@@ -728,9 +779,9 @@ function WatchInstanceRowCard({
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 flex-1 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Chip className={chipClasses(STATUS_TONE[row.status])}>
+          <StatusPill tone={toStatusPillTone(STATUS_TONE[row.status])}>
             {STATUS_LABEL[row.status]}
-          </Chip>
+          </StatusPill>
           <Chip className="border-border bg-muted text-muted-foreground">
             {row.triggered_by_type.replace(/_/g, " ")}
           </Chip>
@@ -790,7 +841,7 @@ function WatchInstanceRowCard({
                   type="button"
                   variant="default"
                   size="sm"
-                  onClick={() => onAction("approve")}
+                  onClick={onRequestApprove}
                   disabled={actionLoading === actionKey("approve")}
                 >
                   {actionLoading === actionKey("approve") ? (
@@ -849,6 +900,13 @@ function WatchInstanceRowCard({
                 </Button>
               </>
             )}
+
+            <Link
+              href={`/admin/residents/${row.resident_id}`}
+              className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              View detail
+            </Link>
 
             {row.status === "paused" && (
               <>
@@ -951,30 +1009,11 @@ function KpiCard({
   tone: Tone;
   hint: string;
 }) {
-  return (
-    <article
-      aria-label={`${label}: ${value}`}
-      className={cn(
-        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
-        tone === "danger" && "border-danger/40",
-        tone === "warning" && "border-warning/40",
-        tone === "default" && "border-border",
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "danger" && "text-danger",
-          tone === "warning" && "text-warning",
-          tone === "default" && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-[11px] text-muted-foreground">{hint}</span>
-    </article>
-  );
+  const thresholds =
+    label === "Pending approval" || label === "Overdue tasks"
+      ? ({ type: label === "Overdue tasks" ? "overdue-count" : "critical-count" } as const)
+      : ({ type: "informational" } as const);
+  return <MetricCard label={label} value={value} numericValue={value} thresholds={thresholds} tone={tone === "default" ? undefined : tone} hint={hint} />;
 }
 
 /* -------------------------------------------------------------------------- */
