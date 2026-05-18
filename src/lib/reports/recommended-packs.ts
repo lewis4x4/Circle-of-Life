@@ -13,7 +13,7 @@ export type RecommendedStarterPack = {
 /** Phase 1 opinionated bundles — template slugs must exist in `report_templates`. */
 export function buildRecommendedStarterPacks(seed: Phase1TemplateSeed[]): RecommendedStarterPack[] {
   const slug = (s: string) => s;
-  return [
+  const packs: RecommendedStarterPack[] = [
     {
       id: "ceo-weekly",
       name: "CEO weekly pack",
@@ -53,7 +53,8 @@ export function buildRecommendedStarterPacks(seed: Phase1TemplateSeed[]): Recomm
       cadenceLabel: "Monthly",
       frequency: "monthly",
     },
-  ].filter((pack) => pack.templateSlugs.every((s) => seed.some((t) => t.slug === s)));
+  ];
+  return packs.filter((pack) => pack.templateSlugs.every((s) => seed.some((t) => t.slug === s)));
 }
 
 /** Survey visit shortcut uses every Phase 1 template (single downloadable bundle UX). */

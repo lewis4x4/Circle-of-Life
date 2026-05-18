@@ -135,10 +135,12 @@ export function ReportsHubNav() {
                 : "text-muted-foreground hover:text-foreground",
             )}
             aria-label={
-              activeSecondary ? `More views — currently ${activeSecondary.label}` : "More reporting views"
+              activeSecondary
+                ? `More reporting views — submenu (current: ${activeSecondary.label})`
+                : "More reporting views submenu"
             }
           >
-            {activeSecondary ? activeSecondary.label : "More"}
+            More
             <ChevronDown className="size-3 opacity-70" aria-hidden />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 p-1">

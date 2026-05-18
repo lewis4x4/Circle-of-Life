@@ -112,10 +112,17 @@ const nextConfig: NextConfig = {
       "transportation",
       "vendors",
     ];
-    return segments.flatMap((seg) => [
-      { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
-      { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
-    ]);
+    return [
+      ...segments.flatMap((seg) => [
+        { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
+        { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
+      ]),
+      {
+        source: "/admin/reports-hub/haven-insight",
+        destination: "/admin/reports/nlq",
+        permanent: false,
+      },
+    ];
   },
   async headers() {
     return [
