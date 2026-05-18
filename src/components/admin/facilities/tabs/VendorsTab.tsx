@@ -3,6 +3,7 @@
 import React from "react";
 import { Loader2, Truck } from "lucide-react";
 import Link from "next/link";
+import { PhoneLink } from "@/components/common/phone-link";
 import { useFacilityVendors } from "@/hooks/useFacilityVendors";
 
 interface VendorsTabProps {
@@ -50,9 +51,11 @@ export function VendorsTab({ facilityId }: VendorsTabProps) {
                     <span className="ml-2 rounded-[8px] bg-muted/10 border border-border px-1.5 py-0.5 text-xs text-foreground">Primary</span>
                   )}
                 </p>
-                {r.vendor?.primary_contact_phone && (
-                  <p className="text-sm mt-1 text-foreground">{r.vendor.primary_contact_phone}</p>
-                )}
+                {r.vendor?.primary_contact_phone ? (
+                  <p className="mt-1">
+                    <PhoneLink phone={r.vendor.primary_contact_phone} />
+                  </p>
+                ) : null}
               </div>
               {r.vendor?.id && (
                 <Link

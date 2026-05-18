@@ -1,24 +1,50 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { useFacilityBuildingProfile } from "@/hooks/useFacilityBuildingProfile";
+import { toast } from "sonner";
+import type { FacilityDetailRow } from "@/types/facility";
+import type { BuildingProfileInput } from "@/lib/validation/facility-admin";
 import {
   CONSTRUCTION_TYPES,
   FIRE_SUPPRESSION_TYPES,
   GENERATOR_FUEL_TYPES,
 } from "@/lib/admin/facilities/facility-constants";
-import type { BuildingProfileInput } from "@/lib/validation/facility-admin";
-import { RecordDetailSection } from "@/design-system/components/record-detail";
+import {
+  CONSTRUCTION_TYPE_LABELS,
+  FIRE_SUPPRESSION_LABELS,
+  GENERATOR_FUEL_LABELS,
+} from "@/lib/admin/facilities/building-profile-labels";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { PhoneLink } from "@/components/common/phone-link";
 
-interface BuildingTabProps {
-  facilityId: string;
-}
+const ENUM_UNSET = "__unset__";
+const CURRENT_YEAR = new Date().getFullYear();
 
 function d(v: unknown): string {
   if (v == null || v === "") return "";
   if (typeof v === "string") return v.length >= 10 ? v.slice(0, 10) : v;
   return String(v);
+}
+
+function normalizeVendorSeparators(raw: string): string {
+  return raw.trim().replace(/\s*\/\s*/g, " — ");
+}
+
+function splitTrailingParen(raw: string): { body: string; tag?: string } {
+  const m = raw.trim().match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  if (!m) return { body: raw.trim() };
+  return { body: m[1].trim(), tag: m[2].trim() };
 }
 
 function profileToDraft(profile: Record<string, unknown> | null): Partial<BuildingProfileInput> {
@@ -27,6 +53,7 @@ function profileToDraft(profile: Record<string, unknown> | null): Partial<Buildi
   return {
     year_built: (p.year_built as number) ?? undefined,
     number_of_floors: (p.number_of_floors as number) ?? 1,
+    square_footage: (p.square_footage as number) ?? undefined,
     has_generator: Boolean(p.has_generator),
     has_elevator: Boolean(p.has_elevator),
     ada_compliant: Boolean(p.ada_compliant),
@@ -40,32 +67,144 @@ function profileToDraft(profile: Record<string, unknown> | null): Partial<Buildi
     gas_phone: (p.gas_phone as string) ?? undefined,
     generator_fuel_type: p.generator_fuel_type as BuildingProfileInput["generator_fuel_type"],
     generator_service_vendor: (p.generator_service_vendor as string) ?? undefined,
+    generator_capacity_kw: (p.generator_capacity_kw as number) ?? undefined,
+    generator_last_test_date: d(p.generator_last_test_date) || undefined,
+    generator_next_service_date: d(p.generator_next_service_date) || undefined,
     kitchen_license_number: (p.kitchen_license_number as string) ?? undefined,
     last_fire_inspection_date: d(p.last_fire_inspection_date) || undefined,
+    next_fire_inspection_date: d(p.next_fire_inspection_date) || undefined,
     evacuation_partner_facility: (p.evacuation_partner_facility as string) ?? undefined,
+    evacuation_transport_capacity: (p.evacuation_transport_capacity as number) ?? undefined,
     door_alarm_system: (p.door_alarm_system as string) ?? undefined,
     perimeter_description: (p.perimeter_description as string) ?? undefined,
+    wander_guard_system: (p.wander_guard_system as string) ?? undefined,
   };
 }
 
-const inputCls = "mt-1 w-full rounded-[8px] border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+function mergedPayload(m: Partial<BuildingProfileInput>): BuildingProfileInput {
+  return Object.fromEntries(
+    Object.entries(m).filter(([, v]) => v !== undefined && v !== ""),
+  ) as BuildingProfileInput;
+}
 
-export function BuildingTab({ facilityId }: BuildingTabProps) {
-  const { profile, isLoading, error, saveProfile, isSaving } = useFacilityBuildingProfile(facilityId);
-  const baseDraft = useMemo(
-    () => profileToDraft(profile as Record<string, unknown> | null),
-    [profile],
+function sprinklerCoverageSentence(v: BuildingProfileInput["fire_suppression_type"]): string {
+  switch (v) {
+    case "full_sprinkler":
+      return "Inferred coverage: Full (matches suppression profile).";
+    case "partial_sprinkler":
+      return "Inferred coverage: Partial (matches suppression profile).";
+    case "extinguisher_only":
+      return "Inferred coverage: None — portable extinguishers only on file.";
+    case "none":
+      return "Inferred coverage: None on file.";
+    default:
+      return "Select suppression above to infer baseline sprinkler coverage.";
+  }
+}
+
+function SectionAuditFooter({ updatedAt }: { updatedAt?: string | null }) {
+  if (!updatedAt || typeof updatedAt !== "string") {
+    return (
+      <p className="mt-4 text-[12px] text-muted-foreground">
+        Audit trail per subsection pending facility audit_log slices — launch sprint.
+      </p>
+    );
+  }
+  const iso = new Date(updatedAt).toISOString();
+  return (
+    <p className="mt-4 text-[12px] text-muted-foreground">
+      Last saved {iso.replace(".000Z", "Z")} · Building profile record (aggregate until sectional audit ships).
+    </p>
   );
+}
+
+function BuildingSection({
+  title,
+  children,
+  auditUpdatedAt,
+}: {
+  title: string;
+  children: React.ReactNode;
+  auditUpdatedAt?: string | null;
+}) {
+  return (
+    <section className="pb-8">
+      <h2 className="text-[14px] font-semibold tracking-tight text-foreground">{title}</h2>
+      <div className="mt-2 border-t border-border" />
+      <div className="mt-4">{children}</div>
+      <SectionAuditFooter updatedAt={auditUpdatedAt} />
+    </section>
+  );
+}
+
+function ScaffoldRow({ label }: { label: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/60 py-2 last:border-b-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm tabular-nums text-muted-foreground">—</span>
+    </div>
+  );
+}
+
+const inputCls =
+  "mt-1 w-full rounded-[8px] border border-border bg-background px-2 py-2 text-sm text-foreground shadow-none focus:outline-none focus:ring-2 focus:ring-ring";
+
+interface BuildingTabProps {
+  facilityId: string;
+  facility: FacilityDetailRow;
+  profile: Record<string, unknown> | null;
+  isLoading: boolean;
+  error: string | null;
+  saveProfile: (p: BuildingProfileInput) => Promise<void>;
+  isSaving: boolean;
+}
+
+export function BuildingTab({
+  facilityId,
+  facility,
+  profile,
+  isLoading,
+  error,
+  saveProfile,
+  isSaving,
+}: BuildingTabProps) {
+  const baseDraft = useMemo(() => profileToDraft(profile), [profile]);
   const [draft, setDraft] = useState<Partial<BuildingProfileInput>>({});
-  const merged = { ...baseDraft, ...draft };
+  const [dirty, setDirty] = useState(false);
+
+  const merged = useMemo(() => ({ ...baseDraft, ...draft }), [baseDraft, draft]);
+  const auditStamp = typeof profile?.updated_at === "string" ? profile.updated_at : null;
+
+  const docsHref = `/admin/facilities/${facilityId}?tab=documents`;
+  const vendorsHref = `/admin/facilities/${facilityId}?tab=vendors`;
+  const licensingHref = `/admin/facilities/${facilityId}?tab=licensing`;
+
+  function touchDraft(updater: (prev: Partial<BuildingProfileInput>) => Partial<BuildingProfileInput>) {
+    setDraft((prev) => updater(prev));
+    setDirty(true);
+  }
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = Object.fromEntries(
-      Object.entries(merged).filter(([, v]) => v !== undefined && v !== ""),
-    ) as BuildingProfileInput;
-    await saveProfile(parsed);
+    try {
+      await saveProfile(mergedPayload(merged));
+      toast.success("Building profile saved.");
+    } catch {
+      toast.error("Could not save building profile.");
+    }
   }
+
+  function onDiscard() {
+    const keys = Object.keys(draft);
+    if (keys.length > 5 && typeof window !== "undefined") {
+      const ok = window.confirm(`Discard ${keys.length} unsaved edits on this page?`);
+      if (!ok) return;
+    }
+    setDraft({});
+    setDirty(false);
+  }
+
+  const gasParts = splitTrailingParen(merged.gas_provider ?? "");
 
   if (isLoading) {
     return (
@@ -80,17 +219,28 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
   }
 
   return (
-    <form onSubmit={onSave} className="space-y-4">
-      <RecordDetailSection title="Construction">
+    <form
+      key={`${facilityId}:${String(profile?.updated_at ?? "")}`}
+      onSubmit={onSave}
+      className={cn("relative pb-24", dirty && "pb-28")}
+    >
+      <BuildingSection title="Construction" auditUpdatedAt={auditStamp}>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="text-sm text-foreground">
             Year built
             <input
               type="number"
+              min={1900}
+              max={CURRENT_YEAR}
+              step={1}
               className={inputCls}
               value={merged.year_built ?? ""}
+              placeholder=""
               onChange={(e) =>
-                setDraft((d) => ({ ...d, year_built: e.target.value ? Number(e.target.value) : undefined }))
+                touchDraft((d) => ({
+                  ...d,
+                  year_built: e.target.value ? Number(e.target.value) : undefined,
+                }))
               }
             />
           </label>
@@ -99,191 +249,487 @@ export function BuildingTab({ facilityId }: BuildingTabProps) {
             <input
               type="number"
               min={1}
+              max={10}
+              step={1}
               className={inputCls}
               value={merged.number_of_floors ?? 1}
-              onChange={(e) => setDraft((d) => ({ ...d, number_of_floors: Number(e.target.value) || 1 }))}
+              onChange={(e) =>
+                touchDraft((d) => ({
+                  ...d,
+                  number_of_floors: Math.min(10, Math.max(1, Number(e.target.value) || 1)),
+                }))
+              }
             />
           </label>
           <label className="text-sm text-foreground">
             Construction type
-            <select
-              className={inputCls}
-              value={merged.construction_type ?? ""}
-              onChange={(e) =>
-                setDraft((d) => ({
+            <Select
+              value={merged.construction_type ?? ENUM_UNSET}
+              onValueChange={(v) =>
+                touchDraft((d) => ({
                   ...d,
-                  construction_type: e.target.value
-                    ? (e.target.value as BuildingProfileInput["construction_type"])
-                    : undefined,
+                  construction_type: v === ENUM_UNSET ? undefined : (v as BuildingProfileInput["construction_type"]),
                 }))
               }
             >
-              <option value="">—</option>
-              {CONSTRUCTION_TYPES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+              <SelectTrigger className={cn(inputCls, "h-auto py-2")}>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ENUM_UNSET}>Not set</SelectItem>
+                {CONSTRUCTION_TYPES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {CONSTRUCTION_TYPE_LABELS[c]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
         </div>
-      </RecordDetailSection>
 
-      <RecordDetailSection title="Fire &amp; safety">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-sm text-foreground">
+            Square footage (total building)
+            <input
+              type="number"
+              min={0}
+              step={1}
+              className={inputCls}
+              value={merged.square_footage ?? ""}
+              placeholder=""
+              onChange={(e) =>
+                touchDraft((d) => ({
+                  ...d,
+                  square_footage: e.target.value ? Number(e.target.value) : undefined,
+                }))
+              }
+            />
+          </label>
+          <div className="text-sm text-foreground">
+            <span className="block">Resident rooms (count)</span>
+            <p className="mt-3 text-[13px] text-muted-foreground tabular-nums">— schema sprint</p>
+          </div>
+          <div className="text-sm text-foreground">
+            <span className="block">Licensed beds</span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-[13px] tabular-nums text-foreground">
+                {facility.total_licensed_beds ?? "—"}
+              </span>
+              <Link href={licensingHref} className="text-[13px] text-primary hover:underline">
+                Licensing tab
+              </Link>
+            </div>
+          </div>
+          <div className="text-sm text-foreground">
+            <span className="block">Common area sq ft</span>
+            <p className="mt-3 text-[13px] text-muted-foreground tabular-nums">— schema sprint</p>
+          </div>
+        </div>
+      </BuildingSection>
+
+      <BuildingSection title="Fire & safety" auditUpdatedAt={auditStamp}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-foreground">
             Suppression
-            <select
-              className={inputCls}
-              value={merged.fire_suppression_type ?? ""}
-              onChange={(e) =>
-                setDraft((d) => ({
+            <Select
+              value={merged.fire_suppression_type ?? ENUM_UNSET}
+              onValueChange={(v) =>
+                touchDraft((d) => ({
                   ...d,
-                  fire_suppression_type: e.target.value
-                    ? (e.target.value as BuildingProfileInput["fire_suppression_type"])
-                    : undefined,
+                  fire_suppression_type: v === ENUM_UNSET ? undefined : (v as BuildingProfileInput["fire_suppression_type"]),
                 }))
               }
             >
-              <option value="">—</option>
-              {FIRE_SUPPRESSION_TYPES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+              <SelectTrigger className={cn(inputCls, "h-auto py-2")}>
+                <SelectValue placeholder="Select suppression" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ENUM_UNSET}>Not set</SelectItem>
+                {FIRE_SUPPRESSION_TYPES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {FIRE_SUPPRESSION_LABELS[c]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm text-foreground">
             Fire alarm monitoring
             <input
               className={inputCls}
               value={merged.fire_alarm_monitoring_company ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, fire_alarm_monitoring_company: e.target.value }))}
+              placeholder=""
+              onChange={(e) => touchDraft((d) => ({ ...d, fire_alarm_monitoring_company: e.target.value }))}
             />
           </label>
-          <label className="text-sm text-foreground">
-            Last fire inspection
-            <input
-              type="date"
-              className={inputCls}
-              value={merged.last_fire_inspection_date ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, last_fire_inspection_date: e.target.value || undefined }))}
-            />
-          </label>
+          <div className="sm:col-span-2">
+            <label className="text-sm text-foreground">
+              Last fire inspection
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <input
+                  type="date"
+                  className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                  value={merged.last_fire_inspection_date ?? ""}
+                  placeholder=""
+                  onChange={(e) =>
+                    touchDraft((d) => ({ ...d, last_fire_inspection_date: e.target.value || undefined }))
+                  }
+                />
+                {!merged.last_fire_inspection_date ? (
+                  <span className="text-xs text-muted-foreground">Not on file</span>
+                ) : (
+                  <Link href={docsHref} className="text-xs text-primary hover:underline">
+                    Proof in Document Vault
+                  </Link>
+                )}
+              </div>
+            </label>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-sm text-foreground">
+              Next fire inspection due
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <input
+                  type="date"
+                  className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                  value={merged.next_fire_inspection_date ?? ""}
+                  placeholder=""
+                  onChange={(e) =>
+                    touchDraft((d) => ({ ...d, next_fire_inspection_date: e.target.value || undefined }))
+                  }
+                />
+                {!merged.next_fire_inspection_date ? (
+                  <span className="text-xs text-muted-foreground">Not on file</span>
+                ) : null}
+              </div>
+            </label>
+          </div>
         </div>
-      </RecordDetailSection>
+      </BuildingSection>
 
-      <RecordDetailSection title="Generator">
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input
-            type="checkbox"
-            checked={merged.has_generator ?? false}
-            onChange={(e) => setDraft((d) => ({ ...d, has_generator: e.target.checked }))}
-          />
-          Has generator
-        </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm text-foreground">
-            Fuel type
-            <select
-              className={inputCls}
-              value={merged.generator_fuel_type ?? ""}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  generator_fuel_type: e.target.value
-                    ? (e.target.value as BuildingProfileInput["generator_fuel_type"])
-                    : undefined,
-                }))
-              }
-            >
-              <option value="">—</option>
-              {GENERATOR_FUEL_TYPES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm text-foreground">
-            Service vendor
+      <BuildingSection title="Sprinkler system" auditUpdatedAt={auditStamp}>
+        <p className="mb-3 text-[13px] text-muted-foreground">{sprinklerCoverageSentence(merged.fire_suppression_type)}</p>
+        <ScaffoldRow label="Dedicated coverage selector (full / partial / none)" />
+        <ScaffoldRow label="System type (wet / dry / pre-action / deluge)" />
+        <ScaffoldRow label="Last sprinkler inspection date + vault link" />
+        <ScaffoldRow label="Next sprinkler inspection due" />
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          Granular sprinkler columns ship in schema sprint — suppression enum fields remain authoritative until then.
+        </p>
+      </BuildingSection>
+
+      <BuildingSection title="Emergency power / Generator (AHCA Rule 59A-36 framing)" auditUpdatedAt={auditStamp}>
+        <div id="facility-building-generator" className="scroll-mt-24">
+          <label className="flex items-center gap-2 text-sm text-foreground">
             <input
-              className={inputCls}
-              value={merged.generator_service_vendor ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, generator_service_vendor: e.target.value }))}
+              type="checkbox"
+              checked={merged.has_generator ?? false}
+              onChange={(e) => touchDraft((d) => ({ ...d, has_generator: e.target.checked }))}
             />
+            Has generator
           </label>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm text-foreground">
+              Fuel type
+              <Select
+                value={merged.generator_fuel_type ?? ENUM_UNSET}
+                onValueChange={(v) =>
+                  touchDraft((d) => ({
+                    ...d,
+                    generator_fuel_type: v === ENUM_UNSET ? undefined : (v as BuildingProfileInput["generator_fuel_type"]),
+                  }))
+                }
+              >
+                <SelectTrigger className={cn(inputCls, "h-auto py-2")}>
+                  <SelectValue placeholder="Select fuel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ENUM_UNSET}>Not set</SelectItem>
+                  {GENERATOR_FUEL_TYPES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {GENERATOR_FUEL_LABELS[c]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="text-sm text-foreground">
+              Service vendor
+              <input
+                className={inputCls}
+                value={merged.generator_service_vendor ?? ""}
+                placeholder=""
+                onChange={(e) => touchDraft((d) => ({ ...d, generator_service_vendor: e.target.value }))}
+              />
+              <p className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
+                <Link href={vendorsHref} className="text-primary hover:underline">
+                  Vendors hub
+                </Link>
+                {merged.generator_service_vendor ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <Link href={vendorsHref} className="font-medium text-primary hover:underline">
+                      {normalizeVendorSeparators(merged.generator_service_vendor)}
+                    </Link>
+                  </>
+                ) : null}
+              </p>
+            </label>
+            <label className="text-sm text-foreground">
+              kW capacity (on file)
+              <input
+                type="number"
+                min={0}
+                step={1}
+                className={inputCls}
+                value={merged.generator_capacity_kw ?? ""}
+                placeholder=""
+                onChange={(e) =>
+                  touchDraft((d) => ({
+                    ...d,
+                    generator_capacity_kw: e.target.value ? Number(e.target.value) : undefined,
+                  }))
+                }
+              />
+            </label>
+            <div className="sm:col-span-2 rounded-md border border-border/80 bg-muted/10 px-3 py-2 text-[13px] text-muted-foreground">
+              AHCA Rule 59A-36.025 96-hour readiness: indicator scaffold only — computation deferred to compliance-rules
+              engine sprint (TODO: runtime × tank vs licensed beds).
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm text-foreground">
+                Last load test
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <input
+                    type="date"
+                    className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                    value={merged.generator_last_test_date ?? ""}
+                    placeholder=""
+                    onChange={(e) =>
+                      touchDraft((d) => ({
+                        ...d,
+                        generator_last_test_date: e.target.value || undefined,
+                      }))
+                    }
+                  />
+                  {!merged.generator_last_test_date ? (
+                    <span className="text-xs text-muted-foreground">Not on file</span>
+                  ) : (
+                    <Link href={docsHref} className="text-xs text-primary hover:underline">
+                      Proof in Document Vault
+                    </Link>
+                  )}
+                </div>
+              </label>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm text-foreground">
+                Next PM / service due
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <input
+                    type="date"
+                    className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                    value={merged.generator_next_service_date ?? ""}
+                    placeholder=""
+                    onChange={(e) =>
+                      touchDraft((d) => ({
+                        ...d,
+                        generator_next_service_date: e.target.value || undefined,
+                      }))
+                    }
+                  />
+                  {!merged.generator_next_service_date ? (
+                    <span className="text-xs text-muted-foreground">Not on file</span>
+                  ) : null}
+                </div>
+              </label>
+            </div>
+          </div>
+          <div className="mt-6 space-y-1">
+            <ScaffoldRow label="Manufacturer / model (structured)" />
+            <ScaffoldRow label="Fuel tank size (gal) · runtime @ full load (hrs)" />
+            <ScaffoldRow label="Covered circuits selector" />
+            <ScaffoldRow label="Last PM service technician-of-record" />
+          </div>
         </div>
-      </RecordDetailSection>
+      </BuildingSection>
 
-      <RecordDetailSection title="Utilities">
+      <BuildingSection title="Utilities" auditUpdatedAt={auditStamp}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-foreground">
             Electric provider
             <input
               className={inputCls}
               value={merged.electric_provider ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, electric_provider: e.target.value }))}
+              placeholder=""
+              onChange={(e) => touchDraft((d) => ({ ...d, electric_provider: e.target.value }))}
             />
           </label>
           <label className="text-sm text-foreground">
-            Electric phone
-            <input
-              className={inputCls}
-              value={merged.electric_phone ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, electric_phone: e.target.value }))}
-            />
+            <span className="flex items-center gap-2">
+              Electric phone
+              <PhoneLink phone={merged.electric_phone ?? ""} iconOnly />
+            </span>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                className={cn(inputCls, "mt-0 flex-1")}
+                value={merged.electric_phone ?? ""}
+                placeholder=""
+                onChange={(e) => touchDraft((d) => ({ ...d, electric_phone: e.target.value }))}
+              />
+            </div>
           </label>
           <label className="text-sm text-foreground">
             Gas provider
-            <input
-              className={inputCls}
-              value={merged.gas_provider ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, gas_provider: e.target.value }))}
-            />
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <input
+                className={cn(inputCls, "mt-0 flex-1 min-w-[12rem]")}
+                value={merged.gas_provider ?? ""}
+                placeholder=""
+                onChange={(e) => touchDraft((d) => ({ ...d, gas_provider: e.target.value }))}
+              />
+              {gasParts.tag ? (
+                <Badge variant="secondary" className="font-normal">
+                  {gasParts.tag}
+                </Badge>
+              ) : null}
+            </div>
+            {gasParts.body && gasParts.tag ? (
+              <p className="mt-1 text-[12px] text-muted-foreground">
+                Structured hint: provider <span className="text-foreground">{gasParts.body}</span> · fuel note{" "}
+                <span className="text-foreground">{gasParts.tag}</span>
+              </p>
+            ) : null}
           </label>
           <label className="text-sm text-foreground">
-            Gas phone
-            <input
-              className={inputCls}
-              value={merged.gas_phone ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, gas_phone: e.target.value }))}
-            />
+            <span className="flex items-center gap-2">
+              Gas phone
+              <PhoneLink phone={merged.gas_phone ?? ""} iconOnly />
+            </span>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                className={cn(inputCls, "mt-0 flex-1")}
+                value={merged.gas_phone ?? ""}
+                placeholder=""
+                onChange={(e) => touchDraft((d) => ({ ...d, gas_phone: e.target.value }))}
+              />
+            </div>
           </label>
         </div>
-      </RecordDetailSection>
+      </BuildingSection>
 
-      <RecordDetailSection title="Elopement / storm">
+      <BuildingSection title="Elopement prevention" auditUpdatedAt={auditStamp}>
         <div className="space-y-3">
-          <label className="text-sm text-foreground block">
+          <label className="block text-sm text-foreground">
             Door alarm system
             <input
               className={inputCls}
               value={merged.door_alarm_system ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, door_alarm_system: e.target.value }))}
+              placeholder="e.g. DSC Power 1832 keypad, monitored by Security Safe central station"
+              onChange={(e) => touchDraft((d) => ({ ...d, door_alarm_system: e.target.value }))}
             />
           </label>
-          <label className="text-sm text-foreground block">
+          <label className="block text-sm text-foreground">
+            Wander Guard / tag system
+            <input
+              className={inputCls}
+              value={merged.wander_guard_system ?? ""}
+              placeholder=""
+              onChange={(e) => touchDraft((d) => ({ ...d, wander_guard_system: e.target.value }))}
+            />
+          </label>
+          <label className="block text-sm text-foreground">
             Perimeter description
             <textarea
               className={inputCls}
-              rows={2}
+              rows={3}
               value={merged.perimeter_description ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, perimeter_description: e.target.value }))}
+              placeholder="e.g. Fully fenced rear courtyard; lobby exits tied to keypad egress."
+              onChange={(e) => touchDraft((d) => ({ ...d, perimeter_description: e.target.value }))}
             />
           </label>
-          <label className="text-sm text-foreground block">
-            Evacuation partner facility
-            <input
-              className={inputCls}
-              value={merged.evacuation_partner_facility ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, evacuation_partner_facility: e.target.value }))}
-            />
-          </label>
+          <ScaffoldRow label="Secure unit Y/N · secure bed count" />
+          <ScaffoldRow label="Last elopement drill · cadence" />
         </div>
-      </RecordDetailSection>
+      </BuildingSection>
 
-      <button
-        type="submit"
-        disabled={isSaving}
-        className="rounded-[8px] bg-primary px-6 py-2 text-sm text-primary-foreground disabled:opacity-50"
-      >
-        {isSaving ? "Saving…" : "Save building profile"}
-      </button>
+      <BuildingSection title="Severe weather / storm preparedness" auditUpdatedAt={auditStamp}>
+        <p className="mb-3 text-[13px] text-muted-foreground">
+          Cross-reference{" "}
+          <a href="#facility-building-generator" className="text-primary hover:underline">
+            Emergency power / Generator
+          </a>{" "}
+          for AHCA Rule 59A-36 readiness framing.
+        </p>
+        <ScaffoldRow label="CEMP filed with county OEM · approved · expires" />
+        <div className="py-2">
+          <Link href={docsHref} className="text-sm text-primary hover:underline">
+            Upload / locate CEMP PDF in Document Vault (storm preparedness category)
+          </Link>
+        </div>
+        <ScaffoldRow label="Impact-rated openings · shutter system · evacuation contract vendor" />
+        <label className="mt-4 block text-sm text-foreground">
+          Evacuation partner facility
+          <input
+            className={inputCls}
+            value={merged.evacuation_partner_facility ?? ""}
+            placeholder=""
+            onChange={(e) => touchDraft((d) => ({ ...d, evacuation_partner_facility: e.target.value }))}
+          />
+        </label>
+        <label className="mt-4 block text-sm text-foreground">
+          Evacuation transport capacity (residents / trip)
+          <input
+            type="number"
+            min={0}
+            step={1}
+            className={inputCls}
+            value={merged.evacuation_transport_capacity ?? ""}
+            placeholder=""
+            onChange={(e) =>
+              touchDraft((d) => ({
+                ...d,
+                evacuation_transport_capacity: e.target.value ? Number(e.target.value) : undefined,
+              }))
+            }
+          />
+        </label>
+        <label className="mt-4 block text-sm text-foreground">
+          Shelter-in-place capacity (days on hand)
+          <input
+            type="number"
+            min={1}
+            step={1}
+            className={inputCls}
+            value={merged.shelter_in_place_capacity_days ?? 3}
+            onChange={(e) =>
+              touchDraft((d) => ({
+                ...d,
+                shelter_in_place_capacity_days: Number(e.target.value) || 3,
+              }))
+            }
+          />
+        </label>
+      </BuildingSection>
+
+      {dirty ? (
+        <div
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm",
+            "flex flex-wrap items-center justify-between gap-3 md:px-8",
+          )}
+        >
+          <p className="text-sm text-muted-foreground">Unsaved changes</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={onDiscard}>
+              Discard
+            </Button>
+            <Button type="submit" size="sm" disabled={isSaving}>
+              {isSaving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }
