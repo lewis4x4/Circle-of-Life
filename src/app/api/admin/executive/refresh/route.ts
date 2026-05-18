@@ -1,0 +1,128 @@
+import { NextResponse } from "next/server";
+
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
+import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+
+type EdgeRefreshResult = {
+  name: "exec-kpi-snapshot" | "resident-safety-scorer";
+  ok: boolean;
+  status: number;
+  body?: unknown;
+  error?: string;
+};
+
+function normalizeSupabaseUrl(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+async function parseResponseBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
+}
+
+async function invokeEdgeRefresh({
+  name,
+  supabaseUrl,
+  secret,
+  organizationId,
+}: {
+  name: EdgeRefreshResult["name"];
+  supabaseUrl: string;
+  secret: string;
+  organizationId: string;
+}): Promise<EdgeRefreshResult> {
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-cron-secret": secret,
+      },
+      body: JSON.stringify({ organization_id: organizationId }),
+      cache: "no-store",
+    });
+
+    const body = await parseResponseBody(response);
+    return {
+      name,
+      ok: response.ok,
+      status: response.status,
+      body,
+    };
+  } catch (error) {
+    return {
+      name,
+      ok: false,
+      status: 0,
+      error: error instanceof Error ? error.message : "Failed to invoke edge function.",
+    };
+  }
+}
+
+export async function POST() {
+  const roleContext = await loadFinanceRoleContextServer();
+  if (!roleContext.ok) {
+    const status = roleContext.error === "Sign in required." ? 401 : 403;
+    return NextResponse.json({ ok: false, error: roleContext.error }, { status });
+  }
+
+  if (!canMutateFinance(roleContext.ctx.appRole)) {
+    return NextResponse.json(
+      { ok: false, error: "Owner or organization administrator access required." },
+      { status: 403 },
+    );
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const snapshotSecret = process.env.EXEC_KPI_SNAPSHOT_SECRET?.trim();
+  const scorerSecret = process.env.RESIDENT_SAFETY_SCORER_SECRET?.trim();
+  const missing = [
+    !supabaseUrl ? "SUPABASE_URL" : null,
+    !snapshotSecret ? "EXEC_KPI_SNAPSHOT_SECRET" : null,
+    !scorerSecret ? "RESIDENT_SAFETY_SCORER_SECRET" : null,
+  ].filter((value): value is string => Boolean(value));
+
+  if (!supabaseUrl || !snapshotSecret || !scorerSecret) {
+    return NextResponse.json(
+      { ok: false, error: "Executive refresh is not configured on this server.", missing },
+      { status: 503 },
+    );
+  }
+
+  const normalizedSupabaseUrl = normalizeSupabaseUrl(supabaseUrl);
+  const organizationId = roleContext.ctx.organizationId;
+
+  const snapshot = await invokeEdgeRefresh({
+    name: "exec-kpi-snapshot",
+    supabaseUrl: normalizedSupabaseUrl,
+    secret: snapshotSecret,
+    organizationId,
+  });
+
+  const scorer = await invokeEdgeRefresh({
+    name: "resident-safety-scorer",
+    supabaseUrl: normalizedSupabaseUrl,
+    secret: scorerSecret,
+    organizationId,
+  });
+
+  if (!snapshot.ok || !scorer.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Executive refresh did not complete successfully.",
+        snapshot,
+        scorer,
+      },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json({ ok: true, snapshot, scorer });
+}
