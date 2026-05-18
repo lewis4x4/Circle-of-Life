@@ -362,23 +362,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"
                 }`
         }
+        title={facilityControlLoading ? undefined : facilityTriggerLabel}
         className={cn(
-          // min-h-9 instead of h-9 so a long facility name can wrap to a
-          // second line (constitution rule 8: never ellipsize). Vertical
-          // padding keeps the wrapped state tidy without changing baseline
-          // height for short names.
           WORKSPACE_WELL,
-          "hidden md:flex min-h-9 items-center gap-2 rounded-md px-2.5 py-1",
+          "hidden md:flex min-h-9 max-w-[220px] items-center gap-2 rounded-md px-2.5 py-1",
           "text-[12px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          "max-w-[220px]",
         )}
       >
         <Building2 className="size-3.5 shrink-0 opacity-90" aria-hidden />
         {facilityControlLoading ? (
           <Skeleton className="h-3 w-24 rounded bg-muted" aria-label="Loading facilities" />
         ) : (
-          <span className="text-left leading-tight break-words">{facilityTriggerLabel}</span>
+          <span className="min-w-0 flex-1 truncate text-left leading-tight">{facilityTriggerLabel}</span>
         )}
         <ChevronDown className="size-3 shrink-0 opacity-90" aria-hidden />
       </DropdownMenuTrigger>
@@ -787,7 +783,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 min-h-0 overflow-hidden border-t border-border">
         {activePillar && (
           <aside
-            className="hidden lg:flex w-[224px] shrink-0 flex-col border-r border-border haven-chrome-sidebar"
+            className="hidden lg:flex w-[248px] shrink-0 flex-col border-r border-border haven-chrome-sidebar"
             aria-label={`${activePillar.label} navigation`}
           >
             {/* No section header — the active pillar tab in the top bar is

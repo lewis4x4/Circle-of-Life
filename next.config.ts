@@ -127,6 +127,16 @@ const nextConfig: NextConfig = {
         destination: "/admin/facilities/:facilityId?tab=emergency",
         permanent: false,
       },
+      {
+        source: "/pipeline/referrals-crm",
+        destination: "/admin/referrals/hl7-inbound",
+        permanent: false,
+      },
+      {
+        source: "/pipeline/referrals-crm/:path*",
+        destination: "/admin/referrals/hl7-inbound/:path*",
+        permanent: false,
+      },
     ];
   },
   async headers() {

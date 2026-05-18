@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils"
  * the operational Table/List surface. For Inbox/Work-Queue density (33–36px)
  * override per-row; for Settings (35px) override per-row.
  *
- * Headers: caption typography (11px uppercase tracked) on the TOP edge of
- * the header band only. The visual separator under the header is the first
+ * Headers: 12px semibold muted sentence case — labels read as captions, not
+ * shout caps (Quiet Operator constitution). The visual separator under the header is the first
  * body row's top edge, NOT a `<thead>` bottom border. Renders `<thead>`
  * with `border-t border-border`.
  *
@@ -97,7 +97,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-9 px-3 text-left align-middle text-[11px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "h-9 px-3 text-left align-middle text-[12px] font-semibold normal-case tracking-normal text-muted-foreground whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}

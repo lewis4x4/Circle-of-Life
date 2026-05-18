@@ -12,6 +12,7 @@ const ADMIN_SHELL_SEGMENTS = [
   "/admin",
   "/billing",
   "/finance",
+  "/pipeline",
   "/risk",
   "/insurance",
   "/vendors",

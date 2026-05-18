@@ -5,6 +5,7 @@ import noRawColor from "./eslint-rules/no-raw-color.mjs";
 import noRawSpacing from "./eslint-rules/no-raw-spacing.mjs";
 import requireKpiInfo from "./eslint-rules/require-kpi-info.mjs";
 import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.mjs";
+import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
 
 const uiV2Plugin = {
   rules: {
@@ -12,6 +13,12 @@ const uiV2Plugin = {
     "no-raw-spacing": noRawSpacing,
     "require-kpi-info": requireKpiInfo,
     "no-direct-primitive-import": noDirectPrimitiveImport,
+  },
+};
+
+const quietOperatorPrimitivesPlugin = {
+  rules: {
+    "enforce-route-markup-quiet-operator": primitiveEnforcementRoute,
   },
 };
 
@@ -44,6 +51,17 @@ const eslintConfig = defineConfig([
       "ui-v2/no-raw-color": "error",
       "ui-v2/no-raw-spacing": "error",
       "ui-v2/require-kpi-info": "error",
+    },
+  },
+  {
+    // Phase 2: widen to `"src/app/**/*.{ts,tsx,js,jsx}"` after legacy routes migrate
+    // (see `npm run audit:primitive-enforcement` counts + backlog issues).
+    files: ["src/app/(admin)/admin/referrals/hl7-inbound/**/*.{ts,tsx,js,jsx}"],
+    plugins: {
+      "quiet-primitives": quietOperatorPrimitivesPlugin,
+    },
+    rules: {
+      "quiet-primitives/enforce-route-markup-quiet-operator": "error",
     },
   },
   {

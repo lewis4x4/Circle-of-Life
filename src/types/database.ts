@@ -9043,6 +9043,7 @@ export type Database = {
           facility_id: string
           first_name: string
           id: string
+          inquiry_date: string
           last_name: string
           merged_at: string | null
           merged_by: string | null
@@ -9051,6 +9052,7 @@ export type Database = {
           organization_id: string
           phone: string | null
           pii_access_tier: Database["public"]["Enums"]["pii_access_tier"]
+          preferred_contact: Database["public"]["Enums"]["referral_lead_preferred_contact"]
           preferred_name: string | null
           referral_source_id: string | null
           status: Database["public"]["Enums"]["referral_lead_status"]
@@ -9069,6 +9071,7 @@ export type Database = {
           facility_id: string
           first_name: string
           id?: string
+          inquiry_date?: string
           last_name: string
           merged_at?: string | null
           merged_by?: string | null
@@ -9077,6 +9080,7 @@ export type Database = {
           organization_id: string
           phone?: string | null
           pii_access_tier?: Database["public"]["Enums"]["pii_access_tier"]
+          preferred_contact?: Database["public"]["Enums"]["referral_lead_preferred_contact"]
           preferred_name?: string | null
           referral_source_id?: string | null
           status?: Database["public"]["Enums"]["referral_lead_status"]
@@ -9095,6 +9099,7 @@ export type Database = {
           facility_id?: string
           first_name?: string
           id?: string
+          inquiry_date?: string
           last_name?: string
           merged_at?: string | null
           merged_by?: string | null
@@ -9103,6 +9108,7 @@ export type Database = {
           organization_id?: string
           phone?: string | null
           pii_access_tier?: Database["public"]["Enums"]["pii_access_tier"]
+          preferred_contact?: Database["public"]["Enums"]["referral_lead_preferred_contact"]
           preferred_name?: string | null
           referral_source_id?: string | null
           status?: Database["public"]["Enums"]["referral_lead_status"]
@@ -15977,6 +15983,7 @@ export type Database = {
         | "processed"
         | "failed"
         | "ignored"
+      referral_lead_preferred_contact: "phone" | "email" | "either"
       referral_lead_status:
         | "new"
         | "contacted"
@@ -16597,6 +16604,7 @@ export const Constants = {
         "failed",
         "ignored",
       ],
+      referral_lead_preferred_contact: ["phone", "email", "either"],
       referral_lead_status: [
         "new",
         "contacted",

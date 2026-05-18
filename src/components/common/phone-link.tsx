@@ -29,6 +29,19 @@ export function formatPhoneNational(raw: string): string {
   return raw.trim();
 }
 
+/** US national display with parentheses (Quiet Operator lead forms). */
+export function formatPhoneUsParenthetical(raw: string): string {
+  const d = digitsOnly(raw).slice(0, 11);
+  if (d.length === 10) {
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  if (d.length === 11 && d.startsWith("1")) {
+    const n = d.slice(1);
+    return `(${n.slice(0, 3)}) ${n.slice(3, 6)}-${n.slice(6)}`;
+  }
+  return raw.trim();
+}
+
 export function PhoneLink({
   phone,
   className,

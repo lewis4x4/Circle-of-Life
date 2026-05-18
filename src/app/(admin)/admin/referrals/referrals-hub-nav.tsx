@@ -1,52 +1,71 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { useRouter, usePathname } from "next/navigation";
 
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const NAV = [
+  { value: "pipeline", href: "/admin/referrals" },
+  { value: "new", href: "/admin/referrals/new" },
+  { value: "sources", href: "/admin/referrals/sources" },
+  { value: "inbox", href: "/admin/referrals/hl7-inbound" },
+] as const;
+
+function hubValue(pathname: string): string {
+  if (pathname.startsWith("/admin/referrals/new")) return "new";
+  if (pathname.startsWith("/admin/referrals/sources")) return "sources";
+  if (pathname.startsWith("/admin/referrals/hl7-inbound")) return "inbox";
+  return "pipeline";
+}
+
+/**
+ * Quiet Operator referral sub-nav using the Tabs (line variant) primitive.
+ * Values drive SPA navigation instead of duplicated link chrome.
+ */
 export function ReferralsHubNav() {
   const pathname = usePathname();
-
-  const isPipeline =
-    pathname === "/admin/referrals" ||
-    (pathname.startsWith("/admin/referrals/") &&
-      !pathname.startsWith("/admin/referrals/new") &&
-      !pathname.startsWith("/admin/referrals/sources") &&
-      !pathname.startsWith("/admin/referrals/hl7-inbound"));
-
-  const links = [
-    { href: "/admin/referrals", label: "Pipeline", active: isPipeline },
-    { href: "/admin/referrals/new", label: "New lead", active: pathname.startsWith("/admin/referrals/new") },
-    { href: "/admin/referrals/sources", label: "Sources", active: pathname.startsWith("/admin/referrals/sources") },
-    {
-      href: "/admin/referrals/hl7-inbound",
-      label: "Referral Inbox",
-      active: pathname.startsWith("/admin/referrals/hl7-inbound"),
-    },
-  ] as const;
+  const router = useRouter();
+  const value = hubValue(pathname);
 
   return (
-    <nav
-      className="flex flex-wrap gap-1.5 w-fit rounded-full border border-slate-200/50 bg-slate-100/50 p-1.5 shadow-inner dark:border-white/5 dark:bg-black/40 "
-      aria-label="Referral sections"
+    <Tabs
+      value={value}
+      className="w-full"
+      onValueChange={(next) => {
+        const tab = NAV.find((n) => n.value === next);
+        if (tab) router.push(tab.href);
+      }}
     >
-      {links.map((item) => {
-         return (
-           <Link
-             key={item.href}
-             href={item.href}
-             className={cn(
-               "px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all outline-none tap-responsive",
-               item.active 
-                  ? "bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm border border-slate-200/50 dark:border-white/10" 
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/5"
-             )}
-             style={{ pointerEvents: item.active && item.href === "/admin/referrals" && pathname === "/admin/referrals" ? "none" : "auto" }}
-           >
-             {item.label}
-           </Link>
-         );
-      })}
-    </nav>
+      <TabsList
+        variant="line"
+        aria-label="Referral sections"
+        className="h-auto min-h-8 w-full flex-wrap justify-start gap-1 rounded-none border-0 bg-transparent px-0 py-0 pb-px"
+      >
+        <TabsTrigger
+          value="pipeline"
+          className="rounded-none px-3 py-2 text-[13px] font-medium data-active:after:bottom-0"
+        >
+          Pipeline
+        </TabsTrigger>
+        <TabsTrigger
+          value="new"
+          className="rounded-none px-3 py-2 text-[13px] font-medium data-active:after:bottom-0"
+        >
+          New lead
+        </TabsTrigger>
+        <TabsTrigger
+          value="sources"
+          className="rounded-none px-3 py-2 text-[13px] font-medium data-active:after:bottom-0"
+        >
+          Sources
+        </TabsTrigger>
+        <TabsTrigger
+          value="inbox"
+          className="rounded-none px-3 py-2 text-[13px] font-medium data-active:after:bottom-0"
+        >
+          Referral inbox
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 }

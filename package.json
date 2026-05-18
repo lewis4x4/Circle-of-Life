@@ -24,6 +24,7 @@
     "migrations:check": "node scripts/check-migration-order.mjs",
     "migrations:verify:pg": "node scripts/pg-verify-migrations.mjs",
     "a11y:routes": "node scripts/a11y-axe-routes.mjs",
+    "audit:primitive-enforcement": "node scripts/primitive-enforcement-audit.mjs",
     "design:review": "npx tsx scripts/design-review/no-schema-leak.ts && node .agents/design-review-runner.mjs",
     "design:review:chrome-s5.5": "DESIGN_REVIEW_ROUTES=/admin,/admin/executive,/admin/residents,/caregiver,/family npm run design:review",
     "stress:test": "tsx .agents/stress-test/run.ts",

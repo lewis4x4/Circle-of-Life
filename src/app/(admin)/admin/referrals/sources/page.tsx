@@ -1,18 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Check, Link2, Globe, Building2, User, HelpCircle, Server } from "lucide-react";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -26,6 +38,14 @@ const SOURCE_TYPES = [
   { value: "other", label: "Other" },
 ] as const;
 
+const TYPE_FILTER_OPTS = [{ value: "all", label: "All types" }, ...SOURCE_TYPES.map((t) => ({ value: t.value, label: t.label }))] as const;
+
+const STATUS_FILTER_OPTS = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+] as const;
+
 type SourceRow = {
   id: string;
   name: string;
@@ -34,45 +54,119 @@ type SourceRow = {
   is_active: boolean;
 };
 
+const labelClass = "text-[13px] font-semibold text-muted-foreground";
+
+function similarityHint(input: string, existing: string[]): string | undefined {
+  const n = input.trim().toLowerCase();
+  if (n.length < 2) return undefined;
+  for (const x of existing) {
+    const xl = x.toLowerCase();
+    if (!xl.length || xl === n) continue;
+    if (xl.includes(n) || n.includes(xl)) return x;
+    const dice = xl.split(/\s+/).some((w) => w.length > 3 && (n.includes(w) || xl.includes(w)));
+    if (dice) return x;
+  }
+  return undefined;
+}
+
 export default function AdminReferralSourcesPage() {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
 
   const [rows, setRows] = useState<SourceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
+  const [canAddSource, setCanAddSource] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
+  const [nameBlurHint, setNameBlurHint] = useState<{ suggested: string } | null>(null);
   const [sourceType, setSourceType] = useState<string>("hospital");
-  const [scopeFacility, setScopeFacility] = useState(false);
+  const [limitOneFacility, setLimitOneFacility] = useState(false);
+  const [targetFacilityId, setTargetFacilityId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setRoleLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        setCanAddSource(false);
+        setRoleLoading(false);
+        return;
+      }
+      const { data } = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
+      if (cancelled) return;
+      const r = data?.app_role as string | undefined;
+      setCanAddSource(r === "owner" || r === "org_admin");
+      setRoleLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
+  const resolveOrganizationId = useCallback(async (): Promise<string | null> => {
+    if (selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId)) {
+      const { data } = await supabase
+        .from("facilities")
+        .select("organization_id")
+        .eq("id", selectedFacilityId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      return data?.organization_id ?? null;
+    }
+    if (availableFacilities.length > 0) {
+      const first = availableFacilities[0]!.id;
+      const { data } = await supabase
+        .from("facilities")
+        .select("organization_id")
+        .eq("id", first)
+        .is("deleted_at", null)
+        .maybeSingle();
+      return data?.organization_id ?? null;
+    }
+    return null;
+  }, [availableFacilities, selectedFacilityId, supabase]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+    const oid = await resolveOrganizationId();
+    setOrganizationId(oid);
+    if (!oid) {
       setRows([]);
       setLoading(false);
+      setLoadError(availableFacilities.length === 0 ? "No facilities available for this profile." : "Could not resolve organization.");
       return;
     }
 
-    const { data: fac, error: facErr } = await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).single();
-    if (facErr || !fac?.organization_id) {
-      setLoadError("Could not resolve organization for this facility.");
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data, error: qErr } = await supabase
+    const facIds = availableFacilities.map((f) => f.id).filter((id) => isValidFacilityIdForQuery(id));
+    let query = supabase
       .from("referral_sources")
       .select("id, name, source_type, facility_id, is_active")
-      .eq("organization_id", fac.organization_id)
+      .eq("organization_id", oid)
       .is("deleted_at", null)
-      .or(`facility_id.is.null,facility_id.eq.${selectedFacilityId}`)
       .order("name");
 
+    if (selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId)) {
+      query = query.or(`facility_id.is.null,facility_id.eq.${selectedFacilityId}`);
+    } else if (facIds.length > 0) {
+      const orParts = [`facility_id.is.null`, ...facIds.map((id) => `facility_id.eq.${id}`)];
+      query = query.or(orParts.join(","));
+    }
+
+    const { data, error: qErr } = await query;
     if (qErr) {
       setLoadError(qErr.message);
       setRows([]);
@@ -80,234 +174,424 @@ export default function AdminReferralSourcesPage() {
       setRows((data ?? []) as SourceRow[]);
     }
     setLoading(false);
-  }, [supabase, selectedFacilityId]);
+  }, [availableFacilities, resolveOrganizationId, selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!highlightId) return;
+    const t = window.setTimeout(() => setHighlightId(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [highlightId]);
+
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (q && !r.name.toLowerCase().includes(q)) return false;
+      if (typeFilter !== "all" && r.source_type !== typeFilter) return false;
+      if (statusFilter === "active" && !r.is_active) return false;
+      if (statusFilter === "inactive" && r.is_active) return false;
+      return true;
+    });
+  }, [rows, search, statusFilter, typeFilter]);
+
+  const facilityLabel = useMemo(() => {
+    const m = new Map(availableFacilities.map((f) => [f.id, f.name] as const));
+    return (id: string | null) => {
+      if (id == null) return "Org-wide";
+      return m.get(id) ?? "Facility";
+    };
+  }, [availableFacilities]);
+
+  const accessibleFacilityOptions =
+    selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId)
+      ? availableFacilities.filter((f) => f.id === selectedFacilityId)
+      : availableFacilities;
+
+  useEffect(() => {
+    if (!limitOneFacility) return;
+    if (targetFacilityId) return;
+    if (accessibleFacilityOptions.length === 1) {
+      setTargetFacilityId(accessibleFacilityOptions[0]!.id);
+    }
+  }, [accessibleFacilityOptions, limitOneFacility, targetFacilityId]);
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setFormError("Select a facility in the header.");
+    const n = name.trim();
+    if (!n) return;
+    const oid = organizationId ?? (await resolveOrganizationId());
+    if (!oid) {
+      setFormError("Could not resolve organization.");
       return;
     }
-    const n = name.trim();
-    if (!n) {
-      setFormError("Name is required.");
+
+    let facilityScoped: string | null = null;
+    if (limitOneFacility) {
+      if (!targetFacilityId || !isValidFacilityIdForQuery(targetFacilityId)) {
+        setFormError("Select a facility.");
+        return;
+      }
+      facilityScoped = targetFacilityId;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.id) {
+      setFormError("You must be signed in.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const { data: fac, error: facErr } = await supabase
-        .from("facilities")
-        .select("organization_id")
-        .eq("id", selectedFacilityId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (facErr || !fac?.organization_id) {
-        setFormError("Could not resolve organization for this facility.");
-        return;
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id) {
-        setFormError("You must be signed in.");
-        return;
-      }
-
       const payload = {
-        organization_id: fac.organization_id,
-        facility_id: scopeFacility ? selectedFacilityId : null,
+        organization_id: oid,
+        facility_id: facilityScoped,
         name: n,
         source_type: sourceType,
         is_active: true,
         created_by: user.id,
       };
 
-      const { error: insErr } = await supabase.from("referral_sources").insert(payload);
+      const { data: inserted, error: insErr } = await supabase
+        .from("referral_sources")
+        .insert(payload)
+        .select("id, name, source_type, facility_id, is_active")
+        .maybeSingle();
+
       if (insErr) {
         setFormError(insErr.message);
         return;
       }
+
+      toast.success("Source added.");
+      if (inserted) {
+        setRows((prev) => [inserted as SourceRow, ...prev.filter((r) => r.id !== inserted.id)]);
+        setHighlightId(inserted.id as string);
+      } else {
+        await load();
+      }
       setName("");
-      setScopeFacility(false);
-      await load();
+      setNameBlurHint(null);
+      setLimitOneFacility(false);
+      setTargetFacilityId("");
+      setSourceType("hospital");
     } finally {
       setSubmitting(false);
     }
   }
 
-  const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+  const disableSubmit =
+    submitting || roleLoading || !canAddSource || !name.trim() || (limitOneFacility && (!targetFacilityId || !isValidFacilityIdForQuery(targetFacilityId)));
+
+  const COL_SPAN = 5;
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="space-y-6">
-        <ReferralsHubNav />
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border mt-4">
-          <div className="space-y-3">
-             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-               Referral Sources
-             </h1>
-            <p className="mt-2 text-[13px] text-muted-foreground max-w-2xl text-balance">
-               Master list for attribution (hospital, agency, family, web, other). Ties to <code className="rounded bg-muted/40 px-1.5 py-0.5 text-[10px] uppercase font-semibold tracking-wider text-muted-foreground">residents.referral_source_id</code> when set.
-            </p>
-          </div>
-          <div>
-            <Link
-              href="/admin/referrals"
-              className={cn(buttonVariants({ variant: "outline", size: "default" }), "h-9 px-4 text-[12px] font-medium flex items-center gap-2")}
-            >
-              Back to Pipeline
-            </Link>
-          </div>
-        </header>
+    <div className="space-y-8 pb-12">
+      <div>
+        <Link
+          href="/admin/referrals"
+          className="inline-flex text-[13px] font-medium text-primary underline-offset-4 hover:underline"
+        >
+          ← Back to pipeline
+        </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-1 rounded-lg border border-border bg-card overflow-hidden p-6 md:p-8 relative h-fit order-last lg:order-first">
-             <div className="mb-6 border-b border-border pb-4 flex flex-col gap-1">
-                <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                  <Plus className="h-5 w-5 text-primary" /> Add Source
-                </h3>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                   Requires Owner or Org Admin
-                </p>
-             </div>
-             
-             {noFacility ? (
-               <div className="p-4 rounded-lg bg-warning/10 border border-warning/20 text-[13px] font-medium text-warning">
-                 Select a facility in the header to manage sources.
-               </div>
-             ) : (
-               <form onSubmit={(e) => void handleCreate(e)} className="space-y-4">
-                 <div className="space-y-4">
-                   <div className="space-y-1.5">
-                     <Label htmlFor="src-name" className="text-xs uppercase tracking-wider text-muted-foreground">Name</Label>
-                     <Input id="src-name" value={name} onChange={(e) => setName(e.target.value)} required className="h-10 rounded-lg" />
-                   </div>
-                   <div className="space-y-1.5">
-                     <Label htmlFor="src-type" className="text-xs uppercase tracking-wider text-muted-foreground">Type</Label>
-                     <select
-                       id="src-type"
-                       value={sourceType}
-                       onChange={(e) => setSourceType(e.target.value)}
-                       className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 text-foreground"
-                     >
-                       {SOURCE_TYPES.map((t) => (
-                         <option key={t.value} value={t.value}>
-                           {t.label}
-                         </option>
-                       ))}
-                     </select>
-                   </div>
-                   <label className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/40 transition-colors duration-[var(--motion-duration-micro)]">
-                     <div className="relative flex items-center justify-center">
-                       <input
-                         type="checkbox"
-                         checked={scopeFacility}
-                         onChange={(e) => setScopeFacility(e.target.checked)}
-                         className="peer h-5 w-5 appearance-none rounded border-2 border-border checked:border-primary checked:bg-primary transition-all cursor-pointer"
-                       />
-                       <Check className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" />
-                     </div>
-                     <span className="text-[13px] font-medium text-foreground">Limit to current facility</span>
-                   </label>
-                 </div>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Referral sources</h1>
+        <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+          Master list of attribution sources used across the org.
+        </p>
 
-                 {formError && (
-                   <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-[12px] font-semibold text-destructive" role="alert">
-                     {formError}
-                   </div>
-                 )}
-                 <Button type="submit" disabled={submitting} className="w-full h-10 rounded-lg font-semibold tracking-wider uppercase text-[10px] bg-primary hover:bg-primary/90 text-primary-foreground">
-                   {submitting ? (
-                     <>
-                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                       Saving…
-                     </>
-                   ) : (
-                     "Add Source"
-                   )}
-                 </Button>
-               </form>
-             )}
-           </div>
-
-           <div className="lg:col-span-2 rounded-lg border border-border bg-card overflow-hidden p-6 md:p-8 relative">
-              <div className="mb-6 border-b border-border pb-4 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-foreground mt-1 flex items-center gap-2">
-                   <Link2 className="h-5 w-5 text-primary" /> Configured Sources
-                </h3>
-                <p className="text-[10px] tracking-wider text-muted-foreground mt-1 uppercase">Org & Facility Scoped</p>
-              </div>
-
-              <div className="relative z-10 w-full overflow-hidden">
-                {loading ? (
-                  <div className="flex items-center justify-center p-12 text-[13px] text-muted-foreground">
-                     <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading Sources...
-                  </div>
-                ) : loadError ? (
-                  <div className="p-6 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive font-medium text-[13px]">
-                    {loadError}
-                  </div>
-                ) : (
-                  <>
-                    <TableRowHeader className="hidden sm:flex">
-                      <div className="flex-[1.5]">Name</div>
-                      <div className="flex-1">Type</div>
-                      <div className="flex-1">Scope</div>
-                      <div className="flex-[0.5] text-right">Status</div>
-                    </TableRowHeader>
-
-                    <div className="space-y-1 p-1">
-                      <MotionList className="space-y-1">
-                          {rows.length === 0 ? (
-                            <div className="p-12 text-center text-muted-foreground text-[13px] bg-muted/40 rounded-lg border border-dashed border-border">
-                               No sources yet. Add one or ask an org admin to create channels.
-                            </div>
-                          ) : (
-                            rows.map((r) => {
-                                const TypeIcon = r.source_type === "hospital" ? Building2 : r.source_type === "agency" ? Server : r.source_type === "web" ? Globe : r.source_type === "family" ? User : HelpCircle;
-                                return (
-                                  <MotionItem key={r.id}>
-                                    <TableRow className="w-full">
-                                      <div className="flex-[1.5] min-w-0">
-                                        <span className="font-medium text-[13px] text-foreground truncate block">{r.name}</span>
-                                      </div>
-                                      <div className="flex-1 flex items-center gap-2">
-                                        <Badge className="bg-muted/40 hover:bg-muted text-muted-foreground border-none text-[10px] uppercase font-semibold tracking-wider">
-                                          <TypeIcon className="w-3 h-3 mr-1.5 opacity-50" />
-                                          {r.source_type.replace(/_/g, " ")}
-                                        </Badge>
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <span className="text-[12px] text-muted-foreground truncate block">
-                                          {r.facility_id ? "This Facility" : "Organization"}
-                                        </span>
-                                      </div>
-                                      <div className="flex-[0.5] flex justify-end">
-                                        {r.is_active ? (
-                                          <StatusPill tone="muted">Active</StatusPill>
-                                        ) : (
-                                          <StatusPill tone="warning">Inactive</StatusPill>
-                                        )}
-                                      </div>
-                                    </TableRow>
-                                  </MotionItem>
-                                );
-                             })
-                          )}
-                       </MotionList>
-                    </div>
-                  </>
-                )}
-              </div>
-           </div>
+        <div className="mt-4">
+          <ReferralsHubNav />
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+        <section className="h-fit rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-border/60 lg:col-span-1">
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground">Add source</h2>
+
+          {roleLoading ? (
+            <p className="mt-6 text-[13px] text-muted-foreground">Checking access…</p>
+          ) : !canAddSource ? (
+            <div className="mt-6 space-y-2 text-left">
+              <p className="text-[13px] font-medium text-foreground">You don&apos;t have permission to add sources.</p>
+              <p className="text-[12px] leading-relaxed text-muted-foreground">Ask an org admin or owner.</p>
+            </div>
+          ) : !organizationId && !loading && loadError ? (
+            <p className="mt-4 text-[13px] text-muted-foreground">{loadError}</p>
+          ) : (
+            <form onSubmit={(e) => void handleCreate(e)} className="mt-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="src-name" className={labelClass}>
+                      Name <span className="font-semibold text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="src-name"
+                      value={name}
+                      maxLength={200}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setName(v);
+                        if (nameBlurHint) setNameBlurHint(null);
+                      }}
+                      onBlur={() => {
+                        const sug = similarityHint(name, rows.map((r) => r.name));
+                        setNameBlurHint(sug ? { suggested: sug } : null);
+                      }}
+                      className="h-10 text-[13px]"
+                      autoComplete="off"
+                    />
+                    {nameBlurHint ? (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+                        <span>
+                          Did you mean &quot;{nameBlurHint.suggested}&quot;?
+                          <button
+                            type="button"
+                            className="ml-2 font-medium text-primary underline underline-offset-2"
+                            onClick={() => setName(nameBlurHint.suggested)}
+                          >
+                            Use existing
+                          </button>
+                          <button
+                            type="button"
+                            className="ml-2 font-medium text-primary underline underline-offset-2"
+                            onClick={() => setNameBlurHint(null)}
+                          >
+                            Continue
+                          </button>
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="src-type-trigger" className={labelClass}>
+                      Type
+                    </Label>
+                    <Select value={sourceType} onValueChange={(v) => setSourceType(v)}>
+                      <SelectTrigger id="src-type-trigger" className="h-10 w-full text-[13px] shadow-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SOURCE_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value} className="text-[13px]">
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <label className="flex cursor-pointer items-start gap-2 text-[13px] text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={limitOneFacility}
+                      onChange={(e) => {
+                        setLimitOneFacility(e.target.checked);
+                        if (!e.target.checked) setTargetFacilityId("");
+                      }}
+                      className="mt-0.5 size-4 rounded border border-border accent-primary"
+                    />
+                    <span>Limit to a single facility</span>
+                  </label>
+
+                  {limitOneFacility ? (
+                    <div className="space-y-1.5 pl-6">
+                      <Label htmlFor="fac-scope" className={labelClass}>
+                        Facility
+                      </Label>
+                      <Select value={targetFacilityId} onValueChange={(v) => setTargetFacilityId(v)}>
+                        <SelectTrigger id="fac-scope" className="h-10 w-full text-[13px] shadow-none">
+                          <SelectValue placeholder="Select facility" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accessibleFacilityOptions.map((f) => (
+                            <SelectItem key={f.id} value={f.id} className="text-[13px]">
+                              {f.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+
+                  {formError ? (
+                    <p className="text-[13px] font-medium text-destructive" role="alert">
+                      {formError}
+                    </p>
+                  ) : null}
+
+                  <div className="flex justify-end pt-1">
+                    <Button type="submit" disabled={disableSubmit} className="min-w-[140px] font-medium">
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 size-4 animate-spin" aria-hidden /> Saving…
+                        </>
+                      ) : (
+                        "Add source"
+                      )}
+                    </Button>
+                  </div>
+
+                  <p className="text-left text-[12px] leading-relaxed text-muted-foreground">
+                    Adding requires owner or org admin role.
+                  </p>
+                </form>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-border/60 lg:col-span-2">
+          <div className="space-y-1 border-b border-border pb-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className="text-[15px] font-semibold tracking-tight text-foreground">Configured sources</h2>
+            </div>
+            <p className="max-w-xl text-[12px] text-muted-foreground">Scope: org-level with optional facility limit.</p>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <Input
+              placeholder="Search by name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8 flex-1 min-w-[10rem] text-[13px] sm:max-w-xs"
+              aria-label="Search sources"
+            />
+            <div className="flex flex-wrap gap-2">
+              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v)}>
+                <SelectTrigger className="h-8 w-[10.5rem] text-[13px] shadow-none" aria-label="Filter by source type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TYPE_FILTER_OPTS.map((o) => (
+                    <SelectItem key={o.value} value={o.value} className="text-[13px]">
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+                <SelectTrigger className="h-8 w-[9rem] text-[13px] shadow-none" aria-label="Status filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_FILTER_OPTS.map((o) => (
+                    <SelectItem key={o.value} value={o.value} className="text-[13px]">
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            {loading ? (
+              <div className="flex items-center gap-2 p-8 text-[13px] text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Loading sources…
+              </div>
+            ) : loadError ? (
+              <p className="p-6 text-[13px] font-medium text-destructive">{loadError}</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-b-0">
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Scope</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.length === 0 ? (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={COL_SPAN} className="border-b-0 py-10 text-left text-[13px] text-muted-foreground">
+                        No sources yet. Add the first source on the left to start attributing leads.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRows.map((r) => (
+                      <TableRow
+                        key={r.id}
+                        className={cn(
+                          highlightId === r.id ? "motion-safe:bg-primary/15 motion-safe:transition-colors motion-safe:duration-[1.75s]" : "",
+                        )}
+                      >
+                        <TableCell className="max-w-[14rem] text-[13px] font-medium text-foreground">{r.name}</TableCell>
+                        <TableCell className="capitalize text-[13px] text-muted-foreground">{r.source_type.replace(/_/g, " ")}</TableCell>
+                        <TableCell className="text-[13px] text-muted-foreground">{facilityLabel(r.facility_id)}</TableCell>
+                        <TableCell>
+                          {r.is_active ? <StatusPill tone="muted">Active</StatusPill> : <StatusPill tone="warning">Inactive</StatusPill>}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              type="button"
+                              aria-label={`Actions for ${r.name}`}
+                              className={cn(
+                                buttonVariants({ variant: "ghost", size: "icon" }),
+                                "size-8 text-muted-foreground hover:text-foreground",
+                              )}
+                            >
+                              <MoreHorizontal className="size-4" aria-hidden />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 text-[13px]">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  toast.message("Edit source", {
+                                    description: "Inline editing will connect when the referrals settings API ships.",
+                                  })
+                                }
+                              >
+                                Edit
+                              </DropdownMenuItem>
+                              {r.is_active ? (
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={() =>
+                                    toast.message("Deactivate", {
+                                      description: "Soft-archive actions will route through retention-safe workflows.",
+                                    })
+                                  }
+                                >
+                                  Deactivate
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    toast.message("Activate", {
+                                      description: "Reactive paths stay audit-logged.",
+                                    })
+                                  }
+                                >
+                                  Activate
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  toast.message("History preserved", {
+                                    description: "Attribution ties stay intact — only operators change visibility.",
+                                  })
+                                }
+                              >
+                                Attribution note
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

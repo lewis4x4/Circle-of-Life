@@ -2,14 +2,23 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
-import { ClipboardList, Download, Search, UserPlus, ArrowRight, Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { format, subDays, startOfQuarter } from "date-fns";
+import { ClipboardList, Download, Search, Loader2, Mic } from "lucide-react";
 
 import { ReferralsHubNav } from "./referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { V2Card } from "@/components/ui/v2-card";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { KpiCard, type KpiCardTone } from "@/components/ui/kpi-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +36,8 @@ type LeadRow = Pick<
   | "last_name"
   | "status"
   | "updated_at"
+  | "created_at"
+  | "converted_at"
   | "email"
   | "phone"
   | "external_reference"
@@ -81,6 +92,36 @@ const LEAD_STATUS_FILTERS: { value: "all" | ReferralLeadStatus; label: string }[
 type LeadExportRow = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
 };
+
+type ReferralKpiScope = "7d" | "30d" | "quarter" | "all";
+
+function kpiScopeRange(key: ReferralKpiScope, now = new Date()): { start: Date; end: Date } | null {
+  switch (key) {
+    case "7d":
+      return { start: subDays(now, 7), end: now };
+    case "30d":
+      return { start: subDays(now, 30), end: now };
+    case "quarter":
+      return { start: startOfQuarter(now), end: now };
+    case "all":
+    default:
+      return null;
+  }
+}
+
+/** Inclusive of start/end timestamps (facility-local ordering via ISO strings). */
+function tsInRange(iso: string, range: { start: Date; end: Date }): boolean {
+  const t = new Date(iso).getTime();
+  return t >= range.start.getTime() && t <= range.end.getTime();
+}
+
+/** Length-matched interval immediately before `range`. */
+function priorAdjacentRange(range: { start: Date; end: Date }): { start: Date; end: Date } {
+  const ms = range.end.getTime() - range.start.getTime();
+  const end = new Date(range.start.getTime());
+  const start = new Date(end.getTime() - ms);
+  return { start, end };
+}
 
 function buildReferralLeadsCsv(rows: LeadExportRow[]): string {
   const header = [
@@ -159,27 +200,31 @@ function leadPriority(status: ReferralLeadStatus, handoffPhase: HandoffPhase | n
   return 11;
 }
 
+type HandoffRollup = {
+  blocked: number;
+  ready: number;
+  onboarding: number;
+};
+
 export default function AdminReferralsHubPage() {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<LeadRow[]>([]);
-  const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<Record<string, ActiveAdmissionCase>>({});
-  const [counts, setCounts] = useState({
-    new: 0,
-    pipeline: 0,
-    converted: 0,
-    attention: 0,
-    inAdmissions: 0,
-    handoffBlocked: 0,
-    handoffReady: 0,
-    handoffOnboarding: 0,
+  const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<
+    Record<string, ActiveAdmissionCase>
+  >({});
+  const [handoffRollup, setHandoffRollup] = useState<HandoffRollup>({
+    blocked: 0,
+    ready: 0,
+    onboarding: 0,
   });
   const [hl7Counts, setHl7Counts] = useState({ pending: 0, failed: 0 });
   const [exportingCsv, setExportingCsv] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | ReferralLeadStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [kpiScope, setKpiScope] = useState<ReferralKpiScope>("30d");
   const [outreachRows, setOutreachRows] = useState<OutreachRow[]>([]);
   const [outreachStatusDrafts, setOutreachStatusDrafts] = useState<Record<string, string>>({});
   const [activityType, setActivityType] = useState("provider_visit");
@@ -240,9 +285,9 @@ export default function AdminReferralsHubPage() {
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
-      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0, handoffBlocked: 0, handoffReady: 0, handoffOnboarding: 0 });
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
+      setHandoffRollup({ blocked: 0, ready: 0, onboarding: 0 });
       setLoading(false);
       return;
     }
@@ -252,7 +297,7 @@ export default function AdminReferralsHubPage() {
         (supabase
           .from("referral_leads" as never)
           .select(
-            "id, first_name, last_name, status, updated_at, email, phone, external_reference, notes, tour_scheduled_for, tour_completed_at, referral_sources(name)",
+            "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, tour_completed_at, referral_sources(name)",
           )
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
@@ -263,7 +308,7 @@ export default function AdminReferralsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .order("scheduled_for", { ascending: false })
-          .limit(8),
+          .limit(48),
       ]);
 
       if (listErr) throw listErr;
@@ -274,7 +319,6 @@ export default function AdminReferralsHubPage() {
       setOutreachStatusDrafts(Object.fromEntries(((outreachList ?? []) as OutreachRow[]).map((row) => [row.id, row.status])));
 
       const leadIds = leadRows.map((row) => row.id);
-      let inAdmissionsCount = 0;
       let handoffBlocked = 0;
       let handoffReady = 0;
       let handoffOnboarding = 0;
@@ -350,17 +394,15 @@ export default function AdminReferralsHubPage() {
             }),
         );
         setActiveAdmissionCaseByLeadId(activeMap);
-        inAdmissionsCount = Object.keys(activeMap).length;
       } else {
         setActiveAdmissionCaseByLeadId({});
       }
 
-      const base = () =>
-        supabase
-          .from("referral_leads")
-          .select("id", { count: "exact", head: true })
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null);
+      setHandoffRollup({
+        blocked: handoffBlocked,
+        ready: handoffReady,
+        onboarding: handoffOnboarding,
+      });
 
       const hl7Base = () =>
         supabase
@@ -369,30 +411,11 @@ export default function AdminReferralsHubPage() {
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null);
 
-      const [cNew, cConv, cAtt, cPipe, hl7Pending, hl7Failed] = await Promise.all([
-        base().eq("status", "new"),
-        base().eq("status", "converted"),
-        base().in("status", ["new", "contacted"]),
-        supabase
-          .from("referral_leads")
-          .select("id", { count: "exact", head: true })
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .not("status", "in", "(converted,lost,merged)"),
+      const [hl7Pending, hl7Failed] = await Promise.all([
         hl7Base().eq("status", "pending"),
         hl7Base().eq("status", "failed"),
       ]);
 
-      setCounts({
-        new: cNew.count ?? 0,
-        pipeline: cPipe.count ?? 0,
-        converted: cConv.count ?? 0,
-        attention: cAtt.count ?? 0,
-        inAdmissions: inAdmissionsCount,
-        handoffBlocked,
-        handoffReady,
-        handoffOnboarding,
-      });
       setHl7Counts({
         pending: hl7Pending.count ?? 0,
         failed: hl7Failed.count ?? 0,
@@ -403,7 +426,7 @@ export default function AdminReferralsHubPage() {
       setOutreachRows([]);
       setHl7Counts({ pending: 0, failed: 0 });
       setActiveAdmissionCaseByLeadId({});
-      setCounts({ new: 0, pipeline: 0, converted: 0, attention: 0, inAdmissions: 0, handoffBlocked: 0, handoffReady: 0, handoffOnboarding: 0 });
+      setHandoffRollup({ blocked: 0, ready: 0, onboarding: 0 });
     } finally {
       setLoading(false);
     }
@@ -446,116 +469,207 @@ export default function AdminReferralsHubPage() {
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
 
+  const selectedFacilityLabel = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? selectedFacilityId;
+  }, [availableFacilities, selectedFacilityId]);
+
+  const kpiMetrics = useMemo(() => {
+    if (noFacility) return null;
+    const range = kpiScopeRange(kpiScope);
+    const inUpd = (r: LeadRow) => (!range ? true : tsInRange(r.updated_at, range));
+    const inCreatedRange = (r: LeadRow) => {
+      if (!r.created_at) return !range;
+      return !range ? true : tsInRange(r.created_at, range);
+    };
+    const conversionTs = (r: LeadRow) => r.converted_at ?? r.updated_at;
+
+    const newLeads = !range
+      ? rows.filter((r) => r.status === "new").length
+      : rows.filter((r) => inCreatedRange(r)).length;
+
+    const activePipeline = rows.filter(
+      (r) => !["converted", "lost", "merged"].includes(r.status) && inUpd(r),
+    ).length;
+
+    const needsAttention = rows.filter(
+      (r) => ["new", "contacted"].includes(r.status) && inUpd(r),
+    ).length;
+
+    const inAdmissions = rows.filter(
+      (r) => Boolean(activeAdmissionCaseByLeadId[r.id]) && inUpd(r),
+    ).length;
+
+    const conversions = rows.filter(
+      (r) => r.status === "converted" && (!range ? true : tsInRange(conversionTs(r), range)),
+    ).length;
+
+    const sumScoped = newLeads + activePipeline + inAdmissions + conversions + needsAttention;
+
+    let convTone: KpiCardTone = "neutral";
+    let convFootnote: ReactNode | undefined;
+    let newFootnote: ReactNode | undefined;
+
+    if (range) {
+      const prevR = priorAdjacentRange(range);
+
+      const convPrior = rows.filter(
+        (r) => r.status === "converted" && tsInRange(conversionTs(r), prevR),
+      ).length;
+      const convCurr = conversions;
+      if (convCurr > convPrior && convCurr > 0) convTone = "success";
+      else if (convCurr < convPrior && convCurr > 0) convTone = "warning";
+
+      convFootnote = (
+        <>
+          Previous window{" "}
+          <span className={cn("tabular-nums", convCurr >= convPrior ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400")}>{convPrior}</span>
+        </>
+      );
+
+      const newCurr = rows.filter((r) => inCreatedRange(r)).length;
+      const newPrior = rows.filter((r) => r.created_at && tsInRange(r.created_at, prevR)).length;
+      newFootnote = (
+        <>
+          Previous window{" "}
+          <span
+            className={cn(
+              "tabular-nums",
+              newCurr > newPrior ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground",
+            )}
+          >
+            {newPrior}
+          </span>
+        </>
+      );
+    }
+
+    let needsTone: KpiCardTone = "neutral";
+    if (needsAttention >= 10) needsTone = "danger";
+    else if (needsAttention > 0) needsTone = "warning";
+
+    return {
+      newLeads,
+      activePipeline,
+      needsAttention,
+      inAdmissions,
+      conversions,
+      sumScoped,
+      convTone,
+      needsTone,
+      convFootnote,
+      newFootnote,
+    };
+  }, [activeAdmissionCaseByLeadId, kpiScope, noFacility, rows]);
+
+  const allKpisZero =
+    Boolean(kpiMetrics) && !loading && (kpiMetrics?.sumScoped ?? 1) === 0;
+
+  const recentOutreach = useMemo(() => outreachRows.slice(0, 5), [outreachRows]);
+
+  const admissionActiveTotal = Object.keys(activeAdmissionCaseByLeadId).length;
+
+  const handoffCardMuted = handoffRollup.blocked === 0;
+  const hl7NeedsReview = hl7Counts.failed > 0;
+
   return (
-    <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
-      
-      {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
-         <div className="space-y-2">
-           
-           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-              Referral CRM
-           </h1>
-           <p className="mt-2 font-medium tracking-wide text-muted-foreground">
-             Inquiries and pipeline before admission — source attribution and conversion.
-           </p>
-         </div>
-         <div className="hidden md:block">
-           <ReferralsHubNav />
-         </div>
-      </div>
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-28 pt-4">
+      <header className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Referrals CRM</h1>
+            <p className="max-w-prose text-[13px] leading-relaxed text-muted-foreground">
+              Inquiries and pipeline before admission — attribution, follow-up, and conversion for{" "}
+              {selectedFacilityLabel ? (
+                <span className="font-medium text-foreground">{selectedFacilityLabel}</span>
+              ) : (
+                "the selected facility"
+              )}
+              .
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!noFacility ? (
+              <Select value={kpiScope} onValueChange={(v) => setKpiScope(v as ReferralKpiScope)}>
+                <SelectTrigger className="h-9 w-[164px]" aria-label="KPI time scope">
+                  <SelectValue placeholder="Scope" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="quarter">This quarter</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : null}
+            {!noFacility ? (
+              <Link href="/admin/referrals/new" className={cn(buttonVariants({ variant: "secondary" }))}>
+                Add lead
+              </Link>
+            ) : (
+              <Button variant="secondary" disabled>
+                Add lead
+              </Button>
+            )}
+          </div>
+        </div>
+        <ReferralsHubNav />
+      </header>
 
       {noFacility ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4">
-           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
-              <span className="font-bold">!</span>
-           </div>
-           Select a facility in the header to load referral leads and metrics.
+        <div
+          role="status"
+          className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
+        >
+          Select a facility in the header to load referral leads and KPIs for that site.
         </div>
       ) : null}
 
-      {/* ─── METRIC PILLARS ─── */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-4">
-        <div className="h-[180px]">
-           <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                 New Leads
-               </h3>
-               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.new}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="indigo" className="border-primary-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
-                 Active Pipeline
-               </h3>
-               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.pipeline}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="blue" className="border-blue-500/20 shadow-[0_8px_30px_rgba(59,130,246,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                 Converted
-               </h3>
-               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.converted}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                 Needs Attention
-               </h3>
-               <div className="flex items-center gap-3">
-                 <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
-                   {noFacility ? "—" : loading ? "—" : counts.attention}
-                 </p>
-               </div>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                 In Admissions
-               </h3>
-               <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.inAdmissions}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-      </div>
-
-      <div className="h-[120px]">
-        <V2Card href="/admin/referrals/new" hoverColor="indigo" className="border-primary-500/20 pb-0">
-          <div className="flex items-center gap-6 h-full absolute inset-0 px-8">
-            <div className="rounded-2xl bg-primary-50 dark:bg-primary-500/10 p-4 border border-primary-100 dark:border-primary-500/20">
-              <UserPlus className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-            </div>
-            <div>
-              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-foreground group-hover:text-primary transition-colors">
-                New Prospect Lead
-              </h3>
-              <p className="text-sm text-muted-foreground tracking-wide mt-1">Add an inquiry directly to the chosen facility pipeline.</p>
-            </div>
-            <ArrowRight className="h-6 w-6 text-muted-foreground ml-auto group-hover:text-primary transition-colors duration-[var(--motion-duration-micro)]" />
+      {!noFacility ? (
+        <section aria-label="Referral KPIs">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <KpiCard
+              value={loading ? "—" : (kpiMetrics?.newLeads ?? "—")}
+              label={kpiScope === "all" ? "Open new-status leads" : "Leads created in scope"}
+              tone="neutral"
+              footnote={kpiMetrics?.newFootnote}
+            />
+            <KpiCard
+              value={loading ? "—" : (kpiMetrics?.activePipeline ?? "—")}
+              label="Active pipeline (touched in scope)"
+              tone="neutral"
+            />
+            <KpiCard
+              value={loading ? "—" : (kpiMetrics?.needsAttention ?? "—")}
+              label="Needs attention (new · contacted)"
+              tone={loading || !kpiMetrics ? "neutral" : kpiMetrics.needsTone}
+            />
+            <KpiCard
+              value={loading ? "—" : (kpiMetrics?.conversions ?? "—")}
+              label="Converted in scope"
+              tone={loading || !kpiMetrics ? "neutral" : kpiMetrics.convTone}
+              footnote={kpiMetrics?.convFootnote}
+            />
+            <KpiCard
+              value={loading ? "—" : (kpiMetrics?.inAdmissions ?? "—")}
+              label="In admissions (touched in scope)"
+              tone="neutral"
+            />
           </div>
-        </V2Card>
-      </div>
+        </section>
+      ) : null}
+
+      {allKpisZero ? (
+        <Card className="border-dashed border-border/80">
+          <CardContent className="pt-6 text-center text-[13px] text-muted-foreground">
+            Nothing is moving in this window yet — add a{" "}
+            <Link href="/admin/referrals/new" className="font-medium text-foreground underline-offset-4 hover:underline">
+              new lead
+            </Link>{" "}
+            or widen the KPI scope.
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!noFacility ? (
         <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6">
@@ -582,7 +696,7 @@ export default function AdminReferralsHubPage() {
                   <div className="flex items-center justify-between gap-3 w-full">
                     <div>
                       <div className="text-[13px] text-foreground font-medium">{row.first_name} {row.last_name}</div>
-                      <div className="text-[12px] uppercase tracking-wider text-muted-foreground">{formatStatus(row.status)}</div>
+                      <div className="text-[12px] font-medium capitalize text-muted-foreground">{formatStatus(row.status)}</div>
                     </div>
                     <div className="text-[12px] text-muted-foreground tabular-nums">
                       {row.tour_scheduled_for ? new Date(row.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}
@@ -596,136 +710,195 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6">
-          <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-base font-bold text-foreground tracking-tight">Outreach & provider activity</p>
-              <p className="mt-1 text-sm text-muted-foreground tracking-wide">
-                Log the provider, facility, and event activity that should feed the weekly standup instead of typing those rows manually.
+              <p className="text-[15px] font-medium tracking-tight text-foreground">Outreach and provider activity</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                Log outreach so weekly stand-ups reference the same ledger instead of rewriting work in chat.
               </p>
             </div>
-            <Badge className="border-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">Standup source</Badge>
+            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand-up source</Badge>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-            <div className="grid gap-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select
-                  className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
-                  value={activityType}
-                  onChange={(e) => setActivityType(e.target.value)}
-                >
-                  <option value="provider_visit">Provider visit</option>
-                  <option value="home_health_provider">Home health provider</option>
-                  <option value="facility_outreach">Facility outreach</option>
-                  <option value="community_event">Community event</option>
-                  <option value="digital_outreach">Digital outreach</option>
-                </select>
-                <select
-                  className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
-                  value={activityStatus}
-                  onChange={(e) => setActivityStatus(e.target.value)}
-                >
-                  <option value="planned">Planned</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+          <div className="grid gap-8 p-5 lg:grid-cols-[1fr_1fr]">
+            <div className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="crm-activity-type" className="text-[13px]">
+                    Activity type
+                  </Label>
+                  <Select value={activityType} onValueChange={setActivityType}>
+                    <SelectTrigger id="crm-activity-type" className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="provider_visit">Provider visit</SelectItem>
+                      <SelectItem value="home_health_provider">Home health provider</SelectItem>
+                      <SelectItem value="facility_outreach">Facility outreach</SelectItem>
+                      <SelectItem value="community_event">Community event</SelectItem>
+                      <SelectItem value="digital_outreach">Digital outreach</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="crm-activity-status" className="text-[13px]">
+                    Status
+                  </Label>
+                  <Select value={activityStatus} onValueChange={setActivityStatus}>
+                    <SelectTrigger id="crm-activity-status" className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planned">Planned</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <input
-                type="datetime-local"
-                className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
-                value={scheduledFor}
-                onChange={(e) => setScheduledFor(e.target.value)}
-              />
-              <input
-                className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
-                placeholder="Partner / facility / event name"
-                value={partnerName}
-                onChange={(e) => setPartnerName(e.target.value)}
-              />
-              <textarea
-                className="rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground"
-                rows={3}
-                placeholder="Notes"
-                value={activityNotes}
-                onChange={(e) => setActivityNotes(e.target.value)}
-              />
-              <Button
-                type="button"
-                disabled={savingActivity}
-                onClick={() => void createOutreachActivity({
-                  supabase,
-                  selectedFacilityId,
-                  activityType,
-                  activityStatus,
-                  scheduledFor,
-                  partnerName,
-                  activityNotes,
-                  setLoadError,
-                  setSavingActivity,
-                  onSaved: async () => {
-                    setPartnerName("");
-                    setActivityNotes("");
-                    await load();
-                  },
-                })}
-              >
-                {savingActivity ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Save activity
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="crm-activity-datetime" className="text-[13px]">
+                  Scheduled date and time
+                </Label>
+                <Input
+                  id="crm-activity-datetime"
+                  type="datetime-local"
+                  className="h-10"
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="crm-activity-partner" className="text-[13px]">
+                  Partner / facility / event name
+                </Label>
+                <Input
+                  id="crm-activity-partner"
+                  placeholder="Who or what you met with"
+                  className="h-10"
+                  value={partnerName}
+                  onChange={(e) => setPartnerName(e.target.value)}
+                />
+              </div>
+              <div className="relative space-y-2">
+                <Label htmlFor="crm-activity-notes" className="text-[13px]">
+                  Notes
+                </Label>
+                <textarea
+                  id="crm-activity-notes"
+                  rows={4}
+                  placeholder="What was discussed, follow-ups, or context for the team"
+                  className="min-h-[100px] w-full resize-y rounded-lg border border-input bg-background py-2 pl-3 pr-10 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+                  value={activityNotes}
+                  onChange={(e) => setActivityNotes(e.target.value)}
+                />
+                <span
+                  className="pointer-events-none absolute bottom-2 right-2 text-muted-foreground"
+                  title="Dictation can be wired to your device microphone in a future pass"
+                  aria-hidden
+                >
+                  <Mic className="size-4 opacity-70" />
+                </span>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  className="min-w-[8rem]"
+                  disabled={savingActivity}
+                  onClick={() =>
+                    void createOutreachActivity({
+                      supabase,
+                      selectedFacilityId,
+                      activityType,
+                      activityStatus,
+                      scheduledFor,
+                      partnerName,
+                      activityNotes,
+                      setLoadError,
+                      setSavingActivity,
+                      onSaved: async () => {
+                        setPartnerName("");
+                        setActivityNotes("");
+                        await load();
+                      },
+                    })
+                  }
+                >
+                  {savingActivity ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Save activity
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <p className="text-[13px] font-medium text-foreground">Recent activity</p>
               {outreachRows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No outreach/provider activity logged yet for this facility.</p>
+                <p className="text-[13px] text-muted-foreground">No outreach logged yet for this facility.</p>
               ) : (
-                outreachRows.map((row) => (
-                  <div key={row.id} className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
-                    <div className="flex items-center justify-between gap-3 w-full">
-                      <div>
-                        <div className="text-[13px] font-medium text-foreground">
-                          {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
+                <ul className="space-y-3">
+                  {recentOutreach.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-border bg-background/40 px-3 py-3 text-[13px]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground">
+                            {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-0.5 text-[12px] capitalize text-muted-foreground">
+                            {row.activity_type.replace(/_/g, " ")} · {row.status}
+                          </p>
                         </div>
-                        <div className="text-[12px] uppercase tracking-wider text-muted-foreground">
-                          {row.activity_type.replace(/_/g, " ")} · {row.status}
-                        </div>
+                        <p className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
+                          {row.scheduled_for
+                            ? new Date(row.scheduled_for).toLocaleString(undefined, {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                            : (row.performed_for_week ?? "—")}
+                        </p>
                       </div>
-                      <div className="text-[12px] text-muted-foreground tabular-nums">
-                        {row.scheduled_for ? new Date(row.scheduled_for).toLocaleString() : row.performed_for_week ?? "—"}
+                      {row.notes ? <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{row.notes}</p> : null}
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Select
+                          value={outreachStatusDrafts[row.id] ?? row.status}
+                          onValueChange={(v) =>
+                            setOutreachStatusDrafts((current) => ({ ...current, [row.id]: v }))
+                          }
+                        >
+                          <SelectTrigger className="h-8 w-[140px] text-xs" aria-label={`Status for activity ${row.id}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="planned">Planned</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={savingActivity || (outreachStatusDrafts[row.id] ?? row.status) === row.status}
+                          onClick={() =>
+                            void updateOutreachActivityStatus({
+                              supabase,
+                              activityId: row.id,
+                              status: outreachStatusDrafts[row.id] ?? row.status,
+                              setLoadError,
+                              setSavingActivity,
+                              onSaved: load,
+                            })
+                          }
+                        >
+                          Save status
+                        </Button>
                       </div>
-                    </div>
-                    {row.notes ? <p className="mt-2 text-sm text-muted-foreground">{row.notes}</p> : null}
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <select
-                        className="rounded-lg border border-input bg-background px-3 py-2 text-xs uppercase tracking-wider text-foreground"
-                        value={outreachStatusDrafts[row.id] ?? row.status}
-                        onChange={(e) => setOutreachStatusDrafts((current) => ({ ...current, [row.id]: e.target.value }))}
-                      >
-                        <option value="planned">Planned</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={savingActivity || (outreachStatusDrafts[row.id] ?? row.status) === row.status}
-                        onClick={() =>
-                          void updateOutreachActivityStatus({
-                            supabase,
-                            activityId: row.id,
-                            status: outreachStatusDrafts[row.id] ?? row.status,
-                            setLoadError,
-                            setSavingActivity,
-                            onSaved: load,
-                          })
-                        }
-                      >
-                        Save status
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
@@ -733,46 +906,60 @@ export default function AdminReferralsHubPage() {
       ) : null}
 
       {!noFacility ? (
-        <div className="border-amber-200/70 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="text-base font-bold text-foreground mb-1 tracking-tight">Admissions Handoff</p>
-            <p className="text-sm text-muted-foreground tracking-wide">
-              {loading
-                ? "Loading handoff counts…"
-                : `${counts.inAdmissions} referral lead${counts.inAdmissions === 1 ? "" : "s"} already have an active admission case in this facility.`}
-            </p>
-            {!loading && counts.inAdmissions > 0 ? (
-              <p className="text-xs text-muted-foreground tracking-wide mt-1 tabular-nums">
-                {counts.handoffBlocked} blocked · {counts.handoffReady} ready · {counts.handoffOnboarding} onboarding
+        <Card
+          className={cn(
+            "overflow-hidden",
+            !handoffCardMuted ? "border-amber-500/35 bg-amber-500/[0.04]" : "",
+          )}
+        >
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[15px] font-medium text-foreground">Admissions handoff</p>
+              <p className="text-[13px] text-muted-foreground">
+                {loading
+                  ? "Loading handoff rollup…"
+                  : `${admissionActiveTotal} referral lead${admissionActiveTotal === 1 ? "" : "s"} tied to an active admission case in this facility.`}
               </p>
-            ) : null}
-          </div>
-          <Link
-            href="/admin/referrals/in-admissions"
-            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
-          >
-            Open Handoff Queue
-          </Link>
-        </div>
+              {!loading && admissionActiveTotal > 0 ? (
+                <p className="text-[12px] tabular-nums text-muted-foreground">
+                  {handoffRollup.blocked} blocked · {handoffRollup.ready} ready · {handoffRollup.onboarding} onboarding
+                </p>
+              ) : null}
+            </div>
+            <Link
+              href="/admin/referrals/in-admissions"
+              className={cn(buttonVariants({ variant: "outline" }), "w-full justify-center sm:w-auto")}
+            >
+              Open handoff queue
+            </Link>
+          </CardContent>
+        </Card>
       ) : null}
 
       {!noFacility ? (
-        <div className="border-amber-200/70 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 shadow-sm overflow-hidden p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="text-base font-bold text-foreground mb-1 tracking-tight">HL7 ADT Inbound Queue</p>
-            <p className="text-sm text-muted-foreground tracking-wide">
-              {loading
-                ? "Loading queue counts…"
-                : `Pending ${hl7Counts.pending} · Failed ${hl7Counts.failed} for this facility. Open the queue for processed and ignored messages.`}
-            </p>
-          </div>
-          <Link
-            href="/admin/referrals/hl7-inbound"
-            className={cn(buttonVariants({ variant: "outline" }), "shrink-0 shadow-sm rounded-full w-full sm:w-auto px-6 tap-responsive font-bold uppercase tracking-wider text-xs")}
-          >
-            Review Pipeline
-          </Link>
-        </div>
+        <Card
+          className={cn(
+            "overflow-hidden",
+            hl7NeedsReview ? "border-amber-500/35 bg-amber-500/[0.04]" : "",
+          )}
+        >
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[15px] font-medium text-foreground">Referral inbox (HL7 ADT)</p>
+              <p className="text-[13px] text-muted-foreground">
+                {loading
+                  ? "Loading queue counts…"
+                  : `Pending ${hl7Counts.pending}, failed ${hl7Counts.failed}. Open the inbox to triage, replay, or discard messages — this count is facility-scoped.`}
+              </p>
+            </div>
+            <Link
+              href="/admin/referrals/hl7-inbound"
+              className={cn(buttonVariants({ variant: "outline" }), "w-full justify-center sm:w-auto")}
+            >
+              Open referral inbox
+            </Link>
+          </CardContent>
+        </Card>
       ) : null}
 
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
@@ -780,17 +967,20 @@ export default function AdminReferralsHubPage() {
         <div className="flex flex-col gap-3 border-b border-border pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <ClipboardList className="h-5 w-5 text-primary" />
-              <h3 className="text-xl font-medium text-foreground tracking-tight">
-                Pipeline Leads
-              </h3>
+              <ClipboardList className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+              <div>
+                <h2 className="text-lg font-medium tracking-tight text-foreground">Pipeline</h2>
+                <p className="mt-0.5 text-[13px] text-muted-foreground">
+                  Priority-ranked subset; open a row for the full lead timeline.
+                </p>
+              </div>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled={noFacility || exportingCsv}
-              className="h-10 shrink-0 gap-2 rounded-full text-[10px] font-bold uppercase tracking-wider sm:self-start"
+              className="h-9 shrink-0 gap-2 sm:self-start"
               title={
                 (statusFilter === "all"
                   ? "Export up to 500 leads (all statuses), most recently updated first."
@@ -800,11 +990,11 @@ export default function AdminReferralsHubPage() {
               onClick={() => void exportReferralLeadsCsv()}
             >
               <Download className="h-4 w-4" aria-hidden />
-              {exportingCsv ? "Preparing…" : "Download leads CSV"}
+              {exportingCsv ? "Preparing…" : "Download CSV"}
             </Button>
           </div>
           {!noFacility ? (
-            <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <label className="flex min-w-0 max-w-full flex-1 items-center gap-2 sm:max-w-md">
                 <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 <Input
@@ -816,32 +1006,35 @@ export default function AdminReferralsHubPage() {
                   aria-label="Filter pipeline by text"
                 />
               </label>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Status</span>
-                <select
-                  className={cn(
-                    "h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none",
-                    "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50",
-                  )}
+              <div className="flex flex-col gap-2 sm:min-w-[200px]">
+                <Label htmlFor="crm-pipeline-status" className="text-[12px] font-medium text-muted-foreground">
+                  Status
+                </Label>
+                <Select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as "all" | ReferralLeadStatus)}
+                  onValueChange={(v) => setStatusFilter(v as "all" | ReferralLeadStatus)}
                 >
-                  {LEAD_STATUS_FILTERS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger id="crm-pipeline-status" className="h-9 w-full bg-background shadow-xs">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_STATUS_FILTERS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {rows.length > 0 ? (
-                <p className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">
+                <p className="text-[12px] text-muted-foreground">
                   {searchQuery.trim() ? (
                     <>
-                      Showing {featuredRows.length} of {displayRows.length} · Search
+                      Showing {featuredRows.length} of {displayRows.length} matching search.
                     </>
                   ) : (
                     <>
-                      Showing {featuredRows.length} of {rows.length} · Priority-ranked
+                      Showing {featuredRows.length} priority-ranked rows of {rows.length} loaded.
                     </>
                   )}
                 </p>
@@ -855,8 +1048,8 @@ export default function AdminReferralsHubPage() {
         ) : null}
 
         <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
-           <div className="hidden lg:flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-             <div className="flex-[2]">Lead Name</div>
+           <div className="hidden lg:flex items-center gap-3 border-b border-border bg-card/60 px-[13px] py-2 text-[12px] font-semibold capitalize text-muted-foreground">
+             <div className="flex-[2]">Lead name</div>
              <div className="flex-1">Status</div>
              <div className="flex-1 text-right">Source</div>
              <div className="flex-1 text-right">Updated</div>
@@ -884,16 +1077,16 @@ export default function AdminReferralsHubPage() {
                  No leads match this search.
                </div>
              ) : (
-                <MotionList className="space-y-4">
+                <div className="space-y-3">
                  {featuredRows.map((r) => {
-                    const isNew = r.status.includes('new');
+                    const isNew = r.status === "new";
                     const linkedAdmission = activeAdmissionCaseByLeadId[r.id] ?? null;
                     const linkedAdmissionCaseId = linkedAdmission?.id ?? null;
                     const handoffPhase = linkedAdmission?.phase ?? null;
                     
                     return (
-                      <MotionItem key={r.id}>
                         <Link
+                          key={r.id}
                           href={`/admin/referrals/${r.id}`}
                           className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card tap-responsive group hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                         >
@@ -907,29 +1100,29 @@ export default function AdminReferralsHubPage() {
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-start items-center">
-                            <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Status</span>
+                            <span className="lg:hidden text-[12px] font-medium text-muted-foreground">Status</span>
                             <div className="flex items-center gap-2">
                               <span className={cn(
-                                "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
-                                isNew ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400"
+                                "text-[11px] font-semibold capitalize px-2.5 py-1 rounded-full border",
+                                isNew ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400" : "bg-muted/60 text-foreground border-border"
                               )}>
                                 {formatStatus(r.status)}
                               </span>
                               {linkedAdmissionCaseId ? (
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                                <span className="text-[11px] font-medium rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-amber-800 dark:text-amber-300">
                                   In admissions
                                 </span>
                               ) : null}
                               {handoffPhase === "blocked" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                                <span className="text-[11px] font-medium rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-amber-800 dark:text-amber-300">
                                   Blocked
                                 </span>
                               ) : handoffPhase === "ready" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                                <span className="text-[11px] font-medium rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-emerald-800 dark:text-emerald-300">
                                   Ready
                                 </span>
                               ) : handoffPhase === "onboarding" ? (
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300">
+                                <span className="text-[11px] font-medium rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-primary">
                                   Onboarding
                                 </span>
                               ) : null}
@@ -937,14 +1130,14 @@ export default function AdminReferralsHubPage() {
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Source</span>
+                            <span className="lg:hidden text-[12px] font-medium text-muted-foreground">Source</span>
                             <span className="text-[13px] text-foreground truncate">
                               {r.referral_sources?.name ?? "—"}
                             </span>
                           </div>
 
                           <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Updated</span>
+                            <span className="lg:hidden text-[12px] font-medium text-muted-foreground">Updated</span>
                           <div className="flex flex-col items-end">
                             <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
                               {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
@@ -968,10 +1161,9 @@ export default function AdminReferralsHubPage() {
                             </div>
                           </div>
                         </Link>
-                      </MotionItem>
                     )
                   })}
-                </MotionList>
+                </div>
              )}
            </div>
         </div>
