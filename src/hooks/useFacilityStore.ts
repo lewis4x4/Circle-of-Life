@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
@@ -56,6 +56,12 @@ function sanitizeUserId(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
+const noopServerStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
+
 export const useFacilityStore = create<FacilityState>()(
   persist(
     (set) => ({
@@ -79,7 +85,7 @@ export const useFacilityStore = create<FacilityState>()(
     }),
     {
       name: "haven-facility-storage",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => (typeof window !== "undefined" ? window.localStorage : noopServerStorage)),
       partialize: (state) => ({
         selectedFacilityId: state.selectedFacilityId,
         availableFacilities: state.availableFacilities,
