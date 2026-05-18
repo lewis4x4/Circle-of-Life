@@ -31,6 +31,7 @@ import { extractXlsxSheets } from "./onboarding/homewood/ingestion-lib.mjs";
 
 const ROOT = process.cwd();
 const DEFAULT_FILE = "/Users/brianlewis/Desktop/AR May 2026.xlsx";
+const DEFAULT_ROOM_OVERRIDES = path.join(ROOT, "scripts", "homewood", "data", "homewood-ar-room-overrides.json");
 const DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const DEFAULT_ENTITY_ID = "00000000-0000-0000-0001-000000000003";
@@ -48,6 +49,8 @@ function usage() {
     "",
     "Options:",
     `  --file <path>              Current A/R XLSX (default: ${DEFAULT_FILE})`,
+    `  --room-overrides <path>    JSON room correction file (default: ${DEFAULT_ROOM_OVERRIDES})`,
+    "  --no-room-overrides        Ignore the default room correction file",
     "  --dry-run                  Plan only; no writes",
     `  --facility-id <uuid>       Homewood facility id (default: ${DEFAULT_FACILITY_ID})`,
     `  --organization-id <uuid>   COL organization id (default: ${DEFAULT_ORG_ID})`,
@@ -60,6 +63,7 @@ function usage() {
 function parseArgs(argv) {
   const args = {
     file: DEFAULT_FILE,
+    roomOverrides: DEFAULT_ROOM_OVERRIDES,
     dryRun: false,
     facilityId: DEFAULT_FACILITY_ID,
     organizationId: DEFAULT_ORG_ID,
@@ -71,6 +75,8 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--file") args.file = path.resolve(process.cwd(), argv[++i]);
+    else if (a === "--room-overrides") args.roomOverrides = path.resolve(process.cwd(), argv[++i]);
+    else if (a === "--no-room-overrides") args.roomOverrides = null;
     else if (a === "--dry-run") args.dryRun = true;
     else if (a === "--facility-id") args.facilityId = argv[++i];
     else if (a === "--organization-id") args.organizationId = argv[++i];
@@ -150,6 +156,54 @@ function normalizeRoomBed(value) {
   return { raw, roomNumber, bedLabel, normalized: `${roomNumber}${bedLabel}` };
 }
 
+function normalizeOverrideKey(value) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function loadRoomOverrides(file) {
+  if (!file || !existsSync(file)) return { bySourceName: new Map(), appliedFrom: file || null };
+  const raw = JSON.parse(readFileSync(file, "utf8"));
+  if (!Array.isArray(raw)) throw new Error(`Room override file must contain a JSON array: ${file}`);
+  const bySourceName = new Map();
+  for (const item of raw) {
+    const sourceName = normalizeOverrideKey(item.sourceName);
+    const correctedRoomBed = item.correctedRoomBed;
+    if (!sourceName || !correctedRoomBed) throw new Error(`Invalid room override entry in ${file}: each row needs sourceName and correctedRoomBed`);
+    bySourceName.set(sourceName, {
+      sourceName: item.sourceName,
+      correctedRoomBed,
+      reason: item.reason || "Room correction override",
+    });
+  }
+  return { bySourceName, appliedFrom: file };
+}
+
+function applyRoomOverrides(residents, overrideState) {
+  const applied = [];
+  for (const resident of residents) {
+    const override = overrideState.bySourceName.get(normalizeOverrideKey(resident.sourceName));
+    if (!override) continue;
+    const corrected = normalizeRoomBed(override.correctedRoomBed);
+    if (!corrected.normalized || !corrected.bedLabel) {
+      throw new Error(`Invalid correctedRoomBed for ${override.sourceName}: ${override.correctedRoomBed}`);
+    }
+    resident.originalRoomBed = resident.roomBed;
+    resident.originalRoomNumber = resident.roomNumber;
+    resident.originalBedLabel = resident.bedLabel;
+    resident.roomBed = corrected.normalized;
+    resident.roomNumber = corrected.roomNumber;
+    resident.bedLabel = corrected.bedLabel;
+    resident.roomOverrideReason = override.reason;
+    applied.push({
+      sourceName: resident.sourceName,
+      originalRoomBed: resident.originalRoomBed,
+      correctedRoomBed: resident.roomBed,
+      reason: override.reason,
+    });
+  }
+  return applied;
+}
+
 function parseName(value) {
   const raw = String(value ?? "").trim().replace(/\s+/g, " ");
   if (!raw) return null;
@@ -217,7 +271,7 @@ function findIndex(headers, candidates) {
   return -1;
 }
 
-function parseWorkbook(file) {
+function parseWorkbook(file, options = {}) {
   if (!existsSync(file)) throw new Error(`A/R workbook not found: ${file}`);
   const sheets = extractXlsxSheets(file);
   const sheet = sheets.find((s) => /homewood/i.test(s.name)) || sheets.find((s) => /homewood/i.test(s.rows[0]?.join(" ") || ""));
@@ -283,6 +337,9 @@ function parseWorkbook(file) {
     });
   }
 
+  const overrideState = loadRoomOverrides(options.roomOverrides);
+  const roomOverridesApplied = applyRoomOverrides(residents, overrideState);
+
   const byRoomBed = new Map();
   for (const resident of residents) {
     byRoomBed.set(resident.roomBed, [...(byRoomBed.get(resident.roomBed) || []), resident.fullLegalName]);
@@ -316,6 +373,8 @@ function parseWorkbook(file) {
       outstandingCents: 0,
       payerCounts: {},
       duplicateRoomBedConflicts,
+      roomOverridesApplied,
+      roomOverridesSource: overrideState.appliedFrom,
     },
   );
 
@@ -343,8 +402,11 @@ function rowNotes(row, extra = []) {
   const parts = [
     `Imported from Homewood May 2026 A/R workbook row ${row.sourceRow}.`,
     `Source resident: ${row.sourceName}.`,
-    `Source room/bed: ${row.roomBed}.`,
+    row.originalRoomBed && row.originalRoomBed !== row.roomBed
+      ? `Source room/bed: ${row.originalRoomBed}; corrected to ${row.roomBed}.`
+      : `Source room/bed: ${row.roomBed}.`,
   ];
+  if (row.roomOverrideReason) parts.push(`Room correction: ${row.roomOverrideReason}`);
   if (row.payerType === "medicaid_pending") parts.push("Source payer marked Medicaid pending; stored as medicaid_oss with payer name Medicaid Pending because live payer enum has no medicaid_pending value.");
   if (row.collectionNotes) parts.push(`Collection notes: ${row.collectionNotes}`);
   if (row.admittedFrom) parts.push(`Admitted from: ${row.admittedFrom}`);
@@ -790,6 +852,9 @@ function printParsedSummary(parsed) {
   console.log(`Parsed Homewood A/R: ${s.residentCount} resident rows from ${s.sourceSheet}`);
   console.log(`Totals: contracted ${centsToDollars(s.totalContractedCents)}, collected ${centsToDollars(s.privatePaidCents + s.medicaidPaidCents)}, outstanding ${centsToDollars(s.outstandingCents)}`);
   console.log(`Payers: ${Object.entries(s.payerCounts).map(([k, v]) => `${k}=${v}`).join(", ") || "none"}`);
+  if (s.roomOverridesApplied.length > 0) {
+    console.log(`Room overrides applied: ${s.roomOverridesApplied.map((o) => `${o.sourceName} ${o.originalRoomBed}->${o.correctedRoomBed}`).join(", ")}`);
+  }
   if (s.duplicateRoomBedConflicts.length > 0) console.log(`Bed conflicts held for review: ${s.duplicateRoomBedConflicts.map((c) => c.roomBed).join(", ")}`);
 }
 
@@ -809,7 +874,7 @@ function printPlan(residentPlans, skipped, counts, verbose) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const parsed = parseWorkbook(args.file);
+  const parsed = parseWorkbook(args.file, { roomOverrides: args.roomOverrides });
   printParsedSummary(parsed);
 
   loadEnvFile();
