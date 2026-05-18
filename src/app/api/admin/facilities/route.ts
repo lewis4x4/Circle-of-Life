@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
   if (facilityIds.length > 0) {
     const orgId = actor.organization_id!;
     const [bedsRes, alertsRes, incRes, admRes, riskRes] = await Promise.all([
-      untypedAdmin.from("beds").select("facility_id, is_occupied").in("facility_id", facilityIds),
+      untypedAdmin.from("beds").select("facility_id, current_resident_id").in("facility_id", facilityIds),
       untypedAdmin
         .from("facility_operational_thresholds")
         .select("facility_id")
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
     const typedBeds =
       (((bedsRes as { data?: unknown }).data ?? []) as unknown as Array<{
         facility_id: string;
-        is_occupied: boolean;
+        current_resident_id: string | null;
       }>) ?? [];
 
     for (const bed of typedBeds) {
@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
         };
       }
       statsMap[bed.facility_id].total_beds++;
-      if (bed.is_occupied) statsMap[bed.facility_id].occupancy_count++;
+      if (bed.current_resident_id) statsMap[bed.facility_id].occupancy_count++;
     }
 
     const typedAlerts =

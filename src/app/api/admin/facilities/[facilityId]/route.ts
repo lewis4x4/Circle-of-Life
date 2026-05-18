@@ -77,14 +77,14 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   // Bed census for header / overview
   const { data: beds } = await untypedAdmin
     .from("beds")
-    .select("is_occupied")
+    .select("current_resident_id")
     .eq("facility_id", facilityId);
 
-  const typedBeds = (beds ?? []) as unknown as Array<{ is_occupied: boolean }>;
+  const typedBeds = (beds ?? []) as unknown as Array<{ current_resident_id: string | null }>;
   let occupancy_count = 0;
   const total_beds = typedBeds.length;
   for (const b of typedBeds) {
-    if (b.is_occupied) occupancy_count++;
+    if (b.current_resident_id) occupancy_count++;
   }
 
   let portfolio_open_incidents_total = 0;
