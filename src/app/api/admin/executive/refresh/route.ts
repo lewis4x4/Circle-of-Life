@@ -11,6 +11,8 @@ type EdgeRefreshResult = {
   error?: string;
 };
 
+type EdgeRefreshClientResult = Pick<EdgeRefreshResult, "name" | "ok" | "status">;
+
 function normalizeSupabaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
@@ -65,6 +67,23 @@ async function invokeEdgeRefresh({
   }
 }
 
+function toClientResult(result: EdgeRefreshResult): EdgeRefreshClientResult {
+  return {
+    name: result.name,
+    ok: result.ok,
+    status: result.status,
+  };
+}
+
+function logRefreshFailure(result: EdgeRefreshResult): void {
+  console.error("[executive-refresh] edge invocation failed", {
+    name: result.name,
+    status: result.status,
+    ok: result.ok,
+    failureType: result.status === 0 ? "network" : "edge-function",
+  });
+}
+
 export async function POST() {
   const roleContext = await loadFinanceRoleContextServer();
   if (!roleContext.ok) {
@@ -112,17 +131,23 @@ export async function POST() {
     organizationId,
   });
 
+  const snapshotClient = toClientResult(snapshot);
+  const scorerClient = toClientResult(scorer);
+
   if (!snapshot.ok || !scorer.ok) {
+    if (!snapshot.ok) logRefreshFailure(snapshot);
+    if (!scorer.ok) logRefreshFailure(scorer);
+
     return NextResponse.json(
       {
         ok: false,
         error: "Executive refresh did not complete successfully.",
-        snapshot,
-        scorer,
+        snapshot: snapshotClient,
+        scorer: scorerClient,
       },
       { status: 502 },
     );
   }
 
-  return NextResponse.json({ ok: true, snapshot, scorer });
+  return NextResponse.json({ ok: true, snapshot: snapshotClient, scorer: scorerClient });
 }

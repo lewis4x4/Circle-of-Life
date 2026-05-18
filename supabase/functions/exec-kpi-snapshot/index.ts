@@ -16,6 +16,7 @@ import {
   normalizedRowsForScope,
   type NormalizedMetricRow,
 } from "./normalized-metrics.ts";
+import { parseSnapshotRequestBody } from "./request-validation.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 
 const UUID_RE =
@@ -53,26 +54,24 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Server configuration error" }, 503);
   }
 
-  let body: { organization_id?: string; snapshot_date?: string };
+  let parsedBody: unknown;
   try {
-    body = (await req.json()) as typeof body;
+    parsedBody = await req.json();
   } catch {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
-  const organizationId = body.organization_id?.trim();
-  if (!organizationId || !UUID_RE.test(organizationId)) {
+  const bodyResult = parseSnapshotRequestBody(parsedBody);
+  if (!bodyResult.ok) {
+    return jsonResponse({ error: bodyResult.error }, 400);
+  }
+
+  const { organizationId } = bodyResult.body;
+  if (!UUID_RE.test(organizationId)) {
     return jsonResponse({ error: "organization_id (uuid) is required" }, 400);
   }
 
-  let snapshotDate = body.snapshot_date?.trim();
-  if (snapshotDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(snapshotDate)) {
-      return jsonResponse({ error: "snapshot_date must be YYYY-MM-DD" }, 400);
-    }
-  } else {
-    snapshotDate = utcTodayDate();
-  }
+  const snapshotDate = bodyResult.body.snapshotDate ?? utcTodayDate();
 
   const supabase = createClient(url, serviceKey);
 

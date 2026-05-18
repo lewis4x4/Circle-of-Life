@@ -352,7 +352,6 @@ export async function computeKpiForFacilityIds(
     .select("id", { count: "exact", head: true })
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .in("status", ["open", "investigating"])
     .gte("occurred_at", `${trailing30Start}T00:00:00.000Z`)
     .lt("occurred_at", `${nextSnapshotDate}T00:00:00.000Z`);
 

@@ -15,6 +15,7 @@ export type MetricThresholds =
   | { type: "custom"; resolve: (value: number) => MetricTone };
 
 export function resolveMetricTone(value: number, thresholds?: MetricThresholds): MetricTone {
+  if (!Number.isFinite(value)) return "default";
   if (!thresholds) return "default";
 
   switch (thresholds.type) {
@@ -64,7 +65,10 @@ export function MetricCard({
   className,
   ...props
 }: MetricCardProps) {
-  const derivedTone = tone ?? resolveMetricTone(numericValue ?? Number(value) ?? 0, thresholds);
+  const resolvedNumericValue = numericValue ?? Number(value);
+  const derivedTone = thresholds
+    ? resolveMetricTone(resolvedNumericValue, thresholds)
+    : (tone ?? "default");
   const classes = toneClasses[derivedTone];
 
   return (
