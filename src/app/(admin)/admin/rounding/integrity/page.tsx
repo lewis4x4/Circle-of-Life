@@ -2,15 +2,34 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Eye, Loader2, ShieldAlert, UserSearch, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  Eye,
+  Loader2,
+  RefreshCw,
+  ShieldAlert,
+  UserSearch,
+  X,
+  XCircle,
+} from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { V2Card } from "@/components/ui/v2-card";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
-import { fetchIncidentFollowupAssignees, type IncidentFollowupAssigneeOption } from "@/lib/incidents/followup-assignees";
+import {
+  fetchIncidentFollowupAssignees,
+  type IncidentFollowupAssigneeOption,
+} from "@/lib/incidents/followup-assignees";
 import { cn } from "@/lib/utils";
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
 type FollowUpStatus = "open" | "in_progress" | "resolved" | "dismissed";
 type Severity = "low" | "medium" | "high" | "critical";
@@ -27,10 +46,25 @@ type IntegrityRow = {
   detected_at: string;
   status: FollowUpStatus;
   disposition_note: string | null;
-  residents?: { first_name: string; last_name: string; preferred_name: string | null } | null;
+  residents?: {
+    first_name: string;
+    last_name: string;
+    preferred_name: string | null;
+  } | null;
   staff?: { first_name: string; last_name: string; preferred_name: string | null } | null;
-  assigned_staff?: { first_name: string; last_name: string; preferred_name: string | null } | null;
-  resident_observation_logs?: { quick_status: string; entry_mode: string; observed_at: string; entered_at: string; late_reason: string | null; note: string | null } | null;
+  assigned_staff?: {
+    first_name: string;
+    last_name: string;
+    preferred_name: string | null;
+  } | null;
+  resident_observation_logs?: {
+    quick_status: string;
+    entry_mode: string;
+    observed_at: string;
+    entered_at: string;
+    late_reason: string | null;
+    note: string | null;
+  } | null;
 };
 
 type IntegrityHistoryItem = {
@@ -41,57 +75,119 @@ type IntegrityHistoryItem = {
   createdAt: string;
 };
 
-const STATUS_STYLES: Record<FollowUpStatus, string> = {
-  open: "border-rose-500/30 bg-rose-500/10 text-rose-200",
-  in_progress: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  resolved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-  dismissed: "border-slate-500/30 bg-slate-500/10 text-slate-300",
-};
+type LoadState = "idle" | "loading" | "ready" | "error";
 
-const SEVERITY_STYLES: Record<Severity, string> = {
-  low: "border-sky-500/30 bg-sky-500/10 text-sky-200",
-  medium: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-  high: "border-orange-500/30 bg-orange-500/10 text-orange-200",
-  critical: "border-rose-500/30 bg-rose-500/10 text-rose-200",
-};
+type BoardState =
+  | "no_facility"
+  | "loading"
+  | "error"
+  | "empty"
+  | "empty_filtered"
+  | "populated";
+
+type Tone = "default" | "warning" | "danger";
+
+type StatusFilter = "all" | FollowUpStatus;
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
 
 function personName(
-  row: { first_name: string; last_name: string; preferred_name: string | null } | null | undefined,
+  row:
+    | { first_name: string; last_name: string; preferred_name: string | null }
+    | null
+    | undefined,
   fallback: string,
 ) {
   if (!row) return fallback;
   return row.preferred_name?.trim() || `${row.first_name} ${row.last_name}`;
 }
 
+function statusTone(status: FollowUpStatus): Tone {
+  if (status === "open") return "danger";
+  if (status === "in_progress") return "warning";
+  return "default";
+}
+
+function statusLabel(status: FollowUpStatus): string {
+  if (status === "in_progress") return "In progress";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function severityTone(severity: Severity): Tone {
+  if (severity === "critical") return "danger";
+  if (severity === "high") return "danger";
+  if (severity === "medium") return "warning";
+  return "default";
+}
+
+function chipClasses(tone: Tone): string {
+  if (tone === "danger") return "border-danger/30 bg-danger/10 text-danger";
+  if (tone === "warning") return "border-warning/30 bg-warning/10 text-warning";
+  return "border-border bg-muted text-muted-foreground";
+}
+
+function resolveOpenTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 2) return "warning";
+  return "danger";
+}
+
+function resolveCriticalTone(count: number): Tone {
+  return count > 0 ? "danger" : "default";
+}
+
+function resolveInProgressTone(count: number): Tone {
+  return count > 0 ? "warning" : "default";
+}
+
+function deriveBoardState(args: {
+  loadState: LoadState;
+  hasFacility: boolean;
+  rowCount: number;
+  filterApplied: boolean;
+}): BoardState {
+  if (!args.hasFacility) return "no_facility";
+  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
+  if (args.loadState === "error") return "error";
+  if (args.rowCount === 0) return args.filterApplied ? "empty_filtered" : "empty";
+  return "populated";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export default function RoundingIntegrityPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<IntegrityRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [assigneeDrafts, setAssigneeDrafts] = useState<Record<string, string>>({});
   const [assigneeOptions, setAssigneeOptions] = useState<IncidentFollowupAssigneeOption[]>([]);
   const [historyById, setHistoryById] = useState<Record<string, IntegrityHistoryItem[]>>({});
-  const [filter, setFilter] = useState<"all" | FollowUpStatus>("all");
+  const [filter, setFilter] = useState<StatusFilter>("all");
 
   const load = useCallback(async () => {
+    setLoadState("loading");
+    setErrorMessage(null);
+
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
       setRows([]);
-      setLoading(false);
+      setLoadState("ready");
       return;
     }
-
-    setLoading(true);
-    setError(null);
 
     try {
       let query = supabase
         .from("resident_observation_integrity_flags" as never)
-        .select(`
+        .select(
+          `
           id,
           resident_id,
           staff_id,
@@ -107,18 +203,17 @@ export default function RoundingIntegrityPage() {
           staff(first_name, last_name, preferred_name),
           assigned_staff:assigned_to_staff_id(first_name, last_name, preferred_name),
           resident_observation_logs(quick_status, entry_mode, observed_at, entered_at, late_reason, note)
-        `)
+        `,
+        )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("detected_at", { ascending: false })
         .limit(100);
 
-      if (filter !== "all") {
-        query = query.eq("status", filter);
-      }
+      if (filter !== "all") query = query.eq("status", filter);
 
-      const { data, error: queryError } = await query;
-      if (queryError) throw queryError;
+      const { data, error } = await query;
+      if (error) throw error;
       const nextRows = (data ?? []) as unknown as IntegrityRow[];
       setRows(nextRows);
       setAssigneeDrafts(
@@ -139,7 +234,11 @@ export default function RoundingIntegrityPage() {
           { method: "GET", cache: "no-store" },
         );
         const payload = (await response.json().catch(() => null)) as
-          | { ok?: boolean; historyById?: Record<string, IntegrityHistoryItem[]>; error?: string }
+          | {
+              ok?: boolean;
+              historyById?: Record<string, IntegrityHistoryItem[]>;
+              error?: string;
+            }
           | null;
         if (!response.ok || !payload?.ok) {
           throw new Error(payload?.error || "Could not load integrity history.");
@@ -148,10 +247,14 @@ export default function RoundingIntegrityPage() {
       } else {
         setHistoryById({});
       }
+
+      setLoadState("ready");
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load integrity flags");
-    } finally {
-      setLoading(false);
+      setErrorMessage(
+        loadError instanceof Error ? loadError.message : "Could not load integrity flags.",
+      );
+      setRows([]);
+      setLoadState("error");
     }
   }, [filter, selectedFacilityId, supabase]);
 
@@ -159,353 +262,680 @@ export default function RoundingIntegrityPage() {
     void load();
   }, [load]);
 
-  const counts = useMemo(() => ({
-    open: rows.filter((row) => row.status === "open").length,
-    in_progress: rows.filter((row) => row.status === "in_progress").length,
-    resolved: rows.filter((row) => row.status === "resolved").length,
-    dismissed: rows.filter((row) => row.status === "dismissed").length,
-    critical: rows.filter((row) => row.severity === "critical").length,
-  }), [rows]);
+  const counts = useMemo(
+    () => ({
+      open: rows.filter((row) => row.status === "open").length,
+      in_progress: rows.filter((row) => row.status === "in_progress").length,
+      resolved: rows.filter((row) => row.status === "resolved").length,
+      dismissed: rows.filter((row) => row.status === "dismissed").length,
+      critical: rows.filter((row) => row.severity === "critical").length,
+    }),
+    [rows],
+  );
 
-  const runAction = useCallback(async (id: string, action: "assign" | "start_review" | "resolve" | "dismiss") => {
-    setActionLoading(`${id}:${action}`);
-    setActionError(null);
-    setActionMessage(null);
+  const runAction = useCallback(
+    async (id: string, action: "assign" | "start_review" | "resolve" | "dismiss") => {
+      setActionLoading(`${id}:${action}`);
+      setErrorMessage(null);
+      setActionMessage(null);
 
-    try {
-      const response = await fetch(`/api/rounding/integrity-flags/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action,
-          note: notes[id]?.trim() || undefined,
-          assignedStaffId: action === "assign" ? (assigneeDrafts[id] || null) : undefined,
-        }),
-      });
+      try {
+        const response = await fetch(`/api/rounding/integrity-flags/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action,
+            note: notes[id]?.trim() || undefined,
+            assignedStaffId: action === "assign" ? assigneeDrafts[id] || null : undefined,
+          }),
+        });
 
-      const json = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(json.error ?? "Could not update integrity flag");
+        const json = (await response.json()) as { error?: string };
+        if (!response.ok) throw new Error(json.error ?? "Could not update integrity flag");
+
+        setActionMessage(
+          action === "assign"
+            ? "Integrity flag assignment saved."
+            : action === "start_review"
+              ? "Integrity flag moved into review."
+              : action === "resolve"
+                ? "Integrity flag resolved."
+                : "Integrity flag dismissed.",
+        );
+        setNotes((current) => ({ ...current, [id]: "" }));
+        await load();
+      } catch (runError) {
+        setErrorMessage(
+          runError instanceof Error ? runError.message : "Could not update integrity flag.",
+        );
+      } finally {
+        setActionLoading(null);
       }
+    },
+    [assigneeDrafts, load, notes],
+  );
 
-      setActionMessage(
-        action === "assign"
-          ? "Integrity flag assignment saved."
-          : action === "start_review"
-          ? "Integrity flag moved into review."
-          : action === "resolve"
-            ? "Integrity flag resolved."
-            : "Integrity flag dismissed.",
-      );
-      setNotes((current) => ({ ...current, [id]: "" }));
-      await load();
-    } catch (runError) {
-      setActionError(runError instanceof Error ? runError.message : "Could not update integrity flag");
-    } finally {
-      setActionLoading(null);
-    }
-  }, [assigneeDrafts, load, notes]);
+  const boardState = deriveBoardState({
+    loadState,
+    hasFacility: Boolean(selectedFacilityId),
+    rowCount: rows.length,
+    filterApplied: filter !== "all",
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
+      <PageHeader
+        title="Documentation integrity"
+        subtitle="Late-entry and documentation-quality flags — review and disposition before rounding evidence becomes hard to defend."
+        actions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => void load()}
+            aria-label="Refresh integrity flags"
+            title="Refresh"
+            disabled={loadState === "loading"}
+          >
+            <RefreshCw
+              className={cn("size-4", loadState === "loading" && "animate-spin")}
+              aria-hidden
+            />
+          </Button>
+        }
+      />
 
-      <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-2">
-            
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Documentation Integrity
-              {counts.critical > 0 ? <ShieldAlert className="h-8 w-8 text-rose-400" /> : null}
-            </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-3xl">
-              Review late-entry and documentation-quality flags before rounding evidence becomes hard to defend.
-            </p>
-          </div>
-          <div>
-            <RoundingHubNav />
-          </div>
-        </div>
+      <RoundingHubNav />
 
-        {!selectedFacilityId ? (
-          <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 px-6 py-10 text-center text-sm text-slate-600 dark:text-slate-300">
-            Select a facility in the admin header to open the integrity queue.
-          </div>
-        ) : null}
+      {boardState === "no_facility" ? (
+        <AllFacilitiesInterstitial />
+      ) : boardState === "error" ? (
+        <LoadErrorNotice
+          message={errorMessage ?? "Could not load integrity flags."}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <>
+          {actionMessage ? (
+            <InfoBanner message={actionMessage} onDismiss={() => setActionMessage(null)} />
+          ) : null}
 
-        {actionMessage ? <Banner tone="success">{actionMessage}</Banner> : null}
-        {actionError ? <Banner tone="error">{actionError}</Banner> : null}
-        {error ? <Banner tone="error">{error}</Banner> : null}
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <MetricCard label="Open" value={String(counts.open)} accent="text-rose-500" icon={<ShieldAlert className="h-5 w-5" />} pulse={counts.open > 0} />
-          <MetricCard label="In Progress" value={String(counts.in_progress)} accent="text-amber-500" icon={<Eye className="h-5 w-5" />} />
-          <MetricCard label="Resolved" value={String(counts.resolved)} accent="text-emerald-500" icon={<CheckCircle2 className="h-5 w-5" />} />
-          <MetricCard label="Dismissed" value={String(counts.dismissed)} accent="text-slate-400" icon={<XCircle className="h-5 w-5" />} />
-          <MetricCard label="Critical" value={String(counts.critical)} accent="text-primary-500" icon={<UserSearch className="h-5 w-5" />} pulse={counts.critical > 0} />
-        </div>
-
-        <V2Card hoverColor="indigo" className="p-6 border-primary-500/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Integrity flag queue</h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
-                Review suspicious rounding evidence, late-entry patterns, and other documentation-quality follow-up.
-              </p>
+          {/* KPI strip */}
+          <section aria-label="Integrity flag summary">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              <KpiCard
+                label="Open"
+                value={counts.open}
+                tone={resolveOpenTone(counts.open)}
+                hint="Awaiting review"
+              />
+              <KpiCard
+                label="In progress"
+                value={counts.in_progress}
+                tone={resolveInProgressTone(counts.in_progress)}
+                hint="Under review"
+              />
+              <KpiCard
+                label="Resolved"
+                value={counts.resolved}
+                tone="default"
+                hint="Closed flags"
+              />
+              <KpiCard
+                label="Dismissed"
+                value={counts.dismissed}
+                tone="default"
+                hint="Reviewed and dismissed"
+              />
+              <KpiCard
+                label="Critical"
+                value={counts.critical}
+                tone={resolveCriticalTone(counts.critical)}
+                hint="Highest severity"
+              />
             </div>
+          </section>
 
-            <div className="flex flex-wrap gap-2">
-              {(["all", "open", "in_progress", "resolved", "dismissed"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFilter(value)}
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
-                    filter === value
-                      ? "border-primary-500/30 bg-primary-500/10 text-primary-200"
-                      : "border-slate-200 bg-white/70 text-slate-600 hover:border-slate-300 dark:border-white/10 dark:bg-black/20 dark:text-zinc-400 dark:hover:border-white/20",
-                  )}
-                >
-                  {value === "all" ? "All" : value.replace("_", " ")}
-                </button>
-              ))}
+          {/* Filter pills */}
+          <section aria-label="Filter integrity flags">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <span className="shrink-0 text-[12px] font-medium text-muted-foreground">
+                Filter
+              </span>
+              <div className="-mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+                <FilterPill
+                  label="All"
+                  count={
+                    counts.open + counts.in_progress + counts.resolved + counts.dismissed
+                  }
+                  tone="default"
+                  active={filter === "all"}
+                  onClick={() => setFilter("all")}
+                />
+                <FilterPill
+                  label="Open"
+                  count={counts.open}
+                  tone={resolveOpenTone(counts.open)}
+                  active={filter === "open"}
+                  onClick={() => setFilter(filter === "open" ? "all" : "open")}
+                />
+                <FilterPill
+                  label="In progress"
+                  count={counts.in_progress}
+                  tone={resolveInProgressTone(counts.in_progress)}
+                  active={filter === "in_progress"}
+                  onClick={() => setFilter(filter === "in_progress" ? "all" : "in_progress")}
+                />
+                <FilterPill
+                  label="Resolved"
+                  count={counts.resolved}
+                  tone="default"
+                  active={filter === "resolved"}
+                  onClick={() => setFilter(filter === "resolved" ? "all" : "resolved")}
+                />
+                <FilterPill
+                  label="Dismissed"
+                  count={counts.dismissed}
+                  tone="default"
+                  active={filter === "dismissed"}
+                  onClick={() => setFilter(filter === "dismissed" ? "all" : "dismissed")}
+                />
+                {filter !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setFilter("all")}
+                    className="ml-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <X className="size-3" aria-hidden />
+                    Clear filter
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          </section>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-primary-400" />
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 px-4 py-10 text-center text-sm text-slate-500 dark:text-zinc-500">
-              No integrity flags match this filter.
-            </div>
+          {boardState === "empty" ? (
+            <NoFlagsEmptyState />
+          ) : boardState === "empty_filtered" ? (
+            <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
-            <div className="mt-5 space-y-4">
-              {rows.map((row) => {
-                const key = (action: string) => `${row.id}:${action}`;
-                const log = row.resident_observation_logs;
-                return (
-                  <div key={row.id} className="rounded-lg border border-slate-200 dark:border-white/10 bg-card dark:bg-slate-950/40 p-5 shadow-sm">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", STATUS_STYLES[row.status])}>
-                            {row.status.replace("_", " ")}
-                          </span>
-                          <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", SEVERITY_STYLES[row.severity])}>
-                            {row.severity}
-                          </span>
-                          <span className="rounded-full border border-slate-200 dark:border-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                            {row.flag_type.replace(/_/g, " ")}
-                          </span>
-                        </div>
-
-                        <div>
-                          <h3 className="text-xl tracking-tight text-slate-900 dark:text-slate-100">
-                            {personName(row.residents, row.resident_id?.slice(0, 8) ?? "No resident linked")}
-                          </h3>
-                          <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
-                            Staff: {personName(row.staff, row.staff_id?.slice(0, 8) ?? "Unassigned")}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">
-                            Owner: {personName(row.assigned_staff, row.assigned_to_staff_id ?? "Unassigned")}
-                            {row.assigned_at ? ` · assigned ${new Date(row.assigned_at).toLocaleString()}` : ""}
-                          </p>
-                        </div>
-
-                        <div className="grid gap-3 md:grid-cols-2 text-sm text-slate-600 dark:text-zinc-400">
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Detected</p>
-                            <p>{new Date(row.detected_at).toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Entry mode</p>
-                            <p>{log?.entry_mode?.replace(/_/g, " ") ?? "Unavailable"}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Observed</p>
-                            <p>{log ? new Date(log.observed_at).toLocaleString() : "Unavailable"}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Entered</p>
-                            <p>{log ? new Date(log.entered_at).toLocaleString() : "Unavailable"}</p>
-                          </div>
-                        </div>
-
-                        {log?.late_reason ? (
-                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 px-3.5 py-3 text-sm text-slate-600 dark:text-zinc-300">
-                            Late reason: {log.late_reason}
-                          </div>
-                        ) : null}
-
-                        {log?.note ? (
-                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 px-3.5 py-3 text-sm text-slate-600 dark:text-zinc-300">
-                            {log.note}
-                          </div>
-                        ) : null}
-
-                        {row.disposition_note ? (
-                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 px-3.5 py-3 text-sm text-slate-600 dark:text-zinc-300">
-                            {row.disposition_note}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="min-w-[260px] space-y-3">
-                        <textarea
-                          value={notes[row.id] ?? ""}
-                          onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))}
-                          rows={3}
-                          placeholder="Review note or disposition..."
-                          className="w-full rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-ring/20 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100 dark:focus:border-primary-500 dark:focus:ring-ring"
-                        />
-
-                        {assigneeOptions.length > 0 ? (
-                          <div className="space-y-2">
-                            <select
-                              value={assigneeDrafts[row.id] ?? ""}
-                              onChange={(event) =>
-                                setAssigneeDrafts((current) => ({
-                                  ...current,
-                                  [row.id]: event.target.value,
-                                }))
-                              }
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-white/10 dark:bg-slate-950 dark:text-slate-100"
-                            >
-                              <option value="">Unassigned</option>
-                              {assigneeOptions.map((option) => (
-                                <option key={option.id} value={option.id}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => void runAction(row.id, "assign")}
-                              disabled={actionLoading === `${row.id}:assign`}
-                              className="rounded-full"
-                            >
-                              {actionLoading === `${row.id}:assign` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                              Save owner
-                            </Button>
-                          </div>
-                        ) : null}
-
-                        <div className="flex flex-wrap gap-2">
-                          {row.status === "open" ? (
-                            <Button
-                              type="button"
-                              onClick={() => void runAction(row.id, "start_review")}
-                              disabled={actionLoading === key("start_review")}
-                              className="rounded-full bg-amber-600 text-white hover:bg-amber-500"
-                            >
-                              {actionLoading === key("start_review") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
-                              Start review
-                            </Button>
-                          ) : null}
-
-                          {row.status === "open" || row.status === "in_progress" ? (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "resolve")}
-                                disabled={actionLoading === key("resolve")}
-                                className="rounded-full"
-                              >
-                                {actionLoading === key("resolve") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Resolve
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "dismiss")}
-                                disabled={actionLoading === key("dismiss")}
-                                className="rounded-full"
-                              >
-                                {actionLoading === key("dismiss") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                                Dismiss
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-
-                        {historyById[row.id]?.length ? (
-                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 px-3.5 py-3">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">History</p>
-                            <ul className="mt-2 space-y-2 text-xs text-slate-600 dark:text-zinc-300">
-                              {historyById[row.id].slice(0, 4).map((item) => (
-                                <li key={item.id}>
-                                  <span className="font-semibold">{item.action}</span>
-                                  {item.changedFields.length > 0 ? ` · ${item.changedFields.join(", ")}` : ""}
-                                  {` · ${item.actorName} · ${new Date(item.createdAt).toLocaleString()}`}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <ul className="flex flex-col gap-3" aria-label="Integrity flags">
+              {rows.map((row) => (
+                <li key={row.id}>
+                  <IntegrityCard
+                    row={row}
+                    note={notes[row.id] ?? ""}
+                    assignee={assigneeDrafts[row.id] ?? ""}
+                    assigneeOptions={assigneeOptions}
+                    history={historyById[row.id] ?? []}
+                    actionLoading={actionLoading}
+                    onNoteChange={(value) =>
+                      setNotes((current) => ({ ...current, [row.id]: value }))
+                    }
+                    onAssigneeChange={(value) =>
+                      setAssigneeDrafts((current) => ({ ...current, [row.id]: value }))
+                    }
+                    onAction={(action) => void runAction(row.id, action)}
+                  />
+                </li>
+              ))}
+            </ul>
           )}
-        </V2Card>
-      </div>
+        </>
+      )}
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  accent,
-  icon,
-  pulse = false,
+/* -------------------------------------------------------------------------- */
+/*  Integrity card                                                             */
+/* -------------------------------------------------------------------------- */
+
+function IntegrityCard({
+  row,
+  note,
+  assignee,
+  assigneeOptions,
+  history,
+  actionLoading,
+  onNoteChange,
+  onAssigneeChange,
+  onAction,
 }: {
-  label: string;
-  value: string;
-  accent: string;
-  icon: ReactNode;
-  pulse?: boolean;
+  row: IntegrityRow;
+  note: string;
+  assignee: string;
+  assigneeOptions: IncidentFollowupAssigneeOption[];
+  history: IntegrityHistoryItem[];
+  actionLoading: string | null;
+  onNoteChange: (value: string) => void;
+  onAssigneeChange: (value: string) => void;
+  onAction: (action: "assign" | "start_review" | "resolve" | "dismiss") => void;
 }) {
+  const log = row.resident_observation_logs;
+  const actionKey = (action: string) => `${row.id}:${action}`;
+
   return (
-    <V2Card hoverColor="indigo" className="p-5 border-slate-200 dark:border-white/5">
-      <div className="flex h-full flex-col justify-between gap-4">
-        <div className={cn("flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider", accent)}>
-          {icon}
-          {label}
-          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-rose-500" /> : null}
+    <article className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip className={chipClasses(statusTone(row.status))}>
+              {statusLabel(row.status)}
+            </Chip>
+            <Chip className={chipClasses(severityTone(row.severity))}>{row.severity}</Chip>
+            <Chip className="border-border bg-muted text-muted-foreground">
+              {row.flag_type.replace(/_/g, " ")}
+            </Chip>
+          </div>
+
+          <div>
+            <h3 className="text-base font-semibold text-foreground">
+              {personName(row.residents, row.resident_id?.slice(0, 8) ?? "No resident linked")}
+            </h3>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Staff: {personName(row.staff, row.staff_id?.slice(0, 8) ?? "Unassigned")}
+            </p>
+            <p className="text-[12px] text-muted-foreground">
+              Owner: {personName(row.assigned_staff, row.assigned_to_staff_id ?? "Unassigned")}
+              {row.assigned_at ? ` · assigned ${new Date(row.assigned_at).toLocaleString()}` : ""}
+            </p>
+          </div>
+
+          <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
+            <DataPair label="Detected" value={new Date(row.detected_at).toLocaleString()} />
+            <DataPair
+              label="Entry mode"
+              value={log?.entry_mode?.replace(/_/g, " ") ?? "Unavailable"}
+            />
+            <DataPair
+              label="Observed"
+              value={log ? new Date(log.observed_at).toLocaleString() : "Unavailable"}
+            />
+            <DataPair
+              label="Entered"
+              value={log ? new Date(log.entered_at).toLocaleString() : "Unavailable"}
+            />
+          </dl>
+
+          {log?.late_reason ? (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px] text-foreground">
+              <p className="text-[11px] font-medium text-muted-foreground">Late reason</p>
+              <p>{log.late_reason}</p>
+            </div>
+          ) : null}
+
+          {log?.note ? (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px] text-foreground">
+              <p className="text-[11px] font-medium text-muted-foreground">Observation note</p>
+              <p>{log.note}</p>
+            </div>
+          ) : null}
+
+          {row.disposition_note ? (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px] text-foreground">
+              <p className="text-[11px] font-medium text-muted-foreground">Disposition note</p>
+              <p>{row.disposition_note}</p>
+            </div>
+          ) : null}
         </div>
-        <div className={cn("text-4xl tracking-tight", accent)}>{value}</div>
+
+        <div className="min-w-0 lg:w-[280px] lg:shrink-0">
+          <div className="space-y-3">
+            <label htmlFor={`note-${row.id}`} className="sr-only">
+              Review note
+            </label>
+            <textarea
+              id={`note-${row.id}`}
+              value={note}
+              onChange={(event) => onNoteChange(event.target.value)}
+              rows={3}
+              placeholder="Review note or disposition…"
+              className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
+            />
+
+            {assigneeOptions.length > 0 ? (
+              <div className="space-y-2">
+                <label
+                  htmlFor={`assignee-${row.id}`}
+                  className="text-[11px] font-medium text-muted-foreground"
+                >
+                  Assigned owner
+                </label>
+                <select
+                  id={`assignee-${row.id}`}
+                  value={assignee}
+                  onChange={(event) => onAssigneeChange(event.target.value)}
+                  className="h-10 w-full rounded-md border border-border bg-card px-3 text-[13px] text-foreground shadow-sm transition focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+                >
+                  <option value="">Unassigned</option>
+                  {assigneeOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAction("assign")}
+                  disabled={actionLoading === actionKey("assign")}
+                >
+                  {actionLoading === actionKey("assign") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <UserSearch className="size-3.5" aria-hidden />
+                  )}
+                  Save owner
+                </Button>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+              {row.status === "open" ? (
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => onAction("start_review")}
+                  disabled={actionLoading === actionKey("start_review")}
+                >
+                  {actionLoading === actionKey("start_review") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <Eye className="size-3.5" aria-hidden />
+                  )}
+                  Start review
+                </Button>
+              ) : null}
+
+              {(row.status === "open" || row.status === "in_progress") && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onAction("resolve")}
+                    disabled={actionLoading === actionKey("resolve")}
+                  >
+                    {actionLoading === actionKey("resolve") ? (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      <CheckCircle2 className="size-3.5" aria-hidden />
+                    )}
+                    Resolve
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onAction("dismiss")}
+                    disabled={actionLoading === actionKey("dismiss")}
+                  >
+                    {actionLoading === actionKey("dismiss") ? (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      <XCircle className="size-3.5" aria-hidden />
+                    )}
+                    Dismiss
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {history.length > 0 ? (
+              <div className="rounded-md border border-border bg-muted/40 px-3 py-2">
+                <p className="text-[11px] font-medium text-muted-foreground">History</p>
+                <ul className="mt-1 space-y-1 text-[12px] text-foreground">
+                  {history.slice(0, 4).map((item) => (
+                    <li key={item.id}>
+                      <span className="font-medium capitalize">
+                        {item.action.replace(/_/g, " ")}
+                      </span>
+                      {item.changedFields.length > 0
+                        ? ` · ${item.changedFields.join(", ")}`
+                        : ""}
+                      <span className="text-muted-foreground">
+                        {` · ${item.actorName} · ${new Date(item.createdAt).toLocaleString()}`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
-    </V2Card>
+    </article>
   );
 }
 
-function Banner({
-  tone,
-  children,
-}: {
-  tone: "success" | "error";
-  children: ReactNode;
-}) {
+/* -------------------------------------------------------------------------- */
+/*  Primitives                                                                */
+/* -------------------------------------------------------------------------- */
+
+function Chip({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div
+    <span
       className={cn(
-        "rounded-2xl border px-4 py-3 text-sm",
-        tone === "success"
-          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
-          : "border-rose-500/20 bg-rose-500/10 text-rose-200",
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize",
+        className,
       )}
     >
       {children}
+    </span>
+  );
+}
+
+function DataPair({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+      <dd className="text-[13px] text-foreground capitalize">{value}</dd>
     </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: Tone;
+  hint: string;
+}) {
+  return (
+    <article
+      aria-label={`${label}: ${value}`}
+      className={cn(
+        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
+        tone === "danger" && "border-danger/40",
+        tone === "warning" && "border-warning/40",
+        tone === "default" && "border-border",
+      )}
+    >
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "text-2xl font-semibold tabular-nums tracking-tight",
+          tone === "danger" && "text-danger",
+          tone === "warning" && "text-warning",
+          tone === "default" && "text-foreground",
+        )}
+      >
+        {value}
+      </span>
+      <span className="text-[11px] text-muted-foreground">{hint}</span>
+    </article>
+  );
+}
+
+function FilterPill({
+  label,
+  count,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  tone: Tone;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const showSemanticTint = tone !== "default" && count > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active && tone === "danger" && "border-danger bg-danger/10 text-danger",
+        active && tone === "warning" && "border-warning bg-warning/10 text-warning",
+        active && tone === "default" && "border-border-strong bg-muted text-foreground",
+        !active &&
+          showSemanticTint &&
+          tone === "danger" &&
+          "border-danger/30 bg-card text-danger hover:bg-danger/5",
+        !active &&
+          showSemanticTint &&
+          tone === "warning" &&
+          "border-warning/30 bg-card text-warning hover:bg-warning/5",
+        !active &&
+          !showSemanticTint &&
+          "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
+      )}
+    >
+      <span>{label}</span>
+      <span className={cn("tabular-nums opacity-80", active && "opacity-100")}>({count})</span>
+    </button>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Notices + empty states                                                    */
+/* -------------------------------------------------------------------------- */
+
+function InfoBanner({
+  message,
+  onDismiss,
+}: {
+  message: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-[13px] text-foreground"
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="text-muted-foreground hover:text-foreground"
+        aria-label="Dismiss"
+      >
+        <X className="size-3.5" aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function AllFacilitiesInterstitial() {
+  return (
+    <section
+      aria-label="Facility scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <div className="flex items-start gap-3">
+        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Integrity review operates per facility
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            Documentation integrity flags are facility-scoped. Select a facility from the top
+            bar to continue.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-destructive"
+          aria-hidden
+        />
+        <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="h-8 shrink-0 text-[12px]"
+      >
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+function NoFlagsEmptyState() {
+  return (
+    <section
+      aria-label="No integrity flags"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <ShieldAlert className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">No integrity flags</p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Late-entry and documentation-quality issues will appear here as the integrity scanner
+        detects them.
+      </p>
+    </section>
+  );
+}
+
+function FilterEmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <section
+      aria-label="No integrity flags match filter"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <ClipboardList className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        No flags match the current filter
+      </p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Adjust the filter to see other integrity flags.
+      </p>
+      <div className="mt-4">
+        <Button type="button" variant="outline" size="sm" onClick={onClear}>
+          <X className="size-4" aria-hidden />
+          Clear filter
+        </Button>
+      </div>
+    </section>
   );
 }

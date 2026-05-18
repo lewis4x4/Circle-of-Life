@@ -2,23 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
+  Building2,
   CheckCircle2,
   Clock,
   Download,
   FileBarChart,
   RefreshCw,
+  UserRound,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { V2Card } from "@/components/ui/v2-card";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
 type BreakdownRow = {
   label: string;
@@ -41,6 +44,12 @@ type ReportSummary = {
   avgDelayMin: number;
 };
 
+type LoadState = "idle" | "loading" | "ready" | "error";
+
+type BoardState = "no_facility" | "loading" | "error" | "empty" | "populated";
+
+type Tone = "default" | "success" | "warning" | "danger";
+
 const EMPTY_SUMMARY: ReportSummary = {
   expected: 0,
   completed: 0,
@@ -53,33 +62,85 @@ const EMPTY_SUMMARY: ReportSummary = {
   avgDelayMin: 0,
 };
 
-const EMPTY_BREAKDOWNS: { byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] } = {
+const EMPTY_BREAKDOWNS: {
+  byShift: BreakdownRow[];
+  byStaff: BreakdownRow[];
+  byResident: BreakdownRow[];
+} = {
   byShift: [],
   byStaff: [],
   byResident: [],
 };
 
+/* -------------------------------------------------------------------------- */
+/*  Value-derived tone helpers                                                */
+/* -------------------------------------------------------------------------- */
+
+function resolveRateTone(rate: number, hasData: boolean): Tone {
+  if (!hasData) return "default";
+  const pct = rate * 100;
+  if (pct < 50) return "danger";
+  if (pct < 80) return "warning";
+  return "success";
+}
+
+function resolveMissedTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 3) return "warning";
+  return "danger";
+}
+
+function resolveLateTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 5) return "warning";
+  return "danger";
+}
+
+function rateRowTone(rate: number): Tone {
+  if (rate >= 95) return "success";
+  if (rate >= 80) return "warning";
+  return "danger";
+}
+
+function deriveBoardState(args: {
+  loadState: LoadState;
+  hasFacility: boolean;
+  hasData: boolean;
+}): BoardState {
+  if (!args.hasFacility) return "no_facility";
+  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
+  if (args.loadState === "error") return "error";
+  if (!args.hasData) return "empty";
+  return "populated";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export default function AdminRoundingReportsPage() {
   const { selectedFacilityId } = useFacilityStore();
-  const [from, setFrom] = useState(() => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
-  const [to, setTo] = useState(() => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
-  const [, setLoading] = useState(true);
+  const [from, setFrom] = useState(() =>
+    new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+  );
+  const [to, setTo] = useState(() =>
+    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+  );
+  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [summary, setSummary] = useState<ReportSummary>(EMPTY_SUMMARY);
-  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
-  const [breakdowns, setBreakdowns] = useState<{ byShift: BreakdownRow[]; byStaff: BreakdownRow[]; byResident: BreakdownRow[] }>(EMPTY_BREAKDOWNS);
+  const [breakdowns, setBreakdowns] = useState(EMPTY_BREAKDOWNS);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setLoadState("loading");
+    setErrorMessage(null);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setSourceNotice("Select a facility and connect the live rounding report source to show completion reports.");
       setSummary(EMPTY_SUMMARY);
       setBreakdowns(EMPTY_BREAKDOWNS);
-      setLoading(false);
+      setLoadState("ready");
       return;
     }
-
-    setSourceNotice(null);
 
     try {
       const response = await fetch(
@@ -89,14 +150,18 @@ export default function AdminRoundingReportsPage() {
       const json = (await response.json()) as {
         error?: string;
         summary?: ReportSummary;
-        breakdowns?: { byShift?: BreakdownRow[]; byStaff?: BreakdownRow[]; byResident?: BreakdownRow[] };
+        breakdowns?: {
+          byShift?: BreakdownRow[];
+          byStaff?: BreakdownRow[];
+          byResident?: BreakdownRow[];
+        };
       };
       if (!response.ok) throw new Error(json.error ?? "Could not load report");
 
       const s = json.summary;
       if (s && s.expected > 0) {
         setSummary({
-          expected: s.expected ?? 0,
+          expected: s.expected,
           completed: s.completed ?? 0,
           onTime: s.onTime ?? 0,
           late: s.late ?? 0,
@@ -112,16 +177,17 @@ export default function AdminRoundingReportsPage() {
           byResident: json.breakdowns?.byResident ?? [],
         });
       } else {
-        setSourceNotice("No live rounding report data was returned for the selected window.");
         setSummary(EMPTY_SUMMARY);
         setBreakdowns(EMPTY_BREAKDOWNS);
       }
-    } catch {
-      setSourceNotice("Unable to load live rounding report data. No fallback report rows are shown.");
+      setLoadState("ready");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not load completion report data.",
+      );
       setSummary(EMPTY_SUMMARY);
       setBreakdowns(EMPTY_BREAKDOWNS);
-    } finally {
-      setLoading(false);
+      setLoadState("error");
     }
   }, [from, selectedFacilityId, to]);
 
@@ -132,9 +198,33 @@ export default function AdminRoundingReportsPage() {
   const csvRows = useMemo(() => {
     return [
       ["bucket", "label", "expected", "completed", "on_time", "late", "missed"],
-      ...breakdowns.byShift.map((row) => ["shift", row.label, row.expected, row.completed, row.onTime, row.late, row.missed]),
-      ...breakdowns.byStaff.map((row) => ["staff", row.label, row.expected, row.completed, row.onTime, row.late, row.missed]),
-      ...breakdowns.byResident.map((row) => ["resident", row.label, row.expected, row.completed, row.onTime, row.late, row.missed]),
+      ...breakdowns.byShift.map((row) => [
+        "shift",
+        row.label,
+        row.expected,
+        row.completed,
+        row.onTime,
+        row.late,
+        row.missed,
+      ]),
+      ...breakdowns.byStaff.map((row) => [
+        "staff",
+        row.label,
+        row.expected,
+        row.completed,
+        row.onTime,
+        row.late,
+        row.missed,
+      ]),
+      ...breakdowns.byResident.map((row) => [
+        "resident",
+        row.label,
+        row.expected,
+        row.completed,
+        row.onTime,
+        row.late,
+        row.missed,
+      ]),
     ];
   }, [breakdowns]);
 
@@ -150,238 +240,384 @@ export default function AdminRoundingReportsPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "resident-assurance-report.csv";
+    anchor.download = "rounding-completion-report.csv";
     anchor.click();
     URL.revokeObjectURL(url);
   }
 
+  const hasData = summary.expected > 0;
+
+  const boardState = deriveBoardState({
+    loadState,
+    hasFacility: Boolean(selectedFacilityId),
+    hasData,
+  });
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
-
-      <div className="relative z-10 space-y-6">
-        <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-2">
-            
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Completion Reports
-            </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-              Expected, completed, on-time, late, and missed checks for the selected window
-            </p>
-          </div>
-          <div className="hidden md:block">
-            <RoundingHubNav />
-          </div>
-        </header>
-
-        {sourceNotice ? (
-          <AdminLiveDataFallbackNotice
-            message={sourceNotice}
-            onRetry={() => void load()}
-          />
-        ) : null}
-
-        <div className="flex flex-wrap items-end gap-6 rounded-lg border border-slate-200 dark:border-white/5 bg-card dark:bg-slate-900/40 p-6 shadow-sm">
-          <label className="space-y-1 text-sm flex-1 min-w-[200px]">
-            <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">From Window</span>
-            <input
-              type="datetime-local"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-primary-500/50 focus:outline-none focus:ring-1 focus:ring-ring transition-all shadow-inner uppercase font-semibold"
-            />
-          </label>
-          <label className="space-y-1 text-sm flex-1 min-w-[200px]">
-             <span className="text-[10px] font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">To Window</span>
-            <input
-              type="datetime-local"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-               className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 px-4 text-sm font-mono tracking-wider text-slate-700 dark:text-slate-200 focus:border-primary-500/50 focus:outline-none focus:ring-1 focus:ring-ring transition-all shadow-inner uppercase font-semibold"
-            />
-          </label>
-          <div className="flex items-center gap-3">
+      <PageHeader
+        title="Completion reports"
+        subtitle="Expected, completed, on-time, late, and missed checks across shifts, staff, and residents."
+        actions={
+          <>
             <Button
-              onClick={() => void load()}
+              type="button"
               variant="outline"
-              className="h-12 rounded-full border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors"
-            >
-              <RefreshCw className="mr-2 h-4 w-4 text-slate-400" />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
+              size="default"
               onClick={exportCsv}
               disabled={csvRows.length <= 1}
-               className="h-12 rounded-full border-primary-200 dark:border-primary-500/30 bg-primary-50 dark:bg-primary-500/10 px-6 font-bold uppercase tracking-wider text-[10px] shadow-sm hover:bg-primary-100 dark:hover:bg-primary-500/20 text-primary-700 dark:text-primary-400 transition-colors"
             >
-              <Download className="mr-2 h-4 w-4 opacity-70" />
-              Export
+              <Download className="size-4" aria-hidden />
+              Export CSV
             </Button>
-          </div>
-        </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => void load()}
+              aria-label="Refresh completion report"
+              title="Refresh"
+              disabled={loadState === "loading"}
+            >
+              <RefreshCw
+                className={cn("size-4", loadState === "loading" && "animate-spin")}
+                aria-hidden
+              />
+            </Button>
+          </>
+        }
+      />
 
-        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-          <ReportMetric
-            label="Completion Rate"
-            value={`${Math.round(summary.completionRate * 100)}%`}
-            detail={`${summary.completed} / ${summary.expected}`}
-            color="emerald"
-          />
-          <ReportMetric
-            label="On-Time Rate"
-            value={`${Math.round(summary.onTimeRate * 100)}%`}
-            detail={`${summary.onTime} on time`}
-            color="cyan"
-          />
-          <ReportMetric
-            label="Late Checks"
-            value={String(summary.late)}
-            detail={`Avg ${summary.avgDelayMin.toFixed(1)}m delay`}
-            color="amber"
-          />
-          <ReportMetric
-            label="Missed Checks"
-            value={String(summary.missed)}
-            detail={`${Math.round(summary.missedRate * 100)}% miss rate`}
-            color={summary.missed > 0 ? "rose" : "emerald"}
-          />
-        </KineticGrid>
+      <RoundingHubNav />
 
-        <BreakdownSection title="By Shift" icon={<Clock aria-hidden className="h-4 w-4" />} rows={breakdowns.byShift} color="cyan" />
-        <BreakdownSection title="By Staff Member" icon={<CheckCircle2 aria-hidden className="h-4 w-4" />} rows={breakdowns.byStaff} color="indigo" />
-        <BreakdownSection title="By Resident" icon={<FileBarChart aria-hidden className="h-4 w-4" />} rows={breakdowns.byResident} color="emerald" />
+      {boardState === "no_facility" ? (
+        <AllFacilitiesInterstitial />
+      ) : boardState === "error" ? (
+        <LoadErrorNotice
+          message={errorMessage ?? "Could not load completion report data."}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <>
+          {/* Date range pickers */}
+          <section aria-label="Report window">
+            <div className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2">
+              <DateField
+                id="report-from"
+                label="From"
+                value={from}
+                onChange={setFrom}
+              />
+              <DateField id="report-to" label="To" value={to} onChange={setTo} />
+            </div>
+          </section>
 
-        <div className="block md:hidden pt-2">
-          <RoundingHubNav />
-        </div>
-      </div>
+          {/* KPI strip */}
+          <section aria-label="Completion metrics">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <KpiCard
+                label="Completion rate"
+                value={hasData ? `${Math.round(summary.completionRate * 100)}%` : "—"}
+                tone={resolveRateTone(summary.completionRate, hasData)}
+                hint={`${summary.completed} of ${summary.expected} checks`}
+              />
+              <KpiCard
+                label="On-time rate"
+                value={hasData ? `${Math.round(summary.onTimeRate * 100)}%` : "—"}
+                tone={resolveRateTone(summary.onTimeRate, hasData)}
+                hint={`${summary.onTime} on time`}
+              />
+              <KpiCard
+                label="Late checks"
+                value={hasData ? String(summary.late) : "—"}
+                tone={resolveLateTone(summary.late)}
+                hint={`Avg ${summary.avgDelayMin.toFixed(1)}m delay`}
+              />
+              <KpiCard
+                label="Missed checks"
+                value={hasData ? String(summary.missed) : "—"}
+                tone={resolveMissedTone(summary.missed)}
+                hint={
+                  hasData
+                    ? `${Math.round(summary.missedRate * 100)}% miss rate`
+                    : "No data for window"
+                }
+              />
+            </div>
+          </section>
+
+          {boardState === "empty" ? (
+            <NoDataEmptyState />
+          ) : (
+            <>
+              <BreakdownSection
+                title="By shift"
+                icon={<Clock className="size-4" aria-hidden />}
+                rows={breakdowns.byShift}
+              />
+              <BreakdownSection
+                title="By staff member"
+                icon={<UserRound className="size-4" aria-hidden />}
+                rows={breakdowns.byStaff}
+              />
+              <BreakdownSection
+                title="By resident"
+                icon={<FileBarChart className="size-4" aria-hidden />}
+                rows={breakdowns.byResident}
+              />
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function ReportMetric({
+/* -------------------------------------------------------------------------- */
+/*  Date field                                                                */
+/* -------------------------------------------------------------------------- */
+
+function DateField({
+  id,
   label,
   value,
-  detail,
-  color,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label htmlFor={id} className="flex flex-col gap-1.5">
+      <span className="text-[12px] font-medium text-muted-foreground">{label}</span>
+      <input
+        id={id}
+        type="datetime-local"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground tabular-nums shadow-sm transition focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+      />
+    </label>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  KPI card                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function KpiCard({
+  label,
+  value,
+  tone,
+  hint,
 }: {
   label: string;
   value: string;
-  detail: string;
-  color: string;
+  tone: Tone;
+  hint: string;
 }) {
-  const colorMap = {
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400" },
-    cyan: { border: "border-cyan-500/20", text: "text-cyan-400" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400" },
-    rose: { border: "border-rose-500/20", text: "text-rose-400" },
-    indigo: { border: "border-primary-500/20", text: "text-primary-400" },
-  }[color] ?? { border: "", text: "text-slate-400" };
-
   return (
-    <div className="h-[120px]">
-      <V2Card hoverColor={color} className={colorMap.border}>
-        <div className="relative z-10 flex flex-col h-full justify-between">
-          <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", colorMap.text)}>{label}</h3>
-          <div>
-            <p className={cn("text-3xl font-mono tracking-tighter", colorMap.text)}>{value}</p>
-            <p className="text-[10px] font-mono text-slate-500 mt-0.5">{detail}</p>
-          </div>
-        </div>
-      </V2Card>
-    </div>
+    <article
+      aria-label={`${label}: ${value}`}
+      className={cn(
+        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
+        tone === "danger" && "border-danger/40",
+        tone === "warning" && "border-warning/40",
+        tone === "success" && "border-success/40",
+        tone === "default" && "border-border",
+      )}
+    >
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "text-2xl font-semibold tabular-nums tracking-tight",
+          tone === "danger" && "text-danger",
+          tone === "warning" && "text-warning",
+          tone === "success" && "text-success",
+          tone === "default" && "text-foreground",
+        )}
+      >
+        {value}
+      </span>
+      <span className="text-[11px] text-muted-foreground">{hint}</span>
+    </article>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Breakdown section                                                          */
+/* -------------------------------------------------------------------------- */
 
 function BreakdownSection({
   title,
   icon,
   rows,
-  color,
 }: {
   title: string;
   icon: React.ReactNode;
   rows: BreakdownRow[];
-  color: string;
 }) {
-  const headerColor = {
-    cyan: "text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/20",
-    indigo: "text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/20",
-    emerald: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20",
-  }[color] ?? "text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10";
-  
-  const iconColor = {
-    cyan: "text-cyan-500",
-    indigo: "text-primary-500",
-    emerald: "text-emerald-500",
-  }[color] ?? "text-slate-500";
-
   return (
-    <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm overflow-hidden overflow-x-auto relative">
-      <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center gap-3">
-         <div className={cn("w-10 h-10 flex shrink-0 items-center justify-center rounded-full border", headerColor)}>
-            <span className={iconColor}>{icon}</span>
-         </div>
-        <div>
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white capitalize tracking-tight">{title}</h3>
-          <p className="text-[10px] mt-0.5 font-bold font-mono tracking-wider text-slate-500 dark:text-slate-400 uppercase">{rows.length} Records</p>
+    <section
+      aria-label={title}
+      className="overflow-hidden rounded-lg border border-border bg-card"
+    >
+      <header className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">{icon}</span>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         </div>
-      </div>
+        <span className="text-[12px] text-muted-foreground">
+          {rows.length} {rows.length === 1 ? "record" : "records"}
+        </span>
+      </header>
 
       {rows.length === 0 ? (
-        <div className="px-5 py-12 text-center bg-white/50 dark:bg-white/[0.015] rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-          <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No live rows returned</p>
-          <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">This section stays empty until the live source returns rows.</p>
+        <div className="px-4 py-8 text-center">
+          <p className="text-[13px] text-muted-foreground">
+            No rows returned for this window.
+          </p>
         </div>
       ) : (
-        <MotionList className="space-y-3 min-w-[700px]">
-            {rows.map((row) => {
-              const rate = row.expected > 0 ? Math.round((row.completed / row.expected) * 100) : 0;
-              const rateColor = rate >= 95 ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20" : rate >= 80 ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20" : "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20";
-              
-              return (
-                <MotionItem key={row.label}>
-                    <div className="p-5 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 w-full flex items-center justify-between gap-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
-                         <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
-                           <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-[11px] tracking-wider truncate">
-                              {row.label}
-                           </span>
-                        </div>
-                        <div className="grid grid-cols-6 gap-2 w-full text-center">
-                             <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-slate-400">Total</span>
-                                <span className="font-mono text-sm tracking-tighter font-semibold text-slate-600 dark:text-zinc-300">{row.expected}</span>
-                             </div>
-                             <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-slate-400">Done</span>
-                                <span className="font-mono text-sm tracking-tighter font-semibold text-slate-600 dark:text-zinc-300">{row.completed}</span>
-                             </div>
-                             <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-emerald-500">On Time</span>
-                                <span className="font-mono text-sm tracking-tighter font-semibold text-emerald-700 dark:text-emerald-400">{row.onTime}</span>
-                             </div>
-                            <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-amber-500">Late</span>
-                                <span className="font-mono text-sm tracking-tighter font-semibold text-amber-700 dark:text-amber-400">{row.late}</span>
-                             </div>
-                             <div className="flex flex-col gap-1.5 justify-center">
-                                <span className="text-[8px] font-bold uppercase font-mono tracking-wider text-rose-500">Missed</span>
-                                <span className="font-mono text-sm tracking-tighter font-semibold text-rose-700 dark:text-rose-400">{row.missed}</span>
-                             </div>
-                             <div className="flex flex-col items-end justify-center pr-2">
-                                <Badge className={cn("uppercase tracking-wider font-mono text-[10px] font-bold shadow-sm px-2.5 py-1 rounded-full border", rateColor)}>
-                                   {rate}% rate
-                                </Badge>
-                             </div>
-                        </div>
-                    </div>
-                </MotionItem>
-              );
-            })}
-        </MotionList>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="border-b border-border text-[12px] font-semibold text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2.5">Label</th>
+                <th className="px-4 py-2.5 text-right">Expected</th>
+                <th className="px-4 py-2.5 text-right">Completed</th>
+                <th className="px-4 py-2.5 text-right">On time</th>
+                <th className="px-4 py-2.5 text-right">Late</th>
+                <th className="px-4 py-2.5 text-right">Missed</th>
+                <th className="px-4 py-2.5 text-right">Rate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.map((row) => {
+                const rate =
+                  row.expected > 0 ? Math.round((row.completed / row.expected) * 100) : 0;
+                const tone = rateRowTone(rate);
+
+                return (
+                  <tr key={row.label} className="transition-colors hover:bg-muted/30">
+                    <td className="px-4 py-2.5 font-medium text-foreground">{row.label}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-foreground">
+                      {row.expected}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-foreground">
+                      {row.completed}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      <span className={cn(row.onTime > 0 && "text-success")}>{row.onTime}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      <span className={cn(row.late > 0 && "text-warning")}>{row.late}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      <span className={cn(row.missed > 0 && "text-danger")}>{row.missed}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <RatePill rate={rate} tone={tone} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
+    </section>
+  );
+}
+
+function RatePill({ rate, tone }: { rate: number; tone: Tone }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums",
+        tone === "danger" && "border-danger/40 bg-danger/10 text-danger",
+        tone === "warning" && "border-warning/40 bg-warning/10 text-warning",
+        tone === "success" && "border-success/40 bg-success/10 text-success",
+        tone === "default" && "border-border bg-muted text-foreground",
+      )}
+    >
+      {rate}%
+    </span>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Notices + empty states                                                    */
+/* -------------------------------------------------------------------------- */
+
+function AllFacilitiesInterstitial() {
+  return (
+    <section
+      aria-label="Facility scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <div className="flex items-start gap-3">
+        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Completion reports operate per facility
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            Rounding completion data is facility-scoped. Select a facility from the top bar to
+            continue.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-destructive"
+          aria-hidden
+        />
+        <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="h-8 shrink-0 text-[12px]"
+      >
+        Retry
+      </Button>
     </div>
+  );
+}
+
+function NoDataEmptyState() {
+  return (
+    <section
+      aria-label="No completion data"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <CheckCircle2 className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        No completion data in this window
+      </p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Adjust the date range, or check that rounding cycles ran in the selected window.
+      </p>
+    </section>
   );
 }
