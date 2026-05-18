@@ -1,3 +1,4 @@
+import { AppRuntimeProviders } from "@/components/layout/AppRuntimeProviders";
 import { DietaryShell } from "@/components/layout/DietaryShell";
 
 export default function DietaryRouteLayout({
@@ -5,5 +6,9 @@ export default function DietaryRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DietaryShell>{children}</DietaryShell>;
+  return (
+    <AppRuntimeProviders>
+      <DietaryShell>{children}</DietaryShell>
+    </AppRuntimeProviders>
+  );
 }

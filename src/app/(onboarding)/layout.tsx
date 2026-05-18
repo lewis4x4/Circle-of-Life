@@ -1,3 +1,4 @@
+import { AppRuntimeProviders } from "@/components/layout/AppRuntimeProviders";
 import { OnboardingShell } from "@/components/layout/OnboardingShell";
 
 export default function OnboardingRouteLayout({
@@ -5,5 +6,9 @@ export default function OnboardingRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <OnboardingShell>{children}</OnboardingShell>;
+  return (
+    <AppRuntimeProviders>
+      <OnboardingShell>{children}</OnboardingShell>
+    </AppRuntimeProviders>
+  );
 }
