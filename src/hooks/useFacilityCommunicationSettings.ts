@@ -3,17 +3,23 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CommunicationSettingsInput } from "@/lib/validation/facility-admin";
 
-export function useFacilityCommunicationSettings(facilityId: string) {
+export function useFacilityCommunicationSettings(facilityId: string, enabled = true) {
   const [settings, setSettings] = useState<Record<string, unknown> | null>(null);
   const [capabilities, setCapabilities] = useState<{
     can_edit: boolean;
     can_edit_marketing: boolean;
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const refetch = useCallback(async () => {
+    if (!enabled || !facilityId) {
+      setIsLoading(false);
+      setSettings(null);
+      setCapabilities(null);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -33,7 +39,7 @@ export function useFacilityCommunicationSettings(facilityId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [facilityId]);
+  }, [facilityId, enabled]);
 
   useEffect(() => {
     void refetch();

@@ -18,6 +18,7 @@ import {
 } from "@/lib/admin/facilities/building-profile-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import {
   Select,
   SelectContent,
@@ -366,13 +367,13 @@ export function BuildingTab({
             <label className="text-sm text-foreground">
               Last fire inspection
               <div className="mt-1 flex flex-wrap items-center gap-3">
-                <input
-                  type="date"
+                <DateInput
                   className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                  aria-label="Last fire inspection date"
                   value={merged.last_fire_inspection_date ?? ""}
-                  placeholder=""
-                  onChange={(e) =>
-                    touchDraft((d) => ({ ...d, last_fire_inspection_date: e.target.value || undefined }))
+                  emptyHint={null}
+                  onValueChange={(v) =>
+                    touchDraft((d) => ({ ...d, last_fire_inspection_date: v || undefined }))
                   }
                 />
                 {!merged.last_fire_inspection_date ? (
@@ -389,13 +390,13 @@ export function BuildingTab({
             <label className="text-sm text-foreground">
               Next fire inspection due
               <div className="mt-1 flex flex-wrap items-center gap-3">
-                <input
-                  type="date"
+                <DateInput
                   className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                  aria-label="Next fire inspection due date"
                   value={merged.next_fire_inspection_date ?? ""}
-                  placeholder=""
-                  onChange={(e) =>
-                    touchDraft((d) => ({ ...d, next_fire_inspection_date: e.target.value || undefined }))
+                  emptyHint={null}
+                  onValueChange={(v) =>
+                    touchDraft((d) => ({ ...d, next_fire_inspection_date: v || undefined }))
                   }
                 />
                 {!merged.next_fire_inspection_date ? (
@@ -500,15 +501,15 @@ export function BuildingTab({
               <label className="text-sm text-foreground">
                 Last load test
                 <div className="mt-1 flex flex-wrap items-center gap-3">
-                  <input
-                    type="date"
+                  <DateInput
                     className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                    aria-label="Generator last load test date"
                     value={merged.generator_last_test_date ?? ""}
-                    placeholder=""
-                    onChange={(e) =>
+                    emptyHint={null}
+                    onValueChange={(v) =>
                       touchDraft((d) => ({
                         ...d,
-                        generator_last_test_date: e.target.value || undefined,
+                        generator_last_test_date: v || undefined,
                       }))
                     }
                   />
@@ -526,15 +527,15 @@ export function BuildingTab({
               <label className="text-sm text-foreground">
                 Next PM / service due
                 <div className="mt-1 flex flex-wrap items-center gap-3">
-                  <input
-                    type="date"
+                  <DateInput
                     className={cn(inputCls, "mt-0 w-auto min-w-[11rem]")}
+                    aria-label="Next generator PM or service due date"
                     value={merged.generator_next_service_date ?? ""}
-                    placeholder=""
-                    onChange={(e) =>
+                    emptyHint={null}
+                    onValueChange={(v) =>
                       touchDraft((d) => ({
                         ...d,
-                        generator_next_service_date: e.target.value || undefined,
+                        generator_next_service_date: v || undefined,
                       }))
                     }
                   />

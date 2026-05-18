@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -487,12 +488,12 @@ export function RatesTab({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="new-rate-eff">Effective date</Label>
-              <Input
+              <DateInput
                 id="new-rate-eff"
-                type="date"
                 value={formData.effective_from}
-                onChange={(e) => setFormData({ ...formData, effective_from: e.target.value })}
+                onValueChange={(v) => setFormData({ ...formData, effective_from: v })}
                 className={inputCls}
+                emptyHint="When this amount first applies (MM/DD/YYYY)"
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
@@ -531,14 +532,14 @@ export function RatesTab({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="sched-eff">Effective date</Label>
-              <Input
+              <DateInput
                 id="sched-eff"
-                type="date"
                 value={scheduleForm.effective_from}
-                onChange={(e) => {
-                  setScheduleForm({ ...scheduleForm, effective_from: e.target.value });
+                onValueChange={(v) => {
+                  setScheduleForm({ ...scheduleForm, effective_from: v });
                   setScheduleFutureNote(null);
                 }}
+                emptyHint="When this amount first applies (MM/DD/YYYY)"
               />
             </div>
             {schedulePreview ? (

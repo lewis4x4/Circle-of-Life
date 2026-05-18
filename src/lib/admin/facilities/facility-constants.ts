@@ -56,51 +56,14 @@ export const CONTACT_CATEGORY_LABELS: Record<ContactCategory, string> = {
 };
 
 // ─── Document Categories ─────────────────────────────────────────────────────
+export {
+  DOCUMENT_VAULT_CATEGORY_KEYS as DOCUMENT_CATEGORIES,
+  DOCUMENT_VAULT_CATEGORY_KEYS,
+  DOCUMENT_VAULT_CATEGORY_LABELS as DOCUMENT_CATEGORY_LABELS,
+  DOCUMENT_VAULT_CATEGORY_LABELS,
+} from "@/lib/admin/facilities/document-vault-taxonomy";
 
-export const DOCUMENT_CATEGORIES = [
-  'ahca_license', 'fire_inspection', 'elevator_inspection',
-  'kitchen_license', 'insurance_certificate', 'survey_report',
-  'poc_response', 'resident_handbook', 'employee_handbook',
-  'building_permit', 'occupancy_certificate', 'generator_inspection',
-  'backflow_prevention', 'fire_alarm_inspection', 'sprinkler_inspection',
-  'pest_control_report', 'water_quality_report', 'radon_test',
-  'ada_compliance', 'evacuation_plan', 'floor_plan',
-  'photo_hero', 'photo_room', 'photo_dining', 'photo_activity',
-  'vendor_contract', 'storm_preparedness', 'other',
-] as const;
-
-export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
-
-export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
-  ahca_license: 'AHCA License',
-  fire_inspection: 'Fire Inspection',
-  elevator_inspection: 'Elevator Inspection',
-  kitchen_license: 'Kitchen License',
-  insurance_certificate: 'Insurance Certificate',
-  survey_report: 'Survey Report',
-  poc_response: 'POC Response',
-  resident_handbook: 'Resident Handbook',
-  employee_handbook: 'Employee Handbook',
-  building_permit: 'Building Permit',
-  occupancy_certificate: 'Occupancy Certificate',
-  generator_inspection: 'Generator Inspection',
-  backflow_prevention: 'Backflow Prevention',
-  fire_alarm_inspection: 'Fire Alarm Inspection',
-  sprinkler_inspection: 'Sprinkler Inspection',
-  pest_control_report: 'Pest Control Report',
-  water_quality_report: 'Water Quality Report',
-  radon_test: 'Radon Test',
-  ada_compliance: 'ADA Compliance',
-  evacuation_plan: 'Evacuation Plan',
-  floor_plan: 'Floor Plan',
-  photo_hero: 'Photo — Hero',
-  photo_room: 'Photo — Room',
-  photo_dining: 'Photo — Dining',
-  photo_activity: 'Photo — Activity',
-  vendor_contract: 'Vendor Contract',
-  storm_preparedness: 'Storm Preparedness',
-  other: 'Other',
-};
+export type { DocumentVaultCategoryKey as DocumentCategory } from "@/lib/admin/facilities/document-vault-taxonomy";
 
 // ─── Rate Types ──────────────────────────────────────────────────────────────
 
@@ -297,8 +260,8 @@ export const FACILITY_TAB_LABELS: Record<FacilityTab, string> = {
   emergency: 'Emergency Contacts',
   vendors: 'Vendors',
   documents: 'Document Vault',
-  staffing: 'Staffing Config',
-  communication: 'Communication',
+  staffing: 'Staff',
+  communication: 'Communications & Policy',
   thresholds: 'Alert Thresholds',
   audit: 'Audit Log',
   timeline: 'Timeline',
@@ -306,6 +269,9 @@ export const FACILITY_TAB_LABELS: Record<FacilityTab, string> = {
 
 /** First six tabs stay in the strip; remainder use the “More” menu (no truncated labels). */
 export const FACILITY_PRIMARY_TAB_COUNT = 6;
+
+/** Tabs opened from the ··· More overflow — facility chrome renders an H2 heading for each. */
+export const FACILITY_OVERFLOW_TABS = FACILITY_TABS.slice(FACILITY_PRIMARY_TAB_COUNT);
 
 // ─── Compliance Contacts (FL hardcoded) ──────────────────────────────────────
 

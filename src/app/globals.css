@@ -479,6 +479,10 @@
   input, select, textarea, button {
     font-size: inherit;
   }
+  textarea {
+    resize: vertical;
+    max-height: min(70vh, 32rem);
+  }
   /* Tabular numerics — body already sets this; preserved as an explicit hook
      for ad-hoc `.tabular` use sites and for data tables. */
   table, .tabular {

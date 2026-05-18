@@ -1,16 +1,25 @@
 "use client";
 
-import React, { Suspense, useCallback, useMemo } from "react";
+import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
 import { useFacilityBuildingProfile } from "@/hooks/useFacilityBuildingProfile";
 import { useFacilityRates } from "@/hooks/useFacilityRates";
-import { useSurveyVisitSession } from "@/hooks/useSurveyVisitSession";
 import { useFacilityEmergencyContacts } from "@/hooks/useFacilityEmergencyContacts";
+import { useFacilityStaffKpis } from "@/hooks/useFacilityStaffKpis";
+import { useFacilityVendors } from "@/hooks/useFacilityVendors";
+import { useFacilityDocumentVaultMetrics } from "@/hooks/useFacilityDocumentVaultMetrics";
+import { useFacilityCommunicationSettings } from "@/hooks/useFacilityCommunicationSettings";
+import { useFacilityThresholds, type ThresholdRow } from "@/hooks/useFacilityThresholds";
+import { useFacilityAuditMetrics } from "@/hooks/useFacilityAuditMetrics";
+import {
+  countFlMandatoryVendorComplianceGaps,
+  vendorCategorySetFromLinkedVendors,
+} from "@/lib/vendors/vendor-fl-requirements";
 import { Badge } from "@/components/ui/badge";
-import { FacilityTabMetricsStrip } from "@/components/admin/facilities/FacilityTabMetricsStrip";
+import { FacilityHeader } from "@/components/admin/facilities/FacilityHeader";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
 import { OverviewTab } from "@/components/admin/facilities/tabs/OverviewTab";
 import { RatesTab } from "@/components/admin/facilities/tabs/RatesTab";
@@ -24,15 +33,16 @@ import { StaffingTab } from "@/components/admin/facilities/tabs/StaffingTab";
 import { CommunicationTab } from "@/components/admin/facilities/tabs/CommunicationTab";
 import { ThresholdsTab } from "@/components/admin/facilities/tabs/ThresholdsTab";
 import { TimelineTab } from "@/components/admin/facilities/tabs/TimelineTab";
-import { FacilitySurveyVisitHeaderActions } from "@/components/compliance/FacilitySurveyVisitHeaderActions";
-import { SurveyVisitSessionDock } from "@/components/compliance/SurveyVisitSessionDock";
+import { FacilityAuditSubscribeButton } from "@/components/admin/facilities/FacilityAuditSubscribeButton";
 import { RecordDetailHeader } from "@/design-system/components/record-detail";
 import {
   FACILITY_TABS,
+  FACILITY_OVERFLOW_TABS,
   FACILITY_TAB_LABELS,
   type FacilityTab,
 } from "@/lib/admin/facilities/facility-constants";
 import { formatFacilityDetailSubtitle } from "@/lib/admin/facilities/format-facility-metadata";
+import { AUDIT_RETENTION_COPY, FACILITY_AUDIT_TAB_HELPER } from "@/lib/admin/facilities/facility-audit-ui";
 const TABS = FACILITY_TABS.map((id) => ({
   id,
   label: FACILITY_TAB_LABELS[id],
@@ -41,6 +51,8 @@ const TABS = FACILITY_TABS.map((id) => ({
 function isFacilityTab(t: string | null): t is FacilityTab {
   return t != null && (FACILITY_TABS as readonly string[]).includes(t);
 }
+
+const OVERFLOW_TAB_SET = new Set<FacilityTab>(FACILITY_OVERFLOW_TABS);
 
 function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   const { facility, isLoading, error } = useFacility(facilityId);
@@ -51,16 +63,56 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   const tabParam = searchParams.get("tab");
   const activeTab: FacilityTab = isFacilityTab(tabParam) ? tabParam : "overview";
 
-  const emergencyApi = useFacilityEmergencyContacts(facilityId, {
-    enabled: activeTab === "emergency",
+  /** Emergency directory is needed for Vendor KPI completeness on the vendors tab plus Emergency UI. */
+  const emergencyApi = useFacilityEmergencyContacts(facilityId, { enabled: true });
+  const vendorFacilities = useFacilityVendors(facilityId, {
+    enabled: activeTab === "vendors",
   });
+  const documentVaultMetrics = useFacilityDocumentVaultMetrics(facilityId, activeTab === "documents");
+  const communicationSettingsApi = useFacilityCommunicationSettings(
+    facilityId,
+    activeTab === "communication",
+  );
+  const thresholdsApi = useFacilityThresholds(facilityId, {
+    enabled: activeTab === "thresholds",
+  });
+  const [thresholdStripSnapshot, setThresholdStripSnapshot] = useState<ThresholdRow[]>([]);
+
   const emergencySlotContext = useMemo(() => {
     const p = buildingProfileApi.profile;
     const floors =
       typeof p?.number_of_floors === "number" && p.number_of_floors > 0 ? p.number_of_floors : 1;
     return { floorCount: floors, hasElevator: Boolean(p?.has_elevator) };
   }, [buildingProfileApi.profile]);
-  const surveyVisit = useSurveyVisitSession(facilityId);
+  const staffKpis = useFacilityStaffKpis(facilityId, activeTab === "staffing");
+
+  const canonicalVendorRows = useMemo(
+    () => vendorFacilities.rows.filter((row) => !String(row.id).startsWith("facility-launch-")),
+    [vendorFacilities.rows],
+  );
+
+  const vendorComplianceGaps = useMemo(() => {
+    return countFlMandatoryVendorComplianceGaps({
+      linkedCategories: vendorCategorySetFromLinkedVendors(canonicalVendorRows),
+      vendorRowsCanonical: canonicalVendorRows,
+      buildingProfile: buildingProfileApi.profile as Record<string, unknown> | null,
+      emergencyContacts: emergencyApi.contacts,
+    });
+  }, [buildingProfileApi.profile, canonicalVendorRows, emergencyApi.contacts]);
+
+  const suspectedAuditInfrastructureGap = useMemo(() => {
+    const p = buildingProfileApi.profile as Record<string, unknown> | null;
+    const buildingTouches = Boolean(
+      p &&
+        ("electric_provider" in p ||
+          "fire_alarm_monitoring_company" in p ||
+          "generator_service_vendor" in p ||
+          typeof p.number_of_floors === "number"),
+    );
+    return emergencyApi.contacts.length > 0 || ratesApi.rates.length > 0 || buildingTouches;
+  }, [buildingProfileApi.profile, emergencyApi.contacts.length, ratesApi.rates.length]);
+
+  const auditMetricsApi = useFacilityAuditMetrics(facilityId, activeTab === "audit");
 
   const onTabChange = useCallback(
     (tabId: string) => {
@@ -134,17 +186,50 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
           />
         );
       case "vendors":
-        return <VendorsTab facilityId={facilityId} />;
+        return (
+          <VendorsTab
+            facilityId={facilityId}
+            facilityName={facility.name}
+            vendors={{
+              rows: vendorFacilities.rows,
+              kpi: vendorFacilities.kpi,
+              isLoading: vendorFacilities.isLoading,
+              error: vendorFacilities.error,
+              refetch: vendorFacilities.refetch,
+            }}
+            buildingProfile={buildingProfileApi.profile as Record<string, unknown> | null}
+            emergencyContacts={emergencyApi.contacts}
+          />
+        );
       case "documents":
         return <DocumentsTab facilityId={facilityId} />;
       case "staffing":
-        return <StaffingTab facilityId={facilityId} />;
+        return <StaffingTab facilityId={facilityId} facility={facility} staffKpis={staffKpis} />;
       case "communication":
-        return <CommunicationTab facilityId={facilityId} />;
+        return <CommunicationTab facilityId={facilityId} communicationApi={communicationSettingsApi} />;
       case "thresholds":
-        return <ThresholdsTab facilityId={facilityId} />;
+        return (
+          <ThresholdsTab
+            facility={facility}
+            facilityId={facilityId}
+            orgDefaults={thresholdsApi.orgDefaults}
+            thresholds={thresholdsApi.thresholds}
+            isLoading={thresholdsApi.isLoading}
+            error={thresholdsApi.error}
+            saveThresholds={thresholdsApi.saveThresholds}
+            isSaving={thresholdsApi.isSaving}
+            onLiveRowsChange={setThresholdStripSnapshot}
+          />
+        );
       case "audit":
-        return <AuditTab facilityId={facilityId} />;
+        return (
+          <AuditTab
+            key={facilityId}
+            facilityId={facilityId}
+            suspectedSurfaceSignals={suspectedAuditInfrastructureGap}
+            metricsSummary={auditMetricsApi.data}
+          />
+        );
       case "timeline":
         return <TimelineTab facilityId={facilityId} />;
       default:
@@ -170,32 +255,34 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
         })}
         backLink={{ label: "Facilities", href: "/admin/facilities" }}
         statusChips={statusChip}
-        actions={<FacilitySurveyVisitHeaderActions survey={surveyVisit} />}
+        actions={
+          activeTab === "audit" ? (
+            <FacilityAuditSubscribeButton facilityId={facilityId} facilityName={facility.name} />
+          ) : undefined
+        }
       />
 
-      {(surveyVisit.loadError || surveyVisit.message) ? (
-        <div className="space-y-1 mb-4">
-          {surveyVisit.loadError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {surveyVisit.loadError}
-            </p>
-          ) : null}
-          {surveyVisit.message ? <p className="text-sm text-muted-foreground">{surveyVisit.message}</p> : null}
-        </div>
-      ) : null}
-
-      {surveyVisit.active && surveyVisit.canLog ? (
-        <div className="mb-6 rounded-lg border border-amber-300/70 bg-amber-50/40 p-4 dark:border-amber-800 dark:bg-amber-950/25">
-          <SurveyVisitSessionDock survey={surveyVisit} />
-        </div>
-      ) : null}
-
-      <FacilityTabMetricsStrip
+      <FacilityHeader
         tab={activeTab}
         facility={facility}
         rates={ratesApi.rates}
         buildingProfile={buildingProfileApi.profile}
         buildingProfileLoading={buildingProfileApi.isLoading}
+        vendorStrip={
+          activeTab === "vendors"
+            ? {
+                loading: vendorFacilities.isLoading || emergencyApi.isLoading,
+                kpi: vendorFacilities.kpi,
+                complianceGapCount:
+                  vendorFacilities.isLoading || emergencyApi.isLoading ? 0 : vendorComplianceGaps,
+              }
+            : undefined
+        }
+        documentVaultStrip={
+          activeTab === "documents"
+            ? { loading: documentVaultMetrics.loading, kpi: documentVaultMetrics.kpi }
+            : undefined
+        }
         emergency={
           activeTab === "emergency"
             ? {
@@ -205,13 +292,67 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
               }
             : undefined
         }
+        staffStrip={
+          activeTab === "staffing"
+            ? {
+                loading: staffKpis.loading,
+                kpi: staffKpis.data,
+                error: staffKpis.error,
+              }
+            : undefined
+        }
+        communicationStrip={
+          activeTab === "communication"
+            ? {
+                loading: communicationSettingsApi.isLoading,
+                settings: communicationSettingsApi.settings,
+              }
+            : undefined
+        }
+        thresholdsStrip={
+          activeTab === "thresholds"
+            ? {
+                loading: thresholdsApi.isLoading,
+                rows: thresholdStripSnapshot,
+                orgDefaults: thresholdsApi.orgDefaults,
+              }
+            : undefined
+        }
+        auditStrip={
+          activeTab === "audit"
+            ? {
+                loading: auditMetricsApi.loading,
+                metrics: auditMetricsApi.data,
+                retentionCopy: AUDIT_RETENTION_COPY,
+              }
+            : undefined
+        }
       />
 
       <div className="border-b border-border overflow-x-auto">
         <FacilityTabNav activeTab={activeTab} onTabChange={onTabChange} tabs={TABS} />
       </div>
 
-      <div className="pt-4">{renderTabContent()}</div>
+      {OVERFLOW_TAB_SET.has(activeTab) ? (
+        <div className="space-y-3 pt-4">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            {FACILITY_TAB_LABELS[activeTab]}
+          </h2>
+          <div className="h-px w-full bg-border" aria-hidden />
+          {activeTab === "documents" ? (
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              Centralize AHCA filings, inspections, drills, permits, certificates, carrier policies, and vendor
+              agreements here. Prefer <span className="font-medium text-foreground">Replace</span> on an existing row
+              so surveyors never chase stale duplicates — the vault keeps proof tied to taxonomy and expiry rules.
+            </p>
+          ) : null}
+          {activeTab === "audit" ? (
+            <p className="max-w-3xl text-sm text-muted-foreground">{FACILITY_AUDIT_TAB_HELPER}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={OVERFLOW_TAB_SET.has(activeTab) ? "pt-6" : "pt-4"}>{renderTabContent()}</div>
     </div>
   );
 }

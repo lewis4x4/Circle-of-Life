@@ -1,0 +1,135 @@
+{
+  "segment": "building-safety-tab-refinement",
+  "timestamp": "2026-05-18T12:37:15.980Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 24,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 191,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 805,
+      "stdout": "# npm audit report\n\npostcss  <8.5.10\nSeverity: moderate\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nfix available via `npm audit fix --force`\nWill install next@9.3.3, which is a breaking change\nnode_modules/next/node_modules/postcss\n  next  9.3.4-canary.0 - 16.3.0-canary.5\n  Depends on vulnerable versions of postcss\n  node_modules/next\n    @sentry/nextjs  >=6.3.6\n    Depends on vulnerable versions of next\n    node_modules/@sentry/nextjs\n\n3 moderate severity vulnerabilities\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 3533,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m12:37PM\u001b[0m \u001b[32mINF\u001b[0m 1035 commits scanned.\n\u001b[90m12:37PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 2.78s\n\u001b[90m12:37PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "failed",
+      "duration_ms": 17373,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/admin/facilities/tabs/EmergencyTab.tsx\n   36:21  warning  'formatPhoneNational' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars\n   83:28  warning  '_contact' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars\n  222:15  error    Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/components/admin/facilities/tabs/EmergencyTab.tsx:222:15\n  220 |\n  221 |   useEffect(() => {\n> 222 |     if (open) setIdx(0);\n      |               ^^^^^^ Avoid calling setState() directly within an effect\n  223 |   }, [open, contacts.length]);\n  224 |\n  225 |   const cur = contacts[idx];  react-hooks/set-state-in-effect\n\n✖ 3 problems (1 error, 2 warnings)\n\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 102,
+      "stdout": "[migrations:check] PASS: 249 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..247\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 13408,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 159_col_licensure_survey_data.sql\n ERROR:  column \"ahca_license_number\" of relation \"facilities\" does not exist\nLINE 3:   ahca_license_number = '9863',\n          ^\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default \"max_connections\" ... 100\nselecting default \"shared_buffers\" ... 128MB\nselecting default time zone ... Etc/UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-05-18 12:37:38.605 UTC [55] LOG:  starting PostgreSQL 17.10 (Debian 17.10-1.pgdg12+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit\n2026-05-18 12:37:38.606 UTC [55] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-05-18 12:37:38.607 UTC [58] LOG:  database system was shut down at 2026-05-18 12:37:38 UTC\n2026-05-18 12:37:38.610 UTC [55] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\nwaiting for server to shut down...2026-05-18 12:37:38.714 UTC [55] LOG:  received fast shutdown request\n.2026-05-18 12:37:38.714 UTC [55] LOG:  aborting any active transactions\n2026-05-18 12:37:38.716 UTC [55] LOG:  background worker \"logical replication launcher\" (PID 61) exited with exit code 1\n2026-05-18 12:37:38.716 UTC [56] LOG:  shutting down\n2026-05-18 12:37:38.716 UTC [56] LOG:  checkpoint starting: shutdown immediate\n2026-05-18 12:37:38.718 UTC [56] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14E4F18, redo lsn=0/14E4F18\n2026-05-18 12:37:38.720 UTC [55] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 37088,
+      "stdout": "[migrations:check] PASS: 249 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..247\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.6 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 11.2s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 310ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/app/(admin)/admin/facilities/[facilityId]/page.tsx:128:17\nType error: Type '{ contactsApi: { contacts: EmergencyContactRow[]; isLoading: boolean; error: string | null; refetch: () => Promise<void>; createContact: (payload: { contact_category: \"transport\" | ... 30 more ... | \"painter\"; ... 8 more ...; notes?: string | undefined; }) => Promise<...>; }; }' is missing the following properties from type '{ facilityId: string; contactsApi: { contacts: EmergencyContactRow[]; isLoading: boolean; error: string | null; refetch: () => Promise<void>; createContact: (payload: { ...; }) => Promise<...>; }; buildingFloors: number; hasElevator: boolean; }': facilityId, buildingFloors, hasElevator\n\n  \u001b[90m126 |\u001b[0m         );\n  \u001b[90m127 |\u001b[0m       \u001b[36mcase\u001b[0m \u001b[32m\"emergency\"\u001b[0m:\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m128 |\u001b[0m         \u001b[36mreturn\u001b[0m <\u001b[33mEmergencyTab\u001b[0m contactsApi={emergencyApi} />;\n  \u001b[90m    |\u001b[0m                 \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m129 |\u001b[0m       \u001b[36mcase\u001b[0m \u001b[32m\"vendors\"\u001b[0m:\n  \u001b[90m130 |\u001b[0m         \u001b[36mreturn\u001b[0m <\u001b[33mVendorsTab\u001b[0m facilityId={facilityId} />;\n  \u001b[90m131 |\u001b[0m       \u001b[36mcase\u001b[0m \u001b[32m\"documents\"\u001b[0m:\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 327,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "command": "npm run design:review",
+      "status": "passed",
+      "duration_ms": 972,
+      "stdout": "[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "command": "npm run a11y:routes",
+      "status": "passed",
+      "duration_ms": 1654,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 3,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.eslint",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-05-18T12-37-15-980Z-building-safety-tab-refinement.json"
+  ]
+}

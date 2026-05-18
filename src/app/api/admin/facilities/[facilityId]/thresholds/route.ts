@@ -41,17 +41,48 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   }
 
   // List thresholds
-  const { data: thresholds, error } = await untypedAdmin
+  const { data: thresholdsRaw, error } = await untypedAdmin
     .from("facility_operational_thresholds")
-    .select("id, threshold_type, yellow_threshold, red_threshold, notify_roles, enabled, created_at, updated_at")
+    .select(
+      "id, threshold_type, yellow_threshold, red_threshold, notify_roles, enabled, alert_frequency, created_at, updated_at, updated_by",
+    )
     .eq("facility_id", facilityId);
 
   if (error) {
     return NextResponse.json({ error: "Failed to fetch thresholds" }, { status: 500 });
   }
 
+  const { data: orgDefaultsRaw, error: orgErr } = await untypedAdmin
+    .from("organization_operational_threshold_defaults")
+    .select("threshold_type, yellow_threshold, red_threshold, notify_roles, alert_frequency")
+    .eq("organization_id", facility.organization_id);
+
+  if (orgErr) {
+    return NextResponse.json({ error: "Failed to fetch organization threshold defaults" }, { status: 500 });
+  }
+
+  const updaterIds = [...new Set((thresholdsRaw ?? []).map((r: { updated_by?: string | null }) => r.updated_by).filter(Boolean))] as string[];
+  const labelMap = new Map<string, string>();
+  if (updaterIds.length > 0) {
+    const { data: profiles } = await admin
+      .from("user_profiles")
+      .select("id, full_name")
+      .in("id", updaterIds);
+    for (const p of profiles ?? []) {
+      const row = p as { id: string; full_name: string | null };
+      if (row.full_name?.trim()) labelMap.set(row.id, row.full_name.trim());
+      else labelMap.set(row.id, row.id.slice(0, 8));
+    }
+  }
+
+  const data = (thresholdsRaw ?? []).map((r: Record<string, unknown>) => ({
+    ...r,
+    updated_by_display: r.updated_by ? (labelMap.get(String(r.updated_by)) ?? null) : null,
+  }));
+
   return NextResponse.json({
-    data: thresholds ?? [],
+    data,
+    org_defaults: orgDefaultsRaw ?? [],
   });
 }
 
@@ -123,6 +154,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
             red_threshold: threshold.red_threshold,
             notify_roles: threshold.notify_roles,
             enabled: threshold.enabled,
+            alert_frequency: threshold.alert_frequency ?? null,
             updated_at: now,
             updated_by: actor.id,
           } as Record<string, unknown>)
@@ -156,6 +188,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
               red_threshold: threshold.red_threshold,
               notify_roles: threshold.notify_roles,
               enabled: threshold.enabled,
+              alert_frequency: threshold.alert_frequency ?? null,
               updated_at: now,
               updated_by: actor.id,
             } as Record<string, unknown>)
@@ -182,6 +215,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
               red_threshold: threshold.red_threshold,
               notify_roles: threshold.notify_roles,
               enabled: threshold.enabled,
+              alert_frequency: threshold.alert_frequency ?? null,
               created_by: actor.id,
               updated_by: actor.id,
             } as Record<string, unknown>)

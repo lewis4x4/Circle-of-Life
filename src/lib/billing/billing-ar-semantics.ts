@@ -75,6 +75,21 @@ export function ninetyPlusBucketValueClass(outstandingCents: number, ninetyPlusC
   return "text-warning";
 }
 
+export function ninetyPlusRiskShareClass(outstandingCents: number, ninetyPlusCents: number): string {
+  if (ninetyPlusCents <= 0 || outstandingCents <= 0) return "text-muted-foreground";
+  const ratio = ninetyPlusCents / outstandingCents;
+  if (ratio > 0.05) return "text-destructive";
+  return "text-warning";
+}
+
+/** Rolling collection-rate KPI tone — thresholds align with Quiet Operator billing handoff until engine lands. */
+export function collectionRateSemanticClass(ratePct: number | null | undefined): string {
+  if (ratePct == null || Number.isNaN(ratePct)) return "text-muted-foreground";
+  if (ratePct >= 95) return "text-emerald-600 dark:text-emerald-400";
+  if (ratePct >= 85) return "text-amber-600 dark:text-amber-400";
+  return "text-destructive";
+}
+
 export function standardBucketValueClass(cents: number): string {
   return cents > 0 ? "text-foreground" : "text-muted-foreground";
 }

@@ -2,14 +2,27 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, Users } from "lucide-react";
-import { useFacility } from "@/hooks/useFacility";
+import { AlertTriangle, Bell, Calendar, ChevronRight, Users } from "lucide-react";
+
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { SectionLabel, FieldLabel } from "@/design-system/components/record-detail";
 import { createClient } from "@/lib/supabase/client";
-import { formatStaffRoleLabel } from "@/lib/staff/load-staff";
-import { RecordDetailSection } from "@/design-system/components/record-detail";
+import {
+  countStaffByTaxonomy,
+  FACILITY_STAFF_TAXONOMY,
+  resolveRequiredRoleContext,
+} from "@/lib/admin/facilities/facility-required-staff-roles";
+import type { FacilityDetailRow } from "@/types/facility";
+import type { FacilityStaffKpiPayload } from "@/hooks/useFacilityStaffKpis";
 
 interface StaffingTabProps {
   facilityId: string;
+  facility: FacilityDetailRow;
+  staffKpis: {
+    loading: boolean;
+    error: string | null;
+    data: FacilityStaffKpiPayload | null;
+  };
 }
 
 type StaffSummaryRow = {
@@ -18,8 +31,100 @@ type StaffSummaryRow = {
   employment_status: string;
 };
 
-export function StaffingTab({ facilityId }: StaffingTabProps) {
-  const { facility, isLoading, error } = useFacility(facilityId);
+const NY_TZ = "America/New_York";
+
+function formatEtMedium(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: NY_TZ }).format(d);
+}
+
+function freshnessDays(iso: string | null): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+}
+
+function CoveragePlaceholderGrid({ configured }: { configured: boolean }) {
+  const shifts = ["Day", "Evening", "Night"];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return (
+    <div className="space-y-3">
+      {!configured ? (
+        <p className="text-[13px] text-muted-foreground">
+          Configure ratio rule set to enable coverage tracking —{" "}
+          <Link href="/admin/staffing" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Configure →
+          </Link>
+        </p>
+      ) : (
+        <p className="text-[13px] text-muted-foreground">
+          Coverage engine — launching sprint. Grid below is a scaffold (7 days × 3 shifts) for ratio compliance
+          shading.
+        </p>
+      )}
+      <div className="overflow-x-auto rounded-[8px] border border-border">
+        <table className="w-full min-w-[520px] border-collapse text-[12px]">
+          <thead>
+            <tr className="border-b border-border bg-muted/20">
+              <th className="px-2 py-2 text-left font-medium text-muted-foreground">Shift</th>
+              {days.map((d) => (
+                <th key={d} className="px-1 py-2 text-center font-medium text-muted-foreground">
+                  {d}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shifts.map((shift) => (
+              <tr key={shift} className="border-b border-border last:border-b-0">
+                <td className="px-2 py-2 font-medium text-foreground">{shift}</td>
+                {days.map((d) => (
+                  <td key={`${shift}-${d}`} className="p-1">
+                    <div
+                      className={`h-10 rounded-[6px] border border-border ${
+                        configured ? "bg-muted/40" : "bg-muted/20 opacity-70"
+                      }`}
+                      title={configured ? "Coverage % scaffold" : "Awaiting ratio rule set"}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {configured ? (
+        <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+          <span>
+            <span className="inline-block size-2.5 rounded-sm bg-emerald-500/80 align-middle mr-1" aria-hidden />≥100%
+          </span>
+          <span>
+            <span className="inline-block size-2.5 rounded-sm bg-amber-400/90 align-middle mr-1" aria-hidden />
+            80–99%
+          </span>
+          <span>
+            <span className="inline-block size-2.5 rounded-sm bg-destructive/80 align-middle mr-1" aria-hidden />
+            &lt;80%
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const ACTIVITY_SCAFFOLD = [
+  { name: "Workforce activity feed", role: "—", kind: "Planned", when: "Sprint backlog" },
+  { name: "Hires / departures / expirations", role: "—", kind: "Event stream", when: "Coming soon" },
+  { name: "—", role: "—", kind: "—", when: "—" },
+  { name: "—", role: "—", kind: "—", when: "—" },
+  { name: "—", role: "—", kind: "—", when: "—" },
+] as const;
+
+export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProps) {
   const [staffRows, setStaffRows] = useState<StaffSummaryRow[]>([]);
   const [staffLoading, setStaffLoading] = useState(true);
   const [staffError, setStaffError] = useState<string | null>(null);
@@ -50,93 +155,200 @@ export function StaffingTab({ facilityId }: StaffingTabProps) {
     void loadStaffSummary();
   }, [loadStaffSummary]);
 
-  const activeStaffCount = staffRows.filter((row) => row.employment_status === "active").length;
-  const roleBreakdown = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const row of staffRows) {
-      counts.set(row.staff_role, (counts.get(row.staff_role) ?? 0) + 1);
-    }
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([role, count]) => ({ role, count }));
+  const reqCtx = useMemo(() => resolveRequiredRoleContext(facility), [facility]);
+
+  const activeRoleSamples = useMemo(() => {
+    return staffRows.filter((r) => r.employment_status === "active").map((r) => r.staff_role);
   }, [staffRows]);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const taxonomyCounts = useMemo(() => countStaffByTaxonomy(activeRoleSamples), [activeRoleSamples]);
 
-  if (error || !facility) {
-    return <p className="text-destructive text-sm">{error ?? "Not found"}</p>;
-  }
+  const ratioConfigured = Boolean(facility.facility_ratio_rule_set_id);
+
+  const kpi = staffKpis.data;
+  const rosterLine = useMemo(() => {
+    const d = formatEtMedium(kpi?.rosterUpdatedAt ?? null);
+    const by = kpi?.rosterUpdatedByDisplayName?.trim();
+    const fresh = freshnessDays(kpi?.rosterUpdatedAt ?? null);
+    if (!d && !by && fresh == null) return null;
+    const freshnessBit =
+      typeof fresh === "number" ? `· Roster freshness: ${fresh === 0 ? "today" : `${fresh} days`}` : "";
+    const byBit = by ? `by ${by}` : "";
+    return `Last roster update: ${d ?? "—"} ${byBit} ${freshnessBit}`.replace(/\s+/g, " ").trim();
+  }, [kpi?.rosterUpdatedAt, kpi?.rosterUpdatedByDisplayName]);
+
+  const navCards = [
+    {
+      href: "/admin/staff",
+      title: "Staff roster",
+      subtitle: "Full roster, profiles, and HR fields for this facility.",
+      Icon: Users,
+    },
+    {
+      href: "/admin/staffing",
+      title: "Staffing alerts",
+      subtitle: "Ratio thresholds, overrides, and escalation routing.",
+      Icon: Bell,
+    },
+    {
+      href: "/admin/schedules",
+      title: "Schedules",
+      subtitle: "Published weeks, assignments, and shift swaps.",
+      Icon: Calendar,
+    },
+  ] as const;
 
   return (
-    <div className="space-y-6">
-      <RecordDetailSection
-        title="Key roles"
-        action={<Users className="h-4 w-4 text-muted-foreground" />}
-        description="Detailed staffing ratios, schedules, and certifications live in Workforce hubs. This summary reads the live staff roster for the selected facility."
-      >
-        <div className="text-sm grid gap-2 sm:grid-cols-3">
+    <div className="space-y-10">
+      <section className="space-y-4" aria-labelledby="staffing-key-roles-heading">
+        <div className="flex items-start justify-between gap-3">
+          <SectionLabel id="staffing-key-roles-heading">Key roles</SectionLabel>
+          <Tooltip>
+            <TooltipTrigger type="button" className="rounded-md p-1 text-muted-foreground hover:bg-muted/60">
+              <Users className="h-4 w-4" aria-hidden />
+              <span className="sr-only">Staff snapshot source</span>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-xs">
+              Staff record source: live roster from Workforce (facility-scoped query).
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="h-px w-full bg-border" />
+
+        <div className="grid gap-6 sm:grid-cols-3">
           <div>
-            <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Administrator (recorded)</p>
-            <p className="font-medium text-foreground mt-1">{facility.administrator_name ?? "—"}</p>
+            <FieldLabel>Administrator of record</FieldLabel>
+            <p className="mt-1 text-[13px] font-medium text-foreground">{facility.administrator_name ?? "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Active staff rows</p>
-            <p className="font-medium tabular-nums text-foreground mt-1">{staffLoading ? "Loading…" : activeStaffCount}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Ratio rule set</p>
-            <p className="font-medium text-xs break-all text-foreground mt-1">
-              {facility.facility_ratio_rule_set_id ?? "—"}
+            <FieldLabel>Active staff</FieldLabel>
+            <p className="mt-1 text-[13px] font-medium tabular-nums text-foreground">
+              {staffLoading ? "Loading…" : staffRows.filter((r) => r.employment_status === "active").length}
             </p>
+          </div>
+          <div>
+            <FieldLabel>Ratio rule set</FieldLabel>
+            {ratioConfigured ? (
+              <p className="mt-1 text-[13px] text-foreground">
+                Configured —{" "}
+                <Link href="/admin/staffing" className="font-medium underline-offset-4 hover:underline">
+                  Manage in staffing hub →
+                </Link>
+              </p>
+            ) : (
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-warning">
+                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                <span>Not configured</span>
+                <Link href="/admin/staffing" className="font-medium text-foreground underline-offset-4 hover:underline">
+                  Configure →
+                </Link>
+              </p>
+            )}
           </div>
         </div>
 
         {staffError ? (
-          <p className="rounded-[8px] border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+          <p className="rounded-[8px] border border-warning/30 bg-warning/10 px-3 py-2 text-[12px] text-warning">
             Staff roster summary could not load: {staffError}
           </p>
         ) : null}
 
-        {!staffLoading && roleBreakdown.length > 0 ? (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {roleBreakdown.map(({ role, count }) => (
-              <span
-                key={role}
-                className="rounded-[8px] border border-border bg-muted/10 px-3 py-1 text-xs font-medium text-foreground"
-              >
-                {formatStaffRoleLabel(role)}: <span className="tabular-nums">{count}</span>
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </RecordDetailSection>
+        <div className="space-y-2">
+          <FieldLabel>Role tally (active staff)</FieldLabel>
+          <p className="text-[12px] text-muted-foreground">
+            Roles flagged with a warning are typically required for FL ALF operations under current assumptions and
+            show zero active matches. Verify vendor-staffed or contract coverage before correcting roster data.
+          </p>
+          <ul className="flex flex-col gap-2 pt-1">
+            {FACILITY_STAFF_TAXONOMY.map((def) => {
+              const count = taxonomyCounts.get(def.key) ?? 0;
+              const required = def.isRequired(reqCtx);
+              const warn = required && count === 0;
+              return (
+                <li
+                  key={def.key}
+                  className={`flex items-center justify-between gap-3 rounded-[8px] border border-border px-3 py-2 text-[13px] ${
+                    warn ? "bg-warning/5 border-warning/30" : "bg-muted/10"
+                  }`}
+                >
+                  <span className={`min-w-0 flex items-center gap-2 ${count === 0 ? "text-muted-foreground" : "text-foreground"}`}>
+                    {warn ? (
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden />
+                    ) : (
+                      <span className="w-4 shrink-0" aria-hidden />
+                    )}
+                    <span className="truncate">{def.label}</span>
+                  </span>
+                  <span className="tabular-nums font-medium text-foreground">{count}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/admin/staff"
-          className="rounded-[8px] border border-border bg-muted/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/20 transition-colors"
-        >
-          Staff roster
-        </Link>
-        <Link
-          href="/admin/staffing"
-          className="rounded-[8px] border border-border bg-muted/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/20 transition-colors"
-        >
-          Staffing alerts
-        </Link>
-        <Link
-          href="/admin/schedules"
-          className="rounded-[8px] border border-border bg-muted/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/20 transition-colors"
-        >
-          Schedules
-        </Link>
-      </div>
+        {rosterLine ? <p className="text-[12px] text-muted-foreground">{rosterLine}</p> : null}
+        {staffKpis.error ? (
+          <p className="text-[12px] text-destructive" role="alert">
+            KPI block: {staffKpis.error}
+          </p>
+        ) : null}
+      </section>
+
+      <section className="space-y-4" aria-labelledby="staffing-coverage-heading">
+        <SectionLabel id="staffing-coverage-heading">Coverage next 7 days</SectionLabel>
+        <div className="h-px w-full bg-border" />
+        <CoveragePlaceholderGrid configured={ratioConfigured} />
+      </section>
+
+      <section className="space-y-4" aria-labelledby="staffing-activity-heading">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <SectionLabel id="staffing-activity-heading">Recent staffing activity</SectionLabel>
+          <Link href="/admin/staff" className="text-[13px] font-medium text-foreground underline-offset-4 hover:underline">
+            View all activity →
+          </Link>
+        </div>
+        <div className="h-px w-full bg-border" />
+        <p className="text-[13px] text-muted-foreground">
+          Workforce event stream + 30-day rollup — tracked in{" "}
+          <span className="font-medium text-foreground">Workforce data layer hardening</span> sprint (issue backlog).
+        </p>
+        <ul className="divide-y divide-border rounded-[8px] border border-border">
+          {ACTIVITY_SCAFFOLD.map((row, idx) => (
+            <li key={idx} className="flex flex-col gap-0.5 px-3 py-2 text-[13px] sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-medium text-foreground">{row.name}</span>
+              <span className="text-muted-foreground">
+                {row.role} · {row.kind} · {row.when}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-4" aria-labelledby="staffing-views-heading">
+        <SectionLabel id="staffing-views-heading">Detailed views</SectionLabel>
+        <div className="h-px w-full bg-border" />
+        <div className="grid gap-3 sm:grid-cols-3">
+          {navCards.map(({ href, title, subtitle, Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="group flex items-stretch gap-3 rounded-[8px] border border-border bg-muted/10 p-4 transition-colors hover:bg-muted/20"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-foreground">
+                <Icon className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-foreground">{title}</p>
+                <p className="mt-1 text-[12px] text-muted-foreground leading-snug">{subtitle}</p>
+              </div>
+              <ChevronRight
+                className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                aria-hidden
+              />
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { Loader2, Plus } from "lucide-react";
 import { useFacilityTimeline } from "@/hooks/useFacilityTimeline";
 import { TIMELINE_EVENT_TYPES } from "@/lib/admin/facilities/facility-constants";
 import type { TimelineEventInput } from "@/lib/validation/facility-admin";
+import { DateInput } from "@/components/ui/date-input";
+import { cn } from "@/lib/utils";
 
 interface TimelineTabProps {
   facilityId: string;
@@ -107,12 +109,13 @@ export function TimelineTab({ facilityId }: TimelineTabProps) {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm text-foreground">
               Date
-              <input
-                type="date"
-                className={inputCls}
+              <DateInput
+                aria-label="Event date"
+                className={cn("mt-1", inputCls)}
                 value={form.event_date}
-                onChange={(e) => setForm((f) => ({ ...f, event_date: e.target.value }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, event_date: v }))}
                 required
+                emptyHint={null}
               />
             </label>
             <label className="text-sm text-foreground">

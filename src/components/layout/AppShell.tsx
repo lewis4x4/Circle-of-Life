@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
+import { useSurveyVisitSession } from "@/hooks/useSurveyVisitSession";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { createClient } from "@/lib/supabase/client";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
@@ -76,7 +77,8 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
-import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
+import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
+import { SurveyVisitWorkspaceDock } from "@/components/compliance/SurveyVisitWorkspaceChrome";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { HavenInsightShell } from "@/components/haven-insight/HavenInsightShell";
 import { GraceShell } from "@/lib/grace/GraceShell";
@@ -89,6 +91,7 @@ import {
   type Pillar,
   type PillarItem,
 } from "@/lib/navigation/pillars";
+import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
 
 /** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
@@ -130,6 +133,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const safeSelectedFacilityId = selectedFacilityIsValid ? selectedFacilityId : null;
   const currentFacility = visibleFacilities.find((f) => f.id === safeSelectedFacilityId);
 
+  const surveyVisit = useSurveyVisitSession(safeSelectedFacilityId);
+
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const facilityRefreshRequestRef = useRef(0);
@@ -141,6 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => setMounted(true), []);
 
   const activePillar = useMemo(() => findActivePillar(pathname), [pathname]);
+  const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
 
   // ── ⌘K global hotkey ─────────────────────────────────────────────
   useEffect(() => {
@@ -725,11 +731,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {renderHavenInsightTrigger()}
           {renderReportIncidentButton()}
           <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
+          {suppressSurveyVisitChrome ? null : <SurveyVisitShellToggle survey={surveyVisit} />}
           {renderNotificationsButton()}
           {renderThemeToggle()}
           {renderProfileMenu()}
         </div>
       </header>
+
+      {suppressSurveyVisitChrome ? null : <SurveyVisitWorkspaceDock survey={surveyVisit} />}
 
       {/* ── Mobile pillar scroll strip ──────────────────────────── */}
       <div
@@ -773,9 +782,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </div>
-
-      {/* Survey Visit Mode banner — page-level chrome, never nav. */}
-      <SurveyVisitModeBar />
 
       {/* ── Layout row: contextual rail + main ─────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden border-t border-border">

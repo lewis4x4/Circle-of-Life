@@ -14483,30 +14483,48 @@ export type Database = {
       }
       vendor_facilities: {
         Row: {
+          coi_expiration: string | null
+          coi_on_file: boolean | null
           created_at: string
           deleted_at: string | null
           facility_id: string
           id: string
           is_primary: boolean
+          last_invoice_at: string | null
+          last_payment_at: string | null
           organization_id: string
+          service_contract_expiration: string | null
+          service_contract_status: string | null
           vendor_id: string
         }
         Insert: {
+          coi_expiration?: string | null
+          coi_on_file?: boolean | null
           created_at?: string
           deleted_at?: string | null
           facility_id: string
           id?: string
           is_primary?: boolean
+          last_invoice_at?: string | null
+          last_payment_at?: string | null
           organization_id: string
+          service_contract_expiration?: string | null
+          service_contract_status?: string | null
           vendor_id: string
         }
         Update: {
+          coi_expiration?: string | null
+          coi_on_file?: boolean | null
           created_at?: string
           deleted_at?: string | null
           facility_id?: string
           id?: string
           is_primary?: boolean
+          last_invoice_at?: string | null
+          last_payment_at?: string | null
           organization_id?: string
+          service_contract_expiration?: string | null
+          service_contract_status?: string | null
           vendor_id?: string
         }
         Relationships: [
@@ -16758,6 +16776,13 @@ export const Constants = {
         "staffing_agency",
         "consulting",
         "technology",
+        "laundry",
+        "transportation",
+        "laboratory",
+        "utilities",
+        "security",
+        "government_partner",
+        "community_partner",
         "other",
       ],
       vendor_invoice_status: [

@@ -2,12 +2,26 @@
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Download, HelpCircle } from "lucide-react";
+import {
+  differenceInCalendarDays,
+  endOfMonth,
+  endOfQuarter,
+  format,
+  parseISO,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+  subDays,
+  subMonths,
+  subQuarters,
+} from "date-fns";
 import { useSearchParams } from "next/navigation";
 
 import { AdminFilterBar, AdminOperationalListPanel, AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -16,14 +30,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import {
-  ninetyPlusBucketValueClass,
+  collectionRateSemanticClass,
+  ninetyPlusRiskShareClass,
   outstandingArValueClass,
   overdueInvoicesValueClass,
   standardBucketValueClass,
   summarizeOpenArBucketTotals,
+  rowContributesOpenAr,
   totalOpenArCents,
 } from "@/lib/billing/billing-ar-semantics";
 import {
@@ -33,6 +50,9 @@ import {
   type InvoiceStatusUi,
   type PayerTypeUi,
 } from "@/lib/billing/load-invoices";
+
+import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
+
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -50,6 +70,116 @@ const DEFAULT_FILTERS = {
   status: "all",
   payerType: "all",
 };
+
+type PeriodPreset =
+  | "this_month"
+  | "last_month"
+  | "this_quarter"
+  | "last_quarter"
+  | "ytd"
+  | "rolling_12";
+
+function periodBounds(preset: PeriodPreset, now = new Date()): { start: string; end: string } {
+  switch (preset) {
+    case "last_month": {
+      const ref = subMonths(now, 1);
+      return { start: format(startOfMonth(ref), "yyyy-MM-dd"), end: format(endOfMonth(ref), "yyyy-MM-dd") };
+    }
+    case "this_quarter":
+      return { start: format(startOfQuarter(now), "yyyy-MM-dd"), end: format(endOfQuarter(now), "yyyy-MM-dd") };
+    case "last_quarter": {
+      const ref = subQuarters(now, 1);
+      return { start: format(startOfQuarter(ref), "yyyy-MM-dd"), end: format(endOfQuarter(ref), "yyyy-MM-dd") };
+    }
+    case "ytd":
+      return { start: format(startOfYear(now), "yyyy-MM-dd"), end: format(now, "yyyy-MM-dd") };
+    case "rolling_12":
+      return { start: format(subDays(now, 364), "yyyy-MM-dd"), end: format(now, "yyyy-MM-dd") };
+    case "this_month":
+    default:
+      return { start: format(startOfMonth(now), "yyyy-MM-dd"), end: format(endOfMonth(now), "yyyy-MM-dd") };
+  }
+}
+
+function isoInPeriod(iso: string, bounds: { start: string; end: string }) {
+  if (!iso) return false;
+  return iso >= bounds.start && iso <= bounds.end;
+}
+
+function daysUntilDueDate(iso: string): number | null {
+  if (!iso) return null;
+  const due = parseISO(`${iso}T12:00:00`);
+  if (Number.isNaN(due.getTime())) return null;
+  return differenceInCalendarDays(due, new Date());
+}
+
+function payerExportLabel(payerType: PayerTypeUi) {
+  if (payerType === "private_pay") return "Private pay";
+  if (payerType === "medicaid") return "Medicaid";
+  return "LTC insurance";
+}
+
+function statusExportLabel(status: InvoiceStatusUi) {
+  const map: Record<InvoiceStatusUi, string> = {
+    draft: "Draft",
+    sent: "Sent",
+    partial: "Partial",
+    paid: "Paid",
+    overdue: "Overdue",
+    void: "Void",
+    written_off: "Written off",
+  };
+  return map[status] ?? status;
+}
+
+function csvEscape(cell: string) {
+  const safe = cell.replace(/"/g, '""');
+  return `"${safe}"`;
+}
+
+function triggerBillingArRefresh() {
+  window.dispatchEvent(new CustomEvent(BILLING_AR_OVERVIEW_REFRESH));
+}
+
+function downloadInvoiceLedgerCsv(rows: BillingRow[], filename: string, facilityLookup: Map<string, string>) {
+  const header = [
+    "Invoice #",
+    "Resident",
+    "Facility",
+    "Payer",
+    "Amount due ($)",
+    "Invoice total ($)",
+    "Status",
+    "Invoice date",
+    "Due date",
+    "Facility id",
+  ];
+  const lines = rows.map((r) =>
+    [
+      csvEscape(r.invoiceNumber),
+      csvEscape(r.residentName),
+      csvEscape(facilityLookup.get(r.facilityId) ?? ""),
+      csvEscape(payerExportLabel(r.payerType)),
+      csvEscape(String(r.amountDueCents / 100)),
+      csvEscape(String(r.totalCents / 100)),
+      csvEscape(statusExportLabel(r.status)),
+      csvEscape(r.invoiceDateIso),
+      csvEscape(r.dueDateIso),
+      csvEscape(r.facilityId),
+    ].join(","),
+  );
+
+  const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export const billingCurrency = new Intl.NumberFormat("en-US", {
   style: "currency",

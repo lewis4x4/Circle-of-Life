@@ -2,6 +2,8 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+import { FieldLabel } from "./QuietLabels";
+
 /** True when rendered text is blank or placeholder em-dash (Record Detail quiet-empty pattern). */
 export function isRecordDetailEmptyValue(value: React.ReactNode): boolean {
   const text = collectPlainText(value)
@@ -35,15 +37,8 @@ export function DetailRow({ label, value }: DetailRowProps) {
 
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-      <span
-        className={cn(
-          "min-w-[8rem] text-xs font-medium uppercase tracking-wide",
-          empty ? mutedHalf : "text-muted-foreground",
-        )}
-      >
-        {label}
-      </span>
-      <div className={cn("min-w-0", empty ? mutedHalf : "text-foreground")}>{empty ? "—" : value}</div>
+      <FieldLabel className={cn("min-w-[8rem]", empty ? mutedHalf : undefined)}>{label}</FieldLabel>
+      <div className={cn("min-w-0 text-[13px]", empty ? mutedHalf : "text-foreground")}>{empty ? "—" : value}</div>
     </div>
   );
 }

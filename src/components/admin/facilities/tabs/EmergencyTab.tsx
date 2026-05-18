@@ -34,6 +34,7 @@ import {
   type SlotContext,
 } from "@/lib/admin/facilities/emergency-directory";
 import { PhoneLink } from "@/components/common/phone-link";
+import { FieldLabel } from "@/design-system/components/record-detail";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -152,9 +153,7 @@ function EmergencyQuickStrip({
 
   return (
     <div className="rounded-[10px] border-2 border-border/80 bg-muted/30 p-4 shadow-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        Immediate emergency
-      </p>
+      <FieldLabel className="text-[13px] font-semibold text-muted-foreground">Immediate emergency</FieldLabel>
       <ul className="mt-3 divide-y divide-border/80">
         {rows.map((r) => (
           <li key={r.key} className="flex flex-wrap items-start gap-3 py-2.5 first:pt-0">
@@ -177,7 +176,7 @@ function EmergencyQuickStrip({
                 ) : (
                   <span className="text-sm text-muted-foreground">—</span>
                 )}
-                <span className="rounded-[6px] bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+                <span className="rounded-[6px] bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                   24/7
                 </span>
               </div>
@@ -476,9 +475,7 @@ export function EmergencyTab({
         <form onSubmit={handleSubmit} className="rounded-[8px] border border-border bg-muted/10 p-4 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm text-foreground">
-              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
-                Category
-              </span>
+              <FieldLabel className="mb-1 block">Category</FieldLabel>
               <select
                 className={inputCls}
                 value={form.contact_category}
@@ -497,9 +494,7 @@ export function EmergencyTab({
               </select>
             </label>
             <label className="text-sm text-foreground">
-              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
-                Organization / label
-              </span>
+              <FieldLabel className="mb-1 block">Organization / label</FieldLabel>
               <input
                 className={inputCls}
                 value={form.contact_name}
@@ -508,9 +503,7 @@ export function EmergencyTab({
               />
             </label>
             <label className="text-sm text-foreground">
-              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
-                Primary phone
-              </span>
+              <FieldLabel className="mb-1 block">Primary phone</FieldLabel>
               <input
                 className={inputCls}
                 value={form.phone_primary}
@@ -519,9 +512,7 @@ export function EmergencyTab({
               />
             </label>
             <label className="text-sm text-foreground">
-              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
-                Secondary phone
-              </span>
+              <FieldLabel className="mb-1 block">Secondary phone</FieldLabel>
               <input
                 className={inputCls}
                 value={form.phone_secondary ?? ""}
@@ -529,9 +520,7 @@ export function EmergencyTab({
               />
             </label>
             <label className="text-sm text-foreground sm:col-span-2">
-              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
-                Address (optional)
-              </span>
+              <FieldLabel className="mb-1 block">Address (optional)</FieldLabel>
               <input
                 className={inputCls}
                 value={form.address ?? ""}
@@ -540,9 +529,7 @@ export function EmergencyTab({
               />
             </label>
             <label className="text-sm text-foreground sm:col-span-2">
-              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
-                Notes (max 500 chars)
-              </span>
+              <FieldLabel className="mb-1 block">Notes (max 500 chars)</FieldLabel>
               <textarea
                 className={cn(inputCls, "min-h-[72px] resize-y")}
                 value={form.notes ?? ""}

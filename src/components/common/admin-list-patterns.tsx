@@ -27,6 +27,8 @@ type FilterOption = {
 type AdminFilterBarProps = {
   searchValue: string;
   searchPlaceholder?: string;
+  /** Optional ref for global `/` focus shortcuts (billing / other hubs). */
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
   onSearchChange: (value: string) => void;
   filters: Array<{
     id: string;
@@ -38,16 +40,20 @@ type AdminFilterBarProps = {
   onReset: () => void;
   /** Hide reset until search or filters differ from defaults (first option per filter). */
   suppressResetUnlessDirty?: boolean;
+  /** Eg. export / facility pickers that share the filter row. */
+  trailingSlot?: React.ReactNode;
 };
 
-export function AdminFilterBar({
-  searchValue,
-  searchPlaceholder = "Search",
-  onSearchChange,
-  filters,
-  onReset,
-  suppressResetUnlessDirty = false,
-}: AdminFilterBarProps) {
+export function AdminFilterBar(props: AdminFilterBarProps) {
+  const {
+    searchValue,
+    searchPlaceholder = "Search",
+    searchInputRef,
+    onSearchChange,
+    filters,
+    onReset,
+    suppressResetUnlessDirty = false,
+  } = props;
   const filtersActive =
     searchValue.trim().length > 0 ||
     filters.some((f) => {
@@ -61,6 +67,7 @@ export function AdminFilterBar({
       <div className="relative flex w-full items-center md:max-w-md">
         <Search className="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" aria-hidden />
         <Input
+          ref={searchInputRef}
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={searchPlaceholder}
@@ -86,6 +93,8 @@ export function AdminFilterBar({
             </SelectContent>
           </Select>
         ))}
+
+        {props.trailingSlot}
 
         {showReset ? (
           <Button

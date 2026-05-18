@@ -64,6 +64,7 @@ import {
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
+import { useSurveyVisitSession } from "@/hooks/useSurveyVisitSession";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { createClient } from "@/lib/supabase/client";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
@@ -85,9 +86,10 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
-import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
+import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
 
 /** Workspace strip inside main column (`--background`); persisted sidebar uses `haven-chrome-*`. Mercury pattern. */
@@ -151,12 +153,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     visibleFacilities.some((facility) => facility.id === selectedFacilityId);
   const safeSelectedFacilityId = selectedFacilityIsValid ? selectedFacilityId : null;
   const currentFacility = visibleFacilities.find((f) => f.id === safeSelectedFacilityId);
+  const surveyVisit = useSurveyVisitSession(safeSelectedFacilityId);
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const facilityRefreshRequestRef = useRef(0);
   const currentUserIdRef = useRef<string | null>(currentUserId);
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
+  const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
   const [signingOut, setSigningOut] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -763,6 +767,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             <PilotFeedbackLauncher shellKind="admin" facilityId={safeSelectedFacilityId} compact />
 
+            {suppressSurveyVisitChrome ? null : <SurveyVisitShellToggle survey={surveyVisit} />}
+
             <Tooltip>
               <TooltipTrigger
                 aria-label="Notifications"
@@ -816,8 +822,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </DropdownMenu>
           </div>
         </header>
-
-        <SurveyVisitModeBar />
 
         {/* Scrolling main — full-bleed, no mx-auto/max-w. Pages that need a
             narrow column for long-form content (settings forms, etc.) apply

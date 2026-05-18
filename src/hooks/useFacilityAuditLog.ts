@@ -1,21 +1,28 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { UUID_STRING_RE } from "@/lib/supabase/env";
+import { useState, useCallback } from "react";
 
-interface AuditEntry {
+export interface FacilityAuditHookRow {
   id: string;
-  facility_id: string;
+  facility_id?: string;
   timestamp: string;
-  user: string;
+  user: string | null;
+  changed_by_display: string;
   table_name: string;
-  field_name: string;
-  old_value: string | null;
-  new_value: string | null;
+  record_id: string;
+  field_name: string | null;
+  action: string;
+  old_value: unknown;
+  new_value: unknown;
+  old_value_text: string | null;
+  new_value_text: string | null;
+  summary: string;
+  ip_address?: unknown;
+  user_agent?: string | null;
 }
 
 interface AuditLogResponse {
-  data: AuditEntry[];
+  data: FacilityAuditHookRow[];
   pagination: {
     total: number;
     page: number;
@@ -25,64 +32,80 @@ interface AuditLogResponse {
   };
 }
 
-interface AuditLogFilters {
+export interface AuditLogFilters {
   fieldName?: string;
-  user?: string;
   startDate?: string;
   endDate?: string;
   page?: number;
   pageSize?: number;
+  table_name_in?: string[];
+  action_in?: string[];
+  user_ids?: string[];
+  search?: string;
 }
 
 interface UseFacilityAuditLogReturn {
-  entries: AuditEntry[];
+  entries: FacilityAuditHookRow[];
   isLoading: boolean;
   error: string | null;
   total: number;
   page: number;
   hasNext: boolean;
-  refetch: (filters?: AuditLogFilters) => Promise<void>;
+  refetch: (filters: AuditLogFilters) => Promise<void>;
 }
 
-const EMPTY_FILTERS: AuditLogFilters = {};
+function buildQuery(filters: AuditLogFilters): URLSearchParams {
+  const params = new URLSearchParams({
+    page: String(filters.page ?? 1),
+    per_page: String(filters.pageSize ?? 50),
+  });
+  if (filters.fieldName) params.set("field_name", filters.fieldName);
+  if (filters.startDate) params.set("from", filters.startDate);
+  if (filters.endDate) params.set("to", filters.endDate);
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
+  const tables = filters.table_name_in;
+  if (tables && tables.length > 0) params.set("table_name_in", tables.join(","));
+  const actions = filters.action_in;
+  if (actions && actions.length > 0) params.set("action_in", actions.join(","));
+  const actors = filters.user_ids;
+  if (actors && actors.length > 0) params.set("user_ids", actors.join(","));
+  return params;
+}
 
-export function useFacilityAuditLog(facilityId: string, initialFilters: AuditLogFilters = {}): UseFacilityAuditLogReturn {
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
+export function useFacilityAuditLog(facilityId: string): UseFacilityAuditLogReturn {
+  const [entries, setEntries] = useState<FacilityAuditHookRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(initialFilters.page ?? 1);
+  const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(false);
-  const initialFiltersRef = useRef<AuditLogFilters>(initialFilters ?? EMPTY_FILTERS);
 
   const refetch = useCallback(
-    async (filters: AuditLogFilters = {}) => {
+    async (filters: AuditLogFilters) => {
       setIsLoading(true);
       setError(null);
-      const { fieldName, user, startDate, endDate, page: newPage = 1, pageSize = 20 } = filters;
+      const newPage = filters.page ?? 1;
+      const pageSize = filters.pageSize ?? 50;
       setPage(newPage);
 
       try {
-        const params = new URLSearchParams({
-          page: newPage.toString(),
-          per_page: pageSize.toString(),
-        });
-        if (fieldName) params.set("field_name", fieldName);
-        if (user && UUID_STRING_RE.test(user)) params.set("user_id", user);
-        if (startDate) params.set("from", startDate);
-        if (endDate) params.set("to", endDate);
-
+        const params = buildQuery({ ...filters, page: newPage, pageSize });
         const res = await fetch(`/api/admin/facilities/${facilityId}/audit-log?${params}`);
         if (!res.ok) {
           throw new Error("Failed to fetch audit log");
         }
         const json = (await res.json()) as AuditLogResponse;
+        const rows = json.data ?? [];
         setEntries(
-          (json.data ?? []).map((entry) => ({
-            ...entry,
-            timestamp: (entry as AuditEntry & { changed_at?: string }).changed_at ?? entry.timestamp,
-            user: (entry as AuditEntry & { changed_by?: string }).changed_by ?? entry.user,
-          })),
+          rows.map((entry) => {
+            const row = entry as FacilityAuditHookRow & { changed_at?: string; changed_by?: string | null };
+            const ts = row.changed_at ?? row.timestamp;
+            return {
+              ...row,
+              timestamp: ts,
+              user: row.changed_by ?? null,
+            };
+          }),
         );
         setTotal(json.pagination?.total ?? 0);
         setHasNext(json.pagination?.has_next ?? false);
@@ -99,14 +122,6 @@ export function useFacilityAuditLog(facilityId: string, initialFilters: AuditLog
     },
     [facilityId],
   );
-
-  useEffect(() => {
-    initialFiltersRef.current = initialFilters ?? EMPTY_FILTERS;
-  }, [initialFilters]);
-
-  useEffect(() => {
-    void refetch(initialFiltersRef.current);
-  }, [refetch]);
 
   return {
     entries,

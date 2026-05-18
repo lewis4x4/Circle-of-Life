@@ -6,7 +6,8 @@ export type QueryResult<T> = Promise<{
   count?: number | null;
 }>;
 
-type UntypedQueryBuilder = QueryResult<Array<Record<string, unknown>>> & {
+/** Narrow builder for casts when Supabase generics fight `unknown` filters (e.g. `.is(.., null)`). */
+export type UntypedQueryBuilder = QueryResult<Array<Record<string, unknown>>> & {
   select(columns?: string, options?: unknown): UntypedQueryBuilder;
   insert(values: Record<string, unknown> | Array<Record<string, unknown>>): UntypedQueryBuilder;
   update(values: Record<string, unknown>): UntypedQueryBuilder;
@@ -17,7 +18,7 @@ type UntypedQueryBuilder = QueryResult<Array<Record<string, unknown>>> & {
   lte(column: string, value: unknown): UntypedQueryBuilder;
   in(column: string, values: readonly unknown[]): UntypedQueryBuilder;
   is(column: string, value: unknown): UntypedQueryBuilder;
-  not(column: string, operator: string, value: string): UntypedQueryBuilder;
+  not(column: string, operator: string, value: unknown): UntypedQueryBuilder;
   or(filters: string): UntypedQueryBuilder;
   order(column: string, options?: { ascending?: boolean }): UntypedQueryBuilder;
   range(from: number, to: number): UntypedQueryBuilder;

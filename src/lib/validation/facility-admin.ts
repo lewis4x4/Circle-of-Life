@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import type { DocumentVaultCategoryKey as DocumentCategory } from "@/lib/admin/facilities/document-vault-taxonomy";
 import {
   CONTACT_CATEGORIES,
   DOCUMENT_CATEGORIES,
@@ -20,6 +21,7 @@ import {
   GENERATOR_FUEL_TYPES,
   FACILITY_TABS,
 } from '@/lib/admin/facilities/facility-constants';
+import { thresholdPairError } from "@/lib/admin/facilities/operational-threshold-catalog";
 
 // ─── Facility List Query ─────────────────────────────────────────────────────
 
@@ -122,12 +124,17 @@ export type EmergencyContactInput = z.infer<typeof emergencyContactSchema>;
 // ─── Document Upload ─────────────────────────────────────────────────────────
 
 export const documentMetadataSchema = z.object({
-  document_category: z.enum(DOCUMENT_CATEGORIES),
+  document_category: z.enum(DOCUMENT_CATEGORIES as unknown as [DocumentCategory, ...DocumentCategory[]]),
   document_name: z.string().min(2),
   expiration_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   alert_yellow_days: z.number().int().min(1).default(60),
   alert_red_days: z.number().int().min(1).default(30),
   notes: z.string().optional(),
+  carrier: z.string().max(240).optional(),
+  friendly_title: z.string().max(240).optional(),
+  effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  vault_series_id: z.string().uuid().optional(),
+  supersedes_document_id: z.string().uuid().optional(),
 }).strict();
 
 export type DocumentMetadataInput = z.infer<typeof documentMetadataSchema>;
@@ -246,13 +253,30 @@ export type CommunicationSettingsInput = z.infer<typeof communicationSettingsSch
 
 // ─── Operational Thresholds ──────────────────────────────────────────────────
 
-export const thresholdSchema = z.object({
-  threshold_type: z.enum(THRESHOLD_TYPES),
-  yellow_threshold: z.number().min(0),
-  red_threshold: z.number().min(0),
-  notify_roles: z.array(z.string()).min(1),
-  enabled: z.boolean().default(true),
-}).strict();
+export const THRESHOLD_ALERT_FREQUENCIES = [
+  "once_on_breach",
+  "daily_until_resolved",
+  "hourly",
+  "custom",
+] as const;
+export type ThresholdAlertFrequency = (typeof THRESHOLD_ALERT_FREQUENCIES)[number];
+
+export const thresholdSchema = z
+  .object({
+    threshold_type: z.enum(THRESHOLD_TYPES),
+    yellow_threshold: z.number().min(0),
+    red_threshold: z.number().min(0),
+    notify_roles: z.array(z.string()).min(1),
+    enabled: z.boolean().default(true),
+    alert_frequency: z.enum(THRESHOLD_ALERT_FREQUENCIES).nullable().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    const msg = thresholdPairError(val.threshold_type, val.yellow_threshold, val.red_threshold);
+    if (msg) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: msg, path: ["red_threshold"] });
+    }
+  });
 
 export type ThresholdInput = z.infer<typeof thresholdSchema>;
 
@@ -276,6 +300,13 @@ export const auditLogQuerySchema = z.object({
   field_name: z.string().optional(),
   user_id: z.string().uuid().optional(),
   table_name: z.string().optional(),
+  /** Comma-separated table_name values (entity filter chips). */
+  table_name_in: z.string().optional(),
+  /** Comma-separated INSERT, UPDATE, DELETE. */
+  action_in: z.string().optional(),
+  /** Comma-separated auth user IDs (facility operators). */
+  user_ids: z.string().optional(),
+  search: z.string().max(200).optional(),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });

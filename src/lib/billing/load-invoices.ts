@@ -16,6 +16,11 @@ export type BillingRow = {
   amountDueCents: number;
   /** YYYY-MM-DD from DB — aging buckets / semantics */
   dueDateIso: string;
+  /** YYYY-MM-DD from DB — period filters / activity */
+  invoiceDateIso: string;
+  facilityId: string;
+  /** Full invoice total (cents) — collection rate signals */
+  totalCents: number;
   dueDate: string;
   updatedAt: string;
 };
@@ -28,9 +33,12 @@ type SupabaseResidentMini = {
 type SupabaseInvoiceRow = {
   id: string;
   resident_id: string;
+  facility_id: string;
   invoice_number: string;
   status: string;
   balance_due: number;
+  total: number;
+  invoice_date: string;
   due_date: string;
   updated_at: string;
   payer_type: string | null;
@@ -49,7 +57,7 @@ export async function fetchInvoicesFromSupabase(
   let invQuery = supabase
     .from("invoices" as never)
     .select(
-      "id, resident_id, invoice_number, status, balance_due, due_date, updated_at, payer_type, deleted_at, residents!invoices_resident_id_fkey(first_name,last_name)",
+      "id, resident_id, facility_id, invoice_number, status, balance_due, total, invoice_date, due_date, updated_at, payer_type, deleted_at, residents!invoices_resident_id_fkey(first_name,last_name)",
     )
     .is("deleted_at", null)
     .order("invoice_date", { ascending: false })
@@ -80,6 +88,9 @@ export async function fetchInvoicesFromSupabase(
       status: mapDbInvoiceStatusToUi(inv.status),
       amountDueCents: Math.max(0, inv.balance_due),
       dueDateIso: inv.due_date?.slice(0, 10) ?? "",
+      invoiceDateIso: inv.invoice_date?.slice(0, 10) ?? "",
+      facilityId: inv.facility_id,
+      totalCents: Math.max(0, inv.total ?? 0),
       dueDate: formatDueDisplay(inv.due_date, inv.status),
       updatedAt: formatUpdatedAt(inv.updated_at),
     };

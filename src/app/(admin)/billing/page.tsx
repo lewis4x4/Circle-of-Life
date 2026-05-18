@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { BillingArOverviewHero } from "./billing-ar-overview-hero";
 import { BillingHubNav } from "./billing-hub-nav";
 import { BillingInvoiceLedger } from "./billing-invoice-ledger";
 import {
@@ -33,6 +34,8 @@ export default async function AdminBillingPage() {
 
   return (
     <div className="space-y-6">
+      <BillingArOverviewHero />
+
       <BillingHubNav />
 
       <BillingInvoiceLedger

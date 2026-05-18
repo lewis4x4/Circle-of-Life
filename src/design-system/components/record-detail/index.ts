@@ -17,3 +17,5 @@ export { RecordDetailSection } from "./RecordDetailSection";
 export type { RecordDetailSectionProps } from "./RecordDetailSection";
 export { DetailRow, isRecordDetailEmptyValue } from "./DetailRow";
 export type { DetailRowProps } from "./DetailRow";
+
+export { SectionLabel, FieldLabel } from "./QuietLabels";
