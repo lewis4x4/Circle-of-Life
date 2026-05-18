@@ -145,7 +145,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         {/* Tablet / desktop side rail (md+) */}
         <nav
           aria-label="Caregiver navigation (tablet)"
-          className="fixed inset-y-0 left-0 z-50 hidden w-20 flex-col border-r border-border bg-background pt-4 pb-6 md:flex"
+          className="haven-chrome-sidebar fixed inset-y-0 left-0 z-50 hidden w-20 flex-col border-r border-border pt-4 pb-6 md:flex"
         >
           <div className="mt-4 flex flex-1 flex-col items-center gap-6">
             {primaryItems.map((item) => (
@@ -157,13 +157,13 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
 
-        <div className="flex min-w-0 flex-1 flex-col md:ml-20">
-          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background px-4 py-3 md:px-8 md:py-4">
+        <div className="flex min-w-0 flex-1 flex-col md:ml-20 md:border-l md:border-border">
+          <header className="haven-chrome-topnav sticky top-0 z-40 flex items-center justify-between border-b border-border px-4 py-3 md:px-8 md:py-4">
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
+              <h1 className="text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
                 {facilityName}
               </h1>
-              <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <p className="mt-0.5 text-[11px] uppercase tracking-wider haven-chrome-fg-muted">
                 {shiftLabel}
               </p>
             </div>
@@ -172,7 +172,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => void roundingSync.flush()}
-                className="tap-responsive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
+                className="tap-responsive rounded-full haven-chrome-tw-ring-offset-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 aria-label="Sync queued caregiver rounds"
               >
                 <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing}>
@@ -182,7 +182,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 aria-label="Alerts"
-                className="tap-responsive relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="haven-chrome-on-header-chip tap-responsive relative inline-flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 haven-chrome-tw-ring-offset-primary"
               >
                 <AlertTriangle className="h-4 w-4" aria-hidden />
                 <span
@@ -239,10 +239,9 @@ function SideNavItem({
       aria-label={label}
       data-state={isActive ? "active" : "inactive"}
       className={cn(
-        "tap-responsive flex h-16 w-16 flex-col items-center justify-center gap-1.5 rounded-lg text-[10px] font-semibold tracking-wide transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        "data-[state=active]:bg-accent data-[state=active]:text-accent-foreground",
-        "data-[state=inactive]:text-muted-foreground hover:text-foreground active:text-foreground",
+        "tap-responsive relative flex h-16 w-16 flex-col items-center justify-center gap-1.5 rounded-lg text-[10px] font-semibold tracking-wide transition-colors",
+        "haven-chrome-tw-ring-offset-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        isActive ? "haven-chrome-narrow-rail-active" : "haven-chrome-narrow-rail-quiet",
       )}
     >
       <span aria-hidden>{icon}</span>

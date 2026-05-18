@@ -1,0 +1,29 @@
+/*
+ * Haven — Quiet Operator semantic tokens (reference copy).
+ *
+ * Runtime source (what Tailwind resolves at build time): src/app/globals.css
+ * (:root | .light | .dark cascades plus @theme inline color registrations).
+ *
+ * Chrome vs canvas
+ * Persistent navigation and AppShell framing use --chrome-* bands so eyes
+ * anchor on value contrast vs bg-background (warm canvas in forced-light /
+ * operator-light; near-black canvas when .dark).
+ */
+
+:root {
+  /* Operator chrome surfaces (Quiet Operator S5.5) */
+  --chrome-primary: 215 9% 12%;
+  --chrome-secondary: 215 9% 14%;
+  --chrome-foreground: 42 38% 95%;
+  --chrome-foreground-muted: 218 14% 70%;
+  --chrome-active: 215 14% 20%;
+}
+
+.dark {
+  /* Lifted chrome on near-black canvas (admin dark + caregiver forced-dark). */
+  --chrome-primary: 215 8% 18%;
+  --chrome-secondary: 215 8% 21%;
+  --chrome-foreground: 42 36% 95%;
+  --chrome-foreground-muted: 217 14% 64%;
+  --chrome-active: 215 12% 28%;
+}

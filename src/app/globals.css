@@ -50,6 +50,13 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
+  /* Chrome — persistent nav/chrome vs canvas (Quiet Operator hierarchy) */
+  --color-chrome-primary: hsl(var(--chrome-primary));
+  --color-chrome-secondary: hsl(var(--chrome-secondary));
+  --color-chrome-foreground: hsl(var(--chrome-foreground));
+  --color-chrome-foreground-muted: hsl(var(--chrome-foreground-muted));
+  --color-chrome-active: hsl(var(--chrome-active));
+
   /* Haven domain status tokens (unchanged — preserved) */
   --color-acuity-1: var(--acuity-1);
   --color-acuity-2: var(--acuity-2);
@@ -107,8 +114,11 @@
 
 /* =============================================================================
    Quiet Operator — operator-product theme.
-   Source of truth: HANDOFFS/2026-05-16__haven-alf-operations__visual-forge-handoff/
-     design-system/{constitution,visual-direction,design-tokens.css}
+   Runtime source of truth for tokens: src/app/globals.css
+
+   Design-system reference (handoff + mirrored docs, not loaded at runtime):
+   - HANDOFFS/2026-05-16__haven-alf-operations__visual-forge-handoff/design-system/
+   - docs/design-system/{constitution.md,design-tokens.css,tailwind.theme.ts}
 
    ADMIN DEFAULT IS LIGHT (warm paper, not cold white — Mercury feel preserved).
    Operators can toggle to dark via the AppShell top-bar theme toggle. Family
@@ -158,6 +168,14 @@
   --input: 30 10% 88%;
   --ring: 205 27% 42%;
   --radius: 0.625rem;
+
+  /* Chrome shells — fixed dark banding vs warm canvas (--background).
+     Hue nudges cool-neutral (~215°); admin + forced-light surfaces share defaults. */
+  --chrome-primary: 215 9% 12%;
+  --chrome-secondary: 215 9% 14%;
+  --chrome-foreground: 42 38% 95%;
+  --chrome-foreground-muted: 218 14% 70%;
+  --chrome-active: 215 14% 20%;
 
   /* Charts — deepened for AA contrast on warm paper */
   --chart-1: 205 27% 42%;
@@ -268,6 +286,12 @@
   --input: 30 10% 88%;
   --ring: 205 27% 42%;
 
+  --chrome-primary: 215 9% 12%;
+  --chrome-secondary: 215 9% 14%;
+  --chrome-foreground: 42 38% 95%;
+  --chrome-foreground-muted: 218 14% 70%;
+  --chrome-active: 215 14% 20%;
+
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 38%;
   --chart-3: 30 60% 45%;
@@ -354,6 +378,13 @@
   --border: 36 6% 14%;
   --input: 36 6% 14%;
   --ring: 205 27% 54%;
+
+  /* Slightly lifted chrome vs near-black canvas (caregiver + operator-dark). */
+  --chrome-primary: 215 8% 18%;
+  --chrome-secondary: 215 8% 21%;
+  --chrome-foreground: 42 36% 95%;
+  --chrome-foreground-muted: 217 14% 64%;
+  --chrome-active: 215 12% 28%;
 
   --chart-1: 205 27% 54%;
   --chart-2: 92 25% 49%;
@@ -509,6 +540,147 @@
   /* Tactile press for mobile/touch surfaces only. */
   .tap-responsive {
     @apply transition-transform duration-150 active:scale-[0.98];
+  }
+
+  /*
+   Shell chrome paint (S5.5b) — explicit hsl(var(...)) so top/side rails
+   always contrast the canvas regardless of Tailwind theme resolution.
+   */
+  .haven-chrome-topnav {
+    background-color: hsl(var(--chrome-primary));
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-sidebar {
+    background-color: hsl(var(--chrome-secondary));
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-bottomnav {
+    background-color: hsl(var(--chrome-primary));
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-bottomnav [data-state=inactive]:hover,
+  .haven-chrome-bottomnav [data-state=inactive]:active {
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-fg-muted {
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-fg {
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-tab-idle:hover {
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-brand-mark {
+    background-color: hsl(var(--chrome-foreground));
+    color: hsl(var(--chrome-primary));
+  }
+  /** Small disc on chrome (avatar ring, badges) — primary wash + foreground icon/text. */
+  .haven-chrome-primary-surface {
+    background-color: hsl(var(--chrome-primary));
+    color: hsl(var(--chrome-foreground));
+  }
+  /* Inset wells on chrome (facility scope, ⌘K search trigger, kbd chip). */
+  .haven-chrome-control-well {
+    border: 1px solid hsl(var(--chrome-foreground) / 0.15);
+    background-color: hsl(var(--chrome-secondary) / 0.92);
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-control-well:hover {
+    border-color: hsl(var(--chrome-foreground) / 0.22);
+    background-color: hsl(var(--chrome-foreground) / 0.08);
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-kbd-chip {
+    border: 1px solid hsl(var(--chrome-foreground) / 0.2);
+    background-color: hsl(var(--chrome-primary));
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-icon-well {
+    color: hsl(var(--chrome-foreground-muted));
+    border-radius: 0.375rem;
+  }
+  .haven-chrome-icon-well:hover {
+    background-color: hsl(var(--chrome-foreground) / 0.1);
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-skeleton-tonal {
+    background-color: hsl(var(--chrome-foreground) / 0.14);
+  }
+  /* Contextual sidebar / AppShell pillar rail links */
+  .haven-chrome-rail-active {
+    background-color: hsl(var(--chrome-active));
+    color: hsl(var(--chrome-foreground));
+    font-weight: 500;
+  }
+  .haven-chrome-rail-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.28rem;
+    bottom: 0.28rem;
+    width: 2px;
+    border-radius: 0 3px 3px 0;
+    background-color: hsl(var(--primary));
+  }
+  .haven-chrome-rail-quiet {
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-rail-quiet:hover {
+    background-color: hsl(var(--chrome-foreground) / 0.08);
+    color: hsl(var(--chrome-foreground));
+  }
+  /* Caregiver icon rail active (slightly tighter vertical notch). */
+  .haven-chrome-narrow-rail-active {
+    background-color: hsl(var(--chrome-active));
+    color: hsl(var(--chrome-foreground));
+    font-weight: 600;
+  }
+  .haven-chrome-narrow-rail-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+    bottom: 0.4rem;
+    width: 2px;
+    border-radius: 999px;
+    background-color: hsl(var(--primary));
+  }
+  .haven-chrome-narrow-rail-quiet {
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-narrow-rail-quiet:hover {
+    background-color: hsl(var(--chrome-foreground) / 0.09);
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-tw-ring-offset-primary {
+    --tw-ring-offset-color: hsl(var(--chrome-primary));
+  }
+  .haven-chrome-tw-ring-offset-secondary {
+    --tw-ring-offset-color: hsl(var(--chrome-secondary));
+  }
+  /* Family / small floating pills on canvas */
+  .haven-chrome-floating-chip {
+    border: 1px solid hsl(var(--chrome-foreground) / 0.15);
+    background-color: hsl(var(--chrome-primary));
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-floating-chip:hover {
+    background-color: hsl(var(--chrome-foreground) / 0.1);
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-floating-chip:active {
+    background-color: hsl(var(--chrome-secondary));
+    color: hsl(var(--chrome-foreground));
+  }
+  .haven-chrome-on-header-chip {
+    border: 1px solid hsl(var(--chrome-foreground) / 0.15);
+    background-color: hsl(var(--chrome-secondary));
+    color: hsl(var(--chrome-foreground-muted));
+  }
+  .haven-chrome-on-header-chip:hover {
+    background-color: hsl(var(--chrome-foreground) / 0.09);
+    color: hsl(var(--chrome-foreground));
   }
 }
 

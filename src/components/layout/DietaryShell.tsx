@@ -12,6 +12,9 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 /**
  * DietaryShell — dedicated full-bleed shell for the Dietary Command Deck.
  *
+ * No top/side nav here; any future fixed chrome in this shell should use
+ * `--chrome-*` tokens for parity with other operator surfaces.
+ *
  * Chromeless layout: no sidebar, no top nav. The cockpit owns all chrome.
  * This shell handles:
  *  1. Dark theme enforcement

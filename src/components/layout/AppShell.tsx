@@ -326,7 +326,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <Link
       href="/admin"
       className={cn(
-        "flex h-9 shrink-0 items-center gap-2 rounded-md px-1.5 text-foreground",
+        "flex h-9 shrink-0 items-center gap-2 rounded-md px-1.5",
         "transition-opacity hover:opacity-90",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
@@ -334,7 +334,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     >
       <span
         aria-hidden
-        className="grid size-7 place-items-center rounded-md bg-foreground text-background"
+        className="grid size-7 place-items-center rounded-md haven-chrome-brand-mark"
       >
         <span className="text-[13px] font-semibold leading-none">H</span>
       </span>
@@ -360,20 +360,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           // second line (constitution rule 8: never ellipsize). Vertical
           // padding keeps the wrapped state tidy without changing baseline
           // height for short names.
-          "hidden md:flex min-h-9 items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1",
-          "text-[12px] font-medium text-foreground transition-colors",
-          "hover:bg-secondary",
+          "haven-chrome-control-well hidden md:flex min-h-9 items-center gap-2 rounded-md px-2.5 py-1",
+          "text-[12px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           "max-w-[220px]",
         )}
       >
-        <Building2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <Building2 className="size-3.5 shrink-0 opacity-90" aria-hidden />
         {facilityControlLoading ? (
-          <Skeleton className="h-3 w-24 rounded bg-muted" aria-label="Loading facilities" />
+          <Skeleton className="h-3 w-24 rounded haven-chrome-skeleton-tonal" aria-label="Loading facilities" />
         ) : (
           <span className="text-left leading-tight break-words">{facilityTriggerLabel}</span>
         )}
-        <ChevronDown className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+        <ChevronDown className="size-3 shrink-0 opacity-90" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[244px] p-1">
         <DropdownMenuItem
@@ -426,14 +425,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className={cn(
           // 36px hit target, generous horizontal padding so the 2px accent
           // underline reads as a strong active signal without crowding.
-          // Active state: text-foreground + font-medium + accent underline.
-          // Inactive: text-muted-foreground with hover lift to text-foreground.
+          // Active state: text-chrome-foreground + font-medium + primary underline.
+          // Inactive: text-chrome-foreground-muted with hover lift to foreground.
           "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
           "transition-colors duration-[var(--motion-duration-micro)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           active
-            ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground",
+            ? "font-medium haven-chrome-fg"
+            : "haven-chrome-fg-muted haven-chrome-tab-idle",
         )}
       >
         {/* No truncate — constitution rule 8 forbids ellipsis. Pillar labels
@@ -441,11 +440,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             doesn't, rename it rather than ellipsize. */}
         <span className="whitespace-nowrap">{pillar.label}</span>
         {active && (
-          // 2px accent underline aligned to the tab's text baseline (rule 4:
+          // 2px brand underline aligned to the tab's text baseline (rule 4:
           // never rely on color alone — paired with aria-current + font-medium).
           <span
             aria-hidden
-            className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent"
+            className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
           />
         )}
       </button>
@@ -459,16 +458,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         type="button"
         onClick={() => setPaletteOpen(true)}
         className={cn(
-          "hidden md:flex h-9 max-w-[280px] flex-1 items-center gap-2 rounded-md border border-border/60 bg-card",
-          "px-2.5 text-[12px] text-muted-foreground transition-colors",
-          "hover:border-border hover:bg-secondary hover:text-foreground",
+          "haven-chrome-control-well hidden md:flex h-9 max-w-[280px] flex-1 items-center gap-2 rounded-md",
+          "px-2.5 text-[12px] transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
         aria-label="Open search (⌘K)"
       >
         <Search className="size-3.5 shrink-0" aria-hidden />
         <span className="truncate">Search residents, staff, incidents…</span>
-        <kbd className="ml-auto rounded border border-border/60 bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+        <kbd className="haven-chrome-kbd-chip ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
           ⌘K
         </kbd>
       </button>
@@ -481,8 +479,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setPaletteOpen(true)}
               aria-label="Open search (⌘K)"
               className={cn(
-                "grid size-9 place-items-center rounded-md text-muted-foreground md:hidden",
-                "transition-colors hover:bg-secondary hover:text-foreground",
+                "haven-chrome-icon-well grid size-9 place-items-center md:hidden",
+                "transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
             />
@@ -500,8 +498,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent("grace:open"))}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors",
-        "hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "haven-chrome-icon-well inline-flex size-8 items-center justify-center rounded-[8px]",
+        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
       aria-label="Ask Grace"
       title="Ask Grace (⌘G)"
@@ -515,8 +513,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent("haven-insight:open"))}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors",
-        "hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "haven-chrome-icon-well inline-flex size-8 items-center justify-center rounded-[8px]",
+        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
       aria-label="Open Haven Insight"
       title="Haven Insight (⌘⇧I)"
@@ -549,11 +547,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const renderNotificationsButton = () => (
     <Tooltip>
-      <TooltipTrigger
+        <TooltipTrigger
         aria-label="Notifications"
         className={cn(
-          "relative grid size-9 place-items-center rounded-md text-muted-foreground",
-          "transition-colors hover:bg-secondary hover:text-foreground",
+          "haven-chrome-icon-well relative grid size-9 place-items-center rounded-md",
+          "transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
@@ -584,8 +582,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           aria-label={`Toggle theme (currently ${isDark ? "dark" : "light"})`}
           onClick={() => setTheme(nextTheme)}
           className={cn(
-            "grid size-9 place-items-center rounded-md text-muted-foreground",
-            "transition-colors hover:bg-secondary hover:text-foreground",
+            "haven-chrome-icon-well grid size-9 place-items-center rounded-md",
+            "transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >
@@ -601,8 +599,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <DropdownMenuTrigger
         aria-label="Account menu"
         className={cn(
-          "grid size-9 place-items-center rounded-md text-muted-foreground outline-none",
-          "transition-colors hover:bg-secondary hover:text-foreground",
+          "haven-chrome-icon-well grid size-9 place-items-center rounded-md outline-none",
+          "transition-colors",
           "focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
@@ -664,15 +662,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           "transition-colors duration-[var(--motion-duration-micro)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           active
-            ? "bg-secondary text-foreground font-medium before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-r-sm before:bg-accent"
-            : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            ? "haven-chrome-rail-active"
+            : "haven-chrome-rail-quiet",
         )}
       >
         <Icon
-          className={cn(
-            "size-4 shrink-0 transition-colors",
-            active ? "text-foreground" : "text-muted-foreground group-hover/item:text-foreground",
-          )}
+          className="size-4 shrink-0 opacity-95"
           aria-hidden
         />
         {/* No truncate — rail is 224px wide and every label is intentionally
@@ -704,7 +699,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Top bar (always visible) ────────────────────────────── */}
       <header
         className={cn(
-          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background",
+          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border haven-chrome-topnav",
           "px-3 lg:px-4",
         )}
       >
@@ -735,7 +730,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "lg:hidden sticky top-14 z-20 flex shrink-0 items-stretch gap-0.5 overflow-x-auto",
-          "border-b border-border/60 bg-card px-2",
+          "border-b border-border haven-chrome-topnav px-2",
           "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         )}
         aria-label="Primary"
@@ -757,8 +752,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 "transition-colors duration-[var(--motion-duration-micro)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 active
-                  ? "font-medium text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "font-medium haven-chrome-fg"
+                  : "haven-chrome-fg-muted haven-chrome-tab-idle",
               )}
             >
               <Icon className="size-3.5" aria-hidden />
@@ -766,7 +761,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {active && (
                 <span
                   aria-hidden
-                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent"
+                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
                 />
               )}
             </button>
@@ -778,10 +773,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SurveyVisitModeBar />
 
       {/* ── Layout row: contextual rail + main ─────────────────── */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden border-t border-border">
         {activePillar && (
           <aside
-            className="hidden lg:flex w-[224px] shrink-0 flex-col border-r border-border/60 bg-card"
+            className="hidden lg:flex w-[224px] shrink-0 flex-col border-r border-border haven-chrome-sidebar"
             aria-label={`${activePillar.label} navigation`}
           >
             {/* No section header — the active pillar tab in the top bar is
@@ -795,7 +790,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
         )}
 
-        <main className="flex-1 overflow-y-auto">
+        <main className={cn("flex-1 overflow-y-auto bg-background text-foreground", activePillar && "border-l border-border")}>
           {/* Full-bleed: pages that need a narrow column for long-form
               content (settings forms, etc.) apply max-w on an inner block,
               not on this wrapper. */}
@@ -807,7 +802,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sheet open={pillarSheetOpen} onOpenChange={setPillarSheetOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-[14px] border-t border-border bg-card p-0 max-h-[80dvh]"
+          className="rounded-t-[14px] border-t border-border haven-chrome-sidebar p-0 max-h-[80dvh]"
           showCloseButton
         >
           <SheetHeader className="px-4 pb-2 pt-4 text-left">

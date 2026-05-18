@@ -467,13 +467,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 onClick={() => toggleGroup(group.group)}
                 className={cn(
                   "group/header flex h-7 w-full items-center gap-2 rounded-md px-2",
-                  "text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
-                  "transition-colors hover:text-foreground",
+                  "text-[11px] font-medium uppercase tracking-wider haven-chrome-fg-muted haven-chrome-tab-idle",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
                 )}
                 aria-expanded={!collapsed}
               >
-                <GroupIcon className="size-3.5 opacity-70 transition-opacity group-hover/header:opacity-100" />
+                <GroupIcon className="size-3.5 haven-chrome-fg-muted opacity-70 transition-opacity group-hover/header:opacity-100" />
                 <span className="flex-1 text-left">{group.group}</span>
                 <ChevronDown
                   className={cn(
@@ -499,15 +498,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                             "group/item relative flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px]",
                             "transition-colors duration-[var(--motion-duration-micro)]",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            active
-                              ? "bg-secondary text-foreground font-medium before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-r-sm before:bg-primary"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                            active ? "haven-chrome-rail-active" : "haven-chrome-rail-quiet",
                           )}
                         >
                           <ItemIcon
                             className={cn(
                               "size-4 shrink-0 transition-colors",
-                              active ? "text-foreground" : "text-muted-foreground group-hover/item:text-foreground",
+                              active
+                                ? "haven-chrome-fg"
+                                : "haven-chrome-fg-muted group-hover/item:text-[hsl(var(--chrome-foreground))]",
                             )}
                           />
                           <span className="truncate">{item.label}</span>
@@ -528,20 +527,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <Link
       href={roleConfig.route}
       className={cn(
-        "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 px-4",
-        "text-foreground transition-opacity hover:opacity-90",
+        "flex h-14 shrink-0 items-center gap-2 border-b border-border px-4",
+        "haven-chrome-fg transition-opacity hover:opacity-90",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
       )}
       aria-label={`Haven — go to ${roleConfig.roleLabel.toLowerCase()} home`}
     >
       <span
         aria-hidden
-        className="grid size-7 place-items-center rounded-md bg-foreground text-background"
+        className="haven-chrome-brand-mark grid size-7 place-items-center rounded-md"
       >
         <span className="text-[13px] font-semibold leading-none">H</span>
       </span>
       <span className="text-[14px] font-semibold tracking-tight">Haven</span>
-      <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <span className="haven-chrome-fg-muted ml-auto rounded border border-[hsl(var(--chrome-foreground)/0.2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider">
         {roleConfig.roleLabel}
       </span>
     </Link>
@@ -561,19 +560,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 }`
         }
         className={cn(
-          "mx-2 my-2 flex h-9 items-center gap-2 rounded-md border border-border/60 bg-card px-2.5",
-          "text-[13px] font-medium text-foreground transition-colors",
-          "hover:bg-secondary",
+          "haven-chrome-control-well mx-2 my-2 flex min-h-9 items-center gap-2 rounded-md px-2.5",
+          "text-[13px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
-        <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <Building2 className="size-4 shrink-0 opacity-95" aria-hidden />
         {facilityControlLoading ? (
-          <Skeleton className="h-3.5 flex-1 rounded bg-muted" aria-label="Loading facilities" />
+          <Skeleton className="h-3.5 flex-1 rounded haven-chrome-skeleton-tonal" aria-label="Loading facilities" />
         ) : (
           <span className="flex-1 truncate text-left">{facilityTriggerLabel}</span>
         )}
-        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <ChevronDown className="size-3.5 shrink-0 opacity-95" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[244px] p-1">
         <DropdownMenuItem
@@ -615,28 +613,28 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   const renderSidebarFooter = () => (
-    <div className="shrink-0 border-t border-border/60 p-2">
+    <div className="shrink-0 border-t border-border p-2">
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
             "flex h-10 w-full items-center gap-2 rounded-md px-2 text-left",
-            "transition-colors hover:bg-secondary",
+            "transition-colors hover:bg-[hsl(var(--chrome-foreground)/0.08)]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
           aria-label="Account menu"
         >
-          <span className="grid size-7 place-items-center rounded-full bg-secondary text-foreground">
+          <span className="haven-chrome-primary-surface grid size-7 place-items-center rounded-full ring-1 ring-[hsl(var(--chrome-foreground)/0.15)]">
             <UserCircle2 className="size-4" />
           </span>
           <span className="flex flex-1 flex-col leading-tight min-w-0">
-            <span className="truncate text-[12px] font-medium text-foreground">
+            <span className="haven-chrome-fg truncate text-[12px] font-medium">
               {sessionEmail ?? "Signed in"}
             </span>
-            <span className="truncate text-[11px] text-muted-foreground">
+            <span className="haven-chrome-fg-muted truncate text-[11px]">
               {roleConfig.roleLabel}
             </span>
           </span>
-          <ChevronsRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          <ChevronsRight className="haven-chrome-fg-muted size-3.5 shrink-0" aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top" className="w-56 p-1">
           <DropdownMenuGroup>
@@ -676,7 +674,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border/60 bg-card",
+          "hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border haven-chrome-sidebar",
         )}
         aria-label="Sidebar"
       >
@@ -687,11 +685,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main column */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 lg:border-l lg:border-border">
         {/* Topbar */}
         <header
           className={cn(
-            "flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-3 lg:px-5",
+            "haven-chrome-topnav flex h-14 shrink-0 items-center gap-2 border-b border-border px-3 lg:px-5",
             "sticky top-0 z-30",
           )}
         >
@@ -699,8 +697,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <SheetTrigger
               className={cn(
-                "grid size-8 place-items-center rounded-md text-muted-foreground lg:hidden",
-                "transition-colors hover:bg-secondary hover:text-foreground",
+                "haven-chrome-icon-well grid size-8 place-items-center rounded-md lg:hidden",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
               aria-label="Open navigation"
@@ -709,7 +706,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[280px] border-r border-border bg-card p-0"
+              className="w-[280px] border-r border-border haven-chrome-sidebar p-0"
               showCloseButton={false}
             >
               <SheetHeader className="sr-only">
@@ -728,16 +725,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/admin/search"
             className={cn(
-              "ml-1 hidden md:flex h-8 max-w-[440px] flex-1 items-center gap-2 rounded-md border border-border/60 bg-card",
-              "px-2.5 text-[12px] text-muted-foreground transition-colors",
-              "hover:border-border hover:bg-secondary hover:text-foreground",
+              "haven-chrome-control-well ml-1 hidden md:flex h-8 max-w-[440px] flex-1 items-center gap-2 rounded-md",
+              "px-2.5 text-[12px] transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
             aria-label="Search"
           >
             <Search className="size-3.5 shrink-0" />
             <span className="truncate">Search residents, staff, incidents…</span>
-            <kbd className="ml-auto rounded border border-border/60 bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <kbd className="haven-chrome-kbd-chip ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
               ⌘K
             </kbd>
           </Link>
@@ -750,8 +746,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     href="/admin/search"
                     aria-label="Search"
                     className={cn(
-                      "grid size-8 place-items-center rounded-md text-muted-foreground md:hidden",
-                      "transition-colors hover:bg-secondary hover:text-foreground",
+                      "haven-chrome-icon-well grid size-8 place-items-center rounded-md md:hidden",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     )}
                   />
@@ -768,8 +763,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <TooltipTrigger
                 aria-label="Notifications"
                 className={cn(
-                  "relative grid size-8 place-items-center rounded-md text-muted-foreground",
-                  "transition-colors hover:bg-secondary hover:text-foreground",
+                  "haven-chrome-icon-well relative grid size-8 place-items-center rounded-md",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}
               >
@@ -782,8 +776,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "grid size-8 place-items-center rounded-md text-muted-foreground outline-none",
-                  "transition-colors hover:bg-secondary hover:text-foreground",
+                  "haven-chrome-icon-well grid size-8 place-items-center rounded-md outline-none",
                   "focus-visible:ring-2 focus-visible:ring-ring",
                 )}
                 aria-label="Toggle theme"

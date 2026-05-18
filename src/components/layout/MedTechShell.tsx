@@ -13,6 +13,10 @@ import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLaunch
 /**
  * MedTechShell — dedicated full-bleed shell for the Med-Tech Shift Cockpit.
  *
+ * Navigation chrome uses the global `--chrome-*` tokens wherever this shell
+ * adds fixed UI (e.g. loading); the cockpit UI itself remains full-bleed on
+ * `bg-background` (dark-locked).
+ *
  * Unlike CaregiverShell/AdminShell, this is a chromeless layout:
  * no sidebar, no top nav. The cockpit itself owns all chrome (ShiftBar,
  * ResidentRail, ShiftTape). This shell only handles:

@@ -49,6 +49,11 @@ const config: Config = {
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
+        "chrome-primary": "hsl(var(--chrome-primary) / <alpha-value>)",
+        "chrome-secondary": "hsl(var(--chrome-secondary) / <alpha-value>)",
+        "chrome-foreground": "hsl(var(--chrome-foreground) / <alpha-value>)",
+        "chrome-foreground-muted": "hsl(var(--chrome-foreground-muted) / <alpha-value>)",
+        "chrome-active": "hsl(var(--chrome-active) / <alpha-value>)",
         chart: {
           1: "hsl(var(--chart-1) / <alpha-value>)",
           2: "hsl(var(--chart-2) / <alpha-value>)",
@@ -86,6 +91,10 @@ const config: Config = {
         "brand-primary": tokens.color.brand.primary,
         "brand-primary-hover": tokens.color.brand.primaryHover,
         "brand-accent": tokens.color.brand.accent,
+      },
+      ringOffsetColor: {
+        "chrome-primary": "hsl(var(--chrome-primary))",
+        "chrome-secondary": "hsl(var(--chrome-secondary))",
       },
       borderRadius: {
         ...tokens.radius,

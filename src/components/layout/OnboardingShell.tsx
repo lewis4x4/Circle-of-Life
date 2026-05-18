@@ -71,29 +71,37 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-0 z-40 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+        <header className="haven-chrome-topnav border-b border-border">
+          <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted ring-1 ring-border">
+              <div className="haven-chrome-sidebar flex h-10 w-10 items-center justify-center rounded-lg ring-1 ring-[hsl(var(--chrome-foreground)/0.15)]">
                 <ShieldCheck className="h-5 w-5 text-primary" aria-hidden />
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                <p className="text-[11px] uppercase tracking-wider haven-chrome-fg-muted">
                   Haven Activation
                 </p>
-                <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                <h1 className="text-xl font-semibold tracking-tight haven-chrome-fg">
                   Onboarding Command Center
                 </h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">Shared access (temporary)</Badge>
+              <Badge
+                variant="outline"
+                className="haven-chrome-fg border-[hsl(var(--chrome-foreground)/0.25)]"
+              >
+                Shared access (temporary)
+              </Badge>
               <button
                 type="button"
                 disabled={exiting}
                 onClick={() => void handleExit()}
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "haven-chrome-fg border-[hsl(var(--chrome-foreground)/0.25)] bg-[hsl(var(--chrome-secondary)/0.9)] hover:bg-[hsl(var(--chrome-foreground)/0.1)]",
+                )}
                 aria-label="Sign out of onboarding"
               >
                 {exiting ? (
@@ -105,19 +113,23 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           </div>
+        </header>
 
-          <WizardSteps aria-label="Onboarding progress">
-            {WIZARD_STEPS.map((step) => (
-              <WizardStep
-                key={step.href}
-                label={step.label}
-                href={step.href}
-                state={deriveStepState(step.href, currentHref)}
-              />
-            ))}
-          </WizardSteps>
+        <div className="border-b border-border bg-background px-4 py-3 sm:px-6">
+          <div className="mx-auto max-w-7xl">
+            <WizardSteps aria-label="Onboarding progress">
+              {WIZARD_STEPS.map((step) => (
+                <WizardStep
+                  key={step.href}
+                  label={step.label}
+                  href={step.href}
+                  state={deriveStepState(step.href, currentHref)}
+                />
+              ))}
+            </WizardSteps>
+          </div>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">{children}</main>
     </div>

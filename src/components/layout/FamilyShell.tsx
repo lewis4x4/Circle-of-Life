@@ -118,7 +118,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             aria-label="Notifications"
-            className="tap-responsive relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-accent active:text-accent-foreground"
+            className="haven-chrome-floating-chip tap-responsive relative inline-flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Bell className="h-5 w-5" aria-hidden />
             <span
@@ -130,7 +130,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Family account menu"
-              className="tap-responsive inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-accent active:text-accent-foreground"
+              className="haven-chrome-floating-chip tap-responsive inline-flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <UserCircle2 className="h-5 w-5" aria-hidden />
             </DropdownMenuTrigger>
