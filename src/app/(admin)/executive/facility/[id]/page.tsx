@@ -208,7 +208,7 @@ export default function ExecutiveFacilityDetailPage() {
       {!loading && !error && assurance && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Resident Assurance</CardTitle>
+            <CardTitle className="text-lg">Smart rounding</CardTitle>
             <CardDescription>
               Watch load, escalation pressure, integrity review, and resident safety-score risk for this facility.
             </CardDescription>
@@ -242,7 +242,7 @@ export default function ExecutiveFacilityDetailPage() {
       {!loading && !error && assuranceTrend && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Resident Assurance Trend</CardTitle>
+            <CardTitle className="text-lg">Smart rounding trend</CardTitle>
             <CardDescription>
               Seven-day heat trend for watch starts, escalations, integrity flags, and critical safety score pressure.
             </CardDescription>

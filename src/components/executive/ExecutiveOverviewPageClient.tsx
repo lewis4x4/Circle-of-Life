@@ -309,7 +309,7 @@ function ExecutiveEmptyOnboarding({ facilityCount }: { facilityCount: number }) 
       cta: "Open snapshot settings",
     },
     {
-      title: "Generate the first resident assurance rollup",
+      title: "Generate the first Smart Rounding rollup",
       body: "Computes watch load, escalation pressure, and integrity flags per facility. Populates the heat map and 7-day trend chart.",
       href: "/admin/rounding",
       cta: "Open assurance hub",
@@ -703,11 +703,11 @@ function ExecutiveDashboardBody({
         </div>
       </div>
 
-      {/* Resident assurance heat map */}
+      {/* Smart rounding heat map */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-            <Activity className="size-4 text-destructive" /> Resident assurance heat map
+            <Activity className="size-4 text-destructive" /> Smart rounding heat map
           </h2>
           <Link
             href="/admin/rounding"
@@ -766,12 +766,12 @@ function ExecutiveDashboardBody({
         )}
       </section>
 
-      {/* Resident assurance trend */}
+      {/* Smart rounding trend */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-              <Activity className="size-4 text-info" /> Resident assurance trend (7d)
+              <Activity className="size-4 text-info" /> Smart rounding trend (7d)
             </h2>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
               Daily heat pressure by facility.

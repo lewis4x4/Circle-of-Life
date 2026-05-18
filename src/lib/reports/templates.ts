@@ -65,7 +65,7 @@ export const PHASE1_TEMPLATE_SEED: Phase1TemplateSeed[] = [
   },
   {
     slug: "resident-assurance-rounding-compliance",
-    name: "Resident Assurance / Rounding Compliance",
+    name: "Smart Rounding / Rounding Compliance",
     category: "Clinical",
     description: "Expected vs completed checks, late entries, and overdue tasks.",
     audience: "COO, Clinical Lead, Administrator",
@@ -74,7 +74,7 @@ export const PHASE1_TEMPLATE_SEED: Phase1TemplateSeed[] = [
   },
   {
     slug: "resident-assurance-heat-trend",
-    name: "Resident Assurance Heat Trend",
+    name: "Smart Rounding Heat Trend",
     category: "Executive",
     description: "7-day watch, escalation, integrity, and critical-safety pressure by facility.",
     audience: "CEO, COO, Regional Leader, Administrator",

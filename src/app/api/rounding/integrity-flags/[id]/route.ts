@@ -102,14 +102,14 @@ export async function PATCH(
         return NextResponse.json({ error: `Integrity flag is already ${flag.status}` }, { status: 409 });
       }
       patch.status = "resolved";
-      patch.disposition_note = note || "Resolved from the Resident Assurance integrity review queue.";
+      patch.disposition_note = note || "Resolved from the Smart Rounding integrity review queue.";
       break;
     case "dismiss":
       if (flag.status === "resolved" || flag.status === "dismissed") {
         return NextResponse.json({ error: `Integrity flag is already ${flag.status}` }, { status: 409 });
       }
       patch.status = "dismissed";
-      patch.disposition_note = note || "Dismissed from the Resident Assurance integrity review queue.";
+      patch.disposition_note = note || "Dismissed from the Smart Rounding integrity review queue.";
       break;
   }
 

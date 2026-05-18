@@ -5,21 +5,39 @@
  * Shows composite safety scores per resident with risk tier distribution.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Shield, TrendingDown, TrendingUp, Minus, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import {
+  AlertTriangle,
+  Building2,
+  Minus,
+  RefreshCw,
+  Shield,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+
+import { RoundingHubNav } from "../rounding-hub-nav";
+import { PageHeader } from "@/design-system/components/PageHeader";
+import { Button } from "@/components/ui/button";
 import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
+
+type RiskTier = "low" | "moderate" | "high" | "critical";
 
 interface ScoreRow {
   id: string;
   resident_id: string;
   facility_id: string;
   score: number;
-  risk_tier: "low" | "moderate" | "high" | "critical";
+  risk_tier: RiskTier;
   component_scores: Record<string, number>;
   previous_score: number | null;
   score_delta: number | null;
@@ -28,155 +46,378 @@ interface ScoreRow {
   facilities?: { name: string } | null;
 }
 
-const TH = "text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 px-3 py-2";
-const TD = "px-3 py-2.5 text-sm text-slate-200";
-const TR = "border-b border-white/5 hover:bg-white/[0.02] transition-colors";
+type LoadState = "idle" | "loading" | "ready" | "error";
+
+type BoardState = "no_facility" | "loading" | "error" | "empty" | "populated";
+
+type Tone = "default" | "warning" | "danger";
+
+/* -------------------------------------------------------------------------- */
+/*  Tier helpers — value-derived                                              */
+/* -------------------------------------------------------------------------- */
+
+function resolveTierTone(tier: RiskTier, count: number): Tone {
+  if (count === 0) return "default";
+  if (tier === "critical") return "danger";
+  if (tier === "high") return "warning";
+  return "default";
+}
+
+function deriveBoardState(args: {
+  loadState: LoadState;
+  hasFacility: boolean;
+  rowCount: number;
+}): BoardState {
+  if (!args.hasFacility) return "no_facility";
+  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
+  if (args.loadState === "error") return "error";
+  if (args.rowCount === 0) return "empty";
+  return "populated";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
 
 export default function SafetyScoresPage() {
-  const supabase = createClient() as unknown as SupabaseClient;
+  const { selectedFacilityId } = useFacilityStore();
+  const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const [rows, setRows] = useState<ScoreRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoadState("loading");
+    setErrorMessage(null);
+
+    if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
+      setRows([]);
+      setLoadState("ready");
+      return;
+    }
+
     try {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
 
-      // Get latest score per resident using distinct on
-      const { data, error: qErr } = await supabase
+      const { data, error } = await supabase
         .from("resident_safety_scores")
         .select("*, residents(first_name, last_name, room_number), facilities(name)")
         .eq("organization_id", ctx.ctx.organizationId)
+        .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("score", { ascending: true })
         .limit(200);
 
-      if (qErr) throw qErr;
+      if (error) throw error;
       setRows((data ?? []) as ScoreRow[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load safety scores");
-    } finally {
-      setLoading(false);
+      setLoadState("ready");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not load safety scores.",
+      );
+      setRows([]);
+      setLoadState("error");
     }
-  }, [supabase]);
+  }, [supabase, selectedFacilityId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  // Tier distribution
-  const dist = { low: 0, moderate: 0, high: 0, critical: 0 };
-  rows.forEach(r => { dist[r.risk_tier]++; });
+  const dist = useMemo(() => {
+    const acc: Record<RiskTier, number> = { low: 0, moderate: 0, high: 0, critical: 0 };
+    for (const row of rows) acc[row.risk_tier] += 1;
+    return acc;
+  }, [rows]);
+
+  const boardState = deriveBoardState({
+    loadState,
+    hasFacility: Boolean(selectedFacilityId),
+    rowCount: rows.length,
+  });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <></>
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <PageHeader
+        title="Resident safety scores"
+        subtitle="Composite safety scores updated daily — observation compliance, incident recency, medication adherence."
+        actions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => void load()}
+            aria-label="Refresh safety scores"
+            title="Refresh"
+            disabled={loadState === "loading"}
+          >
+            <RefreshCw
+              className={cn("size-4", loadState === "loading" && "animate-spin")}
+              aria-hidden
+            />
+          </Button>
+        }
+      />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <Link href="/admin/rounding" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Rounding Hub
-        </Link>
+      <RoundingHubNav />
 
-        <header className="flex items-center gap-3 border-b border-white/10 pb-6">
-          <div className="w-10 h-10 rounded-xl border border-rose-500/20 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-rose-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Resident Safety Scores</h1>
-            <p className="text-sm text-slate-400">Composite safety scores updated daily across all facilities</p>
-          </div>
-        </header>
-
-        {/* Tier Distribution */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {(["critical", "high", "moderate", "low"] as const).map(tier => {
-            const colors = {
-              critical: "border-rose-500/20 bg-rose-500/5",
-              high: "border-orange-500/20 bg-orange-500/5",
-              moderate: "border-amber-500/20 bg-amber-500/5",
-              low: "border-emerald-500/20 bg-emerald-500/5",
-            };
-            const textColors = { critical: "text-rose-400", high: "text-orange-400", moderate: "text-amber-400", low: "text-emerald-400" };
-            return (
-              <div key={tier} className={cn("rounded-2xl border p-5", colors[tier])}>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">{tier.toUpperCase()} RISK</p>
-                <p className={cn("text-3xl font-bold mt-1 font-mono", textColors[tier])}>{dist[tier]}</p>
-                <p className="text-xs text-slate-500 mt-1">residents</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Error */}
-        {error && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">{error}</p>}
-
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-teal-400 animate-spin" />
-          </div>
-        )}
-
-        {/* Table */}
-        {!loading && rows.length > 0 && (
-          <div className="rounded-2xl border border-white/5 bg-slate-900/50  p-6 shadow-lg">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    <th className={TH}>Resident</th>
-                    <th className={TH}>Facility</th>
-                    <th className={TH}>Room</th>
-                    <th className={TH}>Score</th>
-                    <th className={TH}>Trend</th>
-                    <th className={TH}>Obs Compliance</th>
-                    <th className={TH}>Incidents</th>
-                    <th className={TH}>Med Adherence</th>
-                    <th className={TH}>Last Computed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(r => {
-                    const name = r.residents ? `${r.residents.last_name}, ${r.residents.first_name}` : r.resident_id.slice(0, 8);
-                    const cs = r.component_scores as Record<string, number>;
-                    return (
-                      <tr key={r.id} className={TR}>
-                        <td className={cn(TD, "font-medium")}>{name}</td>
-                        <td className={cn(TD, "text-xs text-slate-400")}>{r.facilities?.name ?? "—"}</td>
-                        <td className={cn(TD, "font-mono text-xs")}>{r.residents?.room_number ?? "—"}</td>
-                        <td className={TD}><SafetyScoreBadge score={r.score} tier={r.risk_tier} size="sm" /></td>
-                        <td className={TD}>
-                          {r.score_delta != null ? (
-                            <span className={cn("inline-flex items-center gap-1 text-xs font-mono",
-                              r.score_delta > 0 ? "text-emerald-400" : r.score_delta < 0 ? "text-rose-400" : "text-slate-400"
-                            )}>
-                              {r.score_delta > 0 ? <TrendingUp className="w-3 h-3" /> : r.score_delta < 0 ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-                              {r.score_delta > 0 ? "+" : ""}{r.score_delta}
-                            </span>
-                          ) : <span className="text-xs text-slate-500">—</span>}
-                        </td>
-                        <td className={cn(TD, "font-mono text-xs")}>{cs.observation_compliance?.toFixed(0) ?? "—"}%</td>
-                        <td className={cn(TD, "font-mono text-xs")}>{cs.incident_recency?.toFixed(0) ?? "—"}</td>
-                        <td className={cn(TD, "font-mono text-xs")}>{cs.medication_adherence?.toFixed(0) ?? "—"}%</td>
-                        <td className={cn(TD, "text-xs text-slate-500")}>{new Date(r.computed_at).toLocaleDateString()}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+      {boardState === "no_facility" ? (
+        <AllFacilitiesInterstitial />
+      ) : boardState === "error" ? (
+        <LoadErrorNotice
+          message={errorMessage ?? "Could not load safety scores."}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <>
+          {/* Tier distribution */}
+          <section aria-label="Risk tier distribution">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <TierCard
+                label="Critical risk"
+                value={dist.critical}
+                tone={resolveTierTone("critical", dist.critical)}
+                hint="Immediate safety review required"
+              />
+              <TierCard
+                label="High risk"
+                value={dist.high}
+                tone={resolveTierTone("high", dist.high)}
+                hint="Watch protocols and frequent rounds"
+              />
+              <TierCard
+                label="Moderate risk"
+                value={dist.moderate}
+                tone="default"
+                hint="Standard observation cadence"
+              />
+              <TierCard
+                label="Low risk"
+                value={dist.low}
+                tone="default"
+                hint="Routine monitoring"
+              />
             </div>
-          </div>
-        )}
+          </section>
 
-        {/* Empty state */}
-        {!loading && rows.length === 0 && !error && (
-          <div className="text-center py-16 text-slate-500">
-            <Shield className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="text-sm">No safety scores computed yet. Scores are generated daily by the resident-safety-scorer cron job.</p>
-          </div>
-        )}
-      </div>
+          {boardState === "empty" ? (
+            <NoScoresEmptyState />
+          ) : (
+            <section
+              aria-label="Resident safety score table"
+              className="overflow-hidden rounded-lg border border-border bg-card"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2.5">Resident</th>
+                      <th className="px-3 py-2.5">Facility</th>
+                      <th className="px-3 py-2.5">Room</th>
+                      <th className="px-3 py-2.5">Score</th>
+                      <th className="px-3 py-2.5">Trend</th>
+                      <th className="px-3 py-2.5">Obs compliance</th>
+                      <th className="px-3 py-2.5">Incidents</th>
+                      <th className="px-3 py-2.5">Med adherence</th>
+                      <th className="px-3 py-2.5">Last computed</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {rows.map((row) => {
+                      const name = row.residents
+                        ? `${row.residents.last_name}, ${row.residents.first_name}`
+                        : row.resident_id.slice(0, 8);
+                      const cs = row.component_scores as Record<string, number>;
+                      const delta = row.score_delta;
+
+                      return (
+                        <tr key={row.id} className="transition-colors hover:bg-muted/40">
+                          <td className="px-3 py-2.5 font-medium text-foreground">{name}</td>
+                          <td className="px-3 py-2.5 text-[13px] text-muted-foreground">
+                            {row.facilities?.name ?? "—"}
+                          </td>
+                          <td className="px-3 py-2.5 tabular-nums text-[13px] text-muted-foreground">
+                            {row.residents?.room_number ?? "—"}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <SafetyScoreBadge
+                              score={row.score}
+                              tier={row.risk_tier}
+                              size="sm"
+                            />
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {delta != null ? (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1 text-[12px] tabular-nums",
+                                  delta > 0 && "text-success",
+                                  delta < 0 && "text-danger",
+                                  delta === 0 && "text-muted-foreground",
+                                )}
+                              >
+                                {delta > 0 ? (
+                                  <TrendingUp className="size-3" aria-hidden />
+                                ) : delta < 0 ? (
+                                  <TrendingDown className="size-3" aria-hidden />
+                                ) : (
+                                  <Minus className="size-3" aria-hidden />
+                                )}
+                                {delta > 0 ? "+" : ""}
+                                {delta}
+                              </span>
+                            ) : (
+                              <span className="text-[12px] text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 tabular-nums text-[13px] text-foreground">
+                            {cs.observation_compliance != null
+                              ? `${cs.observation_compliance.toFixed(0)}%`
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2.5 tabular-nums text-[13px] text-foreground">
+                            {cs.incident_recency != null
+                              ? cs.incident_recency.toFixed(0)
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2.5 tabular-nums text-[13px] text-foreground">
+                            {cs.medication_adherence != null
+                              ? `${cs.medication_adherence.toFixed(0)}%`
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2.5 text-[12px] text-muted-foreground">
+                            {new Date(row.computed_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </>
+      )}
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Tier card                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function TierCard({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: Tone;
+  hint: string;
+}) {
+  return (
+    <article
+      aria-label={`${label}: ${value}`}
+      className={cn(
+        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
+        tone === "danger" && "border-danger/40",
+        tone === "warning" && "border-warning/40",
+        tone === "default" && "border-border",
+      )}
+    >
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "text-2xl font-semibold tabular-nums tracking-tight",
+          tone === "danger" && "text-danger",
+          tone === "warning" && "text-warning",
+          tone === "default" && "text-foreground",
+        )}
+      >
+        {value}
+      </span>
+      <span className="text-[11px] text-muted-foreground">
+        {value === 1 ? `1 resident · ${hint}` : `${value} residents · ${hint}`}
+      </span>
+    </article>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Notices + empty states                                                    */
+/* -------------------------------------------------------------------------- */
+
+function AllFacilitiesInterstitial() {
+  return (
+    <section
+      aria-label="Facility scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <div className="flex items-start gap-3">
+        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Safety scores operate per facility
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            Composite safety scores are facility-scoped. Select a facility from the top bar to
+            continue.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-destructive"
+          aria-hidden
+        />
+        <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="h-8 shrink-0 text-[12px]"
+      >
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+function NoScoresEmptyState() {
+  return (
+    <section
+      aria-label="No safety scores computed"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <Shield className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        No safety scores computed yet
+      </p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Scores are generated daily by the resident-safety-scorer job. Check back after the next
+        scheduled run.
+      </p>
+    </section>
   );
 }

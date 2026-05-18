@@ -39,6 +39,9 @@ export async function PATCH(
   if (note.length > 2000) {
     return NextResponse.json({ error: "note must be 2000 characters or fewer" }, { status: 400 });
   }
+  if (action === "resolve" && note.length < 30) {
+    return NextResponse.json({ error: "Resolution rationale must be at least 30 characters" }, { status: 400 });
+  }
 
   const escalationId = (await params).id;
   const { data: escalation, error: escalationError } = await context.admin
@@ -84,7 +87,8 @@ export async function PATCH(
         patch.acknowledged_at = now;
       }
       patch.resolved_at = now;
-      patch.resolution_note = note || "Resolved from the Resident Assurance escalation queue.";
+      patch.resolution_note = note;
+      patch.resolution_rationale = note;
       break;
     case "dismiss":
       if (escalation.status === "resolved" || escalation.status === "dismissed") {
@@ -95,7 +99,7 @@ export async function PATCH(
         patch.acknowledged_at = now;
       }
       patch.resolved_at = now;
-      patch.resolution_note = note || "Dismissed from the Resident Assurance escalation queue.";
+      patch.resolution_note = note || "Dismissed from the Smart rounding escalation queue.";
       break;
   }
 

@@ -100,7 +100,7 @@ export function KPITile({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-caps text-text-muted">
+        <span className="text-sm font-medium text-text-muted">
           {label}
         </span>
         {info && (

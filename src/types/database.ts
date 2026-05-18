@@ -11433,7 +11433,7 @@ export type Database = {
           facility_id: string
           id: string
           organization_id: string
-          rationale: string | null
+          rationale: string
           resident_id: string
           source_type: Database["public"]["Enums"]["resident_observation_source_type"]
           status: Database["public"]["Enums"]["resident_observation_plan_status"]
@@ -11451,7 +11451,7 @@ export type Database = {
           facility_id: string
           id?: string
           organization_id: string
-          rationale?: string | null
+          rationale: string
           resident_id: string
           source_type?: Database["public"]["Enums"]["resident_observation_source_type"]
           status?: Database["public"]["Enums"]["resident_observation_plan_status"]
@@ -11469,7 +11469,7 @@ export type Database = {
           facility_id?: string
           id?: string
           organization_id?: string
-          rationale?: string | null
+          rationale?: string
           resident_id?: string
           source_type?: Database["public"]["Enums"]["resident_observation_source_type"]
           status?: Database["public"]["Enums"]["resident_observation_plan_status"]
