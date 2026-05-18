@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   let query = untypedAdmin
     .from("rate_schedule_versions")
     .select(
-      "id, facility_id, rate_type, amount_cents, effective_from, effective_to, rate_confirmed, approved_by, approved_at, notes, created_at",
+      "id, facility_id, rate_type, amount_cents, effective_from, effective_to, rate_confirmed, approved_by, approved_at, notes, created_at, updated_at, created_by",
     )
     .eq("facility_id", facilityId)
     .is("deleted_at", null)

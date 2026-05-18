@@ -5,9 +5,9 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
+import { useFacilityRates } from "@/hooks/useFacilityRates";
 import { Badge } from "@/components/ui/badge";
-import { FacilityHeader } from "@/components/admin/facilities/FacilityHeader";
-import { FacilityComplianceMetricsStrip } from "@/components/admin/facilities/FacilityComplianceMetricsStrip";
+import { FacilityTabMetricsStrip } from "@/components/admin/facilities/FacilityTabMetricsStrip";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
 import { OverviewTab } from "@/components/admin/facilities/tabs/OverviewTab";
 import { RatesTab } from "@/components/admin/facilities/tabs/RatesTab";
@@ -39,6 +39,7 @@ function isFacilityTab(t: string | null): t is FacilityTab {
 
 function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   const { facility, isLoading, error } = useFacility(facilityId);
+  const ratesApi = useFacilityRates(facilityId);
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -82,7 +83,18 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
       case "licensing":
         return <LicensingTab facilityId={facilityId} />;
       case "rates":
-        return <RatesTab facilityId={facilityId} />;
+        return (
+          <RatesTab
+            facility={facility}
+            rates={ratesApi.rates}
+            isLoading={ratesApi.isLoading}
+            error={ratesApi.error}
+            isCreating={ratesApi.isCreating}
+            isConfirming={ratesApi.isConfirming}
+            createRate={ratesApi.createRate}
+            confirmRate={ratesApi.confirmRate}
+          />
+        );
       case "building":
         return <BuildingTab facilityId={facilityId} />;
       case "emergency":
@@ -119,19 +131,14 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
         title={facility.name}
         subtitle={formatFacilityDetailSubtitle({
           city: facility.city,
-          county: facility.county,
+          state: facility.state,
           licenseNumber: facility.ahca_license_number ?? facility.license_number ?? null,
-          facilityOperationalStatus: facility.status ?? "active",
         })}
         backLink={{ label: "Facilities", href: "/admin/facilities" }}
         statusChips={statusChip}
       />
 
-      {activeTab === "licensing" ? (
-        <FacilityComplianceMetricsStrip facility={facility} />
-      ) : (
-        <FacilityHeader facility={facility} />
-      )}
+      <FacilityTabMetricsStrip tab={activeTab} facility={facility} rates={ratesApi.rates} />
 
       <div className="border-b border-border overflow-x-auto">
         <FacilityTabNav activeTab={activeTab} onTabChange={onTabChange} tabs={TABS} />

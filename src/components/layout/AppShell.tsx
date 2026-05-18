@@ -467,7 +467,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Open search (⌘K)"
       >
         <Search className="size-3.5 shrink-0" aria-hidden />
-        <span className="truncate">Search residents, staff, incidents…</span>
+        <span className="truncate">Search residents, staff…</span>
         <kbd className={cn(WORKSPACE_KBD, "ml-auto")}>
           ⌘K
         </kbd>

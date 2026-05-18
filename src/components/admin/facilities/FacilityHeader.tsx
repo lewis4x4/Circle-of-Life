@@ -3,18 +3,11 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import type { FacilityRow } from "@/types/facility";
+import { SurveyRecencyKpiTile } from "@/components/admin/facilities/SurveyRecencyKpiTile";
 import {
   portfolioLaborCostTextClass,
   portfolioOccupancyKpiTextClass,
 } from "@/lib/admin/facilities/portfolio-metrics";
-
-function daysSinceLastSurvey(date: string | null | undefined): number | null {
-  if (date == null || typeof date !== "string" || date.trim() === "") return null;
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return null;
-  const diffMs = Date.now() - d.getTime();
-  return Math.max(0, Math.floor(diffMs / 86_400_000));
-}
 
 interface FacilityOperationsMetricsStripProps {
   facility: FacilityRow;
@@ -26,7 +19,6 @@ export function FacilityOperationsMetricsStrip({ facility }: FacilityOperationsM
   const level3 = facility.portfolio_open_incidents_level_3 ?? 0;
   const readiness = facility.survey_readiness_pct;
   const laborPct = facility.labor_cost_mtd_pct;
-  const days = daysSinceLastSurvey(facility.last_survey_date);
 
   const laborOk = typeof laborPct === "number" && Number.isFinite(laborPct);
   const readinessOk = typeof readiness === "number" && Number.isFinite(readiness);
@@ -66,12 +58,7 @@ export function FacilityOperationsMetricsStrip({ facility }: FacilityOperationsM
         </p>
       </div>
 
-      <div className="rounded-[8px] border border-border bg-muted/10 p-5">
-        <p className="text-[13px] text-muted-foreground">Days since survey</p>
-        <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
-          {typeof days === "number" ? days : "—"}
-        </p>
-      </div>
+      <SurveyRecencyKpiTile lastSurveyDate={facility.last_survey_date} />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { RATE_TYPE_LABELS } from "@/lib/admin/facilities/facility-constants";
 
-interface RateEntry {
+export interface RateEntry {
   id: string;
   facility_id: string;
   rate_type: string;
@@ -14,6 +14,8 @@ interface RateEntry {
   effective_to: string | null;
   rate_confirmed: boolean;
   created_at: string;
+  updated_at?: string;
+  created_by?: string | null;
   approved_by?: string | null;
 }
 
@@ -61,6 +63,7 @@ export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
           ...rate,
           effective_to: rate.effective_to ?? null,
           rate_confirmed: Boolean(rate.rate_confirmed),
+          updated_at: typeof rate.updated_at === "string" ? rate.updated_at : rate.created_at,
           rate_type_label:
             RATE_TYPE_LABELS[rate.rate_type as keyof typeof RATE_TYPE_LABELS] ?? rate.rate_type,
           amount_usd: rate.amount_cents / 100,

@@ -188,8 +188,8 @@ export function SurveyVisitModeBar() {
 
   return (
     <div
-      className={`border-b px-4 py-3 dark:border-slate-800 ${
-        active ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30" : "border-slate-200 bg-white dark:bg-slate-950"
+      className={`border-b px-4 ${active ? "py-3" : "py-1.5"} dark:border-slate-800 ${
+        active ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30" : "border-slate-200/80 bg-transparent dark:border-slate-800 dark:bg-transparent"
       }`}
     >
       <div className="mx-auto flex max-w-6xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -200,7 +200,7 @@ export function SurveyVisitModeBar() {
           />
           <div className="min-w-0">
             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Survey visit mode</p>
-            <p className="truncate text-xs text-slate-600 dark:text-slate-400">
+            <p className="hidden text-xs text-slate-600 sm:block dark:text-slate-400">
               {active
                 ? "Session active — log each record pull for the survey trail."
                 : "Activate when a surveyor is on site (one active session per facility)."}

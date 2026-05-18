@@ -12,37 +12,23 @@ function titleCaseGeo(s: string): string {
     .join(" ");
 }
 
-function operationalStatusLabel(status: string): string {
-  switch (status) {
-    case "inactive":
-      return "Inactive";
-    case "under_renovation":
-      return "Under renovation";
-    case "archived":
-      return "Archived";
-    case "active":
-    default:
-      return "Active";
-  }
-}
-
-/** e.g. Facility · Mayo, Lafayette · License 12528 · Active */
+/** e.g. Facility · Mayo, FL · License 12528 (operational status is the header pill only). */
 export function formatFacilityDetailSubtitle(parts: {
   city?: string | null;
-  county?: string | null;
+  /** Two-letter state code, e.g. FL */
+  state?: string | null;
   licenseNumber?: string | null;
-  facilityOperationalStatus?: string | null;
 }): string {
   const cityRaw = typeof parts.city === "string" ? parts.city.trim() : "";
-  const countyRaw = typeof parts.county === "string" ? parts.county.trim() : "";
+  const stateRaw = typeof parts.state === "string" ? parts.state.trim().toUpperCase() : "";
 
   let loc = "";
-  if (cityRaw && countyRaw) {
-    loc = `${titleCaseGeo(cityRaw)}, ${titleCaseGeo(countyRaw)}`;
+  if (cityRaw && stateRaw) {
+    loc = `${titleCaseGeo(cityRaw)}, ${stateRaw}`;
   } else if (cityRaw) {
     loc = titleCaseGeo(cityRaw);
-  } else if (countyRaw) {
-    loc = titleCaseGeo(countyRaw);
+  } else if (stateRaw) {
+    loc = stateRaw;
   }
 
   const prefix = loc ? `Facility · ${loc}` : "Facility";
@@ -50,7 +36,5 @@ export function formatFacilityDetailSubtitle(parts: {
   const licRaw = typeof parts.licenseNumber === "string" ? parts.licenseNumber.trim() : "";
   const licSeg = licRaw ? ` · License ${licRaw}` : "";
 
-  const st = operationalStatusLabel((parts.facilityOperationalStatus ?? "active").trim() || "active");
-
-  return `${prefix}${licSeg} · ${st}`;
+  return `${prefix}${licSeg}`;
 }

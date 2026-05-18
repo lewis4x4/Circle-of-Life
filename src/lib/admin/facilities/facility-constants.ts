@@ -304,6 +304,9 @@ export const FACILITY_TAB_LABELS: Record<FacilityTab, string> = {
   timeline: 'Timeline',
 };
 
+/** First six tabs stay in the strip; remainder use the “More” menu (no truncated labels). */
+export const FACILITY_PRIMARY_TAB_COUNT = 6;
+
 // ─── Compliance Contacts (FL hardcoded) ──────────────────────────────────────
 
 export const FL_COMPLIANCE_CONTACTS = {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { FacilityDetailRow } from "@/types/facility";
 import { StatusPill } from "@/components/ui/status-pill";
+import { SurveyRecencyKpiTile } from "@/components/admin/facilities/SurveyRecencyKpiTile";
 import {
   deriveLicenseStanding,
   licenseStandingLabel,
@@ -13,17 +14,6 @@ import {
   daysBetweenTodayAndRenewal,
   ahcaExpiryYmd,
 } from "@/lib/admin/facilities/license-record-metrics";
-
-function daysSinceLastSurvey(date: string | null | undefined): number | null {
-  if (date == null || typeof date !== "string" || date.trim() === "") return null;
-  try {
-    const diffMs = Date.now() - new Date(`${date}T12:00:00.000Z`).getTime();
-    if (Number.isNaN(diffMs)) return null;
-    return Math.max(0, Math.floor(diffMs / 86_400_000));
-  } catch {
-    return null;
-  }
-}
 
 interface FacilityComplianceMetricsStripProps {
   facility: FacilityDetailRow;
@@ -44,8 +34,6 @@ export function FacilityComplianceMetricsStrip({ facility }: FacilityComplianceM
     Number.isFinite(facility.open_survey_deficiencies_count)
       ? Math.max(0, Math.round(facility.open_survey_deficiencies_count))
       : 0;
-
-  const sinceSurvey = daysSinceLastSurvey(facility.last_survey_date ?? null);
 
   const renewalLead =
     daysRenew === null
@@ -85,12 +73,7 @@ export function FacilityComplianceMetricsStrip({ facility }: FacilityComplianceM
         </p>
       </div>
 
-      <div className="rounded-[8px] border border-border bg-muted/10 p-5">
-        <p className="text-[13px] text-muted-foreground">Days since last survey</p>
-        <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
-          {typeof sinceSurvey === "number" ? sinceSurvey : "—"}
-        </p>
-      </div>
+      <SurveyRecencyKpiTile lastSurveyDate={facility.last_survey_date ?? null} />
     </div>
   );
 }
