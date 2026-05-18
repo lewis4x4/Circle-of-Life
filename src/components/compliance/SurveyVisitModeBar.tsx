@@ -212,7 +212,13 @@ export function SurveyVisitModeBar() {
           {canManage && (
             <>
               {!active ? (
-                <Button type="button" size="sm" variant="default" disabled={busy} onClick={() => void activateSession()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="neutralCta"
+                  disabled={busy}
+                  onClick={() => void activateSession()}
+                >
                   <Power className="mr-1.5 h-4 w-4" />
                   Activate
                 </Button>

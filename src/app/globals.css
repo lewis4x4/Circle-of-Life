@@ -616,6 +616,7 @@
   .haven-chrome-rail-active::before {
     content: "";
     position: absolute;
+    z-index: 1;
     left: 0;
     top: 0.28rem;
     bottom: 0.28rem;
@@ -639,6 +640,7 @@
   .haven-chrome-narrow-rail-active::before {
     content: "";
     position: absolute;
+    z-index: 1;
     left: 0;
     top: 0.4rem;
     bottom: 0.4rem;

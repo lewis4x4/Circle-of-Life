@@ -2,6 +2,15 @@
 
 Captures operator chrome vs warm/dark canvas after the semantic `--chrome-*` rollout.
 
+## Chrome map (Quiet Operator · Mercury-aligned)
+
+| Region | Tokens / classes | Note |
+|--------|-----------------|------|
+| **Persisted sidebar** (AppShell pillar rail · Admin sidebar) | `haven-chrome-sidebar`, `haven-chrome-rail-*` | Dark charcoal; active row uses **2px** `::before` with `background-color: hsl(var(--primary))`. |
+| **Workspace strip** (AppShell desktop header · mobile pillar chip row · Admin main-column top bar only) | `bg-background`, `WORKSPACE_*` wells / icons in layout code | Aligns with **canvas** (“Mercury”: dark nav rail + workspace strip on paper — intentional, not a fallback). |
+
+Survey Visit banner primary action uses `Button variant="neutralCta"` (`--chrome-*` fill) so CTAs avoid saturated `primary` where that would read like a semantic clinical accent (see constitution color semantics).
+
 ## After (recommended)
 
 With a running app (`npm run dev` or `next start`), from the repo root:

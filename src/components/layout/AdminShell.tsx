@@ -89,6 +89,14 @@ import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLaunch
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { cn } from "@/lib/utils";
 
+/** Workspace strip inside main column (`--background`); persisted sidebar uses `haven-chrome-*`. Mercury pattern. */
+const WORKSPACE_WELL =
+  "border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground";
+const WORKSPACE_KBD =
+  "rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground";
+const WORKSPACE_ICON =
+  "grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 type AdminNavItem = {
   key: string;
   href: string;
@@ -560,18 +568,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 }`
         }
         className={cn(
-          "haven-chrome-control-well mx-2 my-2 flex min-h-9 items-center gap-2 rounded-md px-2.5",
+          WORKSPACE_WELL,
+          "mx-2 my-2 flex min-h-9 items-center gap-2 rounded-md px-2.5",
           "text-[13px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
-        <Building2 className="size-4 shrink-0 opacity-95" aria-hidden />
+        <Building2 className="size-4 shrink-0 opacity-90" aria-hidden />
         {facilityControlLoading ? (
-          <Skeleton className="h-3.5 flex-1 rounded haven-chrome-skeleton-tonal" aria-label="Loading facilities" />
+          <Skeleton className="h-3.5 flex-1 rounded bg-muted" aria-label="Loading facilities" />
         ) : (
           <span className="flex-1 truncate text-left">{facilityTriggerLabel}</span>
         )}
-        <ChevronDown className="size-3.5 shrink-0 opacity-95" aria-hidden />
+        <ChevronDown className="size-3.5 shrink-0 opacity-90" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[244px] p-1">
         <DropdownMenuItem
@@ -689,7 +698,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {/* Topbar */}
         <header
           className={cn(
-            "haven-chrome-topnav flex h-14 shrink-0 items-center gap-2 border-b border-border px-3 lg:px-5",
+            "bg-background text-foreground flex h-14 shrink-0 items-center gap-2 border-b border-border px-3 lg:px-5",
             "sticky top-0 z-30",
           )}
         >
@@ -697,8 +706,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
             <SheetTrigger
               className={cn(
-                "haven-chrome-icon-well grid size-8 place-items-center rounded-md lg:hidden",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                WORKSPACE_ICON,
+                "lg:hidden",
               )}
               aria-label="Open navigation"
             >
@@ -725,7 +734,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/admin/search"
             className={cn(
-              "haven-chrome-control-well ml-1 hidden md:flex h-8 max-w-[440px] flex-1 items-center gap-2 rounded-md",
+              WORKSPACE_WELL,
+              "ml-1 hidden md:flex h-8 max-w-[440px] flex-1 items-center gap-2 rounded-md",
               "px-2.5 text-[12px] transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
@@ -733,7 +743,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           >
             <Search className="size-3.5 shrink-0" />
             <span className="truncate">Search residents, staff, incidents…</span>
-            <kbd className="haven-chrome-kbd-chip ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
+            <kbd className={cn(WORKSPACE_KBD, "ml-auto")}>
               ⌘K
             </kbd>
           </Link>
@@ -746,8 +756,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     href="/admin/search"
                     aria-label="Search"
                     className={cn(
-                      "haven-chrome-icon-well grid size-8 place-items-center rounded-md md:hidden",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      WORKSPACE_ICON,
+                      "md:hidden",
                     )}
                   />
                 }
@@ -763,8 +773,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <TooltipTrigger
                 aria-label="Notifications"
                 className={cn(
-                  "haven-chrome-icon-well relative grid size-8 place-items-center rounded-md",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  WORKSPACE_ICON,
+                  "relative",
                 )}
               >
                 <Bell className="size-4" aria-hidden />
@@ -776,8 +786,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "haven-chrome-icon-well grid size-8 place-items-center rounded-md outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-ring",
+                  WORKSPACE_ICON,
+                  "outline-none",
                 )}
                 aria-label="Toggle theme"
               >

@@ -4,16 +4,14 @@
  * AppShell — Mercury-pattern two-level admin navigation primitive.
  *
  *   ┌──────────────────────────────────────────────────────────────┐
- *   │ logo · facility scope · Command Pipeline Clinical Quality    │  ← top bar
- *   │                              Workforce Knowledge       ⌘K …  │
+ *   │ Workspace strip (canvas-aligned): pillars · ⌘K · tools        │
  *   ├──────────┬───────────────────────────────────────────────────┤
- *   │ active   │                                                   │
- *   │ pillar   │   page content                                    │  ← contextual rail (left)
- *   │ items    │                                                   │      shows only the active
- *   │ (≤ 9)    │                                                   │      pillar's items, no
- *   │          │                                                   │      group headers, no
- *   │          │                                                   │      collapse toggles.
+ *   │ Sidebar  │                                                   │
+ *   │ chrome   │   scrollable workspace — canvas (--background)     │
+ *   │ (dark)   │                                                   │
  *   └──────────┴───────────────────────────────────────────────────┘
+ *
+ * Contextual sidebar lists only routes for the active pillar (≤9 items).
  *
  * Single primitive consumed by `src/app/(admin)/admin/layout.tsx`. Pillar
  * data lives in `@/lib/navigation/pillars` so the chrome stays presentational.
@@ -91,6 +89,16 @@ import {
   type PillarItem,
 } from "@/lib/navigation/pillars";
 import { cn } from "@/lib/utils";
+
+/** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
+const WORKSPACE_WELL =
+  "border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground";
+const WORKSPACE_KBD =
+  "rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground";
+const WORKSPACE_ICON_LG =
+  "grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const WORKSPACE_ICON_SM =
+  "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -360,7 +368,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           // second line (constitution rule 8: never ellipsize). Vertical
           // padding keeps the wrapped state tidy without changing baseline
           // height for short names.
-          "haven-chrome-control-well hidden md:flex min-h-9 items-center gap-2 rounded-md px-2.5 py-1",
+          WORKSPACE_WELL,
+          "hidden md:flex min-h-9 items-center gap-2 rounded-md px-2.5 py-1",
           "text-[12px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           "max-w-[220px]",
@@ -368,7 +377,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <Building2 className="size-3.5 shrink-0 opacity-90" aria-hidden />
         {facilityControlLoading ? (
-          <Skeleton className="h-3 w-24 rounded haven-chrome-skeleton-tonal" aria-label="Loading facilities" />
+          <Skeleton className="h-3 w-24 rounded bg-muted" aria-label="Loading facilities" />
         ) : (
           <span className="text-left leading-tight break-words">{facilityTriggerLabel}</span>
         )}
@@ -425,14 +434,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className={cn(
           // 36px hit target, generous horizontal padding so the 2px accent
           // underline reads as a strong active signal without crowding.
-          // Active state: text-chrome-foreground + font-medium + primary underline.
-          // Inactive: text-chrome-foreground-muted with hover lift to foreground.
+          // Active: foreground + medium + primary underline. Inactive: muted hover lift.
           "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
           "transition-colors duration-[var(--motion-duration-micro)]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           active
-            ? "font-medium haven-chrome-fg"
-            : "haven-chrome-fg-muted haven-chrome-tab-idle",
+            ? "font-medium text-foreground"
+            : "text-muted-foreground hover:text-foreground",
         )}
       >
         {/* No truncate — constitution rule 8 forbids ellipsis. Pillar labels
@@ -458,7 +466,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         type="button"
         onClick={() => setPaletteOpen(true)}
         className={cn(
-          "haven-chrome-control-well hidden md:flex h-9 max-w-[280px] flex-1 items-center gap-2 rounded-md",
+          WORKSPACE_WELL,
+          "hidden md:flex h-9 max-w-[280px] flex-1 items-center gap-2 rounded-md",
           "px-2.5 text-[12px] transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
@@ -466,7 +475,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <Search className="size-3.5 shrink-0" aria-hidden />
         <span className="truncate">Search residents, staff, incidents…</span>
-        <kbd className="haven-chrome-kbd-chip ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium">
+        <kbd className={cn(WORKSPACE_KBD, "ml-auto")}>
           ⌘K
         </kbd>
       </button>
@@ -479,7 +488,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setPaletteOpen(true)}
               aria-label="Open search (⌘K)"
               className={cn(
-                "haven-chrome-icon-well grid size-9 place-items-center md:hidden",
+                WORKSPACE_ICON_LG,
+                "md:hidden",
                 "transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
@@ -498,7 +508,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent("grace:open"))}
       className={cn(
-        "haven-chrome-icon-well inline-flex size-8 items-center justify-center rounded-[8px]",
+        WORKSPACE_ICON_SM,
         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
       aria-label="Ask Grace"
@@ -513,7 +523,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent("haven-insight:open"))}
       className={cn(
-        "haven-chrome-icon-well inline-flex size-8 items-center justify-center rounded-[8px]",
+        WORKSPACE_ICON_SM,
         "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
       aria-label="Open Haven Insight"
@@ -550,7 +560,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TooltipTrigger
         aria-label="Notifications"
         className={cn(
-          "haven-chrome-icon-well relative grid size-9 place-items-center rounded-md",
+          WORKSPACE_ICON_LG,
+          "relative",
           "transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
@@ -582,7 +593,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           aria-label={`Toggle theme (currently ${isDark ? "dark" : "light"})`}
           onClick={() => setTheme(nextTheme)}
           className={cn(
-            "haven-chrome-icon-well grid size-9 place-items-center rounded-md",
+            WORKSPACE_ICON_LG,
             "transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
@@ -599,7 +610,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <DropdownMenuTrigger
         aria-label="Account menu"
         className={cn(
-          "haven-chrome-icon-well grid size-9 place-items-center rounded-md outline-none",
+          WORKSPACE_ICON_LG,
+          "outline-none",
           "transition-colors",
           "focus-visible:ring-2 focus-visible:ring-ring",
         )}
@@ -699,7 +711,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Top bar (always visible) ────────────────────────────── */}
       <header
         className={cn(
-          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border haven-chrome-topnav",
+          "bg-background text-foreground sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border",
           "px-3 lg:px-4",
         )}
       >
@@ -730,7 +742,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "lg:hidden sticky top-14 z-20 flex shrink-0 items-stretch gap-0.5 overflow-x-auto",
-          "border-b border-border haven-chrome-topnav px-2",
+          "bg-background text-foreground border-b border-border px-2",
           "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         )}
         aria-label="Primary"
@@ -752,8 +764,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 "transition-colors duration-[var(--motion-duration-micro)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 active
-                  ? "font-medium haven-chrome-fg"
-                  : "haven-chrome-fg-muted haven-chrome-tab-idle",
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="size-3.5" aria-hidden />

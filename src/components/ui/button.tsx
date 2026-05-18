@@ -22,6 +22,11 @@ import { cn } from "@/lib/utils"
  *   - `destructive` Full danger fill — used for irreversible primary actions
  *                   (delete, revoke). NOT the soft `bg-destructive/10` pattern
  *                   (that's for chips / badges, not buttons).
+ *   - `neutralCta` Neutral charcoal operator action — fills from `--chrome-*`
+ *                   (anchors to chrome, not saturated brand). Prefer this over
+ *                   `default` when `bg-primary` would read like a semantic
+ *                   clinical/state color on Quiet Operator canvases (see
+ *                   constitution § color semantics).
  *   - `link`        Underlined inline text action.
  *
  * Sizes (component-rules.md §Buttons §3):
@@ -49,6 +54,8 @@ const buttonVariants = cva(
           "bg-transparent hover:bg-muted/40 hover:text-foreground aria-expanded:bg-muted/40 aria-expanded:text-foreground",
         destructive:
           "bg-destructive text-destructive-foreground font-semibold hover:bg-destructive/90 focus-visible:ring-destructive/30",
+        neutralCta:
+          "border-transparent bg-[hsl(var(--chrome-primary))] text-[hsl(var(--chrome-foreground))] font-semibold shadow-none hover:bg-[hsl(var(--chrome-active))] hover:shadow-none dark:hover:shadow-none",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
