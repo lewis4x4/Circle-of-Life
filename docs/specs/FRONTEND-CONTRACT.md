@@ -247,3 +247,16 @@ This replaces `"/facilities/:id/*"` as a UI routing pattern. Keep `facility_id` 
 1. One-week Admin UI scaffold sprint (route shells + shared patterns).
 2. Resume backend modules in order: `07 -> 11 -> 16`.
 3. As each backend module lands, replace mock/adaptor data for matching Admin routes.
+
+---
+
+## 7) Record Detail surface (Quiet Operator · S6.5+)
+
+Applies to **Attio-derived record detail pages** (`RecordDetailHeader` + `RecordDetailSection` from `@/design-system/components/record-detail`).
+
+- **Sections:** Discrete cards vs canvas — `RecordDetailSection` uses `rounded-xl`, `bg-card`, `border-border`, **`ring-1 ring-border/60`**, `shadow-[var(--shadow-card)]`. Token `--card` is tuned slightly lighter than `--background` so edges read without heavy chrome.
+
+- **Field rows (`DetailRow`):** When a field is **missing** or displays only **`—`** (including derived formatting), both **label and value** use **`text-muted-foreground/50`**. Populated rows use **`text-muted-foreground`** labels and **`text-foreground`** values. Never surface internal storage hints (e.g. “stored in cents”) in user-visible copy — convert/format silently.
+
+- **Header badges / chips:** **Binary positive operational states** (e.g. active employment, certs healthy) MAY use **`Badge`** with **`tone="success"`**. **Taxonomy-only labels** (job family / role: Nurse, Caregiver, Admin, Med Tech) use **`Badge variant="outline"`** neutral — **never** reuse success/warning tint for role metadata. Severity states (terminated, expired cert, leave) remain warning/danger/neutral per meaning.
+

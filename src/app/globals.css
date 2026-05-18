@@ -147,7 +147,8 @@
   /* Warm paper floor — #FAF7F0 base, pure white card, terracotta destructive */
   --background: 42 33% 97%;
   --foreground: 30 14% 12%;
-  --card: 0 0% 100%;
+  /* Warm paper floor — card subtly lifted (~99% L same hue) for discrete Record Detail surfaces */
+  --card: 42 28% 99%;
   --card-foreground: 30 14% 12%;
   --popover: 0 0% 100%;
   --popover-foreground: 30 14% 12%;
@@ -265,7 +266,8 @@
 .light {
   --background: 42 33% 97%;
   --foreground: 30 14% 12%;
-  --card: 0 0% 100%;
+  /* Warm paper floor — card subtly lifted (~99% L same hue) for discrete Record Detail surfaces */
+  --card: 42 28% 99%;
   --card-foreground: 30 14% 12%;
   --popover: 0 0% 100%;
   --popover-foreground: 30 14% 12%;
@@ -358,7 +360,7 @@
 .dark {
   --background: 30 9% 4%;
   --foreground: 42 35% 94%;
-  --card: 42 6% 9%;
+  --card: 42 8% 12%;
   --card-foreground: 42 35% 94%;
   --popover: 42 6% 9%;
   --popover-foreground: 42 35% 94%;

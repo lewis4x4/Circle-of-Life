@@ -17,6 +17,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
+  DetailRow,
   RecordDetailHeader,
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
@@ -335,10 +336,16 @@ export default function AdminStaffDetailPage() {
             </div>
           </RecordDetailSection>
 
-          <RecordDetailSection title="Compensation" description="Rates stored in cents (internal)">
+          <RecordDetailSection title="Compensation">
             <div className="space-y-4 text-sm">
-              <DetailRow label="Base hourly" value={<span className="tabular-nums text-lg font-medium">{formatCents(staff.hourly_rate)}</span>} />
-              <DetailRow label="Overtime" value={<span className="tabular-nums text-lg font-medium">{formatCents(staff.overtime_rate)}</span>} />
+              <DetailRow
+                label="Base hourly"
+                value={<span className="tabular-nums text-lg font-medium">{formatCents(staff.hourly_rate)}</span>}
+              />
+              <DetailRow
+                label="Overtime"
+                value={<span className="tabular-nums text-lg font-medium">{formatCents(staff.overtime_rate)}</span>}
+              />
             </div>
           </RecordDetailSection>
 
@@ -507,39 +514,64 @@ function formatShiftLabel(shiftDate: string, shiftType: string): string {
   return `${datePart} · ${typeLabel}`;
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+const RECORD_HEADER_CHIP = "text-[10px] font-semibold uppercase tracking-wider";
+
+function RoleBadge({ role }: { role: StaffRoleUi }) {
+  const map: Record<StaffRoleUi, string> = {
+    nurse: "Nurse",
+    caregiver: "Caregiver",
+    med_tech: "Med Tech",
+    admin: "Admin",
+  };
+  /** Role taxonomy — neutral outline only (Quiet Operator §7 — not a binary positive state). */
   return (
-    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
-      <span className="min-w-[8rem] text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
-      <div className="text-foreground">{value}</div>
-    </div>
+    <Badge variant="outline" className={RECORD_HEADER_CHIP}>
+      {map[role]}
+    </Badge>
   );
 }
 
-function RoleBadge({ role }: { role: StaffRoleUi }) {
-  const map: Record<StaffRoleUi, { label: string; className: string }> = {
-    nurse: { label: "Nurse", className: "bg-info/10 text-info border-info/20" },
-    caregiver: { label: "Caregiver", className: "bg-success/10 text-success border-success/20" },
-    med_tech: { label: "Med Tech", className: "bg-info/10 text-info border-info/20" },
-    admin: { label: "Admin", className: "bg-muted text-muted-foreground border-border" },
-  };
-  return <Badge variant="outline" className={cn("font-medium text-[9px] uppercase tracking-wider", map[role].className)}>{map[role].label}</Badge>;
-}
-
 function StatusBadge({ status }: { status: StaffStatusUi }) {
-  const map: Record<StaffStatusUi, { label: string; className: string }> = {
-    active: { label: "Active", className: "bg-success/10 text-success border-success/20" },
-    off_shift: { label: "Off roster", className: "bg-muted text-muted-foreground border-border" },
-    on_leave: { label: "On leave", className: "bg-warning/10 text-warning border-warning/20" },
-  };
-  return <Badge variant="outline" className={cn("font-medium text-[9px] uppercase tracking-wider", map[status].className)}>{map[status].label}</Badge>;
+  /** Employment state — semantic tone; Active is the lone success chip when healthy. */
+  if (status === "active") {
+    return (
+      <Badge variant="default" tone="success" className={RECORD_HEADER_CHIP}>
+        Active
+      </Badge>
+    );
+  }
+  if (status === "off_shift") {
+    return (
+      <Badge variant="outline" tone="none" className={RECORD_HEADER_CHIP}>
+        Off roster
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="default" tone="warning" className={RECORD_HEADER_CHIP}>
+      On leave
+    </Badge>
+  );
 }
 
 function CertificationBadge({ certifications }: { certifications: CertificationStatus }) {
-  const map: Record<CertificationStatus, { label: string; className: string }> = {
-    current: { label: "Certs OK", className: "bg-success/10 text-success border-success/20" },
-    expiring_soon: { label: "Expiring soon", className: "bg-warning/10 text-warning border-warning/20" },
-    expired: { label: "Cert issue", className: "bg-destructive/10 text-destructive border-destructive/20" },
-  };
-  return <Badge variant="outline" className={cn("font-medium text-[9px] uppercase tracking-wider", map[certifications].className)}>{map[certifications].label}</Badge>;
+  if (certifications === "current") {
+    return (
+      <Badge variant="default" tone="success" className={RECORD_HEADER_CHIP}>
+        Certs OK
+      </Badge>
+    );
+  }
+  if (certifications === "expiring_soon") {
+    return (
+      <Badge variant="default" tone="warning" className={RECORD_HEADER_CHIP}>
+        Expiring soon
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="destructive" className={RECORD_HEADER_CHIP}>
+      Cert issue
+    </Badge>
+  );
 }

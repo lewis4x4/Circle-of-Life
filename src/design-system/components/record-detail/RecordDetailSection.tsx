@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 /**
  * RecordDetailSection
  *
- * Bordered content section for a Record Detail surface (surface-map.md:
- * radius 8px · padding 14px · DATA emphasis). Organises body content under
- * a labelled heading with an optional right-aligned action slot.
+ * Bordered content section for a Record Detail surface (S6.5: `rounded-xl`,
+ * subtle ring lift vs canvas — padding 14px · DATA emphasis). Organises body
+ * content under a labelled heading with an optional right-aligned action slot.
  *
  * Accessibility:
  *   - The section title is rendered as an <h2>, and `aria-label={title}` is
@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
  * Visual treatment per Record Detail surface:
  *   - Row height: 38px (density operational)
  *   - Padding: 14px
- *   - Border radius: 8px (NOT var(--radius) which is 10px — use literal 8px)
+ *   - Border radius: `rounded-xl` (card lift vs canvas — ring + `--card`)
  *   - Hover lift: 2px applies to TILE-like sub-elements, NOT to sections
  *     themselves. Sections are stationary; only interactive tiles within
  *     them receive the lift treatment.
@@ -89,10 +89,9 @@ export function RecordDetailSection({
       // Without it, <section> is a generic element with no landmark role.
       aria-label={title}
       className={cn(
-        // Surface-map Record Detail: radius 8px, padding 14px, shadow-card,
-        // standard transition (240ms, motion-ease). NO hover lift on the
-        // section itself — only tile sub-elements lift.
-        "rounded-[8px] border border-border bg-card p-[14px] shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)]",
+        // Record Detail cards: discrete lift from canvas via ring + token bg-card,
+        // standard transition (240ms). NO hover lift on the section itself.
+        "rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)]",
         className,
       )}
     >
