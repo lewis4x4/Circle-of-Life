@@ -25,6 +25,10 @@ import {
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
+import {
+  buildAggregateSnapshotQuery,
+  buildFacilitySnapshotQuery,
+} from "@/lib/executive/metric-snapshot-queries";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -90,25 +94,17 @@ export function ExecutiveOverviewPageClient({
       // 1. Fetch latest scoped executive snapshots. Aggregate metrics stay
       // separate from facility metrics; never smear portfolio averages into
       // facility rows.
-      const { data: snapData, error: snapErr } = await supabase
-        .from("exec_metric_snapshots")
-        .select("facility_id, metric_code, metric_value_numeric")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("facility_id", null)
-        .is("deleted_at", null)
-        .order("snapshot_date", { ascending: false })
-        .limit(50);
+      const { data: snapData, error: snapErr } = await buildAggregateSnapshotQuery(
+        supabase,
+        ctx.ctx.organizationId,
+      );
         
       if (snapErr) throw snapErr;
 
-      const { data: facilityMetricData, error: facilityMetricErr } = await supabase
-        .from("exec_metric_snapshots")
-        .select("facility_id, metric_code, metric_value_numeric")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .not("facility_id", "is", null)
-        .is("deleted_at", null)
-        .order("snapshot_date", { ascending: false })
-        .limit(500);
+      const { data: facilityMetricData, error: facilityMetricErr } = await buildFacilitySnapshotQuery(
+        supabase,
+        ctx.ctx.organizationId,
+      );
 
       if (facilityMetricErr) throw facilityMetricErr;
 

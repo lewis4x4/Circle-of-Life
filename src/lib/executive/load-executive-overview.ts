@@ -7,6 +7,10 @@ import {
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
 import {
+  buildAggregateSnapshotQuery,
+  buildFacilitySnapshotQuery,
+} from "@/lib/executive/metric-snapshot-queries";
+import {
   fetchResidentAssuranceFacilityHeatMap,
   fetchResidentAssuranceFacilityTrendSeries,
   type ResidentAssuranceFacilityRollup,
@@ -34,22 +38,8 @@ export async function loadExecutiveOverview(
 ): Promise<ExecutiveOverviewData> {
   const [aggregateSnapshotsRes, facilitySnapshotsRes, alertsRes, facilitiesRes, assuranceRows, assuranceTrendRows] =
     await Promise.all([
-      supabase
-        .from("exec_metric_snapshots")
-        .select("facility_id, metric_code, metric_value_numeric")
-        .eq("organization_id", organizationId)
-        .is("facility_id", null)
-        .is("deleted_at", null)
-        .order("snapshot_date", { ascending: false })
-        .limit(50),
-      supabase
-        .from("exec_metric_snapshots")
-        .select("facility_id, metric_code, metric_value_numeric")
-        .eq("organization_id", organizationId)
-        .not("facility_id", "is", null)
-        .is("deleted_at", null)
-        .order("snapshot_date", { ascending: false })
-        .limit(500),
+      buildAggregateSnapshotQuery(supabase, organizationId),
+      buildFacilitySnapshotQuery(supabase, organizationId),
       supabase
         .from("exec_alerts")
         .select("*, facilities(name)")
