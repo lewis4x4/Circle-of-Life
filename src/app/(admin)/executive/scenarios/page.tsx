@@ -262,13 +262,13 @@ export default function ExecutiveScenariosPage() {
             </Panel>
 
             {/* Charts */}
-            <Panel className="lg:col-span-2 space-y-6">
+            <Panel className="lg:col-span-2 min-w-0 space-y-6">
               {/* Revenue vs Labor vs NOI */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Revenue, Labor &amp; NOI Projection</h3>
                 <p className="text-xs text-muted-foreground mb-4">Monthly projected values over {assumptions.horizonMonths} months</p>
-                <div className="h-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[280px] min-w-0">
+                  <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 280 }}>
                     <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
@@ -287,8 +287,8 @@ export default function ExecutiveScenariosPage() {
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Monthly Cash Flow</h3>
                 <p className="text-xs text-muted-foreground mb-4">NOI minus debt service ({fmtK(BASELINE.monthlyDebtService)}/mo)</p>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[200px] min-w-0">
+                  <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 200 }}>
                     <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
