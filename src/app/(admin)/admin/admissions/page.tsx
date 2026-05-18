@@ -90,6 +90,8 @@ type ConferenceRow = Pick<
   residents: { first_name: string; last_name: string } | null;
 };
 
+const ADMISSIONS_HUB_PREVIEW_LIMIT = 100;
+
 function formatStatus(s: string) {
   return formatColLabel(s);
 }
@@ -357,6 +359,7 @@ function AdminAdmissionsOverviewInner() {
         .not("status", "in", "(converted,lost,merged)")
         .order("updated_at", { ascending: false });
       if (activityLower) refSel = refSel.gte("updated_at", activityLower);
+      refSel = refSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let admSel = supabase
         .from("admission_cases")
@@ -368,6 +371,7 @@ function AdminAdmissionsOverviewInner() {
         .not("status", "eq", "cancelled")
         .order("updated_at", { ascending: false });
       if (activityLower) admSel = admSel.gte("updated_at", activityLower);
+      admSel = admSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let disSel = supabase
         .from("discharge_med_reconciliation")
@@ -377,6 +381,7 @@ function AdminAdmissionsOverviewInner() {
         .not("status", "eq", "cancelled")
         .order("updated_at", { ascending: false });
       if (activityLower) disSel = disSel.gte("updated_at", activityLower);
+      disSel = disSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let triSel = supabase
         .from("family_message_triage_items")
@@ -386,6 +391,7 @@ function AdminAdmissionsOverviewInner() {
         .in("triage_status", ["pending_review", "in_review"])
         .order("updated_at", { ascending: false });
       if (activityLower) triSel = triSel.gte("updated_at", activityLower);
+      triSel = triSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let confSel = supabase
         .from("family_care_conference_sessions")
@@ -395,6 +401,7 @@ function AdminAdmissionsOverviewInner() {
         .gte("scheduled_start", nowIso)
         .order("scheduled_start", { ascending: true });
       if (calendarUpper) confSel = confSel.lte("scheduled_start", calendarUpper);
+      confSel = confSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let cRefPipe = supabase
         .from("referral_leads")

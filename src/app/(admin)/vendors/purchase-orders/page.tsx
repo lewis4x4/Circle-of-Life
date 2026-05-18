@@ -12,7 +12,12 @@ import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
-type PoRow = Database["public"]["Tables"]["purchase_orders"]["Row"];
+type PoRow = Pick<
+  Database["public"]["Tables"]["purchase_orders"]["Row"],
+  "id" | "po_number" | "status" | "order_date" | "total_cents"
+>;
+
+const PURCHASE_ORDER_LIST_LIMIT = 150;
 
 export default function PurchaseOrdersListPage() {
   const supabase = createClient();
@@ -32,10 +37,11 @@ export default function PurchaseOrdersListPage() {
     }
     const { data, error } = await supabase
       .from("purchase_orders")
-      .select("*")
+      .select("id, po_number, status, order_date, total_cents")
       .eq("organization_id", c.ctx.organizationId)
       .is("deleted_at", null)
-      .order("order_date", { ascending: false });
+      .order("order_date", { ascending: false })
+      .limit(PURCHASE_ORDER_LIST_LIMIT);
     if (error) {
       setLoadError(error.message);
       setRows([]);
@@ -68,8 +74,8 @@ export default function PurchaseOrdersListPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">All POs</CardTitle>
-          <CardDescription>{loading ? "Loading…" : `${rows.length} PO(s)`}</CardDescription>
+          <CardTitle className="text-base">Latest POs</CardTitle>
+          <CardDescription>{loading ? "Loading…" : `Showing latest ${rows.length} PO(s)`}</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-left text-sm">
