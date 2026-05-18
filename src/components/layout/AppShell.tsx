@@ -75,6 +75,7 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
+import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { HavenInsightShell } from "@/components/haven-insight/HavenInsightShell";
@@ -331,23 +332,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // ── render helpers ───────────────────────────────────────────────
 
   const renderBrand = () => (
-    <Link
+    <HavenShellBrandLink
       href="/admin"
+      aria-label="Haven — admin home"
       className={cn(
-        "flex h-9 shrink-0 items-center gap-2 rounded-md px-1.5",
-        "transition-opacity hover:opacity-90",
+        "flex h-9 shrink-0 rounded-md px-1.5 pr-4",
+        "text-foreground transition-opacity hover:opacity-90",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
-      aria-label="Haven — admin home"
-    >
-      <span
-        aria-hidden
-        className="grid size-7 place-items-center rounded-md haven-chrome-brand-mark"
-      >
-        <span className="text-[13px] font-semibold leading-none">H</span>
-      </span>
-      <span className="hidden sm:inline text-[14px] font-semibold tracking-tight">Haven</span>
-    </Link>
+    />
   );
 
   const renderFacilityScope = () => (

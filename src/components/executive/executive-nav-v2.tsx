@@ -23,6 +23,7 @@ import {
   Heart,
   DollarSign,
 } from "lucide-react";
+import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import { cn } from "@/lib/utils";
 
 // ── TOP NAVIGATION TABS ──
@@ -130,15 +131,14 @@ function TopNavigation({ activeTab, onTabChange }: TopNavigationProps) {
 
   return (
     <div className="flex items-center bg-card border-b border-border px-4 sm:px-6 h-12 gap-6">
-      {/* Haven Brand */}
-      <Link href="/admin/executive" className="flex items-center gap-3 mr-4 group">
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm group-hover:bg-primary/80 transition-colors duration-[var(--motion-duration-micro)]">
-          H
-        </div>
-        <span className="font-bold text-card-foreground text-base group-hover:text-foreground transition-colors duration-[var(--motion-duration-micro)]">
-          Haven
-        </span>
-      </Link>
+      <HavenShellBrandLink
+        href="/admin/executive"
+        aria-label="Haven — executive home"
+        className={cn(
+          "mr-4 shrink-0 pr-4 text-foreground transition-opacity hover:opacity-90",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
+      />
 
       {/* Navigation Tabs */}
       {topNavTabs.map((tab) => {

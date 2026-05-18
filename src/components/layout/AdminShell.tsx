@@ -84,6 +84,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import { SurveyVisitModeBar } from "@/components/compliance/SurveyVisitModeBar";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
@@ -532,26 +533,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   const renderBrand = () => (
-    <Link
+    <HavenShellBrandLink
       href={roleConfig.route}
+      aria-label={`Haven — go to ${roleConfig.roleLabel.toLowerCase()} home`}
       className={cn(
-        "flex h-14 shrink-0 items-center gap-2 border-b border-border px-4",
+        "flex h-14 w-full shrink-0 border-b border-border px-4",
         "haven-chrome-fg transition-opacity hover:opacity-90",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
       )}
-      aria-label={`Haven — go to ${roleConfig.roleLabel.toLowerCase()} home`}
     >
-      <span
-        aria-hidden
-        className="haven-chrome-brand-mark grid size-7 place-items-center rounded-md"
-      >
-        <span className="text-[13px] font-semibold leading-none">H</span>
-      </span>
-      <span className="text-[14px] font-semibold tracking-tight">Haven</span>
       <span className="haven-chrome-fg-muted ml-auto rounded border border-[hsl(var(--chrome-foreground)/0.2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider">
         {roleConfig.roleLabel}
       </span>
-    </Link>
+    </HavenShellBrandLink>
   );
 
   const renderFacilityScope = () => (

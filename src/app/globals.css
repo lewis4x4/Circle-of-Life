@@ -573,10 +573,6 @@
   .haven-chrome-tab-idle:hover {
     color: hsl(var(--chrome-foreground));
   }
-  .haven-chrome-brand-mark {
-    background-color: hsl(var(--chrome-foreground));
-    color: hsl(var(--chrome-primary));
-  }
   /** Small disc on chrome (avatar ring, badges) — primary wash + foreground icon/text. */
   .haven-chrome-primary-surface {
     background-color: hsl(var(--chrome-primary));
