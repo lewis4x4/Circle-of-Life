@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -52,7 +52,7 @@ export function ExecutiveOverviewPageClient({
   initialAssuranceTrends,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { user } = useAuth();
   const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
   const [, setLoading] = useState(!initialHasServerData);

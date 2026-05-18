@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { FileSpreadsheet, MessageSquare } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
@@ -175,7 +175,7 @@ function isStandupBoardPacketReport(report: ReportRow): boolean {
 }
 
 export default function ExecutiveSavedReportsPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<ReportRow[]>([]);

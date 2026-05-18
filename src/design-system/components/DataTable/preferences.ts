@@ -24,6 +24,8 @@ const EMPTY: DashboardPreferences = {
   exists: false,
 };
 
+const defaultFetch: typeof fetch = (...args) => globalThis.fetch(...args);
+
 export type UseDashboardPreferencesOptions = {
   endpoint?: string;
   debounceMs?: number;
@@ -47,7 +49,7 @@ export function useDashboardPreferences(
 ): UseDashboardPreferencesResult {
   const endpoint = options.endpoint ?? "/api/v2/preferences";
   const debounceMs = options.debounceMs ?? 500;
-  const doFetch = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+  const doFetch = options.fetchImpl ?? defaultFetch;
 
   const [preferences, setPreferences] = useState<DashboardPreferences>({
     ...EMPTY,
@@ -94,6 +96,7 @@ export function useDashboardPreferences(
     (next: DashboardPreferences): void => {
       if (pendingTimer.current) clearTimeout(pendingTimer.current);
       pendingTimer.current = setTimeout(() => {
+        pendingTimer.current = null;
         void persist(next);
       }, debounceMs);
     },
