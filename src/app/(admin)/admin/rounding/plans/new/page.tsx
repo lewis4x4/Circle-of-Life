@@ -1,11 +1,15 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { RoundingHubNav } from "../../rounding-hub-nav";
 import { ObservationPlanEditor } from "@/components/rounding/ObservationPlanEditor";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 
 export default function AdminRoundingPlanNewPage() {
+  const searchParams = useSearchParams();
+  const duplicatePlanId = searchParams.get("duplicatePlanId")?.trim() || undefined;
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const facilityName =
     availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name ?? "selected facility";
@@ -19,7 +23,7 @@ export default function AdminRoundingPlanNewPage() {
 
       <RoundingHubNav />
 
-      <ObservationPlanEditor title="Create observation plan" />
+      <ObservationPlanEditor duplicatePlanId={duplicatePlanId} title={duplicatePlanId ? "Duplicate observation plan" : "Create observation plan"} />
     </div>
   );
 }

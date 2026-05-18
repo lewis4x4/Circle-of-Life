@@ -20,6 +20,7 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { MetricCard } from "@/components/ui/metric-card";
 import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -80,7 +81,9 @@ function deriveBoardState(args: {
 /* -------------------------------------------------------------------------- */
 
 export default function SafetyScoresPage() {
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const [rows, setRows] = useState<ScoreRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
@@ -112,10 +115,8 @@ export default function SafetyScoresPage() {
       if (error) throw error;
       setRows((data ?? []) as ScoreRow[]);
       setLoadState("ready");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not load safety scores.",
-      );
+    } catch {
+      setErrorMessage("Could not load safety scores. Confirm facility scope and retry.");
       setRows([]);
       setLoadState("error");
     }
@@ -141,7 +142,7 @@ export default function SafetyScoresPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Resident safety scores"
-        subtitle="Composite safety scores updated daily — observation compliance, incident recency, medication adherence."
+        subtitle={`Composite safety scores updated daily from observation compliance, incident recency, and medication adherence at ${facilityName}.`}
         actions={
           <Button
             type="button"
@@ -202,7 +203,7 @@ export default function SafetyScoresPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoScoresEmptyState />
+            <NoScoresEmptyState facilityName={facilityName} />
           ) : (
             <section
               aria-label="Resident safety score table"
@@ -318,31 +319,16 @@ function TierCard({
   tone: Tone;
   hint: string;
 }) {
+  const thresholds = label === "Critical risk" ? ({ type: "critical-count" } as const) : label === "High risk" ? ({ type: "overdue-count" } as const) : ({ type: "informational" } as const);
   return (
-    <article
-      aria-label={`${label}: ${value}`}
-      className={cn(
-        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
-        tone === "danger" && "border-danger/40",
-        tone === "warning" && "border-warning/40",
-        tone === "default" && "border-border",
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "danger" && "text-danger",
-          tone === "warning" && "text-warning",
-          tone === "default" && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-[11px] text-muted-foreground">
-        {value === 1 ? `1 resident · ${hint}` : `${value} residents · ${hint}`}
-      </span>
-    </article>
+    <MetricCard
+      label={label}
+      value={value}
+      numericValue={value}
+      thresholds={thresholds}
+      tone={tone === "default" ? undefined : tone}
+      hint={value === 1 ? `1 resident · ${hint}` : `${value} residents · ${hint}`}
+    />
   );
 }
 
@@ -404,7 +390,7 @@ function LoadErrorNotice({
   );
 }
 
-function NoScoresEmptyState() {
+function NoScoresEmptyState({ facilityName }: { facilityName: string }) {
   return (
     <section
       aria-label="No safety scores computed"
@@ -412,11 +398,10 @@ function NoScoresEmptyState() {
     >
       <Shield className="mx-auto size-8 text-muted-foreground" aria-hidden />
       <p className="mt-3 text-sm font-semibold text-foreground">
-        No safety scores computed yet
+        No safety scores at {facilityName}
       </p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        Scores are generated daily by the resident-safety-scorer job. Check back after the next
-        scheduled run.
+        Safety score snapshots will appear here after the next scoring cycle.
       </p>
     </section>
   );

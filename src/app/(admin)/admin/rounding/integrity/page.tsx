@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Building2,
@@ -19,6 +20,16 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { MetricCard } from "@/components/ui/metric-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import {
@@ -87,7 +98,7 @@ type BoardState =
 
 type Tone = "default" | "warning" | "danger";
 
-type StatusFilter = "all" | FollowUpStatus;
+type StatusFilter = "all" | "open" | "reviewed_today" | "reviewed_7d" | "compliance_referred";
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                    */
@@ -122,10 +133,30 @@ function severityTone(severity: Severity): Tone {
   return "default";
 }
 
-function chipClasses(tone: Tone): string {
-  if (tone === "danger") return "border-danger/30 bg-danger/10 text-danger";
-  if (tone === "warning") return "border-warning/30 bg-warning/10 text-warning";
-  return "border-border bg-muted text-muted-foreground";
+function toStatusPillTone(tone: Tone): StatusPillTone {
+  if (tone === "danger") return "danger";
+  if (tone === "warning") return "warning";
+  return "muted";
+}
+
+function lagMinutes(row: IntegrityRow) {
+  const log = row.resident_observation_logs;
+  if (!log) return null;
+  const delta = Math.max(0, new Date(log.entered_at).getTime() - new Date(log.observed_at).getTime());
+  return Math.round(delta / 60000);
+}
+
+function lagTone(minutes: number | null): StatusPillTone {
+  if (minutes == null || minutes < 15) return "muted";
+  if (minutes <= 60) return "warning";
+  return "danger";
+}
+
+function lagLabel(minutes: number | null) {
+  if (minutes == null) return "Unavailable";
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 24 * 60) return `${(minutes / 60).toFixed(1)} hr`;
+  return `${(minutes / (24 * 60)).toFixed(1)} days`;
 }
 
 function resolveOpenTone(count: number): Tone {
@@ -136,10 +167,6 @@ function resolveOpenTone(count: number): Tone {
 
 function resolveCriticalTone(count: number): Tone {
   return count > 0 ? "danger" : "default";
-}
-
-function resolveInProgressTone(count: number): Tone {
-  return count > 0 ? "warning" : "default";
 }
 
 function deriveBoardState(args: {
@@ -161,7 +188,9 @@ function deriveBoardState(args: {
 
 export default function RoundingIntegrityPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const [rows, setRows] = useState<IntegrityRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -184,7 +213,7 @@ export default function RoundingIntegrityPage() {
     }
 
     try {
-      let query = supabase
+      const query = supabase
         .from("resident_observation_integrity_flags" as never)
         .select(
           `
@@ -209,8 +238,6 @@ export default function RoundingIntegrityPage() {
         .is("deleted_at", null)
         .order("detected_at", { ascending: false })
         .limit(100);
-
-      if (filter !== "all") query = query.eq("status", filter);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -249,29 +276,39 @@ export default function RoundingIntegrityPage() {
       }
 
       setLoadState("ready");
-    } catch (loadError) {
-      setErrorMessage(
-        loadError instanceof Error ? loadError.message : "Could not load integrity flags.",
-      );
+    } catch {
+      setErrorMessage("Could not load integrity flags. Confirm facility scope and retry.");
       setRows([]);
       setLoadState("error");
     }
-  }, [filter, selectedFacilityId, supabase]);
+  }, [selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const counts = useMemo(
-    () => ({
-      open: rows.filter((row) => row.status === "open").length,
-      in_progress: rows.filter((row) => row.status === "in_progress").length,
-      resolved: rows.filter((row) => row.status === "resolved").length,
-      dismissed: rows.filter((row) => row.status === "dismissed").length,
+  const counts = useMemo(() => {
+    const today = new Date().toDateString();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return {
+      all: rows.length,
+      open: rows.filter((row) => row.status === "open" || row.status === "in_progress").length,
+      reviewed_today: rows.filter((row) => row.status === "resolved" && historyById[row.id]?.some((item) => new Date(item.createdAt).toDateString() === today)).length,
+      reviewed_7d: rows.filter((row) => row.status === "resolved" && historyById[row.id]?.some((item) => new Date(item.createdAt).getTime() >= sevenDaysAgo)).length,
+      compliance_referred: rows.filter((row) => row.status === "dismissed").length,
       critical: rows.filter((row) => row.severity === "critical").length,
-    }),
-    [rows],
-  );
+    };
+  }, [historyById, rows]);
+
+  const visibleRows = useMemo(() => {
+    if (filter === "all") return rows;
+    if (filter === "open") return rows.filter((row) => row.status === "open" || row.status === "in_progress");
+    if (filter === "compliance_referred") return rows.filter((row) => row.status === "dismissed");
+    const today = new Date().toDateString();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    if (filter === "reviewed_today") return rows.filter((row) => row.status === "resolved" && historyById[row.id]?.some((item) => new Date(item.createdAt).toDateString() === today));
+    return rows.filter((row) => row.status === "resolved" && historyById[row.id]?.some((item) => new Date(item.createdAt).getTime() >= sevenDaysAgo));
+  }, [filter, historyById, rows]);
 
   const runAction = useCallback(
     async (id: string, action: "assign" | "start_review" | "resolve" | "dismiss") => {
@@ -280,12 +317,18 @@ export default function RoundingIntegrityPage() {
       setActionMessage(null);
 
       try {
+        const note = notes[id]?.trim() ?? "";
+        if (action === "dismiss" && note.length < 30) {
+          setErrorMessage("Add a policy-acceptable rationale of at least 30 characters before marking this flag acceptable.");
+          return;
+        }
+
         const response = await fetch(`/api/rounding/integrity-flags/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action,
-            note: notes[id]?.trim() || undefined,
+            note: note || undefined,
             assignedStaffId: action === "assign" ? assigneeDrafts[id] || null : undefined,
           }),
         });
@@ -304,10 +347,8 @@ export default function RoundingIntegrityPage() {
         );
         setNotes((current) => ({ ...current, [id]: "" }));
         await load();
-      } catch (runError) {
-        setErrorMessage(
-          runError instanceof Error ? runError.message : "Could not update integrity flag.",
-        );
+      } catch {
+        setErrorMessage("Could not update integrity flag. Confirm it is still actionable and retry.");
       } finally {
         setActionLoading(null);
       }
@@ -318,7 +359,7 @@ export default function RoundingIntegrityPage() {
   const boardState = deriveBoardState({
     loadState,
     hasFacility: Boolean(selectedFacilityId),
-    rowCount: rows.length,
+    rowCount: visibleRows.length,
     filterApplied: filter !== "all",
   });
 
@@ -326,7 +367,7 @@ export default function RoundingIntegrityPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Documentation integrity"
-        subtitle="Late-entry and documentation-quality flags — review and disposition before rounding evidence becomes hard to defend."
+        subtitle={`Late entries, retroactive documentation, and audit-evidence flags before they become survey findings at ${facilityName}.`}
         actions={
           <Button
             type="button"
@@ -370,22 +411,22 @@ export default function RoundingIntegrityPage() {
                 hint="Awaiting review"
               />
               <KpiCard
-                label="In progress"
-                value={counts.in_progress}
-                tone={resolveInProgressTone(counts.in_progress)}
-                hint="Under review"
+                label="Reviewed today"
+                value={counts.reviewed_today}
+                tone="default"
+                hint="Reviewed during today's audit work"
               />
               <KpiCard
-                label="Resolved"
-                value={counts.resolved}
+                label="Reviewed (7 days)"
+                value={counts.reviewed_7d}
                 tone="default"
-                hint="Closed flags"
+                hint="Reviewed in the last 7 days"
               />
               <KpiCard
-                label="Dismissed"
-                value={counts.dismissed}
-                tone="default"
-                hint="Reviewed and dismissed"
+                label="Compliance referred"
+                value={counts.compliance_referred}
+                tone="warning"
+                hint="Referred or marked policy acceptable"
               />
               <KpiCard
                 label="Critical"
@@ -405,9 +446,7 @@ export default function RoundingIntegrityPage() {
               <div className="-mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
                 <FilterPill
                   label="All"
-                  count={
-                    counts.open + counts.in_progress + counts.resolved + counts.dismissed
-                  }
+                  count={counts.all}
                   tone="default"
                   active={filter === "all"}
                   onClick={() => setFilter("all")}
@@ -420,25 +459,25 @@ export default function RoundingIntegrityPage() {
                   onClick={() => setFilter(filter === "open" ? "all" : "open")}
                 />
                 <FilterPill
-                  label="In progress"
-                  count={counts.in_progress}
-                  tone={resolveInProgressTone(counts.in_progress)}
-                  active={filter === "in_progress"}
-                  onClick={() => setFilter(filter === "in_progress" ? "all" : "in_progress")}
+                  label="Reviewed today"
+                  count={counts.reviewed_today}
+                  tone="default"
+                  active={filter === "reviewed_today"}
+                  onClick={() => setFilter(filter === "reviewed_today" ? "all" : "reviewed_today")}
                 />
                 <FilterPill
-                  label="Resolved"
-                  count={counts.resolved}
+                  label="Reviewed (7 days)"
+                  count={counts.reviewed_7d}
                   tone="default"
-                  active={filter === "resolved"}
-                  onClick={() => setFilter(filter === "resolved" ? "all" : "resolved")}
+                  active={filter === "reviewed_7d"}
+                  onClick={() => setFilter(filter === "reviewed_7d" ? "all" : "reviewed_7d")}
                 />
                 <FilterPill
-                  label="Dismissed"
-                  count={counts.dismissed}
-                  tone="default"
-                  active={filter === "dismissed"}
-                  onClick={() => setFilter(filter === "dismissed" ? "all" : "dismissed")}
+                  label="Compliance referred"
+                  count={counts.compliance_referred}
+                  tone="warning"
+                  active={filter === "compliance_referred"}
+                  onClick={() => setFilter(filter === "compliance_referred" ? "all" : "compliance_referred")}
                 />
                 {filter !== "all" && (
                   <button
@@ -455,12 +494,12 @@ export default function RoundingIntegrityPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoFlagsEmptyState />
+            <NoFlagsEmptyState facilityName={facilityName} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
             <ul className="flex flex-col gap-3" aria-label="Integrity flags">
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <li key={row.id}>
                   <IntegrityCard
                     row={row}
@@ -514,16 +553,15 @@ function IntegrityCard({
 }) {
   const log = row.resident_observation_logs;
   const actionKey = (action: string) => `${row.id}:${action}`;
+  const lag = lagMinutes(row);
 
   return (
     <article className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Chip className={chipClasses(statusTone(row.status))}>
-              {statusLabel(row.status)}
-            </Chip>
-            <Chip className={chipClasses(severityTone(row.severity))}>{row.severity}</Chip>
+            <StatusPill tone={toStatusPillTone(statusTone(row.status))}>{statusLabel(row.status)}</StatusPill>
+            <StatusPill tone={toStatusPillTone(severityTone(row.severity))}>{row.severity}</StatusPill>
             <Chip className="border-border bg-muted text-muted-foreground">
               {row.flag_type.replace(/_/g, " ")}
             </Chip>
@@ -543,19 +581,13 @@ function IntegrityCard({
           </div>
 
           <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
-            <DataPair label="Detected" value={new Date(row.detected_at).toLocaleString()} />
-            <DataPair
-              label="Entry mode"
-              value={log?.entry_mode?.replace(/_/g, " ") ?? "Unavailable"}
-            />
-            <DataPair
-              label="Observed"
-              value={log ? new Date(log.observed_at).toLocaleString() : "Unavailable"}
-            />
-            <DataPair
-              label="Entered"
-              value={log ? new Date(log.entered_at).toLocaleString() : "Unavailable"}
-            />
+            <DataPair label="Recorded" value={log ? new Date(log.entered_at).toLocaleString() : new Date(row.detected_at).toLocaleString()} />
+            <DataPair label="Actual occurrence" value={log ? new Date(log.observed_at).toLocaleString() : "Unavailable"} />
+            <DataPair label="Recorded by" value={personName(row.staff, row.staff_id?.slice(0, 8) ?? "Unassigned")} />
+            <div className="min-w-0">
+              <dt className="text-[11px] font-medium text-muted-foreground">Lag</dt>
+              <dd className="mt-0.5"><StatusPill tone={lagTone(lag)}>{lagLabel(lag)}</StatusPill></dd>
+            </div>
           </dl>
 
           {log?.late_reason ? (
@@ -602,19 +634,19 @@ function IntegrityCard({
                 >
                   Assigned owner
                 </label>
-                <select
-                  id={`assignee-${row.id}`}
-                  value={assignee}
-                  onChange={(event) => onAssigneeChange(event.target.value)}
-                  className="h-10 w-full rounded-md border border-border bg-card px-3 text-[13px] text-foreground shadow-sm transition focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
-                >
-                  <option value="">Unassigned</option>
-                  {assigneeOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <Select value={assignee || "unassigned"} onValueChange={(value) => onAssigneeChange(value === "unassigned" ? "" : value)}>
+                  <SelectTrigger id={`assignee-${row.id}`} className="h-10">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {assigneeOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button
                   type="button"
                   variant="outline"
@@ -664,24 +696,30 @@ function IntegrityCard({
                     ) : (
                       <CheckCircle2 className="size-3.5" aria-hidden />
                     )}
-                    Resolve
+                    Mark reviewed
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => onAction("dismiss")}
-                    disabled={actionLoading === actionKey("dismiss")}
+                    disabled={actionLoading === actionKey("dismiss") || note.trim().length < 30}
                   >
                     {actionLoading === actionKey("dismiss") ? (
                       <Loader2 className="size-3.5 animate-spin" aria-hidden />
                     ) : (
                       <XCircle className="size-3.5" aria-hidden />
                     )}
-                    Dismiss
+                    Mark as policy-acceptable
                   </Button>
                 </>
               )}
+              <Link
+                href={`/admin/compliance?integrityFlagId=${row.id}`}
+                className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Refer to compliance
+              </Link>
             </div>
 
             {history.length > 0 ? (
@@ -748,74 +786,8 @@ function KpiCard({
   tone: Tone;
   hint: string;
 }) {
-  return (
-    <article
-      aria-label={`${label}: ${value}`}
-      className={cn(
-        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
-        tone === "danger" && "border-danger/40",
-        tone === "warning" && "border-warning/40",
-        tone === "default" && "border-border",
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "danger" && "text-danger",
-          tone === "warning" && "text-warning",
-          tone === "default" && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-[11px] text-muted-foreground">{hint}</span>
-    </article>
-  );
-}
-
-function FilterPill({
-  label,
-  count,
-  tone,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  tone: Tone;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const showSemanticTint = tone !== "default" && count > 0;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active && tone === "danger" && "border-danger bg-danger/10 text-danger",
-        active && tone === "warning" && "border-warning bg-warning/10 text-warning",
-        active && tone === "default" && "border-border-strong bg-muted text-foreground",
-        !active &&
-          showSemanticTint &&
-          tone === "danger" &&
-          "border-danger/30 bg-card text-danger hover:bg-danger/5",
-        !active &&
-          showSemanticTint &&
-          tone === "warning" &&
-          "border-warning/30 bg-card text-warning hover:bg-warning/5",
-        !active &&
-          !showSemanticTint &&
-          "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
-      )}
-    >
-      <span>{label}</span>
-      <span className={cn("tabular-nums opacity-80", active && "opacity-100")}>({count})</span>
-    </button>
-  );
+  const thresholds = label === "Open" || label === "Critical" ? ({ type: "critical-count" } as const) : ({ type: "informational" } as const);
+  return <MetricCard label={label} value={value} numericValue={value} thresholds={thresholds} tone={tone === "default" ? undefined : tone} hint={hint} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -901,17 +873,16 @@ function LoadErrorNotice({
   );
 }
 
-function NoFlagsEmptyState() {
+function NoFlagsEmptyState({ facilityName }: { facilityName: string }) {
   return (
     <section
       aria-label="No integrity flags"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <ShieldAlert className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No integrity flags</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">No integrity flags at {facilityName}</p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        Late-entry and documentation-quality issues will appear here as the integrity scanner
-        detects them.
+        Late or retroactive entries will appear here for review before they become survey findings.
       </p>
     </section>
   );

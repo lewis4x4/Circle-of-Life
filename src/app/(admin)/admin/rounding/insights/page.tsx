@@ -26,6 +26,9 @@ import {
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { MetricCard } from "@/components/ui/metric-card";
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
@@ -87,9 +90,15 @@ function severityTone(severity: Severity): Tone {
   return "default";
 }
 
-function severityChipClasses(severity: Severity): string {
+function statusPillTone(tone: Tone): StatusPillTone {
+  if (tone === "danger") return "danger";
+  if (tone === "warning") return "warning";
+  return "muted";
+}
+
+function severitySurfaceClasses(severity: Severity): string {
   const tone = severityTone(severity);
-  if (tone === "danger") return "border-danger/30 bg-danger/10 text-danger";
+  if (tone === "danger") return "border-destructive/30 bg-destructive/10 text-destructive";
   if (tone === "warning") return "border-warning/30 bg-warning/10 text-warning";
   return "border-border bg-muted text-muted-foreground";
 }
@@ -124,7 +133,9 @@ function deriveBoardState(args: {
 /* -------------------------------------------------------------------------- */
 
 export default function InsightsPage() {
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const [rows, setRows] = useState<InsightRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
@@ -147,7 +158,7 @@ export default function InsightsPage() {
       const ctx = await loadFinanceRoleContext(supabase);
       if (!ctx.ok) throw new Error(ctx.error);
 
-      let query = supabase
+      const query = supabase
         .from("resident_safety_insights")
         .select("*, residents(first_name, last_name), facilities(name)")
         .eq("organization_id", ctx.ctx.organizationId)
@@ -156,20 +167,16 @@ export default function InsightsPage() {
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (filter !== "all") query = query.eq("status", filter);
-
       const { data, error } = await query;
       if (error) throw error;
       setRows((data ?? []) as InsightRow[]);
       setLoadState("ready");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not load AI safety insights.",
-      );
+    } catch {
+      setErrorMessage("Could not load Smart rounding insights. Confirm facility scope and retry.");
       setRows([]);
       setLoadState("error");
     }
-  }, [supabase, filter, selectedFacilityId]);
+  }, [supabase, selectedFacilityId]);
 
   useEffect(() => {
     void load();
@@ -196,10 +203,8 @@ export default function InsightsPage() {
         `Analyzed ${json.residentsAnalyzed ?? 0} residents · ${json.insightsGenerated ?? 0} insight${json.insightsGenerated === 1 ? "" : "s"} generated · ${json.alertsCreated ?? 0} alert${json.alertsCreated === 1 ? "" : "s"} created.`,
       );
       await load();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not run Smart Rounding insights AI.",
-      );
+    } catch {
+      setErrorMessage("Could not run Smart rounding insights analysis.");
     } finally {
       setRunning(false);
     }
@@ -229,21 +234,27 @@ export default function InsightsPage() {
       if (row.severity === "critical") critical += 1;
       if (row.status === "new") newCount += 1;
     }
-    return { critical, newCount };
+    const acknowledged = rows.filter((row) => row.status === "acknowledged").length;
+    return { critical, newCount, acknowledged };
   }, [rows]);
+
+  const visibleRows = useMemo(() => {
+    if (filter === "all") return rows;
+    return rows.filter((row) => row.status === filter);
+  }, [filter, rows]);
 
   const boardState = deriveBoardState({
     loadState,
     hasFacility: Boolean(selectedFacilityId),
-    rowCount: rows.length,
+    rowCount: visibleRows.length,
     filterApplied: filter !== "all",
   });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
-        title="AI safety insights"
-        subtitle="Claude-powered clinical pattern detection and early warnings for residents in scope."
+        title="Insights"
+        subtitle={`Clinical pattern detection, anomaly review, and early warnings across rounding activity at ${facilityName}.`}
         actions={
           <>
             <Button
@@ -284,7 +295,7 @@ export default function InsightsPage() {
         <AllFacilitiesInterstitial />
       ) : boardState === "error" ? (
         <LoadErrorNotice
-          message={errorMessage ?? "Could not load AI safety insights."}
+          message={errorMessage ?? "Could not load Smart rounding insights."}
           onRetry={() => void load()}
         />
       ) : (
@@ -348,7 +359,7 @@ export default function InsightsPage() {
                 />
                 <FilterPill
                   label="Acknowledged"
-                  count={rows.filter((r) => r.status === "acknowledged").length}
+                  count={counts.acknowledged}
                   tone="default"
                   active={filter === "acknowledged"}
                   onClick={() => setFilter(filter === "acknowledged" ? "all" : "acknowledged")}
@@ -368,12 +379,12 @@ export default function InsightsPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoInsightsEmptyState />
+            <NoInsightsEmptyState facilityName={facilityName} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
             <ul className="flex flex-col gap-2" aria-label="AI safety insights">
-              {rows.map((row) => {
+              {visibleRows.map((row) => {
                 const Icon = TYPE_ICONS[row.insight_type] ?? Eye;
                 const name = row.residents
                   ? `${row.residents.first_name} ${row.residents.last_name}`
@@ -387,7 +398,7 @@ export default function InsightsPage() {
                           <div
                             className={cn(
                               "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border",
-                              severityChipClasses(row.severity),
+                              severitySurfaceClasses(row.severity),
                             )}
                             aria-hidden
                           >
@@ -408,14 +419,7 @@ export default function InsightsPage() {
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
-                          <span
-                            className={cn(
-                              "rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize",
-                              severityChipClasses(row.severity),
-                            )}
-                          >
-                            {row.severity}
-                          </span>
+                          <StatusPill tone={statusPillTone(severityTone(row.severity))}>{row.severity}</StatusPill>
                           <span className="hidden text-[11px] text-muted-foreground sm:inline">
                             {row.insight_type.replace(/_/g, " ")}
                           </span>
@@ -504,79 +508,13 @@ function KpiCard({
   tone: Tone;
   hint: string;
 }) {
-  return (
-    <article
-      aria-label={`${label}: ${value}`}
-      className={cn(
-        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
-        tone === "danger" && "border-danger/40",
-        tone === "warning" && "border-warning/40",
-        tone === "default" && "border-border",
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "danger" && "text-danger",
-          tone === "warning" && "text-warning",
-          tone === "default" && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-[11px] text-muted-foreground">{hint}</span>
-    </article>
-  );
+  const thresholds = label === "Critical severity" ? ({ type: "critical-count" } as const) : label === "New patterns" ? ({ type: "overdue-count" } as const) : ({ type: "informational" } as const);
+  return <MetricCard label={label} value={value} numericValue={value} thresholds={thresholds} tone={tone === "default" ? undefined : tone} hint={hint} />;
 }
 
 /* -------------------------------------------------------------------------- */
 /*  Filter pill                                                                */
 /* -------------------------------------------------------------------------- */
-
-function FilterPill({
-  label,
-  count,
-  tone,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  tone: Tone;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const showSemanticTint = tone !== "default" && count > 0;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active && tone === "danger" && "border-danger bg-danger/10 text-danger",
-        active && tone === "warning" && "border-warning bg-warning/10 text-warning",
-        active && tone === "default" && "border-border-strong bg-muted text-foreground",
-        !active &&
-          showSemanticTint &&
-          tone === "danger" &&
-          "border-danger/30 bg-card text-danger hover:bg-danger/5",
-        !active &&
-          showSemanticTint &&
-          tone === "warning" &&
-          "border-warning/30 bg-card text-warning hover:bg-warning/5",
-        !active &&
-          !showSemanticTint &&
-          "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
-      )}
-    >
-      <span>{label}</span>
-      <span className={cn("tabular-nums opacity-80", active && "opacity-100")}>({count})</span>
-    </button>
-  );
-}
 
 /* -------------------------------------------------------------------------- */
 /*  Notices + empty states                                                    */
@@ -620,8 +558,7 @@ function AllFacilitiesInterstitial() {
             Insights operate per facility
           </p>
           <p className="text-[13px] text-muted-foreground">
-            AI safety insights are facility-scoped. Select a facility from the top bar to
-            continue.
+            Smart rounding insights are facility-scoped. Select a facility from the top bar to continue.
           </p>
         </div>
       </div>
@@ -661,17 +598,16 @@ function LoadErrorNotice({
   );
 }
 
-function NoInsightsEmptyState() {
+function NoInsightsEmptyState({ facilityName }: { facilityName: string }) {
   return (
     <section
       aria-label="No AI insights"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <Brain className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No AI insights yet</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">No rounding activity insights at {facilityName}</p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        The assurance AI runs daily to analyze clinical patterns. Run a manual analysis to
-        surface findings now.
+        No rounding activity insights are available for this facility yet.
       </p>
     </section>
   );

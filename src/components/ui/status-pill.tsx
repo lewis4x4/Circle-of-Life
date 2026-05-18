@@ -121,6 +121,8 @@ const legacyVariantToTone: Record<LegacyVariant, Tone> = {
   destructive: "danger",
 };
 
+type StatusPillValue = string | number | boolean | null | undefined;
+
 type StatusPillProps = Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> &
   Omit<VariantProps<typeof pillVariants>, "tone"> & {
     /**
@@ -130,33 +132,49 @@ type StatusPillProps = Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> &
     tone?: ToneInput;
     /** @deprecated Use `tone` directly. Mapped automatically for back-compat. */
     variant?: LegacyVariant;
+    /** Default-state values null-render so healthy/default noise stays quiet. */
+    value?: StatusPillValue;
+    defaultValue?: StatusPillValue;
     /**
      * Default `true` — the dot is the convention (component-rules.md
      * §Tables rule 3). Pass `false` only as a deliberate escape hatch.
      */
     dot?: boolean;
     pulsing?: boolean;
-    children: React.ReactNode;
+    children?: React.ReactNode;
   };
+
+function normalizeValue(value: StatusPillValue) {
+  return value == null ? "" : String(value).trim().toLowerCase();
+}
 
 export function StatusPill({
   tone,
   variant,
+  value,
+  defaultValue,
   dot = true,
   pulsing = false,
   className,
   children,
   ...props
 }: StatusPillProps) {
+  if (defaultValue !== undefined && normalizeValue(value ?? children?.toString()) === normalizeValue(defaultValue)) {
+    return null;
+  }
+
   const resolvedTone: Tone = resolveTone(
     tone,
     variant ? legacyVariantToTone[variant] : "muted",
   );
+  const label = children ?? (value == null ? null : String(value));
+
+  if (label == null || label === "") return null;
 
   return (
     <span className={cn(pillVariants({ tone: resolvedTone }), className)} {...props}>
       {dot && <span aria-hidden className={dotVariants({ tone: resolvedTone, pulsing })} />}
-      {children}
+      {label}
     </span>
   );
 }

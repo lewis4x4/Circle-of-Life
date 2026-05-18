@@ -7,6 +7,7 @@ import { CheckCircle2, GripVertical, Loader2, Plus, Trash2 } from "lucide-react"
 
 import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -16,8 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormLabel } from "@/components/ui/form-label";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -153,9 +154,11 @@ function residentComboboxLabel(resident: ResidentOption) {
 
 export function ObservationPlanEditor({
   planId,
+  duplicatePlanId,
   title,
 }: {
   planId?: string;
+  duplicatePlanId?: string;
   title: string;
 }) {
   const router = useRouter();
@@ -205,9 +208,10 @@ export function ObservationPlanEditor({
       if (residentError) throw residentError;
       setResidents((residentRows ?? []) as unknown as ResidentOption[]);
 
-      if (planId) {
+      const sourcePlanId = planId ?? duplicatePlanId;
+      if (sourcePlanId) {
         const response = await fetch(
-          `/api/rounding/plans?planId=${encodeURIComponent(planId)}&facilityId=${encodeURIComponent(selectedFacilityId)}`,
+          `/api/rounding/plans?planId=${encodeURIComponent(sourcePlanId)}&facilityId=${encodeURIComponent(selectedFacilityId)}`,
           { cache: "no-store" },
         );
         const json = (await response.json()) as { error?: string; plans?: ExistingPlan[] };
@@ -219,10 +223,10 @@ export function ObservationPlanEditor({
           throw new Error("Observation plan not found");
         }
         setResidentId(plan.resident_id);
-        setStatus(plan.status ?? "draft");
+        setStatus(duplicatePlanId ? "draft" : (plan.status ?? "draft"));
         setSourceType(plan.source_type ?? "manual");
-        setEffectiveFrom(plan.effective_from.slice(0, 16));
-        setEffectiveTo(plan.effective_to ? plan.effective_to.slice(0, 16) : "");
+        setEffectiveFrom(duplicatePlanId ? "" : plan.effective_from.slice(0, 16));
+        setEffectiveTo(duplicatePlanId ? "" : plan.effective_to ? plan.effective_to.slice(0, 16) : "");
         setRationale(plan.rationale ?? "");
         setRules(
           (plan.resident_observation_plan_rules ?? [])
@@ -246,17 +250,17 @@ export function ObservationPlanEditor({
         setResidentId("");
         setStatus("draft");
         setSourceType("manual");
-        setEffectiveFrom(new Date().toISOString().slice(0, 16));
+        setEffectiveFrom("");
         setEffectiveTo("");
         setRationale("");
         setRules([blankRule()]);
       }
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load observation plan form.");
+    } catch {
+      setError("Could not load observation plan form. Confirm facility scope and retry.");
     } finally {
       setLoading(false);
     }
-  }, [planId, selectedFacilityId, supabase]);
+  }, [duplicatePlanId, planId, selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
@@ -339,8 +343,8 @@ export function ObservationPlanEditor({
 
       setStatusMessage("Observation plan saved.");
       router.replace(`/admin/rounding/plans/${json.planId ?? planId ?? ""}`);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save observation plan.");
+    } catch {
+      setError("Could not save observation plan. Confirm required fields and retry.");
     } finally {
       setSaving(false);
     }
@@ -438,11 +442,10 @@ export function ObservationPlanEditor({
             <FormSection title="Effective window">
               <div className="grid gap-4 md:grid-cols-2">
                 <FormField id="effective-from" label="Effective from" required>
-                  <Input
+                  <DateTimePicker
                     id="effective-from"
-                    type="datetime-local"
                     value={effectiveFrom}
-                    onChange={(event) => setEffectiveFrom(event.target.value)}
+                    onValueChange={setEffectiveFrom}
                     required
                   />
                 </FormField>
@@ -453,11 +456,10 @@ export function ObservationPlanEditor({
                   helper="Leave empty for open-ended plan."
                   error={effectiveWindowError ?? undefined}
                 >
-                  <Input
+                  <DateTimePicker
                     id="effective-to"
-                    type="datetime-local"
                     value={effectiveTo}
-                    onChange={(event) => setEffectiveTo(event.target.value)}
+                    onValueChange={setEffectiveTo}
                     placeholder="Open-ended"
                     aria-invalid={Boolean(effectiveWindowError)}
                   />
@@ -769,10 +771,9 @@ function FormField({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-[13px] font-semibold text-muted-foreground">
+      <FormLabel htmlFor={id} required={required}>
         {label}
-        {required ? <span className="font-semibold text-destructive">*</span> : null}
-      </Label>
+      </FormLabel>
       {children}
       {error ? (
         <p className="text-sm text-destructive" role="alert">

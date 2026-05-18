@@ -13,7 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Label } from "@/components/ui/label";
+import { FormLabel } from "@/components/ui/form-label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -67,10 +67,9 @@ export function EntityCombobox({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <Label htmlFor={id} className="text-[13px] font-semibold text-muted-foreground">
+      <FormLabel htmlFor={id} required={required}>
         {label}
-        {required ? <span className="font-semibold text-destructive"> *</span> : null}
-      </Label>
+      </FormLabel>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           id={id}
