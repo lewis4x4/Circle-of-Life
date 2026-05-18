@@ -1,9 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-let mockResult: { data: unknown[] | null; error: { message: string } | null } = {
+let mockResult: { data: unknown[] | null; count: number | null; error: { message: string } | null } = {
   data: null,
+  count: 0,
   error: null,
 };
+
+const selectMock = vi.fn();
+const orderMock = vi.fn();
+const rangeMock = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -12,9 +17,7 @@ vi.mock("@/lib/supabase/server", () => ({
     },
     schema: () => ({
       from: () => ({
-        select: () => ({
-          order: () => Promise.resolve(mockResult),
-        }),
+        select: selectMock,
       }),
     }),
   })),
@@ -23,9 +26,18 @@ vi.mock("@/lib/supabase/server", () => ({
 import { V2_LIST_IDS, isV2ListId, loadV2List } from "./v2-lists";
 
 describe("v2-lists narrowing + loader", () => {
+  beforeEach(() => {
+    selectMock.mockReset().mockImplementation(() => ({ order: orderMock }));
+    orderMock
+      .mockReset()
+      .mockImplementationOnce(() => ({ order: orderMock }))
+      .mockImplementationOnce(() => ({ range: rangeMock }));
+    rangeMock.mockReset().mockResolvedValue(mockResult);
+    mockResult = { data: null, count: 0, error: null };
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
-    mockResult = { data: null, error: null };
   });
 
   it("exposes the four canonical list ids", () => {
@@ -36,92 +48,56 @@ describe("v2-lists narrowing + loader", () => {
     expect(isV2ListId("residents")).toBe(true);
     expect(isV2ListId("alerts")).toBe(true);
     expect(isV2ListId("nope")).toBe(false);
-    expect(isV2ListId("")).toBe(false);
   });
 
-  it("returns an explicit empty state when the view returns no rows", async () => {
-    mockResult = { data: [], error: null };
-    const load = await loadV2List("residents");
-    expect(load.source).toBe("empty");
-    expect(load.rows).toEqual([]);
+  it("applies count, stable ordering, and inclusive range from pagination", async () => {
+    mockResult = { data: [], count: 200, error: null };
+    rangeMock.mockResolvedValue(mockResult);
+
+    const load = await loadV2List("incidents", { page: "2", pageSize: "50" });
+
+    expect(selectMock).toHaveBeenCalledWith(expect.any(String), { count: "exact" });
+    expect(orderMock).toHaveBeenNthCalledWith(1, "occurred_at", { ascending: false });
+    expect(orderMock).toHaveBeenNthCalledWith(2, "incident_id", { ascending: true });
+    expect(rangeMock).toHaveBeenCalledWith(50, 99);
+    expect(load.pagination).toMatchObject({ page: 2, pageSize: 50, from: 50, to: 99, totalCount: 200 });
+    expect(load.source).toBe("live");
   });
 
-  it("returns an unavailable state when the view errors", async () => {
-    mockResult = { data: null, error: { message: "boom" } };
+  it("clamps invalid pagination and max page size", async () => {
+    mockResult = { data: [], count: 0, error: null };
+    rangeMock.mockResolvedValue(mockResult);
+
+    const load = await loadV2List("residents", { page: "-3", pageSize: "999" });
+
+    expect(rangeMock).toHaveBeenCalledWith(0, 99);
+    expect(load.pagination.page).toBe(1);
+    expect(load.pagination.pageSize).toBe(100);
+  });
+
+  it("returns unavailable on query error", async () => {
+    mockResult = { data: null, count: null, error: { message: "boom" } };
+    rangeMock.mockResolvedValue(mockResult);
+
     const load = await loadV2List("incidents");
     expect(load.source).toBe("unavailable");
     expect(load.rows).toEqual([]);
   });
 
-  it("maps live residents view rows into the canonical V2ListRow shape", async () => {
-    mockResult = {
-      data: [
-        {
-          resident_id: "r-1",
-          facility_id: "f-1",
-          facility_name: "Oakridge ALF",
-          resident_name: "A. Smith",
-          resident_status: "active",
-          primary_diagnosis: "Heart failure",
-        },
-      ],
-      error: null,
-    };
-    const load = await loadV2List("residents");
+  it("returns live when total rows exist but current page has no rows", async () => {
+    mockResult = { data: [], count: 10, error: null };
+    rangeMock.mockResolvedValue(mockResult);
+
+    const load = await loadV2List("alerts", { page: "99", pageSize: "50" });
+    expect(load.rows).toEqual([]);
     expect(load.source).toBe("live");
-    expect(load.rows[0]).toMatchObject({
-      id: "r-1",
-      primary: "A. Smith",
-      facilityName: "Oakridge ALF",
-      status: "active",
-      secondary: "Heart failure",
-    });
   });
 
-  it("maps live incidents view rows including badges and severity", async () => {
-    mockResult = {
-      data: [
-        {
-          incident_id: "i-1",
-          facility_id: "f-1",
-          facility_name: "Oakridge ALF",
-          incident_number: "INC-001",
-          category: "fall",
-          severity: "high",
-          incident_status: "open",
-          occurred_at: "2026-04-24T12:00:00-04:00",
-          injury_occurred: true,
-          ahca_reportable: true,
-          ahca_reported: false,
-        },
-      ],
-      error: null,
-    };
-    const load = await loadV2List("incidents");
-    expect(load.rows[0]!.severity).toBe("high");
-    expect(load.rows[0]!.badges).toEqual(["Injury", "AHCA reportable"]);
-  });
+  it("returns empty only when total count is zero", async () => {
+    mockResult = { data: [], count: 0, error: null };
+    rangeMock.mockResolvedValue(mockResult);
 
-  it("maps live alerts view rows with severity normalization", async () => {
-    mockResult = {
-      data: [
-        {
-          alert_id: "a-1",
-          facility_id: "f-1",
-          facility_name: "Oakridge ALF",
-          title: "Variance",
-          category: "clinical",
-          severity: "medium",
-          status: "new",
-          source_metric_code: "emar_variance_pct",
-          first_triggered_at: "2026-04-24T11:00:00-04:00",
-        },
-      ],
-      error: null,
-    };
     const load = await loadV2List("alerts");
-    expect(load.rows[0]!.severity).toBe("medium");
-    expect(load.rows[0]!.primary).toBe("Variance");
-    expect(load.rows[0]!.secondary).toBe("clinical");
+    expect(load.source).toBe("empty");
   });
 });

@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 
+import {
+  buildV2PaginationMeta,
+  resolveV2Pagination,
+  type V2PaginationInput,
+  type V2PaginationMeta,
+} from "./v2-pagination";
+
 export type V2ListId = "residents" | "incidents" | "alerts" | "admissions";
 
 export const V2_LIST_IDS: readonly V2ListId[] = [
@@ -36,10 +43,15 @@ export type V2ListLoad = {
   rows: V2ListRow[];
   source: V2LiveSource;
   generatedAt: string;
+  pagination: V2PaginationMeta;
 };
 
 type SupabaseRow = Record<string, unknown>;
-type ListResult = { data: SupabaseRow[] | null; error: { message: string } | null };
+type ListResult = {
+  data: SupabaseRow[] | null;
+  count: number | null;
+  error: { message: string } | null;
+};
 
 const VIEW_FOR: Record<V2ListId, string> = {
   residents: "vw_v2_residents_list",
@@ -73,14 +85,28 @@ const ORDER_DESC: Record<V2ListId, boolean> = {
   admissions: false,
 };
 
-export async function loadV2List(listId: V2ListId): Promise<V2ListLoad> {
+const ID_ORDER_BY: Record<V2ListId, string> = {
+  residents: "resident_id",
+  incidents: "incident_id",
+  alerts: "alert_id",
+  admissions: "admission_case_id",
+};
+
+export async function loadV2List(
+  listId: V2ListId,
+  options?: V2PaginationInput,
+): Promise<V2ListLoad> {
   const supabase = await createClient();
+  const range = resolveV2Pagination(options);
   const result = (await supabase
     .schema("haven" as never)
     .from(VIEW_FOR[listId] as never)
-    .select(SELECTS[listId])
-    .order(ORDER_BY[listId] as never, { ascending: !ORDER_DESC[listId] })) as unknown as ListResult;
+    .select(SELECTS[listId], { count: "exact" })
+    .order(ORDER_BY[listId] as never, { ascending: !ORDER_DESC[listId] })
+    .order(ID_ORDER_BY[listId] as never, { ascending: true })
+    .range(range.from, range.to)) as unknown as ListResult;
 
+  const pagination = buildV2PaginationMeta(range, result.count);
   const generatedAt = new Date().toISOString();
 
   if (result.error) {
@@ -89,6 +115,7 @@ export async function loadV2List(listId: V2ListId): Promise<V2ListLoad> {
       rows: [],
       source: "unavailable",
       generatedAt,
+      pagination,
     };
   }
 
@@ -98,14 +125,16 @@ export async function loadV2List(listId: V2ListId): Promise<V2ListLoad> {
       rows: mapRows(listId, result.data),
       source: "live",
       generatedAt,
+      pagination,
     };
   }
 
   return {
     listId,
     rows: [],
-    source: "empty",
+    source: pagination.totalCount > 0 ? "live" : "empty",
     generatedAt,
+    pagination,
   };
 }
 

@@ -1,11 +1,23 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockUser = { id: "user-1", app_metadata: { app_role: "owner" } };
 
-let mockViewResult: { data: unknown[] | null; error: { message: string } | null } = {
+let mockFacilityOptionsResult: { data: unknown[] | null; error: { message: string } | null } = {
   data: [],
   error: null,
 };
+let mockTableResult: { data: unknown[] | null; count: number | null; error: { message: string } | null } = {
+  data: [],
+  count: 0,
+  error: null,
+};
+let mockOrgFacilityCount = 0;
+
+const facilitySelectMock = vi.fn();
+const tableSelectMock = vi.fn();
+const tableRangeMock = vi.fn();
+const publicSelectMock = vi.fn();
+const publicIsMock = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -14,10 +26,14 @@ vi.mock("@/lib/supabase/server", () => ({
     },
     schema: () => ({
       from: () => ({
-        select: () => ({
-          order: () => Promise.resolve(mockViewResult),
-        }),
+        select: (columns: string, options?: { count?: string }) => {
+          if (columns === "facility_id, facility_name" && !options) return facilitySelectMock();
+          return tableSelectMock(columns, options);
+        },
       }),
+    }),
+    from: () => ({
+      select: publicSelectMock,
     }),
   })),
 }));
@@ -26,11 +42,27 @@ import { loadV2Dashboard } from "./v2-dashboard-loader";
 
 describe("loadV2Dashboard", () => {
   beforeEach(() => {
-    mockViewResult = { data: [], error: null };
-  });
+    mockFacilityOptionsResult = { data: [], error: null };
+    mockTableResult = { data: [], count: 0, error: null };
+    mockOrgFacilityCount = 0;
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+    facilitySelectMock.mockReset().mockReturnValue({
+      order: vi.fn().mockReturnValue({
+        order: vi.fn().mockImplementation(() => Promise.resolve(mockFacilityOptionsResult)),
+      }),
+    });
+
+    tableRangeMock.mockReset().mockResolvedValue(mockTableResult);
+    tableSelectMock.mockReset().mockReturnValue({
+      order: vi.fn().mockReturnValue({
+        order: vi.fn().mockReturnValue({
+          range: tableRangeMock,
+        }),
+      }),
+    });
+
+    publicIsMock.mockReset().mockResolvedValue({ count: mockOrgFacilityCount });
+    publicSelectMock.mockReset().mockReturnValue({ is: publicIsMock });
   });
 
   it("returns null for unknown dashboard ids", async () => {
@@ -38,73 +70,96 @@ describe("loadV2Dashboard", () => {
     expect(load).toBeNull();
   });
 
-  it("returns an explicit empty state when the view returns 0 rows", async () => {
-    mockViewResult = { data: [], error: null };
-    const load = await loadV2Dashboard("command-center");
-    expect(load).not.toBeNull();
-    expect(load!.rowsSource).toBe("empty");
+  it("keeps facility options unpaged while paginating table rows", async () => {
+    mockFacilityOptionsResult = {
+      data: [
+        { facility_id: "f-1", facility_name: "A" },
+        { facility_id: "f-2", facility_name: "B" },
+      ],
+      error: null,
+    };
+    mockTableResult = {
+      data: [{ facility_id: "f-1", facility_name: "A", occupancy_pct: 0.92, open_incidents_count: 4, survey_readiness_pct: 0.9 }],
+      count: 2,
+      error: null,
+    };
+    tableRangeMock.mockResolvedValue(mockTableResult);
+
+    const load = await loadV2Dashboard("command-center", { page: "1", pageSize: "1" });
+
+    expect(tableRangeMock).toHaveBeenCalledWith(0, 0);
+    expect(load!.facilities).toEqual([
+      { id: "f-1", label: "A" },
+      { id: "f-2", label: "B" },
+    ]);
+    expect(load!.payload.tableRows).toHaveLength(1);
+    expect(load!.payload.tableRows[0]).toMatchObject({
+      id: "f-1",
+      name: "A",
+      occupancyPct: 92,
+      openIncidents: 4,
+      surveyReadinessPct: 90,
+    });
+    expect(load!.tablePagination.totalCount).toBe(2);
+    expect(load!.rowsSource).toBe("live");
+  });
+
+  it("keeps rowsSource live when total rows exist but the requested page is empty", async () => {
+    mockFacilityOptionsResult = {
+      data: [{ facility_id: "f-1", facility_name: "A" }],
+      error: null,
+    };
+    mockTableResult = { data: [], count: 1, error: null };
+    tableRangeMock.mockResolvedValue(mockTableResult);
+
+    const load = await loadV2Dashboard("command-center", { page: "3", pageSize: "50" });
+
+    expect(load!.rowsSource).toBe("live");
     expect(load!.payload.tableRows).toEqual([]);
+    expect(load!.facilities).toEqual([{ id: "f-1", label: "A" }]);
+    expect(load!.tablePagination.totalCount).toBe(1);
+  });
+
+  it("does not expose facility options when the rollup table query is unavailable", async () => {
+    mockFacilityOptionsResult = {
+      data: [{ facility_id: "f-1", facility_name: "A" }],
+      error: null,
+    };
+    mockTableResult = { data: null, count: null, error: { message: "boom" } };
+    tableRangeMock.mockResolvedValue(mockTableResult);
+
+    const load = await loadV2Dashboard("clinical-quality");
+
+    expect(load!.rowsSource).toBe("unavailable");
     expect(load!.facilities).toEqual([]);
   });
 
-  it("returns an unavailable state when the view query errors", async () => {
-    mockViewResult = { data: null, error: { message: "boom" } };
+  it("keeps org facility count query head-only and unpaged", async () => {
+    mockOrgFacilityCount = 5;
+    publicIsMock.mockResolvedValue({ count: mockOrgFacilityCount });
+
+    const load = await loadV2Dashboard("executive-intelligence");
+
+    expect(publicSelectMock).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(publicIsMock).toHaveBeenCalledWith("deleted_at", null);
+    expect(load!.orgFacilityCount).toBe(5);
+  });
+
+  it("returns unavailable when paged table query errors", async () => {
+    mockTableResult = { data: null, count: null, error: { message: "boom" } };
+    tableRangeMock.mockResolvedValue(mockTableResult);
+
     const load = await loadV2Dashboard("clinical-quality");
     expect(load!.rowsSource).toBe("unavailable");
     expect(load!.payload.tableRows).toEqual([]);
-    expect(load!.facilities).toEqual([]);
   });
 
-  it("uses live rows from the view when available", async () => {
-    mockViewResult = {
-      data: [
-        {
-          facility_id: "f-1",
-          facility_name: "Live Facility A",
-          occupancy_pct: 0.92, // fraction → should normalize to 92
-          open_incidents_count: 4,
-          survey_readiness_pct: null,
-        },
-        {
-          facility_id: "f-2",
-          facility_name: "Live Facility B",
-          occupancy_pct: 88, // already a percent integer
-          open_incidents_count: null,
-          survey_readiness_pct: 0.85,
-        },
-      ],
-      error: null,
-    };
+  it("returns empty only when count is zero", async () => {
+    mockTableResult = { data: [], count: 0, error: null };
+    tableRangeMock.mockResolvedValue(mockTableResult);
+
     const load = await loadV2Dashboard("rounding-operations");
-    expect(load!.rowsSource).toBe("live");
-    expect(load!.payload.tableRows).toHaveLength(2);
-
-    const a = load!.payload.tableRows.find((r) => r.id === "f-1")!;
-    expect(a.name).toBe("Live Facility A");
-    expect(a.occupancyPct).toBe(92);
-    expect(a.openIncidents).toBe(4);
-    expect(a.surveyReadinessPct).toBeNull();
-    expect(a.laborCostPct).toBeNull();
-
-    const b = load!.payload.tableRows.find((r) => r.id === "f-2")!;
-    expect(b.occupancyPct).toBe(88);
-    expect(b.openIncidents).toBeNull();
-    expect(b.surveyReadinessPct).toBe(85);
-
-    expect(load!.facilities).toEqual([
-      { id: "f-1", label: "Live Facility A" },
-      { id: "f-2", label: "Live Facility B" },
-    ]);
-  });
-
-  it("derives the scope option list from the live row set", async () => {
-    mockViewResult = {
-      data: [
-        { facility_id: "x", facility_name: "Only One", occupancy_pct: null, open_incidents_count: 1, survey_readiness_pct: null },
-      ],
-      error: null,
-    };
-    const load = await loadV2Dashboard("executive-intelligence");
-    expect(load!.facilities).toEqual([{ id: "x", label: "Only One" }]);
+    expect(load!.rowsSource).toBe("empty");
+    expect(load!.tablePagination.totalCount).toBe(0);
   });
 });

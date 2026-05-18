@@ -11,7 +11,7 @@ import { isV2ListId, loadV2List } from "@/lib/v2-lists";
  * return an explicit empty/unavailable state; no fixture rows are substituted.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ listId: string }> },
 ) {
   const { listId } = await params;
@@ -28,7 +28,7 @@ export async function GET(
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const load = await loadV2List(listId);
+  const load = await loadV2List(listId, new URL(request.url).searchParams);
   return NextResponse.json(load, {
     status: 200,
     headers: { "cache-control": "no-store" },

@@ -12,7 +12,7 @@ import { isV2DashboardId } from "@/lib/v2-dashboards";
  * rowsSource marker; it never substitutes deterministic fixture rows.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -30,7 +30,7 @@ export async function GET(
     return NextResponse.json({ error: "Unknown dashboard id" }, { status: 404 });
   }
 
-  const load = await loadV2Dashboard(id);
+  const load = await loadV2Dashboard(id, new URL(request.url).searchParams);
   if (!load) {
     return NextResponse.json({ error: "Unknown dashboard id" }, { status: 404 });
   }
@@ -39,6 +39,8 @@ export async function GET(
     ...load.payload,
     rowsSource: load.rowsSource,
     facilities: load.facilities,
+    orgFacilityCount: load.orgFacilityCount,
+    tablePagination: load.tablePagination,
   }, {
     status: 200,
     headers: { "cache-control": "no-store" },
