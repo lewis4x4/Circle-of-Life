@@ -113,7 +113,7 @@ export const emergencyContactSchema = z.object({
   distance_miles: z.number().min(0).optional(),
   drive_time_minutes: z.number().int().min(0).optional(),
   account_number: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().max(500).optional(),
   sort_order: z.number().int().min(0).default(0),
 }).strict();
 
@@ -158,10 +158,17 @@ export type SurveyHistoryInput = z.infer<typeof surveyHistorySchema>;
 // ─── Building Profile ────────────────────────────────────────────────────────
 
 export const buildingProfileSchema = z.object({
-  year_built: z.number().int().min(1900).max(2100).optional(),
+  year_built: z
+    .number()
+    .int()
+    .min(1900)
+    .optional()
+    .refine((y) => y === undefined || y <= new Date().getFullYear(), {
+      message: 'Year built cannot be in the future',
+    }),
   last_renovation_year: z.number().int().optional(),
   square_footage: z.number().int().min(0).optional(),
-  number_of_floors: z.number().int().min(1).default(1),
+  number_of_floors: z.number().int().min(1).max(10).default(1),
   number_of_wings: z.number().int().min(0).optional(),
   construction_type: z.enum(CONSTRUCTION_TYPES).optional(),
   fire_suppression_type: z.enum(FIRE_SUPPRESSION_TYPES).optional(),

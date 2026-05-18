@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { EmergencyContactRow } from "@/hooks/useFacilityEmergencyContacts";
-import { countMissingEmergencySlots, type SlotContext } from "@/lib/admin/facilities/emergency-kpis";
+import { countMissingEmergencySlots, type SlotContext } from "@/lib/admin/facilities/emergency-directory";
 
 function Tile({
   label,

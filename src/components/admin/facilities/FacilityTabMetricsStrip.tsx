@@ -12,7 +12,7 @@ import {
 } from "@/components/admin/facilities/FacilityRatesMetricsStrip";
 import { FacilityBuildingMetricsStrip } from "@/components/admin/facilities/FacilityBuildingMetricsStrip";
 import { FacilityEmergencyContactsMetricsStrip } from "@/components/admin/facilities/FacilityEmergencyContactsMetricsStrip";
-import type { SlotContext } from "@/lib/admin/facilities/emergency-kpis";
+import type { SlotContext } from "@/lib/admin/facilities/emergency-directory";
 
 export function FacilityTabMetricsStrip({
   tab,

@@ -122,6 +122,11 @@ const nextConfig: NextConfig = {
         destination: "/admin/reports/nlq",
         permanent: false,
       },
+      {
+        source: "/admin/facilities/:facilityId/emergency-contacts",
+        destination: "/admin/facilities/:facilityId?tab=emergency",
+        permanent: false,
+      },
     ];
   },
   async headers() {
