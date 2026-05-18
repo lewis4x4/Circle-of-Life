@@ -33,6 +33,8 @@ type AdminFilterBarProps = {
   filters: Array<{
     id: string;
     ariaLabel?: string;
+    /** Optional leading glyph inside the trigger (Quiet Operator funnel icon, etc.). */
+    triggerPrefix?: React.ReactNode;
     value: string;
     options: FilterOption[];
     onChange: (value: string) => void;
@@ -79,9 +81,15 @@ export function AdminFilterBar(props: AdminFilterBarProps) {
         {filters.map((filter) => (
           <Select key={filter.id} value={filter.value} onValueChange={filter.onChange}>
             <SelectTrigger
-              className="h-8 w-[min(100vw-2rem,200px)] min-w-[140px] rounded-md border border-input bg-card text-[13px] text-foreground shadow-none"
+              id={`${filter.id}-trigger`}
+              className="h-8 w-[min(100vw-2rem,200px)] min-w-[140px] gap-2 rounded-md border border-input bg-card px-3 text-[13px] text-foreground shadow-none"
               aria-label={filter.ariaLabel ?? filter.id}
             >
+              {filter.triggerPrefix != null ? (
+                <span className="shrink-0 text-muted-foreground" aria-hidden>
+                  {filter.triggerPrefix}
+                </span>
+              ) : null}
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

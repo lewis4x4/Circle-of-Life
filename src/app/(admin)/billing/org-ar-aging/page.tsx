@@ -102,7 +102,7 @@ export default function AdminOrgArAgingPage() {
           <div className="space-y-3">
              
              <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Org AR Aging
+               Org AR aging
              </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
                Open invoice balances rolled up to legal entity.

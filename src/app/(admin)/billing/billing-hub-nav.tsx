@@ -30,10 +30,10 @@ export function BillingHubNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+              "relative rounded-none border-b-2 px-3 py-2 text-[13px] font-medium transition-colors",
               active
-                ? "bg-secondary text-foreground shadow-sm ring-1 ring-primary/25 after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-primary"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                ? "-mb-[1px] border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:border-muted hover:text-foreground",
             )}
             aria-current={active ? "page" : undefined}
           >
