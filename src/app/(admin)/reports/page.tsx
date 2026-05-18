@@ -5,8 +5,7 @@ import Link from "next/link";
 import { History, ArrowRight, X } from "lucide-react";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";

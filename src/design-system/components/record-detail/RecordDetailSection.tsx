@@ -35,6 +35,8 @@ import { cn } from "@/lib/utils";
  *   - Hover lift: 2px applies to TILE-like sub-elements, NOT to sections
  *     themselves. Sections are stationary; only interactive tiles within
  *     them receive the lift treatment.
+ *   - Section `<h2>` uses Quiet Operator typography: sentence case Geist sans,
+ *     **`text-[14px] font-semibold text-foreground`** (not monospace all-caps).
  *
  * Constraints:
  *   - 100% semantic Tailwind tokens — zero hardcoded colors.
@@ -43,7 +45,7 @@ import { cn } from "@/lib/utils";
  */
 export interface RecordDetailSectionProps {
   /**
-   * Section label displayed in small-caps style above the body.
+   * Section label — sentence case, **`text-[14px] font-semibold`**, Geist (default sans).
    * Rendered as <h2> for document outline semantics.
    */
   title: string;
@@ -98,17 +100,7 @@ export function RecordDetailSection({
       {/* Section header row — title + optional action */}
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-3">
         <div className="min-w-0 flex-1">
-          {/*
-           * h2 provides the implicit accessible name for this <section>.
-           * Text is styled as caption / small-caps per Record Detail emphasis.
-           * Note: 11px falls below WCAG AA for body copy but is acceptable
-           * for section labels (supplementary navigation landmark, not primary
-           * reading content). Ensure sufficient contrast via muted-foreground
-           * on the bg-card surface.
-           */}
-          <h2 className={cn("text-[11px] font-medium uppercase tracking-wider text-muted-foreground")}>
-            {title}
-          </h2>
+          <h2 className="text-sm font-semibold tracking-normal normal-case text-foreground">{title}</h2>
           {description && (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           )}
