@@ -9,6 +9,7 @@ import {
   AdminEmptyState,
   AdminFilterBar,
   AdminLiveDataFallbackNotice,
+  AdminOperationalListPanel,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -328,7 +329,7 @@ export function AdminResidentsPageClient({
       ) : null}
 
       {!isLoading && !error && filteredRows.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <AdminOperationalListPanel>
           <TableRowHeader className="hidden lg:flex">
             <div className="flex-[3]">Resident</div>
             <div className="flex-1">Location</div>
@@ -381,7 +382,7 @@ export function AdminResidentsPageClient({
               </MotionItem>
             ))}
           </MotionList>
-        </div>
+        </AdminOperationalListPanel>
       ) : null}
     </div>
   );

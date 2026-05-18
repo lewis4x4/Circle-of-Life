@@ -7,6 +7,47 @@ import { listActorAccessibleFacilityIds, requireAdminApiActor } from "@/lib/admi
 import { listFacilitiesQuerySchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { portfolioOccupancyPercent } from "@/lib/admin/facilities/portfolio-metrics";
+
+function pickSurveyReadinessPct(summaryJson: unknown): number | null {
+  if (!summaryJson || typeof summaryJson !== "object") return null;
+  const raw = (summaryJson as Record<string, unknown>).survey_readiness_pct;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return Math.max(0, Math.min(100, raw));
+  }
+  if (typeof raw === "string") {
+    const n = Number(raw);
+    if (Number.isFinite(n)) return Math.max(0, Math.min(100, n));
+  }
+  return null;
+}
+
+type StaffAdminRow = {
+  id: string;
+  facility_id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+function resolveFacilityAdministrator(
+  facilityId: string,
+  admins: StaffAdminRow[],
+  storedAdministratorName: string | null | undefined,
+): { name: string | null; staffId: string | null } {
+  const atSite = admins.filter((s) => s.facility_id === facilityId);
+  atSite.sort(
+    (a, b) =>
+      (a.last_name ?? "").localeCompare(b.last_name ?? "", undefined, { sensitivity: "base" }) ||
+      (a.first_name ?? "").localeCompare(b.first_name ?? "", undefined, { sensitivity: "base" }),
+  );
+  const top = atSite[0];
+  if (top) {
+    const nm = `${top.first_name ?? ""} ${top.last_name ?? ""}`.trim();
+    return { name: nm || null, staffId: top.id };
+  }
+  const stored = storedAdministratorName?.trim();
+  return { name: stored || null, staffId: null };
+}
 
 // ── GET: List Facilities ──────────────────────────────────────────
 
@@ -46,7 +87,7 @@ export async function GET(request: NextRequest) {
   let query = admin
     .from("facilities")
     .select(
-      "id, name, phone, email, address_line_1, city, state, zip, county, total_licensed_beds, status, created_at, organization_id",
+      "id, name, phone, email, address_line_1, city, state, zip, county, total_licensed_beds, status, created_at, organization_id, administrator_name",
       { count: "exact" },
     )
     .eq("organization_id", actor.organization_id!)
@@ -104,73 +145,146 @@ export async function GET(request: NextRequest) {
     }
   > = {};
 
+  const incidentsByFacility = new Map<string, { open: number; open_level_3: number }>();
+  const surveyPctByFacility = new Map<string, number>();
+  const administratorsByFacility: StaffAdminRow[] = [];
+
   if (facilityIds.length > 0) {
-    // Get occupancy from beds
-    const { data: beds } = await untypedAdmin
-      .from("beds")
-      .select("facility_id, is_occupied")
-      .in("facility_id", facilityIds);
+    const orgId = actor.organization_id!;
+    const [bedsRes, alertsRes, incRes, admRes, riskRes] = await Promise.all([
+      untypedAdmin.from("beds").select("facility_id, is_occupied").in("facility_id", facilityIds),
+      untypedAdmin
+        .from("facility_operational_thresholds")
+        .select("facility_id")
+        .in("facility_id", facilityIds)
+        .eq("enabled", true),
+      untypedAdmin
+        .from("incidents")
+        .select("facility_id, status, severity")
+        .eq("organization_id", orgId)
+        .in("facility_id", facilityIds)
+        .is("deleted_at", null),
+      untypedAdmin
+        .from("staff")
+        .select("id, facility_id, first_name, last_name")
+        .in("facility_id", facilityIds)
+        .eq("staff_role", "administrator")
+        .eq("employment_status", "active")
+        .is("deleted_at", null),
+      untypedAdmin
+        .from("risk_score_snapshots")
+        .select("facility_id, computed_at, summary_json")
+        .eq("organization_id", orgId)
+        .in("facility_id", facilityIds)
+        .is("deleted_at", null)
+        .order("computed_at", { ascending: false }),
+    ]);
 
-    const typedBeds = (beds ?? []) as unknown as Array<{ facility_id: string; is_occupied: boolean }>;
-    if (beds) {
-      for (const bed of typedBeds) {
-        if (!statsMap[bed.facility_id]) {
-          statsMap[bed.facility_id] = {
-            occupancy_count: 0,
-            total_beds: 0,
-            occupancy_pct: 0,
-            alert_count: 0,
-          };
-        }
-        statsMap[bed.facility_id].total_beds++;
-        if (bed.is_occupied) {
-          statsMap[bed.facility_id].occupancy_count++;
-        }
+    const typedBeds =
+      (((bedsRes as { data?: unknown }).data ?? []) as unknown as Array<{
+        facility_id: string;
+        is_occupied: boolean;
+      }>) ?? [];
+
+    for (const bed of typedBeds) {
+      if (!statsMap[bed.facility_id]) {
+        statsMap[bed.facility_id] = {
+          occupancy_count: 0,
+          total_beds: 0,
+          occupancy_pct: 0,
+          alert_count: 0,
+        };
       }
+      statsMap[bed.facility_id].total_beds++;
+      if (bed.is_occupied) statsMap[bed.facility_id].occupancy_count++;
     }
 
-    // Get alert counts
-    const { data: alerts } = await untypedAdmin
-      .from("facility_operational_thresholds")
-      .select("facility_id")
-      .in("facility_id", facilityIds)
-      .eq("enabled", true);
+    const typedAlerts =
+      (((alertsRes as { data?: unknown }).data ?? []) as unknown as Array<{ facility_id: string }>) ?? [];
 
-    const typedAlerts = (alerts ?? []) as unknown as Array<{ facility_id: string }>;
-    if (alerts) {
-      for (const alert of typedAlerts) {
-        if (!statsMap[alert.facility_id]) {
-          statsMap[alert.facility_id] = {
-            occupancy_count: 0,
-            total_beds: 0,
-            occupancy_pct: 0,
-            alert_count: 0,
-          };
-        }
-        statsMap[alert.facility_id].alert_count++;
+    for (const alert of typedAlerts) {
+      if (!statsMap[alert.facility_id]) {
+        statsMap[alert.facility_id] = {
+          occupancy_count: 0,
+          total_beds: 0,
+          occupancy_pct: 0,
+          alert_count: 0,
+        };
       }
+      statsMap[alert.facility_id].alert_count++;
     }
 
-    // Calculate percentages
-    for (const fid of facilityIds) {
-      if (statsMap[fid]) {
-        const stats = statsMap[fid];
-        stats.occupancy_pct =
-          stats.total_beds > 0 ? Math.round((stats.occupancy_count / stats.total_beds) * 100) : 0;
-      }
+    const incRows =
+      (((incRes as { data?: unknown }).data ?? []) as unknown as Array<{
+        facility_id: string;
+        status: string;
+        severity: string;
+      }>) ?? [];
+
+    for (const inc of incRows) {
+      if (inc.status === "closed" || inc.status === "resolved") continue;
+      const cur = incidentsByFacility.get(inc.facility_id) ?? { open: 0, open_level_3: 0 };
+      cur.open += 1;
+      if (inc.severity === "level_3") cur.open_level_3 += 1;
+      incidentsByFacility.set(inc.facility_id, cur);
+    }
+
+    administratorsByFacility.push(
+      ...((((admRes as { data?: unknown }).data ?? []) as unknown as StaffAdminRow[]) ?? []),
+    );
+
+    const riskRows =
+      (((riskRes as { data?: unknown }).data ?? []) as unknown as Array<{
+        facility_id: string;
+        summary_json: unknown;
+      }>) ?? [];
+
+    for (const rr of riskRows) {
+      if (surveyPctByFacility.has(rr.facility_id)) continue;
+      const pct = pickSurveyReadinessPct(rr.summary_json);
+      if (pct != null) surveyPctByFacility.set(rr.facility_id, pct);
     }
   }
 
   let data = (facilities ?? []).map((f) => {
-    const row = f as { id: string; total_licensed_beds?: number };
+    const row = f as {
+      id: string;
+      total_licensed_beds?: number;
+      administrator_name?: string | null;
+    };
+    const licensed = typeof row.total_licensed_beds === "number" ? row.total_licensed_beds : 0;
+    const stats = statsMap[row.id] ?? {
+      occupancy_count: 0,
+      total_beds: 0,
+      occupancy_pct: 0,
+      alert_count: 0,
+    };
+
+    const phy = stats.total_beds;
+
+    const occupancy_pct = portfolioOccupancyPercent(stats.occupancy_count, phy, licensed);
+    const inc = incidentsByFacility.get(row.id) ?? { open: 0, open_level_3: 0 };
+
+    const { name: administrator_name, staffId: administrator_staff_id } = resolveFacilityAdministrator(
+      row.id,
+      administratorsByFacility,
+      row.administrator_name ?? null,
+    );
+
+    const survey_readiness_pct = surveyPctByFacility.has(row.id) ? surveyPctByFacility.get(row.id)! : null;
+
     return {
       ...row,
-      ...(statsMap[row.id] || {
-        occupancy_count: 0,
-        total_beds: row.total_licensed_beds || 0,
-        occupancy_pct: 0,
-        alert_count: 0,
-      }),
+      occupancy_count: stats.occupancy_count,
+      total_beds: phy,
+      occupancy_pct,
+      alert_count: stats.alert_count,
+      portfolio_open_incidents_total: inc.open,
+      portfolio_open_incidents_level_3: inc.open_level_3,
+      survey_readiness_pct,
+      administrator_name,
+      administrator_staff_id,
+      labor_cost_mtd_pct: null as number | null,
     };
   });
 

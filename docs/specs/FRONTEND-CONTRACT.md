@@ -260,3 +260,17 @@ Applies to **Attio-derived record detail pages** (`RecordDetailHeader` + `Record
 
 - **Header badges / chips:** **Binary positive operational states** (e.g. active employment, certs healthy) MAY use **`Badge`** with **`tone="success"`**. **Taxonomy-only labels** (job family / role: Nurse, Caregiver, Admin, Med Tech) use **`Badge variant="outline"`** neutral — **never** reuse success/warning tint for role metadata. Severity states (terminated, expired cert, leave) remain warning/danger/neutral per meaning.
 
+## 8) Table / List surface (Quiet Operator · S7+)
+
+Applies to **dense operational hub listings** where each row navigates as a primary surface (staff roster, residents, time records, queues).
+
+- **List canvas:** **`AdminOperationalListPanel`** from `@/components/common/admin-list-patterns` wraps the bordered region. It uses **`rounded-xl`**, **`bg-card`**, **`border-border`**, **`ring-1 ring-border/60`**, **`shadow-[var(--shadow-card)]`** — parity with **`RecordDetailSection`** so list blocks read as discrete cards rather than oversized strip chrome.
+
+- **Optional toolbar:** Pass **`toolbar={…}`** for a **`bg-card/60`** title row (**`px-[13px] py-2`**, bottom border). Omit when **`TableRowHeader` + rows** are enough.
+
+- **Row primitives:** **`TableRow`** and **`TableRowHeader`** from `@/components/ui/table-row` encode **36px rows**, **`px-[13px]`**, **8px row radius**, **hover lift**, and **`StatusPill`** discipline (see inline spec in that module). Prefer **`render={<Link href={…} />}`** for navigable rows. Do not stack multi-line label/value stacks inside bounded rows — captions live in **`TableRowHeader`**.
+
+- **Motion:** Optional **`MotionList`** / **`MotionItem`** wrappers keep entrance motion consistent (**`MotionList`** typically **`space-y-1 p-1`** around rows).
+
+- **Above the canvas:** **`AdminFilterBar`** for hub search/select filters; **`AdminTableLoadingState`**, **`AdminEmptyState`**, **`AdminLiveDataFallbackNotice`**, **`AdminErrorState`** remain the canonical non-row states.
+

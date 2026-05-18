@@ -92,6 +92,14 @@ export interface FacilityRow extends BaseFacilityRow {
   last_survey_date?: string | null;
   /** Most recent AHCA survey result */
   last_survey_result?: string | null;
+  /** List API enrichment — administrator profile ID when sourced from roster */
+  administrator_staff_id?: string | null;
+  /** Risk snapshot / intelligence survey readiness projection (0–100) when present */
+  survey_readiness_pct?: number | null;
+  portfolio_open_incidents_total?: number;
+  portfolio_open_incidents_level_3?: number;
+  /** Labor dollars as percent of census revenue — pending finance aggregate; UI uses em-dash when null */
+  labor_cost_mtd_pct?: number | null;
 }
 
 /** Optional fields returned by facility detail / list APIs */

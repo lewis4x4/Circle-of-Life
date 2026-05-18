@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
+/** Outer shell for dense operator hub lists (`TableRow` stacks). Mirrors Record Detail discrete cards (`rounded-xl` + subtle ring per FRONTEND-CONTRACT §7–§8). */
+const OPERATIONAL_LIST_PANEL_CLASS =
+  "overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)] ring-1 ring-border/60";
+
 type FilterOption = {
   value: string;
   label: string;
@@ -80,9 +84,34 @@ export function AdminFilterBar({
   );
 }
 
-export function AdminTableLoadingState() {
+type AdminOperationalListPanelProps = {
+  /** Optional top row inside the panel (section title + actions). Omit when headers + rows suffice. */
+  toolbar?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+};
+
+export function AdminOperationalListPanel({ toolbar, className, children }: AdminOperationalListPanelProps) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+    <div className={cn(OPERATIONAL_LIST_PANEL_CLASS, className)}>
+      {toolbar != null ? (
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-card/60 px-[13px] py-2">
+          {toolbar}
+        </div>
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+export function AdminTableLoadingState({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-2 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-card)] ring-1 ring-border/60",
+        className,
+      )}
+    >
       <Skeleton className="h-8 w-full bg-muted" />
       <Skeleton className="h-9 w-full bg-muted" />
       <Skeleton className="h-9 w-full bg-muted" />

@@ -9,6 +9,7 @@ import {
   AdminEmptyState,
   AdminFilterBar,
   AdminLiveDataFallbackNotice,
+  AdminOperationalListPanel,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -366,23 +367,25 @@ export function AdminStaffPageClient({
       ) : null}
 
       {!isLoading && filteredRows.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between gap-3 px-[13px] py-2 border-b border-border bg-card/60">
-            <h2 className="text-[13px] font-medium text-foreground">Team directory</h2>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 shrink-0 text-[11px]"
-              disabled={exportingCsv}
-              aria-busy={exportingCsv}
-              onClick={() => void exportStaffRosterCsv()}
-            >
-              <Download className="mr-1.5 size-3" aria-hidden />
-              {exportingCsv ? "Exporting…" : "Download roster CSV"}
-            </Button>
-          </div>
-
+        <AdminOperationalListPanel
+          toolbar={
+            <>
+              <h2 className="text-[13px] font-medium text-foreground">Team directory</h2>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 shrink-0 text-[11px]"
+                disabled={exportingCsv}
+                aria-busy={exportingCsv}
+                onClick={() => void exportStaffRosterCsv()}
+              >
+                <Download className="mr-1.5 size-3" aria-hidden />
+                {exportingCsv ? "Exporting…" : "Download roster CSV"}
+              </Button>
+            </>
+          }
+        >
           <TableRowHeader className="hidden lg:flex">
             <div className="flex-[3]">Staff</div>
             <div className="flex-1">Status</div>
@@ -446,7 +449,7 @@ export function AdminStaffPageClient({
               </MotionItem>
             ))}
           </MotionList>
-        </div>
+        </AdminOperationalListPanel>
       ) : null}
     </div>
   );

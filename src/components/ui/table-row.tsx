@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
  * primitives. Single source of truth for row density and chrome.
  *
  * Spec bindings:
+ *   - docs/specs/FRONTEND-CONTRACT.md §8 (Table / List surface)
  *   - surface-map.md §Table/List + §Inbox/Work Queue:
  *     Row height 36px · Padding 13px · Border radius 8px · Hover lift 1-2px
  *   - component-rules.md §Tables rule 1 — "Row height matches the per-
