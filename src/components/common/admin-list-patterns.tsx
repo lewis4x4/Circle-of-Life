@@ -21,7 +21,10 @@ const OPERATIONAL_LIST_PANEL_CLASS =
 
 type FilterOption = {
   value: string;
+  /** Full row copy inside the dropdown menu. */
   label: string;
+  /** Compact trigger copy when this option is selected (defaults to `label`). */
+  shortLabel?: string;
 };
 
 type AdminFilterBarProps = {
@@ -35,6 +38,12 @@ type AdminFilterBarProps = {
     ariaLabel?: string;
     /** Optional leading glyph inside the trigger (Quiet Operator funnel icon, etc.). */
     triggerPrefix?: React.ReactNode;
+    /**
+     * When set, drives the Select trigger title for the baseline (first-option) selection
+     * and enables compact labeling for dropdown rows that include counts.
+     * When omitted, Radix `<SelectValue />` is rendered (backward compatible).
+     */
+    compactLabel?: string;
     value: string;
     options: FilterOption[];
     onChange: (value: string) => void;
@@ -83,14 +92,42 @@ export function AdminFilterBar(props: AdminFilterBarProps) {
             <SelectTrigger
               id={`${filter.id}-trigger`}
               className="h-8 w-[min(100vw-2rem,200px)] min-w-[140px] gap-2 rounded-md border border-input bg-card px-3 text-[13px] text-foreground shadow-none"
-              aria-label={filter.ariaLabel ?? filter.id}
+              aria-label={
+                filter.compactLabel
+                  ? (() => {
+                      const selected = filter.options.find((option) => option.value === filter.value);
+                      const first = filter.options[0];
+                      const isBaseline = !!first && selected?.value === first.value;
+                      const verbal = selected?.label ?? filter.compactLabel;
+                      const state = isBaseline ? filter.compactLabel : verbal.replace(/\s+/g, " ").trim();
+                      return `${filter.ariaLabel ?? filter.compactLabel}: ${state}`;
+                    })()
+                  : (filter.ariaLabel ?? filter.id)
+              }
             >
               {filter.triggerPrefix != null ? (
                 <span className="shrink-0 text-muted-foreground" aria-hidden>
                   {filter.triggerPrefix}
                 </span>
               ) : null}
-              <SelectValue />
+              {filter.compactLabel ? (
+                <span className="truncate">
+                  {(() => {
+                    const selected = filter.options.find((option) => option.value === filter.value);
+                    const first = filter.options[0];
+                    const isBaseline = !!first && selected?.value === first.value;
+                    if (isBaseline) return filter.compactLabel;
+                    const short =
+                      selected?.shortLabel ??
+                      selected?.label
+                        .replace(/^All\s+/i, "")
+                        .replace(/\s*\(\d+\)\s*$/, "");
+                    return short;
+                  })()}
+                </span>
+              ) : (
+                <SelectValue />
+              )}
             </SelectTrigger>
             <SelectContent>
               {filter.options.map((option) => (

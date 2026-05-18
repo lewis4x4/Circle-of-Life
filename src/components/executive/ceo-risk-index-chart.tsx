@@ -76,6 +76,14 @@ const GRID_STROKE_COLOR = "hsl(36, 6%, 14%)"; // --border
 const REF_LINE_COLOR = "hsl(32, 58%, 60%)";   // --warning
 const REF_AREA_COLOR = "hsl(8, 48%, 54%)";    // --destructive
 
+function chartFacilityName(payload: unknown): string | null {
+  if (typeof payload !== "object" || payload === null || !("facility" in payload)) {
+    return null;
+  }
+  const facility = (payload as { facility?: unknown }).facility;
+  return typeof facility === "string" ? facility : null;
+}
+
 // ── RISK LEVEL CALCULATOR ──
 
 export function getRiskLevel(
@@ -242,11 +250,11 @@ export function CeoRiskIndexChart({
             radius={[4, 4, 0, 0]}
             barSize={40}
             cursor={onFacilityClick ? "pointer" : "default"}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={(data: any) => {
+            onClick={(data: unknown) => {
               if (onFacilityClick) {
+                const facilityName = chartFacilityName(data);
                 const facility = enrichedData.find(
-                  (item) => item.facility === data.facility
+                  (item) => item.facility === facilityName
                 );
                 if (facility) onFacilityClick(facility);
               }

@@ -320,7 +320,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         items: [
           { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", enabled: true, icon: UserPlus },
           { key: "admissions", href: "/pipeline/recent-admissions", label: "Admissions overview", enabled: true, icon: Home },
-          { key: "discharge", href: "/admin/discharge", label: "Discharge & transition", enabled: true, icon: DoorOpen },
+          { key: "discharge", href: "/pipeline/discharge-management", label: "Medication reconciliation", enabled: true, icon: DoorOpen },
           { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", enabled: true, icon: Heart },
           { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
         ],
@@ -335,7 +335,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", enabled: true, icon: Clock },
           { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", enabled: true, icon: Pill },
           { key: "medication-errors", href: "/admin/medications/errors", label: "Medication errors", enabled: true, icon: ShieldAlert },
-          { key: "medications", href: "/admin/medications", label: "Medication management", enabled: true, icon: Pill },
+          { key: "medications", href: "/admin/medications", label: "Medications", enabled: true, icon: Pill },
           { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", enabled: true, icon: Utensils },
           { key: "transportation", href: "/admin/transportation", label: "Transportation", enabled: true, icon: Truck },
         ],
@@ -576,7 +576,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {facilityControlLoading ? (
           <Skeleton className="h-3.5 flex-1 rounded bg-muted" aria-label="Loading facilities" />
         ) : (
-          <span className="flex-1 truncate text-left">{facilityTriggerLabel}</span>
+          <span
+            className="flex-1 min-w-0 max-w-[min(28rem,calc(100vw-12rem))] truncate text-left"
+            title={
+              !facilityControlLoading && safeSelectedFacilityId !== null && currentFacility?.name
+                ? currentFacility.name
+                : undefined
+            }
+          >
+            {facilityTriggerLabel}
+          </span>
         )}
         <ChevronDown className="size-3.5 shrink-0 opacity-90" aria-hidden />
       </DropdownMenuTrigger>
@@ -681,7 +690,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex w-[284px] shrink-0 flex-col border-r border-border haven-chrome-sidebar",
+          "hidden lg:flex w-[308px] shrink-0 flex-col border-r border-border haven-chrome-sidebar",
         )}
         aria-label="Sidebar"
       >
@@ -713,7 +722,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[304px] border-r border-border haven-chrome-sidebar p-0"
+              className="w-[328px] border-r border-border haven-chrome-sidebar p-0"
               showCloseButton={false}
             >
               <SheetHeader className="sr-only">

@@ -167,13 +167,8 @@ describe("UI-V2 flags", () => {
     ).toBe("/admin/v2/finance/trial-balance");
   });
 
-  it("S10 form routes are covered by S9 list prefixes (one-deep rewrite)", () => {
-    // /admin/residents/new gets rewritten via the /residents prefix because
-    // it's one segment deep — the V2 page at residents/new/page.tsx wins over
-    // [id]/page.tsx via Next routing precedence (static beats dynamic).
-    expect(resolveUiV2AdminRewritePath("/admin/residents/new", { enabled: true })).toBe(
-      "/admin/v2/residents/new",
-    );
+  it("S10 form routes: incidents/admissions new still rewrite; residents/new override form does not", () => {
+    expect(resolveUiV2AdminRewritePath("/admin/residents/new", { enabled: true })).toBeNull();
     expect(resolveUiV2AdminRewritePath("/admin/incidents/new", { enabled: true })).toBe(
       "/admin/v2/incidents/new",
     );

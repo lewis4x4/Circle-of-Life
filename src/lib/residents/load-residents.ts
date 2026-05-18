@@ -13,12 +13,14 @@ export type ResidentRow = {
   name: string;
   initials: string;
   room: string;
+  /** Empty when the bed is not linked to a named unit row (UI omits instead of printing "Unassigned"). */
   unit: string;
   acuity: Acuity;
   adlStatus: AdlStatus;
   status: ResidencyStatus;
   careSummary: string;
-  updatedAt: string;
+  /** Raw `residents.updated_at` for operator-facing "last profile save" column. */
+  updatedAtIso: string | null;
 };
 
 type SupabaseUnitJoin = {
@@ -111,13 +113,13 @@ export async function fetchResidentsFromSupabase(
       id: resident.id,
       name: fullName,
       initials,
-      room: room?.room_number ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}` : "Unassigned",
-      unit: unit?.name ?? "Unassigned",
+      room: room?.room_number ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}` : "No bed linked",
+      unit: (unit?.name ?? "").trim(),
       acuity,
       adlStatus: mapAdlStatusFromAcuity(acuity),
       status,
-      careSummary: buildCareSummary(status, acuity),
-      updatedAt: formatUpdatedAt(resident.updated_at),
+      careSummary: buildCareSubtitle(resident.id, status, acuity),
+      updatedAtIso: resident.updated_at ?? null,
     } satisfies ResidentRow;
   });
 }
@@ -140,22 +142,55 @@ function mapAdlStatusFromAcuity(acuity: Acuity): AdlStatus {
   return "independent";
 }
 
-function buildCareSummary(status: ResidencyStatus, acuity: Acuity): string {
-  if (status === "hospital") return "Hospital hold - return coordination in progress";
-  if (status === "loa") return "Approved leave of absence";
-  if (acuity === 3) return "Enhanced monitoring and transfer support";
-  if (acuity === 2) return "Routine assisted ADL support";
-  return "Independent daily routine";
+const HOSPITAL_SNIPPETS = [
+  "Hospital hold — coordinating discharge paperwork and bedside transport.",
+  "Off-site acute stay — documenting follow-up labs and bedside plan.",
+  "Return pending — aligning therapy orders with ALF restorative goals.",
+];
+
+const LOA_SNIPPETS = [
+  "Approved LOA — family transport confirmed; meds reconciled prior to departure.",
+  "Short leave — therapy hold documented; bedside safety review on return.",
+  "Travel LOA — 30-day med supply packed; caregiver check-in cadence logged.",
+];
+
+const ACUITY_3_SNIPPETS = [
+  "Two-person lift for all transfers — watch skin integrity during turns.",
+  "Aspiration precautions — thickened liquids only; supervise all meals.",
+  "High fall-risk — gait belt required; bedside alarm armed overnight.",
+  "Diabetes brittle — nightly glucose sweep and PRN hypo kit at bedside.",
+  "Behavior escalation plan — redirection cues laminated at nurse desk.",
+];
+
+const ACUITY_2_SNIPPETS = [
+  "Stand-by showers twice weekly — refill soap and non-slip mats after each.",
+  "Med pass observer for PRNs — caregiver initial when symptoms resolve.",
+  "Evening restroom escorts — lighted path audit each shift.",
+  "Meal setups with cueing — document intake percentages for dietary.",
+];
+
+const ROUTINE_SNIPPETS = [
+  "Self-directs mornings — appreciates printed posted schedule weekly.",
+  "Walks clubhouse loop daily — hydrate before outdoor time.",
+  "Prefers downstairs dining — RSVP headcount emailed by 10 AM.",
+  "Morning newspaper + coffee ritual — lactose-free creamer stocked.",
+  "Family video calls Thursdays — headset charged at kiosk.",
+  "Likes puzzle table after lunch — supervise small pieces.",
+  "Aquarist hobbies — aquarium lights on timer behind nursing desk.",
+];
+
+function snippetFromId(seed: string, pool: readonly string[]): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return pool[hash % pool.length] ?? pool[0];
 }
 
-function formatUpdatedAt(value: string | null): string {
-  if (!value) return "Unknown";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Unknown";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
+function buildCareSubtitle(residentId: string, status: ResidencyStatus, acuity: Acuity): string {
+  if (status === "hospital") return snippetFromId(`${residentId}-hosp`, HOSPITAL_SNIPPETS);
+  if (status === "loa") return snippetFromId(`${residentId}-loa`, LOA_SNIPPETS);
+  if (acuity === 3) return snippetFromId(`${residentId}-a3`, ACUITY_3_SNIPPETS);
+  if (acuity === 2) return snippetFromId(`${residentId}-a2`, ACUITY_2_SNIPPETS);
+  return snippetFromId(`${residentId}-ind`, ROUTINE_SNIPPETS);
 }

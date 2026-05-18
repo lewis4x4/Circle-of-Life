@@ -8,8 +8,31 @@ import type { TapeEvent } from "@/components/med-tech/ShiftTape";
 import type { ShiftBarProps } from "@/components/med-tech/ShiftBar";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type R = Record<string, any>;
+type QueryRow = Record<string, unknown>;
+type QueryOrder = { col: string; opts?: Record<string, unknown> };
+type QueryColumnValue = { col: string; val: unknown };
+type QueryColumnValues = { col: string; vals: readonly unknown[] };
+type QueryFilters = Record<string, unknown> & {
+  _order?: QueryOrder;
+  _limit?: number;
+  _in?: QueryColumnValues;
+  _is?: QueryColumnValue;
+  _single?: boolean;
+};
+type QueryResult = { data: unknown; error: { message?: string } | null };
+type DynamicQuery = PromiseLike<QueryResult> & {
+  order(col: string, opts?: Record<string, unknown>): DynamicQuery;
+  limit(count: number): DynamicQuery;
+  in(col: string, vals: readonly unknown[]): DynamicQuery;
+  is(col: string, val: unknown): DynamicQuery;
+  maybeSingle(): DynamicQuery;
+  eq(col: string, val: unknown): DynamicQuery;
+};
+type DynamicSupabase = {
+  from(table: string): {
+    select(columns: string): DynamicQuery;
+  };
+};
 
 const UNRESOLVED_UNIT_LABEL = "Assigned facility";
 
@@ -62,25 +85,26 @@ function elapsed(clockedIn: string | null): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-function facilityLabelFrom(row: R | null | undefined): string {
+function facilityLabelFrom(row: QueryRow | null | undefined): string {
   const name = typeof row?.name === "string" ? row.name.trim() : "";
   return name || UNRESOLVED_UNIT_LABEL;
 }
 
 /** Raw Supabase query helper — casts to bypass generated type depth issues */
-async function q(table: string, select: string, filters: Record<string, any> = {}) {
+async function q(table: string, select: string, filters: QueryFilters = {}) {
   const sb = createClient();
-  let query = (sb as any).from(table).select(select);
-  for (const [k, v] of Object.entries(filters)) {
-    if (k === "_order") { query = query.order(v.col, v.opts); continue; }
-    if (k === "_limit") { query = query.limit(v); continue; }
-    if (k === "_in") { query = query.in(v.col, v.vals); continue; }
-    if (k === "_is") { query = query.is(v.col, v.val); continue; }
-    if (k === "_single") { query = query.maybeSingle(); continue; }
+  const { _order, _limit, _in, _is, _single, ...eqFilters } = filters;
+  let query = (sb as unknown as DynamicSupabase).from(table).select(select);
+  if (_order) query = query.order(_order.col, _order.opts);
+  if (typeof _limit === "number") query = query.limit(_limit);
+  if (_in) query = query.in(_in.col, _in.vals);
+  if (_is) query = query.is(_is.col, _is.val);
+  if (_single) query = query.maybeSingle();
+  for (const [k, v] of Object.entries(eqFilters)) {
     query = query.eq(k, v);
   }
   const { data, error } = await query;
-  return { data: data as R[] | R | null, error };
+  return { data: data as QueryRow[] | QueryRow | null, error };
 }
 
 export function useShiftCurrent(): ShiftData {
@@ -103,61 +127,65 @@ export function useShiftCurrent(): ShiftData {
         _order: { col: "shift_start", opts: { ascending: false } },
         _limit: 1, _single: true,
       });
-      if (shiftRes.error) { setData(d => ({ ...d, loading: false, error: shiftRes.error.message })); return; }
-      const shift = shiftRes.data as R | null;
+      if (shiftRes.error) {
+        const errorMessage = shiftRes.error.message ?? "Failed to load active shift";
+        setData(d => ({ ...d, loading: false, error: errorMessage }));
+        return;
+      }
+      const shift = shiftRes.data as QueryRow | null;
       if (!shift) { setData(d => ({ ...d, loading: false, error: "No active shift" })); return; }
 
       const facilityRes = shift.facility_id
         ? await q("facilities", "name", { id: shift.facility_id, _single: true })
         : { data: null };
-      const facilityLabel = facilityLabelFrom(facilityRes.data as R | null);
+      const facilityLabel = facilityLabelFrom(facilityRes.data as QueryRow | null);
 
       // Profile
       const profRes = await q("user_profiles", "full_name", { id: user.id, _single: true });
-      const fullName = (profRes.data as R)?.full_name ?? "Med Tech";
-      const initials = fullName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+      const fullName = ((profRes.data as QueryRow | null)?.full_name as string | undefined) ?? "Med Tech";
+      const initials = fullName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
       // Shift residents with resident details
       const srRes = await q("med_tech_shift_residents",
         "resident_id, priority, residents(id, first_name, last_name, preferred_name)",
         { shift_id: shift.id, _order: { col: "priority", opts: { ascending: true } } });
-      const shiftResidents = (srRes.data ?? []) as R[];
+      const shiftResidents = (srRes.data ?? []) as QueryRow[];
 
       // Med passes with medication details
       const mpRes = await q("med_passes",
         "*, resident_medications(medication_name, strength, form, route, controlled_schedule)",
         { shift_id: shift.id, _is: { col: "deleted_at", val: null }, _order: { col: "scheduled_time", opts: { ascending: true } } });
-      const passes = (mpRes.data ?? []) as R[];
+      const passes = (mpRes.data ?? []) as QueryRow[];
 
       // Tape events
       const tRes = await q("shift_tape_events", "*",
         { shift_id: shift.id, _order: { col: "occurred_at", opts: { ascending: true } } });
-      const tapeRows = (tRes.data ?? []) as R[];
+      const tapeRows = (tRes.data ?? []) as QueryRow[];
 
       // Active holds
       const rids = shiftResidents.map(sr => sr.resident_id);
       const holdRes = await q("pre_pass_holds", "resident_id",
         { active: true, _in: { col: "resident_id", vals: rids } });
-      const holdRids = new Set(((holdRes.data ?? []) as R[]).map(h => h.resident_id));
+      const holdRids = new Set(((holdRes.data ?? []) as QueryRow[]).map(h => h.resident_id));
 
       // ── Build UI data ──
 
       const passItems: MedPassItem[] = passes
         .filter(p => p.status !== "given")
         .map(p => {
-          const med = p.resident_medications as R | null;
-          const { status, minutes } = derivePassStatus(p.status, p.scheduled_time);
+          const med = p.resident_medications as QueryRow | null;
+          const { status, minutes } = derivePassStatus(p.status as string, p.scheduled_time as string | null);
           const sr = shiftResidents.find(s => s.resident_id === p.resident_id);
-          const res = sr?.residents as R | null;
+          const res = sr?.residents as QueryRow | null;
           const resName = res ? `${res.last_name}, ${res.preferred_name || res.first_name}` : "Unknown";
           return {
-            id: p.id, resident: resName, room: "-",
+            id: p.id as string, resident: resName, room: "-",
             med: med ? `${med.medication_name} ${med.strength}` : "Unknown",
             dose: med ? `1 ${med.form} ${med.route}` : "",
-            time: p.scheduled_time ? fmtTime(p.scheduled_time) : "--:--",
+            time: p.scheduled_time ? fmtTime(p.scheduled_time as string) : "--:--",
             status, minutes,
             controlled: med?.controlled_schedule !== "non_controlled" && med?.controlled_schedule != null,
-            hold: p.hold_reason || null,
+            hold: (p.hold_reason as string | null) || null,
           } satisfies MedPassItem;
         })
         .sort((a, b) => {
@@ -166,7 +194,7 @@ export function useShiftCurrent(): ShiftData {
         });
 
       const resItems: ResidentItem[] = shiftResidents.map(sr => {
-        const res = sr.residents as R | null;
+        const res = sr.residents as QueryRow | null;
         const rid = sr.resident_id as string;
         const ln = (res?.last_name ?? "") as string;
         const hasHold = holdRids.has(rid);
@@ -185,12 +213,14 @@ export function useShiftCurrent(): ShiftData {
       });
 
       const tapeItems: TapeEvent[] = tapeRows.map(t => ({
-        t: fmtTime(t.occurred_at), kind: mapTapeKind(t.event_type), text: t.summary,
+        t: fmtTime(t.occurred_at as string),
+        kind: mapTapeKind(t.event_type as string),
+        text: t.summary as string,
       }));
 
-      const startH = fmtTime(shift.shift_start);
-      const endH = fmtTime(shift.shift_end);
-      const isPM = new Date(shift.shift_start).getHours() >= 12;
+      const startH = fmtTime(shift.shift_start as string);
+      const endH = fmtTime(shift.shift_end as string);
+      const isPM = new Date(shift.shift_start as string).getHours() >= 12;
 
       const shiftType = currentShiftForTimezone("America/New_York");
       setData({
@@ -200,11 +230,11 @@ export function useShiftCurrent(): ShiftData {
           shiftLabel: `${isPM ? "PM" : "AM"} · ${startH} - ${endH}`,
           unitLabel: facilityLabel,
           assignedCount: resItems.length,
-          elapsedLabel: elapsed(shift.clocked_in_at),
+          elapsedLabel: elapsed(shift.clocked_in_at as string | null),
           shiftType,
         },
         passes: passItems, residents: resItems, tape: tapeItems,
-        shiftId: shift.id, loading: false, error: null,
+        shiftId: shift.id as string, loading: false, error: null,
       });
     } catch (err) {
       setData(d => ({ ...d, loading: false, error: err instanceof Error ? err.message : "Unknown error" }));

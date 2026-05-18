@@ -1,36 +1,20 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-/** Product URL `/pipeline/discharge-management` → admin med reconciliation hub. */
-function Inner() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+import { DischargeMedRecHub } from "@/components/admin/discharge/discharge-med-rec-hub";
 
-  useEffect(() => {
-    const rest = new URLSearchParams(searchParams.toString());
-    const qs = rest.toString();
-    router.replace(`/admin/discharge${qs.length ? `?${qs}` : ""}`);
-  }, [router, searchParams]);
-
-  return (
-    <div className="p-6 text-[13px] text-muted-foreground" role="status">
-      Redirecting…
-    </div>
-  );
-}
-
-export default function PipelineDischargeManagementRedirectPage() {
+/** Product Pipeline URL — renders the canonical med reconciliation hub (no redirect). */
+export default function PipelineDischargeManagementPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-6 text-[13px] text-muted-foreground" role="status">
-          Redirecting…
+        <div className="mx-auto max-w-5xl px-2 py-10 text-[13px] text-muted-foreground" role="status">
+          Loading discharge pipeline…
         </div>
       }
     >
-      <Inner />
+      <DischargeMedRecHub hubBasePath="/pipeline/discharge-management" />
     </Suspense>
   );
 }

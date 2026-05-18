@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  *     surface density. Hover changes background, not lift." (Lift is held
  *     to 1px so the background swap reads as the primary cue.)
  *   - component-rules.md §Tables rule 2 — column headers use caption
- *     (10-11px uppercase tracked) on top borders.
+ *     typography (≈11px sentence case) along header row borders.
  *   - constitution.md rule 6 — tables and lists default to data density.
  *
  * Hard constraints (binding):
@@ -68,7 +68,7 @@ const TABLE_ROW_BASE =
   "flex items-center gap-3 h-9 px-[13px] rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0";
 
 const TABLE_HEADER_BASE =
-  "flex items-center gap-3 h-8 px-[13px] border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground";
+  "flex items-center gap-3 h-8 px-[13px] border-b border-border bg-card/60 text-[11px] font-semibold normal-case tracking-tight text-muted-foreground";
 
 export function TableRow({
   className,

@@ -20,8 +20,7 @@ import { cn } from "@/lib/utils";
  *
  * Tone API (single source of truth — all consumers should use these):
  *   - `tone="muted"`    (default) Healthy / default. Gray dot, muted label.
- *                       Use for ACTIVE, CURRENT, LOW, On schedule, Acuity 1,
- *                       In facility, On time, Posted, Approved (default
+ *                       Acuity 1, In facility, On time, Posted, Approved (default
  *                       state), Independent, anything that is "nothing to
  *                       do here, just here for scan."
  *   - `tone="success"`  Green. Reserved for "successfully resolved /
@@ -54,7 +53,7 @@ import { cn } from "@/lib/utils";
  *   <StatusPill tone="danger">Expired</StatusPill>
  *   <StatusPill tone="info" pulsing>Syncing</StatusPill>
  *
- * Typography: 10px uppercase tracking-wider. Sits inside a 36px table row.
+ * Typography: 10px sentence case. Sits inside a 36px table row.
  */
 
 type Tone = "muted" | "success" | "warning" | "danger" | "info";
@@ -95,7 +94,7 @@ const dotVariants = cva("inline-block h-1.5 w-1.5 rounded-full shrink-0", {
 });
 
 const pillVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors whitespace-nowrap",
+  "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold normal-case tracking-tight transition-colors whitespace-nowrap",
   {
     variants: {
       tone: {

@@ -9,6 +9,9 @@ export const UI_V2_INTERNAL_ROUTE_PREFIX = "/admin/v2";
  * causes a 404 on the rewrite path.
  *
  * Each entry uses the post-`/admin` segment ("/" for `/admin`).
+ *
+ * Note: `/residents/new` is intentionally excluded in `resolveUiV2AdminRewritePath`
+ * so the compliance override form is not rewritten to `/admin/v2/residents/new`.
  */
 export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
   // S8 (W1 P0 dashboards)
@@ -88,6 +91,9 @@ export function resolveUiV2AdminRewritePath(
 
   const adminRoute = normalizeAdminRoute(pathname);
   if (!adminRoute) return null;
+
+  /** Override intake (Quiet Operator) — real insert + audit; must not be rewritten to the V2 new-resident stub. */
+  if (adminRoute === "/residents/new") return null;
 
   const implementedRoutes = options.implementedRoutes ?? UI_V2_IMPLEMENTED_ROUTES;
   const implementedPrefixes = options.implementedPrefixes ?? UI_V2_IMPLEMENTED_PREFIXES;

@@ -104,7 +104,7 @@ export const PILLARS: Pillar[] = [
     items: [
       { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", icon: UserPlus },
       { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
-      { key: "discharge", href: "/admin/discharge", label: "Discharge & transition", icon: DoorOpen },
+      { key: "discharge", href: "/pipeline/discharge-management", label: "Medication reconciliation", icon: DoorOpen },
       { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", icon: Heart },
       { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", icon: MessageCircle },
     ],
@@ -119,7 +119,7 @@ export const PILLARS: Pillar[] = [
       { key: "clinical-desk", href: "/admin/assessments/overdue", label: "Clinical Desk", icon: ClipboardCheck },
       { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", icon: Clock },
       { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", icon: Pill },
-      { key: "medications", href: "/admin/medications", label: "Medication management", icon: Pill },
+      { key: "medications", href: "/admin/medications", label: "Medications", icon: Pill },
       { key: "medication-errors", href: "/admin/medications/errors", label: "Medication errors", icon: ShieldAlert },
       { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", icon: Utensils },
       { key: "transportation", href: "/admin/transportation", label: "Transportation", icon: Truck },

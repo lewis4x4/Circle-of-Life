@@ -11,6 +11,10 @@
 3. Do not claim “done” without a **machine-readable gate artifact** under `test-results/agent-gates/`.
 4. On required gate **PASS**: stage only segment files, **atomic commit**, push, then start the next segment.
 
+## Form primitives (operator-facing defaults)
+
+Shared UI primitives—including **`QuietDatePicker`**—must **not** silently imply a chosen date or other value for the operator. **Empty state stays empty** until the caller supplies an explicit controlled **`value`** or an explicit **`initialVisibleMonthIso`** when the design only needs a calendar *viewport anchor* without selecting a date.
+
 ## Commands
 
 | Script | Purpose |

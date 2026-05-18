@@ -118,8 +118,23 @@ const nextConfig: NextConfig = {
         { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
       ]),
       {
-        source: "/admin/reports-hub/haven-insight",
-        destination: "/admin/reports/nlq",
+        source: "/pipeline/discharge-transition/new",
+        destination: "/admin/discharge/new",
+        permanent: false,
+      },
+      {
+        source: "/pipeline/discharge-transition",
+        destination: "/pipeline/discharge-management",
+        permanent: false,
+      },
+      {
+        source: "/pipeline/family-portal/:path*",
+        destination: "/admin/family-portal/:path*",
+        permanent: false,
+      },
+      {
+        source: "/pipeline/family-portal",
+        destination: "/admin/family-portal",
         permanent: false,
       },
       {

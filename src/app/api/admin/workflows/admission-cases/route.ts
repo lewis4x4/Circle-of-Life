@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { formatInTimeZone } from "date-fns-tz";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { ensureForm1823Checklist, emitWorkflowEvent, syncLeadToApplicationPending } from "@/lib/workflows/workflow-events";
@@ -24,6 +25,38 @@ const MEDICAID_PIPELINE_STAGES: MedicaidPipelineStage[] = [
   "waitlist",
 ];
 
+type AnticipatedPayerSource =
+  | "private_pay"
+  | "medicaid_pending"
+  | "medicaid_approved"
+  | "ltc_insurance"
+  | "va_benefits"
+  | "other";
+
+const ANTICIPATED_PAYER_SOURCES: AnticipatedPayerSource[] = [
+  "private_pay",
+  "medicaid_pending",
+  "medicaid_approved",
+  "ltc_insurance",
+  "va_benefits",
+  "other",
+];
+
+type AdmissionCaseSource =
+  | "walk_in"
+  | "hospital_discharge_no_referral"
+  | "facility_transfer_no_referral"
+  | "family_initiated"
+  | "other";
+
+const ADMISSION_CASE_SOURCES: AdmissionCaseSource[] = [
+  "walk_in",
+  "hospital_discharge_no_referral",
+  "facility_transfer_no_referral",
+  "family_initiated",
+  "other",
+];
+
 type RequestBody = {
   facility_id?: string;
   resident_id?: string;
@@ -34,7 +67,21 @@ type RequestBody = {
   /** Optional intake classification from the admissions form (e.g. long_term). */
   intake_program_type?: string | null;
   medicaid_pipeline_stage?: MedicaidPipelineStage;
+  /** `draft` = save for later (no bed reservation; date optional). `submit` = open active case. */
+  create_intent?: "draft" | "submit";
+  anticipated_payer_source?: AnticipatedPayerSource | null;
+  anticipated_payer_other?: string | null;
+  /** Direct-intake admission channel (mirrors `admission_cases.source`). */
+  source?: AdmissionCaseSource | null;
+  source_other?: string | null;
 };
+
+function isOnOrAfterTodayYmd(ymd: string, facilityTimeZone: string): boolean {
+  const trimmed = ymd.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return false;
+  const todayYmd = formatInTimeZone(new Date(), facilityTimeZone, "yyyy-MM-dd");
+  return trimmed >= todayYmd;
+}
 
 export async function POST(request: NextRequest) {
   const actorResult = await requireAdminApiActor({ allowedRoles: ALLOWED_ROLES });
@@ -52,8 +99,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "facility_id and resident_id are required" }, { status: 400 });
   }
 
-  if (!body.target_move_in_date || !String(body.target_move_in_date).trim()) {
-    return NextResponse.json({ error: "target_move_in_date is required" }, { status: 400 });
+  const intent: "draft" | "submit" = body.create_intent === "draft" ? "draft" : "submit";
+
+  if (intent === "submit") {
+    if (!body.target_move_in_date || !String(body.target_move_in_date).trim()) {
+      return NextResponse.json({ error: "target_move_in_date is required" }, { status: 400 });
+    }
+  }
+
+  if (
+    body.anticipated_payer_source != null
+    && !ANTICIPATED_PAYER_SOURCES.includes(body.anticipated_payer_source as AnticipatedPayerSource)
+  ) {
+    return NextResponse.json({ error: "Invalid anticipated payer source" }, { status: 400 });
   }
 
   if (
@@ -63,6 +121,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid Medicaid pipeline stage" }, { status: 400 });
   }
 
+  if (
+    body.source !== undefined
+    && body.source !== null
+    && String(body.source).trim() !== ""
+    && !ADMISSION_CASE_SOURCES.includes(body.source as AdmissionCaseSource)
+  ) {
+    return NextResponse.json({ error: "Invalid admission source" }, { status: 400 });
+  }
+
   const canAccessFacility = await actorCanAccessFacility(actor, body.facility_id);
   if (!canAccessFacility) {
     return NextResponse.json({ error: "Access denied for facility" }, { status: 403 });
@@ -70,13 +137,26 @@ export async function POST(request: NextRequest) {
 
   const { data: facility, error: facilityError } = await actor.admin
     .from("facilities")
-    .select("id, organization_id")
+    .select("id, organization_id, timezone")
     .eq("id", body.facility_id)
     .is("deleted_at", null)
     .maybeSingle();
 
   if (facilityError || !facility?.organization_id) {
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+  }
+
+  const facilityTz = typeof facility.timezone === "string" && facility.timezone.trim()
+    ? facility.timezone.trim()
+    : "America/New_York";
+
+  if (
+    intent === "submit"
+    && body.target_move_in_date != null
+    && String(body.target_move_in_date).trim()
+    && !isOnOrAfterTodayYmd(String(body.target_move_in_date), facilityTz)
+  ) {
+    return NextResponse.json({ error: "target_move_in_date must be today or a future date" }, { status: 400 });
   }
 
   const { data: resident, error: residentError } = await actor.admin
@@ -103,6 +183,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const payerSource =
+    body.anticipated_payer_source && String(body.anticipated_payer_source).trim()
+      ? (body.anticipated_payer_source as AnticipatedPayerSource)
+      : null;
+  const payerOther =
+    payerSource === "other" ? (body.anticipated_payer_other?.trim() || null) : null;
+
+  const admissionCaseSource =
+    body.source != null && String(body.source).trim()
+      ? (body.source as AdmissionCaseSource)
+      : null;
+  const admissionCaseSourceOther =
+    admissionCaseSource === "other" ? (body.source_other?.trim() || null) : null;
+
+  const status = intent === "draft" ? "draft" : "pending_clearance";
+  const bedId = intent === "draft" ? null : (body.bed_id ?? null);
+  const moveInDate =
+    intent === "draft"
+      ? (body.target_move_in_date?.trim() || null)
+      : (body.target_move_in_date?.trim() || null);
+
   const { data: inserted, error: insertError } = await actor.admin
     .from("admission_cases")
     .insert({
@@ -110,12 +211,16 @@ export async function POST(request: NextRequest) {
       facility_id: body.facility_id,
       resident_id: body.resident_id,
       referral_lead_id: body.referral_lead_id ?? null,
-      bed_id: body.bed_id ?? null,
-      target_move_in_date: body.target_move_in_date ?? null,
+      bed_id: bedId,
+      target_move_in_date: moveInDate,
       notes: body.notes ?? null,
       intake_program_type: body.intake_program_type ?? null,
       medicaid_pipeline_stage: body.medicaid_pipeline_stage ?? "prospect",
-      status: "pending_clearance",
+      anticipated_payer_source: payerSource,
+      anticipated_payer_other: payerOther,
+      source: admissionCaseSource,
+      source_other: admissionCaseSourceOther,
+      status,
       created_by: actor.id,
       updated_by: actor.id,
     })
@@ -126,14 +231,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertError?.message ?? "Failed to create admission case" }, { status: 500 });
   }
 
-  await ensureForm1823Checklist(actor.admin, {
-    organizationId: inserted.organization_id,
-    facilityId: inserted.facility_id,
-    admissionCaseId: inserted.id,
-    actorId: actor.id,
-  });
+  if (intent === "submit") {
+    await ensureForm1823Checklist(actor.admin, {
+      organizationId: inserted.organization_id,
+      facilityId: inserted.facility_id,
+      admissionCaseId: inserted.id,
+      actorId: actor.id,
+    });
+  }
 
-  if (inserted.referral_lead_id) {
+  if (intent === "submit" && inserted.referral_lead_id) {
     await syncLeadToApplicationPending(actor.admin, {
       leadId: inserted.referral_lead_id,
       actorId: actor.id,

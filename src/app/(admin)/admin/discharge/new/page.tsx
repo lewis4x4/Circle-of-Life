@@ -3,22 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addDays, format, parseISO } from "date-fns";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { Loader2 } from "lucide-react";
 
-import { DischargeHubNav } from "../discharge-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { DateInput } from "@/components/ui/date-input";
+import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
+import { FormCancelLink } from "@/components/ui/form-cancel-link";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -28,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
+import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -36,49 +29,81 @@ import { cn } from "@/lib/utils";
 type DischargePlanCategory = Database["public"]["Enums"]["discharge_plan_category"];
 
 const DISCHARGE_TYPE_OPTIONS: { value: DischargePlanCategory; label: string }[] = [
-  { value: "planned", label: "Planned" },
+  { value: "planned", label: "Routine" },
   { value: "hospital_transfer", label: "Hospital transfer" },
+  { value: "higher_level_of_care", label: "Hospice transition" },
   { value: "ama", label: "AMA" },
-  { value: "higher_level_of_care", label: "Higher level of care" },
   { value: "death", label: "Death" },
-  { value: "other", label: "Other" },
+  { value: "other", label: "Permanent move-out" },
 ];
+
+const DISCHARGE_TYPE_HELPER_INLINE = DISCHARGE_TYPE_OPTIONS.map((o) => o.label).join(" · ");
 
 const ACTIVE_DRAFT_STATUSES = ["draft", "pharmacist_review"] as const;
 
-type ResidentRow = {
+const MED_REC_QUEUE_PATH = "/pipeline/discharge-management";
+
+const DRAFTS_PANEL_GENERIC_ERROR = "Couldn't load in-progress drafts. Refresh to try again.";
+const CREATE_DRAFT_GENERIC_ERROR = "Couldn't create this draft. Refresh and try again.";
+
+/** Columns guaranteed after migration `079` — avoids PostgREST failures when plan-category migration (`255`) is not applied yet. */
+const DRAFT_SELECT_MINIMAL =
+  "id, resident_id, status, created_at, updated_at, residents(first_name, last_name)" as const;
+
+type ResidentBedNested = {
+  bed_label: string;
+  rooms: { room_number: string } | null;
+} | null;
+
+type ResidentPickerRow = {
   id: string;
   first_name: string;
   last_name: string;
   status: string;
+  admission_date: string | null;
+  beds?: ResidentBedNested | ResidentBedNested[];
 };
 
 type DraftCardRow = {
   id: string;
   resident_id: string;
-  discharge_plan_category: DischargePlanCategory | null;
-  expected_discharge_date: string | null;
+  status: Database["public"]["Enums"]["discharge_med_reconciliation_status"];
+  created_at: string;
   updated_at: string;
   residents: { first_name: string; last_name: string } | null;
 };
 
-function residentLabel(r: Pick<ResidentRow, "first_name" | "last_name">): string {
+function residentLabel(r: Pick<ResidentPickerRow, "first_name" | "last_name">): string {
   return `${r.last_name}, ${r.first_name}`;
 }
 
-function formatPlanCategory(c: string | null | undefined): string {
-  if (!c) return "—";
-  const found = DISCHARGE_TYPE_OPTIONS.find((o) => o.value === c);
-  return found?.label ?? c.replace(/_/g, " ");
+function normalizeBed(row: ResidentPickerRow): ResidentBedNested {
+  const b = row.beds;
+  if (Array.isArray(b)) return b[0] ?? null;
+  return b ?? null;
 }
 
-function formatCalendarDate(isoDate: string | null | undefined): string {
+function formatRoom(row: ResidentPickerRow): string {
+  const bed = normalizeBed(row);
+  const rn = bed?.rooms?.room_number?.trim();
+  if (rn) return rn;
+  const lbl = bed?.bed_label?.trim();
+  if (lbl) return lbl;
+  return "—";
+}
+
+function formatAdmitted(isoDate: string | null | undefined): string {
   if (!isoDate || !isoDate.trim()) return "—";
   try {
     return format(parseISO(isoDate.length > 10 ? isoDate : `${isoDate}T12:00:00`), "MMM d, yyyy");
   } catch {
-    return isoDate;
+    return "—";
   }
+}
+
+function workflowStepOf5(status: string): number {
+  if (status === "pharmacist_review") return 3;
+  return 2;
 }
 
 export default function AdminDischargeNewPage() {
@@ -89,12 +114,9 @@ export default function AdminDischargeNewPage() {
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
 
   const [residentId, setResidentId] = useState("");
-  const [residentOpen, setResidentOpen] = useState(false);
-  const [residents, setResidents] = useState<ResidentRow[]>([]);
+  const [residents, setResidents] = useState<ResidentPickerRow[]>([]);
   const [dischargePlanType, setDischargePlanType] = useState<DischargePlanCategory | "">("");
-  const [expectedDischargeDate, setExpectedDischargeDate] = useState(() =>
-    format(addDays(new Date(), 3), "yyyy-MM-dd"),
-  );
+  const [expectedDischargeDate, setExpectedDischargeDate] = useState("");
   const [loadingRefs, setLoadingRefs] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,11 +124,16 @@ export default function AdminDischargeNewPage() {
 
   const [draftRows, setDraftRows] = useState<DraftCardRow[]>([]);
   const [loadingDrafts, setLoadingDrafts] = useState(true);
-  const [draftLoadError, setDraftLoadError] = useState<string | null>(null);
+  const [draftPanelFetchFailed, setDraftPanelFetchFailed] = useState(false);
 
   const today = useMemo(() => new Date(), []);
-  const minDateStr = useMemo(() => format(addDays(today, -90), "yyyy-MM-dd"), [today]);
-  const maxDateStr = useMemo(() => format(addDays(today, 90), "yyyy-MM-dd"), [today]);
+  const minMax = useMemo(
+    () => ({
+      min: format(addDays(today, -90), "yyyy-MM-dd"),
+      max: format(addDays(today, 90), "yyyy-MM-dd"),
+    }),
+    [today],
+  );
 
   const scopedFacilityId =
     selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : null;
@@ -132,17 +159,16 @@ export default function AdminDischargeNewPage() {
       setDraftRows([]);
       setLoadingRefs(false);
       setLoadingDrafts(false);
+      setDraftPanelFetchFailed(false);
       return;
     }
     setLoadingRefs(true);
     setLoadingDrafts(true);
-    setError(null);
+    setDraftPanelFetchFailed(false);
 
     const { data: draftData, error: draftErr } = await supabase
       .from("discharge_med_reconciliation")
-      .select(
-        "id, resident_id, discharge_plan_category, expected_discharge_date, updated_at, residents(first_name, last_name)",
-      )
+      .select(DRAFT_SELECT_MINIMAL)
       .eq("facility_id", scopedFacilityId)
       .in("status", [...ACTIVE_DRAFT_STATUSES])
       .is("deleted_at", null)
@@ -150,25 +176,55 @@ export default function AdminDischargeNewPage() {
 
     let blockedResidentIds = new Set<string>();
     if (draftErr) {
-      setDraftLoadError(draftErr.message);
+      logSupabasePostgrestError("discharge-new.drafts", draftErr, { facilityId: scopedFacilityId });
+      setDraftPanelFetchFailed(true);
       setDraftRows([]);
     } else {
-      setDraftLoadError(null);
       const rows = (draftData ?? []) as unknown as DraftCardRow[];
       setDraftRows(rows);
       blockedResidentIds = new Set(rows.map((r) => r.resident_id));
     }
     setLoadingDrafts(false);
 
-    const { data: residentData } = await supabase
+    const residentSelectWithRoom =
+      "id, first_name, last_name, status, admission_date, beds(bed_label, rooms(room_number))";
+
+    const primaryRes = await supabase
       .from("residents")
-      .select("id, first_name, last_name, status")
+      .select(residentSelectWithRoom)
       .eq("facility_id", scopedFacilityId)
       .is("deleted_at", null)
       .not("status", "in", "(discharged,deceased)")
       .order("last_name");
 
-    const allResidents = ((residentData ?? []) as ResidentRow[]).filter((r) => !blockedResidentIds.has(r.id));
+    let pickerRows: ResidentPickerRow[];
+
+    if (primaryRes.error) {
+      logSupabasePostgrestError("discharge-new.residents.embed_fallback", primaryRes.error, {
+        facilityId: scopedFacilityId,
+      });
+      const fb = await supabase
+        .from("residents")
+        .select("id, first_name, last_name, status, admission_date")
+        .eq("facility_id", scopedFacilityId)
+        .is("deleted_at", null)
+        .not("status", "in", "(discharged,deceased)")
+        .order("last_name");
+
+      if (fb.error) {
+        logSupabasePostgrestError("discharge-new.residents", fb.error, { facilityId: scopedFacilityId });
+        pickerRows = [];
+      } else {
+        pickerRows = (fb.data ?? []).map((row) => ({
+          ...row,
+          beds: null,
+        }));
+      }
+    } else {
+      pickerRows = (primaryRes.data ?? []) as ResidentPickerRow[];
+    }
+
+    const allResidents = pickerRows.filter((r) => !blockedResidentIds.has(r.id));
     setResidents(allResidents);
     setLoadingRefs(false);
   }, [scopedFacilityId, supabase]);
@@ -188,7 +244,7 @@ export default function AdminDischargeNewPage() {
         setExistingReconciliationId(null);
         return;
       }
-      const { data } = await supabase
+      const { data, error: exErr } = await supabase
         .from("discharge_med_reconciliation")
         .select("id")
         .eq("facility_id", scopedFacilityId)
@@ -197,6 +253,14 @@ export default function AdminDischargeNewPage() {
         .not("status", "eq", "cancelled")
         .not("status", "eq", "complete")
         .maybeSingle();
+      if (exErr) {
+        logSupabasePostgrestError("discharge-new.existing-check", exErr, {
+          facilityId: scopedFacilityId,
+          residentId,
+        });
+        setExistingReconciliationId(null);
+        return;
+      }
       setExistingReconciliationId(data?.id ?? null);
     }
     void checkExisting();
@@ -224,14 +288,14 @@ export default function AdminDischargeNewPage() {
       return;
     }
     if (existingReconciliationId) {
-      setError("This resident already has an active discharge reconciliation.");
+      setError("This resident already has an active medication reconciliation draft.");
       return;
     }
 
     const parsedExpect = parseISO(`${expectedDischargeDate}T12:00:00`);
     if (
-      parsedExpect.getTime() < parseISO(`${minDateStr}T12:00:00`).getTime() ||
-      parsedExpect.getTime() > parseISO(`${maxDateStr}T12:00:00`).getTime()
+      parsedExpect.getTime() < parseISO(`${minMax.min}T12:00:00`).getTime() ||
+      parsedExpect.getTime() > parseISO(`${minMax.max}T12:00:00`).getTime()
     ) {
       setError("Expected discharge date must be within 90 days before or after today.");
       return;
@@ -245,7 +309,12 @@ export default function AdminDischargeNewPage() {
         .eq("id", fid)
         .is("deleted_at", null)
         .maybeSingle();
-      if (facErr || !fac?.organization_id) {
+      if (facErr) {
+        logSupabasePostgrestError("discharge-new.facility-org", facErr, { facilityId: fid });
+        setError("Could not resolve organization for this facility.");
+        return;
+      }
+      if (!fac?.organization_id) {
         setError("Could not resolve organization for this facility.");
         return;
       }
@@ -274,7 +343,11 @@ export default function AdminDischargeNewPage() {
         .select("id")
         .single();
       if (insErr) {
-        setError(insErr.message);
+        logSupabasePostgrestError("discharge-new.insert", insErr, {
+          facilityId: fid,
+          residentId,
+        });
+        setError(CREATE_DRAFT_GENERIC_ERROR);
         return;
       }
       if (inserted?.id) {
@@ -286,10 +359,20 @@ export default function AdminDischargeNewPage() {
     }
   }
 
-  const selectedResidentLabel = useMemo(() => {
-    const r = residents.find((x) => x.id === residentId);
-    return r ? residentLabel(r) : "";
-  }, [residentId, residents]);
+  const residentOptions: EntityComboboxOption[] = useMemo(
+    () =>
+      residents.map((r) => {
+        const room = formatRoom(r);
+        const admitted = formatAdmitted(r.admission_date);
+        const label = `${residentLabel(r)} · Room ${room} · Admitted ${admitted}`;
+        return {
+          id: r.id,
+          label,
+          keywords: `${residentLabel(r)} ${room} ${admitted} ${r.status} ${r.id}`,
+        };
+      }),
+    [residents],
+  );
 
   const gateBlocking =
     selectedFacilityId === null ||
@@ -308,8 +391,8 @@ export default function AdminDischargeNewPage() {
 
   const subtitle =
     scopedFacilityId && facilityName
-      ? `Start a discharge medication reconciliation draft for a resident at ${facilityName}.`
-      : "Start a discharge medication reconciliation draft after choosing a facility.";
+      ? `Start a medication reconciliation (med rec) draft for a resident at ${facilityName}.`
+      : "Start a medication reconciliation (med rec) draft after choosing a facility.";
 
   const awaitingSingletonFacility =
     (selectedFacilityId == null || !isValidFacilityIdForQuery(selectedFacilityId ?? "")) &&
@@ -321,22 +404,23 @@ export default function AdminDischargeNewPage() {
     syncSelectedFacilityCookie(id);
   }
 
+  const visibleDrafts = draftRows.slice(0, 5);
+
+  const ninetyDayRationale =
+    "Florida assisted living discharge planning is typically anchored near-term; ±90 days keeps scheduling realistic while allowing short lookahead.";
+
   return (
     <div className="space-y-8 pb-12">
       <div>
         <Link
-          href="/admin/discharge"
+          href={MED_REC_QUEUE_PATH}
           className="inline-flex text-[13px] font-medium text-primary underline-offset-4 hover:underline"
         >
-          ← Back to discharge queue
+          ← Back to medication reconciliation queue
         </Link>
 
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">New medication reconciliation</h1>
         <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">{subtitle}</p>
-
-        <div className="mt-4">
-          <DischargeHubNav />
-        </div>
       </div>
 
       {awaitingSingletonFacility ? (
@@ -350,7 +434,7 @@ export default function AdminDischargeNewPage() {
         <div className="max-w-xl space-y-3 rounded-lg border border-border bg-muted/20 p-6 text-[13px] text-foreground">
           <p className="font-medium">Choose a facility</p>
           <p className="text-muted-foreground">
-            Medicine reconciliation drafts are tracked per facility. Select one facility before continuing.
+            Medication reconciliation drafts are tracked per facility. Select one facility before continuing.
           </p>
           <div className="space-y-1.5">
             <Label htmlFor="facility-scope" className="text-[13px] font-semibold text-muted-foreground">
@@ -377,12 +461,14 @@ export default function AdminDischargeNewPage() {
       ) : null}
 
       {!manualFacilityBarrier && scopedFacilityId && !awaitingSingletonFacility ? (
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-5 lg:gap-10">
-          <div className="border-t border-border pt-8 lg:col-span-3">
+        <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6 lg:flex-row lg:gap-6">
+          <div className="min-w-0 max-w-[640px] flex-1 border-t border-border pt-8">
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-8">
               <div className="space-y-1">
                 <p className="text-[13px] font-semibold tracking-tight text-foreground">About this discharge</p>
-                <p className="text-[12px] text-muted-foreground">Required fields to open a draft medication reconciliation.</p>
+                <p className="text-[12px] text-muted-foreground">
+                  Required fields to open a draft medication reconciliation.
+                </p>
               </div>
 
               <div className="space-y-6">
@@ -393,7 +479,7 @@ export default function AdminDischargeNewPage() {
                     <div className="mt-3">
                       <Link
                         href={`/admin/discharge/${existingReconciliationId}`}
-                        className={cn(buttonVariants({ size: "sm" }))}
+                        className={cn(buttonVariants({ size: "sm" }), "inline-flex")}
                       >
                         Open existing draft
                       </Link>
@@ -401,62 +487,47 @@ export default function AdminDischargeNewPage() {
                   </div>
                 ) : null}
 
-                <div className="space-y-2">
-                  <Label htmlFor="resident-combobox" className="text-[13px] font-semibold text-muted-foreground">
-                    Resident<span className="font-semibold text-destructive"> *</span>
-                  </Label>
-                  <Popover open={residentOpen} onOpenChange={setResidentOpen}>
-                    <PopoverTrigger
-                      id="resident-combobox"
-                      type="button"
-                      disabled={loadingRefs}
-                      className={cn(
-                        buttonVariants({ variant: "outline", size: "sm" }),
-                        "h-10 w-full justify-between px-3 font-normal shadow-none md:max-w-md",
-                      )}
-                      aria-required
+                {!existingReconciliationId && residents.length === 0 && !loadingRefs ? (
+                  <div className="rounded-lg border border-border bg-muted/20 px-4 py-3 text-[13px] leading-relaxed text-foreground">
+                    All active residents have open medication reconciliation drafts.{" "}
+                    <Link
+                      href={MED_REC_QUEUE_PATH}
+                      className="font-medium text-primary underline-offset-4 hover:underline"
                     >
-                      <span className={cn("truncate text-left", !selectedResidentLabel && "text-muted-foreground")}>
-                        {loadingRefs ? "Loading residents…" : selectedResidentLabel || "Search active residents…"}
-                      </span>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[min(100vw-2rem,440px)] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search active residents…" />
-                        <CommandList>
-                          <CommandEmpty>No matching residents.</CommandEmpty>
-                          <CommandGroup heading="Residents">
-                            {residents.map((r) => (
-                              <CommandItem
-                                key={r.id}
-                                value={`${residentLabel(r)} ${r.id}`}
-                                onSelect={() => {
-                                  setResidentId(r.id);
-                                  setResidentOpen(false);
-                                }}
-                              >
-                                {residentLabel(r)}
-                                <span className="ml-2 text-[12px] text-muted-foreground">({r.status})</span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-[12px] leading-relaxed text-muted-foreground">
-                    Active residents at{" "}
-                    <span className="font-medium text-foreground">{facilityName ?? "this facility"}</span> without an
-                    open med rec draft.
-                  </p>
-                </div>
+                      View in-progress drafts
+                    </Link>
+                  </div>
+                ) : (
+                  <EntityCombobox
+                    id="resident-combobox"
+                    data-testid="med-rec-resident-combobox"
+                    label="Resident"
+                    placeholder="Select resident…"
+                    searchPlaceholder="Search active residents…"
+                    required
+                    loading={loadingRefs}
+                    disabled={loadingRefs || Boolean(existingReconciliationId)}
+                    options={residentOptions}
+                    value={residentId}
+                    onChange={setResidentId}
+                    triggerClassName="md:max-w-md"
+                  />
+                )}
 
-                <div className="space-y-2">
+                {!existingReconciliationId && residents.length > 0 ? (
+                  <p className="text-[12px] leading-relaxed text-muted-foreground md:max-w-md" aria-live="polite">
+                    <span className="font-medium text-foreground">{residents.length}</span> active residents available at{" "}
+                    <span className="font-medium text-foreground">{facilityName ?? "this facility"}</span> without an open
+                    med rec draft.
+                  </p>
+                ) : null}
+
+                <div className="space-y-2 md:max-w-md">
                   <Label htmlFor="plan-type" className="text-[13px] font-semibold text-muted-foreground">
                     Discharge type<span className="font-semibold text-destructive"> *</span>
                   </Label>
                   <Select value={dischargePlanType} onValueChange={(v) => setDischargePlanType(v as DischargePlanCategory)}>
-                    <SelectTrigger id="plan-type" className="h-10 w-full text-[13px] shadow-none md:max-w-md">
+                    <SelectTrigger id="plan-type" className="h-10 w-full text-[13px] shadow-none">
                       <SelectValue placeholder="Select discharge type…" />
                     </SelectTrigger>
                     <SelectContent>
@@ -467,25 +538,26 @@ export default function AdminDischargeNewPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-[12px] leading-relaxed text-muted-foreground">{DISCHARGE_TYPE_HELPER_INLINE}</p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 md:max-w-md">
                   <Label htmlFor="expected-date" className="text-[13px] font-semibold text-muted-foreground">
                     Expected discharge date<span className="font-semibold text-destructive"> *</span>
                   </Label>
-                  <div className="md:max-w-md">
-                    <DateInput
-                      id="expected-date"
-                      value={expectedDischargeDate}
-                      onValueChange={setExpectedDischargeDate}
-                      min={minDateStr}
-                      max={maxDateStr}
-                      emptyHint={null}
-                      required
-                      className="text-[13px]"
-                    />
-                  </div>
-                  <p className="text-[12px] text-muted-foreground">Defaults to three days from today; must stay within ±90 days.</p>
+                  <DateInput
+                    id="expected-date"
+                    value={expectedDischargeDate}
+                    onValueChange={setExpectedDischargeDate}
+                    min={minMax.min}
+                    max={minMax.max}
+                    emptyHint="MM/DD/YYYY"
+                    required
+                    className="text-[13px] md:w-[200px]"
+                  />
+                  <p className="text-[12px] leading-relaxed text-muted-foreground">
+                    Must be within ±90 days of today. {ninetyDayRationale}
+                  </p>
                 </div>
               </div>
 
@@ -495,19 +567,20 @@ export default function AdminDischargeNewPage() {
                 </p>
               ) : null}
 
-              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                The next step opens the full med rec editor — current meds, prescriber sign-off, post-discharge
-                instructions, and attachments.
-              </p>
+              <div className="rounded-lg border border-border bg-muted/15 px-4 py-3 text-[13px] leading-relaxed text-foreground">
+                <p className="font-semibold">What you&apos;ll do next</p>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                  <li>Add current medications</li>
+                  <li>Reconcile against discharge plan</li>
+                  <li>Send for pharmacist review</li>
+                  <li>Prescriber sign-off</li>
+                  <li>Post-discharge handoff complete</li>
+                </ol>
+              </div>
 
               <div className="border-t border-border pt-6">
                 <div className="flex flex-wrap items-center justify-end gap-3">
-                <Link
-                  href="/admin/discharge"
-                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-[13px]")}
-                >
-                  Cancel
-                </Link>
+                  <FormCancelLink href={MED_REC_QUEUE_PATH} />
                   <Button type="submit" disabled={!canSubmitForm} className="min-w-[9.5rem] text-[13px] font-semibold">
                     {submitting ? (
                       <>
@@ -528,60 +601,88 @@ export default function AdminDischargeNewPage() {
             </form>
           </div>
 
-          <aside className="border-t border-border pt-8 lg:col-span-2">
+          <aside
+            data-testid="med-rec-drafts-panel"
+            className="w-full max-w-[360px] shrink-0 border-t border-border pt-8 lg:border-t-0 lg:pt-0"
+          >
             <h2 className="text-[15px] font-semibold tracking-tight text-foreground">Continue a draft</h2>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              In-progress medication reconciliations for {facilityName ?? "this facility"}.
-            </p>
 
-            <div className="mt-4 space-y-2">
-              {draftLoadError ? (
-                <p className="text-left text-[13px] font-medium text-destructive" role="alert">
-                  Could not load drafts ({draftLoadError}).
-                </p>
-              ) : null}
-              {loadingDrafts ? (
+            <div className="mt-4 space-y-3">
+              {draftPanelFetchFailed ? (
+                <div className="space-y-2" role="alert">
+                  <p className="text-left text-[13px] font-medium text-destructive">{DRAFTS_PANEL_GENERIC_ERROR}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-[13px]"
+                    data-testid="med-rec-drafts-retry"
+                    onClick={() => void loadResidentsAndDrafts()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : loadingDrafts ? (
                 <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                   Loading drafts…
                 </p>
               ) : draftRows.length === 0 ? (
-                <p className="text-left text-[13px] leading-relaxed text-muted-foreground">
-                  No drafts in progress. Once you start a med rec draft, it appears here until completed.
-                </p>
+                <p className="text-left text-[13px] text-muted-foreground">No in-progress drafts.</p>
               ) : (
-                <ul className="space-y-2">
-                  {draftRows.map((row) => {
+                <>
+                  <ul className="space-y-3" aria-label="In-progress medication reconciliation drafts">
+                    {visibleDrafts.map((row) => {
                       const rn = row.residents;
                       const name = rn ? residentLabel({ first_name: rn.first_name, last_name: rn.last_name }) : "Unknown resident";
+                      let startedLabel = "—";
+                      let daysAgo = 0;
+                      try {
+                        const started = parseISO(row.created_at);
+                        startedLabel = format(started, "MMM d, yyyy");
+                        daysAgo = differenceInCalendarDays(new Date(), started);
+                      } catch {
+                        /* ignore */
+                      }
+                      const step = workflowStepOf5(row.status);
                       return (
-                      <li key={row.id}>
-                        <button
-                          type="button"
-                          className={cn(
-                            "w-full rounded-lg border border-border bg-card px-4 py-3 text-left shadow-[var(--shadow-card)] ring-1 ring-border/50 transition-colors",
-                            "hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          )}
-                          onClick={() => {
-                            router.push(`/admin/discharge/${row.id}`);
-                          }}
+                        <li
+                          key={row.id}
+                          className="rounded-lg border border-border bg-card px-4 py-3 shadow-[var(--shadow-card)] ring-1 ring-border/50"
+                          data-testid="med-rec-draft-card"
                         >
-                          <span className="flex items-start justify-between gap-2">
-                            <span className="text-[13px] font-medium text-foreground">{name}</span>
-                            <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                          </span>
-                          <span className="mt-1 block text-[12px] text-muted-foreground">
-                            {formatPlanCategory(row.discharge_plan_category)} · {formatCalendarDate(row.expected_discharge_date)}
-                          </span>
-                          <span className="mt-1 block text-[11px] text-muted-foreground">
-                            Updated{" "}
-                            {format(parseISO(row.updated_at), "MMM d, yyyy 'at' h:mm a")}
-                          </span>
-                        </button>
-                      </li>
+                          <p className="text-[13px] font-semibold text-foreground">{name}</p>
+                          <p className="mt-1 text-[12px] text-muted-foreground">
+                            Started {startedLabel} · {daysAgo} days ago
+                          </p>
+                          <p className="mt-1 text-[12px] text-muted-foreground">
+                            Step {step} of 5 · Medication reconciliation workflow
+                          </p>
+                          <div className="mt-3">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 text-[13px]"
+                              onClick={() => router.push(`/admin/discharge/${row.id}`)}
+                            >
+                              Resume
+                            </Button>
+                          </div>
+                        </li>
                       );
-                  })}
-                </ul>
+                    })}
+                  </ul>
+                  {draftRows.length > 5 ? (
+                    <Link
+                      href={MED_REC_QUEUE_PATH}
+                      className="inline-flex text-[13px] font-medium text-primary underline-offset-4 hover:underline"
+                      data-testid="med-rec-view-all-drafts"
+                    >
+                      View all drafts ({draftRows.length})
+                    </Link>
+                  ) : null}
+                </>
               )}
             </div>
           </aside>

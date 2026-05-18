@@ -5,9 +5,9 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { DischargeHubNav } from "../discharge-hub-nav";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -79,7 +79,8 @@ export default function AdminDischargeDetailPage() {
       .maybeSingle();
 
     if (qErr) {
-      setError(qErr.message);
+      logSupabasePostgrestError("discharge-detail.load", qErr, { reconciliationId: id });
+      setError("Couldn't load this medication reconciliation. Refresh to try again.");
       setRow(null);
     } else {
       const loadedRow = data as RowT | null;
@@ -127,7 +128,8 @@ export default function AdminDischargeDetailPage() {
       setActionMessage(successMessage);
       await load();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Could not update discharge reconciliation.");
+      logSupabasePostgrestError("discharge-detail.patch-reconciliation", err, { reconciliationId: row?.id });
+      setActionError("Couldn't save changes. Retry or refresh.");
     } finally {
       setActionLoading(null);
     }
@@ -154,7 +156,8 @@ export default function AdminDischargeDetailPage() {
       setActionMessage(successMessage);
       await load();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Could not update resident discharge planning.");
+      logSupabasePostgrestError("discharge-detail.patch-resident", err, { reconciliationId: row?.id });
+      setActionError("Couldn't save discharge planning. Retry or refresh.");
     } finally {
       setActionLoading(null);
     }
@@ -163,12 +166,10 @@ export default function AdminDischargeDetailPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <RecordDetailHeader
-        title="Med reconciliation"
+        title="Medication reconciliation"
         subtitle="Operational workspace for discharge reconciliation, pharmacist attestation, and transition notes."
-        backLink={{ label: "Back to pipeline", href: "/admin/discharge" }}
+        backLink={{ label: "Back to medication reconciliation queue", href: "/pipeline/discharge-management" }}
       />
-
-      <DischargeHubNav />
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

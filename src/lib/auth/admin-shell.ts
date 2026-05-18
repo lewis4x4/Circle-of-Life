@@ -10,6 +10,7 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
  */
 const ADMIN_SHELL_SEGMENTS = [
   "/admin",
+  "/clinical",
   "/billing",
   "/finance",
   "/pipeline",

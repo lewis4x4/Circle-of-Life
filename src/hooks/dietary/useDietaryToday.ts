@@ -16,8 +16,33 @@ import type {
   ServiceStatus,
 } from "@/components/dietary/types";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type R = Record<string, any>;
+type QueryRow = Record<string, unknown>;
+type QueryOrder = { col: string; opts?: Record<string, unknown> };
+type QueryColumnValue = { col: string; val: unknown };
+type QueryColumnValues = { col: string; vals: readonly unknown[] };
+type QueryFilters = Record<string, unknown> & {
+  _order?: QueryOrder;
+  _limit?: number;
+  _gte?: QueryColumnValue;
+  _lte?: QueryColumnValue;
+  _in?: QueryColumnValues;
+  _neq?: QueryColumnValue;
+};
+type QueryResult = { data: unknown; error: { message?: string } | null };
+type DynamicQuery = PromiseLike<QueryResult> & {
+  order(col: string, opts?: Record<string, unknown>): DynamicQuery;
+  limit(count: number): DynamicQuery;
+  gte(col: string, val: unknown): DynamicQuery;
+  lte(col: string, val: unknown): DynamicQuery;
+  in(col: string, vals: readonly unknown[]): DynamicQuery;
+  neq(col: string, val: unknown): DynamicQuery;
+  eq(col: string, val: unknown): DynamicQuery;
+};
+type DynamicSupabase = {
+  from(table: string): {
+    select(columns: string): DynamicQuery;
+  };
+};
 
 const UNRESOLVED_FACILITY_LABEL = "Assigned facility";
 
@@ -50,21 +75,22 @@ const EMPTY_STATE: DietaryDeckState = {
 async function q(
   table: string,
   select: string,
-  filters: Record<string, any> = {},
+  filters: QueryFilters = {},
 ) {
   const sb = createClient();
-  let query = (sb as any).from(table).select(select);
-  for (const [k, v] of Object.entries(filters)) {
-    if (k === "_order") { query = query.order(v.col, v.opts); continue; }
-    if (k === "_limit") { query = query.limit(v); continue; }
-    if (k === "_gte")   { query = query.gte(v.col, v.val); continue; }
-    if (k === "_lte")   { query = query.lte(v.col, v.val); continue; }
-    if (k === "_in")    { query = query.in(v.col, v.vals); continue; }
-    if (k === "_neq")   { query = query.neq(v.col, v.val); continue; }
+  const { _order, _limit, _gte, _lte, _in, _neq, ...eqFilters } = filters;
+  let query = (sb as unknown as DynamicSupabase).from(table).select(select);
+  if (_order) query = query.order(_order.col, _order.opts);
+  if (typeof _limit === "number") query = query.limit(_limit);
+  if (_gte) query = query.gte(_gte.col, _gte.val);
+  if (_lte) query = query.lte(_lte.col, _lte.val);
+  if (_in) query = query.in(_in.col, _in.vals);
+  if (_neq) query = query.neq(_neq.col, _neq.val);
+  for (const [k, v] of Object.entries(eqFilters)) {
     query = query.eq(k, v);
   }
   const { data, error } = await query;
-  return { data: data as R[] | null, error };
+  return { data: data as QueryRow[] | null, error };
 }
 
 function fmtTime(ts: string): string {
@@ -102,7 +128,7 @@ function residentInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function facilityDisplayName(row: R | undefined): string {
+function facilityDisplayName(row: QueryRow | undefined): string {
   const name = typeof row?.name === "string" ? row.name.trim() : "";
   return name || UNRESOLVED_FACILITY_LABEL;
 }
@@ -125,7 +151,7 @@ export function useDietaryToday(): DietaryDeckState {
         is_primary: true,
         _limit: 1,
       });
-      const facilityId = (facRows?.[0] as R | undefined)?.facility_id as string | undefined;
+      const facilityId = facRows?.[0]?.facility_id as string | undefined;
       if (!facilityId) {
         setState((s) => ({ ...s, loading: false, error: "No facility assigned" }));
         return;
@@ -135,13 +161,13 @@ export function useDietaryToday(): DietaryDeckState {
         id: facilityId,
         _limit: 1,
       });
-      const facilityName = facilityDisplayName(facilityRows?.[0] as R | undefined);
+      const facilityName = facilityDisplayName(facilityRows?.[0]);
 
       // User profile
       const { data: profRows } = await q("user_profiles", "full_name", {
         id: user.id, _limit: 1,
       });
-      const fullName = (profRows?.[0] as R | undefined)?.full_name as string ?? "Lead Cook";
+      const fullName = (profRows?.[0]?.full_name as string | undefined) ?? "Lead Cook";
       const initials = residentInitials(fullName);
 
       // Today's date (facility timezone)
@@ -184,8 +210,8 @@ export function useDietaryToday(): DietaryDeckState {
         );
 
         for (const t of ticketRows ?? []) {
-          const res = t.residents as R | null;
-          const snap = (t.diet_order_snapshot as R) ?? {};
+          const res = t.residents as QueryRow | null;
+          const snap = (t.diet_order_snapshot as QueryRow | null) ?? {};
           const menuItems = Array.isArray(t.menu_items) ? t.menu_items as string[] : [];
           const fortItems = Array.isArray(t.fortification_items) ? t.fortification_items as string[] : [];
           const allergens = Array.isArray(snap.allergies) ? snap.allergies as string[] : [];
@@ -233,7 +259,7 @@ export function useDietaryToday(): DietaryDeckState {
       );
 
       const haccp: HACCPEntry[] = (haccpRows ?? []).map((h) => {
-        const prof = h["user_profiles!logged_by"] as R | null;
+        const prof = h["user_profiles!logged_by"] as QueryRow | null;
         return {
           id: h.id as string,
           time: fmtTime(h.logged_at as string),
@@ -257,10 +283,10 @@ export function useDietaryToday(): DietaryDeckState {
       );
 
       const fortification: FortificationRec[] = (fortRows ?? []).map((f) => {
-        const res = f.residents as R | null;
-        const ev = (f.trigger_evidence as R) ?? {};
+        const res = f.residents as QueryRow | null;
+        const ev = (f.trigger_evidence as QueryRow | null) ?? {};
         const items = Array.isArray(f.recommended_items)
-          ? (f.recommended_items as R[]).map((i) => i.item as string).join(" + ")
+          ? (f.recommended_items as QueryRow[]).map((i) => i.item as string).join(" + ")
           : "";
         const cal = f.estimated_added_calories as number | null;
         const lossStr = ev.weight_loss_pct_30d
@@ -268,7 +294,7 @@ export function useDietaryToday(): DietaryDeckState {
           : ev.avg_intake_pct_7d
           ? `Intake ${(ev.avg_intake_pct_7d as number).toFixed(0)}% avg`
           : "Flagged";
-        const doSnap = Array.isArray(res?.diet_orders) ? (res?.diet_orders as R[]) : [];
+        const doSnap = Array.isArray(res?.diet_orders) ? (res?.diet_orders as QueryRow[]) : [];
         const dt = doSnap[0]?.diet_type as string | undefined;
 
         return {
@@ -309,7 +335,7 @@ export function useDietaryToday(): DietaryDeckState {
       );
 
       const refusals: RefusalEntry[] = (refusalRows ?? []).map((r) => {
-        const res = r.residents as R | null;
+        const res = r.residents as QueryRow | null;
         const items = Array.isArray(r.refused_items) ? (r.refused_items as string[]).join(", ") : "Item";
         const dt = new Date(r.refused_at as string);
         const isToday = dt.toLocaleDateString("en-CA", { timeZone: "America/New_York" }) === today;
