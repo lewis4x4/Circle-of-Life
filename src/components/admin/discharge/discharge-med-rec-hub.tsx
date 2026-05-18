@@ -49,6 +49,7 @@ import {
 } from "@/lib/admin/discharge/hub-scope";
 
 const NEW_MED_REC_PIPELINE_PATH = "/pipeline/discharge-management/new-reconciliation";
+const DISCHARGE_MED_REC_HUB_LIST_LIMIT = 150;
 
 type RowT = Pick<
   Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"],
@@ -183,6 +184,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [rows, setRows] = useState<RowT[]>([]);
+  const [isRowsCapped, setIsRowsCapped] = useState(false);
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -227,6 +229,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
     setLoadFailed(false);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
+      setIsRowsCapped(false);
       setLoading(false);
       return;
     }
@@ -245,13 +248,18 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
         api = api.gte("updated_at", scopeIsoLower);
       }
 
-      const { data: list, error: listErr } = await api;
+      const { data: list, error: listErr } = await api.limit(
+        DISCHARGE_MED_REC_HUB_LIST_LIMIT + 1,
+      );
       if (listErr) throw listErr;
-      setRows((list ?? []) as RowT[]);
+      const loadedRows = (list ?? []) as RowT[];
+      setRows(loadedRows.slice(0, DISCHARGE_MED_REC_HUB_LIST_LIMIT));
+      setIsRowsCapped(loadedRows.length > DISCHARGE_MED_REC_HUB_LIST_LIMIT);
     } catch (e) {
       logSupabasePostgrestError("discharge-hub.list", e, { facilityId: selectedFacilityId });
       setLoadFailed(true);
       setRows([]);
+      setIsRowsCapped(false);
     } finally {
       setLoading(false);
     }
@@ -377,15 +385,42 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
     const ph = pharmacistRows.length;
     const rd = readyRows.length;
 
-    const pharmacistLabelShort = `Sent for external pharmacist review (${ph})`;
+    const pharmacistLabelShort = isRowsCapped
+      ? `Sent for external pharmacist review (${ph} shown)`
+      : `Sent for external pharmacist review (${ph})`;
 
     return [
-      { value: "all", label: `All (${total})` },
-      { value: "planning", label: `Planning gaps (${pl})` },
+      {
+        value: "all",
+        label: isRowsCapped
+          ? `All (newest ${DISCHARGE_MED_REC_HUB_LIST_LIMIT} shown)`
+          : `All (${total})`,
+      },
+      {
+        value: "planning",
+        label: isRowsCapped
+          ? `Planning gaps (${pl} shown)`
+          : `Planning gaps (${pl})`,
+      },
       { value: "pharmacist_review", label: pharmacistLabelShort },
-      { value: "ready_to_complete", label: `Ready to complete (${rd})` },
-      { value: "complete", label: `Complete (${completeCount})` },
-      { value: "cancelled", label: `Cancelled (${cancelledCount})` },
+      {
+        value: "ready_to_complete",
+        label: isRowsCapped
+          ? `Ready to complete (${rd} shown)`
+          : `Ready to complete (${rd})`,
+      },
+      {
+        value: "complete",
+        label: isRowsCapped
+          ? `Complete (${completeCount} shown)`
+          : `Complete (${completeCount})`,
+      },
+      {
+        value: "cancelled",
+        label: isRowsCapped
+          ? `Cancelled (${cancelledCount} shown)`
+          : `Cancelled (${cancelledCount})`,
+      },
     ];
   }, [
     planningRows.length,
@@ -393,6 +428,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
     readyRows.length,
     cancelledCount,
     completeCount,
+    isRowsCapped,
     rows.length,
   ]);
 
@@ -457,6 +493,11 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
             {/* FOLLOW-UP(ISSUE): Per-record pharmacist email/export handoff when no in-app pharmacist role exists. */}
             <h2 className="text-lg font-semibold text-foreground">Needs attention</h2>
             <div className="grid gap-3 sm:grid-cols-3">
+              {isRowsCapped ? (
+                <p className="sm:col-span-3 text-xs text-muted-foreground">
+                  Needs-attention counts reflect the newest {DISCHARGE_MED_REC_HUB_LIST_LIMIT} loaded rows.
+                </p>
+              ) : null}
               <Tooltip>
                 <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <KpiCard
@@ -466,7 +507,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
                   />
                 </TooltipTrigger>
                 <TooltipContent align="center" side="bottom" className="max-w-xs">
-                  Med recs with missing meds, missing prescriber, or expected discharge date in the past.
+                  Med recs missing discharge target date, pending hospice planning, or nurse reconciliation notes.
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -510,6 +551,12 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
 
         <section className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Reconciliations</h2>
+
+          {isRowsCapped ? (
+            <p className="text-sm text-muted-foreground">
+              Showing the newest {DISCHARGE_MED_REC_HUB_LIST_LIMIT} reconciliations for this time scope. Narrow the time scope to review older records.
+            </p>
+          ) : null}
 
           {loadFailed ?
             <div className="flex flex-wrap items-center gap-3 text-sm text-destructive" role="alert">
@@ -595,7 +642,9 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
                           colSpan={5}
                           className="py-10 text-sm text-muted-foreground"
                         >
-                          No med recs match this filter yet.
+                          {isRowsCapped
+                            ? "No loaded newest rows match this filter yet."
+                            : "No med recs match this filter yet."}
                         </TableCell>
                       </TableRow>
                     : filteredSortedRows.map((r) => {

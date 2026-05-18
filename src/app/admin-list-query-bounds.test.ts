@@ -10,6 +10,9 @@ const admissionsSource = readSource("src/app/(admin)/admin/admissions/page.tsx")
 const invoiceSource = readSource("src/app/(admin)/vendors/invoices/page.tsx");
 const purchaseOrderSource = readSource("src/app/(admin)/vendors/purchase-orders/page.tsx");
 const referralsSource = readSource("src/app/(admin)/admin/referrals/page.tsx");
+const dischargeMedRecHubSource = readSource(
+  "src/components/admin/discharge/discharge-med-rec-hub.tsx",
+);
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
@@ -33,6 +36,28 @@ describe("admin list query bounds", () => {
     expect(purchaseOrderSource).toContain('.select("id, po_number, status, order_date, total_cents")');
     expect(purchaseOrderSource).toContain(".limit(PURCHASE_ORDER_LIST_LIMIT)");
     expect(purchaseOrderSource).not.toContain('.select("*")');
+  });
+
+  it("caps discharge med-rec hub list loading with honest capped-cohort copy", () => {
+    expect(dischargeMedRecHubSource).toContain(
+      "const DISCHARGE_MED_REC_HUB_LIST_LIMIT = 150;",
+    );
+    expect(dischargeMedRecHubSource).toContain("api.limit(");
+    expect(dischargeMedRecHubSource).toContain(
+      "DISCHARGE_MED_REC_HUB_LIST_LIMIT + 1",
+    );
+    expect(dischargeMedRecHubSource).toContain(
+      "Showing the newest {DISCHARGE_MED_REC_HUB_LIST_LIMIT} reconciliations for this time scope",
+    );
+    expect(dischargeMedRecHubSource).toContain(
+      "No loaded newest rows match this filter yet.",
+    );
+    expect(dischargeMedRecHubSource).not.toContain(
+      "missing meds, missing prescriber, or expected discharge date in the past",
+    );
+    expect(dischargeMedRecHubSource).toContain(
+      "missing discharge target date, pending hospice planning, or nurse reconciliation notes",
+    );
   });
 
   it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {
