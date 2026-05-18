@@ -150,7 +150,7 @@ export async function fetchExecutiveKpiSnapshot(
     .is("deleted_at", null)
     .is("resolved_at", null);
 
-  // Resident Assurance queries
+  // Smart Rounding queries
   let overdueTasksQuery = supabase
     .from("resident_observation_tasks")
     .select("id", { count: "exact", head: true })

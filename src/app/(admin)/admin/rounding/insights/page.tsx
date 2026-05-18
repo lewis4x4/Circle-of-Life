@@ -198,7 +198,7 @@ export default function InsightsPage() {
       await load();
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Could not run resident assurance AI.",
+        error instanceof Error ? error.message : "Could not run Smart Rounding insights AI.",
       );
     } finally {
       setRunning(false);

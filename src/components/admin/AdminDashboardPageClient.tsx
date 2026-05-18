@@ -518,7 +518,7 @@ export function AdminDashboardPageClient({
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Resident assurance</h2>
+            <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Smart rounding</h2>
             <p className="mt-0.5 text-[12px] text-muted-foreground">Watch load, escalation pressure, integrity review, and safety-score risk.</p>
           </div>
         </div>

@@ -14,15 +14,15 @@ const TERMINAL_TASK_STATUSES = new Set(["completed_on_time", "completed_late", "
 function buildDefaultReason(action: WatchAction) {
   switch (action) {
     case "approve":
-      return "Watch approved from the Resident Assurance watch center.";
+      return "Watch approved from the Smart Rounding watch center.";
     case "pause":
-      return "Watch paused from the Resident Assurance watch center.";
+      return "Watch paused from the Smart Rounding watch center.";
     case "resume":
-      return "Watch resumed from the Resident Assurance watch center.";
+      return "Watch resumed from the Smart Rounding watch center.";
     case "end":
-      return "Watch ended from the Resident Assurance watch center.";
+      return "Watch ended from the Smart Rounding watch center.";
     case "cancel":
-      return "Watch cancelled from the Resident Assurance watch center.";
+      return "Watch cancelled from the Smart Rounding watch center.";
   }
 }
 

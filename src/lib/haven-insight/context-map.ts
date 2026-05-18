@@ -231,7 +231,7 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
   {
     prefix: "/admin/rounding",
     context: {
-      module: "Resident Assurance & Safety Rounding",
+      module: "Smart Rounding & Safety",
       perspective: "resident safety, observation compliance, watch protocols, early-warning signals",
       suggestedQuestions: [
         "Which residents are on active observation plans?",
@@ -242,7 +242,7 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
         "Which residents triggered exceptions in the last 24 hours?",
       ],
       kpiDomains: ["clinical", "residentAssurance"],
-      systemPromptAddon: "The user is in Resident Assurance & Safety Rounding. Focus on observation task compliance, overdue/missed checks, watch protocol status, exception severity, and resident safety scores. Reference Florida AHCA post-fall monitoring requirements when relevant. Patient safety is the top priority.",
+      systemPromptAddon: "The user is in Smart Rounding (the observation rounding and resident safety workspace). Focus on observation task compliance, overdue/missed checks, watch protocol status, exception severity, and resident safety scores. Reference Florida AHCA post-fall monitoring requirements when relevant. Patient safety is the top priority.",
     },
   },
   {
