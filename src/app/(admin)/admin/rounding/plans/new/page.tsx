@@ -2,14 +2,20 @@
 
 import { RoundingHubNav } from "../../rounding-hub-nav";
 import { ObservationPlanEditor } from "@/components/rounding/ObservationPlanEditor";
+import { PageHeader } from "@/design-system/components/PageHeader";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 
 export default function AdminRoundingPlanNewPage() {
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const facilityName =
+    availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name ?? "selected facility";
+
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">New observation plan</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Create resident cadence rules and grace windows for live rounding.</p>
-      </div>
+      <PageHeader
+        title="New observation plan"
+        subtitle={`Create resident cadence rules and grace windows for live rounding at ${facilityName}.`}
+      />
 
       <RoundingHubNav />
 
