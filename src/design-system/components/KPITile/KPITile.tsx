@@ -76,6 +76,7 @@ export function KPITile({
 }: KPITileProps) {
   const [infoOpen, setInfoOpen] = useState(false);
   const infoId = useId();
+  const validSparkline = sparkline?.filter(Number.isFinite);
   const Tag = onClick ? "button" : "article";
   const tagProps = onClick
     ? {
@@ -159,9 +160,9 @@ export function KPITile({
           ) : (
             <span />
           )}
-          {sparkline && sparkline.length >= 2 && (
+          {validSparkline && validSparkline.length >= 2 && (
             <Sparkline
-              data={sparkline}
+              data={validSparkline}
               tone={TONE_TO_SPARKLINE[tone]}
               ariaLabel={`${label} sparkline trend`}
             />

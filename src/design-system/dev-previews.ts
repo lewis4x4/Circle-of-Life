@@ -92,7 +92,7 @@ export const UI_V2_PREVIEW_REGISTRY: Record<string, DevPreviewEntry> = {
     code: "P05i",
     name: "Sparkline",
     description:
-      "Thin Recharts area chart used inside KPITile; semantic tone mapping.",
+      "Thin inline SVG area sparkline used inside KPITile; semantic tone mapping.",
     Preview: SparklinePreview,
   },
   "panel": {
