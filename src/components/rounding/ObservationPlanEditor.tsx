@@ -232,7 +232,7 @@ export function ObservationPlanEditor({
           (plan.resident_observation_plan_rules ?? [])
             .sort((a, b) => a.sort_order - b.sort_order)
             .map((rule, index) => ({
-              id: rule.id,
+              id: duplicatePlanId ? undefined : rule.id,
               intervalType: rule.interval_type,
               intervalMinutes: rule.interval_minutes,
               shift: rule.shift,
