@@ -1,0 +1,1727 @@
+{
+  "generatedAt": "2026-05-18T15:10:26.314Z",
+  "appRoot": "src/app",
+  "routeFilesWithAnyHit": 214,
+  "totals": {
+    "rawButtonRoutes": 177,
+    "nativeSelectRoutes": 86,
+    "rawTheadRoutes": 27,
+    "rawThRouteFiles": 27,
+    "trackedCapsSuspectRoutes": 105
+  },
+  "note": "Heuristic grep (not JSX-aware). See eslint.config `quiet-primitives` block for phased enforcement.",
+  "files": [
+    {
+      "file": "src/app/(admin)/admin/activities/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/admissions/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/admissions/blocked/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/admissions/move-in-ready/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/admissions/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/admissions/onboarding/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/admissions/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/assistant-dashboard/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/care-plans/reviews-due/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/audit-export/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/deficiencies/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/deficiencies/analysis/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/deficiencies/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/policies/[id]/edit/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/policies/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/policies/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/rules/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/rules/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/rules/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/compliance/scan/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/coordinator-dashboard/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
+      "rawButton": false,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/dietary/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/dietary/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/discharge/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/discharge/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/discharge/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/facilities/page.tsx",
+      "rawButton": false,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/family-messages/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/family-portal/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/feedback/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/infection-control/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/infection-control/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/infection-control/staff-illness/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/knowledge/admin/review/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/knowledge/coverage/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/knowledge/seed-targets/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/medications/controlled/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/medications/errors/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/medications/errors/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/medications/verbal-orders/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/medications/verbal-orders/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/nurse-dashboard/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/assets/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/missed/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/overdue/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/pager/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/templates/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/operations/vendors/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/quality/measures/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/quality/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/hl7-inbound/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/hl7-inbound/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/in-admissions/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/referrals/sources/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/residents/[id]/assessments/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/residents/[id]/medications/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/residents/[id]/vitals/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/residents/[id]/vitals/thresholds/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/escalations/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/insights/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/integrity/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/live/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/plans/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/reports/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/safety/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/rounding/watches/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/settings/notifications/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/settings/search-tools/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/settings/users/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/shift-swaps/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/admin/v2/error.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/v2/settings/audit-log/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/admin/v2/settings/users/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/assessments/overdue/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/billing/ar-aging/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/billing-ar-overview-hero.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/billing-invoice-ledger.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/collections/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/collections/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/billing/invoices/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/billing/invoices/generate/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/org-ar-aging/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/billing/payments/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/rates/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/billing/rates/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/billing/revenue/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/certifications/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/certifications/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/error.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/executive/alerts/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/executive/nlq/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/executive/reports/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/executive/scenarios/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/executive/settings/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/executive/standup/[week]/board/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/executive/standup/[week]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/executive/standup/compare/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/executive/standup/history/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/executive/standup/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/finance/budget/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/finance/chart-of-accounts/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/finance/gl-settings/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/finance/journal-entries/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/finance/journal-entries/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/finance/journal-entries/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/finance/trust/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/incidents/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/incidents/[id]/rca/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/incidents/followups/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/incidents/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/incidents/obligations/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/incidents/overdue-followups/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/incidents/trends/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/insurance/claims/[id]/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/claims/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/insurance/coi/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/loss-runs/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/page.tsx",
+      "rawButton": false,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/insurance/policies/[id]/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/policies/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/policies/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/insurance/renewal-packages/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/renewal-packages/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/insurance/renewals/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/insurance/workers-comp/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/payroll/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/payroll/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/payroll/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reports/admin/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reports/benchmarks/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reports/history/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reports/nlq/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/reports/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/reports/saved/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reports/scheduled/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reports/templates/page.tsx",
+      "rawButton": false,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/reputation/accounts/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/reputation/integrations/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/reputation/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/reputation/replies/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/residents/[id]/billing/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/residents/[id]/care-plan/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/residents/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/residents/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/schedules/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/schedules/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/search/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/staff/[id]/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/staff/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/staffing/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/time-records/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/time-records/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/training/completions/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/training/inservice/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/training/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/training/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/transportation/calendar/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/transportation/drivers/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/transportation/inspections/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/transportation/mileage-approvals/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/transportation/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/transportation/requests/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/transportation/requests/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/transportation/settings/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/transportation/vehicles/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/vendors/directory/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/invoices/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(admin)/vendors/payments/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/purchase-orders/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/purchase-orders/new/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/purchase-orders/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(admin)/vendors/spend/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": true,
+      "rawThOpen": true,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/caregiver/housekeeper/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/caregiver/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/caregiver/policies/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/caregiver/rounds/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/clock/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/error.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/followups/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/handoff/page.tsx",
+      "rawButton": false,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/incident-draft/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/me/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/meds/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/prn-followup/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/resident/[id]/adl/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/resident/[id]/behavior/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/resident/[id]/condition-change/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/resident/[id]/log/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(caregiver)/resident/[id]/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(caregiver)/tasks/page.tsx",
+      "rawButton": true,
+      "nativeSelect": true,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(family)/error.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(family)/family/billing/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(family)/family/calendar/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(family)/family/care-plan/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(family)/family/invoices/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(family)/family/messages/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(family)/family/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": true
+    },
+    {
+      "file": "src/app/(family)/family/payments/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/(onboarding)/onboarding/questions/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/facility-launch/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/global-error.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    },
+    {
+      "file": "src/app/login/page.tsx",
+      "rawButton": true,
+      "nativeSelect": false,
+      "rawThead": false,
+      "rawThOpen": false,
+      "trackedCapsTailwindFragments": false
+    }
+  ]
+}

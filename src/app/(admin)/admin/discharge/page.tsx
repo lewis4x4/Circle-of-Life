@@ -1,22 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, DoorOpen, ArrowRight, Loader2 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Plus } from "lucide-react";
 
-import { DischargeHubNav } from "./discharge-hub-nav";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { KpiCard, type KpiCardTone } from "@/components/ui/kpi-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { V2Card } from "@/components/ui/v2-card";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  dischargeHubScopeFromSearchParam,
+  dischargeHubScopeLowerBoundUtc,
+  type DischargeHubScope,
+} from "@/lib/admin/discharge/hub-scope";
+
+const NEW_MED_REC_PIPELINE_PATH = "/pipeline/discharge-management/new-reconciliation";
 
 type RowT = Pick<
   Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"],
@@ -27,13 +53,24 @@ type RowT = Pick<
   | "pharmacist_npi"
   | "pharmacist_notes"
 > & {
-  residents: { first_name: string; last_name: string; discharge_target_date: string | null; hospice_status: string } | null;
+  residents: {
+    first_name: string;
+    last_name: string;
+    discharge_target_date: string | null;
+    hospice_status: string;
+  } | null;
 };
 
-type DischargePhase = "planning" | "pharmacist_review" | "ready_to_complete" | "complete" | "cancelled";
+type DischargePhase =
+  | "planning"
+  | "pharmacist_review"
+  | "ready_to_complete"
+  | "complete"
+  | "cancelled";
+
 type PhaseFilter = "all" | DischargePhase;
 
-function formatStatus(s: string) {
+function formatStatusSentence(s: string) {
   return s.replace(/_/g, " ");
 }
 
@@ -52,7 +89,7 @@ function describeDischargePhase(row: RowT): {
   if (row.status === "complete") {
     return {
       phase: "complete",
-      helperText: "Reconciliation and transition planning are complete.",
+      helperText: "Reconciliation workflow is complete.",
       nextActionLabel: "Complete",
     };
   }
@@ -80,8 +117,8 @@ function describeDischargePhase(row: RowT): {
   if (row.status === "draft") {
     return {
       phase: "pharmacist_review",
-      helperText: "Ready to move into pharmacist review.",
-      nextActionLabel: "Send to pharmacist",
+      helperText: "Ready to send for pharmacist attestation.",
+      nextActionLabel: "Send for pharmacist review",
     };
   }
   if (!row.pharmacist_npi?.trim() || !row.pharmacist_notes?.trim()) {
@@ -93,93 +130,122 @@ function describeDischargePhase(row: RowT): {
   }
   return {
     phase: "ready_to_complete",
-    helperText: "Pharmacist review is in place; this can be completed.",
+    helperText: "Pharmacist review is recorded; finalize when ready.",
     nextActionLabel: "Mark complete",
   };
 }
 
+function phaseFromSearchParam(raw: string | null): PhaseFilter {
+  switch (raw) {
+    case "planning":
+    case "pharmacist_review":
+    case "ready_to_complete":
+    case "complete":
+    case "cancelled":
+      return raw;
+    default:
+      return "all";
+  }
+}
+
+function youngestUpdatedMs(rows: RowT[]): number | null {
+  if (!rows.length) return null;
+  return rows.reduce<number | null>((min, row) => {
+    const ms = Date.parse(row.updated_at);
+    if (!Number.isFinite(ms)) return min;
+    return min === null ? ms : Math.min(min, ms);
+  }, null);
+}
+
+/** Hours since oldest `updated_at` in the cohort (staleness heuristic). */
+function oldestAgeHours(rows: RowT[]): number | null {
+  const y = youngestUpdatedMs(rows);
+  if (y === null) return null;
+  return (Date.now() - y) / (1000 * 60 * 60);
+}
+
 export default function AdminDischargeHubPage() {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
-  const { user } = useHavenAuth();
+  const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const { user } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<RowT[]>([]);
-  const [counts, setCounts] = useState({
-    draft: 0,
-    review: 0,
-    complete: 0,
-    cancelled: 0,
-  });
-  const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
+
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const requestedPhase = searchParams.get("phase");
+
+  const scopeKey = dischargeHubScopeFromSearchParam(searchParams.get("scope"));
+  const phaseFilter = phaseFromSearchParam(searchParams.get("phase"));
+
+  type QueryPatch =
+    | { mode: "set"; pairs: Record<string, string | undefined> }
+    | { mode: "delete"; keys: string[] };
+
+  const patchQuery = useCallback(
+    (patch: QueryPatch) => {
+      const next = new URLSearchParams(searchParams.toString());
+      if (patch.mode === "set") {
+        for (const [k, v] of Object.entries(patch.pairs)) {
+          if (v === undefined || v === "") next.delete(k);
+          else next.set(k, v);
+        }
+      } else {
+        for (const k of patch.keys) next.delete(k);
+      }
+      const qs = next.toString();
+      router.replace(qs.length ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   useEffect(() => {
-    if (
-      requestedPhase === "planning" ||
-      requestedPhase === "pharmacist_review" ||
-      requestedPhase === "ready_to_complete" ||
-      requestedPhase === "complete" ||
-      requestedPhase === "cancelled"
-    ) {
-      setPhaseFilter(requestedPhase);
-      return;
+    if (!searchParams.has("scope")) {
+      const next = new URLSearchParams(searchParams.toString());
+      next.set("scope", "month");
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
     }
-    setPhaseFilter("all");
-  }, [requestedPhase]);
+  }, [pathname, router, searchParams]);
+
+  const scopeIsoLower = dischargeHubScopeLowerBoundUtc(scopeKey);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRows([]);
-      setCounts({ draft: 0, review: 0, complete: 0, cancelled: 0 });
       setLoading(false);
       return;
     }
 
     try {
-      const { data: list, error: listErr } = await supabase
+      let api = supabase
         .from("discharge_med_reconciliation")
-        .select("id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)")
+        .select(
+          "id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)",
+        )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
 
+      if (scopeIsoLower) {
+        api = api.gte("updated_at", scopeIsoLower);
+      }
+
+      const { data: list, error: listErr } = await api;
       if (listErr) throw listErr;
       setRows((list ?? []) as RowT[]);
-
-      const base = () =>
-        supabase
-          .from("discharge_med_reconciliation")
-          .select("id", { count: "exact", head: true })
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null);
-
-      const [cDraft, cRev, cDone, cCan] = await Promise.all([
-        base().eq("status", "draft"),
-        base().eq("status", "pharmacist_review"),
-        base().eq("status", "complete"),
-        base().eq("status", "cancelled"),
-      ]);
-
-      setCounts({
-        draft: cDraft.count ?? 0,
-        review: cRev.count ?? 0,
-        complete: cDone.count ?? 0,
-        cancelled: cCan.count ?? 0,
-      });
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load reconciliations.");
+      setLoadError(e instanceof Error ? e.message : "Could not load med reconciliations.");
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [selectedFacilityId, scopeIsoLower, supabase]);
 
   useEffect(() => {
     void load();
@@ -189,7 +255,11 @@ export default function AdminDischargeHubPage() {
     row: RowT,
     patch: Partial<Database["public"]["Tables"]["discharge_med_reconciliation"]["Update"]>,
     successMessage: string,
+    event?: React.MouseEvent | React.BaseSyntheticEvent,
   ) {
+    event?.preventDefault();
+    event?.stopPropagation();
+
     setActionLoading(row.id);
     setActionError(null);
     setActionMessage(null);
@@ -206,14 +276,63 @@ export default function AdminDischargeHubPage() {
       setActionMessage(successMessage);
       await load();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Could not update discharge reconciliation.");
+      setActionError(err instanceof Error ? err.message : "Could not update med reconciliation.");
     } finally {
       setActionLoading(null);
     }
   }
 
-  const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
-  const featuredRows = useMemo(() => {
+  const noFacility =
+    !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+
+  const facilityName = useMemo(() => {
+    if (noFacility) return "the selected facility";
+    const name = availableFacilities.find((f) => f.id === selectedFacilityId)?.name;
+    return name ?? selectedFacilityId;
+  }, [availableFacilities, noFacility, selectedFacilityId]);
+
+  const planningRows = useMemo(
+    () => rows.filter((row) => describeDischargePhase(row).phase === "planning"),
+    [rows],
+  );
+  const pharmacistRows = useMemo(
+    () => rows.filter((row) => describeDischargePhase(row).phase === "pharmacist_review"),
+    [rows],
+  );
+  const readyRows = useMemo(
+    () => rows.filter((row) => describeDischargePhase(row).phase === "ready_to_complete"),
+    [rows],
+  );
+
+  const completeCount = rows.filter(
+    (row) => describeDischargePhase(row).phase === "complete",
+  ).length;
+  const cancelledCount = rows.filter(
+    (row) => describeDischargePhase(row).phase === "cancelled",
+  ).length;
+
+  const planningTone: KpiCardTone = useMemo(() => {
+    if (planningRows.length === 0) return "neutral";
+    const h = oldestAgeHours(planningRows);
+    return h !== null && h > 24 ? "warning" : "neutral";
+  }, [planningRows]);
+
+  const pharmacistTone: KpiCardTone = useMemo(() => {
+    if (pharmacistRows.length === 0) return "neutral";
+    const h = oldestAgeHours(pharmacistRows);
+    return h !== null && h > 48 ? "warning" : "neutral";
+  }, [pharmacistRows]);
+
+  const readyTone: KpiCardTone = readyRows.length > 0 ? "success" : "neutral";
+
+  const filteredRows = useMemo(() => {
+    if (phaseFilter === "all") return rows;
+    return rows.filter(
+      (row) => describeDischargePhase(row).phase === phaseFilter,
+    );
+  }, [phaseFilter, rows]);
+
+  const filteredSortedRows = useMemo(() => {
     const phaseOrder: Record<DischargePhase, number> = {
       planning: 0,
       pharmacist_review: 1,
@@ -221,344 +340,361 @@ export default function AdminDischargeHubPage() {
       complete: 3,
       cancelled: 4,
     };
-    return [...rows]
-      .filter((row) => phaseFilter === "all" || describeDischargePhase(row).phase === phaseFilter)
-      .sort((a, b) => {
-        const phaseA = describeDischargePhase(a).phase;
-        const phaseB = describeDischargePhase(b).phase;
-        const phaseDelta = phaseOrder[phaseA] - phaseOrder[phaseB];
-        if (phaseDelta !== 0) return phaseDelta;
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      })
-      .slice(0, 12);
-  }, [phaseFilter, rows]);
-  const planningCount = rows.filter((row) => describeDischargePhase(row).phase === "planning").length;
-  const pharmacistActionCount = rows.filter((row) => describeDischargePhase(row).phase === "pharmacist_review").length;
-  const readyToCompleteCount = rows.filter((row) => describeDischargePhase(row).phase === "ready_to_complete").length;
+    return [...filteredRows].sort((a, b) => {
+      const phaseA = describeDischargePhase(a).phase;
+      const phaseB = describeDischargePhase(b).phase;
+      const d = phaseOrder[phaseA] - phaseOrder[phaseB];
+      if (d !== 0) return d;
+      return Date.parse(b.updated_at) - Date.parse(a.updated_at);
+    });
+  }, [filteredRows]);
+
+  function setScope(next: DischargeHubScope) {
+    patchQuery({ mode: "set", pairs: { scope: next } });
+  }
+
+  function setPhase(next: PhaseFilter) {
+    patchQuery({
+      mode: "set",
+      pairs: { phase: next === "all" ? undefined : next },
+    });
+  }
+
+  const filterOptions: Array<{ value: PhaseFilter; label: string }> = useMemo(() => {
+    const total = rows.length;
+    const pl = planningRows.length;
+    const ph = pharmacistRows.length;
+    const rd = readyRows.length;
+
+    const pharmacistLabelShort = `Sent for external pharmacist review (${ph})`;
+
+    return [
+      { value: "all", label: `All (${total})` },
+      { value: "planning", label: `Planning gaps (${pl})` },
+      { value: "pharmacist_review", label: pharmacistLabelShort },
+      { value: "ready_to_complete", label: `Ready to complete (${rd})` },
+      { value: "complete", label: `Complete (${completeCount})` },
+      { value: "cancelled", label: `Cancelled (${cancelledCount})` },
+    ];
+  }, [
+    planningRows.length,
+    pharmacistRows.length,
+    readyRows.length,
+    cancelledCount,
+    completeCount,
+    rows.length,
+  ]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
-      
-      {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
-         <div className="space-y-2">
-           
-           <div className="flex flex-wrap items-center gap-3">
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-                Discharge & Transition
-             </h1>
-             {phaseFilter !== "all" ? (
-               <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
-                 {featuredRows.length} visible
-               </Badge>
-             ) : null}
-           </div>
-           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-             Medication reconciliation records and discharge planning.
-           </p>
-         </div>
-         <div className="hidden md:block">
-           <DischargeHubNav />
-         </div>
-      </div>
-
-      {noFacility ? (
-        <div className="rounded-lg border border-warning/20 bg-warning/10 p-6 text-sm text-warning font-medium tracking-wide flex items-center gap-4">
-           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
-              <span className="font-bold">!</span>
-           </div>
-           Select a facility in the header to load reconciliation rows.
-        </div>
-      ) : null}
-
-      {/* ─── METRIC PILLARS ─── */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-4">
-        <div className="h-[180px]">
-           <V2Card hoverColor="rose" className="border-rose-500/20 shadow-[0_8px_30px_rgba(244,63,94,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                 Draft
-               </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.draft}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="amber" className="border-amber-500/20 shadow-[0_8px_30px_rgba(245,158,11,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-amber-600 dark:text-amber-500 flex items-center gap-2">
-                 Pharmacist Review
-               </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.review}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[0_8px_30px_rgba(16,185,129,0.05)]">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                 Complete
-               </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.complete}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-        <div className="h-[180px]">
-           <V2Card hoverColor="slate" className="border-slate-500/20 shadow-sm">
-             <div className="relative z-10 flex flex-col h-full justify-between pt-2 pb-1">
-               <h3 className="text-xs font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                 Cancelled
-               </h3>
-               <p className="text-2xl font-medium tracking-tight text-slate-900 dark:text-white mt-auto">
-                 {noFacility ? "—" : loading ? "—" : counts.cancelled}
-               </p>
-             </div>
-           </V2Card>
-        </div>
-      </div>
-
-      <div className="h-[120px]">
-        <V2Card href="/admin/discharge/new" hoverColor="indigo" className="border-primary-500/20 pb-0">
-          <div className="flex items-center gap-6 h-full absolute inset-0 px-8">
-            <div className="rounded-2xl bg-primary-50 dark:bg-primary-500/10 p-4 border border-primary-100 dark:border-primary-500/20">
-              <DoorOpen className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+    <TooltipProvider delay={300}>
+      <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 pt-2">
+        <PageHeader
+          title="Discharge & transition"
+          subtitle={
+            <>
+              Medication reconciliation pipeline for{" "}
+              <span className="text-foreground">{facilityName}</span>.
+            </>
+          }
+          actions={
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <div className="flex min-w-[200px] items-center gap-2">
+                <span className="sr-only">Time scope</span>
+                <Select
+                  value={scopeKey}
+                  onValueChange={(v) =>
+                    setScope(dischargeHubScopeFromSearchParam(v))
+                  }
+                >
+                  <SelectTrigger
+                    aria-label="Time scope"
+                    className="h-9 w-[200px]"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This week</SelectItem>
+                    <SelectItem value="month">This month</SelectItem>
+                    <SelectItem value="quarter">This quarter</SelectItem>
+                    <SelectItem value="all">All time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Link
+                href={NEW_MED_REC_PIPELINE_PATH}
+                aria-label="Start new med reconciliation"
+                className={cn(
+                  buttonVariants({ variant: "default", size: "default" }),
+                  "inline-flex shrink-0 items-center gap-2",
+                )}
+              >
+                <Plus className="size-4" aria-hidden />
+                New med rec
+              </Link>
             </div>
-            <div>
-              <h3 className="text-xl lg:text-2xl font-medium tracking-tight text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                New Med Reconciliation
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-zinc-400 tracking-wide mt-1">Opens a draft row for a resident in this facility.</p>
-            </div>
-            <ArrowRight className="h-6 w-6 text-slate-300 dark:text-slate-700 ml-auto group-hover:text-primary-500 transition-colors group-hover:translate-x-2 duration-300" />
-          </div>
-        </V2Card>
-      </div>
+          }
+        />
 
-      {!noFacility ? (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Planning gaps</p>
-            <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : planningCount}</p>
+        {noFacility ? (
+          <div role="status" className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            Select a facility in the header to load med reconciliations.
           </div>
-          <div className="rounded-lg border border-primary-200/70 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300">Pharmacist action</p>
-            <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : pharmacistActionCount}</p>
-          </div>
-          <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
-            <p className="text-[10px] uppercase tracking-wider font-mono text-emerald-700 dark:text-emerald-300">Ready to complete</p>
-            <p className="mt-2 text-2xl font-medium text-slate-900 dark:text-white">{loading ? "—" : readyToCompleteCount}</p>
-          </div>
-        </div>
-      ) : null}
-
-      {actionError ? (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-6 text-sm text-destructive font-medium tracking-wide flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
-            <span className="font-bold">!</span>
-          </div>
-          {actionError}
-        </div>
-      ) : null}
-      {actionMessage ? (
-        <div className="rounded-lg border border-success/20 bg-success/10 p-6 text-sm text-success font-medium tracking-wide flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
-            <span className="font-bold">✓</span>
-          </div>
-          {actionMessage}
-        </div>
-      ) : null}
-
-      {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4">
-          <ClipboardList className="h-5 w-5 text-primary-500" />
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
-            Reconciliations
-          </h3>
-        </div>
-
-        {loadError ? (
-           <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="border border-border rounded-lg bg-card overflow-hidden p-6 md:p-8 relative">
-           <div className="relative z-10 mb-6 flex flex-wrap items-center gap-2">
-             {([
-               { value: "all", label: `All (${rows.length})` },
-               { value: "planning", label: `Planning (${planningCount})` },
-               { value: "pharmacist_review", label: `Pharmacist (${pharmacistActionCount})` },
-               { value: "ready_to_complete", label: `Ready (${readyToCompleteCount})` },
-               { value: "complete", label: `Complete (${counts.complete})` },
-               { value: "cancelled", label: `Cancelled (${counts.cancelled})` },
-             ] as Array<{ value: PhaseFilter; label: string }>).map((option) => (
-               <button
-                 key={option.value}
-                 type="button"
-                 onClick={() => setPhaseFilter(option.value)}
-                 className={cn(
-                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                   phaseFilter === option.value
-                     ? "bg-primary-600 text-white"
-                     : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
-                 )}
-               >
-                 {option.label}
-               </button>
-             ))}
-           </div>
-           {phaseFilter !== "all" ? (
-             <div className="relative z-10 mb-4 flex flex-wrap items-center gap-2">
-               <Badge variant="outline" className="border-primary-200 bg-primary-50 text-primary-700">
-                 Phase filter: {phaseFilter === "ready_to_complete" ? "ready to complete" : phaseFilter.replace(/_/g, " ")}
-               </Badge>
-               <Link href="/admin/discharge" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 px-2 text-xs")}>
-                 Clear phase filter
-               </Link>
-             </div>
-           ) : null}
+        {!noFacility ? (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold text-foreground">Needs attention</h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Tooltip>
+                <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <KpiCard
+                    value={loading ? "—" : planningRows.length}
+                    label="Planning gaps"
+                    tone={planningTone}
+                  />
+                </TooltipTrigger>
+                <TooltipContent align="center" side="bottom" className="max-w-xs">
+                  Med recs with missing meds, missing prescriber, or expected discharge date in the past.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <KpiCard
+                    value={loading ? "—" : pharmacistRows.length}
+                    label="Sent for external pharmacist review"
+                    tone={pharmacistTone}
+                  />
+                </TooltipTrigger>
+                <TooltipContent align="center" side="bottom" className="max-w-xs">
+                  Drafts sent for pharmacist review, not yet returned.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <KpiCard
+                    value={loading ? "—" : readyRows.length}
+                    label="Ready to complete"
+                    tone={readyTone}
+                  />
+                </TooltipTrigger>
+                <TooltipContent align="center" side="bottom" className="max-w-xs">
+                  Pharmacist-approved, awaiting final sign-off.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </section>
+        ) : null}
 
-           <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr] gap-4 flex items-center px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground relative z-10">
-             <div>Resident</div>
-             <div>Status</div>
-             <div className="text-right">Updated</div>
-           </div>
+        {actionError ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+            {actionError}
+          </div>
+        ) : null}
+        {actionMessage ? (
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-900 dark:text-emerald-300">
+            {actionMessage}
+          </div>
+        ) : null}
 
-           <div className="space-y-4 mt-6 relative z-10">
-             {noFacility ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
-                 Select a facility to view reconciliations.
-               </div>
-             ) : loading ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500">
-                 Loading queue...
-               </div>
-             ) : rows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-                 No rows yet. Start with <strong>New med reconciliation</strong>.
-               </div>
-             ) : featuredRows.length === 0 ? (
-               <div className="p-8 text-center text-sm font-medium text-slate-500 dark:text-zinc-500 bg-slate-50 dark:bg-black/40 rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-                 No reconciliations match this filter.
-               </div>
-             ) : (
-                <MotionList className="space-y-4">
-                  {featuredRows.map((r) => {
-                    const isDraft = r.status.includes('draft');
-                    const phase = describeDischargePhase(r);
-                    
-                    return (
-                      <MotionItem key={r.id}>
-                        <Link
-                          href={`/admin/discharge/${r.id}`}
-                          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-3 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer"
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Reconciliations</h2>
+
+          {loadError ?
+            <p className="text-sm text-destructive" role="alert">
+              {loadError}
+            </p>
+          : null}
+
+          <div className="overflow-hidden rounded-xl border border-border bg-card px-4 py-4 md:px-5 md:py-5">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
+                <Button
+                  key={option.value === "all" ? "all-phase" : option.value}
+                  type="button"
+                  size="sm"
+                  variant={
+                    phaseFilter === option.value ? "secondary" : "ghost"
+                  }
+                  className="h-auto min-h-9 max-w-[min(100%,24rem)] justify-start whitespace-normal px-3 py-2 text-left text-[13px] font-medium leading-snug tracking-normal transition-colors [&_span]:leading-snug"
+                  onClick={() => setPhase(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+              {phaseFilter !== "all" ?
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="link"
+                  className="h-auto min-h-9 px-2 text-[13px] font-normal"
+                  onClick={() => setPhase("all")}
+                >
+                  Clear filters
+                </Button>
+              : null}
+            </div>
+
+            {noFacility ?
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Select a facility to view reconciliations.
+              </p>
+            : loading ?
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                Loading reconciliations…
+              </p>
+            : (
+              <Table className="min-w-[760px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[220px]">Resident</TableHead>
+                    <TableHead>Record status</TableHead>
+                    <TableHead>Workflow</TableHead>
+                    <TableHead className="w-[230px]">Updated</TableHead>
+                    <TableHead className="w-[260px] text-right">Quick actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {
+                    rows.length === 0 ?
+                      <TableRow>
+                        <TableCell colSpan={5} className="align-top">
+                          <div className="max-w-lg space-y-3 py-6 text-[13px] leading-relaxed text-muted-foreground">
+                            <p>No med recs yet.</p>
+                            <p>
+                              <Link
+                                href={NEW_MED_REC_PIPELINE_PATH}
+                                className={cn(
+                                  buttonVariants({ variant: "link", size: "xs" }),
+                                  "gap-2 px-0 text-[13px] font-semibold",
+                                )}
+                              >
+                                <Plus className="size-4" aria-hidden />
+                                Start your first med rec
+                              </Link>
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    : filteredSortedRows.length === 0 ?
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="py-10 text-sm text-muted-foreground"
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              {isDraft ? <></> : <div className="w-2 h-2 rounded-full bg-primary-500" />}
-                            </div>
-                            <span className="font-semibold text-[13px] text-foreground truncate group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors tracking-tight">
-                               {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "—"}
-                            </span>
-                          </div>
-                          
-                          <div className="flex flex-row justify-between lg:justify-start items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Status</span>
-                            <span className={cn(
-                              "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
-                              isDraft ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
-                            )}>
-                              {formatStatus(r.status)}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-full border shadow-inner",
-                              phase.phase === "planning"
-                                ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
-                                : phase.phase === "pharmacist_review"
-                                  ? "bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300"
-                                  : phase.phase === "ready_to_complete"
-                                    ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
-                                    : phase.phase === "cancelled"
-                                      ? "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300"
-                                      : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
-                            )}>
-                              {phase.nextActionLabel}
-                            </span>
-                          </div>
+                          No reconciliations match this filter yet.
+                        </TableCell>
+                      </TableRow>
+                    : filteredSortedRows.map((r) => {
+                        const phase = describeDischargePhase(r);
 
-                          <div className="flex flex-row justify-between lg:justify-end items-center">
-                            <span className="lg:hidden text-xs text-slate-500 uppercase tracking-wider font-bold">Updated</span>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[11px] font-mono tracking-wide text-slate-500 dark:text-zinc-500">
-                                {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                              </span>
-                              <span className={cn(
-                                "mt-1 text-[11px]",
-                                phase.phase === "planning"
-                                  ? "text-amber-700 dark:text-amber-300"
-                                  : phase.phase === "pharmacist_review"
-                                    ? "text-primary-700 dark:text-primary-300"
-                                    : phase.phase === "ready_to_complete"
-                                      ? "text-emerald-700 dark:text-emerald-300"
-                                      : "text-slate-600 dark:text-zinc-400",
-                              )}>
-                                {phase.helperText}
-                              </span>
-                              <div className="mt-2 flex flex-wrap justify-end gap-2">
-                                {phase.phase === "pharmacist_review" && r.status === "draft" ? (
+                        const detailHref = `/admin/discharge/${r.id}`;
+
+                        return (
+                          <TableRow key={r.id}>
+                            <TableCell className="font-medium align-top">
+                              <Link
+                                href={detailHref}
+                                className="text-foreground underline-offset-4 hover:underline"
+                              >
+                                {r.residents ?
+                                  `${r.residents.first_name} ${r.residents.last_name}`
+                                : "Unknown resident"}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="align-top text-[13px] text-muted-foreground">
+                              <Badge variant="outline" className="font-normal capitalize">
+                                {formatStatusSentence(r.status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[320px] align-top text-[13px] leading-snug text-muted-foreground">
+                              <Badge variant="outline" className="mb-2 font-normal">
+                                {phase.nextActionLabel}
+                              </Badge>
+                              <p>{phase.helperText}</p>
+                            </TableCell>
+                            <TableCell className="align-top text-[13px] leading-snug text-muted-foreground">
+                              {new Date(r.updated_at).toLocaleString(undefined, {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })}
+                            </TableCell>
+                            <TableCell className="space-y-2 text-right align-top">
+                              <div className="flex flex-wrap justify-end gap-2">
+                                {
+                                  phase.phase === "pharmacist_review" &&
+                                  r.status === "draft"
+                                ?
                                   <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
                                     disabled={actionLoading === r.id}
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      void updateReconciliation(r, { status: "pharmacist_review" }, "Reconciliation moved to pharmacist review.");
-                                    }}
+                                    onMouseDown={(e) => void e.preventDefault()}
+                                    onClick={(e) =>
+                                      void updateReconciliation(
+                                        r,
+                                        { status: "pharmacist_review" },
+                                        "Sent for pharmacist review.",
+                                        e,
+                                      )
+                                    }
                                   >
-                                    {actionLoading === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Move to pharmacist review"}
+                                    {actionLoading === r.id ?
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                    : "Send for review"}
                                   </Button>
-                                ) : null}
-                                {phase.phase === "ready_to_complete" ? (
+                                : null}
+
+                                {
+                                  phase.phase === "ready_to_complete"
+                                ?
                                   <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
                                     disabled={actionLoading === r.id}
-                                    onClick={(event) => {
-                                      event.preventDefault();
+                                    onMouseDown={(e) => void e.preventDefault()}
+                                    onClick={(e) =>
                                       void updateReconciliation(
                                         r,
                                         {
                                           status: "complete",
                                           pharmacist_reviewed_at: new Date().toISOString(),
-                                          pharmacist_reviewed_by: user?.id ?? null,
+                                          pharmacist_reviewed_by:
+                                            user?.id ?? null,
                                         },
-                                        "Reconciliation marked complete.",
-                                      );
-                                    }}
+                                        "Marked complete.",
+                                        e,
+                                      )
+                                    }
                                   >
-                                    {actionLoading === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Mark complete"}
+                                    {actionLoading === r.id ?
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                    : "Mark complete"}
                                   </Button>
-                                ) : null}
+                                : null}
                               </div>
-                            </div>
-                          </div>
-                        </Link>
-                      </MotionItem>
-                    )
-                  })}
-                </MotionList>
-             )}
-           </div>
-        </div>
+                              <Link
+                                href={detailHref}
+                                className={cn(
+                                  buttonVariants({ variant: "link", size: "xs" }),
+                                  "justify-end px-0 text-[12px] font-normal",
+                                )}
+                              >
+                                Open workflow
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                  }
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </section>
       </div>
-      
-    </div>
+    </TooltipProvider>
   );
 }

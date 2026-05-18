@@ -20,8 +20,15 @@ function PipelineReferralsCrmRedirectInner() {
       router.replace("/admin/referrals/sources");
       return;
     }
-    if (tab === "inbox" || tab === "hl7-inbound") {
-      router.replace("/admin/referrals/hl7-inbound");
+    if (
+      tab === "inbox" ||
+      tab === "hl7-inbound" ||
+      tab === "referral-inbox"
+    ) {
+      const rest = new URLSearchParams(searchParams);
+      rest.delete("tab");
+      const qs = rest.toString();
+      router.replace(`/admin/referrals/hl7-inbound${qs.length ? `?${qs}` : ""}`);
       return;
     }
     router.replace("/admin/referrals");

@@ -31,6 +31,8 @@ type RequestBody = {
   bed_id?: string | null;
   target_move_in_date?: string | null;
   notes?: string | null;
+  /** Optional intake classification from the admissions form (e.g. long_term). */
+  intake_program_type?: string | null;
   medicaid_pipeline_stage?: MedicaidPipelineStage;
 };
 
@@ -48,6 +50,10 @@ export async function POST(request: NextRequest) {
 
   if (!body.facility_id || !body.resident_id) {
     return NextResponse.json({ error: "facility_id and resident_id are required" }, { status: 400 });
+  }
+
+  if (!body.target_move_in_date || !String(body.target_move_in_date).trim()) {
+    return NextResponse.json({ error: "target_move_in_date is required" }, { status: 400 });
   }
 
   if (
@@ -107,6 +113,7 @@ export async function POST(request: NextRequest) {
       bed_id: body.bed_id ?? null,
       target_move_in_date: body.target_move_in_date ?? null,
       notes: body.notes ?? null,
+      intake_program_type: body.intake_program_type ?? null,
       medicaid_pipeline_stage: body.medicaid_pipeline_stage ?? "prospect",
       status: "pending_clearance",
       created_by: actor.id,

@@ -395,6 +395,7 @@ export type Database = {
           financial_clearance_at: string | null
           financial_clearance_by: string | null
           id: string
+          intake_program_type: string | null
           medicaid_pipeline_stage: string
           notes: string | null
           organization_id: string
@@ -416,6 +417,7 @@ export type Database = {
           financial_clearance_at?: string | null
           financial_clearance_by?: string | null
           id?: string
+          intake_program_type?: string | null
           medicaid_pipeline_stage?: string
           notes?: string | null
           organization_id: string
@@ -437,6 +439,7 @@ export type Database = {
           financial_clearance_at?: string | null
           financial_clearance_by?: string | null
           id?: string
+          intake_program_type?: string | null
           medicaid_pipeline_stage?: string
           notes?: string | null
           organization_id?: string
@@ -2891,6 +2894,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
+          discharge_plan_category: Database["public"]["Enums"]["discharge_plan_category"] | null
+          expected_discharge_date: string | null
           facility_id: string
           id: string
           med_snapshot_json: Json | null
@@ -2909,6 +2914,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          discharge_plan_category?: Database["public"]["Enums"]["discharge_plan_category"] | null
+          expected_discharge_date?: string | null
           facility_id: string
           id?: string
           med_snapshot_json?: Json | null
@@ -2927,6 +2934,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
+          discharge_plan_category?: Database["public"]["Enums"]["discharge_plan_category"] | null
+          expected_discharge_date?: string | null
           facility_id?: string
           id?: string
           med_snapshot_json?: Json | null
@@ -12363,7 +12372,7 @@ export type Database = {
           code_status: string
           created_at: string
           created_by: string | null
-          date_of_birth: string
+          date_of_birth: string | null
           deleted_at: string | null
           diagnosis_list: string[] | null
           diet_order: string | null
@@ -12437,7 +12446,7 @@ export type Database = {
           code_status?: string
           created_at?: string
           created_by?: string | null
-          date_of_birth: string
+          date_of_birth?: string | null
           deleted_at?: string | null
           diagnosis_list?: string[] | null
           diet_order?: string | null
@@ -12511,7 +12520,7 @@ export type Database = {
           code_status?: string
           created_at?: string
           created_by?: string | null
-          date_of_birth?: string
+          date_of_birth?: string | null
           deleted_at?: string | null
           diagnosis_list?: string[] | null
           diet_order?: string | null
@@ -15784,6 +15793,13 @@ export type Database = {
         | "pharmacist_review"
         | "complete"
         | "cancelled"
+      discharge_plan_category:
+        | "planned"
+        | "hospital_transfer"
+        | "ama"
+        | "higher_level_of_care"
+        | "death"
+        | "other"
       discharge_reason:
         | "higher_level_of_care"
         | "hospital_permanent"
@@ -16379,6 +16395,14 @@ export const Constants = {
         "pharmacist_review",
         "complete",
         "cancelled",
+      ],
+      discharge_plan_category: [
+        "planned",
+        "hospital_transfer",
+        "ama",
+        "higher_level_of_care",
+        "death",
+        "other",
       ],
       discharge_reason: [
         "higher_level_of_care",

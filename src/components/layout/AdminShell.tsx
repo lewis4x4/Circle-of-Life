@@ -319,8 +319,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         icon: ActivitySquare,
         items: [
           { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", enabled: true, icon: UserPlus },
-          { key: "admissions", href: "/admin/admissions", label: "Recent admissions", enabled: true, icon: Home },
-          { key: "discharge", href: "/admin/discharge", label: "Discharge management", enabled: true, icon: DoorOpen },
+          { key: "admissions", href: "/pipeline/recent-admissions", label: "Admissions overview", enabled: true, icon: Home },
+          { key: "discharge", href: "/admin/discharge", label: "Discharge & transition", enabled: true, icon: DoorOpen },
           { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", enabled: true, icon: Heart },
           { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", enabled: true, icon: MessageCircle },
         ],
@@ -681,7 +681,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex w-[260px] shrink-0 flex-col border-r border-border haven-chrome-sidebar",
+          "hidden lg:flex w-[284px] shrink-0 flex-col border-r border-border haven-chrome-sidebar",
         )}
         aria-label="Sidebar"
       >
@@ -713,7 +713,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[280px] border-r border-border haven-chrome-sidebar p-0"
+              className="w-[304px] border-r border-border haven-chrome-sidebar p-0"
               showCloseButton={false}
             >
               <SheetHeader className="sr-only">

@@ -103,8 +103,8 @@ export const PILLARS: Pillar[] = [
     icon: ActivitySquare,
     items: [
       { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", icon: UserPlus },
-      { key: "admissions", href: "/admin/admissions", label: "Recent admissions", icon: Home },
-      { key: "discharge", href: "/admin/discharge", label: "Discharge management", icon: DoorOpen },
+      { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
+      { key: "discharge", href: "/admin/discharge", label: "Discharge & transition", icon: DoorOpen },
       { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", icon: Heart },
       { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", icon: MessageCircle },
     ],

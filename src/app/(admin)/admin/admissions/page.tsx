@@ -1,21 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { UserPlus, Home, DoorOpen, MessageCircle, Plus } from "lucide-react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { V2Card } from "@/components/ui/v2-card";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { PageHeader } from "@/design-system/components/PageHeader";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { formatColLabel } from "@/lib/col-labels";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import type { AdmissionsHubScope } from "@/lib/admin/admissions/hub-scope";
+import {
+  admissionsHubActivityLowerBoundUtc,
+  admissionsHubCalendarUpperBoundUtc,
+  admissionsHubScopeFromSearchParam,
+} from "@/lib/admin/admissions/hub-scope";
 
-// Types for each section
 type LeadRow = Pick<
   Database["public"]["Tables"]["referral_leads"]["Row"],
   "id" | "first_name" | "last_name" | "status" | "updated_at"
@@ -66,7 +79,13 @@ type TriageRow = Pick<
 
 type ConferenceRow = Pick<
   Database["public"]["Tables"]["family_care_conference_sessions"]["Row"],
-  "id" | "scheduled_start" | "updated_at" | "status" | "recording_consent" | "recording_consent_at" | "recording_consent_by"
+  | "id"
+  | "scheduled_start"
+  | "updated_at"
+  | "status"
+  | "recording_consent"
+  | "recording_consent_at"
+  | "recording_consent_by"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -223,82 +242,87 @@ function describeAdmissionPhase(
   };
 }
 
-// Section component for lifecycle stages
-function LifecycleSection({
+function HubSection({
   title,
-  icon: Icon,
+  viewAllHref,
   metrics,
-  allHref,
   children,
 }: {
   title: string;
-  color: "emerald" | "indigo" | "rose" | "amber";
-  icon: React.ElementType;
-  metrics: { label: string; value: number | string }[];
-  allHref: string;
-  children: React.ReactNode;
+  viewAllHref: string;
+  metrics: ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-lg font-medium text-foreground tracking-tight">
-            {title}
-          </h3>
-        </div>
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-4 border-b border-border pb-2">
+        <h2 className="section-header text-lg font-semibold tracking-tight text-foreground">{title}</h2>
         <Link
-          href={allHref}
-          className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
+          href={viewAllHref}
+          className="view-all shrink-0 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           View all →
         </Link>
       </div>
-
-      {/* Metrics row */}
-      <div className="flex gap-3 flex-wrap">
-        {metrics.map((m) => (
-          <div
-            key={m.label}
-            className="px-4 py-2 rounded-full bg-card border border-border"
-          >
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-2">{m.label}</span>
-            <span className="text-sm font-semibold tabular-nums text-foreground">{m.value}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-4 md:p-6">
-        {children}
-      </div>
-    </div>
+      <div>{metrics}</div>
+      <div>{children}</div>
+    </section>
   );
 }
 
-export default function AdminAdmissionsHubPage() {
+function InlineMetricsRow({ parts }: { parts: { label: string; value: string | number }[] }) {
+  return (
+    <p className="text-sm leading-relaxed">
+      {parts.map((p, idx) => (
+        <span key={p.label}>
+          {idx > 0 ? <span className="text-muted-foreground/50"> · </span> : null}
+          <span className="text-muted-foreground">{p.label}:</span>{" "}
+          <span className="font-medium tabular-nums text-foreground">{p.value}</span>
+        </span>
+      ))}
+    </p>
+  );
+}
+
+function QuietInlineArrowLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="inline text-sm font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function AdminAdmissionsOverviewInner() {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const hubScope = admissionsHubScopeFromSearchParam(searchParams.get("scope"));
+
+  const { selectedFacilityId, availableFacilities } = useFacilityStore((s) => ({
+    selectedFacilityId: s.selectedFacilityId,
+    availableFacilities: s.availableFacilities,
+  }));
   const { user } = useHavenAuth();
+
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [onboardingState, setOnboardingState] = useState<Record<string, string[]>>({});
 
-  // Referrals
   const [referrals, setReferrals] = useState<LeadRow[]>([]);
-  const [referralCounts, setReferralCounts] = useState({ new: 0, pipeline: 0, converted: 0, attention: 0 });
-
-  // Admissions
   const [admissions, setAdmissions] = useState<CaseRow[]>([]);
-  const [admissionCounts, setAdmissionCounts] = useState({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0, blocked: 0 });
-
-  // Discharges
   const [discharges, setDischarges] = useState<DischargeRow[]>([]);
-  const [dischargeCounts, setDischargeCounts] = useState({ draft: 0, review: 0, complete: 0, cancelled: 0 });
-
-  // Family Connections
   const [triage, setTriage] = useState<TriageRow[]>([]);
   const [conferences, setConferences] = useState<ConferenceRow[]>([]);
-  const [familyCounts, setFamilyCounts] = useState({ triage: 0, conferences: 0, consents: 0 });
+
+  const [referralMetrics, setReferralMetrics] = useState({ activePipeline: 0 });
+  const [admissionMetrics, setAdmissionMetrics] = useState({ pending: 0, reserved: 0, moveIn: 0 });
+  const [dischargeMetrics, setDischargeMetrics] = useState({ inReview: 0 });
+  const [familyMetrics, setFamilyMetrics] = useState({ triage: 0, conferences: 0, consentsPending: 0 });
+
   const [familyActionLoading, setFamilyActionLoading] = useState<string | null>(null);
   const [familyActionError, setFamilyActionError] = useState<string | null>(null);
   const [familyActionMessage, setFamilyActionMessage] = useState<string | null>(null);
@@ -312,93 +336,153 @@ export default function AdminAdmissionsHubPage() {
       setDischarges([]);
       setTriage([]);
       setConferences([]);
-      setReferralCounts({ new: 0, pipeline: 0, converted: 0, attention: 0 });
-      setAdmissionCounts({ pending: 0, reserved: 0, moveIn: 0, cancelled: 0, blocked: 0 });
-      setDischargeCounts({ draft: 0, review: 0, complete: 0, cancelled: 0 });
-      setFamilyCounts({ triage: 0, conferences: 0, consents: 0 });
+      setReferralMetrics({ activePipeline: 0 });
+      setAdmissionMetrics({ pending: 0, reserved: 0, moveIn: 0 });
+      setDischargeMetrics({ inReview: 0 });
+      setFamilyMetrics({ triage: 0, conferences: 0, consentsPending: 0 });
       setLoading(false);
       return;
     }
 
+    const activityLower = admissionsHubActivityLowerBoundUtc(hubScope);
+    const calendarUpper = admissionsHubCalendarUpperBoundUtc(hubScope);
+    const nowIso = new Date().toISOString();
+
     try {
+      let refSel = supabase
+        .from("referral_leads")
+        .select("id, first_name, last_name, status, updated_at, referral_sources(name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .not("status", "in", "(converted,lost,merged)")
+        .order("updated_at", { ascending: false });
+      if (activityLower) refSel = refSel.gte("updated_at", activityLower);
+
+      let admSel = supabase
+        .from("admission_cases")
+        .select(
+          "id, referral_lead_id, status, medicaid_pipeline_stage, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)",
+        )
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .not("status", "eq", "cancelled")
+        .order("updated_at", { ascending: false });
+      if (activityLower) admSel = admSel.gte("updated_at", activityLower);
+
+      let disSel = supabase
+        .from("discharge_med_reconciliation")
+        .select("id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .not("status", "eq", "cancelled")
+        .order("updated_at", { ascending: false });
+      if (activityLower) disSel = disSel.gte("updated_at", activityLower);
+
+      let triSel = supabase
+        .from("family_message_triage_items")
+        .select("id, updated_at, matched_keywords, triage_status, residents(first_name, last_name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .in("triage_status", ["pending_review", "in_review"])
+        .order("updated_at", { ascending: false });
+      if (activityLower) triSel = triSel.gte("updated_at", activityLower);
+
+      let confSel = supabase
+        .from("family_care_conference_sessions")
+        .select("id, scheduled_start, updated_at, status, recording_consent, recording_consent_at, recording_consent_by, residents(first_name, last_name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .gte("scheduled_start", nowIso)
+        .order("scheduled_start", { ascending: true });
+      if (calendarUpper) confSel = confSel.lte("scheduled_start", calendarUpper);
+
+      let cRefPipe = supabase
+        .from("referral_leads")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .not("status", "in", "(converted,lost,merged)");
+      if (activityLower) cRefPipe = cRefPipe.gte("updated_at", activityLower);
+
+      let cAdmPend = supabase
+        .from("admission_cases")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .eq("status", "pending_clearance");
+      if (activityLower) cAdmPend = cAdmPend.gte("updated_at", activityLower);
+
+      let cAdmRes = supabase
+        .from("admission_cases")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .eq("status", "bed_reserved");
+      if (activityLower) cAdmRes = cAdmRes.gte("updated_at", activityLower);
+
+      let cAdmMove = supabase
+        .from("admission_cases")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .eq("status", "move_in");
+      if (activityLower) cAdmMove = cAdmMove.gte("updated_at", activityLower);
+
+      let cDisRev = supabase
+        .from("discharge_med_reconciliation")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .eq("status", "pharmacist_review");
+      if (activityLower) cDisRev = cDisRev.gte("updated_at", activityLower);
+
+      let cFamTriage = supabase
+        .from("family_message_triage_items")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .in("triage_status", ["pending_review", "in_review"]);
+      if (activityLower) cFamTriage = cFamTriage.gte("updated_at", activityLower);
+
+      let cFamConf = supabase
+        .from("family_care_conference_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null)
+        .gte("scheduled_start", nowIso);
+      if (calendarUpper) cFamConf = cFamConf.lte("scheduled_start", calendarUpper);
+
+      let cFamConsent = supabase.from("family_consent_records").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null);
+      if (hubScope !== "all" && activityLower) cFamConsent = cFamConsent.gte("updated_at", activityLower);
+
       const [
         refList,
         admList,
         disList,
         triList,
         confList,
-        // Counts
-        cRefNew,
+        pipeCt,
+        admPendCt,
+        admResCt,
+        admMoveCt,
+        disRevCt,
+        famTriageCt,
+        famConfCt,
+        famConsentCt,
+      ] = await Promise.all([
+        refSel,
+        admSel,
+        disSel,
+        triSel,
+        confSel,
         cRefPipe,
-        cRefConv,
-        cRefAtt,
         cAdmPend,
         cAdmRes,
         cAdmMove,
-        cAdmCan,
-        cDisDraft,
         cDisRev,
-        cDisComp,
-        cDisCan,
         cFamTriage,
         cFamConf,
-        cFamCons,
-      ] = await Promise.all([
-        // Lists (limit 5 each for preview)
-        supabase
-          .from("referral_leads")
-          .select("id, first_name, last_name, status, updated_at, referral_sources(name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .not("status", "in", "(converted,lost,merged)")
-          .order("updated_at", { ascending: false }),
-        supabase
-          .from("admission_cases")
-          .select("id, referral_lead_id, status, medicaid_pipeline_stage, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .not("status", "eq", "cancelled")
-          .order("updated_at", { ascending: false }),
-        supabase
-          .from("discharge_med_reconciliation")
-          .select("id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .not("status", "eq", "cancelled")
-          .order("updated_at", { ascending: false }),
-        supabase
-          .from("family_message_triage_items")
-          .select("id, updated_at, matched_keywords, residents(first_name, last_name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .in("triage_status", ["pending_review", "in_review"])
-          .order("updated_at", { ascending: false }),
-        supabase
-          .from("family_care_conference_sessions")
-          .select("id, scheduled_start, updated_at, residents(first_name, last_name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .gte("scheduled_start", new Date().toISOString())
-          .order("scheduled_start", { ascending: true }),
-        // Referral counts
-        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "new"),
-        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).not("status", "in", "(converted,lost,merged)"),
-        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "converted"),
-        supabase.from("referral_leads").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).in("status", ["new", "contacted"]),
-        // Admission counts
-        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "pending_clearance"),
-        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "bed_reserved"),
-        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "move_in"),
-        supabase.from("admission_cases").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "cancelled"),
-        // Discharge counts
-        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "draft"),
-        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "pharmacist_review"),
-        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "complete"),
-        supabase.from("discharge_med_reconciliation").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).eq("status", "cancelled"),
-        // Family counts
-        supabase.from("family_message_triage_items").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).in("triage_status", ["pending_review", "in_review"]),
-        supabase.from("family_care_conference_sessions").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null).gte("scheduled_start", new Date().toISOString()),
-        supabase.from("family_consent_records").select("id", { count: "exact", head: true }).eq("facility_id", selectedFacilityId).is("deleted_at", null),
+        cFamConsent,
       ]);
 
       setReferrals((refList.data ?? []) as LeadRow[]);
@@ -408,36 +492,24 @@ export default function AdminAdmissionsHubPage() {
       setTriage((triList.data ?? []) as TriageRow[]);
       setConferences((confList.data ?? []) as ConferenceRow[]);
 
-      setReferralCounts({
-        new: (cRefNew.count ?? 0) as number,
-        pipeline: (cRefPipe.count ?? 0) as number,
-        converted: (cRefConv.count ?? 0) as number,
-        attention: (cRefAtt.count ?? 0) as number,
+      setReferralMetrics({ activePipeline: (pipeCt.count ?? 0) as number });
+      setAdmissionMetrics({
+        pending: (admPendCt.count ?? 0) as number,
+        reserved: (admResCt.count ?? 0) as number,
+        moveIn: (admMoveCt.count ?? 0) as number,
       });
-      setAdmissionCounts({
-        pending: (cAdmPend.count ?? 0) as number,
-        reserved: (cAdmRes.count ?? 0) as number,
-        moveIn: (cAdmMove.count ?? 0) as number,
-        cancelled: (cAdmCan.count ?? 0) as number,
-        blocked: admissionRows.filter((row) => admissionBlockers(row).length > 0).length,
-      });
-      setDischargeCounts({
-        draft: (cDisDraft.count ?? 0) as number,
-        review: (cDisRev.count ?? 0) as number,
-        complete: (cDisComp.count ?? 0) as number,
-        cancelled: (cDisCan.count ?? 0) as number,
-      });
-      setFamilyCounts({
-        triage: (cFamTriage.count ?? 0) as number,
-        conferences: (cFamConf.count ?? 0) as number,
-        consents: (cFamCons.count ?? 0) as number,
+      setDischargeMetrics({ inReview: (disRevCt.count ?? 0) as number });
+      setFamilyMetrics({
+        triage: (famTriageCt.count ?? 0) as number,
+        conferences: (famConfCt.count ?? 0) as number,
+        consentsPending: (famConsentCt.count ?? 0) as number,
       });
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load data.");
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, hubScope]);
 
   useEffect(() => {
     void load();
@@ -499,13 +571,6 @@ export default function AdminAdmissionsHubPage() {
     }
   }
 
-  const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
-  const blockedAdmissions = admissions
-    .map((row) => ({ row, blockers: admissionBlockers(row) }))
-    .filter((entry) => entry.blockers.length > 0)
-    .slice(0, 4);
-  const [onboardingState, setOnboardingState] = useState<Record<string, string[]>>({});
-
   useEffect(() => {
     async function loadOnboardingState() {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || admissions.length === 0) {
@@ -518,12 +583,12 @@ export default function AdminAdmissionsHubPage() {
         setOnboardingState({});
         return;
       }
-      const supabase = createClient();
+      const client = createClient();
       const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
-        supabase.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-        supabase.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-        supabase.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
-        supabase.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        client.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        client.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        client.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
+        client.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
       ]);
       if (carePlansRes.error || medsRes.error || payersRes.error || consentsRes.error) {
         setOnboardingState({});
@@ -569,6 +634,7 @@ export default function AdminAdmissionsHubPage() {
       })
       .slice(0, 8);
   }, [admissions, onboardingState]);
+
   const activeAdmissionCaseByLeadId = useMemo(() => {
     return Object.fromEntries(
       admissions
@@ -587,6 +653,7 @@ export default function AdminAdmissionsHubPage() {
         }),
     );
   }, [admissions, onboardingState]);
+
   const featuredReferrals = useMemo(() => {
     return [...referrals]
       .sort((a, b) => {
@@ -598,6 +665,7 @@ export default function AdminAdmissionsHubPage() {
       })
       .slice(0, 8);
   }, [activeAdmissionCaseByLeadId, referrals]);
+
   const featuredDischarges = useMemo(() => {
     const phaseOrder: Record<DischargePhase, number> = {
       planning: 0,
@@ -616,85 +684,101 @@ export default function AdminAdmissionsHubPage() {
       })
       .slice(0, 6);
   }, [discharges]);
+
   const featuredTriage = useMemo(() => {
-    return [...triage]
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 6);
+    return [...triage].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 6);
   }, [triage]);
+
   const featuredConferences = useMemo(() => {
     return [...conferences]
       .sort((a, b) => new Date(a.scheduled_start ?? 0).getTime() - new Date(b.scheduled_start ?? 0).getTime())
       .slice(0, 6);
   }, [conferences]);
 
+  const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+
+  const blockedAdmissions = useMemo(() => {
+    return admissions.map((row) => ({ row, blockers: admissionBlockers(row) })).filter((entry) => entry.blockers.length > 0).slice(0, 4);
+  }, [admissions]);
+
+  const hubFacilityLabel = useMemo(() => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      return "the selected facility";
+    }
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? selectedFacilityId;
+  }, [availableFacilities, selectedFacilityId]);
+
+  const workflowQuietLinkClass = cn(buttonVariants({ variant: "ghost", size: "sm" }));
+
+  function setHubScopeParam(next: AdmissionsHubScope) {
+    const base = pathname ?? "/admin/admissions";
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "today") params.delete("scope");
+    else params.set("scope", next);
+    const query = params.toString();
+    router.replace(query ? `${base}?${query}` : base, { scroll: false });
+  }
+
   return (
-    <div className="mx-auto max-w-6xl space-y-10 pb-12 w-full">
-      {/* ─── HEADER ─── */}
-      <div className="bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
-        <div className="space-y-2">
-          
-          <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground">
-            Admissions
-          </h1>
-          <p className="mt-2 font-medium tracking-wide text-muted-foreground">
-            Manage the complete resident journey — referrals, admissions, discharges, and family connections.
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-6xl space-y-10 pb-28 pt-6">
+      <PageHeader
+        title="Admissions overview"
+        subtitle={
+          <>
+            Intake and discharge pipeline for <span className="text-foreground">{hubFacilityLabel}</span>. For clinical care during residency,
+            see the Clinical tab.
+          </>
+        }
+        actions={
+          <div className="flex w-full flex-wrap items-center justify-start gap-3 sm:w-auto sm:justify-end">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="admissions-hub-scope" className="sr-only">
+                Time scope
+              </Label>
+              <Select value={hubScope} onValueChange={(v) => setHubScopeParam(admissionsHubScopeFromSearchParam(v))}>
+                <SelectTrigger id="admissions-hub-scope" className="h-9 w-[156px]">
+                  <SelectValue placeholder="Scope" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This week</SelectItem>
+                  <SelectItem value="month">This month</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              {!noFacility ? (
+                <>
+                  <Link href="/admin/referrals/new" className={workflowQuietLinkClass}>
+                    + New referral
+                  </Link>
+                  <Link href="/admin/admissions/new" className={workflowQuietLinkClass}>
+                    Start admission
+                  </Link>
+                  <Link href="/admin/discharge/new" className={workflowQuietLinkClass}>
+                    Process discharge
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <span className={cn(workflowQuietLinkClass, "pointer-events-none opacity-40")}>+ New referral</span>
+                  <span className={cn(workflowQuietLinkClass, "pointer-events-none opacity-40")}>Start admission</span>
+                  <span className={cn(workflowQuietLinkClass, "pointer-events-none opacity-40")}>Process discharge</span>
+                </>
+              )}
+            </div>
+          </div>
+        }
+      />
 
       {noFacility ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-sm text-amber-700 dark:text-amber-400 font-medium tracking-wide flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 border border-amber-500/30">
-            <span className="font-bold">!</span>
-          </div>
-          Select a facility in the header to load lifecycle data.
+        <div role="status" className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          Select a facility in the header to load intake and discharge metrics.
         </div>
       ) : null}
 
-      {/* ─── QUICK ACTIONS ─── */}
-      <div className="grid gap-4 sm:grid-cols-3 pt-2">
-        <V2Card href="/admin/referrals/new" hoverColor="emerald" className="border-emerald-500/20 pb-0">
-          <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
-            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 p-3 border border-emerald-100 dark:border-emerald-500/20 shrink-0">
-              <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                New Referral
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Add an inquiry to the pipeline</p>
-            </div>
-          </div>
-        </V2Card>
-
-        <V2Card href="/admin/admissions/new" hoverColor="indigo" className="border-primary-500/20 pb-0">
-          <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
-            <div className="rounded-xl bg-primary-50 dark:bg-primary-500/10 p-3 border border-primary-100 dark:border-primary-500/20 shrink-0">
-              <Home className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
-                Start Admission
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Begin the intake workflow</p>
-            </div>
-          </div>
-        </V2Card>
-
-        <V2Card href="/admin/discharge/new" hoverColor="rose" className="border-rose-500/20 pb-0">
-          <div className="flex items-center gap-4 h-full absolute inset-0 px-6">
-            <div className="rounded-xl bg-rose-50 dark:bg-rose-500/10 p-3 border border-rose-100 dark:border-rose-500/20 shrink-0">
-              <DoorOpen className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors truncate">
-                Process Discharge
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">Medication reconciliation</p>
-            </div>
-          </div>
-        </V2Card>
-      </div>
+      {/* FOLLOW-UP(ISSUE): Consider consolidating Family Portal + Family Messages sidebar entries per hub IA decision. */}
 
       {loadError ? (
         <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-700 dark:text-rose-400">
@@ -702,506 +786,430 @@ export default function AdminAdmissionsHubPage() {
         </div>
       ) : null}
 
-      {/* ─── REFERRALS SECTION ─── */}
-      <LifecycleSection
+      <HubSection
         title="Referrals"
-        color="emerald"
-        icon={UserPlus}
-        allHref="/admin/referrals"
-        metrics={[
-          { label: "New", value: noFacility ? "—" : loading ? "—" : referralCounts.new },
-          { label: "Active Pipeline", value: noFacility ? "—" : loading ? "—" : referralCounts.pipeline },
-          { label: "Converted", value: noFacility ? "—" : loading ? "—" : referralCounts.converted },
-        ]}
+        viewAllHref="/admin/referrals"
+        metrics={
+          <InlineMetricsRow
+            parts={[
+              { label: "Active pipeline", value: noFacility ? "—" : loading ? "—" : referralMetrics.activePipeline },
+            ]}
+          />
+        }
       >
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view referrals.</p>
+          <p className="text-sm text-muted-foreground">Select a facility to preview referrals.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading referrals…</p>
         ) : referrals.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-            No active leads. <Link href="/admin/referrals/new" className="underline text-emerald-600 dark:text-emerald-400">Create a referral</Link> to get started.
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            No active leads. New referrals appear here once captured.
           </p>
         ) : (
-          <MotionList className="space-y-3">
+          <div className="space-y-3">
             {featuredReferrals.map((r) => {
               const isNew = r.status === "new";
               const linkedAdmission = activeAdmissionCaseByLeadId[r.id] ?? null;
               const handoffPhase = linkedAdmission?.phase ?? null;
               return (
-                <MotionItem key={r.id}>
-                  <Link
-                    href={`/admin/referrals/${r.id}`}
-                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isNew ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[13px] text-foreground truncate transition-colors duration-[var(--motion-duration-micro)]">
-                          {r.first_name} {r.last_name}
+                <Link
+                  key={r.id}
+                  href={`/admin/referrals/${r.id}`}
+                  className="flex min-h-[36px] w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                >
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40">
+                    {isNew ? null : <div className="size-1.5 rounded-full bg-muted-foreground/60" aria-hidden />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-[13px] font-medium text-foreground">{r.first_name} {r.last_name}</span>
+                      <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium capitalize text-foreground">
+                        {formatStatus(r.status)}
+                      </span>
+                      {handoffPhase === "blocked" ? (
+                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300">
+                          Blocked
                         </span>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                          {formatStatus(r.status)}
+                      ) : handoffPhase === "ready" ? (
+                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
+                          Ready
                         </span>
-                        {handoffPhase === "blocked" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
-                            Blocked
-                          </span>
-                        ) : handoffPhase === "ready" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
-                            Ready
-                          </span>
-                        ) : handoffPhase === "onboarding" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300">
-                            Onboarding
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-[12px] text-muted-foreground mt-0.5">
-                        {r.referral_sources?.name ?? "No source"} · {formatRelative(r.updated_at)}
-                      </p>
-                      {handoffPhase ? (
-                        <p className={cn(
-                          "mt-1 text-[11px]",
-                          handoffPhase === "blocked"
-                            ? "text-amber-700 dark:text-amber-300"
-                            : handoffPhase === "ready"
-                              ? "text-emerald-700 dark:text-emerald-300"
-                              : "text-primary-700 dark:text-primary-300",
-                        )}>
-                          {handoffPhase === "blocked"
-                            ? "Admissions handoff blocked."
-                            : handoffPhase === "ready"
-                              ? "Admissions handoff ready."
-                              : "Admissions handoff in onboarding."}
-                        </p>
+                      ) : handoffPhase === "onboarding" ? (
+                        <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          Onboarding
+                        </span>
                       ) : null}
                     </div>
-                  </Link>
-                </MotionItem>
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">
+                      {r.referral_sources?.name ?? "No source"} · {formatRelative(r.updated_at)}
+                    </p>
+                    {handoffPhase ? (
+                      <p
+                        className={cn(
+                          "mt-1 text-[11px]",
+                          handoffPhase === "blocked"
+                            ? "text-amber-800 dark:text-amber-300"
+                            : handoffPhase === "ready"
+                              ? "text-emerald-800 dark:text-emerald-300"
+                              : "text-primary",
+                        )}
+                      >
+                        {handoffPhase === "blocked"
+                          ? "Admissions handoff blocked."
+                          : handoffPhase === "ready"
+                            ? "Admissions handoff ready."
+                            : "Admissions handoff in onboarding."}
+                      </p>
+                    ) : null}
+                  </div>
+                </Link>
               );
             })}
-          </MotionList>
+          </div>
         )}
-      </LifecycleSection>
+      </HubSection>
 
-      {/* ─── ADMISSIONS SECTION ─── */}
-      <LifecycleSection
+      <HubSection
         title="Admissions"
-        color="indigo"
-        icon={Home}
-        allHref="/admin/admissions"
-        metrics={[
-          { label: "Pending", value: noFacility ? "—" : loading ? "—" : admissionCounts.pending },
-          { label: "Bed Reserved", value: noFacility ? "—" : loading ? "—" : admissionCounts.reserved },
-          { label: "Move-In Ready", value: noFacility ? "—" : loading ? "—" : admissionCounts.moveIn },
-          { label: "Blocked", value: noFacility ? "—" : loading ? "—" : admissionCounts.blocked },
-        ]}
+        viewAllHref="/admin/admissions/onboarding"
+        metrics={
+          <InlineMetricsRow
+            parts={[
+              { label: "Pending", value: noFacility ? "—" : loading ? "—" : admissionMetrics.pending },
+              { label: "Bed reserved", value: noFacility ? "—" : loading ? "—" : admissionMetrics.reserved },
+              { label: "Move-in ready", value: noFacility ? "—" : loading ? "—" : admissionMetrics.moveIn },
+            ]}
+          />
+        }
       >
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view admissions.</p>
+          <p className="text-sm text-muted-foreground">Select a facility to preview admissions.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading admissions…</p>
         ) : admissions.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-            No active cases. <Link href="/admin/admissions/new" className="underline text-primary">Start an admission</Link>.
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            No active cases. <QuietInlineArrowLink href="/admin/admissions/new">Start an admission →</QuietInlineArrowLink>
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary-200/70 bg-primary-50/60 dark:border-primary-900/40 dark:bg-primary-950/20 p-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300">Onboarding queue</p>
-                <p className="text-sm text-primary-900 dark:text-primary-100">Cases already at move-in can continue through downstream onboarding from a single queue.</p>
-              </div>
-              <Link href="/admin/admissions/onboarding" className="text-[10px] font-bold uppercase tracking-wider text-primary-700 hover:text-primary-900 dark:text-primary-300 dark:hover:text-primary-100">
-                Open onboarding →
-              </Link>
-            </div>
+            <p className="text-[13px] text-muted-foreground">
+              Queues · <QuietInlineArrowLink href="/admin/admissions/onboarding">Onboarding →</QuietInlineArrowLink>
+              {" · "}
+              <QuietInlineArrowLink href="/admin/admissions/blocked">Blocked readiness →</QuietInlineArrowLink>
+              {" · "}
+              <QuietInlineArrowLink href="/admin/admissions/move-in-ready">Move-in ready →</QuietInlineArrowLink>
+            </p>
 
-            {blockedAdmissions.length > 0 && (
-              <div className="rounded-lg border border-amber-200/70 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">Move-in readiness pressure</p>
-                    <p className="text-sm text-amber-900 dark:text-amber-100">These admissions are missing key readiness steps.</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">{blockedAdmissions.length}</span>
-                    <Link href="/admin/admissions/blocked" className="text-[10px] font-bold uppercase tracking-wider text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100">
-                      Open blocked queue →
-                    </Link>
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-3">
+            {blockedAdmissions.length > 0 ? (
+              <div className="space-y-2 rounded-lg border border-amber-500/35 bg-amber-500/[0.04] p-4">
+                <p className="text-[13px] font-medium text-foreground">
+                  {blockedAdmissions.length} blocked readiness case{blockedAdmissions.length === 1 ? "" : "s"}
+                </p>
+                <div className="grid gap-2">
                   {blockedAdmissions.map(({ row, blockers }) => (
                     <Link
                       key={row.id}
                       href={`/admin/admissions/${row.id}`}
-                      className="rounded-lg border border-warning/30 bg-card p-4 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40"
+                      className="rounded-md border border-border bg-card px-3 py-2 transition-colors hover:bg-muted/40"
                     >
-                      <div className="font-medium text-foreground">
-                        {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unlinked case"}
-                      </div>
-                      <div className="mt-1 text-xs text-amber-800 dark:text-amber-200">
-                        {blockers.join(" · ")}
-                      </div>
+                      <div className="font-medium text-foreground">{row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unlinked case"}</div>
+                      <div className="mt-0.5 text-[12px] text-amber-900 dark:text-amber-300">{blockers.join(" · ")}</div>
                     </Link>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider font-mono text-emerald-700 dark:text-emerald-300">Ready queue</p>
-                <p className="text-sm text-emerald-900 dark:text-emerald-100">Cases with core readiness items complete can be worked from one queue.</p>
-              </div>
-              <Link href="/admin/admissions/move-in-ready" className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100">
-                Open move-in ready →
-              </Link>
-            </div>
-
-            <MotionList className="space-y-3">
-            {featuredAdmissions.map((r) => {
-              const isPending = r.status === "pending_clearance";
-              const phase = describeAdmissionPhase(r, onboardingState);
-              return (
-                <MotionItem key={r.id}>
+            <div className="space-y-3">
+              {featuredAdmissions.map((r) => {
+                const isPending = r.status === "pending_clearance";
+                const phase = describeAdmissionPhase(r, onboardingState);
+                return (
                   <Link
+                    key={r.id}
                     href={`/admin/admissions/${r.id}`}
-                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
+                    className="flex min-h-[36px] w-full cursor-pointer gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
                   >
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isPending ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40">
+                      {isPending ? null : <div className="size-1.5 rounded-full bg-muted-foreground/60" aria-hidden />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[13px] text-foreground truncate">
-                          {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked case"}
-                        </span>
-                        <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border",
-                          isPending
-                            ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                            : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                        )}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-[13px] font-medium text-foreground">{r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked case"}</span>
+                        <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium capitalize text-foreground">
                           {formatStatus(r.status)}
                         </span>
                         {phase.phase === "blocked" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300">
+                          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300">
                             Blocked
                           </span>
                         ) : phase.phase === "ready" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300">
+                          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
                             Ready
                           </span>
                         ) : phase.phase === "onboarding" ? (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300">
+                          <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                             Onboarding
                           </span>
                         ) : null}
                       </div>
-                      <p className="text-[12px] text-muted-foreground mt-0.5">
+                      <p className="mt-0.5 text-[12px] text-muted-foreground">
                         {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
                       </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">
                         Medicaid stage: {formatMedicaidStage(r.medicaid_pipeline_stage)}
                       </p>
-                      <p className={cn(
-                        "mt-1 text-[11px]",
-                        phase.phase === "blocked"
-                          ? "text-amber-700 dark:text-amber-300"
-                          : phase.phase === "ready"
-                            ? "text-emerald-700 dark:text-emerald-300"
-                            : phase.phase === "onboarding"
-                              ? "text-primary-700 dark:text-primary-300"
-                              : "text-slate-600 dark:text-zinc-400",
-                      )}>
+                      <p
+                        className={cn(
+                          "mt-1 text-[11px]",
+                          phase.phase === "blocked"
+                            ? "text-amber-800 dark:text-amber-300"
+                            : phase.phase === "ready"
+                              ? "text-emerald-800 dark:text-emerald-300"
+                              : phase.phase === "onboarding"
+                                ? "text-primary"
+                                : "text-muted-foreground",
+                        )}
+                      >
                         {phase.helperText}
                       </p>
                     </div>
-                    <div className="shrink-0 hidden xl:flex">
-                      <span className={cn(
-                        "rounded-full px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider border",
-                        phase.phase === "blocked"
-                          ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
-                          : phase.phase === "ready"
-                            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
-                            : phase.phase === "onboarding"
-                              ? "bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300"
-                              : "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300",
-                      )}>
+                    <div className="hidden shrink-0 xl:block">
+                      <span
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
+                          phase.phase === "blocked"
+                            ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                            : phase.phase === "ready"
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+                              : phase.phase === "onboarding"
+                                ? "border-primary/25 bg-primary/10 text-primary"
+                                : "border-border bg-muted/50 text-foreground",
+                        )}
+                      >
                         {phase.nextActionLabel}
                       </span>
                     </div>
                   </Link>
-                </MotionItem>
-              );
-            })}
-            </MotionList>
+                );
+              })}
+            </div>
           </div>
         )}
-      </LifecycleSection>
+      </HubSection>
 
-      {/* ─── DISCHARGES SECTION ─── */}
-      <LifecycleSection
-        title="Discharges"
-        color="rose"
-        icon={DoorOpen}
-        allHref="/admin/discharge"
-        metrics={[
-          { label: "Draft", value: noFacility ? "—" : loading ? "—" : dischargeCounts.draft },
-          { label: "In Review", value: noFacility ? "—" : loading ? "—" : dischargeCounts.review },
-          { label: "Complete", value: noFacility ? "—" : loading ? "—" : dischargeCounts.complete },
-        ]}
-      >
+      <HubSection title="Discharges" viewAllHref="/admin/discharge" metrics={<InlineMetricsRow parts={[{ label: "In review", value: noFacility ? "—" : loading ? "—" : dischargeMetrics.inReview }]} />}>
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view discharges.</p>
+          <p className="text-sm text-muted-foreground">Select a facility to preview discharge work.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading discharges…</p>
         ) : discharges.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-            No active reconciliations. <Link href="/admin/discharge/new" className="underline text-rose-600 dark:text-rose-400">Start a discharge</Link>.
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            No active reconciliations. <QuietInlineArrowLink href="/admin/discharge/new">Start a discharge →</QuietInlineArrowLink>
           </p>
         ) : (
-          <MotionList className="space-y-3">
+          <div className="space-y-3">
             {featuredDischarges.map((r) => {
               const isDraft = r.status === "draft";
               const phase = describeDischargePhase(r);
               return (
-                <MotionItem key={r.id}>
-                  <Link
-                    href={`/admin/discharge/${r.id}`}
-                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/60 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                      {isDraft ? <></> : <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-[13px] text-foreground truncate">
-                          {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked reconciliation"}
-                        </span>
-                        <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border",
-                          isDraft
-                            ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                            : r.status === "pharmacist_review"
-                              ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                              : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                        )}>
-                          {formatStatus(r.status)}
-                        </span>
-                        <span className={cn(
-                          "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border",
+                <Link
+                  key={r.id}
+                  href={`/admin/discharge/${r.id}`}
+                  className="flex min-h-[36px] w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+                >
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40">
+                    {isDraft ? null : <div className="size-1.5 rounded-full bg-muted-foreground/60" aria-hidden />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-[13px] font-medium text-foreground">
+                        {r.residents ? `${r.residents.first_name} ${r.residents.last_name}` : "Unlinked reconciliation"}
+                      </span>
+                      <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium capitalize text-foreground">
+                        {formatStatus(r.status)}
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize",
                           phase.phase === "planning"
-                            ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300"
+                            ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300"
                             : phase.phase === "pharmacist_review"
-                              ? "bg-primary-500/10 text-primary-700 border-primary-500/20 dark:text-primary-300"
+                              ? "border-primary/25 bg-primary/10 text-primary"
                               : phase.phase === "ready_to_complete"
-                                ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
-                                : "bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300",
-                        )}>
-                          {phase.nextActionLabel}
-                        </span>
-                      </div>
-                      <p className="text-[12px] text-muted-foreground mt-0.5">
-                        Updated {formatRelative(r.updated_at)}
-                      </p>
-                      <p className={cn(
+                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+                                : "border-border bg-muted/50 text-foreground",
+                        )}
+                      >
+                        {phase.nextActionLabel}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">Updated {formatRelative(r.updated_at)}</p>
+                    <p
+                      className={cn(
                         "mt-1 text-[11px]",
                         phase.phase === "planning"
-                          ? "text-amber-700 dark:text-amber-300"
+                          ? "text-amber-800 dark:text-amber-300"
                           : phase.phase === "pharmacist_review"
-                            ? "text-primary-700 dark:text-primary-300"
+                            ? "text-primary"
                             : phase.phase === "ready_to_complete"
-                              ? "text-emerald-700 dark:text-emerald-300"
-                              : "text-slate-600 dark:text-zinc-400",
-                      )}>
-                        {phase.helperText}
-                      </p>
-                    </div>
-                  </Link>
-                </MotionItem>
+                              ? "text-emerald-800 dark:text-emerald-300"
+                              : "text-muted-foreground",
+                      )}
+                    >
+                      {phase.helperText}
+                    </p>
+                  </div>
+                </Link>
               );
             })}
-          </MotionList>
+          </div>
         )}
-      </LifecycleSection>
+      </HubSection>
 
-      {/* ─── FAMILY CONNECTIONS SECTION ─── */}
-      <LifecycleSection
-        title="Family Connections"
-        color="amber"
-        icon={MessageCircle}
-        allHref="/admin/family-portal"
-        metrics={[
-          { label: "Triage Alerts", value: noFacility ? "—" : loading ? "—" : familyCounts.triage },
-          { label: "Upcoming Conferences", value: noFacility ? "—" : loading ? "—" : familyCounts.conferences },
-          { label: "Consents", value: noFacility ? "—" : loading ? "—" : familyCounts.consents },
-        ]}
+      <HubSection
+        title="Family connections"
+        viewAllHref="/admin/family-portal"
+        metrics={
+          <InlineMetricsRow
+            parts={[
+              { label: "Triage alerts", value: noFacility ? "—" : loading ? "—" : familyMetrics.triage },
+              { label: "Upcoming conferences", value: noFacility ? "—" : loading ? "—" : familyMetrics.conferences },
+              { label: "Consents pending", value: noFacility ? "—" : loading ? "—" : familyMetrics.consentsPending },
+            ]}
+          />
+        }
       >
         {familyActionError ? (
-          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-400">
-            {familyActionError}
-          </div>
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-700 dark:text-rose-400">{familyActionError}</div>
         ) : null}
         {familyActionMessage ? (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">
-            {familyActionMessage}
-          </div>
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">{familyActionMessage}</div>
         ) : null}
         {noFacility ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Select a facility to view family connections.</p>
+          <p className="text-sm text-muted-foreground">Select a facility to preview family connections.</p>
         ) : loading ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading family connections…</p>
         ) : triage.length === 0 && conferences.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-            No items needing attention. View <Link href="/admin/family-messages" className="underline text-amber-600 dark:text-amber-400">direct messages</Link> for all conversations.
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            No items need attention. <QuietInlineArrowLink href="/admin/family-messages">View all family conversations →</QuietInlineArrowLink>
           </p>
         ) : (
-          <MotionList className="space-y-3">
-            {/* Triage alerts first */}
+          <div className="space-y-3">
             {featuredTriage.map((t) => (
-              <MotionItem key={`triage-${t.id}`}>
-                  <Link
-                    href="/admin/family-portal"
-                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
-                  >
-                  <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center shrink-0">
-                    <></>
+              <Link
+                key={`triage-${t.id}`}
+                href="/admin/family-portal"
+                className="flex min-h-[36px] w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="truncate text-[13px] font-medium text-foreground">
+                      {t.residents ? `${t.residents.first_name} ${t.residents.last_name}` : "Unknown resident"}
+                    </span>
+                    <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground">Triage alert</span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                        <span className="font-medium text-[13px] text-foreground truncate">
-                            {t.residents ? `${t.residents.first_name} ${t.residents.last_name}` : "Unknown resident"}
-                          </span>
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border-rose-500/20">
-                        Triage Alert
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-muted-foreground mt-0.5 truncate">
-                      {t.matched_keywords?.join(", ") ?? "Keywords detected"} · {formatRelative(t.updated_at)}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={familyActionLoading === t.id || t.triage_status === "in_review"}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void updateTriageStatus(t.id, "in_review", "Message triage moved to in review.");
-                        }}
-                      >
-                        In review
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={familyActionLoading === t.id || t.triage_status === "resolved"}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void updateTriageStatus(t.id, "resolved", "Message triage resolved.");
-                        }}
-                      >
-                        Resolve
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={familyActionLoading === t.id || t.triage_status === "false_positive"}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void updateTriageStatus(t.id, "false_positive", "Message triage marked false positive.");
-                        }}
-                      >
-                        False positive
-                      </Button>
-                    </div>
+                  <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+                    {(t.matched_keywords ?? []).join(", ") || "Keywords detected"} · {formatRelative(t.updated_at)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" disabled={familyActionLoading === t.id || t.triage_status === "in_review"} onClick={(event) => { event.preventDefault(); void updateTriageStatus(t.id, "in_review", "Message triage moved to in review."); }}>
+                      In review
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" disabled={familyActionLoading === t.id || t.triage_status === "resolved"} onClick={(event) => { event.preventDefault(); void updateTriageStatus(t.id, "resolved", "Message triage resolved."); }}>
+                      Resolve
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" disabled={familyActionLoading === t.id || t.triage_status === "false_positive"} onClick={(event) => { event.preventDefault(); void updateTriageStatus(t.id, "false_positive", "Message triage marked false positive."); }}>
+                      False positive
+                    </Button>
                   </div>
-                </Link>
-              </MotionItem>
+                </div>
+              </Link>
             ))}
-            {/* Upcoming conferences */}
+
             {featuredConferences.map((c) => (
-              <MotionItem key={`conf-${c.id}`}>
-                  <Link
-                    href="/admin/family-portal"
-                    className="flex items-center gap-3 min-h-[36px] px-[13px] py-2 rounded-lg border border-border bg-card hover:bg-muted/40 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 w-full cursor-pointer group"
-                  >
-                  <div className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 flex items-center justify-center shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+              <Link
+                key={`conf-${c.id}`}
+                href="/admin/family-portal"
+                className="flex min-h-[36px] w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40">
+                  <div className="size-1.5 rounded-full bg-muted-foreground/60" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="truncate text-[13px] font-medium text-foreground">
+                      {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
+                    </span>
+                    <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground">
+                      Conference
+                    </span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                        <span className="font-medium text-[13px] text-foreground truncate">
-                            {c.residents ? `${c.residents.first_name} ${c.residents.last_name}` : "Unknown resident"}
-                          </span>
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-600 border-primary-500/20">
-                        Conference
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-muted-foreground mt-0.5">
-                      {c.scheduled_start ? new Date(c.scheduled_start).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date"} · {formatRelative(c.updated_at)}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={familyActionLoading === c.id || c.status === "completed"}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void updateConference(c.id, { status: "completed" }, "Care conference marked completed.");
-                        }}
-                      >
-                        Complete
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={familyActionLoading === c.id || c.status === "cancelled"}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void updateConference(c.id, { status: "cancelled" }, "Care conference cancelled.");
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={familyActionLoading === c.id || c.recording_consent}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void updateConference(
-                            c.id,
-                            {
-                              recording_consent: true,
-                              recording_consent_at: c.recording_consent_at ?? new Date().toISOString(),
-                              recording_consent_by: c.recording_consent_by ?? user?.id ?? null,
-                            },
-                            "Recording consent documented.",
-                          );
-                        }}
-                      >
-                        Record consent
-                      </Button>
-                    </div>
+                  <p className="mt-0.5 text-[12px] text-muted-foreground">
+                    {(c.scheduled_start ? new Date(c.scheduled_start).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date")} ·{" "}
+                    {formatRelative(c.updated_at)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={familyActionLoading === c.id || c.status === "completed"}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void updateConference(c.id, { status: "completed" }, "Care conference marked completed.");
+                      }}
+                    >
+                      Complete
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={familyActionLoading === c.id || c.status === "cancelled"}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void updateConference(c.id, { status: "cancelled" }, "Care conference cancelled.");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={familyActionLoading === c.id || !!c.recording_consent}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void updateConference(
+                          c.id,
+                          {
+                            recording_consent: true,
+                            recording_consent_at: c.recording_consent_at ?? new Date().toISOString(),
+                            recording_consent_by: c.recording_consent_by ?? user?.id ?? null,
+                          },
+                          "Recording consent documented.",
+                        );
+                      }}
+                    >
+                      Record consent
+                    </Button>
                   </div>
-                </Link>
-              </MotionItem>
+                </div>
+              </Link>
             ))}
-          </MotionList>
+          </div>
         )}
-      </LifecycleSection>
+      </HubSection>
     </div>
+  );
+}
+
+export default function AdminAdmissionsHubPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-6xl px-1 pb-28 pt-6 text-sm text-muted-foreground">Loading admissions overview…</div>}>
+      <AdminAdmissionsOverviewInner />
+    </Suspense>
   );
 }
