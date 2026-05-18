@@ -229,12 +229,12 @@ export default function AdminResidentCarePlanPage() {
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1")}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to census
+          Resident roster
         </Link>
         <RecordDetailSection title="Resident not found">
           <p className="text-sm text-muted-foreground">
             This care plan route is tied to a resident record. Adjust your facility filter or return to the
-            census list.
+            resident roster.
           </p>
         </RecordDetailSection>
       </div>

@@ -399,10 +399,14 @@ export type Database = {
           medicaid_pipeline_stage: string
           notes: string | null
           organization_id: string
+          anticipated_payer_other: string | null
+          anticipated_payer_source: Database["public"]["Enums"]["anticipated_payer_source"] | null
           physician_orders_received_at: string | null
           physician_orders_summary: string | null
           referral_lead_id: string | null
           resident_id: string
+          source: Database["public"]["Enums"]["admission_case_source"] | null
+          source_other: string | null
           status: Database["public"]["Enums"]["admission_case_status"]
           target_move_in_date: string | null
           updated_at: string
@@ -421,10 +425,14 @@ export type Database = {
           medicaid_pipeline_stage?: string
           notes?: string | null
           organization_id: string
+          anticipated_payer_other?: string | null
+          anticipated_payer_source?: Database["public"]["Enums"]["anticipated_payer_source"] | null
           physician_orders_received_at?: string | null
           physician_orders_summary?: string | null
           referral_lead_id?: string | null
           resident_id: string
+          source?: Database["public"]["Enums"]["admission_case_source"] | null
+          source_other?: string | null
           status?: Database["public"]["Enums"]["admission_case_status"]
           target_move_in_date?: string | null
           updated_at?: string
@@ -443,10 +451,14 @@ export type Database = {
           medicaid_pipeline_stage?: string
           notes?: string | null
           organization_id?: string
+          anticipated_payer_other?: string | null
+          anticipated_payer_source?: Database["public"]["Enums"]["anticipated_payer_source"] | null
           physician_orders_received_at?: string | null
           physician_orders_summary?: string | null
           referral_lead_id?: string | null
           resident_id?: string
+          source?: Database["public"]["Enums"]["admission_case_source"] | null
+          source_other?: string | null
           status?: Database["public"]["Enums"]["admission_case_status"]
           target_move_in_date?: string | null
           updated_at?: string
@@ -12366,10 +12378,14 @@ export type Database = {
           advance_directive_on_file: boolean
           advance_directive_type: string | null
           allergy_list: string[] | null
+          allergy_list_reviewed_at: string | null
+          allergy_list_reviewed_by: string | null
           ambulatory: boolean
           assistive_device: string | null
           bed_id: string | null
           code_status: string
+          code_status_verified_at: string | null
+          code_status_verified_by: string | null
           created_at: string
           created_by: string | null
           date_of_birth: string | null
@@ -12396,20 +12412,27 @@ export type Database = {
           first_name: string
           food_preferences: string | null
           gender: Database["public"]["Enums"]["gender"]
+          gender_other: string | null
           hospice_status: Database["public"]["Enums"]["hospice_status"]
           id: string
           last_name: string
           middle_name: string | null
+          name_suffix: string | null
           monthly_base_rate: number | null
           monthly_care_surcharge: number | null
           monthly_total_rate: number | null
           organization_id: string
+          override_full_intake_pending: boolean
+          override_reason: string | null
           photo_url: string | null
           preferred_bed_time: string | null
           preferred_name: string | null
           preferred_shower_days: string[] | null
           preferred_wake_time: string | null
+          primary_phone: string | null
           primary_diagnosis: string | null
+          primary_diagnosis_reviewed_at: string | null
+          primary_diagnosis_reviewed_by: string | null
           primary_payer: Database["public"]["Enums"]["payer_type"]
           primary_physician_fax: string | null
           primary_physician_name: string | null
@@ -12440,10 +12463,14 @@ export type Database = {
           advance_directive_on_file?: boolean
           advance_directive_type?: string | null
           allergy_list?: string[] | null
+          allergy_list_reviewed_at?: string | null
+          allergy_list_reviewed_by?: string | null
           ambulatory?: boolean
           assistive_device?: string | null
           bed_id?: string | null
           code_status?: string
+          code_status_verified_at?: string | null
+          code_status_verified_by?: string | null
           created_at?: string
           created_by?: string | null
           date_of_birth?: string | null
@@ -12470,20 +12497,27 @@ export type Database = {
           first_name: string
           food_preferences?: string | null
           gender: Database["public"]["Enums"]["gender"]
+          gender_other?: string | null
           hospice_status?: Database["public"]["Enums"]["hospice_status"]
           id?: string
           last_name: string
           middle_name?: string | null
+          name_suffix?: string | null
           monthly_base_rate?: number | null
           monthly_care_surcharge?: number | null
           monthly_total_rate?: number | null
           organization_id: string
+          override_full_intake_pending?: boolean
+          override_reason?: string | null
           photo_url?: string | null
           preferred_bed_time?: string | null
           preferred_name?: string | null
           preferred_shower_days?: string[] | null
           preferred_wake_time?: string | null
+          primary_phone?: string | null
           primary_diagnosis?: string | null
+          primary_diagnosis_reviewed_at?: string | null
+          primary_diagnosis_reviewed_by?: string | null
           primary_payer?: Database["public"]["Enums"]["payer_type"]
           primary_physician_fax?: string | null
           primary_physician_name?: string | null
@@ -12514,10 +12548,14 @@ export type Database = {
           advance_directive_on_file?: boolean
           advance_directive_type?: string | null
           allergy_list?: string[] | null
+          allergy_list_reviewed_at?: string | null
+          allergy_list_reviewed_by?: string | null
           ambulatory?: boolean
           assistive_device?: string | null
           bed_id?: string | null
           code_status?: string
+          code_status_verified_at?: string | null
+          code_status_verified_by?: string | null
           created_at?: string
           created_by?: string | null
           date_of_birth?: string | null
@@ -12544,20 +12582,27 @@ export type Database = {
           first_name?: string
           food_preferences?: string | null
           gender?: Database["public"]["Enums"]["gender"]
+          gender_other?: string | null
           hospice_status?: Database["public"]["Enums"]["hospice_status"]
           id?: string
           last_name?: string
           middle_name?: string | null
+          name_suffix?: string | null
           monthly_base_rate?: number | null
           monthly_care_surcharge?: number | null
           monthly_total_rate?: number | null
           organization_id?: string
+          override_full_intake_pending?: boolean
+          override_reason?: string | null
           photo_url?: string | null
           preferred_bed_time?: string | null
           preferred_name?: string | null
           preferred_shower_days?: string[] | null
           preferred_wake_time?: string | null
+          primary_phone?: string | null
           primary_diagnosis?: string | null
+          primary_diagnosis_reviewed_at?: string | null
+          primary_diagnosis_reviewed_by?: string | null
           primary_payer?: Database["public"]["Enums"]["payer_type"]
           primary_physician_fax?: string | null
           primary_physician_name?: string | null
@@ -15704,11 +15749,25 @@ export type Database = {
     Enums: {
       acuity_level: "level_1" | "level_2" | "level_3"
       admission_accommodation_quote: "private" | "semi_private"
+      admission_case_source:
+        | "walk_in"
+        | "hospital_discharge_no_referral"
+        | "facility_transfer_no_referral"
+        | "family_initiated"
+        | "other"
       admission_case_status:
-        | "pending_clearance"
+        | "cancelled"
+        | "draft"
         | "bed_reserved"
         | "move_in"
-        | "cancelled"
+        | "pending_clearance"
+      anticipated_payer_source:
+        | "ltc_insurance"
+        | "medicaid_approved"
+        | "medicaid_pending"
+        | "other"
+        | "private_pay"
+        | "va_benefits"
       ai_phi_class: "none" | "limited" | "phi"
       app_role:
         | "owner"
@@ -15847,7 +15906,7 @@ export type Database = {
         | "resolved"
         | "false_positive"
       fleet_vehicle_status: "active" | "out_of_service" | "retired"
-      gender: "male" | "female" | "other" | "prefer_not_to_say"
+      gender: "male" | "female" | "non_binary" | "other" | "prefer_not_to_say"
       gl_account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       hospice_status: "none" | "pending" | "active" | "ended"
       iddsi_fluid_level:
@@ -16297,11 +16356,27 @@ export const Constants = {
     Enums: {
       acuity_level: ["level_1", "level_2", "level_3"],
       admission_accommodation_quote: ["private", "semi_private"],
+      admission_case_source: [
+        "walk_in",
+        "hospital_discharge_no_referral",
+        "facility_transfer_no_referral",
+        "family_initiated",
+        "other",
+      ],
       admission_case_status: [
-        "pending_clearance",
+        "cancelled",
+        "draft",
         "bed_reserved",
         "move_in",
-        "cancelled",
+        "pending_clearance",
+      ],
+      anticipated_payer_source: [
+        "private_pay",
+        "medicaid_pending",
+        "medicaid_approved",
+        "ltc_insurance",
+        "va_benefits",
+        "other",
       ],
       ai_phi_class: ["none", "limited", "phi"],
       app_role: [
@@ -16460,7 +16535,7 @@ export const Constants = {
         "false_positive",
       ],
       fleet_vehicle_status: ["active", "out_of_service", "retired"],
-      gender: ["male", "female", "other", "prefer_not_to_say"],
+      gender: ["male", "female", "non_binary", "other", "prefer_not_to_say"],
       gl_account_type: ["asset", "liability", "equity", "revenue", "expense"],
       hospice_status: ["none", "pending", "active", "ended"],
       iddsi_fluid_level: [

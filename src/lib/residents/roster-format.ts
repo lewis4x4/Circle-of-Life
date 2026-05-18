@@ -1,0 +1,77 @@
+/**
+ * Compact relative timestamps for roster "Updated" column (America/New_York oriented display).
+ */
+export function formatResidentRosterUpdatedAt(iso: string | null): string {
+  if (!iso) return "—";
+
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "—";
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const dayKey = (d: Date) => {
+    const f = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return f.format(d);
+  };
+
+  const today = new Date();
+  const yday = new Date(today);
+  yday.setDate(yday.getDate() - 1);
+
+  const parsedKey = dayKey(parsed);
+  const todayKey = dayKey(today);
+  const ydayKey = dayKey(yday);
+
+  const monthDay = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
+
+  const timeSuffix = formatter
+    .format(parsed)
+    .replace(/\s+/g, "")
+    .replace(/AM/i, "a")
+    .replace(/PM/i, "p")
+    .toLowerCase();
+
+  if (parsedKey === todayKey) return `Today ${timeSuffix}`;
+  if (parsedKey === ydayKey) return `Yesterday ${timeSuffix}`;
+
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate() - 7);
+  if (parsed >= cutoff) {
+    return `${monthDay} ${timeSuffix}`;
+  }
+
+  return monthDay;
+}
+
+/** Deterministic accent for avatar dot / initials background (HSL). */
+export function rosterAvatarAccentFromId(id: string): { background: string; foreground: string } {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  const hue = hash % 360;
+  return {
+    background: `hsla(${hue}, 42%, 82%, 1)`,
+    foreground: `hsla(${hue}, 35%, 28%, 1)`,
+  };
+}
+
+export function truncateCareNoteSubtitle(text: string, maxChars: number): string {
+  const t = text.trim();
+  if (t.length <= maxChars) return t;
+  return `${t.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
+}
