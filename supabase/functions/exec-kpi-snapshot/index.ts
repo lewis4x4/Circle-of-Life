@@ -4,10 +4,7 @@
  *
  * Body: `{ "organization_id": "<uuid>", "snapshot_date"?: "YYYY-MM-DD" }` (date defaults to UTC today).
  */
-import {
-  createClient,
-  type SupabaseClient,
-} from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import {
   computeKpiForFacilityIds,
@@ -16,11 +13,8 @@ import {
 } from "../_shared/exec-kpi-metrics.ts";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import {
-  applyReplacementScopeFilters,
-  buildReplacementScopes,
   normalizedRowsForScope,
   type NormalizedMetricRow,
-  type NormalizedReplacementScope,
 } from "./normalized-metrics.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 
@@ -31,37 +25,6 @@ function utcTodayDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-
-async function softDeleteActiveNormalizedRows(
-  supabase: SupabaseClient,
-  input: {
-    organizationId: string;
-    snapshotDate: string;
-    scopes: NormalizedReplacementScope[];
-  },
-): Promise<
-  { error: { message: string; code?: string } | null; count: number }
-> {
-  const deletedAt = new Date().toISOString();
-  let count = 0;
-
-  for (const scope of input.scopes) {
-    let query = supabase
-      .from("exec_metric_snapshots")
-      .update({ deleted_at: deletedAt })
-      .eq("organization_id", input.organizationId)
-      .eq("snapshot_date", input.snapshotDate)
-      .is("deleted_at", null);
-
-    query = applyReplacementScopeFilters(query, scope);
-
-    const { error } = await query;
-    if (error) return { error, count };
-    count += 1;
-  }
-
-  return { error: null, count };
-}
 
 Deno.serve(async (req) => {
   const t = withTiming("exec-kpi-snapshot");
@@ -140,22 +103,6 @@ Deno.serve(async (req) => {
   });
 
   try {
-    const { error: delErr } = await supabase
-      .from("exec_kpi_snapshots")
-      .delete()
-      .eq("organization_id", organizationId)
-      .eq("snapshot_date", snapshotDate);
-
-    if (delErr) {
-      t.log({
-        event: "error",
-        outcome: "error",
-        error_message: "delete failed",
-        error_code: delErr.code,
-      });
-      return jsonResponse({ error: "Database error" }, 500);
-    }
-
     const allFacs = await loadFacilitiesForOrganization(
       supabase,
       organizationId,
@@ -271,65 +218,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    const replacementScopes = buildReplacementScopes({
-      entityIds: entities.map((entity) => entity.id),
-      facilityIds: allFacs.map((facility) => facility.id),
-    });
+    const { data: replaceResult, error: replaceErr } = await supabase
+      .rpc("replace_exec_kpi_snapshot_run", {
+        p_organization_id: organizationId,
+        p_snapshot_date: snapshotDate,
+        p_kpi_rows: rows,
+        p_metric_rows: normalizedRows,
+      })
+      .single();
 
-    const { error: insErr } = await supabase.from("exec_kpi_snapshots").insert(
-      rows,
-    );
-    if (insErr) {
+    if (replaceErr) {
       t.log({
         event: "error",
         outcome: "error",
-        error_message: "insert failed",
-        error_code: insErr.code,
+        error_message: "snapshot replace rpc failed",
+        error_code: replaceErr.code,
       });
       return jsonResponse({ error: "Database error" }, 500);
     }
 
-    if (replacementScopes.length > 0) {
-      const softDeleteRes = await softDeleteActiveNormalizedRows(
-        supabase,
-        {
-          organizationId,
-          snapshotDate,
-          scopes: replacementScopes,
-        },
-      );
-      if (softDeleteRes.error) {
-        t.log({
-          event: "error",
-          outcome: "error",
-          error_message: "normalized soft-delete failed",
-          error_code: softDeleteRes.error.code,
-        });
-        return jsonResponse({ error: "Database error" }, 500);
-      }
-
-      if (normalizedRows.length > 0) {
-        const { error: normalizedInsErr } = await supabase.from(
-          "exec_metric_snapshots",
-        ).insert(normalizedRows);
-        if (normalizedInsErr) {
-          t.log({
-            event: "error",
-            outcome: "error",
-            error_message: "normalized insert failed",
-            error_code: normalizedInsErr.code,
-          });
-          return jsonResponse({ error: "Database error" }, 500);
-        }
-      }
-    }
+    const replaceCounts = (replaceResult ?? {}) as {
+      kpi_inserted_count?: number;
+      kpi_soft_deleted_count?: number;
+      metric_inserted_count?: number;
+      metric_soft_deleted_count?: number;
+    };
 
     t.log({
       event: "complete",
       outcome: "success",
-      inserted: rows.length,
-      normalized_inserted: normalizedRows.length,
-      normalized_replaced_scopes: replacementScopes.length,
+      inserted: replaceCounts.kpi_inserted_count ?? rows.length,
+      snapshot_soft_deleted: replaceCounts.kpi_soft_deleted_count ?? 0,
+      normalized_inserted: replaceCounts.metric_inserted_count ?? normalizedRows.length,
+      normalized_soft_deleted: replaceCounts.metric_soft_deleted_count ?? 0,
       entities: entities.length,
       facilities: allFacs.length,
     });
@@ -338,9 +259,10 @@ Deno.serve(async (req) => {
       ok: true,
       organization_id: organizationId,
       snapshot_date: snapshotDate,
-      inserted: rows.length,
-      normalized_inserted: normalizedRows.length,
-      normalized_replaced_scopes: replacementScopes.length,
+      inserted: replaceCounts.kpi_inserted_count ?? rows.length,
+      snapshot_soft_deleted: replaceCounts.kpi_soft_deleted_count ?? 0,
+      normalized_inserted: replaceCounts.metric_inserted_count ?? normalizedRows.length,
+      normalized_soft_deleted: replaceCounts.metric_soft_deleted_count ?? 0,
       scopes: {
         organization: 1,
         entity: entities.length,
