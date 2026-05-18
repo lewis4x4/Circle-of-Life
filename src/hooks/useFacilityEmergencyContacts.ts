@@ -19,9 +19,13 @@ export interface EmergencyContactRow {
   updated_at: string;
 }
 
-export function useFacilityEmergencyContacts(facilityId: string) {
+export function useFacilityEmergencyContacts(
+  facilityId: string,
+  options?: { enabled?: boolean },
+) {
+  const enabled = options?.enabled ?? true;
   const [contacts, setContacts] = useState<EmergencyContactRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
@@ -41,8 +45,14 @@ export function useFacilityEmergencyContacts(facilityId: string) {
   }, [facilityId]);
 
   useEffect(() => {
+    if (!enabled) {
+      setContacts([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
     void refetch();
-  }, [refetch]);
+  }, [enabled, refetch]);
 
   const createContact = useCallback(
     async (payload: EmergencyContactInput) => {

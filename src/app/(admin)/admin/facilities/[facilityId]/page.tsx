@@ -1,11 +1,14 @@
 "use client";
 
-import React, { Suspense, useCallback } from "react";
+import React, { Suspense, useCallback, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
+import { useFacilityBuildingProfile } from "@/hooks/useFacilityBuildingProfile";
 import { useFacilityRates } from "@/hooks/useFacilityRates";
+import { useSurveyVisitSession } from "@/hooks/useSurveyVisitSession";
+import { useFacilityEmergencyContacts } from "@/hooks/useFacilityEmergencyContacts";
 import { Badge } from "@/components/ui/badge";
 import { FacilityTabMetricsStrip } from "@/components/admin/facilities/FacilityTabMetricsStrip";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
@@ -21,6 +24,8 @@ import { StaffingTab } from "@/components/admin/facilities/tabs/StaffingTab";
 import { CommunicationTab } from "@/components/admin/facilities/tabs/CommunicationTab";
 import { ThresholdsTab } from "@/components/admin/facilities/tabs/ThresholdsTab";
 import { TimelineTab } from "@/components/admin/facilities/tabs/TimelineTab";
+import { FacilitySurveyVisitHeaderActions } from "@/components/compliance/FacilitySurveyVisitHeaderActions";
+import { SurveyVisitSessionDock } from "@/components/compliance/SurveyVisitSessionDock";
 import { RecordDetailHeader } from "@/design-system/components/record-detail";
 import {
   FACILITY_TABS,
@@ -40,10 +45,22 @@ function isFacilityTab(t: string | null): t is FacilityTab {
 function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   const { facility, isLoading, error } = useFacility(facilityId);
   const ratesApi = useFacilityRates(facilityId);
+  const buildingProfileApi = useFacilityBuildingProfile(facilityId);
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab: FacilityTab = isFacilityTab(tabParam) ? tabParam : "overview";
+
+  const emergencyApi = useFacilityEmergencyContacts(facilityId, {
+    enabled: activeTab === "emergency",
+  });
+  const emergencySlotContext = useMemo(() => {
+    const p = buildingProfileApi.profile;
+    const floors =
+      typeof p?.number_of_floors === "number" && p.number_of_floors > 0 ? p.number_of_floors : 1;
+    return { floorCount: floors, hasElevator: Boolean(p?.has_elevator) };
+  }, [buildingProfileApi.profile]);
+  const surveyVisit = useSurveyVisitSession(facilityId);
 
   const onTabChange = useCallback(
     (tabId: string) => {
@@ -96,9 +113,26 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
           />
         );
       case "building":
-        return <BuildingTab facilityId={facilityId} />;
+        return (
+          <BuildingTab
+            facilityId={facilityId}
+            facility={facility}
+            profile={buildingProfileApi.profile}
+            isLoading={buildingProfileApi.isLoading}
+            error={buildingProfileApi.error}
+            saveProfile={buildingProfileApi.saveProfile}
+            isSaving={buildingProfileApi.isSaving}
+          />
+        );
       case "emergency":
-        return <EmergencyTab facilityId={facilityId} />;
+        return (
+          <EmergencyTab
+            facilityId={facilityId}
+            contactsApi={emergencyApi}
+            buildingFloors={emergencySlotContext.floorCount}
+            hasElevator={emergencySlotContext.hasElevator}
+          />
+        );
       case "vendors":
         return <VendorsTab facilityId={facilityId} />;
       case "documents":
@@ -136,9 +170,42 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
         })}
         backLink={{ label: "Facilities", href: "/admin/facilities" }}
         statusChips={statusChip}
+        actions={<FacilitySurveyVisitHeaderActions survey={surveyVisit} />}
       />
 
-      <FacilityTabMetricsStrip tab={activeTab} facility={facility} rates={ratesApi.rates} />
+      {(surveyVisit.loadError || surveyVisit.message) ? (
+        <div className="space-y-1 mb-4">
+          {surveyVisit.loadError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {surveyVisit.loadError}
+            </p>
+          ) : null}
+          {surveyVisit.message ? <p className="text-sm text-muted-foreground">{surveyVisit.message}</p> : null}
+        </div>
+      ) : null}
+
+      {surveyVisit.active && surveyVisit.canLog ? (
+        <div className="mb-6 rounded-lg border border-amber-300/70 bg-amber-50/40 p-4 dark:border-amber-800 dark:bg-amber-950/25">
+          <SurveyVisitSessionDock survey={surveyVisit} />
+        </div>
+      ) : null}
+
+      <FacilityTabMetricsStrip
+        tab={activeTab}
+        facility={facility}
+        rates={ratesApi.rates}
+        buildingProfile={buildingProfileApi.profile}
+        buildingProfileLoading={buildingProfileApi.isLoading}
+        emergency={
+          activeTab === "emergency"
+            ? {
+                contacts: emergencyApi.contacts,
+                isLoading: emergencyApi.isLoading,
+                slotContext: emergencySlotContext,
+              }
+            : undefined
+        }
+      />
 
       <div className="border-b border-border overflow-x-auto">
         <FacilityTabNav activeTab={activeTab} onTabChange={onTabChange} tabs={TABS} />

@@ -9,14 +9,23 @@ import {
 } from "@/lib/admin/facilities/facility-constants";
 import type { EmergencyContactInput } from "@/lib/validation/facility-admin";
 
-interface EmergencyTabProps {
+type ContactsApi = ReturnType<typeof useFacilityEmergencyContacts>;
+
+const inputCls =
+  "mt-1 w-full rounded-[8px] border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+
+export function EmergencyTab({
+  facilityId: _facilityId,
+  contactsApi,
+  buildingFloors: _buildingFloors,
+  hasElevator: _hasElevator,
+}: {
   facilityId: string;
-}
-
-const inputCls = "mt-1 w-full rounded-[8px] border border-border bg-background px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
-
-export function EmergencyTab({ facilityId }: EmergencyTabProps) {
-  const { contacts, isLoading, error, createContact } = useFacilityEmergencyContacts(facilityId);
+  contactsApi: ContactsApi;
+  buildingFloors: number;
+  hasElevator: boolean;
+}) {
+  const { contacts, isLoading, error, createContact } = contactsApi;
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<EmergencyContactInput>({
@@ -71,9 +80,9 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          County and vendor emergency numbers for this site. Owner/org_admin can add entries.
+          County and vendor emergency numbers for this site. Administrators can add or edit entries.
         </p>
         <button
           type="button"
@@ -86,15 +95,23 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-[8px] border border-border bg-muted/10 p-4 space-y-3">
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-[8px] border border-border bg-muted/10 p-4 space-y-3"
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm text-foreground">
-              <span className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground block mb-1">Category</span>
+              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
+                Category
+              </span>
               <select
                 className={inputCls}
                 value={form.contact_category}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, contact_category: e.target.value as EmergencyContactInput["contact_category"] }))
+                  setForm((f) => ({
+                    ...f,
+                    contact_category: e.target.value as EmergencyContactInput["contact_category"],
+                  }))
                 }
               >
                 {CONTACT_CATEGORIES.map((c) => (
@@ -105,7 +122,9 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               </select>
             </label>
             <label className="text-sm text-foreground">
-              <span className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground block mb-1">Name / label</span>
+              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
+                Name / label
+              </span>
               <input
                 className={inputCls}
                 value={form.contact_name}
@@ -114,7 +133,9 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               />
             </label>
             <label className="text-sm text-foreground">
-              <span className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground block mb-1">Primary phone</span>
+              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
+                Primary phone
+              </span>
               <input
                 className={inputCls}
                 value={form.phone_primary}
@@ -123,7 +144,9 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
               />
             </label>
             <label className="text-sm text-foreground">
-              <span className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground block mb-1">Secondary phone</span>
+              <span className="mb-1 block text-[10px] font-medium tracking-wider uppercase text-muted-foreground">
+                Secondary phone
+              </span>
               <input
                 className={inputCls}
                 value={form.phone_secondary ?? ""}
@@ -143,13 +166,13 @@ export function EmergencyTab({ facilityId }: EmergencyTabProps) {
 
       <div className="space-y-4">
         {Object.entries(grouped).map(([cat, list]) => (
-          <div key={cat} className="rounded-[8px] border border-border overflow-hidden">
+          <div key={cat} className="overflow-hidden rounded-[8px] border border-border">
             <div className="border-b border-border bg-muted/10 px-4 py-2 text-sm font-semibold text-foreground">
               {CONTACT_CATEGORY_LABELS[cat as keyof typeof CONTACT_CATEGORY_LABELS] ?? cat}
             </div>
             <ul className="divide-y divide-border">
               {list.map((c) => (
-                <li key={c.id} className="px-4 py-3 flex flex-wrap gap-2 justify-between">
+                <li key={c.id} className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
                   <div>
                     <p className="font-medium text-foreground">{c.contact_name}</p>
                     <p className="text-sm text-muted-foreground">{c.phone_primary}</p>
