@@ -204,27 +204,48 @@ type MetricLinkProps = {
   label: string;
   value: string;
   valueClassName: string;
+  /** Optional clarification next to title (Quiet Operator KPIs). */
+  labelTooltip?: string;
 };
 
-function MetricTile({ href, label, value, valueClassName }: MetricLinkProps) {
+function MetricLinkTile({ href, label, value, valueClassName, labelTooltip }: MetricLinkProps) {
   return (
-    <Link
-      href={href}
+    <div
       className={cn(
-        "flex flex-col items-center rounded-xl border border-border bg-card px-2 py-3 text-center shadow-[var(--shadow-card)] ring-1 ring-border/60",
-        "transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "relative rounded-xl border border-border bg-card text-center shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-colors hover:bg-accent/30",
       )}
     >
-      <span
-        className={cn(
-          "text-[28px] font-semibold tabular-nums leading-tight tracking-tight md:text-[28px]",
-          valueClassName,
-        )}
+      <Link
+        href={href}
+        className="flex flex-col items-center rounded-xl px-2 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {value}
-      </span>
-      <span className="mt-2 max-w-[10rem] text-[13px] leading-snug text-muted-foreground">{label}</span>
-    </Link>
+        <span
+          className={cn(
+            "text-[28px] font-semibold tabular-nums leading-tight tracking-tight md:text-[28px]",
+            valueClassName,
+          )}
+        >
+          {value}
+        </span>
+        <span className="mt-2 max-w-[10rem] px-5 text-[13px] leading-snug text-muted-foreground">{label}</span>
+      </Link>
+      {labelTooltip ? (
+        <div className="absolute right-1 top-1">
+          <Tooltip>
+            <TooltipTrigger
+              type="button"
+              className="inline-flex size-7 items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`About ${label}`}
+            >
+              <HelpCircle className="size-3.5" aria-hidden />
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-[16rem] text-left text-xs leading-snug">
+              {labelTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
