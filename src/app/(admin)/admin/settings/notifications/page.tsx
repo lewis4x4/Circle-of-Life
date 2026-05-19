@@ -256,9 +256,9 @@ export default function AdminNotificationsSettingsPage() {
         setErr(result.message);
         return;
       }
-      setMsg(`Dispatch sent — ${JSON.stringify(result.json)}`);
+      setMsg("Test notification sent to saved subscriptions.");
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Dispatch failed.");
+      setErr(e instanceof Error ? e.message : "Test notification failed.");
     } finally {
       setBusy(false);
     }
@@ -403,8 +403,7 @@ export default function AdminNotificationsSettingsPage() {
         <CardHeader>
           <CardTitle>Notification routes</CardTitle>
           <CardDescription>
-            Uses existing <span className="font-mono">notification_routes</span>. Configure where alerts go,
-            what severity starts a route, and which roles receive it.
+            Configure where alerts go, what severity starts a route, and which roles receive it.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -570,8 +569,7 @@ export default function AdminNotificationsSettingsPage() {
         <CardHeader>
           <CardTitle>Web Push</CardTitle>
           <CardDescription>
-            Requires HTTPS (or localhost), user gesture, and VAPID keys configured for the project. Edge Function
-            secrets: VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY.
+            Requires a supported browser and secure connection. Ask an administrator to complete web push setup.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -582,7 +580,7 @@ export default function AdminNotificationsSettingsPage() {
           )}
           {!vapidConfigured && (
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              Set NEXT_PUBLIC_VAPID_PUBLIC_KEY in the app environment (public key only; matches server VAPID).
+              Ask an administrator to complete web push setup before enabling notifications on this device.
             </p>
           )}
           <Button
@@ -601,8 +599,7 @@ export default function AdminNotificationsSettingsPage() {
         <CardHeader>
           <CardTitle className="text-lg">Test dispatch</CardTitle>
           <CardDescription>
-            Sends a notification through the `dispatch-push` Edge Function to your saved subscriptions (owner / org
-            admin only).
+            Sends a test notification to your saved subscriptions (owner / org admin only).
           </CardDescription>
         </CardHeader>
         <CardContent>

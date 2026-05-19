@@ -583,20 +583,20 @@ function ResidueVendorRow({ row, onCleanup }: { row: VendorFacilityRow; onCleanu
       <td className="h-12 px-3 align-middle" colSpan={7}>
         <div className="flex flex-wrap items-center justify-between gap-2 py-3">
           <div>
-            <p className="text-[14px] font-semibold text-foreground">{row.vendor?.name ?? "Migration residue"}</p>
+            <p className="text-[14px] font-semibold text-foreground">{row.vendor?.name ?? "Imported contact row"}</p>
             <p className="text-[13px] text-amber-800 dark:text-amber-200">
-              ⚠ Migration residue · {n} entries unparsed
+              ⚠ Imported entries need review · {n} phone {n === 1 ? "entry" : "entries"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" size="sm" variant="outline" className="rounded-md" onClick={onCleanup}>
-              Clean up →
+              Review →
             </Button>
             <Link
               href={`/admin/data-cleanup/migration-residue/${encodeURIComponent(row.id)}`}
               className={buttonVariants({ variant: "outline", size: "sm", className: "rounded-md" })}
             >
-              Open tooling ↗
+              Open review ↗
             </Link>
           </div>
         </div>
@@ -750,9 +750,9 @@ function CleanupSheet(props: { residue: VendorFacilityRow | null; onClose: () =>
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="w-[min(100vw,420px)] p-0">
         <SheetHeader className="border-b border-border px-4 py-3 text-left">
-          <SheetTitle className="text-base">Clean up migration residue</SheetTitle>
+          <SheetTitle className="text-base">Review imported contacts</SheetTitle>
           <SheetDescription className="text-sm text-muted-foreground">
-            {residue.vendor?.name ?? "Imported directory"} — promote phones into governed vendor or emergency records.
+            {residue.vendor?.name ?? "Imported directory"} — move phones into governed vendor or emergency records.
           </SheetDescription>
         </SheetHeader>
         <div className="max-h-[70vh] space-y-2 overflow-auto px-4 py-4">
@@ -777,12 +777,12 @@ function CleanupSheet(props: { residue: VendorFacilityRow | null; onClose: () =>
           ))}
         </div>
         <div className="border-t border-border px-4 py-3 text-[12px] text-muted-foreground">
-          Long-term cleanup tracked with{" "}
+          Contact review tracked with{" "}
           <Link
             href={`/admin/data-cleanup/migration-residue/${encodeURIComponent(residue.id)}`}
             className="text-primary underline-offset-4 hover:underline"
           >
-            migration residue queue
+            import review queue
           </Link>
           .
         </div>

@@ -55,14 +55,14 @@ export function FacilityEmergencyContactsMetricsStrip({
       <Tile
         label="Verified (<90 days)"
         value="—"
-        sub="Timestamps not available yet — enable in a future schema update"
+        sub="Verification dates are not tracked for these contacts"
         valueClassName="text-muted-foreground text-2xl"
       />
 
       <Tile
         label="24/7 lines confirmed"
         value="—"
-        sub="Availability hours not stored yet — enable in a future schema update"
+        sub="Availability hours are not tracked for these contacts"
         valueClassName="text-muted-foreground text-2xl"
       />
 

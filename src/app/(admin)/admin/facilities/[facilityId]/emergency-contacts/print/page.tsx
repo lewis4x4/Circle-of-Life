@@ -67,7 +67,7 @@ export default function EmergencyContactsPrintPage() {
         <h1 className="text-2xl font-bold">{facility.name}</h1>
         {addr ? <p className="mt-1 text-sm">{addr}</p> : null}
         <p className="mt-2 text-xs text-neutral-600">
-          Verification summary: not tracked in this build — confirm quarterly with licensing file.
+          Verification summary: confirm quarterly with the licensing file; directory verification dates are not tracked here.
         </p>
         <p className="mt-1 text-xs text-neutral-600">Dial 911 for life-threatening emergencies.</p>
       </header>
