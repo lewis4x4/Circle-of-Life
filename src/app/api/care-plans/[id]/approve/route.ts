@@ -8,6 +8,7 @@ type Body = {
 };
 
 const APPROVEABLE_STATUSES = new Set(["draft", "under_review"]);
+const APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
 
 export async function POST(
   request: Request,
@@ -80,6 +81,7 @@ export async function POST(
     .from("user_profiles")
     .select("organization_id, app_role, full_name")
     .eq("id", user.id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (profileError || !userProfile) {
@@ -92,6 +94,20 @@ export async function POST(
   if (!userProfile.organization_id) {
     return NextResponse.json(
       { error: "User profile missing organization" },
+      { status: 403 }
+    );
+  }
+
+  if (!APPROVER_ROLES.has(userProfile.app_role ?? "")) {
+    return NextResponse.json(
+      { error: "You do not have permission to approve care plans" },
+      { status: 403 }
+    );
+  }
+
+  if (carePlan.organization_id !== userProfile.organization_id) {
+    return NextResponse.json(
+      { error: "Care plan organization mismatch" },
       { status: 403 }
     );
   }
@@ -119,23 +135,37 @@ export async function POST(
   }
 
   // Approve the care plan
-  const { error: updateError } = await admin
+  const nowIso = new Date().toISOString();
+  const { data: updatedCarePlan, error: updateError } = await admin
     .from("care_plans")
     .update({
       status: "active",
-      approved_at: new Date().toISOString(),
+      approved_at: nowIso,
       approved_by: user.id,
       signature_data: signature,
-      updated_at: new Date().toISOString(),
+      updated_at: nowIso,
       updated_by: user.id,
     })
-    .eq("id", carePlanId);
+    .eq("id", carePlanId)
+    .eq("organization_id", userProfile.organization_id)
+    .eq("facility_id", carePlan.facility_id)
+    .eq("status", carePlan.status)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) {
     console.error("[care-plan-approve] update error", updateError);
     return NextResponse.json(
       { error: "Failed to approve care plan" },
       { status: 500 }
+    );
+  }
+
+  if (!updatedCarePlan) {
+    return NextResponse.json(
+      { error: "Care plan state changed; refresh and try again" },
+      { status: 409 }
     );
   }
 
@@ -163,7 +193,7 @@ export async function POST(
   return NextResponse.json({
     success: true,
     carePlanId,
-    approvedAt: new Date().toISOString(),
+    approvedAt: nowIso,
     approvedBy: {
       id: user.id,
       name: userProfile.full_name || user.email || "Unknown",

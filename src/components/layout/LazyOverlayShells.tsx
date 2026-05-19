@@ -59,16 +59,24 @@ export function LazyOverlayShells() {
     };
   }, []);
 
+  const shouldRenderGraceShell = graceOpenRequestToken > 0 || graceToggleRequestToken > 0;
+  const shouldRenderHavenInsightShell =
+    havenInsightOpenRequestToken > 0 || havenInsightToggleRequestToken > 0;
+
   return (
     <>
-      <GraceShell
-        openRequestToken={graceOpenRequestToken}
-        toggleRequestToken={graceToggleRequestToken}
-      />
-      <HavenInsightShell
-        openRequestToken={havenInsightOpenRequestToken}
-        toggleRequestToken={havenInsightToggleRequestToken}
-      />
+      {shouldRenderGraceShell ? (
+        <GraceShell
+          openRequestToken={graceOpenRequestToken}
+          toggleRequestToken={graceToggleRequestToken}
+        />
+      ) : null}
+      {shouldRenderHavenInsightShell ? (
+        <HavenInsightShell
+          openRequestToken={havenInsightOpenRequestToken}
+          toggleRequestToken={havenInsightToggleRequestToken}
+        />
+      ) : null}
     </>
   );
 }

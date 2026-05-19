@@ -189,6 +189,7 @@ export default function LandingHome() {
                 src="/luxury-alf-interior.png"
                 alt="Luxury Assisted Living Interior"
                 fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover object-center"
                 priority
               />
