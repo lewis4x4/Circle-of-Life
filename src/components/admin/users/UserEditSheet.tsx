@@ -196,12 +196,17 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30 " onClick={onClose} />
 
-      <div className="relative w-full max-w-2xl h-full overflow-y-auto bg-background border-l shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-user-title"
+        className="relative w-full max-w-2xl h-full overflow-y-auto bg-background border-l shadow-2xl"
+      >
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-background/95 ">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-lg font-semibold">{user?.full_name ?? "Loading..."}</h2>
+              <h2 id="edit-user-title" className="text-lg font-semibold">{user?.full_name ?? "Loading..."}</h2>
               {user && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>{user.email}</span>
@@ -210,8 +215,13 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-muted transition-colors">
-            <X className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close edit user sheet"
+            className="p-1 rounded-md hover:bg-muted transition-colors"
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
 
@@ -246,19 +256,19 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
               {activeTab === "profile" && (
                 <div className="space-y-4">
                   {error && <div className="text-sm text-destructive">{error}</div>}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium">Full Name</label>
-                      <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                      <label htmlFor="edit-user-full-name" className="text-sm font-medium">Full Name</label>
+                      <Input id="edit-user-full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium">Phone</label>
-                      <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                      <label htmlFor="edit-user-phone" className="text-sm font-medium">Phone</label>
+                      <Input id="edit-user-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium">Job Title</label>
-                    <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+                    <label htmlFor="edit-user-job-title" className="text-sm font-medium">Job Title</label>
+                    <Input id="edit-user-job-title" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
                   </div>
                   <button
                     onClick={handleSaveProfile}
@@ -276,7 +286,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                   <div className="rounded-lg border px-4 py-3 bg-muted/50 text-sm">
                     Current role: <strong>{ROLE_LABELS[user?.app_role ?? ""] ?? user?.app_role}</strong>
                   </div>
-                  <UserRoleSelector value={appRole} onChange={setAppRole} />
+                  <UserRoleSelector id="edit-user-role" value={appRole} onChange={setAppRole} />
                   <button
                     onClick={handleSaveRole}
                     disabled={isSaving || appRole === user?.app_role}

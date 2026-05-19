@@ -133,9 +133,10 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
           </div>
           <button
             onClick={handleClose}
+            aria-label="Close incident capture"
             className="text-slate-400 hover:text-white transition p-1 rounded-lg hover:bg-slate-800"
           >
-            <X className="w-5 h-5" />
+            <X aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
 

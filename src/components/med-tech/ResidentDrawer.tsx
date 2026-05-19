@@ -63,9 +63,10 @@ export function ResidentDrawer({ resident, passes, onClose }: ResidentDrawerProp
           </div>
           <button
             onClick={onClose}
+            aria-label="Close resident drawer"
             className="text-slate-400 hover:text-white transition p-1 rounded-lg hover:bg-slate-800"
           >
-            <X className="w-5 h-5" />
+            <X aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
 

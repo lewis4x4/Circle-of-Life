@@ -43,8 +43,8 @@ export function FacilityAccessManager({
   };
 
   return (
-    <div className="space-y-3">
-      <label className="text-sm font-medium">Facility Access</label>
+    <fieldset className="space-y-3">
+      <legend className="text-sm font-medium">Facility Access</legend>
 
       {/* Current facilities */}
       {selected.length > 0 && (
@@ -56,7 +56,7 @@ export function FacilityAccessManager({
                 key={id}
                 className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
               >
-                <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="primary-facility"
@@ -70,9 +70,10 @@ export function FacilityAccessManager({
                       Primary
                     </span>
                   )}
-                </div>
+                </label>
                 {selected.length > 1 && (
                   <button
+                    type="button"
                     onClick={() => handleRemove(id)}
                     className="text-xs text-destructive hover:text-destructive/80"
                   >
@@ -90,6 +91,7 @@ export function FacilityAccessManager({
         <div>
           {showAdd ? (
             <select
+              aria-label="Add facility access"
               onChange={(e) => e.target.value && handleAdd(e.target.value)}
               className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
               autoFocus
@@ -103,6 +105,7 @@ export function FacilityAccessManager({
             </select>
           ) : (
             <button
+              type="button"
               onClick={() => setShowAdd(true)}
               className="text-sm text-teal-600 hover:text-teal-700"
             >
@@ -115,6 +118,6 @@ export function FacilityAccessManager({
       {selected.length === 0 && (
         <p className="text-xs text-muted-foreground">At least one facility is required.</p>
       )}
-    </div>
+    </fieldset>
   );
 }

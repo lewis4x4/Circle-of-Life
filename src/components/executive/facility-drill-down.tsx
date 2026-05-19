@@ -98,10 +98,12 @@ export function FacilityDrillDown({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close facility drilldown"
               className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
