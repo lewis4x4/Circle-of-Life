@@ -35,6 +35,8 @@ export type CollectionPromoteSpec = {
   naturalKey: (row: Row) => Record<string, string | null>;
   payload: (row: Row) => Row;
   label: (row: Row) => string;
+  nullLookupColumns?: (row: Row) => string[];
+  rpcFunction?: string;
 };
 
 export type PromotionCounts = {
@@ -92,6 +94,7 @@ async function findCollectionRow(
   ctx: PromotionContext,
   table: string,
   naturalKey: Record<string, string | null>,
+  nullColumns: string[] = [],
 ): Promise<Row | null> {
   let query = ctx.admin
     .from(table)
@@ -99,6 +102,9 @@ async function findCollectionRow(
     .eq("facility_id", ctx.facility_id)
     .eq("organization_id", ctx.organization_id)
     .is("deleted_at", null);
+  for (const column of nullColumns) {
+    query = query.is(column, null);
+  }
   for (const [column, value] of Object.entries(naturalKey)) {
     if (!value) return null;
     query = query.eq(column, value);
@@ -199,7 +205,11 @@ export async function promoteCollectionRows(
     warnings: [],
   };
   const moduleValue = moduleValueId(ctx, spec.sourceFieldPath);
-  const eligibleRows: Array<{ payload: Row; label: string }> = [];
+  const eligibleRows: Array<{
+    payload: Row;
+    label: string;
+    nullLookupColumns: string[];
+  }> = [];
 
   for (const sourceRow of spec.rows) {
     const naturalKey = spec.naturalKey(sourceRow);
@@ -218,25 +228,27 @@ export async function promoteCollectionRows(
       provenance: sourceProvenance(moduleCode, spec.sourceFieldPath),
       promoted_from_module_value_id: moduleValue,
     };
-    eligibleRows.push({ payload, label: spec.label(sourceRow) });
+    eligibleRows.push({
+      payload,
+      label: spec.label(sourceRow),
+      nullLookupColumns: spec.nullLookupColumns?.(sourceRow) ?? [],
+    });
   }
 
-  if (
-    !ctx.dry_run &&
-    SIMPLE_COLLECTION_RPC_TABLES.has(spec.table) &&
-    eligibleRows.length > 0
-  ) {
-    const { data, error } = await ctx.admin.rpc(
-      "promote_facility_launch_simple_collection",
-      {
-        p_organization_id: ctx.organization_id,
-        p_facility_id: ctx.facility_id,
-        p_actor_user_id: ctx.actor_user_id,
-        p_run_item_id: ctx.run_item_id,
-        p_table: spec.table,
-        p_rows: eligibleRows.map((row) => row.payload),
-      },
-    );
+  const collectionRpc = spec.rpcFunction ??
+    (SIMPLE_COLLECTION_RPC_TABLES.has(spec.table)
+      ? "promote_facility_launch_simple_collection"
+      : null);
+
+  if (!ctx.dry_run && collectionRpc && eligibleRows.length > 0) {
+    const { data, error } = await ctx.admin.rpc(collectionRpc, {
+      p_organization_id: ctx.organization_id,
+      p_facility_id: ctx.facility_id,
+      p_actor_user_id: ctx.actor_user_id,
+      p_run_item_id: ctx.run_item_id,
+      p_table: spec.table,
+      p_rows: eligibleRows.map((row) => row.payload),
+    });
     if (error) {
       throw new Error(`${spec.table} collection RPC failed: ${error.message}`);
     }
@@ -254,7 +266,12 @@ export async function promoteCollectionRows(
       ...sourceRow.payload,
       updated_by: ctx.actor_user_id,
     };
-    const existing = await findCollectionRow(ctx, spec.table, spec.naturalKey(payload));
+    const existing = await findCollectionRow(
+      ctx,
+      spec.table,
+      spec.naturalKey(payload),
+      sourceRow.nullLookupColumns,
+    );
     if (!existing) {
       counts.created += 1;
       if (!ctx.dry_run) {

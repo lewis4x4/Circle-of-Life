@@ -152,6 +152,8 @@ class FakeAdminClient {
   public failScalarRpcAfterFirstWrite = false;
   public failCollectionRpc = false;
   public failCollectionRpcAfterFirstWrite = false;
+  public failVendorRpc = false;
+  public failVendorRpcAfterFirstWrite = false;
   private queryCounts: Record<string, Record<string, number>> = {};
 
   constructor(moduleValues: Row[]) {
@@ -221,6 +223,15 @@ class FakeAdminClient {
         };
       }
       return this.runSimpleCollectionRpc(args);
+    }
+    if (fn === "promote_facility_launch_vendor_contacts") {
+      if (this.failVendorRpc) {
+        return {
+          data: null,
+          error: { message: "Injected vendor collection RPC failure" },
+        };
+      }
+      return this.runVendorContactsRpc(args);
     }
     return { data: null, error: { message: `Unsupported rpc ${fn}` } };
   }
@@ -438,6 +449,140 @@ class FakeAdminClient {
       this.tables[table] = snapshot;
       this.tables.facility_launch_promotion_run_links = linksSnapshot;
       this.counters[table] = tableCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
+  }
+
+  private runVendorContactsRpc(args: Record<string, unknown>) {
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+
+    const snapshot = this.tables.facility_vendors.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const vendorCounter = this.counters.facility_vendors ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+
+      for (const rawRow of rows) {
+        const sourceVendorId = typeof rawRow.source_vendor_id === "string" && rawRow.source_vendor_id.trim().length > 0
+          ? rawRow.source_vendor_id.trim()
+          : null;
+        const organization = typeof rawRow.organization === "string" && rawRow.organization.trim().length > 0
+          ? rawRow.organization.trim()
+          : null;
+        const category = typeof rawRow.category === "string" && rawRow.category.trim().length > 0
+          ? rawRow.category.trim()
+          : null;
+        const phone = typeof rawRow.phone === "string" && rawRow.phone.trim().length > 0
+          ? rawRow.phone.trim()
+          : null;
+
+        const matches = this.tables.facility_vendors.filter((row) => {
+          const sameOrg = row.organization_id === args.p_organization_id;
+          const sameFacility = row.facility_id === args.p_facility_id;
+          const active = row.deleted_at === null || row.deleted_at === undefined;
+          if (!sameOrg || !sameFacility || !active) return false;
+          if (sourceVendorId) {
+            return row.source_vendor_id === sourceVendorId;
+          }
+          return (row.source_vendor_id === null || row.source_vendor_id === undefined) &&
+            row.organization === organization &&
+            (row.category ?? null) === category &&
+            (row.phone ?? null) === phone;
+        });
+
+        if (matches.length > 1) {
+          throw new Error("Duplicate active facility vendors for natural key");
+        }
+
+        const updatePayload = {
+          source_vendor_id: sourceVendorId,
+          organization,
+          category,
+          primary_contact: rawRow.primary_contact ?? null,
+          phone,
+          after_hours_phone: rawRow.after_hours_phone ?? null,
+          account_number: rawRow.account_number ?? null,
+          contract_status: rawRow.contract_status ?? null,
+          insurance_required: rawRow.insurance_required ?? null,
+          escalation_owner: rawRow.escalation_owner ?? null,
+          provenance: rawRow.provenance ?? {},
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          updated_by: args.p_actor_user_id,
+        };
+
+        const existing = matches[0];
+        if (!existing) {
+          const inserted = this.insert("facility_vendors", {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            ...updatePayload,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failVendorRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected vendor RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: updatePayload.promoted_from_module_value_id,
+              target_table: "facility_vendors",
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                ...updatePayload,
+              },
+            });
+          }
+          continue;
+        }
+
+        const changed = Object.entries(updatePayload).some(([key, value]) =>
+          valuesDiffer(existing[key], value)
+        );
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload);
+        updated += 1;
+        if (this.failVendorRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected vendor RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: updatePayload.promoted_from_module_value_id,
+            target_table: "facility_vendors",
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables.facility_vendors = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters.facility_vendors = vendorCounter;
       this.counters.facility_launch_promotion_run_links = linkCounter;
       return { data: null, error: { message: String(error) } };
     }
@@ -742,7 +887,31 @@ Deno.test("round2 dry-run writes no target rows or promotion runs", async () => 
   assertEquals(admin.select("facility_vendors").length, 0);
 });
 
-Deno.test("m18 keeps same-organization vendor contacts distinct by source id", async () => {
+Deno.test("m18 source_vendor_id aliases normalize into payload source_vendor_id", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [
+      {
+        id: "vendor-id-alias",
+        organization: "Alias One",
+      },
+      {
+        sourceVendorId: "vendor-camel-alias",
+        organization: "Alias Two",
+      },
+      {
+        source_vendor_id: "vendor-snake-alias",
+        organization: "Alias Three",
+      },
+    ]),
+  ]);
+
+  await apply(admin, ["M18"]);
+
+  const ids = admin.select("facility_vendors").map((row) => row.source_vendor_id);
+  assertEquals(ids, ["vendor-id-alias", "vendor-camel-alias", "vendor-snake-alias"]);
+});
+
+Deno.test("m18 keeps same organization/category/phone contacts distinct when source ids differ", async () => {
   const admin = new FakeAdminClient([
     mv("M18", "vendorContacts", [
       {
@@ -752,10 +921,10 @@ Deno.test("m18 keeps same-organization vendor contacts distinct by source id", a
         phone: "386-555-0101",
       },
       {
-        id: "vendor-fire-after-hours",
+        source_vendor_id: "vendor-fire-after-hours",
         organization: "Acme Services",
         category: "Fire",
-        phone: "386-555-0199",
+        phone: "386-555-0101",
       },
     ]),
   ]);
@@ -763,6 +932,191 @@ Deno.test("m18 keeps same-organization vendor contacts distinct by source id", a
   await apply(admin, ["M18"]);
 
   assertEquals(admin.select("facility_vendors").length, 2);
+});
+
+Deno.test("m18 updates existing source-key row by source_vendor_id", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      source_vendor_id: "vendor-source-1",
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+      primaryContact: "New Contact",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "vendor-source-1",
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    primary_contact: "Old Contact",
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M18"]);
+
+  assertEquals(admin.select("facility_vendors").length, 1);
+  assertEquals(admin.select("facility_vendors")[0].primary_contact, "New Contact");
+});
+
+Deno.test("m18 updates fallback-key row when source_vendor_id is absent", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+      primaryContact: "New Contact",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    primary_contact: "Old Contact",
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M18"]);
+
+  assertEquals(admin.select("facility_vendors").length, 1);
+  assertEquals(admin.select("facility_vendors")[0].primary_contact, "New Contact");
+});
+
+Deno.test("m18 dry-run fallback preview does not cross-match source-key rows", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-123",
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+
+  const body = await apply(admin, ["M18"], true);
+  const vendorTable = body.modules_promoted[0].tables_touched.find((table: Row) =>
+    table.table === "facility_vendors"
+  );
+
+  assertEquals(vendorTable?.rows_created, 1);
+  assertEquals(vendorTable?.rows_updated, 0);
+  assertEquals(admin.select("facility_vendors").length, 1);
+});
+
+Deno.test("m18 source-key and fallback-key rows do not cross-match", async () => {
+  const sourceIncoming = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      source_vendor_id: "source-123",
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  sourceIncoming.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+  await apply(sourceIncoming, ["M18"]);
+  assertEquals(sourceIncoming.select("facility_vendors").length, 2);
+
+  const fallbackIncoming = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  fallbackIncoming.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-123",
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+  await apply(fallbackIncoming, ["M18"]);
+  assertEquals(fallbackIncoming.select("facility_vendors").length, 2);
+});
+
+Deno.test("m18 duplicate active source-key matches fail", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      source_vendor_id: "source-dup",
+      organization: "Acme",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-dup",
+    organization: "Acme",
+    deleted_at: null,
+  });
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-dup",
+    organization: "Acme",
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M18"]));
+  const body = await response.json();
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+});
+
+Deno.test("m18 duplicate active fallback-key matches fail", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M18"]));
+  const body = await response.json();
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
 });
 
 Deno.test("round2 collection warnings mark a module partial even when config writes", async () => {
@@ -886,6 +1240,50 @@ Deno.test("round2 simple collection dry-run does not call rpc", async () => {
     call.fn === "promote_facility_launch_simple_collection"
   );
   assertEquals(collectionRpcCalls.length, 0);
+});
+
+Deno.test("m18 apply uses one bounded vendor rpc and no direct facility_vendors writes", async () => {
+  const admin = new FakeAdminClient(vendorRows);
+
+  await apply(admin, ["M18"]);
+
+  const vendorRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_vendor_contacts"
+  );
+  assertEquals(vendorRpcCalls.length, 1);
+  assertEquals(admin.queryCount("facility_vendors", "select"), 0);
+  assertEquals(admin.queryCount("facility_vendors", "insert"), 0);
+  assertEquals(admin.queryCount("facility_vendors", "update"), 0);
+});
+
+Deno.test("m18 dry-run does not call vendor rpc", async () => {
+  const admin = new FakeAdminClient(vendorRows);
+
+  await apply(admin, ["M18"], true);
+
+  const vendorRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_vendor_contacts"
+  );
+  assertEquals(vendorRpcCalls.length, 0);
+});
+
+Deno.test("m18 vendor rpc failure rolls back vendor rows and links", async () => {
+  const admin = new FakeAdminClient(vendorRows);
+  admin.failVendorRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M18"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("collection RPC failed"));
+  assertEquals(admin.select("facility_vendors").length, 0);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "facility_vendors"
+    ).length,
+    0,
+  );
 });
 
 Deno.test("round2 simple collection rpc failure writes no rows/links", async () => {
