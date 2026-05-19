@@ -52,6 +52,12 @@ Checks stream prefixed output live. Quiet commands emit a 30-second `still runni
 
 GitHub Actions: `.github/workflows/ci-gates.yml` runs gates with `CI=true` and `REQUIRE_PG_VERIFY=1`.
 
+## Known npm audit moderates
+
+- `postcss <8.5.10` remains through `next@16.2.6`'s nested `postcss@8.4.31` copy.
+- Do **not** run `npm audit fix --force` for this advisory; npm proposes a breaking Next downgrade path rather than a safe patch.
+- Recheck this note after each Next upgrade and remove it once Next ships a nested `postcss >=8.5.10`.
+
 ## Playwright setup
 
 After `npm install`, install browsers once:
