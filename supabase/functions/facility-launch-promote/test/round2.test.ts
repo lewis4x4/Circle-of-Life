@@ -150,6 +150,8 @@ class FakeAdminClient {
   public rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   public failScalarRpc = false;
   public failScalarRpcAfterFirstWrite = false;
+  public failCollectionRpc = false;
+  public failCollectionRpcAfterFirstWrite = false;
   private queryCounts: Record<string, Record<string, number>> = {};
 
   constructor(moduleValues: Row[]) {
@@ -205,13 +207,25 @@ class FakeAdminClient {
 
   async rpc(fn: string, args: Record<string, unknown>) {
     this.rpcCalls.push({ fn, args });
-    if (fn !== "promote_facility_launch_scalar_config") {
-      return { data: null, error: { message: `Unsupported rpc ${fn}` } };
+    if (fn === "promote_facility_launch_scalar_config") {
+      if (this.failScalarRpc) {
+        return { data: null, error: { message: "Injected scalar RPC failure" } };
+      }
+      return this.runScalarRpc(args);
     }
-    if (this.failScalarRpc) {
-      return { data: null, error: { message: "Injected scalar RPC failure" } };
+    if (fn === "promote_facility_launch_simple_collection") {
+      if (this.failCollectionRpc) {
+        return {
+          data: null,
+          error: { message: "Injected simple collection RPC failure" },
+        };
+      }
+      return this.runSimpleCollectionRpc(args);
     }
+    return { data: null, error: { message: `Unsupported rpc ${fn}` } };
+  }
 
+  private runScalarRpc(args: Record<string, unknown>) {
     const table = String(args.p_table ?? "");
     const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
     const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
@@ -294,6 +308,115 @@ class FakeAdminClient {
         updated += 1;
         if (this.failScalarRpcAfterFirstWrite && created + updated === 1) {
           throw new Error("Injected scalar RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: updatePayload.promoted_from_module_value_id,
+            target_table: table,
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables[table] = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters[table] = tableCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
+  }
+
+  private runSimpleCollectionRpc(args: Record<string, unknown>) {
+    const table = String(args.p_table ?? "");
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+    const naturalKey = table === "incident_workflow_templates"
+      ? "incident_type"
+      : "kpi_name";
+
+    const snapshot = this.tables[table].map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const tableCounter = this.counters[table] ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+      for (const rawRow of rows) {
+        const keyValue = String(rawRow[naturalKey] ?? "").trim();
+        if (!keyValue) continue;
+
+        const matches = this.tables[table].filter((row) =>
+          row.organization_id === args.p_organization_id &&
+          row.facility_id === args.p_facility_id &&
+          row[naturalKey] === keyValue &&
+          (row.deleted_at === null || row.deleted_at === undefined)
+        );
+        if (matches.length > 1) {
+          throw new Error(`Duplicate active ${table} rows for ${naturalKey} ${keyValue}`);
+        }
+        const existing = matches[0];
+
+        const updatePayload = {
+          ...rawRow,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          updated_by: args.p_actor_user_id,
+        };
+
+        if (!existing) {
+          const inserted = this.insert(table, {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            ...updatePayload,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failCollectionRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected simple collection RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: updatePayload.promoted_from_module_value_id,
+              target_table: table,
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                ...updatePayload,
+              },
+            });
+          }
+          continue;
+        }
+
+        const changed = Object.entries(updatePayload).some(([key, value]) =>
+          valuesDiffer(existing[key], value)
+        );
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload);
+        updated += 1;
+        if (this.failCollectionRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected simple collection RPC failure after first write");
         }
         if (runItemId) {
           this.insert("facility_launch_promotion_run_links", {
@@ -479,6 +602,33 @@ const incidentRows = [
       claimsRouting: "ED/DON review first, then decide",
       investigationOwner: "DON + ED jointly",
       followUpCadence: "Event-specific",
+    },
+  ]),
+];
+
+const kpiRows = [
+  mv("M19", "kpiDefinitions", [
+    {
+      id: "kpi-1",
+      kpiName: "Medication pass completion",
+      businessQuestion: "Are med passes completed on time?",
+      dataSource: "QuickMar",
+      owner: "DON",
+      refreshCadence: "Daily",
+      target: ">= 98%",
+      launchThreshold: "< 95%",
+      actionIfOffTrack: "Run med-tech coaching huddle",
+    },
+    {
+      id: "kpi-2",
+      kpiName: "Incident closure lag",
+      businessQuestion: "Are incident investigations closing quickly?",
+      dataSource: "Incident tracker",
+      owner: "ED",
+      refreshCadence: "Weekly",
+      target: "< 3 days",
+      launchThreshold: "> 5 days",
+      actionIfOffTrack: "Escalate to ED/DON review",
     },
   ]),
 ];
@@ -700,4 +850,157 @@ Deno.test("round2 scalar config rpc failure writes no config rows/links", async 
   assert(String(body.modules_promoted[0].errors[0] ?? "").includes("scalar RPC failed"));
   assertEquals(admin.select("facility_billing_config").length, 0);
   assertEquals(admin.select("facility_launch_promotion_run_links").length, 0);
+});
+
+Deno.test("round2 simple collection apply uses bounded rpc calls for M16/M19", async () => {
+  const admin = new FakeAdminClient([...incidentRows, ...kpiRows]);
+
+  await apply(admin, ["M16", "M19"]);
+
+  const collectionRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_simple_collection"
+  );
+  assertEquals(collectionRpcCalls.length, 2);
+  const workflowInsertLink = admin.select("facility_launch_promotion_run_links")
+    .find((row) =>
+      row.target_table === "incident_workflow_templates" && row.action === "insert"
+    );
+  assertEquals((workflowInsertLink?.after_value as Row)?.organization_id, ORG_ID);
+  assertEquals((workflowInsertLink?.after_value as Row)?.facility_id, FACILITY_ID);
+  const kpiInsertLink = admin.select("facility_launch_promotion_run_links")
+    .find((row) =>
+      row.target_table === "facility_kpi_definitions" && row.action === "insert"
+    );
+  assertEquals((kpiInsertLink?.after_value as Row)?.organization_id, ORG_ID);
+  assertEquals((kpiInsertLink?.after_value as Row)?.facility_id, FACILITY_ID);
+  assertEquals(admin.queryCount("incident_workflow_templates", "select"), 0);
+  assertEquals(admin.queryCount("facility_kpi_definitions", "select"), 0);
+});
+
+Deno.test("round2 simple collection dry-run does not call rpc", async () => {
+  const admin = new FakeAdminClient([...incidentRows, ...kpiRows]);
+
+  await apply(admin, ["M16", "M19"], true);
+
+  const collectionRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_simple_collection"
+  );
+  assertEquals(collectionRpcCalls.length, 0);
+});
+
+Deno.test("round2 simple collection rpc failure writes no rows/links", async () => {
+  const admin = new FakeAdminClient(incidentRows);
+  admin.failCollectionRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M16"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("collection RPC failed"));
+  assertEquals(admin.select("incident_workflow_templates").length, 0);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "incident_workflow_templates"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("round2 simple collection handles mixed create/update/noop/missing natural key", async () => {
+  const admin = new FakeAdminClient([
+    mv("M16", "incidentPolicySource", "Policy v2"),
+    mv("M16", "incidentWorkflows", [
+      {
+        id: "workflow-update",
+        incidentType: "Medication Incident Report",
+        severityRule: "Updated",
+      },
+      {
+        id: "workflow-noop",
+        incidentType: "Elopement Incident Form",
+        severityRule: "No change",
+      },
+      {
+        id: "workflow-create",
+        incidentType: "Fall Incident",
+        severityRule: "Create",
+      },
+      {
+        id: "workflow-missing",
+        severityRule: "Missing key",
+      },
+    ]),
+  ]);
+
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Medication Incident Report",
+    severity_rule: "Old",
+    deleted_at: null,
+  });
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Elopement Incident Form",
+    severity_rule: "No change",
+    provenance: {
+      source: "facility-launch-promote",
+      module_code: "M16",
+      field_path: "incidentWorkflows",
+    },
+    promoted_from_module_value_id: "M16-incidentWorkflows",
+    updated_by: USER_ID,
+    deleted_at: null,
+  });
+
+  const body = await apply(admin, ["M16"]);
+
+  assertEquals(body.modules_promoted[0].status, "partial");
+  assert(body.modules_promoted[0].warnings[0].includes("missing natural key"));
+  assertEquals(admin.select("incident_workflow_templates").length, 3);
+  assertEquals(
+    admin.select("incident_workflow_templates").find((row) =>
+      row.incident_type === "Medication Incident Report"
+    )?.severity_rule,
+    "Updated",
+  );
+});
+
+Deno.test("round2 simple collection rpc rejects duplicate active natural keys", async () => {
+  const admin = new FakeAdminClient(incidentRows);
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Medication Incident Report",
+    deleted_at: null,
+  });
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Medication Incident Report",
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M16"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+});
+
+Deno.test("round2 simple collection idempotency for M16/M19 suppresses noop links", async () => {
+  const admin = new FakeAdminClient([...incidentRows, ...kpiRows]);
+  await apply(admin, ["M16", "M19"]);
+  const linkCount = admin.select("facility_launch_promotion_run_links").length;
+  const workflowCount = admin.select("incident_workflow_templates").length;
+  const kpiCount = admin.select("facility_kpi_definitions").length;
+
+  await apply(admin, ["M16", "M19"]);
+
+  assertEquals(admin.select("facility_launch_promotion_run_links").length, linkCount);
+  assertEquals(admin.select("incident_workflow_templates").length, workflowCount);
+  assertEquals(admin.select("facility_kpi_definitions").length, kpiCount);
 });

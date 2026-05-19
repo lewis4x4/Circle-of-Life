@@ -16,6 +16,11 @@ import {
 
 type Row = Record<string, unknown>;
 
+const SIMPLE_COLLECTION_RPC_TABLES = new Set([
+  "incident_workflow_templates",
+  "facility_kpi_definitions",
+]);
+
 export type ConfigPromoterSpec = {
   moduleCode: string;
   table: string;
@@ -194,6 +199,8 @@ export async function promoteCollectionRows(
     warnings: [],
   };
   const moduleValue = moduleValueId(ctx, spec.sourceFieldPath);
+  const eligibleRows: Array<{ payload: Row; label: string }> = [];
+
   for (const sourceRow of spec.rows) {
     const naturalKey = spec.naturalKey(sourceRow);
     const missingKey = Object.entries(naturalKey).find(([, value]) => !value);
@@ -207,14 +214,47 @@ export async function promoteCollectionRows(
     }
 
     const payload = {
-      organization_id: ctx.organization_id,
-      facility_id: ctx.facility_id,
       ...spec.payload(sourceRow),
       provenance: sourceProvenance(moduleCode, spec.sourceFieldPath),
       promoted_from_module_value_id: moduleValue,
+    };
+    eligibleRows.push({ payload, label: spec.label(sourceRow) });
+  }
+
+  if (
+    !ctx.dry_run &&
+    SIMPLE_COLLECTION_RPC_TABLES.has(spec.table) &&
+    eligibleRows.length > 0
+  ) {
+    const { data, error } = await ctx.admin.rpc(
+      "promote_facility_launch_simple_collection",
+      {
+        p_organization_id: ctx.organization_id,
+        p_facility_id: ctx.facility_id,
+        p_actor_user_id: ctx.actor_user_id,
+        p_run_item_id: ctx.run_item_id,
+        p_table: spec.table,
+        p_rows: eligibleRows.map((row) => row.payload),
+      },
+    );
+    if (error) {
+      throw new Error(`${spec.table} collection RPC failed: ${error.message}`);
+    }
+    const rpc = asRecord(data);
+    counts.created += asCount(rpc.created);
+    counts.updated += asCount(rpc.updated);
+    counts.noop += asCount(rpc.noop);
+    return counts;
+  }
+
+  for (const sourceRow of eligibleRows) {
+    const payload = {
+      organization_id: ctx.organization_id,
+      facility_id: ctx.facility_id,
+      ...sourceRow.payload,
       updated_by: ctx.actor_user_id,
     };
-    const existing = await findCollectionRow(ctx, spec.table, naturalKey);
+    const existing = await findCollectionRow(ctx, spec.table, spec.naturalKey(payload));
     if (!existing) {
       counts.created += 1;
       if (!ctx.dry_run) {
@@ -224,7 +264,7 @@ export async function promoteCollectionRows(
         }).select("id").single();
         if (error || !data?.id) {
           throw new Error(
-            `${spec.table} insert failed for ${spec.label(sourceRow)}: ${
+            `${spec.table} insert failed for ${sourceRow.label}: ${
               error?.message ?? "missing id"
             }`,
           );
@@ -253,9 +293,7 @@ export async function promoteCollectionRows(
           .eq("id", existing.id);
         if (error) {
           throw new Error(
-            `${spec.table} update failed for ${
-              spec.label(sourceRow)
-            }: ${error.message}`,
+            `${spec.table} update failed for ${sourceRow.label}: ${error.message}`,
           );
         }
         await insertPromotionLink(ctx, {
