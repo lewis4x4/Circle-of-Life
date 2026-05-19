@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { BuildingProfileInput } from "@/lib/validation/facility-admin";
 
-export function useFacilityBuildingProfile(facilityId: string) {
+export function useFacilityBuildingProfile(
+  facilityId: string,
+  options?: { enabled?: boolean },
+) {
+  const enabled = options?.enabled ?? true;
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +30,14 @@ export function useFacilityBuildingProfile(facilityId: string) {
   }, [facilityId]);
 
   useEffect(() => {
+    if (!enabled) {
+      setProfile(null);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
     void refetch();
-  }, [refetch]);
+  }, [enabled, refetch]);
 
   const saveProfile = useCallback(
     async (payload: BuildingProfileInput) => {

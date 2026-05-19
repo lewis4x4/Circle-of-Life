@@ -19,7 +19,11 @@ export type FacilityBedAvailabilityRow = {
 
 type QueryError = { message: string };
 
-export function useFacilityBedAvailability(facilityId: string) {
+export function useFacilityBedAvailability(
+  facilityId: string,
+  options?: { enabled?: boolean },
+) {
+  const enabled = options?.enabled ?? true;
   const supabase = useMemo(() => createClient(), []);
   const { appRole } = useHavenAuth();
   const [rows, setRows] = useState<FacilityBedAvailabilityRow[]>([]);
@@ -101,8 +105,14 @@ export function useFacilityBedAvailability(facilityId: string) {
   }, [facilityId, supabase]);
 
   useEffect(() => {
+    if (!enabled) {
+      setRows([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
     void load();
-  }, [load]);
+  }, [enabled, load]);
 
   const updateBed = useCallback(
     async (

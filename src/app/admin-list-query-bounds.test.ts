@@ -14,6 +14,10 @@ const referralsSource = readSource("src/app/(admin)/admin/referrals/page.tsx");
 const dischargeMedRecHubSource = readSource(
   "src/components/admin/discharge/discharge-med-rec-hub.tsx",
 );
+const facilityDetailSource = readSource("src/app/(admin)/admin/facilities/[facilityId]/page.tsx");
+const facilityRatesHookSource = readSource("src/hooks/useFacilityRates.ts");
+const facilityBuildingProfileHookSource = readSource("src/hooks/useFacilityBuildingProfile.ts");
+const facilityOverviewTabSource = readSource("src/components/admin/facilities/tabs/OverviewTab.tsx");
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
@@ -76,6 +80,41 @@ describe("admin list query bounds", () => {
     expect(dischargeMedRecHubSource).toContain(
       "missing discharge target date, pending hospice planning, or nurse reconciliation notes",
     );
+  });
+
+  it("gates facility detail tab data hooks and lazy-loads tab bodies", () => {
+    expect(facilityDetailSource).toContain("const needsRates = activeTab === \"rates\" || activeTab === \"audit\";");
+    expect(facilityDetailSource).toContain(
+      "activeTab === \"building\" || activeTab === \"emergency\" || activeTab === \"vendors\" || activeTab === \"audit\"",
+    );
+    expect(facilityDetailSource).toContain(
+      "activeTab === \"emergency\" || activeTab === \"vendors\" || activeTab === \"audit\"",
+    );
+    expect(facilityDetailSource).toContain("useFacilityRates(facilityId, { enabled: needsRates })");
+    expect(facilityDetailSource).toContain(
+      "useFacilityBuildingProfile(facilityId, { enabled: needsBuildingProfile })",
+    );
+    expect(facilityDetailSource).toContain(
+      "useFacilityEmergencyContacts(facilityId, { enabled: needsEmergencyContacts })",
+    );
+    expect(facilityDetailSource).toContain(
+      "vendorFacilities.isLoading || buildingProfileApi.isLoading || emergencyApi.isLoading",
+    );
+    expect(facilityDetailSource).toContain("import dynamic from \"next/dynamic\"");
+    expect(facilityDetailSource).toContain("const TabBodyLoading = () => (");
+  });
+
+  it("supports enabled gating in facility hooks and overview tab", () => {
+    expect(facilityRatesHookSource).toContain("options?: { enabled?: boolean }");
+    expect(facilityRatesHookSource).toContain("if (!enabled) {");
+    expect(facilityBuildingProfileHookSource).toContain("options?: { enabled?: boolean }");
+    expect(facilityBuildingProfileHookSource).toContain("if (!enabled) {");
+
+    expect(facilityOverviewTabSource).not.toContain("const { facility, isLoading, error } = useFacility(facilityId);");
+    expect(facilityOverviewTabSource).toContain("facility: FacilityDetailRow;");
+    expect(facilityOverviewTabSource).toContain("enableBedAvailability?: boolean;");
+    expect(facilityOverviewTabSource).toContain("useFacilityBedAvailability(facilityId, { enabled: shouldLoadBedAvailability })");
+    expect(facilityOverviewTabSource).toContain("new IntersectionObserver(");
   });
 
   it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {

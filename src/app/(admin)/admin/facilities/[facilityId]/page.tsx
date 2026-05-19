@@ -2,6 +2,7 @@
 
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFacility } from "@/hooks/useFacility";
@@ -21,18 +22,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FacilityHeader } from "@/components/admin/facilities/FacilityHeader";
 import { FacilityTabNav } from "@/components/admin/facilities/FacilityTabNav";
-import { OverviewTab } from "@/components/admin/facilities/tabs/OverviewTab";
-import { RatesTab } from "@/components/admin/facilities/tabs/RatesTab";
-import { DocumentsTab } from "@/components/admin/facilities/tabs/DocumentsTab";
-import { AuditTab } from "@/components/admin/facilities/tabs/AuditTab";
-import { LicensingTab } from "@/components/admin/facilities/tabs/LicensingTab";
-import { BuildingTab } from "@/components/admin/facilities/tabs/BuildingTab";
-import { EmergencyTab } from "@/components/admin/facilities/tabs/EmergencyTab";
-import { VendorsTab } from "@/components/admin/facilities/tabs/VendorsTab";
-import { StaffingTab } from "@/components/admin/facilities/tabs/StaffingTab";
-import { CommunicationTab } from "@/components/admin/facilities/tabs/CommunicationTab";
-import { ThresholdsTab } from "@/components/admin/facilities/tabs/ThresholdsTab";
-import { TimelineTab } from "@/components/admin/facilities/tabs/TimelineTab";
 import { FacilityAuditSubscribeButton } from "@/components/admin/facilities/FacilityAuditSubscribeButton";
 import { RecordDetailHeader } from "@/design-system/components/record-detail";
 import {
@@ -48,6 +37,60 @@ const TABS = FACILITY_TABS.map((id) => ({
   label: FACILITY_TAB_LABELS[id],
 }));
 
+const TabBodyLoading = () => (
+  <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+    <Loader2 className="h-4 w-4 animate-spin" />
+    Loading tab…
+  </div>
+);
+
+const OverviewTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/OverviewTab").then((m) => m.OverviewTab),
+  { loading: TabBodyLoading },
+);
+const RatesTab = dynamic(() => import("@/components/admin/facilities/tabs/RatesTab").then((m) => m.RatesTab), {
+  loading: TabBodyLoading,
+});
+const DocumentsTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/DocumentsTab").then((m) => m.DocumentsTab),
+  { loading: TabBodyLoading },
+);
+const AuditTab = dynamic(() => import("@/components/admin/facilities/tabs/AuditTab").then((m) => m.AuditTab), {
+  loading: TabBodyLoading,
+});
+const LicensingTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/LicensingTab").then((m) => m.LicensingTab),
+  { loading: TabBodyLoading },
+);
+const BuildingTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/BuildingTab").then((m) => m.BuildingTab),
+  { loading: TabBodyLoading },
+);
+const EmergencyTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/EmergencyTab").then((m) => m.EmergencyTab),
+  { loading: TabBodyLoading },
+);
+const VendorsTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/VendorsTab").then((m) => m.VendorsTab),
+  { loading: TabBodyLoading },
+);
+const StaffingTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/StaffingTab").then((m) => m.StaffingTab),
+  { loading: TabBodyLoading },
+);
+const CommunicationTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/CommunicationTab").then((m) => m.CommunicationTab),
+  { loading: TabBodyLoading },
+);
+const ThresholdsTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/ThresholdsTab").then((m) => m.ThresholdsTab),
+  { loading: TabBodyLoading },
+);
+const TimelineTab = dynamic(
+  () => import("@/components/admin/facilities/tabs/TimelineTab").then((m) => m.TimelineTab),
+  { loading: TabBodyLoading },
+);
+
 function isFacilityTab(t: string | null): t is FacilityTab {
   return t != null && (FACILITY_TABS as readonly string[]).includes(t);
 }
@@ -56,15 +99,22 @@ const OVERFLOW_TAB_SET = new Set<FacilityTab>(FACILITY_OVERFLOW_TABS);
 
 function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   const { facility, isLoading, error } = useFacility(facilityId);
-  const ratesApi = useFacilityRates(facilityId);
-  const buildingProfileApi = useFacilityBuildingProfile(facilityId);
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab: FacilityTab = isFacilityTab(tabParam) ? tabParam : "overview";
 
+  const needsRates = activeTab === "rates" || activeTab === "audit";
+  const needsBuildingProfile =
+    activeTab === "building" || activeTab === "emergency" || activeTab === "vendors" || activeTab === "audit";
+  const needsEmergencyContacts =
+    activeTab === "emergency" || activeTab === "vendors" || activeTab === "audit";
+
+  const ratesApi = useFacilityRates(facilityId, { enabled: needsRates });
+  const buildingProfileApi = useFacilityBuildingProfile(facilityId, { enabled: needsBuildingProfile });
+
   /** Emergency directory is needed for Vendor KPI completeness on the vendors tab plus Emergency UI. */
-  const emergencyApi = useFacilityEmergencyContacts(facilityId, { enabled: true });
+  const emergencyApi = useFacilityEmergencyContacts(facilityId, { enabled: needsEmergencyContacts });
   const vendorFacilities = useFacilityVendors(facilityId, {
     enabled: activeTab === "vendors",
   });
@@ -148,7 +198,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewTab facilityId={facilityId} />;
+        return <OverviewTab facilityId={facilityId} facility={facility} />;
       case "licensing":
         return <LicensingTab facilityId={facilityId} />;
       case "rates":
@@ -193,7 +243,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
             vendors={{
               rows: vendorFacilities.rows,
               kpi: vendorFacilities.kpi,
-              isLoading: vendorFacilities.isLoading,
+              isLoading: vendorFacilities.isLoading || buildingProfileApi.isLoading || emergencyApi.isLoading,
               error: vendorFacilities.error,
               refetch: vendorFacilities.refetch,
             }}
@@ -233,7 +283,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
       case "timeline":
         return <TimelineTab facilityId={facilityId} />;
       default:
-        return <OverviewTab facilityId={facilityId} />;
+        return <OverviewTab facilityId={facilityId} facility={facility} />;
     }
   };
 
@@ -271,10 +321,12 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
         vendorStrip={
           activeTab === "vendors"
             ? {
-                loading: vendorFacilities.isLoading || emergencyApi.isLoading,
+                loading: vendorFacilities.isLoading || buildingProfileApi.isLoading || emergencyApi.isLoading,
                 kpi: vendorFacilities.kpi,
                 complianceGapCount:
-                  vendorFacilities.isLoading || emergencyApi.isLoading ? 0 : vendorComplianceGaps,
+                  vendorFacilities.isLoading || buildingProfileApi.isLoading || emergencyApi.isLoading
+                    ? 0
+                    : vendorComplianceGaps,
               }
             : undefined
         }
