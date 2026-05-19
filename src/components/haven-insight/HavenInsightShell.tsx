@@ -4,35 +4,47 @@ import { useEffect } from "react";
 import { HavenInsightProvider, useHavenInsight } from "@/lib/haven-insight/HavenInsightContext";
 import { HavenInsightPanel } from "./HavenInsightPanel";
 
-function HavenInsightShellInner() {
+type HavenInsightShellInnerProps = {
+  openRequestToken?: number;
+  toggleRequestToken?: number;
+};
+
+function HavenInsightShellInner({ openRequestToken, toggleRequestToken }: HavenInsightShellInnerProps) {
   const { open, close, isOpen } = useHavenInsight();
 
   useEffect(() => {
-    const onOpen = () => open();
-    const onKeyDown = (event: KeyboardEvent) => {
-      const isMac = navigator.platform.toLowerCase().includes("mac");
-      const cmd = isMac ? event.metaKey : event.ctrlKey;
-      if (cmd && event.shiftKey && event.key.toLowerCase() === "i") {
-        event.preventDefault();
-        if (isOpen) close();
-        else open();
-      }
-    };
-    window.addEventListener("haven-insight:open", onOpen);
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("haven-insight:open", onOpen);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [close, isOpen, open]);
+    if (openRequestToken == null || openRequestToken < 1) return undefined;
+    const timer = window.setTimeout(open, 0);
+    return () => window.clearTimeout(timer);
+  }, [open, openRequestToken]);
+
+  useEffect(() => {
+    if (toggleRequestToken == null || toggleRequestToken < 1) return undefined;
+    const timer = window.setTimeout(() => {
+      if (isOpen) close();
+      else open();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [close, isOpen, open, toggleRequestToken]);
 
   return <HavenInsightPanel />;
 }
 
-export function HavenInsightShell() {
+type HavenInsightShellProps = {
+  openRequestToken?: number;
+  toggleRequestToken?: number;
+};
+
+export function HavenInsightShell({
+  openRequestToken,
+  toggleRequestToken,
+}: HavenInsightShellProps) {
   return (
     <HavenInsightProvider>
-      <HavenInsightShellInner />
+      <HavenInsightShellInner
+        openRequestToken={openRequestToken}
+        toggleRequestToken={toggleRequestToken}
+      />
     </HavenInsightProvider>
   );
 }

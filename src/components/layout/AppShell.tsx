@@ -80,8 +80,7 @@ import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { SurveyVisitWorkspaceDock } from "@/components/compliance/SurveyVisitWorkspaceChrome";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
-import { HavenInsightShell } from "@/components/haven-insight/HavenInsightShell";
-import { GraceShell } from "@/lib/grace/GraceShell";
+import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
   AUXILIARY_ROUTES,
@@ -832,8 +831,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onOpenChange={setPaletteOpen}
         onSelect={handlePaletteSelect}
       />
-      <GraceShell />
-      <HavenInsightShell />
+      <LazyOverlayShells />
     </div>
   );
 }
