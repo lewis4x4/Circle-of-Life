@@ -23,6 +23,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
+const SIGN_IN_UNAVAILABLE_MESSAGE =
+  "Sign-in is temporarily unavailable. Contact your facility administrator or support.";
+const SESSION_VERIFICATION_ERROR_MESSAGE =
+  "Could not verify your session. Check your connection, then refresh this page.";
+
 function readSafeNextDestination(): string | null {
   if (typeof window === "undefined") return null;
   const next = new URLSearchParams(window.location.search).get("next");
@@ -46,6 +51,8 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = React.useMemo(() => createClient(), []);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const [resetRequesting, setResetRequesting] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [sessionProbeError, setSessionProbeError] = useState<string | null>(null);
 
@@ -94,9 +101,7 @@ export default function LoginPage() {
     const routeIfAuthenticated = async () => {
       if (!isBrowserSupabaseConfigured()) {
         if (!cancelled) {
-          setSessionProbeError(
-            "Sign-in is not configured. Copy .env.example to .env.local, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your Supabase project (Settings → API), then restart `npm run dev`.",
-          );
+          setSessionProbeError(SIGN_IN_UNAVAILABLE_MESSAGE);
           setCheckingSession(false);
         }
         return;
@@ -113,11 +118,11 @@ export default function LoginPage() {
         router.refresh();
       } catch (e) {
         if (cancelled) return;
-        const message =
+        setSessionProbeError(
           e instanceof Error && e.message === "AUTH_NETWORK"
-            ? "Cannot reach Supabase (network or URL). Confirm the project is running, NEXT_PUBLIC_SUPABASE_URL is correct, and nothing is blocking the browser. Then restart the dev server."
-            : "Could not verify your session. Check your connection and Supabase settings, then refresh this page.";
-        setSessionProbeError(message);
+            ? SIGN_IN_UNAVAILABLE_MESSAGE
+            : SESSION_VERIFICATION_ERROR_MESSAGE,
+        );
         setCheckingSession(false);
       }
     };
@@ -138,8 +143,9 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginFormData) {
     setGlobalError(null);
+    setResetNotice(null);
     if (!isBrowserSupabaseConfigured()) {
-      setGlobalError("Supabase environment variables are missing. Configure .env.local and restart the dev server.");
+      setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
       return;
     }
     try {
@@ -164,9 +170,38 @@ export default function LoginPage() {
       router.push(readSafeNextDestination() ?? destination);
       router.refresh();
     } catch {
-      setGlobalError(
-        "Sign-in request failed to complete. This is usually a network issue or an invalid Supabase URL. Check .env.local and your Supabase project status.",
-      );
+      setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
+    }
+  }
+
+  async function requestPasswordReset() {
+    setGlobalError(null);
+    setResetNotice(null);
+
+    const email = form.getValues("email").trim();
+    if (!email) {
+      form.setError("email", {
+        type: "manual",
+        message: "Enter your work email before requesting a reset link.",
+      });
+      return;
+    }
+
+    if (!isBrowserSupabaseConfigured()) {
+      setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
+    setResetRequesting(true);
+    try {
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      setResetNotice("If that account exists, a password reset link has been sent.");
+    } catch {
+      setGlobalError("Unable to request a reset link right now. Contact your facility administrator.");
+    } finally {
+      setResetRequesting(false);
     }
   }
 
@@ -253,7 +288,7 @@ export default function LoginPage() {
                         <FormLabel className="font-medium text-slate-200">Work Email</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="jane@oakridge.com"
+                            placeholder="name@organization.com"
                             type="email"
                             disabled={form.formState.isSubmitting}
                             className="h-12 border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500"
@@ -272,8 +307,13 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="flex items-center justify-between">
                           <FormLabel className="font-medium text-slate-200">Password</FormLabel>
-                          <button type="button" className="tap-responsive text-xs font-medium text-amber-400 hover:text-amber-300">
-                            Forgot password?
+                          <button
+                            type="button"
+                            onClick={() => void requestPasswordReset()}
+                            disabled={form.formState.isSubmitting || resetRequesting}
+                            className="tap-responsive text-xs font-medium text-amber-400 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {resetRequesting ? "Sending..." : "Forgot password?"}
                           </button>
                         </div>
                         <FormControl>
@@ -294,6 +334,14 @@ export default function LoginPage() {
                     <input className="h-4 w-4 rounded border-slate-600 bg-slate-950/70" type="checkbox" />
                     Remember me
                   </label>
+
+                  {resetNotice && (
+                    <div className="animate-in fade-in slide-in-from-top-1 rounded-md border border-emerald-700/60 bg-emerald-900/25 p-3">
+                      <p className="text-center text-sm font-medium text-emerald-100">
+                        {resetNotice}
+                      </p>
+                    </div>
+                  )}
 
                   {globalError && (
                     <div className="animate-in fade-in slide-in-from-top-1 rounded-md border border-red-700/60 bg-red-900/25 p-3">
