@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 
 import {
   buildStandupBoardPrintHtml,
@@ -95,6 +94,7 @@ export async function GET(
 
   let browser;
   try {
+    const { chromium } = await import("playwright");
     browser = playwrightWsEndpoint
       ? await chromium.connect(playwrightWsEndpoint)
       : await chromium.launch({

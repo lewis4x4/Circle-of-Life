@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 
 import { requireAdminApiActor, actorCanAccessFacility } from "@/lib/admin/api-auth";
 import { loadSurveyBundlePacket } from "@/lib/risk/load-survey-bundle";
@@ -33,6 +32,7 @@ export async function GET(
 
   let browser;
   try {
+    const { chromium } = await import("playwright");
     browser = await chromium.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],

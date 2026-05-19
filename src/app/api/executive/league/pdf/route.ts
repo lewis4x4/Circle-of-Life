@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 
 import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { buildExecutiveLeaguePrintHtml } from "@/lib/executive/league-print";
@@ -20,6 +19,7 @@ export async function GET() {
 
   let browser;
   try {
+    const { chromium } = await import("playwright");
     browser = await chromium.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
