@@ -104,9 +104,10 @@ export async function buildMonthlyInvoicePreview(
   const { facilityId, billingYear, billingMonth } = params;
   const billingLabel = monthLabel(billingYear, billingMonth);
   const days = daysInMonth(billingYear, billingMonth);
-  const periodStart = `${billingYear}-${String(billingMonth).padStart(2, "0")}-01`;
-  const periodEnd = `${billingYear}-${String(billingMonth).padStart(2, "0")}-${String(days).padStart(2, "0")}`;
-  const dueDate = new Date(billingYear, billingMonth - 1, 15).toISOString().slice(0, 10);
+  const billingMonthText = String(billingMonth).padStart(2, "0");
+  const periodStart = `${billingYear}-${billingMonthText}-01`;
+  const periodEnd = `${billingYear}-${billingMonthText}-${String(days).padStart(2, "0")}`;
+  const dueDate = `${billingYear}-${billingMonthText}-15`;
 
   type QR<T> = { data: T | null; error: QueryError | null };
 
@@ -234,11 +235,11 @@ export async function buildMonthlyInvoicePreview(
 
       let effectiveBase = baseRate;
       let prorated = false;
-      if (r.admission_date) {
-        const admDate = new Date(r.admission_date);
-        const periodStartDate = new Date(billingYear, billingMonth - 1, 1);
-        if (admDate > periodStartDate) {
-          const daysPresent = days - admDate.getDate() + 1;
+      const admissionDate = r.admission_date?.slice(0, 10);
+      if (admissionDate && admissionDate > periodStart && admissionDate <= periodEnd) {
+        const admissionDay = Number(admissionDate.slice(8, 10));
+        if (Number.isInteger(admissionDay) && admissionDay >= 1 && admissionDay <= days) {
+          const daysPresent = days - admissionDay + 1;
           effectiveBase = Math.round((baseRate * daysPresent) / days);
           prorated = true;
         }
@@ -293,113 +294,29 @@ export async function persistMonthlyInvoicesFromPreview(
   const { facilityId, billingYear, billingMonth, preview, periodStart, periodEnd, dueDate } =
     params;
 
-  const facilityRow = (await supabase
-    .from("facilities" as never)
-    .select("entity_id")
-    .eq("id", facilityId)
-    .maybeSingle()) as unknown as {
-    data: { entity_id: string } | null;
+  const rpcResult = (await supabase.rpc(
+    "persist_monthly_invoices_from_preview",
+    {
+      p_facility_id: facilityId,
+      p_billing_year: billingYear,
+      p_billing_month: billingMonth,
+      p_preview: preview,
+      p_period_start: periodStart,
+      p_period_end: periodEnd,
+      p_due_date: dueDate,
+    } as never,
+  )) as unknown as {
+    data: { created_count: number | null; skipped_duplicates: number | null }[] | null;
     error: QueryError | null;
   };
-  if (facilityRow.error) throw new Error(facilityRow.error.message);
-  if (!facilityRow.data) throw new Error("Facility not found.");
 
-  const entityId = facilityRow.data.entity_id;
-  const facilityCode = facilityId.replace(/-/g, "").slice(0, 8).toUpperCase();
+  if (rpcResult.error) throw new Error(rpcResult.error.message);
 
-  let createdCount = 0;
-  let skippedDuplicates = 0;
-
-  const ym = `${billingYear}-${String(billingMonth).padStart(2, "0")}`;
-  for (let i = 0; i < preview.length; i++) {
-    const line = preview[i];
-    // Stable per resident+month (not preview index) so retries/idempotent runs do not collide on idx_invoices_number.
-    const invoiceNumber = `${facilityCode}-${ym}-${line.residentId}`;
-
-    const resRow = (await supabase
-      .from("residents" as never)
-      .select("organization_id")
-      .eq("id", line.residentId)
-      .maybeSingle()) as {
-      data: { organization_id: string } | null;
-      error: QueryError | null;
-    };
-    if (resRow.error) throw new Error(resRow.error.message);
-    const orgId = resRow.data?.organization_id;
-    if (!orgId) continue;
-
-    const { data: invData, error: invErr } = (await supabase
-      .from("invoices" as never)
-      .insert({
-        resident_id: line.residentId,
-        facility_id: facilityId,
-        organization_id: orgId,
-        entity_id: entityId,
-        invoice_number: invoiceNumber,
-        invoice_date: periodStart,
-        due_date: dueDate,
-        period_start: periodStart,
-        period_end: periodEnd,
-        status: "draft",
-        subtotal: line.total,
-        adjustments: 0,
-        tax: 0,
-        total: line.total,
-        amount_paid: 0,
-        balance_due: line.total,
-        payer_type: line.payerType,
-        payer_name: line.payerName,
-      } as never)
-      .select("id")
-      .single()) as {
-      data: { id: string } | null;
-      error: QueryError | null;
-    };
-
-    if (invErr) {
-      if (invErr.code === "23505") {
-        skippedDuplicates += 1;
-        continue;
-      }
-      throw new Error(invErr.message);
-    }
-    if (!invData) continue;
-
-    const lineItems = [
-      {
-        invoice_id: invData.id,
-        organization_id: orgId,
-        line_type: "room_and_board",
-        description: line.prorated
-          ? `Private Room — Prorated (${monthLabel(billingYear, billingMonth)})`
-          : `Private Room — Monthly Rate`,
-        quantity: 1,
-        unit_price: line.baseRate,
-        total: line.baseRate,
-        sort_order: 1,
-      },
-    ];
-
-    if (line.careSurcharge > 0) {
-      lineItems.push({
-        invoice_id: invData.id,
-        organization_id: orgId,
-        line_type: "care_surcharge",
-        description: `${line.acuity} Care Surcharge`,
-        quantity: 1,
-        unit_price: line.careSurcharge,
-        total: line.careSurcharge,
-        sort_order: 2,
-      });
-    }
-
-    const liErr = await supabase.from("invoice_line_items" as never).insert(lineItems as never);
-    if (liErr.error) throw new Error(liErr.error.message);
-
-    createdCount += 1;
-  }
-
-  return { createdCount, skippedDuplicates };
+  const row = rpcResult.data?.[0];
+  return {
+    createdCount: row?.created_count ?? 0,
+    skippedDuplicates: row?.skipped_duplicates ?? 0,
+  };
 }
 
 /** Active facilities for an organization (shared with Edge org batch). */
