@@ -601,8 +601,8 @@
       "billingSystemSource": "Historical Homewood A/R workbook summaries parsed from local 2025 A/R folder; current 2026 A/R still pending.",
       "billingCycle": "Monthly; resident-level contract/rate records pending current A/R and face sheets.",
       "rateApprovalOwner": "CFO / Business Office",
-      "postedPrivateRoomRate": "",
-      "postedCompanionRoomRate": "",
+      "postedPrivateRoomRate": "5550",
+      "postedCompanionRoomRate": "4000",
       "medicaidProviderRule": "Provider names summarized from A/R aggregates; resident-level Medicaid/provider details pending current source files.",
       "rateRecords": []
     },
