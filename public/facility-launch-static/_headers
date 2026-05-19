@@ -1,9 +1,6 @@
 /index.html
   Cache-Control: no-store
 
-/src/*
-  Cache-Control: no-cache, must-revalidate
-
 /dist/*
   Cache-Control: no-cache, must-revalidate
 
