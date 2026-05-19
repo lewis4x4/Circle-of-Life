@@ -154,6 +154,8 @@ class FakeAdminClient {
   public failCollectionRpcAfterFirstWrite = false;
   public failVendorRpc = false;
   public failVendorRpcAfterFirstWrite = false;
+  public failM6RatesRpc = false;
+  public failM6RatesRpcAfterFirstWrite = false;
   private queryCounts: Record<string, Record<string, number>> = {};
 
   constructor(moduleValues: Row[]) {
@@ -232,6 +234,15 @@ class FakeAdminClient {
         };
       }
       return this.runVendorContactsRpc(args);
+    }
+    if (fn === "promote_facility_launch_m6_rates") {
+      if (this.failM6RatesRpc) {
+        return {
+          data: null,
+          error: { message: "Injected M6 rates RPC failure" },
+        };
+      }
+      return this.runM6RatesRpc(args);
     }
     return { data: null, error: { message: `Unsupported rpc ${fn}` } };
   }
@@ -583,6 +594,160 @@ class FakeAdminClient {
       this.tables.facility_vendors = snapshot;
       this.tables.facility_launch_promotion_run_links = linksSnapshot;
       this.counters.facility_vendors = vendorCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
+  }
+
+  private runM6RatesRpc(args: Record<string, unknown>) {
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+
+    const snapshot = this.tables.rate_schedule_versions.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const ratesCounter = this.counters.rate_schedule_versions ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+
+      for (const rawRow of rows) {
+        const rateType = String(rawRow.rate_type ?? "");
+        const effectiveFrom = String(rawRow.effective_from ?? "");
+        const amountCents = Number(rawRow.amount_cents ?? NaN);
+        if (!rateType) throw new Error("M6 rates promotion row missing rate_type");
+        if (effectiveFrom !== "2026-01-01") {
+          throw new Error(`M6 rates promotion expects effective_from=2026-01-01 for rate_type ${rateType}`);
+        }
+        if (!Number.isFinite(amountCents) || amountCents < 0) {
+          throw new Error(`M6 rates promotion requires non-negative amount_cents for rate_type ${rateType}`);
+        }
+
+        const exactRows = this.tables.rate_schedule_versions.filter((row) =>
+          row.organization_id === args.p_organization_id &&
+          row.facility_id === args.p_facility_id &&
+          row.rate_type === rateType &&
+          row.effective_from === "2026-01-01" &&
+          (row.deleted_at === null || row.deleted_at === undefined)
+        );
+        if (exactRows.length > 1) {
+          throw new Error(`Duplicate active exact rate_schedule_versions rows for rate_type ${rateType}`);
+        }
+
+        const existing = exactRows[0];
+        const candidateTo = rawRow.effective_to ? String(rawRow.effective_to) : null;
+        const hasOverlap = this.tables.rate_schedule_versions.some((row) => {
+          if (
+            row.organization_id !== args.p_organization_id ||
+            row.facility_id !== args.p_facility_id ||
+            row.rate_type !== rateType ||
+            (existing?.id && row.id === existing.id) ||
+            !(row.deleted_at === null || row.deleted_at === undefined)
+          ) return false;
+          const from = String(row.effective_from ?? "");
+          const to = row.effective_to ? String(row.effective_to) : null;
+          return from < (candidateTo ?? "9999-12-31") &&
+            "2026-01-01" < (to ?? "9999-12-31");
+        });
+        if (hasOverlap) {
+          throw new Error(`Overlapping active rate exists for rate_type ${rateType} candidate range starting 2026-01-01`);
+        }
+
+        if (!existing) {
+          const inserted = this.insert("rate_schedule_versions", {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            rate_type: rateType,
+            amount_cents: amountCents,
+            effective_from: "2026-01-01",
+            effective_to: rawRow.effective_to ?? null,
+            rate_confirmed: rawRow.rate_confirmed ?? false,
+            approved_by: rawRow.approved_by ?? null,
+            approved_at: rawRow.approved_at ?? null,
+            notes: rawRow.notes ?? null,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failM6RatesRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected M6 rates RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: rawRow.promoted_from_module_value_id ?? null,
+              target_table: "rate_schedule_versions",
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                rate_type: rateType,
+                amount_cents: amountCents,
+                effective_from: "2026-01-01",
+                effective_to: rawRow.effective_to ?? null,
+                rate_confirmed: rawRow.rate_confirmed ?? false,
+                approved_by: rawRow.approved_by ?? null,
+                approved_at: rawRow.approved_at ?? null,
+                notes: rawRow.notes ?? null,
+                created_by: args.p_actor_user_id,
+              },
+            });
+          }
+          continue;
+        }
+
+        const updatePayload = {
+          amount_cents: amountCents,
+          effective_to: rawRow.effective_to ?? null,
+          rate_confirmed: rawRow.rate_confirmed ?? false,
+          approved_by: rawRow.approved_by ?? null,
+          approved_at: rawRow.approved_at ?? null,
+          notes: rawRow.notes ?? null,
+        };
+        const changed = valuesDiffer(existing.amount_cents, updatePayload.amount_cents) ||
+          valuesDiffer(existing.effective_to ?? null, updatePayload.effective_to) ||
+          valuesDiffer(existing.rate_confirmed ?? null, updatePayload.rate_confirmed) ||
+          valuesDiffer(existing.notes ?? null, updatePayload.notes);
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload, {
+          updated_by: args.p_actor_user_id,
+          updated_at: new Date().toISOString(),
+        });
+        updated += 1;
+        if (this.failM6RatesRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected M6 rates RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: rawRow.promoted_from_module_value_id ?? null,
+            target_table: "rate_schedule_versions",
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables.rate_schedule_versions = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters.rate_schedule_versions = ratesCounter;
       this.counters.facility_launch_promotion_run_links = linkCounter;
       return { data: null, error: { message: String(error) } };
     }
@@ -1190,6 +1355,219 @@ Deno.test("round2 dry-run does not call scalar config rpc", async () => {
     call.fn === "promote_facility_launch_scalar_config"
   );
   assertEquals(scalarRpcCalls.length, 0);
+});
+
+Deno.test("m6 apply uses one rate rpc and no direct rate table writes", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6"]);
+
+  const rateRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_m6_rates"
+  );
+  assertEquals(rateRpcCalls.length, 1);
+  assertEquals(admin.queryCount("rate_schedule_versions", "select"), 0);
+  assertEquals(admin.queryCount("rate_schedule_versions", "insert"), 0);
+  assertEquals(admin.queryCount("rate_schedule_versions", "update"), 0);
+});
+
+Deno.test("m6 dry-run does not call rate rpc or write rate rows", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6"], true);
+
+  const rateRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_m6_rates"
+  );
+  assertEquals(rateRpcCalls.length, 0);
+  assertEquals(admin.select("rate_schedule_versions").length, 0);
+});
+
+Deno.test("m6 exact effective_from rows update without duplicate inserts and create update links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 111111,
+    effective_from: "2026-01-01",
+    effective_to: null,
+    rate_confirmed: false,
+    approved_by: null,
+    approved_at: null,
+    notes: "old",
+    deleted_at: null,
+  });
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "semi_private_room",
+    amount_cents: 222222,
+    effective_from: "2026-01-01",
+    effective_to: null,
+    rate_confirmed: false,
+    approved_by: null,
+    approved_at: null,
+    notes: "old",
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M6"]);
+
+  assertEquals(admin.select("rate_schedule_versions").length, 2);
+  assertEquals(
+    admin.select("rate_schedule_versions").find((row) => row.rate_type === "private_room")?.amount_cents,
+    555000,
+  );
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions" && row.action === "update"
+    ).length,
+    2,
+  );
+});
+
+Deno.test("m6 idempotent rerun creates no additional rate links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  await apply(admin, ["M6"]);
+  const rateLinkCount = admin.select("facility_launch_promotion_run_links").filter((row) =>
+    row.target_table === "rate_schedule_versions"
+  ).length;
+
+  await apply(admin, ["M6"]);
+
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    rateLinkCount,
+  );
+});
+
+Deno.test("m6 overlap guard allows prior rate ending on effective_from boundary", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2025-12-01",
+    effective_to: "2026-01-01",
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M6"]);
+
+  assertEquals(
+    admin.select("rate_schedule_versions").filter((row) =>
+      row.rate_type === "private_room"
+    ).length,
+    2,
+  );
+});
+
+Deno.test("m6 rate rpc failure rolls back rate rows and links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.failM6RatesRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("rate RPC failed"));
+  assertEquals(admin.select("rate_schedule_versions").length, 0);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("m6 future overlap guard fails cleanly with no new rows or links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2026-06-01",
+    effective_to: null,
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Overlapping active rate exists"));
+  assertEquals(
+    admin.select("rate_schedule_versions").filter((row) => row.rate_type === "semi_private_room").length,
+    0,
+  );
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("m6 dry-run future overlap fails like apply mode", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2026-06-01",
+    effective_to: null,
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M6"], true));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("overlap failed"));
+  assertEquals(admin.select("rate_schedule_versions").length, 1);
+});
+
+Deno.test("m6 overlap guard fails cleanly with no new rows or links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2025-12-01",
+    effective_to: null,
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Overlapping active rate exists"));
+  assertEquals(
+    admin.select("rate_schedule_versions").filter((row) => row.rate_type === "semi_private_room").length,
+    0,
+  );
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    0,
+  );
 });
 
 Deno.test("round2 scalar config rpc failure writes no config rows/links", async () => {

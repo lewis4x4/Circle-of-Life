@@ -8,7 +8,6 @@ import type {
 import {
   asString,
   compactTables,
-  insertPromotionLink,
   isMeaningful,
   moduleValueId,
   tableCount,
@@ -89,6 +88,29 @@ function rateDiffers(existing: Row, payload: Row): boolean {
   ].some((key) => valuesDiffer(existing[key], payload[key]));
 }
 
+function dateKey(value: unknown): string | null {
+  return asString(value)?.slice(0, 10) ?? null;
+}
+
+function dateRangeOverlaps(
+  leftFrom: string,
+  leftTo: string | null,
+  rightFrom: string,
+  rightTo: string | null,
+): boolean {
+  return leftFrom < (rightTo ?? "9999-12-31") &&
+    rightFrom < (leftTo ?? "9999-12-31");
+}
+
+function asCount(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
 async function findRate(
   ctx: PromotionContext,
   rateType: string,
@@ -109,6 +131,32 @@ async function findRate(
   return data as Row | null;
 }
 
+async function findOverlappingRate(
+  ctx: PromotionContext,
+  rateType: string,
+  effectiveFrom: string,
+  effectiveTo: unknown,
+  excludeId?: unknown,
+): Promise<Row | null> {
+  const { data, error } = await ctx.admin
+    .from("rate_schedule_versions")
+    .select("*")
+    .eq("facility_id", ctx.facility_id)
+    .eq("organization_id", ctx.organization_id)
+    .eq("rate_type", rateType)
+    .is("deleted_at", null);
+  if (error) {
+    throw new Error(`rate_schedule_versions overlap lookup failed: ${error.message}`);
+  }
+  const candidateTo = dateKey(effectiveTo);
+  return ((data as Row[] | null) ?? []).find((row) => {
+    if (excludeId && row.id === excludeId) return false;
+    const rowFrom = dateKey(row.effective_from);
+    if (!rowFrom) return false;
+    return dateRangeOverlaps(rowFrom, dateKey(row.effective_to), effectiveFrom, candidateTo);
+  }) ?? null;
+}
+
 async function promotePostedRates(
   ctx: PromotionContext,
   values: ModuleValues,
@@ -120,68 +168,66 @@ async function promotePostedRates(
     warnings: [],
   };
 
-  for (const spec of RATE_SPECS) {
+  const rows: Row[] = RATE_SPECS.flatMap((spec) => {
     const amountCents = dollarsToCents(values[spec.fieldPath]);
-    if (amountCents == null) continue;
+    if (amountCents == null) return [];
+    return [{
+      ...ratePayload(ctx, spec, amountCents),
+      promoted_from_module_value_id: moduleValueId(ctx, spec.fieldPath),
+    }];
+  });
 
-    const payload = ratePayload(ctx, spec, amountCents);
-    const moduleValue = moduleValueId(ctx, spec.fieldPath);
-    const existing = await findRate(ctx, spec.rateType, EFFECTIVE_FROM);
+  if (rows.length === 0) return counts;
+
+  if (!ctx.dry_run) {
+    const { data, error } = await ctx.admin.rpc(
+      "promote_facility_launch_m6_rates",
+      {
+        p_organization_id: ctx.organization_id,
+        p_facility_id: ctx.facility_id,
+        p_actor_user_id: ctx.actor_user_id,
+        p_run_item_id: ctx.run_item_id,
+        p_rows: rows,
+      },
+    );
+    if (error) {
+      throw new Error(`rate_schedule_versions rate RPC failed: ${error.message}`);
+    }
+    const rpc = (typeof data === "object" && data !== null)
+      ? data as Row
+      : {};
+    counts.created = asCount(rpc.created);
+    counts.updated = asCount(rpc.updated);
+    counts.noop = asCount(rpc.noop);
+    return counts;
+  }
+
+  for (const row of rows) {
+    const rateType = asString(row.rate_type);
+    if (!rateType) continue;
+    const existing = await findRate(ctx, rateType, EFFECTIVE_FROM);
+    const overlapping = await findOverlappingRate(
+      ctx,
+      rateType,
+      EFFECTIVE_FROM,
+      row.effective_to,
+      existing?.id,
+    );
+    if (overlapping) {
+      throw new Error(
+        `rate_schedule_versions overlap failed for ${rateType}: active range ${
+          dateKey(overlapping.effective_from) ?? "unknown"
+        }..${dateKey(overlapping.effective_to) ?? "open"} overlaps 2026-01-01 candidate`,
+      );
+    }
 
     if (!existing) {
       counts.created += 1;
-      if (!ctx.dry_run) {
-        const { data, error } = await ctx.admin.from("rate_schedule_versions")
-          .insert(payload)
-          .select("id")
-          .single();
-        if (error || !data?.id) {
-          throw new Error(
-            `rate_schedule_versions insert failed for ${spec.rateType}: ${
-              error?.message ?? "missing id"
-            }`,
-          );
-        }
-        await insertPromotionLink(ctx, {
-          target_table: "rate_schedule_versions",
-          target_row_id: String(data.id),
-          action: "insert",
-          before_value: null,
-          after_value: payload,
-          module_value_id: moduleValue,
-        });
-      }
       continue;
     }
 
-    const updatePayload = {
-      amount_cents: payload.amount_cents,
-      effective_to: payload.effective_to,
-      rate_confirmed: payload.rate_confirmed,
-      approved_by: payload.approved_by,
-      approved_at: payload.approved_at,
-      notes: payload.notes,
-    };
-    if (rateDiffers(existing, payload)) {
+    if (rateDiffers(existing, row)) {
       counts.updated += 1;
-      if (!ctx.dry_run) {
-        const { error } = await ctx.admin.from("rate_schedule_versions")
-          .update(updatePayload)
-          .eq("id", existing.id);
-        if (error) {
-          throw new Error(
-            `rate_schedule_versions update failed for ${spec.rateType}: ${error.message}`,
-          );
-        }
-        await insertPromotionLink(ctx, {
-          target_table: "rate_schedule_versions",
-          target_row_id: String(existing.id),
-          action: "update",
-          before_value: existing,
-          after_value: updatePayload,
-          module_value_id: moduleValue,
-        });
-      }
     } else {
       counts.noop += 1;
     }
