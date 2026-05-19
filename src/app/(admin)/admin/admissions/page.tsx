@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -310,6 +310,16 @@ function AdminAdmissionsOverviewInner() {
   }));
   const { user } = useHavenAuth();
 
+  const loadContextRef = useRef({ selectedFacilityId, hubScope });
+  useEffect(() => {
+    loadContextRef.current = { selectedFacilityId, hubScope };
+  }, [hubScope, selectedFacilityId]);
+  const isCurrentLoadContext = useCallback(
+    (facilityId: string | null, scope: AdmissionsHubScope) =>
+      loadContextRef.current.selectedFacilityId === facilityId && loadContextRef.current.hubScope === scope,
+    [],
+  );
+
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [onboardingState, setOnboardingState] = useState<Record<string, string[]>>({});
@@ -329,10 +339,12 @@ function AdminAdmissionsOverviewInner() {
   const [familyActionError, setFamilyActionError] = useState<string | null>(null);
   const [familyActionMessage, setFamilyActionMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isCurrent: () => boolean = () => true) => {
+    if (!isCurrent()) return;
     setLoading(true);
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      if (!isCurrent()) return;
       setReferrals([]);
       setAdmissions([]);
       setDischarges([]);
@@ -492,6 +504,8 @@ function AdminAdmissionsOverviewInner() {
         cFamConsent,
       ]);
 
+      if (!isCurrent()) return;
+
       setReferrals((refList.data ?? []) as LeadRow[]);
       const admissionRows = (admList.data ?? []) as CaseRow[];
       setAdmissions(admissionRows);
@@ -512,14 +526,20 @@ function AdminAdmissionsOverviewInner() {
         consentsPending: (famConsentCt.count ?? 0) as number,
       });
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load data.");
+      if (isCurrent()) {
+        setLoadError(e instanceof Error ? e.message : "Could not load data.");
+      }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [supabase, selectedFacilityId, hubScope]);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    void load(() => !cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   async function updateTriageStatus(
@@ -527,6 +547,9 @@ function AdminAdmissionsOverviewInner() {
     triageStatus: Database["public"]["Enums"]["family_message_triage_status"],
     successMessage: string,
   ) {
+    const actionFacilityId = selectedFacilityId;
+    const actionHubScope = hubScope;
+
     setFamilyActionLoading(itemId);
     setFamilyActionError(null);
     setFamilyActionMessage(null);
@@ -542,10 +565,12 @@ function AdminAdmissionsOverviewInner() {
         })
         .eq("id", itemId);
       if (error) throw error;
-      setFamilyActionMessage(successMessage);
-      await load();
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) setFamilyActionMessage(successMessage);
+      await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));
     } catch (err) {
-      setFamilyActionError(err instanceof Error ? err.message : "Could not update triage item.");
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) {
+        setFamilyActionError(err instanceof Error ? err.message : "Could not update triage item.");
+      }
     } finally {
       setFamilyActionLoading(null);
     }
@@ -556,6 +581,9 @@ function AdminAdmissionsOverviewInner() {
     patch: Partial<Database["public"]["Tables"]["family_care_conference_sessions"]["Update"]>,
     successMessage: string,
   ) {
+    const actionFacilityId = selectedFacilityId;
+    const actionHubScope = hubScope;
+
     setFamilyActionLoading(sessionId);
     setFamilyActionError(null);
     setFamilyActionMessage(null);
@@ -569,25 +597,29 @@ function AdminAdmissionsOverviewInner() {
         })
         .eq("id", sessionId);
       if (error) throw error;
-      setFamilyActionMessage(successMessage);
-      await load();
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) setFamilyActionMessage(successMessage);
+      await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));
     } catch (err) {
-      setFamilyActionError(err instanceof Error ? err.message : "Could not update care conference.");
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) {
+        setFamilyActionError(err instanceof Error ? err.message : "Could not update care conference.");
+      }
     } finally {
       setFamilyActionLoading(null);
     }
   }
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadOnboardingState() {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || admissions.length === 0) {
-        setOnboardingState({});
+        if (!cancelled) setOnboardingState({});
         return;
       }
       const moveInCases = admissions.filter((row) => row.status === "move_in" && row.resident_id);
       const residentIds = moveInCases.map((row) => row.resident_id).filter(Boolean) as string[];
       if (residentIds.length === 0) {
-        setOnboardingState({});
+        if (!cancelled) setOnboardingState({});
         return;
       }
       const client = createClient();
@@ -597,6 +629,7 @@ function AdminAdmissionsOverviewInner() {
         client.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
         client.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
       ]);
+      if (cancelled) return;
       if (carePlansRes.error || medsRes.error || payersRes.error || consentsRes.error) {
         setOnboardingState({});
         return;
@@ -622,6 +655,9 @@ function AdminAdmissionsOverviewInner() {
     }
 
     void loadOnboardingState();
+    return () => {
+      cancelled = true;
+    };
   }, [admissions, selectedFacilityId]);
 
   const featuredAdmissions = useMemo(() => {

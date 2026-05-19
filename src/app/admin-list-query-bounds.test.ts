@@ -7,6 +7,7 @@ const readSource = (relativePath: string) =>
   readFileSync(path.join(repoRoot, relativePath), "utf8");
 
 const admissionsSource = readSource("src/app/(admin)/admin/admissions/page.tsx");
+const newAdmissionSource = readSource("src/app/(admin)/admin/admissions/new/page.tsx");
 const invoiceSource = readSource("src/app/(admin)/vendors/invoices/page.tsx");
 const purchaseOrderSource = readSource("src/app/(admin)/vendors/purchase-orders/page.tsx");
 const referralsSource = readSource("src/app/(admin)/admin/referrals/page.tsx");
@@ -22,6 +23,23 @@ describe("admin list query bounds", () => {
     expect(limitMatches).toHaveLength(5);
 
     expect(admissionsSource).toContain('.select("id", { count: "exact", head: true })');
+  });
+
+  it("guards admissions async loaders from stale state writes", () => {
+    expect(admissionsSource).toContain("void load(() => !cancelled);");
+    expect(admissionsSource).toContain("if (!isCurrent()) return;");
+    expect(admissionsSource).toContain("if (isCurrent()) setLoading(false);");
+    expect(admissionsSource).toContain("if (cancelled) return;");
+    expect(admissionsSource).toContain("const isCurrentLoadContext = useCallback(");
+    expect(admissionsSource).toContain("await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));");
+
+    expect(newAdmissionSource).toContain("void loadRefs(() => !cancelled);");
+    expect(newAdmissionSource).toContain("if (cancelled) return;");
+    expect(newAdmissionSource).toContain("if (!cancelled) setDuplicateLookupLoading(false);");
+    expect(newAdmissionSource).toContain("const isCurrentRefsContext = useCallback(");
+    expect(newAdmissionSource).toContain("await loadRefs(() => isCurrentRefsContext(actionFacilityId));");
+    expect(newAdmissionSource).toContain("if (!cancelled) setExistingAdmissionCaseId(data?.id ?? null);");
+    expect(newAdmissionSource).toContain("if (!cancelled) setExistingResidentAdmissionCaseId(data?.id ?? null);");
   });
 
   it("limits vendor invoices list query to rendered columns", () => {
