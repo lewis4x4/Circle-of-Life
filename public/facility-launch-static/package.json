@@ -6,8 +6,9 @@
   "description": "Facility Launch Center for Homewood launch readiness.",
   "scripts": {
     "check": "find src scripts -name '*.js' -o -name '*.mjs' | sort | xargs -n1 node --check",
+    "build": "node ../../scripts/facility-launch/build-static-bundle.mjs --root .",
     "smoke": "node scripts/smoke-static.mjs",
-    "verify": "npm run check && npm run smoke && node scripts/verify.mjs",
+    "verify": "npm run check && npm run build && npm run smoke && node scripts/verify.mjs",
     "serve": "python3 -m http.server 8080"
   }
 }

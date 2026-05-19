@@ -49,22 +49,25 @@ try {
   const index = await fetch(`${base}/index.html`);
   if (!index.ok) throw new Error(`index.html returned ${index.status}`);
   const html = await index.text();
-  for (const expected of [`/styles.css?v=${cacheToken}`, `/src/app.js?v=${cacheToken}`, 'noindex']) {
+  for (const expected of [`/styles.css?v=${cacheToken}`, `/dist/app.bundle.js?v=${cacheToken}`, 'noindex']) {
     if (!html.includes(expected)) throw new Error(`index.html missing ${expected}`);
   }
 
   const css = await fetch(`${base}/styles.css`);
   if (!css.ok) throw new Error(`styles.css returned ${css.status}`);
 
-  const app = await fetch(`${base}/src/app.js`);
-  if (!app.ok) throw new Error(`src/app.js returned ${app.status}`);
+  const headers = await readFile(join(root, '_headers'), 'utf8');
+  if (!/\/dist\/\*\s+Cache-Control: no-cache, must-revalidate/.test(headers)) {
+    throw new Error('_headers missing no-cache rule for /dist/*');
+  }
+
+  const app = await fetch(`${base}/dist/app.bundle.js`);
+  if (!app.ok) throw new Error(`dist/app.bundle.js returned ${app.status}`);
   const appJs = await app.text();
-  for (const expected of ['./state.js', './scoring.js', './gates.js', './export.js', `./supabasePipeline.js?v=${cacheToken}`, '../data/homewood-round1-state.json']) {
-    if (!appJs.includes(expected)) throw new Error(`app.js missing import ${expected}`);
+  for (const expected of ['Push to Haven (Capture + Promote)', 'pushAndPromoteStateToHaven', 'Step 2 — Promoted to live Haven app', '../data/homewood-round1-state.json']) {
+    if (!appJs.includes(expected)) throw new Error(`app.bundle.js missing marker ${expected}`);
   }
-  for (const expected of ['Push to Haven (Capture + Promote)', 'pushAndPromoteStateToHaven', 'Step 2 — Promoted to live Haven app']) {
-    if (!appJs.includes(expected)) throw new Error(`app.js missing capture+promote marker ${expected}`);
-  }
+  if (/from\s+["']\.\//.test(appJs)) throw new Error('app.bundle.js still contains unresolved source imports');
 
   const repoRootCandidates = [
     resolve(root, '..'),
@@ -81,7 +84,7 @@ try {
       if (candidate === repoRootCandidates.at(-1)) throw error;
     }
   }
-  for (const expected of [`/facility-launch-static/styles.css?v=${cacheToken}`, `/facility-launch-static/src/app.js?v=${cacheToken}`]) {
+  for (const expected of [`/facility-launch-static/styles.css?v=${cacheToken}`, `/facility-launch-static/dist/app.bundle.js?v=${cacheToken}`]) {
     if (!nextFacilityLaunchPage.includes(expected)) throw new Error(`${nextFacilityLaunchPagePath} missing ${expected}`);
   }
 
@@ -148,7 +151,7 @@ try {
     globalThis.fetch = originalFetch;
   }
 
-  console.log(`PASS static smoke: index/css/modules served over HTTP from ${base}`);
+  console.log(`PASS static smoke: index/css/bundle served over HTTP from ${base}`);
 } finally {
   await new Promise((resolveClose) => server.close(resolveClose));
 }

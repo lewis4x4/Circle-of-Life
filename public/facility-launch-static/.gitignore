@@ -10,7 +10,8 @@ npm-debug.log*
 
 # Dependency/build folders if this prototype is later wrapped in tooling
 node_modules/
-dist/
+dist/*
+!dist/app.bundle.js
 build/
 .coverage/
 
