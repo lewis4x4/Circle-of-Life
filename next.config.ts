@@ -76,7 +76,6 @@ const nextConfig: NextConfig = {
       "lucide-react",
       "recharts",
       "date-fns",
-      "framer-motion",
       "@radix-ui/react-dialog",
       "@radix-ui/react-select",
     ],
