@@ -24,6 +24,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -66,16 +67,6 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { SurveyVisitWorkspaceDock } from "@/components/compliance/SurveyVisitWorkspaceChrome";
@@ -83,7 +74,6 @@ import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLaunch
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
-  AUXILIARY_ROUTES,
   PILLARS,
   REPORT_INCIDENT_HREF,
   findActivePillar,
@@ -102,6 +92,14 @@ const WORKSPACE_ICON_LG =
   "grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const WORKSPACE_ICON_SM =
   "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+const AppShellCommandPalette = dynamic(
+  () =>
+    import("@/components/layout/AppShellCommandPalette").then((m) => ({
+      default: m.AppShellCommandPalette,
+    })),
+  { ssr: false, loading: () => null },
+);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -826,79 +824,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </Sheet>
 
       {/* ── ⌘K command palette ──────────────────────────────────── */}
-      <AppShellCommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        onSelect={handlePaletteSelect}
-      />
+      {paletteOpen ? (
+        <AppShellCommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          onSelect={handlePaletteSelect}
+        />
+      ) : null}
       <LazyOverlayShells />
     </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────
-// Command palette — indexes every pillar item + auxiliary route.
-// Dynamic search for residents / staff / incident numbers can layer
-// on later via a debounced Supabase query; for now the palette covers
-// 100% of static routes which is the most common power-user need.
-// ────────────────────────────────────────────────────────────────
-
-function AppShellCommandPalette({
-  open,
-  onOpenChange,
-  onSelect,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (href: string) => void;
-}) {
-  return (
-    <CommandDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Command palette"
-      description="Jump to any page, resident, staff member, or incident."
-      className="sm:max-w-[560px]"
-    >
-      <Command shouldFilter loop>
-        <CommandInput placeholder="Search residents, staff, incidents, routes…" autoFocus />
-        <CommandList>
-          <CommandEmpty>No matches.</CommandEmpty>
-          {PILLARS.map((pillar) => (
-            <CommandGroup key={pillar.id} heading={pillar.label}>
-              {pillar.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <CommandItem
-                    key={`${pillar.id}-${item.key}`}
-                    value={`${pillar.label} ${item.label} ${item.href}`}
-                    onSelect={() => onSelect(item.href)}
-                  >
-                    <Icon className="text-muted-foreground" aria-hidden />
-                    <span>{item.label}</span>
-                    <CommandShortcut>{pillar.label}</CommandShortcut>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          ))}
-          <CommandGroup heading="Finance & Settings">
-            {AUXILIARY_ROUTES.map((item) => {
-              const Icon = item.icon;
-              return (
-                <CommandItem
-                  key={`aux-${item.key}`}
-                  value={`${item.label} ${item.href}`}
-                  onSelect={() => onSelect(item.href)}
-                >
-                  <Icon className="text-muted-foreground" aria-hidden />
-                  <span>{item.label}</span>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </CommandDialog>
   );
 }
