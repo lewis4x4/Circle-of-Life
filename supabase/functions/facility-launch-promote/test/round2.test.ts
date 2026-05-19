@@ -101,6 +101,7 @@ class FakeQuery {
   }
 
   private execute(): { data: Row[]; error: null } {
+    this.db.recordQuery(this.table, this.operation);
     if (this.operation === "insert") {
       const rows = (Array.isArray(this.payload) ? this.payload : [this.payload])
         .map((row) => this.db.insert(this.table, row as Row));
@@ -146,6 +147,10 @@ class FakeAdminClient {
   };
   private counters: Record<string, number> = {};
   public tables: Record<string, Row[]>;
+  public rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
+  public failScalarRpc = false;
+  public failScalarRpcAfterFirstWrite = false;
+  private queryCounts: Record<string, Record<string, number>> = {};
 
   constructor(moduleValues: Row[]) {
     this.tables = {
@@ -186,6 +191,133 @@ class FakeAdminClient {
   from(table: string) {
     if (!this.tables[table]) this.tables[table] = [];
     return new FakeQuery(this, table);
+  }
+
+  recordQuery(table: string, operation: string) {
+    const entry = this.queryCounts[table] ?? {};
+    entry[operation] = (entry[operation] ?? 0) + 1;
+    this.queryCounts[table] = entry;
+  }
+
+  queryCount(table: string, operation: "select" | "insert" | "update") {
+    return this.queryCounts[table]?.[operation] ?? 0;
+  }
+
+  async rpc(fn: string, args: Record<string, unknown>) {
+    this.rpcCalls.push({ fn, args });
+    if (fn !== "promote_facility_launch_scalar_config") {
+      return { data: null, error: { message: `Unsupported rpc ${fn}` } };
+    }
+    if (this.failScalarRpc) {
+      return { data: null, error: { message: "Injected scalar RPC failure" } };
+    }
+
+    const table = String(args.p_table ?? "");
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+
+    const snapshot = this.tables[table].map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const tableCounter = this.counters[table] ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+      for (const rawRow of rows) {
+        const fieldPath = String(rawRow.field_path ?? "").trim();
+        if (!fieldPath) continue;
+        const existing = this.tables[table].find((row) =>
+          row.organization_id === args.p_organization_id &&
+          row.facility_id === args.p_facility_id &&
+          row.field_path === fieldPath &&
+          (row.deleted_at === null || row.deleted_at === undefined)
+        );
+
+        const updatePayload = {
+          value: rawRow.value,
+          provenance: rawRow.provenance,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          updated_by: args.p_actor_user_id,
+        };
+
+        if (!existing) {
+          const inserted = this.insert(table, {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            field_path: fieldPath,
+            ...updatePayload,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failScalarRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected scalar RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: updatePayload.promoted_from_module_value_id,
+              target_table: table,
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                field_path: fieldPath,
+                ...updatePayload,
+              },
+            });
+          }
+          continue;
+        }
+
+        const changed = valuesDiffer(existing.value, updatePayload.value) ||
+          valuesDiffer(existing.provenance, updatePayload.provenance) ||
+          valuesDiffer(
+            existing.promoted_from_module_value_id ?? null,
+            updatePayload.promoted_from_module_value_id ?? null,
+          ) ||
+          valuesDiffer(existing.updated_by ?? null, updatePayload.updated_by ?? null);
+
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload);
+        updated += 1;
+        if (this.failScalarRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected scalar RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: updatePayload.promoted_from_module_value_id,
+            target_table: table,
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables[table] = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters[table] = tableCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
   }
 
   select(table: string): Row[] {
@@ -526,4 +658,46 @@ Deno.test("round2 promoters are idempotent and do not create links on no-op reru
     vendorConfigCount,
   );
   assertEquals(admin.select("facility_vendors").length, vendorCount);
+});
+
+Deno.test("round2 scalar config apply uses bounded rpc calls", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6", "M10", "M11", "M13", "M14", "M19"]);
+
+  const scalarRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_scalar_config"
+  );
+  assertEquals(scalarRpcCalls.length, 6);
+  assertEquals(admin.queryCount("facility_billing_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_medication_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_dining_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_maintenance_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_admissions_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_launch_scoreboard_config", "select"), 0);
+});
+
+Deno.test("round2 dry-run does not call scalar config rpc", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6", "M10", "M11", "M13", "M14", "M19"], true);
+
+  const scalarRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_scalar_config"
+  );
+  assertEquals(scalarRpcCalls.length, 0);
+});
+
+Deno.test("round2 scalar config rpc failure writes no config rows/links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.failScalarRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("scalar RPC failed"));
+  assertEquals(admin.select("facility_billing_config").length, 0);
+  assertEquals(admin.select("facility_launch_promotion_run_links").length, 0);
 });

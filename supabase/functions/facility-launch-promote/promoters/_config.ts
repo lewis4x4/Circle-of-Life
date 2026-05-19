@@ -74,6 +74,15 @@ async function findConfigRow(
   return data as Row | null;
 }
 
+function asCount(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
 async function findCollectionRow(
   ctx: PromotionContext,
   table: string,
@@ -112,76 +121,64 @@ export async function promoteConfigFields(
     noop: 0,
     warnings: [],
   };
-  for (const fieldPath of spec.fields) {
-    const value = values[fieldPath];
-    if (!isMeaningful(value)) continue;
 
+  const rows = spec.fields.flatMap((fieldPath) => {
+    const value = values[fieldPath];
+    if (!isMeaningful(value)) return [];
     const moduleValue = moduleValueId(ctx, fieldPath);
-    const payload = {
-      organization_id: ctx.organization_id,
-      facility_id: ctx.facility_id,
+    return [{
       field_path: fieldPath,
       value,
       provenance: sourceProvenance(spec.moduleCode, fieldPath),
       promoted_from_module_value_id: moduleValue,
-      updated_by: ctx.actor_user_id,
-    };
+    }];
+  });
+
+  if (rows.length === 0) return counts;
+
+  if (!ctx.dry_run) {
+    const { data, error } = await ctx.admin.rpc(
+      "promote_facility_launch_scalar_config",
+      {
+        p_organization_id: ctx.organization_id,
+        p_facility_id: ctx.facility_id,
+        p_actor_user_id: ctx.actor_user_id,
+        p_run_item_id: ctx.run_item_id,
+        p_table: spec.table,
+        p_rows: rows,
+      },
+    );
+    if (error) {
+      throw new Error(`${spec.table} scalar RPC failed: ${error.message}`);
+    }
+    const rpc = asRecord(data);
+    counts.created = asCount(rpc.created);
+    counts.updated = asCount(rpc.updated);
+    counts.noop = asCount(rpc.noop);
+    return counts;
+  }
+
+  for (const row of rows) {
+    const fieldPath = String(row.field_path);
     const existing = await findConfigRow(ctx, spec.table, fieldPath);
     if (!existing) {
       counts.created += 1;
-      if (!ctx.dry_run) {
-        const { data, error } = await ctx.admin.from(spec.table).insert({
-          ...payload,
-          created_by: ctx.actor_user_id,
-        }).select("id").single();
-        if (error || !data?.id) {
-          throw new Error(
-            `${spec.table} insert failed for ${fieldPath}: ${
-              error?.message ?? "missing id"
-            }`,
-          );
-        }
-        await insertPromotionLink(ctx, {
-          target_table: spec.table,
-          target_row_id: String(data.id),
-          action: "insert",
-          before_value: null,
-          after_value: payload,
-          module_value_id: moduleValue,
-        });
-      }
       continue;
     }
 
     const updatePayload = {
-      value,
-      provenance: payload.provenance,
-      promoted_from_module_value_id: moduleValue,
+      value: row.value,
+      provenance: row.provenance,
+      promoted_from_module_value_id: row.promoted_from_module_value_id,
       updated_by: ctx.actor_user_id,
     };
     if (payloadDiffers(existing, updatePayload)) {
       counts.updated += 1;
-      if (!ctx.dry_run) {
-        const { error } = await ctx.admin.from(spec.table).update(updatePayload)
-          .eq("id", existing.id);
-        if (error) {
-          throw new Error(
-            `${spec.table} update failed for ${fieldPath}: ${error.message}`,
-          );
-        }
-        await insertPromotionLink(ctx, {
-          target_table: spec.table,
-          target_row_id: String(existing.id),
-          action: "update",
-          before_value: existing,
-          after_value: updatePayload,
-          module_value_id: moduleValue,
-        });
-      }
     } else {
       counts.noop += 1;
     }
   }
+
   return counts;
 }
 
