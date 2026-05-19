@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { parseJsonBody } from "@/lib/http/json-body";
 import { OPERATIONS_TEMPLATE_AUTHOR_ROLES } from "@/lib/operations/constants";
 import {
   normalizeEscalationLadder,
@@ -49,7 +50,9 @@ export async function PATCH(
 
   const { actor } = auth;
   const { id } = await context.params;
-  const body = (await request.json()) as OperationTemplateMutationPayload;
+  const parsedBody = await parseJsonBody<OperationTemplateMutationPayload>(request);
+  if ("response" in parsedBody) return parsedBody.response;
+  const body = parsedBody.data;
 
   const { data: existingData, error: existingError } = await actor.admin
     .from("operation_task_templates" as never)

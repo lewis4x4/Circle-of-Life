@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdminApiActor } from "@/lib/admin/api-auth";
+import { parseJsonBody } from "@/lib/http/json-body";
 import type { AppRole } from "@/lib/rbac";
 
 const MANAGE_ROLES = new Set<AppRole>(["owner", "org_admin", "facility_admin", "manager"]);
@@ -17,10 +18,12 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const body = (await request.json()) as {
+  const parsedBody = await parseJsonBody<{
     accepts_bookings?: boolean;
     booking_confirmation_days_required?: number | null;
-  };
+  }>(request);
+  if ("response" in parsedBody) return parsedBody.response;
+  const body = parsedBody.data;
 
   const { error } = await actor.admin
     .from("vendors" as never)

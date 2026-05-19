@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { parseJsonBody } from "@/lib/http/json-body";
 import type { AppRole } from "@/lib/rbac";
 
 const VIEW_ROLES: readonly AppRole[] = [
@@ -77,7 +78,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
-  const body = (await request.json()) as Partial<TemplateRow> & { facility_id?: string };
+  const parsedBody = await parseJsonBody<Partial<TemplateRow> & { facility_id?: string }>(request);
+  if ("response" in parsedBody) return parsedBody.response;
+  const body = parsedBody.data;
   if (!body.facility_id || !body.name || !body.description || !body.category || !body.cadence_type) {
     return NextResponse.json({ error: "facility_id, name, description, category, and cadence_type are required" }, { status: 400 });
   }

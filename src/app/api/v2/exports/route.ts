@@ -53,18 +53,35 @@ export async function POST(request: Request) {
   }
 
   const csv = buildCsv(body.columns, body.rows);
-  const filename =
-    (body.filename?.trim() || `${body.dashboardId.replace(/[^a-z0-9_-]/gi, "-")}-export`) +
-    ".csv";
+  const filename = buildSafeCsvFilename(body.filename, body.dashboardId);
 
   return new NextResponse(csv, {
     status: 200,
     headers: {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="${filename}"`,
+      "content-disposition": buildContentDisposition(filename),
       "cache-control": "no-store",
     },
   });
+}
+
+function buildSafeCsvFilename(requestedFilename: string | undefined, dashboardId: string): string {
+  const fallbackStem = `${dashboardId.replace(/[^a-z0-9_-]/gi, "-")}-export`;
+  const requestedStem = requestedFilename?.trim().replace(/\.csv$/i, "");
+  const safeStem = (requestedStem || fallbackStem)
+    .replace(/[\r\n\0"\\/;]+/g, "-")
+    .replace(/[^a-zA-Z0-9._ ()-]/g, "-")
+    .replace(/\s+/g, " ")
+    .replace(/^\.+$/, "")
+    .trim()
+    .slice(0, 120);
+
+  return `${safeStem || "export"}.csv`;
+}
+
+function buildContentDisposition(filename: string): string {
+  const asciiFilename = filename.replace(/[^a-zA-Z0-9._ -]/g, "-");
+  return `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
 function buildCsv(
