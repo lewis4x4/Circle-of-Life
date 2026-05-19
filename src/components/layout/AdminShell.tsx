@@ -275,8 +275,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (authLoading) return;
-    syncSelectedFacilityCookie(currentUserId == null ? null : safeSelectedFacilityId);
-  }, [authLoading, currentUserId, safeSelectedFacilityId]);
+    if (currentUserId == null) {
+      syncSelectedFacilityCookie(null);
+      return;
+    }
+    if (facilitiesLoading || facilitiesLoadFailed) return;
+    syncSelectedFacilityCookie(safeSelectedFacilityId);
+  }, [
+    authLoading,
+    currentUserId,
+    facilitiesLoadFailed,
+    facilitiesLoading,
+    safeSelectedFacilityId,
+  ]);
 
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {

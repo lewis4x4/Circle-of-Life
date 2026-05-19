@@ -280,8 +280,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (authLoading) return;
-    syncSelectedFacilityCookie(currentUserId == null ? null : safeSelectedFacilityId);
-  }, [authLoading, currentUserId, safeSelectedFacilityId]);
+    if (currentUserId == null) {
+      syncSelectedFacilityCookie(null);
+      return;
+    }
+    if (facilitiesLoading || facilitiesLoadFailed) return;
+    syncSelectedFacilityCookie(safeSelectedFacilityId);
+  }, [
+    authLoading,
+    currentUserId,
+    facilitiesLoadFailed,
+    facilitiesLoading,
+    safeSelectedFacilityId,
+  ]);
 
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
@@ -307,22 +318,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [pathname],
   );
 
-  const handlePillarTabClick = useCallback(
-    (pillar: Pillar) => {
-      const isActive = activePillar?.id === pillar.id;
-      if (isActive) {
-        // On mobile, re-tapping the active pillar opens its items in a sheet.
-        // On desktop the rail already shows them, so this is a no-op.
-        if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
-          setPillarSheetOpen(true);
-        }
-        return;
-      }
-      const first = pillar.items[0];
-      if (first) router.push(first.href);
-    },
-    [activePillar, router],
-  );
+  const openActivePillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
+    // On mobile, re-tapping the active pillar opens its items in a sheet.
+    // On desktop the link can still navigate back to the pillar landing route.
+    if (activePillar?.id !== pillarId) return false;
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      setPillarSheetOpen(true);
+      return true;
+    }
+    return false;
+  }, [activePillar]);
 
   const handlePaletteSelect = useCallback(
     (href: string) => {
@@ -417,12 +422,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const renderPillarTab = (pillar: Pillar) => {
     const active = activePillar?.id === pillar.id;
+    const first = pillar.items[0];
+    if (!first) return null;
     return (
-      <button
+      <Link
         key={pillar.id}
-        type="button"
-        onClick={() => handlePillarTabClick(pillar)}
+        href={first.href}
         aria-current={active ? "page" : undefined}
+        onClick={(event) => {
+          if (!active) return;
+          if (openActivePillarSheetIfMobile(pillar.id)) {
+            event.preventDefault();
+          }
+        }}
         className={cn(
           // 36px hit target, generous horizontal padding so the 2px accent
           // underline reads as a strong active signal without crowding.
@@ -447,7 +459,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
           />
         )}
-      </button>
+      </Link>
     );
   };
 
@@ -734,26 +746,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {suppressSurveyVisitChrome ? null : <SurveyVisitWorkspaceDock survey={surveyVisit} />}
 
       {/* ── Mobile pillar scroll strip ──────────────────────────── */}
-      <div
+      <nav
         className={cn(
           "lg:hidden sticky top-14 z-20 flex shrink-0 items-stretch gap-0.5 overflow-x-auto",
           "bg-background text-foreground border-b border-border px-2",
           "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         )}
         aria-label="Primary"
-        role="tablist"
       >
         {visiblePillars.map((pillar) => {
           const active = activePillar?.id === pillar.id;
           const Icon = pillar.icon;
+          const first = pillar.items[0];
+          if (!first) return null;
           return (
-            <button
+            <Link
               key={pillar.id}
-              type="button"
-              role="tab"
+              href={first.href}
               aria-current={active ? "page" : undefined}
-              aria-selected={active}
-              onClick={() => handlePillarTabClick(pillar)}
+              onClick={(event) => {
+                if (!active) return;
+                if (openActivePillarSheetIfMobile(pillar.id)) {
+                  event.preventDefault();
+                }
+              }}
               className={cn(
                 "relative flex h-9 shrink-0 items-center gap-1.5 px-3 text-[12px]",
                 "transition-colors duration-[var(--motion-duration-micro)]",
@@ -771,10 +787,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
                 />
               )}
-            </button>
+            </Link>
           );
         })}
-      </div>
+      </nav>
 
       {/* ── Layout row: contextual rail + main ─────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden border-t border-border">

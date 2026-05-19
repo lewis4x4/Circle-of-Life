@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2, ArrowRight } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole, isOnboardingAppRole, isMedTechRole, isDietaryRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
@@ -53,10 +54,25 @@ export default function LoginPage() {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const [resetRequesting, setResetRequesting] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
   const [sessionProbeError, setSessionProbeError] = useState<string | null>(null);
 
-  const resolveRouteFromRole = useCallback(async () => {
+  const resolveRouteFromRole = useCallback(async (candidateUser?: Pick<User, "app_metadata" | "user_metadata"> | null) => {
+    const mapRoleToRoute = (role: ReturnType<typeof getAppRoleFromClaims>) => {
+      if (isOnboardingAppRole(role)) return "/onboarding";
+      if (role === "nurse") return getDashboardRouteForRole(role);
+      if (isMedTechRole(role)) return "/med-tech";
+      if (isDietaryRole(role)) return "/dietary";
+      if (role === "caregiver" || role === "housekeeper") return getDashboardRouteForRole(role);
+      if (role === "family") return "/family";
+      if (isAdminEligibleAppRole(role)) return getDashboardRouteForRole(role);
+      return null;
+    };
+
+    if (candidateUser) {
+      const candidateRoute = mapRoleToRoute(getAppRoleFromClaims(candidateUser));
+      if (candidateRoute) return candidateRoute;
+    }
+
     let userResult: Awaited<ReturnType<typeof supabase.auth.getUser>>;
     try {
       userResult = await supabase.auth.getUser();
@@ -82,17 +98,7 @@ export default function LoginPage() {
       return null;
     }
     if (!user) return null;
-
-    const role = getAppRoleFromClaims(user);
-
-    if (isOnboardingAppRole(role)) return "/onboarding";
-    if (role === "nurse") return getDashboardRouteForRole(role);
-    if (isMedTechRole(role)) return "/med-tech";
-    if (isDietaryRole(role)) return "/dietary";
-    if (role === "caregiver" || role === "housekeeper") return getDashboardRouteForRole(role);
-    if (role === "family") return "/family";
-    if (isAdminEligibleAppRole(role)) return getDashboardRouteForRole(role);
-    return null;
+    return mapRoleToRoute(getAppRoleFromClaims(user));
   }, [supabase]);
 
   useEffect(() => {
@@ -102,20 +108,35 @@ export default function LoginPage() {
       if (!isBrowserSupabaseConfigured()) {
         if (!cancelled) {
           setSessionProbeError(SIGN_IN_UNAVAILABLE_MESSAGE);
-          setCheckingSession(false);
         }
         return;
       }
 
       try {
-        const destination = await resolveRouteFromRole();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
         if (cancelled) return;
-        if (!destination) {
-          setCheckingSession(false);
+
+        if (sessionError) {
+          const hint = `${sessionError.message ?? ""} ${"name" in sessionError ? String(sessionError.name) : ""}`.toLowerCase();
+          if (
+            hint.includes("fetch") ||
+            hint.includes("network") ||
+            hint.includes("load failed") ||
+            hint.includes("failed to send")
+          ) {
+            throw new Error("AUTH_NETWORK");
+          }
           return;
         }
+
+        if (!session?.user) return;
+
+        const destination = await resolveRouteFromRole(session.user);
+        if (cancelled || !destination) return;
         router.replace(readSafeNextDestination() ?? destination);
-        router.refresh();
       } catch (e) {
         if (cancelled) return;
         setSessionProbeError(
@@ -123,7 +144,6 @@ export default function LoginPage() {
             ? SIGN_IN_UNAVAILABLE_MESSAGE
             : SESSION_VERIFICATION_ERROR_MESSAGE,
         );
-        setCheckingSession(false);
       }
     };
 
@@ -131,8 +151,7 @@ export default function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [resolveRouteFromRole, router]);
-
+  }, [resolveRouteFromRole, router, supabase]);
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -150,7 +169,10 @@ export default function LoginPage() {
     }
     try {
       // Execute strict Supabase SSR logic
-      const { error } = await supabase.auth.signInWithPassword({
+      const {
+        data: signInData,
+        error,
+      } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
@@ -160,7 +182,7 @@ export default function LoginPage() {
         return;
       }
 
-      const destination = await resolveRouteFromRole();
+      const destination = await resolveRouteFromRole(signInData.user ?? signInData.session?.user ?? null);
       if (!destination) {
         setGlobalError(
           "Your account does not have an operations role assigned in Haven, or your role cannot open the staff dashboard. Contact your administrator.",
@@ -168,7 +190,6 @@ export default function LoginPage() {
         return;
       }
       router.push(readSafeNextDestination() ?? destination);
-      router.refresh();
     } catch {
       setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
     }
@@ -203,17 +224,6 @@ export default function LoginPage() {
     } finally {
       setResetRequesting(false);
     }
-  }
-
-  if (checkingSession) {
-    return (
-      <div className="min-h-screen bg-[#050914] flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Preparing secure sign in...
-        </div>
-      </div>
-    );
   }
 
   return (
