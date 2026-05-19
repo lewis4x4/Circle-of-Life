@@ -1,5 +1,18 @@
 import { createClient } from "@/lib/supabase/client";
 
+type DeficiencyRecurrenceRow = {
+  id: string;
+  tag_number: string;
+  tag_description: string;
+  survey_date: string;
+  severity: string;
+  status: string;
+  corrected_at: string | null;
+  verified_at: string | null;
+};
+
+const RECURRING_TAGS_PAGE_SIZE = 1000;
+
 export type DeficiencyTrendPoint = {
   month: string; // YYYY-MM format
   tag_number: string;
@@ -144,33 +157,46 @@ export async function getDeficiencyCountsByTag(
  * @param tagNumber - The AHCA tag number (e.g., "220")
  * @returns Recurrence information with occurrences and gap analysis
  */
-export async function getTagRecurrence(
-  facilityId: string,
-  tagNumber: string,
-): Promise<DeficiencyRecurrence | null> {
-  const supabase = createClient();
+async function fetchAllRecurringTagPages<T>(
+  buildQuery: (start: number, end: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  errorPrefix: string,
+): Promise<T[]> {
+  const allRows: T[] = [];
+  let pageStart = 0;
 
-  const { data, error } = await supabase
-    .from("survey_deficiencies")
-    .select("id, tag_number, tag_description, survey_date, severity, status, corrected_at, verified_at")
-    .eq("facility_id", facilityId)
-    .eq("tag_number", tagNumber)
-    .is("deleted_at", null)
-    .order("survey_date", { ascending: true });
+  while (true) {
+    const pageEnd = pageStart + RECURRING_TAGS_PAGE_SIZE - 1;
+    const { data, error } = await buildQuery(pageStart, pageEnd);
 
-  if (error) {
-    throw new Error(`Failed to fetch tag recurrence: ${error.message}`);
+    if (error) {
+      throw new Error(`${errorPrefix}: ${error.message}`);
+    }
+
+    const rows = data ?? [];
+    allRows.push(...rows);
+
+    if (rows.length < RECURRING_TAGS_PAGE_SIZE) {
+      break;
+    }
+
+    pageStart += RECURRING_TAGS_PAGE_SIZE;
   }
 
-  if (!data || data.length === 0) {
+  return allRows;
+}
+
+function buildTagRecurrenceFromRows(
+  tagNumber: string,
+  rows: DeficiencyRecurrenceRow[],
+): DeficiencyRecurrence | null {
+  if (rows.length === 0) {
     return null;
   }
 
-  // Build occurrences with gap analysis
   const occurrences: DeficiencyOccurrence[] = [];
   let previousDate: Date | null = null;
 
-  for (const row of data) {
+  for (const row of rows) {
     const surveyDate = new Date(row.survey_date);
     let gapDays: number | null = null;
 
@@ -192,7 +218,6 @@ export async function getTagRecurrence(
     previousDate = surveyDate;
   }
 
-  // Calculate average gap between occurrences
   const gaps = occurrences
     .slice(1)
     .map((o) => o.gap_days)
@@ -205,11 +230,32 @@ export async function getTagRecurrence(
 
   return {
     tag_number: tagNumber,
-    tag_title: data[0].tag_description,
+    tag_title: rows[0].tag_description,
     occurrences,
     total_occurrences: occurrences.length,
     days_between_average: averageGap ?? 0,
   };
+}
+
+export async function getTagRecurrence(
+  facilityId: string,
+  tagNumber: string,
+): Promise<DeficiencyRecurrence | null> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("survey_deficiencies")
+    .select("id, tag_number, tag_description, survey_date, severity, status, corrected_at, verified_at")
+    .eq("facility_id", facilityId)
+    .eq("tag_number", tagNumber)
+    .is("deleted_at", null)
+    .order("survey_date", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch tag recurrence: ${error.message}`);
+  }
+
+  return buildTagRecurrenceFromRows(tagNumber, (data ?? []) as DeficiencyRecurrenceRow[]);
 }
 
 /**
@@ -229,18 +275,22 @@ export async function getRecurringTags(
   startDate.setMonth(startDate.getMonth() - months);
   const startDateStr = startDate.toISOString().split('T')[0];
 
-  const { data, error } = await supabase
-    .from("survey_deficiencies")
-    .select("tag_number, tag_description")
-    .eq("facility_id", facilityId)
-    .gte("survey_date", startDateStr)
-    .is("deleted_at", null);
+  const data = await fetchAllRecurringTagPages<{ id: string; tag_number: string; tag_description: string; survey_date: string }>(
+    (start, end) =>
+      supabase
+        .from("survey_deficiencies")
+        .select("id, tag_number, tag_description, survey_date")
+        .eq("facility_id", facilityId)
+        .gte("survey_date", startDateStr)
+        .is("deleted_at", null)
+        .order("tag_number", { ascending: true })
+        .order("survey_date", { ascending: true })
+        .order("id", { ascending: true })
+        .range(start, end),
+    "Failed to fetch recurring tags",
+  );
 
-  if (error) {
-    throw new Error(`Failed to fetch recurring tags: ${error.message}`);
-  }
-
-  if (!data || data.length === 0) {
+  if (data.length === 0) {
     return [];
   }
 
@@ -260,18 +310,41 @@ export async function getRecurringTags(
     .filter(([, data]) => data.count > 1)
     .map(([tag_number, data]) => ({ tag_number, ...data }));
 
-  // Get full recurrence data for each recurring tag
-  const results: DeficiencyRecurrence[] = [];
+  if (recurring.length === 0) {
+    return [];
+  }
 
-  for (const { tag_number } of recurring) {
-    const recurrence = await getTagRecurrence(facilityId, tag_number);
-    if (recurrence) {
-      results.push(recurrence);
+  const recurringTagNumbers = recurring.map(({ tag_number }) => tag_number);
+
+  const recurrenceRows = await fetchAllRecurringTagPages<DeficiencyRecurrenceRow>(
+    (start, end) =>
+      supabase
+        .from("survey_deficiencies")
+        .select("id, tag_number, tag_description, survey_date, severity, status, corrected_at, verified_at")
+        .eq("facility_id", facilityId)
+        .in("tag_number", recurringTagNumbers)
+        .is("deleted_at", null)
+        .order("tag_number", { ascending: true })
+        .order("survey_date", { ascending: true })
+        .order("id", { ascending: true })
+        .range(start, end),
+    "Failed to fetch recurring tags",
+  );
+
+  const rowsByTag = new Map<string, DeficiencyRecurrenceRow[]>();
+  for (const row of recurrenceRows) {
+    const existing = rowsByTag.get(row.tag_number);
+    if (existing) {
+      existing.push(row);
+    } else {
+      rowsByTag.set(row.tag_number, [row]);
     }
   }
 
-  // Sort by most frequent occurrences
-  results.sort((a, b) => b.total_occurrences - a.total_occurrences);
+  const results: DeficiencyRecurrence[] = recurring
+    .map(({ tag_number }) => buildTagRecurrenceFromRows(tag_number, rowsByTag.get(tag_number) ?? []))
+    .filter((recurrence): recurrence is DeficiencyRecurrence => recurrence !== null)
+    .sort((a, b) => b.total_occurrences - a.total_occurrences);
 
   return results;
 }
