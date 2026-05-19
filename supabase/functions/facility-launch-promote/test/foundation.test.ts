@@ -174,6 +174,7 @@ class FakeAdminClient {
       facility_launch_promotion_runs: [],
       facility_launch_promotion_run_items: [],
       facility_launch_promotion_run_links: [],
+      units: [],
       rooms: [],
       beds: [],
       facility_documents: [],
@@ -197,6 +198,63 @@ class FakeAdminClient {
     }
     this.tables[table].push(next);
     return next;
+  }
+
+  async rpc(fn: string, args: Record<string, unknown>) {
+    if (fn !== "promote_facility_launch_m3") return { data: null, error: { message: `unknown rpc ${fn}` } };
+
+    const orgId = String(args.p_organization_id);
+    const facilityId = String(args.p_facility_id);
+    const runItemId = String(args.p_run_item_id);
+    const moduleValueId = args.p_module_value_id ? String(args.p_module_value_id) : null;
+    const units = Array.isArray(args.p_units) ? args.p_units as Row[] : [];
+    const rooms = Array.isArray(args.p_rooms) ? args.p_rooms as Row[] : [];
+    const beds = Array.isArray(args.p_beds) ? args.p_beds as Row[] : [];
+
+    let unitsCreated = 0;
+    let unitsNoop = 0;
+    let roomsCreated = 0;
+    let roomsNoop = 0;
+    let bedsCreated = 0;
+    let bedsNoop = 0;
+
+    for (const unit of units) {
+      const existing = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === unit.name);
+      if (!existing) {
+        const inserted = this.insert("units", { organization_id: orgId, facility_id: facilityId, name: unit.name, floor_number: unit.floor_number, sort_order: unit.sort_order });
+        unitsCreated += 1;
+        this.insert("facility_launch_promotion_run_links", { run_item_id: runItemId, organization_id: orgId, facility_id: facilityId, module_value_id: moduleValueId, target_table: "units", target_row_id: String(inserted.id), action: "insert", before_value: null, after_value: unit });
+      } else {
+        unitsNoop += 1;
+      }
+    }
+
+    for (const room of rooms) {
+      const existing = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === room.room_number);
+      const unit = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === room.unit_name);
+      if (!existing) {
+        const inserted = this.insert("rooms", { organization_id: orgId, facility_id: facilityId, unit_id: unit?.id ?? null, room_number: room.room_number, room_type: room.room_type, max_occupancy: room.max_occupancy, floor_number: room.floor_number, sort_order: room.sort_order, launch_profile_metadata: room.launch_profile_metadata });
+        roomsCreated += 1;
+        this.insert("facility_launch_promotion_run_links", { run_item_id: runItemId, organization_id: orgId, facility_id: facilityId, module_value_id: moduleValueId, target_table: "rooms", target_row_id: String(inserted.id), action: "insert", before_value: null, after_value: room });
+      } else {
+        roomsNoop += 1;
+      }
+    }
+
+    for (const bed of beds) {
+      const room = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === bed.room_number);
+      if (!room) return { data: null, error: { message: `room missing for bed ${String(bed.room_number)}` } };
+      const existing = this.tables.beds.find((row) => row.deleted_at == null && row.room_id === room.id && row.bed_label === bed.bed_label);
+      if (!existing) {
+        const inserted = this.insert("beds", { room_id: room.id, organization_id: orgId, facility_id: facilityId, bed_label: bed.bed_label, bed_type: bed.bed_type, status: bed.status });
+        bedsCreated += 1;
+        this.insert("facility_launch_promotion_run_links", { run_item_id: runItemId, organization_id: orgId, facility_id: facilityId, module_value_id: moduleValueId, target_table: "beds", target_row_id: String(inserted.id), action: "insert", before_value: null, after_value: bed });
+      } else {
+        bedsNoop += 1;
+      }
+    }
+
+    return { data: { units_created: unitsCreated, units_noop: unitsNoop, rooms_created: roomsCreated, rooms_noop: roomsNoop, beds_created: bedsCreated, beds_noop: bedsNoop, warnings: [] }, error: null };
   }
 }
 

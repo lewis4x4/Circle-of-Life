@@ -6,8 +6,6 @@ import {
   asString,
   bedLabel,
   compactTables,
-  insertPromotionLink,
-  isMeaningful,
   moduleValueId,
   normalizeFloor,
   normalizeUnitName,
@@ -98,154 +96,145 @@ export const M3_PROMOTER: ModulePromoter = {
     }
 
     const moduleRoomsValueId = moduleValueId(ctx, "rooms");
-    const unitsByName = new Map<string, { floor: number; roomCount: number }>();
-    for (const room of rawRooms) {
-      const name = normalizeUnitName(room);
-      const existing = unitsByName.get(name) ?? { floor: normalizeFloor(room.floor), roomCount: 0 };
-      existing.floor = Math.min(existing.floor, normalizeFloor(room.floor));
+    const unitsByName = new Map<string, { floor: number; roomCount: number; sort_order: number }>();
+    const normalizedRooms = rawRooms.map((sourceRoom, index) => {
+      const number = roomNumber(sourceRoom)!;
+      const bedCount = Math.max(1, asInteger(sourceRoom.bedCount) ?? 1);
+      const unitName = normalizeUnitName(sourceRoom);
+      const normalized = {
+        sourceRoom,
+        number,
+        bedCount,
+        unitName,
+        roomPayload: {
+          room_number: number,
+          unit_name: unitName,
+          room_type: roomTypeFromUnitType(sourceRoom.unitType, bedCount),
+          max_occupancy: bedCount,
+          floor_number: normalizeFloor(sourceRoom.floor),
+          sort_order: index,
+          launch_profile_metadata: roomMetadata(sourceRoom),
+        },
+      };
+
+      const existing = unitsByName.get(unitName) ?? { floor: normalizeFloor(sourceRoom.floor), roomCount: 0, sort_order: unitsByName.size };
+      existing.floor = Math.min(existing.floor, normalizeFloor(sourceRoom.floor));
       existing.roomCount += 1;
-      unitsByName.set(name, existing);
+      unitsByName.set(unitName, existing);
+      return normalized;
+    });
+
+    const normalizedUnits = Array.from(unitsByName.entries()).map(([name, unit]) => ({
+      name,
+      floor_number: unit.floor,
+      sort_order: unit.sort_order,
+    }));
+
+    const normalizedBeds = normalizedRooms.flatMap((room) =>
+      Array.from({ length: room.bedCount }, (_, bedIndex) => ({
+        room_number: room.number,
+        bed_label: bedLabel(bedIndex),
+        bed_type: "alf_intermediate",
+        status: "available",
+      }))
+    );
+
+    if (!ctx.dry_run) {
+      const { data, error } = await ctx.admin.rpc("promote_facility_launch_m3", {
+        p_organization_id: ctx.organization_id,
+        p_facility_id: ctx.facility_id,
+        p_actor_user_id: ctx.actor_user_id,
+        p_run_item_id: ctx.run_item_id,
+        p_module_value_id: moduleRoomsValueId,
+        p_units: normalizedUnits,
+        p_rooms: normalizedRooms.map((room) => room.roomPayload),
+        p_beds: normalizedBeds,
+      });
+      if (error) throw new Error(`M3 RPC failed: ${error.message}`);
+
+      const rpc = asRecord(data);
+      const unitsCreated = asInteger(rpc.units_created) ?? 0;
+      const unitsNoop = asInteger(rpc.units_noop) ?? 0;
+      const roomsCreated = asInteger(rpc.rooms_created) ?? 0;
+      const roomsNoop = asInteger(rpc.rooms_noop) ?? 0;
+      const bedsCreated = asInteger(rpc.beds_created) ?? 0;
+      const bedsNoop = asInteger(rpc.beds_noop) ?? 0;
+      warnings.push(...asArray(rpc.warnings).map((warning) => String(warning)));
+
+      const writes = unitsCreated + roomsCreated + bedsCreated;
+      return {
+        module_code: "M3",
+        status: warnings.length > 0 && writes === 0 ? "partial" : "promoted",
+        summary: writes > 0
+          ? `Promoted ${unitsCreated} unit(s), ${roomsCreated} room(s), ${bedsCreated} bed(s).`
+          : "Units, rooms, and beds already current.",
+        tables_touched: compactTables([
+          tableCount("units", unitsCreated, 0, unitsNoop),
+          tableCount("rooms", roomsCreated, 0, roomsNoop),
+          tableCount("beds", bedsCreated, 0, bedsNoop),
+        ]),
+        warnings,
+        errors,
+        prerequisites_unmet: [],
+      };
     }
 
     let unitsCreated = 0;
-    let unitsUpdated = 0;
     let unitsNoop = 0;
     const unitIds = new Map<string, string>();
-    let unitSort = 0;
-    for (const [name, unit] of unitsByName) {
-      const existing = await findUnit(ctx, name);
-      const payload = {
-        facility_id: ctx.facility_id,
-        organization_id: ctx.organization_id,
-        name,
-        floor_number: unit.floor,
-        sort_order: unitSort++,
-      };
+    for (const unit of normalizedUnits) {
+      const existing = await findUnit(ctx, unit.name);
       if (!existing) {
-        if (ctx.dry_run) {
-          unitsCreated += 1;
-          unitIds.set(name, `dry-run-unit-${name}`);
-        } else {
-          const { data, error } = await ctx.admin.from("units").insert({
-            ...payload,
-            created_by: ctx.actor_user_id,
-            updated_by: ctx.actor_user_id,
-          }).select("id").single();
-          if (error || !data?.id) throw new Error(`M3 unit insert failed for ${name}: ${error?.message ?? "missing id"}`);
-          unitsCreated += 1;
-          unitIds.set(name, String(data.id));
-          await insertPromotionLink(ctx, {
-            target_table: "units",
-            target_row_id: String(data.id),
-            action: "insert",
-            before_value: null,
-            after_value: payload,
-            module_value_id: moduleRoomsValueId,
-          });
-        }
+        unitsCreated += 1;
+        unitIds.set(unit.name, `dry-run-unit-${unit.name}`);
       } else {
-        unitIds.set(name, String(existing.id));
-        if (payloadDiffers(existing, { floor_number: payload.floor_number, sort_order: payload.sort_order })) {
-          warnings.push(`unit '${name}' already exists with differing operational values; intake values were skipped to avoid overwriting live data.`);
-          unitsNoop += 1;
-        } else {
-          unitsNoop += 1;
+        unitIds.set(unit.name, String(existing.id));
+        if (payloadDiffers(existing, { floor_number: unit.floor_number, sort_order: unit.sort_order })) {
+          warnings.push(`unit '${unit.name}' already exists with differing operational values; intake values were skipped to avoid overwriting live data.`);
         }
+        unitsNoop += 1;
       }
     }
 
     let roomsCreated = 0;
-    let roomsUpdated = 0;
     let roomsNoop = 0;
     let bedsCreated = 0;
-    let bedsUpdated = 0;
     let bedsNoop = 0;
 
-    for (let index = 0; index < rawRooms.length; index++) {
-      const sourceRoom = rawRooms[index];
-      const number = roomNumber(sourceRoom)!;
-      const bedCount = Math.max(1, asInteger(sourceRoom.bedCount) ?? 1);
-      const unitName = normalizeUnitName(sourceRoom);
-      const unitId = unitIds.get(unitName);
+    for (const room of normalizedRooms) {
+      const unitId = unitIds.get(room.unitName);
+      const existingRoom = await findRoom(ctx, room.number);
+      let roomId: string;
       const roomPayload = {
         facility_id: ctx.facility_id,
         organization_id: ctx.organization_id,
         unit_id: unitId,
-        room_number: number,
-        room_type: roomTypeFromUnitType(sourceRoom.unitType, bedCount),
-        max_occupancy: bedCount,
-        floor_number: normalizeFloor(sourceRoom.floor),
-        sort_order: index,
-        launch_profile_metadata: roomMetadata(sourceRoom),
+        room_number: room.roomPayload.room_number,
+        room_type: room.roomPayload.room_type,
+        max_occupancy: room.roomPayload.max_occupancy,
+        floor_number: room.roomPayload.floor_number,
+        sort_order: room.roomPayload.sort_order,
+        launch_profile_metadata: room.roomPayload.launch_profile_metadata,
       };
 
-      const existingRoom = await findRoom(ctx, number);
-      let roomId: string;
       if (!existingRoom) {
-        if (ctx.dry_run) {
-          roomsCreated += 1;
-          roomId = `dry-run-room-${number}`;
-        } else {
-          const { data, error } = await ctx.admin.from("rooms").insert({
-            ...roomPayload,
-            created_by: ctx.actor_user_id,
-            updated_by: ctx.actor_user_id,
-          }).select("id").single();
-          if (error || !data?.id) throw new Error(`M3 room insert failed for ${number}: ${error?.message ?? "missing id"}`);
-          roomsCreated += 1;
-          roomId = String(data.id);
-          await insertPromotionLink(ctx, {
-            target_table: "rooms",
-            target_row_id: roomId,
-            action: "insert",
-            before_value: null,
-            after_value: roomPayload,
-            module_value_id: moduleRoomsValueId,
-          });
-        }
+        roomsCreated += 1;
+        roomId = `dry-run-room-${room.number}`;
       } else {
         roomId = String(existingRoom.id);
         if (payloadDiffers(existingRoom, roomPayload)) {
-          warnings.push(`room '${number}' already exists with differing operational values; intake values were skipped to avoid overwriting live data.`);
-          roomsNoop += 1;
-        } else {
-          roomsNoop += 1;
+          warnings.push(`room '${room.number}' already exists with differing operational values; intake values were skipped to avoid overwriting live data.`);
         }
+        roomsNoop += 1;
       }
 
-      for (let bedIndex = 0; bedIndex < bedCount; bedIndex++) {
+      for (let bedIndex = 0; bedIndex < room.bedCount; bedIndex++) {
         const label = bedLabel(bedIndex);
-        const existingBed = ctx.dry_run && roomId.startsWith("dry-run-room-") ? null : await findBed(ctx, roomId, label);
-        const bedPayload = {
-          room_id: roomId,
-          facility_id: ctx.facility_id,
-          organization_id: ctx.organization_id,
-          bed_label: label,
-          bed_type: "alf_intermediate",
-          status: "available",
-        };
+        const existingBed = roomId.startsWith("dry-run-room-") ? null : await findBed(ctx, roomId, label);
         if (!existingBed) {
-          if (ctx.dry_run) {
-            bedsCreated += 1;
-          } else {
-            const { data, error } = await ctx.admin.from("beds").insert({
-              ...bedPayload,
-              created_by: ctx.actor_user_id,
-              updated_by: ctx.actor_user_id,
-            }).select("id").single();
-            if (error || !data?.id) throw new Error(`M3 bed insert failed for ${number}/${label}: ${error?.message ?? "missing id"}`);
-            bedsCreated += 1;
-            await insertPromotionLink(ctx, {
-              target_table: "beds",
-              target_row_id: String(data.id),
-              action: "insert",
-              before_value: null,
-              after_value: bedPayload,
-              module_value_id: moduleRoomsValueId,
-            });
-          }
-        } else if (payloadDiffers(existingBed, { bed_type: bedPayload.bed_type })) {
-          warnings.push(`bed '${number}/${label}' already exists with differing operational values; intake values were skipped to avoid overwriting live data.`);
+          bedsCreated += 1;
+        } else if (payloadDiffers(existingBed, { bed_type: "alf_intermediate" })) {
+          warnings.push(`bed '${room.number}/${label}' already exists with differing operational values; intake values were skipped to avoid overwriting live data.`);
           bedsNoop += 1;
         } else {
           bedsNoop += 1;
@@ -253,17 +242,17 @@ export const M3_PROMOTER: ModulePromoter = {
       }
     }
 
-    const writes = unitsCreated + unitsUpdated + roomsCreated + roomsUpdated + bedsCreated + bedsUpdated;
+    const writes = unitsCreated + roomsCreated + bedsCreated;
     return {
       module_code: "M3",
       status: warnings.length > 0 && writes === 0 ? "partial" : "promoted",
       summary: writes > 0
-        ? `Promoted ${unitsCreated + unitsUpdated} unit(s), ${roomsCreated + roomsUpdated} room(s), ${bedsCreated + bedsUpdated} bed(s).`
+        ? `Promoted ${unitsCreated} unit(s), ${roomsCreated} room(s), ${bedsCreated} bed(s).`
         : "Units, rooms, and beds already current.",
       tables_touched: compactTables([
-        tableCount("units", unitsCreated, unitsUpdated, unitsNoop),
-        tableCount("rooms", roomsCreated, roomsUpdated, roomsNoop),
-        tableCount("beds", bedsCreated, bedsUpdated, bedsNoop),
+        tableCount("units", unitsCreated, 0, unitsNoop),
+        tableCount("rooms", roomsCreated, 0, roomsNoop),
+        tableCount("beds", bedsCreated, 0, bedsNoop),
       ]),
       warnings,
       errors,
