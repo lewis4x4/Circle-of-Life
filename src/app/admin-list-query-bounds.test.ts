@@ -18,6 +18,7 @@ const facilityDetailSource = readSource("src/app/(admin)/admin/facilities/[facil
 const facilityRatesHookSource = readSource("src/hooks/useFacilityRates.ts");
 const facilityBuildingProfileHookSource = readSource("src/hooks/useFacilityBuildingProfile.ts");
 const facilityOverviewTabSource = readSource("src/components/admin/facilities/tabs/OverviewTab.tsx");
+const operationsTodaySource = readSource("src/app/(admin)/admin/operations/page.tsx");
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
@@ -115,6 +116,18 @@ describe("admin list query bounds", () => {
     expect(facilityOverviewTabSource).toContain("enableBedAvailability?: boolean;");
     expect(facilityOverviewTabSource).toContain("useFacilityBedAvailability(facilityId, { enabled: shouldLoadBedAvailability })");
     expect(facilityOverviewTabSource).toContain("new IntersectionObserver(");
+  });
+
+  it("keeps operations adequacy loading from depending on stats and removes raw-id task placeholder", () => {
+    expect(operationsTodaySource).toContain("setStats((current) =>");
+    expect(operationsTodaySource).toContain("current ? { ...current, adequacy_score: data.adequacy_score } : current");
+    expect(operationsTodaySource).toContain(
+      "}, [selectedFacilityId, authLoading, autoShiftApplied, selectedShift]);",
+    );
+    expect(operationsTodaySource).toContain("const selectedTask = selectedTaskId ? tasks.find");
+    expect(operationsTodaySource).toContain("<h2 className=\"text-xl font-bold mb-4\">Task details</h2>");
+    expect(operationsTodaySource).not.toContain("Full task detail is deferred");
+    expect(operationsTodaySource).not.toContain("Task detail modal placeholder");
   });
 
   it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {

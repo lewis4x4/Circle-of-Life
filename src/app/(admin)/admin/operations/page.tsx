@@ -133,13 +133,13 @@ export default function OperationsTodayPage() {
 
       const data = await response.json();
       setTasks(data.tasks || []);
-      setStats({
+      setStats((current) => ({
         pending: data.tasks.filter((t: TaskInstance) => t.status === "pending").length,
         in_progress: data.tasks.filter((t: TaskInstance) => t.status === "in_progress").length,
         completed_today: data.tasks.filter((t: TaskInstance) => t.status === "completed").length,
         missed: data.tasks.filter((t: TaskInstance) => t.status === "missed").length,
-        adequacy_score: 0, // Loaded from separate endpoint
-      });
+        adequacy_score: current?.adequacy_score ?? 0,
+      }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load tasks");
     } finally {
@@ -162,13 +162,13 @@ export default function OperationsTodayPage() {
         setSelectedShift(data.current_shift);
         setAutoShiftApplied(true);
       }
-      if (stats) {
-        setStats({ ...stats, adequacy_score: data.adequacy_score });
-      }
+      setStats((current) =>
+        current ? { ...current, adequacy_score: data.adequacy_score } : current,
+      );
     } catch {
       // Non-critical, continue without adequacy data
     }
-  }, [selectedFacilityId, authLoading, stats, autoShiftApplied, selectedShift]);
+  }, [selectedFacilityId, authLoading, autoShiftApplied, selectedShift]);
 
   useEffect(() => {
     void loadData();
@@ -289,6 +289,7 @@ export default function OperationsTodayPage() {
   const overdueTasks = tasks.filter((t: TaskInstance) =>
     (t.status === "pending" || t.status === "in_progress") && t.days_overdue > 0
   );
+  const selectedTask = selectedTaskId ? tasks.find((task) => task.id === selectedTaskId) ?? null : null;
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">
@@ -661,16 +662,55 @@ export default function OperationsTodayPage() {
         </div>
       )}
 
-      {/* Task detail modal placeholder */}
-      {selectedTaskId && (
+      {selectedTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-lg shadow-xl max-w-lg w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Task Details</h2>
-            <p className="text-muted-foreground mb-6">
-              Full task detail is deferred to a later OCE slice.
-              Task ID: {selectedTaskId}
-            </p>
-            <div className="flex justify-end gap-3">
+            <h2 className="text-xl font-bold mb-4">Task details</h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Task</p>
+                <p className="font-medium text-foreground">{selectedTask.template_name}</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Facility</p>
+                  <p className="text-foreground">{selectedTask.facility_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Category</p>
+                  <p className="text-foreground">{categoryLabels[selectedTask.template_category] ?? selectedTask.template_category}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
+                  <p className="capitalize text-foreground">{selectedTask.status.replace(/_/g, " ")}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Priority</p>
+                  <p className="capitalize text-foreground">{selectedTask.priority}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Shift</p>
+                  <p className="text-foreground">{shiftLabels[selectedTask.assigned_shift]}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Assigned to</p>
+                  <p className="text-foreground">{selectedTask.assigned_to_name ?? "Unassigned"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Due</p>
+                  <p className="text-foreground">
+                    {selectedTask.due_at
+                      ? new Date(selectedTask.due_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+                      : "No due time"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estimated time</p>
+                  <p className="text-foreground">{selectedTask.estimated_minutes} min</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={() => setSelectedTaskId(null)}
