@@ -481,14 +481,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
           }
         />
 
-        {noFacility ? (
-          <div role="status" className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            Select a facility in the header to load med reconciliations.
-          </div>
-        ) : null}
-
-        {!noFacility ? (
-          <section className="space-y-3">
+        <section className="space-y-3">
             {/* FOLLOW-UP(ISSUE): Per-record pharmacist email/export handoff when no in-app pharmacist role exists. */}
             <h2 className="text-lg font-semibold text-foreground">Needs attention</h2>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -534,8 +527,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
                 </TooltipContent>
               </Tooltip>
             </div>
-          </section>
-        ) : null}
+        </section>
 
         {actionError ? (
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">

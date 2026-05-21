@@ -104,7 +104,7 @@ export const PILLARS: Pillar[] = [
     items: [
       { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", icon: UserPlus },
       { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
-      { key: "discharge", href: "/pipeline/discharge-management", label: "Medication reconciliation", icon: DoorOpen },
+      { key: "discharge", href: "/admin/discharge", label: "Medication reconciliation", icon: DoorOpen },
       { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", icon: Heart },
       { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", icon: MessageCircle },
     ],
