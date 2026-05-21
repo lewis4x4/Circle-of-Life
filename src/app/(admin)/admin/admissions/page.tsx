@@ -304,10 +304,10 @@ function AdminAdmissionsOverviewInner() {
   const searchParams = useSearchParams();
   const hubScope = admissionsHubScopeFromSearchParam(searchParams.get("scope"));
 
-  const { selectedFacilityId, availableFacilities } = useFacilityStore((s) => ({
-    selectedFacilityId: s.selectedFacilityId,
-    availableFacilities: s.availableFacilities,
-  }));
+  // Zustand v5: separate selector calls return stable primitives/refs so
+  // the store doesn't re-snapshot and force a render loop.
+  const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
+  const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const { user } = useHavenAuth();
 
   const loadContextRef = useRef({ selectedFacilityId, hubScope });
@@ -829,29 +829,33 @@ function AdminAdmissionsOverviewInner() {
         </div>
       ) : null}
 
-      {!noFacility &&
-      !loading &&
-      !loadError &&
-      hubScope !== "all" &&
-      referrals.length === 0 &&
-      admissions.length === 0 &&
-      discharges.length === 0 &&
-      triage.length === 0 &&
-      conferences.length === 0 ? (
-        <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Nothing updated within the current scope ({hubScope === "today" ? "today" : hubScope === "week" ? "this week" : "this month"}).
-            Imported or historical records may live outside this window.
-          </p>
-          <button
-            type="button"
-            onClick={() => setHubScopeParam("all")}
-            className="inline-flex h-8 shrink-0 items-center rounded-md border border-amber-500/40 bg-amber-500/15 px-3 text-[12px] font-medium text-amber-900 transition-colors hover:bg-amber-500/25 dark:text-amber-100"
-          >
-            View all time
-          </button>
-        </div>
-      ) : null}
+      {(() => {
+        if (noFacility || loading || loadError || hubScope === "all") return null;
+        const allEmpty =
+          referrals.length === 0 &&
+          admissions.length === 0 &&
+          discharges.length === 0 &&
+          triage.length === 0 &&
+          conferences.length === 0;
+        if (!allEmpty) return null;
+        const scopeLabel =
+          hubScope === "today" ? "today" : hubScope === "week" ? "this week" : "this month";
+        return (
+          <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Nothing updated within the current scope ({scopeLabel}).
+              Imported or historical records may live outside this window.
+            </p>
+            <button
+              type="button"
+              onClick={() => setHubScopeParam("all")}
+              className="inline-flex h-8 shrink-0 items-center rounded-md border border-amber-500/40 bg-amber-500/15 px-3 text-[12px] font-medium text-amber-900 transition-colors hover:bg-amber-500/25 dark:text-amber-100"
+            >
+              View all time
+            </button>
+          </div>
+        );
+      })()}
 
       <HubSection
         title="Referrals"
