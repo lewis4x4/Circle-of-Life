@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityRow } from "@/types/facility";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
   type ListApi = FacilityRow & {
@@ -83,6 +84,7 @@ interface UseFacilitiesReturn {
 
 // Module-level cache survives client-side navigations within a session.
 // Keyed by query params; ~60s freshness window then stale-while-revalidate.
+// LRU-bounded so unique searches/filters don't grow memory unbounded.
 type CacheEntry = {
   facilities: FacilityRow[];
   pagination: UseFacilitiesReturn["pagination"];
@@ -90,12 +92,13 @@ type CacheEntry = {
 };
 const facilitiesCache = new Map<string, CacheEntry>();
 const FACILITIES_CACHE_TTL_MS = 60_000;
+const FACILITIES_CACHE_MAX = 16;
 
 export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilitiesReturn {
   const { status, search, page = 1, pageSize = 20 } = options;
 
   const cacheKey = `${page}|${pageSize}|${status ?? ""}|${search ?? ""}`;
-  const cached = facilitiesCache.get(cacheKey);
+  const cached = lruGet(facilitiesCache, cacheKey);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS;
 
   const [facilities, setFacilities] = useState<FacilityRow[]>(cached?.facilities ?? []);
@@ -139,11 +142,12 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
       };
       setFacilities(normalized);
       setPagination(nextPagination);
-      facilitiesCache.set(cacheKey, {
-        facilities: normalized,
-        pagination: nextPagination,
-        fetchedAt: Date.now(),
-      });
+      lruSet(
+        facilitiesCache,
+        cacheKey,
+        { facilities: normalized, pagination: nextPagination, fetchedAt: Date.now() },
+        FACILITIES_CACHE_MAX,
+      );
     } catch (err) {
       console.error("[useFacilities] error:", err);
       const message = err instanceof Error ? err.message : "Failed to fetch facilities";

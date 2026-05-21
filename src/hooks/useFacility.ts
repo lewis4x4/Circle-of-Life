@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
   const f = raw as unknown as FacilityDetailRow & { license_number?: string | null };
@@ -44,13 +45,15 @@ interface UseFacilityReturn {
 }
 
 // 60s in-memory cache keyed by facilityId so tab switches and remounts
-// repaint instantly. Mutations bust the entry via cacheBust.
+// repaint instantly. LRU-bounded so multi-facility browsing doesn't grow
+// memory unbounded. Mutations bust the entry directly.
 type FacilityCacheEntry = { facility: FacilityDetailRow; fetchedAt: number };
 const facilityCache = new Map<string, FacilityCacheEntry>();
 const FACILITY_CACHE_TTL_MS = 60_000;
+const FACILITY_CACHE_MAX = 16;
 
 export function useFacility(facilityId: string): UseFacilityReturn {
-  const cached = facilityCache.get(facilityId);
+  const cached = lruGet(facilityCache, facilityId);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITY_CACHE_TTL_MS;
 
   const [facility, setFacility] = useState<FacilityDetailRow | null>(cached?.facility ?? null);
@@ -78,7 +81,7 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         }
         const n = normalizeFacilityDetail(json.data);
         setFacility(n);
-        facilityCache.set(facilityId, { facility: n, fetchedAt: Date.now() });
+        lruSet(facilityCache, facilityId, { facility: n, fetchedAt: Date.now() }, FACILITY_CACHE_MAX);
         return n;
       } catch (err) {
         console.error("[useFacility] fetch error:", err);

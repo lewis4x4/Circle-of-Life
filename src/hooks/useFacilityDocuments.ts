@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { DocumentVaultCategoryKey } from "@/lib/admin/facilities/document-vault-taxonomy";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 export interface FacilityDocumentHookRow {
   id: string;
@@ -62,9 +63,11 @@ interface UseFacilityDocumentsReturn {
 }
 
 // In-memory cache keyed by facility + scope so tab switches don't refetch.
+// LRU-bounded so navigating many facilities doesn't grow memory unbounded.
 type DocsCacheEntry = { documents: FacilityDocumentHookRow[]; fetchedAt: number };
 const docsCache = new Map<string, DocsCacheEntry>();
 const DOCS_CACHE_TTL_MS = 60_000;
+const DOCS_CACHE_MAX = 16;
 
 export function useFacilityDocuments(
   facilityId: string,
@@ -72,7 +75,7 @@ export function useFacilityDocuments(
 ): UseFacilityDocumentsReturn {
   const [archivedScope, setArchivedScope] = useState(_options?.archived ?? false);
   const cacheKey = `${facilityId}|${archivedScope ? "archived" : "active"}`;
-  const cached = docsCache.get(cacheKey);
+  const cached = lruGet(docsCache, cacheKey);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < DOCS_CACHE_TTL_MS;
 
   const [documents, setDocuments] = useState<FacilityDocumentHookRow[]>(cached?.documents ?? []);
@@ -94,7 +97,7 @@ export function useFacilityDocuments(
       const json = (await res.json()) as DocumentsResponse;
       const normalized = (json.data ?? []).map(normalize);
       setDocuments(normalized);
-      docsCache.set(key, { documents: normalized, fetchedAt: Date.now() });
+      lruSet(docsCache, key, { documents: normalized, fetchedAt: Date.now() }, DOCS_CACHE_MAX);
     } catch (err) {
       console.error("[useFacilityDocuments] fetch error:", err);
       const message = err instanceof Error ? err.message : "Failed to fetch documents";

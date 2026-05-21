@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { TimelineEventInput } from "@/lib/validation/facility-admin";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 export interface TimelineEventRow {
   id: string;
@@ -17,9 +18,10 @@ export interface TimelineEventRow {
 type TimelineCacheEntry = { events: TimelineEventRow[]; fetchedAt: number };
 const timelineCache = new Map<string, TimelineCacheEntry>();
 const TIMELINE_CACHE_TTL_MS = 60_000;
+const TIMELINE_CACHE_MAX = 16;
 
 export function useFacilityTimeline(facilityId: string) {
-  const cached = timelineCache.get(facilityId);
+  const cached = lruGet(timelineCache, facilityId);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < TIMELINE_CACHE_TTL_MS;
 
   const [events, setEvents] = useState<TimelineEventRow[]>(cached?.events ?? []);
@@ -36,7 +38,7 @@ export function useFacilityTimeline(facilityId: string) {
       const json = (await res.json()) as { data: TimelineEventRow[] };
       const next = json.data ?? [];
       setEvents(next);
-      timelineCache.set(facilityId, { events: next, fetchedAt: Date.now() });
+      lruSet(timelineCache, facilityId, { events: next, fetchedAt: Date.now() }, TIMELINE_CACHE_MAX);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       if (!hasCached) setEvents([]);

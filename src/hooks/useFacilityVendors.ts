@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 export interface VendorFacilityRow {
   id: string;
@@ -38,10 +39,11 @@ type VendorsCacheEntry = {
 };
 const vendorsCache = new Map<string, VendorsCacheEntry>();
 const VENDORS_CACHE_TTL_MS = 60_000;
+const VENDORS_CACHE_MAX = 16;
 
 export function useFacilityVendors(facilityId: string, options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
-  const cached = vendorsCache.get(facilityId);
+  const cached = lruGet(vendorsCache, facilityId);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < VENDORS_CACHE_TTL_MS;
 
   const [rows, setRows] = useState<VendorFacilityRow[]>(cached?.rows ?? []);
@@ -64,7 +66,12 @@ export function useFacilityVendors(facilityId: string, options?: { enabled?: boo
       const nextKpi = json.kpi ?? null;
       setRows(nextRows);
       setKpi(nextKpi);
-      vendorsCache.set(facilityId, { rows: nextRows, kpi: nextKpi, fetchedAt: Date.now() });
+      lruSet(
+        vendorsCache,
+        facilityId,
+        { rows: nextRows, kpi: nextKpi, fetchedAt: Date.now() },
+        VENDORS_CACHE_MAX,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       if (!hasCached) {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { SurveyHistoryInput } from "@/lib/validation/facility-admin";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 export interface SurveyRow {
   id: string;
@@ -23,9 +24,10 @@ export interface SurveyRow {
 type SurveysCacheEntry = { surveys: SurveyRow[]; fetchedAt: number };
 const surveysCache = new Map<string, SurveysCacheEntry>();
 const SURVEYS_CACHE_TTL_MS = 60_000;
+const SURVEYS_CACHE_MAX = 16;
 
 export function useFacilitySurveys(facilityId: string) {
-  const cached = surveysCache.get(facilityId);
+  const cached = lruGet(surveysCache, facilityId);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < SURVEYS_CACHE_TTL_MS;
 
   const [surveys, setSurveys] = useState<SurveyRow[]>(cached?.surveys ?? []);
@@ -42,7 +44,7 @@ export function useFacilitySurveys(facilityId: string) {
       const json = (await res.json()) as { data: SurveyRow[] };
       const next = json.data ?? [];
       setSurveys(next);
-      surveysCache.set(facilityId, { surveys: next, fetchedAt: Date.now() });
+      lruSet(surveysCache, facilityId, { surveys: next, fetchedAt: Date.now() }, SURVEYS_CACHE_MAX);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       if (!hasCached) setSurveys([]);
