@@ -33,15 +33,28 @@ export function Cockpit() {
   }
 
   if (error) {
+    const noShift = error === "No active shift";
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <div className="max-w-md rounded-2xl border border-rose-500/30 bg-rose-500/10 px-6 py-5 text-center">
-          <h2 className="text-lg font-semibold text-rose-300 mb-2">
-            Shift Not Available
+        <div
+          className={
+            noShift
+              ? "max-w-md rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center"
+              : "max-w-md rounded-2xl border border-rose-500/30 bg-rose-500/10 px-6 py-5 text-center"
+          }
+        >
+          <h2
+            className={
+              noShift
+                ? "text-lg font-semibold text-slate-200 mb-2"
+                : "text-lg font-semibold text-rose-300 mb-2"
+            }
+          >
+            {noShift ? "Cockpit is waiting on a shift" : "Shift Not Available"}
           </h2>
           <p className="text-sm text-slate-400">
-            {error === "No active shift"
-              ? "No active shift found. Clock in from the scheduling system to start your shift."
+            {noShift
+              ? "The Med-Tech cockpit lights up once a med-tech is clocked in. Start a shift from the scheduling system and this page will populate with the live med pass."
               : error}
           </p>
         </div>
