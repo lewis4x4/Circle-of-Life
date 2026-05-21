@@ -798,10 +798,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground antialiased">
-      {/* ── Top bar (always visible) ────────────────────────────── */}
+      {/* ── Top bar (always visible) — popping grey so the chrome reads
+          distinctly above the canvas. */}
       <header
         className={cn(
-          "bg-background text-foreground sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border",
+          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2",
+          "bg-stone-300 text-foreground border-b border-stone-400 shadow-md",
+          "dark:bg-stone-900 dark:border-stone-700",
           "px-3 lg:px-4",
         )}
       >
