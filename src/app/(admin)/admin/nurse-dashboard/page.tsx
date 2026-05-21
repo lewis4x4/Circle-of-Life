@@ -75,7 +75,7 @@ export default function NurseDashboardPage() {
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Missed Doses */}
         <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
-          <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
             <FileWarning className="w-5 h-5 text-warning" /> Dose Alerts Today
           </h3>
           <div className="space-y-3">
@@ -92,7 +92,7 @@ export default function NurseDashboardPage() {
 
         {/* Clinical Watchlist */}
         <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
-          <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
             <Activity className="w-5 h-5 text-destructive" /> Clinical Watchlist
           </h3>
           {brief.watchlistResidents.length === 0 ? (

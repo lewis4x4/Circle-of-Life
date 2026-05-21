@@ -27,7 +27,7 @@ export function AppShellCommandPalette({
       onOpenChange={onOpenChange}
       title="Command palette"
       description="Jump to any page, resident, staff member, or incident."
-      className="sm:max-w-[560px]"
+      className="sm:max-w-[480px]"
     >
       <Command shouldFilter loop>
         <CommandInput placeholder="Search residents, staff, incidents, routes…" autoFocus />

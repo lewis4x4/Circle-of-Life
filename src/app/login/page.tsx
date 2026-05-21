@@ -227,52 +227,41 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#050914] font-sans text-slate-100 lg:grid lg:grid-cols-2">
-      <div className="relative hidden lg:flex min-h-screen overflow-hidden border-r border-white/10 flex-col justify-end p-12 xl:p-16">
-        {/* Photographic Background Layer */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/login-bg.png')",
-          }}
-        />
-        
-        {/* Gradient overlays to ensure white text readability */}
-        <div className="absolute inset-0 bg-slate-950/20 mix-blend-multiply" />
-        <div className="absolute inset-0 from-[#050914] via-[#050914]/80 opacity-90" />
-        
-        {/* Subtle grid pattern for texture */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#050914] font-sans text-slate-100">
+      {/* Full-bleed photographic background */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/login-bg.png')" }}
+      />
+      {/* Readability overlays */}
+      <div className="absolute inset-0 bg-slate-950/55" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#050914]/70 via-[#050914]/55 to-[#050914]/85" />
+      {/* Subtle grid texture */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />
 
-        {/* Content */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-white/95 text-slate-900 flex items-center justify-center shadow-lg">
-              <div className="h-4 w-4 rounded-sm bg-[#0a192f]" />
-            </div>
-            <span className="text-2xl font-serif tracking-tight text-white drop-shadow-md">Haven</span>
+      {/* Top brand bar */}
+      <header className="relative z-10 flex items-center justify-between px-6 pt-8 sm:px-10 lg:px-16">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/95 text-slate-900 shadow-lg">
+            <div className="h-4 w-4 rounded-sm bg-[#0a192f]" />
           </div>
-
-          <div className="max-w-xl mt-auto pb-8">
-            <h1 className="text-2xl md:text-2xl font-bold leading-[1.05] tracking-tight text-white drop-shadow-sm">
-              Elevating <br /><span className="text-emerald-400">Human Care.</span>
-            </h1>
-            <p className="mt-8 text-lg font-medium leading-relaxed text-slate-200">
-              The comprehensive platform for assisted living operators. Streamline your operations from clinical workflows to compliance.
-            </p>
-          </div>
+          <span className="font-serif text-2xl tracking-tight text-white drop-shadow-md">Haven</span>
         </div>
-      </div>
+        <p className="hidden text-xs uppercase tracking-[0.22em] text-slate-300 sm:block">
+          Operations Platform
+        </p>
+      </header>
 
-      <div className="flex min-h-screen items-center justify-center p-6 sm:p-10 lg:p-14">
-        <div className="w-full max-w-md space-y-7">
-          <div className="space-y-2 text-center lg:text-left">
-            <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Haven Access</p>
-            <h2 className="text-4xl font-semibold tracking-tight text-white">
-              Sign in
-            </h2>
-            <p className="text-sm text-slate-400">
-              Use your organizational credentials. Your dashboard is selected automatically by role.
+      {/* Centered hero + form */}
+      <main className="relative z-10 flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 py-16 sm:px-10">
+        <div className="w-full max-w-lg space-y-10">
+          <div className="space-y-4 text-center">
+            <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/90">Haven Access</p>
+            <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white drop-shadow-sm sm:text-6xl">
+              Elevating <span className="text-emerald-400">Human Care.</span>
+            </h1>
+            <p className="mx-auto max-w-md text-base leading-relaxed text-slate-300">
+              The unified platform for assisted living operators — clinical, compliance, and family engagement on one secure layer.
             </p>
           </div>
 
@@ -286,8 +275,8 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <Card className="border border-white/10 bg-slate-900/65 shadow-2xl ">
-            <CardContent className="p-6 sm:p-8">
+          <Card className="border border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-md">
+            <CardContent className="p-7 sm:p-9">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField
@@ -383,11 +372,11 @@ export default function LoginPage() {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-slate-300 lg:text-left">
+          <p className="text-center text-sm text-slate-300">
             Need access? Contact your facility administrator.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -336,20 +336,20 @@ export function AdminDashboardPageClient({
   const adminConfig = getRoleDashboardConfig(appRole);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
 
-      {/* Page header — flat, dense, no hero card. */}
+      {/* Page header — stronger hierarchy: 3xl title, more breathing room. */}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl md:leading-[1.1]">
             Command center
           </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             <span className="text-foreground">{snapshot.headlineName}</span>
             <span className="mx-1.5 text-border">·</span>
             {scopeLabel}
           </p>
-          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {adminConfig.roleLabel} home — clear urgent facility actions, then blocked workflows, then resident watchlist.
           </p>
         </div>
@@ -390,8 +390,8 @@ export function AdminDashboardPageClient({
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Urgent now</h2>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">Facility-day exceptions that need immediate review.</p>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Urgent now</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">Facility-day exceptions that need immediate review.</p>
           </div>
         </div>
       <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -441,8 +441,8 @@ export function AdminDashboardPageClient({
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Workflow convergence</h2>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">Cross-lane backlog across doctrine, incidents, admissions, referrals, discharge, and family.</p>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Workflow convergence</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">Cross-lane backlog across doctrine, incidents, admissions, referrals, discharge, and family.</p>
           </div>
         </div>
         <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
@@ -518,8 +518,8 @@ export function AdminDashboardPageClient({
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Smart rounding</h2>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">Watch load, escalation pressure, integrity review, and safety-score risk.</p>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Smart rounding</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">Watch load, escalation pressure, integrity review, and safety-score risk.</p>
           </div>
         </div>
         <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -575,7 +575,7 @@ export function AdminDashboardPageClient({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Activity className="size-4 text-muted-foreground" />
-                  <h2 className="text-[14px] font-semibold tracking-tight text-foreground">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">
                     Primary inbox
                   </h2>
                   {totalActionable > 0 && (
@@ -653,7 +653,7 @@ export function AdminDashboardPageClient({
         <div className="flex flex-col gap-4">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
             <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
-              <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+              <h3 className="text-base font-semibold tracking-tight text-foreground">
                 Acuity watchlist
               </h3>
               <Link
@@ -710,7 +710,7 @@ export function AdminDashboardPageClient({
 
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
             <div className="border-b border-border/60 px-4 py-3">
-              <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+              <h3 className="text-base font-semibold tracking-tight text-foreground">
                 Pipeline &amp; capacity
               </h3>
             </div>

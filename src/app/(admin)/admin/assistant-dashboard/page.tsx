@@ -66,7 +66,7 @@ export default function AssistantDashboardPage() {
 
       {/* Messages Section */}
       <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
-        <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+        <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
           <MessageSquare className="w-5 h-5 text-info" /> Recent Messages
         </h3>
         {brief.recentMessages.length === 0 ? (

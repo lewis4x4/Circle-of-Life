@@ -18,12 +18,12 @@ export function PageHeader({ title, subtitle, actions, className }: PageHeaderPr
         className,
       )}
     >
-      <div className="min-w-0 space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl md:leading-tight">
+      <div className="min-w-0 space-y-3">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl md:leading-[1.1]">
           {title}
         </h1>
         {subtitle ? (
-          <div className="max-w-2xl text-pretty text-sm font-medium leading-relaxed text-muted-foreground">
+          <div className="max-w-2xl text-pretty text-base font-medium leading-relaxed text-muted-foreground">
             {subtitle}
           </div>
         ) : null}

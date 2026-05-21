@@ -611,18 +611,18 @@
   }
   /* Contextual sidebar / AppShell pillar rail links */
   .haven-chrome-rail-active {
-    background-color: hsl(var(--chrome-active));
+    background-color: hsl(var(--primary) / 0.14);
     color: hsl(var(--chrome-foreground));
-    font-weight: 500;
+    font-weight: 600;
   }
   .haven-chrome-rail-active::before {
     content: "";
     position: absolute;
     z-index: 1;
     left: 0;
-    top: 0.28rem;
-    bottom: 0.28rem;
-    width: 2px;
+    top: 0.2rem;
+    bottom: 0.2rem;
+    width: 3px;
     border-radius: 0 3px 3px 0;
     background-color: hsl(var(--primary));
   }
