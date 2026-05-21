@@ -56,6 +56,15 @@ export async function GET(request: Request) {
     return NextResponse.json(emptyTaskResponse(filters.dateFrom, filters.dateTo));
   }
 
+  // Bound the result set. Caller can request more via ?limit up to a hard ceiling.
+  const DEFAULT_TASK_LIMIT = 250;
+  const MAX_TASK_LIMIT = 1000;
+  const requestedLimit = Number.parseInt(searchParams.get("limit") ?? "", 10);
+  const effectiveLimit =
+    Number.isFinite(requestedLimit) && requestedLimit > 0
+      ? Math.min(requestedLimit, MAX_TASK_LIMIT)
+      : DEFAULT_TASK_LIMIT;
+
   let query = actor.admin
     .from("operation_task_instances" as never)
     .select(`
@@ -86,7 +95,7 @@ export async function GET(request: Request) {
     .in("facility_id", accessibleFacilityIds)
     .gte("assigned_shift_date", filters.dateFrom)
     .lte("assigned_shift_date", filters.dateTo)
-    .limit(1000);
+    .limit(effectiveLimit);
 
   if (filters.status) {
     query = query.eq("status", filters.status);

@@ -26,6 +26,12 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   const from = url.searchParams.get("from")?.trim();
   const to = url.searchParams.get("to")?.trim();
 
+  // Fetch a bounded recent window — 1000 rows comfortably yields the ~200
+  // unique participants the UI needs without shipping 4000 rows and tossing
+  // ~95% of them client-side.
+  const ROW_FETCH_CAP = 1000;
+  const PARTICIPANT_CAP = 200;
+
   const untyped = asUntypedAdmin(auth.actor.admin);
   let q = untyped
     .from("facility_audit_log")
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
     .eq("facility_id", facilityId)
     .not("changed_by", "is", null)
     .order("changed_at", { ascending: false })
-    .limit(4000);
+    .limit(ROW_FETCH_CAP);
 
   if (from) q = q.gte("changed_at", `${from}T00:00:00Z`);
   if (to) q = q.lte("changed_at", `${to}T23:59:59Z`);
@@ -48,7 +54,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
     if (!id || seen.has(id)) continue;
     seen.add(id);
     ids.push(id);
-    if (ids.length >= 200) break;
+    if (ids.length >= PARTICIPANT_CAP) break;
   }
 
   let profiles = new Map<string, string>();
