@@ -123,7 +123,9 @@ export function useFacility(facilityId: string): UseFacilityReturn {
   );
 
   useEffect(() => {
+    if (cacheIsFresh) return;
     void loadDetail(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDetail]);
 
   return {
