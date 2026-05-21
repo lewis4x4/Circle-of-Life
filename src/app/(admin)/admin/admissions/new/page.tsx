@@ -1265,7 +1265,7 @@ function AdmissionsNewInner() {
 
   return (
     <TooltipProvider delay={300}>
-      <div className="mx-auto max-w-[1040px] space-y-8 px-4 pb-14">
+      <div className="w-full space-y-8 px-4 pb-14">
       <Link
         href="/pipeline/recent-admissions"
         className="inline-flex items-center gap-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
