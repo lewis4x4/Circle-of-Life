@@ -375,12 +375,14 @@ function ExecutiveEmptyOnboarding({
     <div className="rounded-xl border border-border bg-card p-5 lg:p-6">
       <div className="flex flex-col gap-1">
         <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
-          You&rsquo;re connected, but no live data has landed yet
+          {facilityCount > 0
+            ? "Snapshot pending — run the executive refresh"
+            : "We couldn't load facilities for your organization"}
         </h2>
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           {facilityCount > 0
-            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. Run the executive refresh to generate the latest KPI snapshot and resident safety scores from live operational data.`
-            : "Add a facility to start collecting operational data. Once it's in scope, run the executive refresh to populate this dashboard."}
+            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. The executive KPI snapshot hasn't been computed yet — click below to generate the latest KPIs and resident safety scores from your live operational data.`
+            : "Underlying data may exist, but the dashboard couldn't read it. Confirm you're signed in with an account that has owner or org-admin access to this organization, then refresh this page. If the issue persists, the executive snapshot may need to be triggered server-side."}
         </p>
       </div>
 

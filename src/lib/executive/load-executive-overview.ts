@@ -36,8 +36,10 @@ export async function loadExecutiveOverview(
   supabase: SupabaseClient<Database>,
   organizationId: string,
 ): Promise<ExecutiveOverviewData> {
+  // Use allSettled so one failing query (e.g., a snapshot table that's empty
+  // or an assurance lookup that errors) doesn't blank the entire dashboard.
   const [aggregateSnapshotsRes, facilitySnapshotsRes, alertsRes, facilitiesRes, assuranceRows, assuranceTrendRows] =
-    await Promise.all([
+    await Promise.allSettled([
       buildAggregateSnapshotQuery(supabase, organizationId),
       buildFacilitySnapshotQuery(supabase, organizationId),
       supabase
@@ -58,11 +60,18 @@ export async function loadExecutiveOverview(
       fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7),
     ]);
 
+  const aggregateRows = aggregateSnapshotsRes.status === "fulfilled" ? aggregateSnapshotsRes.value.data ?? [] : [];
+  const facilitySnapshotRows = facilitySnapshotsRes.status === "fulfilled" ? facilitySnapshotsRes.value.data ?? [] : [];
+  const alertRows = alertsRes.status === "fulfilled" ? alertsRes.value.data ?? [] : [];
+  const facilityRows = facilitiesRes.status === "fulfilled" ? facilitiesRes.value.data ?? [] : [];
+  const heatMap = assuranceRows.status === "fulfilled" ? assuranceRows.value : [];
+  const trends = assuranceTrendRows.status === "fulfilled" ? assuranceTrendRows.value : [];
+
   return {
-    metrics: buildLatestMetricMap((aggregateSnapshotsRes.data ?? []) as MetricSnapshotRow[]),
-    alerts: (alertsRes.data ?? []) as AlertWithFacility[],
-    facilities: attachFacilityMetrics(facilitiesRes.data ?? [], (facilitySnapshotsRes.data ?? []) as MetricSnapshotRow[]),
-    assuranceHeatMap: assuranceRows,
-    assuranceTrends: assuranceTrendRows,
+    metrics: buildLatestMetricMap(aggregateRows as MetricSnapshotRow[]),
+    alerts: alertRows as AlertWithFacility[],
+    facilities: attachFacilityMetrics(facilityRows, facilitySnapshotRows as MetricSnapshotRow[]),
+    assuranceHeatMap: heatMap,
+    assuranceTrends: trends,
   };
 }
