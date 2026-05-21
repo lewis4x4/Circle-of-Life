@@ -43,9 +43,12 @@ export async function runOutbreakDetectionAfterSurveillance(
   surveillanceId: string,
   declaredByUserId: string,
 ): Promise<{ outcome: "none" | "linked" | "created" | "reopened" }> {
+  // Only seven columns are actually used downstream; selecting them
+  // explicitly avoids shipping the full 30-column row over the wire.
+  const SURV_COLS = "id, status, infection_type, facility_id, organization_id, unit_id, onset_date";
   const { data: row, error: loadErr } = await admin
     .from("infection_surveillance")
-    .select("*")
+    .select(SURV_COLS)
     .eq("id", surveillanceId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -55,7 +58,10 @@ export async function runOutbreakDetectionAfterSurveillance(
     return { outcome: "none" };
   }
 
-  const s = row as SurvRow;
+  const s = row as unknown as Pick<
+    SurvRow,
+    "id" | "status" | "infection_type" | "facility_id" | "organization_id" | "unit_id" | "onset_date"
+  >;
   if (s.status !== "suspected" && s.status !== "confirmed") {
     return { outcome: "none" };
   }
