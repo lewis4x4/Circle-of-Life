@@ -478,41 +478,74 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const first = pillar.items[0];
     if (!first) return null;
     return (
-      <Link
-        key={pillar.id}
-        href={first.href}
-        aria-current={active ? "page" : undefined}
-        onClick={(event) => {
-          if (!active) return;
-          if (openActivePillarSheetIfMobile(pillar.id)) {
-            event.preventDefault();
-          }
-        }}
-        className={cn(
-          // 36px hit target, generous horizontal padding so the 2px accent
-          // underline reads as a strong active signal without crowding.
-          // Active: foreground + medium + primary underline. Inactive: muted hover lift.
-          "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
-          "transition-colors duration-[var(--motion-duration-micro)]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          active
-            ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        {/* No truncate — constitution rule 8 forbids ellipsis. Pillar labels
-            are intentionally short (≤ 9 chars) so they fit; if a future label
-            doesn't, rename it rather than ellipsize. */}
-        <span className="whitespace-nowrap">{pillar.label}</span>
-        {active && (
-          // 2px brand underline aligned to the tab's text baseline (rule 4:
-          // never rely on color alone — paired with aria-current + font-medium).
-          <span
-            aria-hidden
-            className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
-          />
-        )}
-      </Link>
+      <div key={pillar.id} className="group relative">
+        <Link
+          href={first.href}
+          aria-current={active ? "page" : undefined}
+          aria-haspopup="menu"
+          onClick={(event) => {
+            if (!active) return;
+            if (openActivePillarSheetIfMobile(pillar.id)) {
+              event.preventDefault();
+            }
+          }}
+          className={cn(
+            "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
+            "transition-colors duration-[var(--motion-duration-micro)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            active
+              ? "font-medium text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <span className="whitespace-nowrap">{pillar.label}</span>
+          {active && (
+            <span
+              aria-hidden
+              className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
+            />
+          )}
+        </Link>
+        {/* Hover dropdown (desktop only — mobile uses scroll strip + sheet).
+            pt-2 bridges the cursor gap so travel doesn't dismiss it. */}
+        <div
+          role="menu"
+          aria-label={`${pillar.label} sections`}
+          className={cn(
+            "hidden lg:block",
+            "invisible absolute left-0 top-full z-40 min-w-[208px] pt-2 opacity-0",
+            "transition-opacity duration-100",
+            "group-hover:visible group-hover:opacity-100",
+            "group-focus-within:visible group-focus-within:opacity-100",
+          )}
+        >
+          <div className="rounded-md border border-border bg-popover p-1.5 shadow-lg ring-1 ring-foreground/10">
+            {pillar.items.map((item) => {
+              const Icon = item.icon;
+              const itemActive = isItemActive(item.href);
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  role="menuitem"
+                  aria-current={itemActive ? "page" : undefined}
+                  className={cn(
+                    "flex h-8 items-center gap-2 rounded px-2 text-[13px] outline-none",
+                    "transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring",
+                    itemActive
+                      ? "bg-primary/10 font-medium text-foreground"
+                      : "text-foreground/85 hover:bg-secondary/60 hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="whitespace-nowrap">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     );
   };
 
