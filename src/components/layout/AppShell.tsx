@@ -474,78 +474,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   const renderPillarTab = (pillar: Pillar) => {
-    const active = activePillar?.id === pillar.id;
     const first = pillar.items[0];
     if (!first) return null;
     return (
-      <div key={pillar.id} className="group relative">
-        <Link
-          href={first.href}
-          aria-current={active ? "page" : undefined}
-          aria-haspopup="menu"
-          onClick={(event) => {
-            if (!active) return;
-            if (openActivePillarSheetIfMobile(pillar.id)) {
-              event.preventDefault();
-            }
-          }}
-          className={cn(
-            "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
-            "transition-colors duration-[var(--motion-duration-micro)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            active
-              ? "font-medium text-foreground"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <span className="whitespace-nowrap">{pillar.label}</span>
-          {active && (
-            <span
-              aria-hidden
-              className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
-            />
-          )}
-        </Link>
-        {/* Hover dropdown (desktop only — mobile uses scroll strip + sheet).
-            pt-2 bridges the cursor gap so travel doesn't dismiss it. */}
-        <div
-          role="menu"
-          aria-label={`${pillar.label} sections`}
-          className={cn(
-            "hidden lg:block",
-            "invisible absolute left-0 top-full z-40 min-w-[208px] pt-2 opacity-0",
-            "transition-opacity duration-100",
-            "group-hover:visible group-hover:opacity-100",
-            "group-focus-within:visible group-focus-within:opacity-100",
-          )}
-        >
-          <div className="rounded-md border border-border bg-popover p-1.5 shadow-lg ring-1 ring-foreground/10">
-            {pillar.items.map((item) => {
-              const Icon = item.icon;
-              const itemActive = isItemActive(item.href);
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  role="menuitem"
-                  aria-current={itemActive ? "page" : undefined}
-                  className={cn(
-                    "flex h-8 items-center gap-2 rounded px-2 text-[13px] outline-none",
-                    "transition-colors",
-                    "focus-visible:ring-2 focus-visible:ring-ring",
-                    itemActive
-                      ? "bg-primary/10 font-medium text-foreground"
-                      : "text-foreground/85 hover:bg-secondary/60 hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="whitespace-nowrap">{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <PillarTabWithDropdown
+        key={pillar.id}
+        pillar={pillar}
+        active={activePillar?.id === pillar.id}
+        firstHref={first.href}
+        isItemActive={isItemActive}
+        onActivePillarTap={openActivePillarSheetIfMobile}
+      />
     );
   };
 
@@ -938,6 +877,148 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
       ) : null}
       <LazyOverlayShells />
+    </div>
+  );
+}
+
+/**
+ * Pillar tab with its sub-route dropdown.
+ *
+ * Stateful so it works on touch as well as mouse:
+ *  - mouseenter / mouseleave: open/close (desktop hover)
+ *  - focus / blur (within the wrapper): open while focused (keyboard)
+ *  - touch tap on the trigger: open the menu instead of navigating
+ *  - click outside / Escape: close
+ *
+ * Previously the dropdown was pure CSS `group-hover` and `hidden lg:block`,
+ * which meant tablets in landscape with touch input — and any user who
+ * tapped a tab — saw nothing.
+ */
+function PillarTabWithDropdown({
+  pillar,
+  active,
+  firstHref,
+  isItemActive,
+  onActivePillarTap,
+}: {
+  pillar: Pillar;
+  active: boolean;
+  firstHref: string;
+  isItemActive: (href: string) => boolean;
+  onActivePillarTap: (pillarId: Pillar["id"]) => boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Close on outside click / tap and Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const node = wrapperRef.current;
+      if (node && e.target instanceof Node && !node.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(e) => {
+        // Only close if focus is leaving the whole wrapper.
+        if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <Link
+        href={firstHref}
+        aria-current={active ? "page" : undefined}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onPointerDown={(event) => {
+          // Touch / pen users tap the tab to reveal the dropdown instead of
+          // navigating immediately. Mouse users keep the original behavior:
+          // hover reveals the menu, click navigates.
+          if (event.pointerType === "touch" || event.pointerType === "pen") {
+            if (!open) {
+              event.preventDefault();
+              setOpen(true);
+            }
+          }
+        }}
+        onClick={(event) => {
+          if (!active) return;
+          if (onActivePillarTap(pillar.id)) {
+            event.preventDefault();
+          }
+        }}
+        className={cn(
+          "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
+          "transition-colors duration-[var(--motion-duration-micro)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          active
+            ? "font-medium text-foreground"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        <span className="whitespace-nowrap">{pillar.label}</span>
+        {active && (
+          <span
+            aria-hidden
+            className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
+          />
+        )}
+      </Link>
+      <div
+        role="menu"
+        aria-label={`${pillar.label} sections`}
+        className={cn(
+          "absolute left-0 top-full z-40 min-w-[208px] pt-2",
+          "transition-opacity duration-100",
+          open ? "visible opacity-100" : "invisible opacity-0 pointer-events-none",
+        )}
+      >
+        <div className="rounded-md border border-border bg-popover p-1.5 shadow-lg ring-1 ring-foreground/10">
+          {pillar.items.map((item) => {
+            const Icon = item.icon;
+            const itemActive = isItemActive(item.href);
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                role="menuitem"
+                aria-current={itemActive ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex h-8 items-center gap-2 rounded px-2 text-[13px] outline-none",
+                  "transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-ring",
+                  itemActive
+                    ? "bg-primary/10 font-medium text-foreground"
+                    : "text-foreground/85 hover:bg-secondary/60 hover:text-foreground",
+                )}
+              >
+                <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="whitespace-nowrap">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
