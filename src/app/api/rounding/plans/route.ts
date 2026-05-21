@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 import { validateObservationPlanPayload } from "@/lib/rounding/observation-plan-validation";
 import type { ObservationPlanInput } from "@/lib/rounding/types";
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await query;
   if (error) {
-    console.error("[rounding/plans] get", error);
+    logError("rounding.plans.get", error, { facilityId, planId, residentId });
     return NextResponse.json({ error: "Could not load observation plans" }, { status: 500 });
   }
 
@@ -171,7 +172,7 @@ export async function POST(request: Request) {
       .is("deleted_at", null);
 
     if (updateError) {
-      console.error("[rounding/plans] update", updateError);
+      logError("rounding.plans.update", updateError, { planId });
       return NextResponse.json({ error: "Could not update observation plan" }, { status: 500 });
     }
 
@@ -183,7 +184,7 @@ export async function POST(request: Request) {
       .is("deleted_at", null);
 
     if (ruleDeleteError) {
-      console.error("[rounding/plans] soft-delete rules", ruleDeleteError);
+      logError("rounding.plans.rules.soft-delete", ruleDeleteError, { planId });
       return NextResponse.json({ error: "Could not replace plan rules" }, { status: 500 });
     }
     replacedExistingRules = true;
@@ -195,7 +196,7 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError || !createdPlan) {
-      console.error("[rounding/plans] insert", insertError);
+      logError("rounding.plans.insert", insertError, { facilityId: body.facilityId, residentId: body.residentId });
       return NextResponse.json({ error: "Could not create observation plan" }, { status: 500 });
     }
 
@@ -227,14 +228,14 @@ export async function POST(request: Request) {
     .insert(rulesPayload as never);
 
   if (rulesInsertError) {
-    console.error("[rounding/plans] insert rules", rulesInsertError);
+    logError("rounding.plans.rules.insert", rulesInsertError, { planId });
     if (createdPlanInRequest) {
       const { error: rollbackPlanError } = await context.admin
         .from("resident_observation_plans")
         .update({ deleted_at: now })
         .eq("id", planId)
         .eq("organization_id", context.organizationId);
-      if (rollbackPlanError) console.error("[rounding/plans] rollback created plan", rollbackPlanError);
+      if (rollbackPlanError) logError("rounding.plans.rollback", rollbackPlanError, { planId });
     } else if (replacedExistingRules) {
       const { error: restoreRulesError } = await context.admin
         .from("resident_observation_plan_rules")
@@ -242,7 +243,7 @@ export async function POST(request: Request) {
         .eq("plan_id", planId)
         .eq("organization_id", context.organizationId)
         .eq("deleted_at", now);
-      if (restoreRulesError) console.error("[rounding/plans] restore replaced rules", restoreRulesError);
+      if (restoreRulesError) logError("rounding.plans.rules.restore", restoreRulesError, { planId });
     }
     return NextResponse.json({ error: "Could not save observation plan rules" }, { status: 500 });
   }

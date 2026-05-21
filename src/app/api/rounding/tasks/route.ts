@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 import type { ObservationTaskStatus } from "@/lib/rounding/types";
 import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
@@ -105,7 +106,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await query;
   if (error) {
-    console.error("[rounding/tasks] get", error);
+    logError("rounding.tasks.get", error, { facilityId, status });
     return NextResponse.json({ error: "Could not load observation tasks" }, { status: 500 });
   }
 

@@ -4,6 +4,7 @@ import { actorCanAccessFacility, actorCanViewOperations, listActorAccessibleFaci
 import type { OperationsActor } from "@/lib/operations/auth";
 import { buildOperationTaskResponse, parseOperationTaskFilters, summarizeOperationTasks } from "@/lib/operations/server";
 import type { OperationTaskResponse } from "@/lib/operations/types";
+import { logError } from "@/lib/observability/logger";
 
 type OperationTaskRow = {
   id: string;
@@ -115,7 +116,10 @@ export async function GET(request: Request) {
 
   const { data, error } = await query.order("assigned_shift_date", { ascending: true }).order("created_at", { ascending: true });
   if (error) {
-    console.error("[operations/tasks] list", error);
+    logError("admin.operations.tasks.list", error, {
+      facilityCount: accessibleFacilityIds.length,
+      limit: effectiveLimit,
+    });
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
 

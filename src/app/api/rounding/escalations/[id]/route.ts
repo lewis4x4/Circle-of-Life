@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 
 type Action = "start_review" | "resolve" | "dismiss";
@@ -53,7 +54,7 @@ export async function PATCH(
     .maybeSingle();
 
   if (escalationError) {
-    console.error("[rounding/escalations] lookup", escalationError);
+    logError("rounding.escalations.lookup", escalationError, { escalationId });
   }
   if (escalationError || !escalation) {
     return NextResponse.json({ error: "Escalation not found" }, { status: 404 });
@@ -110,7 +111,7 @@ export async function PATCH(
     .eq("organization_id", context.organizationId);
 
   if (updateError) {
-    console.error("[rounding/escalations] update", updateError);
+    logError("rounding.escalations.update", updateError, { escalationId: escalation.id, action });
     return NextResponse.json({ error: "Could not update escalation" }, { status: 500 });
   }
 

@@ -9,6 +9,7 @@ import { documentMetadataSchema } from "@/lib/validation/facility-admin";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { asUntypedAdmin, type UntypedQueryBuilder } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 import type { Database } from "@/types/database";
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
@@ -233,7 +234,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       });
 
     if (uploadErr) {
-      console.error("[document-upload] Storage error:", uploadErr);
+      logError("admin.facilities.documents", uploadErr, { action: "storage_upload", facilityId });
       return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
     }
 
@@ -264,10 +265,10 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       .single();
 
     if (insertErr) {
-      console.error("[document-upload] Insert error:", insertErr);
+      logError("admin.facilities.documents", insertErr, { action: "insert_document", facilityId });
       const { error: removeErr } = await admin.storage.from("facility-documents").remove([storagePath]);
       if (removeErr) {
-        console.warn("[document-upload] uploaded object cleanup failed:", removeErr);
+        logError("admin.facilities.documents", removeErr, { action: "cleanup_uploaded_object", facilityId });
       }
       return NextResponse.json({ error: "Failed to create document record" }, { status: 500 });
     }
@@ -280,12 +281,12 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
           .update({ deleted_at: nowIso } as Record<string, unknown>)
           .eq("id", insertedId);
         if (rollbackErr) {
-          console.warn(`[document-upload] rollback soft-delete failed after ${reason}:`, rollbackErr);
+          logError("admin.facilities.documents", rollbackErr, { action: "rollback_soft_delete", reason, facilityId });
         }
       }
       const { error: removeErr } = await admin.storage.from("facility-documents").remove([storagePath]);
       if (removeErr) {
-        console.warn(`[document-upload] storage cleanup failed after ${reason}:`, removeErr);
+        logError("admin.facilities.documents", removeErr, { action: "rollback_storage_cleanup", reason, facilityId });
       }
     };
 
@@ -321,7 +322,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         .single();
 
       if (verInsErr) {
-        console.error("[document-upload] version ledger error:", verInsErr);
+        logError("admin.facilities.documents", verInsErr, { action: "insert_version_ledger", facilityId });
         await rollbackInsertedDocument("version ledger error");
         return NextResponse.json({ error: "Version ledger update failed" }, { status: 500 });
       }
@@ -331,7 +332,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         .update({ deleted_at: nowIso } as Record<string, unknown>)
         .eq("id", superseded.id as string);
       if (softErr) {
-        console.error("[document-upload] supersede soft-delete error:", softErr);
+        logError("admin.facilities.documents", softErr, { action: "supersede_soft_delete", facilityId });
         const versionId = versionRecord?.id;
         if (typeof versionId === "string") {
           const { error: versionRollbackErr } = await untypedAdmin
@@ -339,7 +340,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
             .delete()
             .eq("id", versionId);
           if (versionRollbackErr) {
-            console.warn("[document-upload] version ledger rollback failed:", versionRollbackErr);
+            logError("admin.facilities.documents", versionRollbackErr, { action: "version_ledger_rollback", facilityId });
           }
         }
         await rollbackInsertedDocument("supersede soft-delete error");
@@ -351,7 +352,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ data: enriched }, { status: 201 });
   } catch (err) {
-    console.error("[document-upload] Error:", err);
+    logError("admin.facilities.documents", err, { action: "upload_document", facilityId });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

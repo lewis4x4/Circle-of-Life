@@ -3,6 +3,7 @@ import {
   type SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { pickRedacted } from "../_shared/redact-pii.ts";
 import { PROMOTERS } from "./promoters/index.ts";
 import type {
   ModulePromotionResult,
@@ -552,10 +553,14 @@ async function handlePromotion(
         metadata: { error_message: message },
       }).catch(() => undefined);
     }
-    console.error("facility-launch-promote failed", {
-      run_id: runId,
-      error: message,
-    });
+    // Whitelist + deep-redact before logging. The error message can carry
+    // upstream payloads, so it goes through `pickRedacted` rather than being
+    // spread raw into the log line.
+    const safeLog = pickRedacted(
+      { run_id: runId, error: message },
+      ["run_id", "error", "error_code", "status"],
+    );
+    console.error("facility-launch-promote failed", safeLog);
     return jsonResponse(
       { error: "Promotion failed", run_id: runId },
       500,

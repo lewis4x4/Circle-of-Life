@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
   id: string;
@@ -38,7 +39,10 @@ export async function POST(request: NextRequest) {
 
   const tasks = (data ?? []) as unknown as TaskRow[];
   if (error) {
-    console.error("[operations/tasks/bulk-complete] query", error);
+    logError("admin.operations.tasks.bulk-complete", error, {
+      action: "query",
+      taskIdCount: body.task_ids.length,
+    });
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
 
@@ -70,7 +74,10 @@ export async function POST(request: NextRequest) {
   );
 
   if (rpcError) {
-    console.error("[operations/tasks/bulk-complete] rpc", rpcError);
+    logError("admin.operations.tasks.bulk-complete", rpcError, {
+      action: "rpc",
+      taskCount: updatableTasks.length,
+    });
     return NextResponse.json({ error: "Failed to complete tasks" }, { status: 500 });
   }
 

@@ -9,6 +9,7 @@ import { thresholdSchema } from "@/lib/validation/facility-admin";
 import { z } from "zod";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -157,7 +158,10 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ data: data ?? [] });
   } catch (err) {
-    console.error("[thresholds-upsert] Error:", err);
+    logError("admin.facilities.thresholds.upsert", err, {
+      facilityId,
+      thresholdCount: thresholds.length,
+    });
     return NextResponse.json({ error: "Failed to save thresholds" }, { status: 500 });
   }
 }

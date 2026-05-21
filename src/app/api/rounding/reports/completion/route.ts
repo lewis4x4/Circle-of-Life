@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
 
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
     .is("deleted_at", null);
 
   if (error) {
-    console.error("[rounding/reports/completion] get", error);
+    logError("rounding.reports.completion.get", error, { facilityId, from, to });
     return NextResponse.json({ error: "Could not load completion report" }, { status: 500 });
   }
 

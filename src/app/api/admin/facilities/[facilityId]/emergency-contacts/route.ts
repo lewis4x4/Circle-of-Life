@@ -8,6 +8,7 @@ import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-au
 import { emergencyContactSchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -133,7 +134,10 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ data: contact }, { status: 201 });
   } catch (err) {
-    console.error("[contact-create] Error:", err);
+    logError("admin.facilities.emergency-contacts.create", err, {
+      facilityId,
+      contactCategory: data.contact_category,
+    });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

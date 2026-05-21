@@ -7,6 +7,7 @@ import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { reactivateUserSchema } from "@/lib/validation/user-management";
 import { adminEnableUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -63,7 +64,10 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   try {
     await adminEnableUser(targetUserId);
   } catch (err) {
-    console.error("[user-reactivate] Failed to enable auth:", err);
+    logError("admin.users.reactivate", err, {
+      action: "enable_auth",
+      targetUserId,
+    });
   }
 
   // Audit

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
@@ -52,7 +53,7 @@ export async function POST(
   try {
     admin = createServiceRoleClient();
   } catch (e) {
-    console.error("[care-plan-approve] service role client error", e);
+    logError("care-plans.approve", e, { action: "service_role_client" });
     return NextResponse.json(
       { error: "Server configuration error" },
       { status: 503 }
@@ -155,7 +156,7 @@ export async function POST(
     .maybeSingle();
 
   if (updateError) {
-    console.error("[care-plan-approve] update error", updateError);
+    logError("care-plans.approve", updateError, { action: "update_care_plan", carePlanId });
     return NextResponse.json(
       { error: "Failed to approve care plan" },
       { status: 500 }
@@ -187,7 +188,7 @@ export async function POST(
   });
 
   if (auditError) {
-    console.warn("[care-plan-approve] audit_log insert failed", auditError);
+    logError("care-plans.approve", auditError, { action: "audit_log_insert", carePlanId });
   }
 
   return NextResponse.json({

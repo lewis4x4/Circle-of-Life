@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { runOutbreakDetectionAfterSurveillance } from "@/lib/infection-control/outbreak-detection";
+import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type Body = { surveillanceId?: string };
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   try {
     admin = createServiceRoleClient();
   } catch (e) {
-    console.error("[evaluate-outbreak] service role", e);
+    logError("infection-control.evaluate-outbreak.service-role", e);
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 

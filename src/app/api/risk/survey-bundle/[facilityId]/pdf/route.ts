@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireAdminApiActor, actorCanAccessFacility } from "@/lib/admin/api-auth";
+import { logError } from "@/lib/observability/logger";
 import { loadSurveyBundlePacket } from "@/lib/risk/load-survey-bundle";
 import { buildSurveyBundlePrintHtml } from "@/lib/risk/survey-bundle-print";
 import {
@@ -59,7 +60,7 @@ export async function GET(
         upsert: true,
       });
     if (upload.error) {
-      console.error("[survey-bundle-pdf] storage", upload.error);
+      logError("risk.survey-bundle.pdf.storage", upload.error, { facilityId });
     }
 
     return new NextResponse(new Uint8Array(pdf), {
@@ -71,7 +72,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("[survey-bundle-pdf] render", error);
+    logError("risk.survey-bundle.pdf.render", error, { facilityId });
     return NextResponse.json(
       { error: "Could not generate survey bundle PDF." },
       { status: 500 },

@@ -5,6 +5,7 @@ import {
   fetchPreviousPublishedStandupSnapshotDetail,
   fetchStandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import { logError } from "@/lib/observability/logger";
 import {
   EXECUTIVE_STANDUP_PACKET_RENDER_VERSION,
   executiveStandupPdfStoragePath,
@@ -38,7 +39,7 @@ export async function GET(
   try {
     admin = createServiceRoleClient();
   } catch (error) {
-    console.error("[standup-pdf] service role", error);
+    logError("executive.standup.pdf.service-role", error);
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 
@@ -121,7 +122,7 @@ export async function GET(
         upsert: true,
       });
     if (upload.error) {
-      console.error("[standup-pdf] storage", upload.error);
+      logError("executive.standup.pdf.storage", upload.error, { week });
     } else {
       await admin
         .from("exec_standup_snapshots" as never)
@@ -184,7 +185,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("[standup-pdf] render", error);
+    logError("executive.standup.pdf.render", error, { week });
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
       {

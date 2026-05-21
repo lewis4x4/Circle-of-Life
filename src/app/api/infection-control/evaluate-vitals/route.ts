@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { evaluateVitalSignAlertsForDailyLog } from "@/lib/infection-control/evaluate-vitals";
+import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 import type { Database } from "@/types/database";
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   try {
     admin = createServiceRoleClient();
   } catch (e) {
-    console.error("[evaluate-vitals] service role", e);
+    logError("infection-control.evaluate-vitals.service-role", e);
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 

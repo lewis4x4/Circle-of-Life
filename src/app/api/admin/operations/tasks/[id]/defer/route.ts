@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
   id: string;
@@ -109,7 +110,11 @@ export async function PATCH(
 
   const newTask = newTaskData as unknown as { id: string } | null;
   if (insertError || !newTask) {
-    console.error("[operations/tasks/defer] insert", insertError);
+    logError("admin.operations.tasks.defer", insertError ?? "insert returned no row", {
+      action: "insert",
+      taskId: id,
+      facilityId: task.facility_id,
+    });
     return NextResponse.json({ error: "Failed to defer task" }, { status: 500 });
   }
 
@@ -125,7 +130,12 @@ export async function PATCH(
     .eq("id", id);
 
   if (updateError) {
-    console.error("[operations/tasks/defer] update", updateError);
+    logError("admin.operations.tasks.defer", updateError, {
+      action: "update",
+      taskId: id,
+      facilityId: task.facility_id,
+      newTaskId: newTask.id,
+    });
     return NextResponse.json({ error: "Failed to update deferred task" }, { status: 500 });
   }
 

@@ -27,6 +27,7 @@ import {
   type ToolCallerContext,
   type ToolLoopResult,
 } from "../haven-ai-router/tools.ts";
+import { pickRedacted } from "./redact-pii.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Public types                                                      */
@@ -137,24 +138,42 @@ function centsToUsd(cents: number): string {
   })}`;
 }
 
+/**
+ * Known-safe keys for router-dispatch logging. We whitelist rather than spread
+ * caller-supplied `extra` so unbounded keys cannot leak via log size or
+ * surprise field names. Values are also deep-redacted via `pickRedacted`.
+ */
+const DISPATCH_LOG_WHITELIST = [
+  "status",
+  "reason",
+  "has_question",
+  "tool",
+  "rpc",
+  "run_id",
+  "count",
+  "error_code",
+] as const;
+
 function logEvent(event: string, extra: Record<string, unknown> = {}): void {
+  const safe = pickRedacted(extra, DISPATCH_LOG_WHITELIST);
   console.log(
     JSON.stringify({
       fn: "router-dispatch",
       event,
-      ...extra,
+      ...safe,
     }),
   );
 }
 
 function logError(event: string, error: unknown, extra: Record<string, unknown> = {}): void {
+  const safe = pickRedacted(extra, DISPATCH_LOG_WHITELIST);
   console.error(
     JSON.stringify({
       fn: "router-dispatch",
       event,
       outcome: "error",
       error_message: error instanceof Error ? error.message : String(error),
-      ...extra,
+      ...safe,
     }),
   );
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 
 type Body = {
@@ -45,7 +46,7 @@ export async function POST(
     .maybeSingle();
 
   if (taskError) {
-    console.error("[rounding/tasks/excuse] task lookup", taskError);
+    logError("rounding.tasks.excuse.lookup", taskError, { taskId });
   }
   if (taskError || !task) {
     return NextResponse.json({ error: "Observation task not found" }, { status: 404 });
@@ -72,7 +73,7 @@ export async function POST(
     .eq("organization_id", context.organizationId);
 
   if (updateError) {
-    console.error("[rounding/tasks/excuse] update", updateError);
+    logError("rounding.tasks.excuse.update", updateError, { taskId: task.id });
     return NextResponse.json({ error: "Could not excuse observation task" }, { status: 500 });
   }
 

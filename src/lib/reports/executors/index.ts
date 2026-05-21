@@ -235,7 +235,8 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
       .from("staff")
       .select("id, first_name, last_name")
       .eq("organization_id", organizationId)
-      .in("id", staffIds);
+      .in("id", staffIds)
+      .is("deleted_at", null);
     for (const s of staffRows ?? []) {
       nameById.set(s.id, `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim());
     }
@@ -310,7 +311,8 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
       .from("staff")
       .select("id, first_name, last_name")
       .eq("organization_id", organizationId)
-      .in("id", otStaffIds);
+      .in("id", otStaffIds)
+      .is("deleted_at", null);
     for (const s of otStaffRows ?? []) {
       otNameById.set(s.id, `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim());
     }
@@ -525,7 +527,8 @@ async function runTrainingCertificationExpiry(params: ExecuteParams): Promise<Re
       .from("staff")
       .select("id, first_name, last_name")
       .eq("organization_id", organizationId)
-      .in("id", staffIds);
+      .in("id", staffIds)
+      .is("deleted_at", null);
     if (staffNameErr) throw new Error(staffNameErr.message);
     nameById = new Map(
       (staffRows ?? []).map((s) => [

@@ -20,6 +20,7 @@ import {
   adminGetAuthSnapshotsByIds,
 } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -237,7 +238,11 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     try {
       await adminUpdateUserRole(id, updates.app_role);
     } catch (err) {
-      console.error("[user-update] Failed to sync role to auth:", err);
+      logError("admin.users.update", err, {
+        action: "sync_role_to_auth",
+        targetUserId: id,
+        newRole: updates.app_role,
+      });
     }
   }
 
@@ -320,7 +325,10 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   try {
     await adminDisableUser(id);
   } catch (err) {
-    console.error("[user-delete] Failed to disable auth:", err);
+    logError("admin.users.delete", err, {
+      action: "disable_auth",
+      targetUserId: id,
+    });
   }
 
   // Audit

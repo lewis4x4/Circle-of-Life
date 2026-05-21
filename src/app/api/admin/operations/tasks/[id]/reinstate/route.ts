@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
   id: string;
@@ -52,7 +53,11 @@ export async function PATCH(
     .eq("id", id);
 
   if (updateError) {
-    console.error("[operations/tasks/reinstate] update", updateError);
+    logError("admin.operations.tasks.reinstate", updateError, {
+      action: "update",
+      taskId: id,
+      facilityId: task.facility_id,
+    });
     return NextResponse.json({ error: "Failed to reinstate task" }, { status: 500 });
   }
 

@@ -28,6 +28,7 @@ import {
   isAllowedTool,
   validateToolInput,
 } from "../_shared/tool-registry.ts";
+import { pickRedacted } from "../_shared/redact-pii.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -87,18 +88,40 @@ const RPC_TIMEOUT_MS = 15_000;
 /*  Logging                                                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Known-safe keys for tool-loop logging. We deliberately whitelist instead of
+ * spreading caller-supplied `extra` — that prevents unbounded log shapes and
+ * stops accidental PHI from a Supabase error/payload from ever entering the
+ * serialised line. Values are also deep-redacted via `pickRedacted`.
+ */
+const TOOL_LOG_WHITELIST = [
+  "tool",
+  "rpc",
+  "classified",
+  "status",
+  "name",
+  "msg",
+  "turns",
+  "tools_used",
+  "run_id",
+  "count",
+  "error_code",
+] as const;
+
 function logEvent(event: string, extra: Record<string, unknown> = {}): void {
-  console.log(JSON.stringify({ fn: "tool-loop", event, ...extra }));
+  const safe = pickRedacted(extra, TOOL_LOG_WHITELIST);
+  console.log(JSON.stringify({ fn: "tool-loop", event, ...safe }));
 }
 
 function logError(event: string, error: unknown, extra: Record<string, unknown> = {}): void {
+  const safe = pickRedacted(extra, TOOL_LOG_WHITELIST);
   console.error(
     JSON.stringify({
       fn: "tool-loop",
       event,
       outcome: "error",
       error_message: error instanceof Error ? error.message : String(error),
-      ...extra,
+      ...safe,
     }),
   );
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+import { logError } from "@/lib/observability/logger";
 
 type EdgeRefreshResult = {
   name: "exec-kpi-snapshot" | "resident-safety-scorer";
@@ -76,7 +77,7 @@ function toClientResult(result: EdgeRefreshResult): EdgeRefreshClientResult {
 }
 
 function logRefreshFailure(result: EdgeRefreshResult): void {
-  console.error("[executive-refresh] edge invocation failed", {
+  logError("executive.refresh.edge", "edge invocation failed", {
     name: result.name,
     status: result.status,
     ok: result.ok,

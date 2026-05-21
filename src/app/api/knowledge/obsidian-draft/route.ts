@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import obsidianDraft from "@/lib/knowledge/obsidian-draft";
 import { ObsidianVaultUnavailableError } from "@/lib/knowledge/obsidian-draft";
+import { logError } from "@/lib/observability/logger";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   try {
     admin = createServiceRoleClient();
   } catch (error) {
-    console.error("[obsidian-draft] service role", error);
+    logError("knowledge.obsidian-draft.service-role", error);
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 

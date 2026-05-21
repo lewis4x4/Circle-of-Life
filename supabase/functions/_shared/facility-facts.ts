@@ -14,6 +14,7 @@
  * fact list — fact-pack failure must never break the Haven Insight surface.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { pickRedacted } from "./redact-pii.ts";
 
 export type FacilityFact = {
   id: string;
@@ -54,14 +55,28 @@ type MedicaidProviderRow = {
   facility_id: string;
 };
 
+/**
+ * Known-safe keys for facility-facts logging. Whitelisting prevents accidental
+ * PHI leakage when callers hand the logger a Supabase error or query payload.
+ * Values are deep-redacted via `pickRedacted`.
+ */
+const FACTS_LOG_WHITELIST = [
+  "organization_id",
+  "facility_id",
+  "status",
+  "count",
+  "error_code",
+] as const;
+
 function logError(event: string, error: unknown, extra: Record<string, unknown> = {}): void {
+  const safe = pickRedacted(extra, FACTS_LOG_WHITELIST);
   console.error(
     JSON.stringify({
       fn: "facility-facts",
       event,
       outcome: "error",
       error_message: error instanceof Error ? error.message : String(error),
-      ...extra,
+      ...safe,
     }),
   );
 }

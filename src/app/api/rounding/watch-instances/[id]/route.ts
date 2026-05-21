@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 
 type WatchAction = "approve" | "pause" | "resume" | "end" | "cancel";
@@ -67,7 +68,7 @@ export async function PATCH(
     .maybeSingle();
 
   if (watchError) {
-    console.error("[rounding/watch-instances] lookup", watchError);
+    logError("rounding.watch-instances", watchError, { action: "lookup", watchInstanceId });
   }
   if (watchError || !watch) {
     return NextResponse.json({ error: "Watch instance not found" }, { status: 404 });
@@ -142,7 +143,7 @@ export async function PATCH(
     .eq("organization_id", context.organizationId);
 
   if (updateError) {
-    console.error("[rounding/watch-instances] update", updateError);
+    logError("rounding.watch-instances", updateError, { action: "update_watch", watchInstanceId: watch.id, watchAction: action });
     return NextResponse.json({ error: "Could not update watch instance" }, { status: 500 });
   }
 
@@ -157,7 +158,7 @@ export async function PATCH(
       .gte("due_at", now);
 
     if (openTasksError) {
-      console.error("[rounding/watch-instances] open tasks", openTasksError);
+      logError("rounding.watch-instances", openTasksError, { action: "load_open_tasks", watchInstanceId: watch.id });
     } else if (openTasks && openTasks.length > 0) {
       const taskIdsToExcuse = openTasks
         .filter((task) => !TERMINAL_TASK_STATUSES.has(task.status))
@@ -176,7 +177,7 @@ export async function PATCH(
           .eq("organization_id", context.organizationId);
 
         if (taskUpdateError) {
-          console.error("[rounding/watch-instances] excuse future tasks", taskUpdateError);
+          logError("rounding.watch-instances", taskUpdateError, { action: "excuse_future_tasks", watchInstanceId: watch.id, taskCount: taskIdsToExcuse.length });
         } else {
           excusedTaskCount = taskIdsToExcuse.length;
         }
@@ -199,7 +200,7 @@ export async function PATCH(
     });
 
   if (eventError) {
-    console.error("[rounding/watch-instances] event", eventError);
+    logError("rounding.watch-instances", eventError, { action: "insert_event", watchInstanceId: watch.id, eventType });
   }
 
   return NextResponse.json({

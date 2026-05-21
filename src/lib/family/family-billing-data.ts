@@ -85,11 +85,13 @@ export async function fetchFamilyBillingContext(
       .select(
         "id, resident_id, invoice_number, invoice_date, due_date, period_start, period_end, total, balance_due, status",
       )
+      .is("deleted_at", null)
       .order("invoice_date", { ascending: false })
       .limit(60),
     supabase
       .from("payments")
       .select("amount, payment_date")
+      .is("deleted_at", null)
       .order("payment_date", { ascending: false })
       .limit(1),
   ]);
@@ -203,6 +205,7 @@ export async function fetchFamilyPaymentsList(
   const payQ = await supabase
     .from("payments")
     .select("id, resident_id, amount, payment_date, payment_method, reference_number")
+    .is("deleted_at", null)
     .order("payment_date", { ascending: false })
     .limit(50);
 

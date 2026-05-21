@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import type { RenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
 import { buildTemplateRenewalNarrative } from "@/lib/insurance/renewal-narrative-template";
+import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/types/database";
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   try {
     admin = createServiceRoleClient();
   } catch (e) {
-    console.error("[renewal-narrative] service role", e);
+    logError("insurance.renewal-narrative", e, { action: "service_role_client" });
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
 
       if (!res.ok) {
         const msg = raw.error?.message ?? res.statusText;
-        console.error("[renewal-narrative] OpenAI error", msg);
+        logError("insurance.renewal-narrative", msg, { action: "openai_call", status: res.status, renewalDataPackageId });
         draftText = buildTemplateRenewalNarrative(payload, policy);
         source = "template";
       } else {
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
         }
       }
     } catch (e) {
-      console.error("[renewal-narrative] fetch", e);
+      logError("insurance.renewal-narrative", e, { action: "openai_fetch", renewalDataPackageId });
       draftText = buildTemplateRenewalNarrative(payload, policy);
       source = "template";
     }
@@ -161,7 +162,7 @@ export async function POST(request: Request) {
     .eq("organization_id", profile.organization_id);
 
   if (upErr) {
-    console.error("[renewal-narrative] update", upErr);
+    logError("insurance.renewal-narrative", upErr, { action: "update_package", renewalDataPackageId });
     return NextResponse.json({ error: "Could not save narrative" }, { status: 500 });
   }
 

@@ -9,6 +9,7 @@ import { updateFacilitySchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
 import { pickSurveyReadinessPct } from "@/lib/admin/facilities/portfolio-metrics";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -44,7 +45,9 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     .maybeSingle();
 
   if (error) {
-    console.error("[GET /api/admin/facilities/[facilityId]]", error.message);
+    logError("admin.facilities.detail.get", error, {
+      facilityId,
+    });
     return NextResponse.json({ error: error.message || "Database error loading facility" }, { status: 500 });
   }
   if (!facility) {
