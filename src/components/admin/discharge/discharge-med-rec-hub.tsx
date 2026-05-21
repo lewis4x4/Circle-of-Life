@@ -227,12 +227,6 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
   const load = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setRows([]);
-      setIsRowsCapped(false);
-      setLoading(false);
-      return;
-    }
 
     try {
       let api = supabase
@@ -240,9 +234,14 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
         .select(
           "id, status, updated_at, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(first_name, last_name, discharge_target_date, hospice_status)",
         )
-        .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
+
+      // Narrow to a single facility when one is picked; otherwise rely on
+      // RLS to scope reads across the user's accessible facilities.
+      if (selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId)) {
+        api = api.eq("facility_id", selectedFacilityId);
+      }
 
       if (scopeIsoLower) {
         api = api.gte("updated_at", scopeIsoLower);
@@ -596,11 +595,7 @@ export function DischargeMedRecHub({ hubBasePath }: DischargeMedRecHubProps) {
               : null}
             </div>
 
-            {noFacility ?
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Select a facility to view reconciliations.
-              </p>
-            : loading ?
+            {loading ?
               <p className="py-10 text-center text-sm text-muted-foreground">
                 Loading reconciliations…
               </p>
