@@ -697,7 +697,10 @@ export async function fetchAdminDashboardSnapshot(
     residentAssuranceBriefPromise,
   ]);
 
-  const firstError = [
+  // Partial-failure tolerant: log any per-query errors but don't throw — the
+  // downstream extractors all default missing data to [] or 0, so the
+  // dashboard renders with whatever queries succeeded instead of blanking.
+  const queryErrors = [
     facilitiesResult.error && { table: "facilities", ...facilitiesResult.error },
     residentsCountRes.error && { table: "residents", ...residentsCountRes.error },
     staffCountRes.error && { table: "staff", ...staffCountRes.error },
@@ -719,13 +722,10 @@ export async function fetchAdminDashboardSnapshot(
     dischargeQueueRes.error && { table: "discharge_med_reconciliation", ...dischargeQueueRes.error },
     familyTriageRes.error && { table: "family_message_triage_items", ...familyTriageRes.error },
     familyConferenceRes.error && { table: "family_care_conference_sessions", ...familyConferenceRes.error },
-  ].find(Boolean);
+  ].filter(Boolean);
 
-  if (firstError) {
-    const table = (firstError as Record<string, unknown>).table ?? "unknown";
-    const code = (firstError as Record<string, unknown>).code ?? "";
-    console.error("[Haven] Admin dashboard query failed", firstError);
-    throw new Error(`${firstError.message}${code ? ` [${code}]` : ""} (table: ${table})`);
+  if (queryErrors.length > 0) {
+    console.warn("[Haven] Admin dashboard partial failure", queryErrors);
   }
 
   const facilityRows = facilitiesResult.data ?? [];
