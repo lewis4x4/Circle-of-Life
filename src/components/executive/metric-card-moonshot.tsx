@@ -65,6 +65,9 @@ export function MetricCardMoonshot({
   // longer referenced.
 
   const isInteractive = !disabled && (onClick || href);
+  // Screen-reader text combining label + value so the card announces
+  // "Occupancy 87%" instead of two disconnected announcements.
+  const ariaLabel = `${label}: ${typeof value === "string" ? value : String(value)}`;
 
   const content = (
     <div
@@ -79,7 +82,6 @@ export function MetricCardMoonshot({
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}
-      onClick={isInteractive ? onClick : undefined}
     >
       {/* Background Sparkline placeholder — no-op stub */}
       {showSparkline && (
@@ -93,6 +95,8 @@ export function MetricCardMoonshot({
         <MonoLabel color={color}>{label}</MonoLabel>
         {trend && (
           <div
+            role="img"
+            aria-label={`Trending ${trend}${trendValue ? ` ${trendValue}` : ""}`}
             className={cn(
               "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
               trend === "up" && "bg-success/10 text-success",
@@ -130,16 +134,39 @@ export function MetricCardMoonshot({
     </div>
   );
 
-  // Wrap in Link if href is provided
+  // Wrap in Link if href is provided.
   if (href && !disabled) {
     return (
-      <Link href={href} className="block h-full w-full group outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-offset-2 rounded-[var(--radius)]">
+      <Link
+        href={href}
+        aria-label={ariaLabel}
+        className="block h-full w-full group outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-offset-2 rounded-[var(--radius)]"
+      >
         {content}
       </Link>
     );
   }
 
-  return <div className="h-full w-full group">{content}</div>;
+  // onClick-only path now renders a real button so keyboard users can focus
+  // and activate the card instead of a non-focusable <div>.
+  if (onClick && !disabled) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel}
+        className="block h-full w-full text-left group outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-offset-2 rounded-[var(--radius)]"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="h-full w-full group" aria-label={ariaLabel}>
+      {content}
+    </div>
+  );
 }
 
 // ── VARIANT COMPONENTS ──
