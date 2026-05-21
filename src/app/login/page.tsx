@@ -256,7 +256,6 @@ export default function LoginPage() {
       <main className="relative z-10 flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 py-16 sm:px-10">
         <div className="w-full max-w-lg space-y-10">
           <div className="space-y-4 text-center">
-            <p className="text-xs uppercase tracking-[0.28em] text-emerald-300/90">Haven Access</p>
             <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white drop-shadow-sm sm:text-6xl">
               Elevating <span className="text-emerald-400">Human Care.</span>
             </h1>
