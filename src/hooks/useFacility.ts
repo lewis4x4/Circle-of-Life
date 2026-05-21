@@ -42,15 +42,25 @@ interface UseFacilityReturn {
   isUpdating: boolean;
 }
 
+// 60s in-memory cache keyed by facilityId so tab switches and remounts
+// repaint instantly. Mutations bust the entry via cacheBust.
+type FacilityCacheEntry = { facility: FacilityDetailRow; fetchedAt: number };
+const facilityCache = new Map<string, FacilityCacheEntry>();
+const FACILITY_CACHE_TTL_MS = 60_000;
+
 export function useFacility(facilityId: string): UseFacilityReturn {
-  const [facility, setFacility] = useState<FacilityDetailRow | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cached = facilityCache.get(facilityId);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITY_CACHE_TTL_MS;
+
+  const [facility, setFacility] = useState<FacilityDetailRow | null>(cached?.facility ?? null);
+  const [isLoading, setIsLoading] = useState(cached == null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = useCallback(
     async (showLoading: boolean): Promise<FacilityDetailRow | null> => {
-      if (showLoading) setIsLoading(true);
+      const hasCached = facilityCache.has(facilityId);
+      if (showLoading && !hasCached) setIsLoading(true);
       setError(null);
       try {
         const res = await fetch(`/api/admin/facilities/${facilityId}`);
@@ -67,12 +77,13 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         }
         const n = normalizeFacilityDetail(json.data);
         setFacility(n);
+        facilityCache.set(facilityId, { facility: n, fetchedAt: Date.now() });
         return n;
       } catch (err) {
         console.error("[useFacility] fetch error:", err);
         const message = err instanceof Error ? err.message : "Failed to fetch facility";
         setError(message);
-        setFacility(null);
+        if (!hasCached) setFacility(null);
         return null;
       } finally {
         if (showLoading) setIsLoading(false);

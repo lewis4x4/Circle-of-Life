@@ -20,29 +20,41 @@ export interface SurveyRow {
   updated_at: string;
 }
 
+type SurveysCacheEntry = { surveys: SurveyRow[]; fetchedAt: number };
+const surveysCache = new Map<string, SurveysCacheEntry>();
+const SURVEYS_CACHE_TTL_MS = 60_000;
+
 export function useFacilitySurveys(facilityId: string) {
-  const [surveys, setSurveys] = useState<SurveyRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cached = surveysCache.get(facilityId);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < SURVEYS_CACHE_TTL_MS;
+
+  const [surveys, setSurveys] = useState<SurveyRow[]>(cached?.surveys ?? []);
+  const [isLoading, setIsLoading] = useState(cached == null);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    setIsLoading(true);
+    const hasCached = surveysCache.has(facilityId);
+    if (!hasCached) setIsLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/admin/facilities/${facilityId}/surveys`);
       if (!res.ok) throw new Error("Failed to load surveys");
       const json = (await res.json()) as { data: SurveyRow[] };
-      setSurveys(json.data ?? []);
+      const next = json.data ?? [];
+      setSurveys(next);
+      surveysCache.set(facilityId, { surveys: next, fetchedAt: Date.now() });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
-      setSurveys([]);
+      if (!hasCached) setSurveys([]);
     } finally {
       setIsLoading(false);
     }
   }, [facilityId]);
 
   useEffect(() => {
+    if (cacheIsFresh) return;
     void refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetch]);
 
   const createSurvey = useCallback(
@@ -56,6 +68,7 @@ export function useFacilitySurveys(facilityId: string) {
         const j = await res.json().catch(() => ({}));
         throw new Error((j as { error?: string }).error ?? "Create failed");
       }
+      surveysCache.delete(facilityId);
       await refetch();
     },
     [facilityId, refetch],

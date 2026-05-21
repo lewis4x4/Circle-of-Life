@@ -31,15 +31,27 @@ export type FacilityVendorFacilityKpi = {
   migration_residue_count: number;
 };
 
+type VendorsCacheEntry = {
+  rows: VendorFacilityRow[];
+  kpi: FacilityVendorFacilityKpi | null;
+  fetchedAt: number;
+};
+const vendorsCache = new Map<string, VendorsCacheEntry>();
+const VENDORS_CACHE_TTL_MS = 60_000;
+
 export function useFacilityVendors(facilityId: string, options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
-  const [rows, setRows] = useState<VendorFacilityRow[]>([]);
-  const [kpi, setKpi] = useState<FacilityVendorFacilityKpi | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cached = vendorsCache.get(facilityId);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < VENDORS_CACHE_TTL_MS;
+
+  const [rows, setRows] = useState<VendorFacilityRow[]>(cached?.rows ?? []);
+  const [kpi, setKpi] = useState<FacilityVendorFacilityKpi | null>(cached?.kpi ?? null);
+  const [isLoading, setIsLoading] = useState(enabled && cached == null);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    setIsLoading(true);
+    const hasCached = vendorsCache.has(facilityId);
+    if (!hasCached) setIsLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/admin/facilities/${facilityId}/vendors`);
@@ -48,12 +60,17 @@ export function useFacilityVendors(facilityId: string, options?: { enabled?: boo
         data: VendorFacilityRow[];
         kpi?: FacilityVendorFacilityKpi;
       };
-      setRows(json.data ?? []);
-      setKpi(json.kpi ?? null);
+      const nextRows = json.data ?? [];
+      const nextKpi = json.kpi ?? null;
+      setRows(nextRows);
+      setKpi(nextKpi);
+      vendorsCache.set(facilityId, { rows: nextRows, kpi: nextKpi, fetchedAt: Date.now() });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
-      setRows([]);
-      setKpi(null);
+      if (!hasCached) {
+        setRows([]);
+        setKpi(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +84,9 @@ export function useFacilityVendors(facilityId: string, options?: { enabled?: boo
       setIsLoading(false);
       return;
     }
+    if (cacheIsFresh) return;
     void refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, refetch]);
 
   return { rows, kpi, isLoading, error, refetch };
