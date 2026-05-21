@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 
 function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
   const f = raw as unknown as FacilityDetailRow & { license_number?: string | null };
@@ -96,6 +97,8 @@ export function useFacility(facilityId: string): UseFacilityReturn {
     await loadDetail(true);
   }, [loadDetail]);
 
+  const clearFacilityListCache = useFacilityStore((s) => s.clearFacilityCache);
+
   const updateFacility = useCallback(
     async (updates: Partial<FacilityRow>): Promise<FacilityDetailRow | null> => {
       setIsUpdating(true);
@@ -109,6 +112,11 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         if (!res.ok) {
           throw new Error("Failed to update facility");
         }
+        // Bust both caches so the next reads — detail and facility-list
+        // dropdowns — pick up the rename / status change without waiting
+        // out the 60s / 5min TTLs.
+        facilityCache.delete(facilityId);
+        clearFacilityListCache();
         return await loadDetail(false);
       } catch (err) {
         console.error("[useFacility] update error:", err);
@@ -119,7 +127,7 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         setIsUpdating(false);
       }
     },
-    [facilityId, loadDetail],
+    [facilityId, loadDetail, clearFacilityListCache],
   );
 
   useEffect(() => {
