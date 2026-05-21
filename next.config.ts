@@ -118,6 +118,10 @@ const nextConfig: NextConfig = {
       "vendors",
     ];
     return [
+      // Apex URL is the operator sign-in — bypass the marketing landing.
+      // Routing-level redirect runs before any HTML is generated, so it
+      // beats CDN/browser caching of the old marketing page.
+      { source: "/", destination: "/login", permanent: false },
       ...segments.flatMap((seg) => [
         { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
         { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
