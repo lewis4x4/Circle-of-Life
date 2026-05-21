@@ -81,22 +81,40 @@ interface UseFacilitiesReturn {
   refetch: () => Promise<void>;
 }
 
+// Module-level cache survives client-side navigations within a session.
+// Keyed by query params; ~60s freshness window then stale-while-revalidate.
+type CacheEntry = {
+  facilities: FacilityRow[];
+  pagination: UseFacilitiesReturn["pagination"];
+  fetchedAt: number;
+};
+const facilitiesCache = new Map<string, CacheEntry>();
+const FACILITIES_CACHE_TTL_MS = 60_000;
+
 export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilitiesReturn {
   const { status, search, page = 1, pageSize = 20 } = options;
 
-  const [facilities, setFacilities] = useState<FacilityRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cacheKey = `${page}|${pageSize}|${status ?? ""}|${search ?? ""}`;
+  const cached = facilitiesCache.get(cacheKey);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS;
+
+  const [facilities, setFacilities] = useState<FacilityRow[]>(cached?.facilities ?? []);
+  // Only show the full-page spinner when we have nothing to paint.
+  const [isLoading, setIsLoading] = useState(cached == null);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    page_size: 20,
-    total_pages: 0,
-    has_next: false,
-  });
+  const [pagination, setPagination] = useState(
+    cached?.pagination ?? {
+      total: 0,
+      page: 1,
+      page_size: 20,
+      total_pages: 0,
+      has_next: false,
+    },
+  );
 
   const refetch = useCallback(async () => {
-    setIsLoading(true);
+    const hasCached = facilitiesCache.has(cacheKey);
+    if (!hasCached) setIsLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
@@ -111,36 +129,37 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
         throw new Error("Failed to fetch facilities");
       }
       const json = (await res.json()) as FacilitiesResponse;
-      setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
-      setPagination({
+      const normalized = (json.facilities ?? []).map((row) => normalizeListRow(row));
+      const nextPagination = {
         total: json.total ?? 0,
         page: json.page ?? page,
         page_size: pageSize,
         total_pages: Math.ceil((json.total ?? 0) / pageSize),
         has_next: json.has_next ?? false,
+      };
+      setFacilities(normalized);
+      setPagination(nextPagination);
+      facilitiesCache.set(cacheKey, {
+        facilities: normalized,
+        pagination: nextPagination,
+        fetchedAt: Date.now(),
       });
     } catch (err) {
       console.error("[useFacilities] error:", err);
       const message = err instanceof Error ? err.message : "Failed to fetch facilities";
       setError(message);
-      setFacilities([]);
+      if (!hasCached) setFacilities([]);
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, status, search]);
+  }, [page, pageSize, status, search, cacheKey]);
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState === "visible") {
-        void refetch();
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    // If we have a fresh cache hit, skip the network round-trip entirely.
+    if (cacheIsFresh) return;
+    void refetch();
+    // refetch is stable for this query shape; cacheIsFresh is read once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetch]);
 
   return {
