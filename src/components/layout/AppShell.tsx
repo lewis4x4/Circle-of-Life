@@ -139,6 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const currentUserIdRef = useRef<string | null>(currentUserId);
   const [signingOut, setSigningOut] = useState(false);
   const [pillarSheetOpen, setPillarSheetOpen] = useState(false);
+  const [sheetPillarId, setSheetPillarId] = useState<Pillar["id"] | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -319,16 +320,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [pathname],
   );
 
-  const openActivePillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
-    // On mobile, re-tapping the active pillar opens its items in a sheet.
-    // On desktop the link can still navigate back to the pillar landing route.
-    if (activePillar?.id !== pillarId) return false;
+  const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
+    // On mobile, tapping any pillar opens its sub-routes in a sheet instead
+    // of jumping straight to the first item. Desktop keeps default navigation
+    // — the dropdown handles sub-route discovery there.
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      setSheetPillarId(pillarId);
       setPillarSheetOpen(true);
       return true;
     }
     return false;
-  }, [activePillar]);
+  }, []);
 
   const handlePaletteSelect = useCallback(
     (href: string) => {
@@ -423,27 +425,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const renderAllSectionsMenu = (pillarsForMenu: Pillar[]) => (
     <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <DropdownMenuTrigger
-              aria-label="Open all sections menu"
-              className={cn(
-                WORKSPACE_ICON_LG,
-                "transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              )}
-            />
-          }
-        >
-          <MenuIcon className="size-4" aria-hidden />
-        </TooltipTrigger>
-        <TooltipContent side="bottom">All sections</TooltipContent>
-      </Tooltip>
+      <DropdownMenuTrigger
+        aria-label="Open all sections menu"
+        className={cn(
+          WORKSPACE_ICON_LG,
+          "transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
+      >
+        <MenuIcon className="size-4" aria-hidden />
+      </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
         sideOffset={6}
-        className="w-72 max-h-[70vh] overflow-y-auto"
+        className="w-[min(22rem,calc(100vw-1rem))] sm:w-72"
       >
         {pillarsForMenu.map((pillar, pillarIdx) => (
           <React.Fragment key={pillar.id}>
@@ -483,7 +478,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         active={activePillar?.id === pillar.id}
         firstHref={first.href}
         isItemActive={isItemActive}
-        onActivePillarTap={openActivePillarSheetIfMobile}
+        onActivePillarTap={openPillarSheetIfMobile}
       />
     );
   };
@@ -793,9 +788,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={pillar.id}
               href={first.href}
               aria-current={active ? "page" : undefined}
+              aria-haspopup="menu"
               onClick={(event) => {
-                if (!active) return;
-                if (openActivePillarSheetIfMobile(pillar.id)) {
+                if (openPillarSheetIfMobile(pillar.id)) {
                   event.preventDefault();
                 }
               }}
@@ -854,17 +849,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="rounded-t-[14px] border-t border-border haven-chrome-sidebar p-0 max-h-[80dvh]"
           showCloseButton
         >
-          <SheetHeader className="px-4 pb-2 pt-4 text-left">
-            <SheetTitle className="text-[14px] font-semibold tracking-tight">
-              {activePillar?.label ?? "Navigation"}
-            </SheetTitle>
-          </SheetHeader>
-          <nav
-            aria-label={`${activePillar?.label ?? "Pillar"} items`}
-            className="flex flex-col gap-px px-2 pb-4"
-          >
-            {activePillar?.items.map(renderRailItem)}
-          </nav>
+          {(() => {
+            const sheetPillar =
+              visiblePillars.find((p) => p.id === sheetPillarId) ?? activePillar;
+            return (
+              <>
+                <SheetHeader className="px-4 pb-2 pt-4 text-left">
+                  <SheetTitle className="text-[14px] font-semibold tracking-tight">
+                    {sheetPillar?.label ?? "Navigation"}
+                  </SheetTitle>
+                </SheetHeader>
+                <nav
+                  aria-label={`${sheetPillar?.label ?? "Pillar"} items`}
+                  className="flex flex-col gap-px px-2 pb-4"
+                  onClick={(event) => {
+                    if ((event.target as HTMLElement).closest("a")) {
+                      setPillarSheetOpen(false);
+                    }
+                  }}
+                >
+                  {sheetPillar?.items.map(renderRailItem)}
+                </nav>
+              </>
+            );
+          })()}
         </SheetContent>
       </Sheet>
 

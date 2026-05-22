@@ -94,7 +94,7 @@ export default function AdminIncidentTrendsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <div className="relative z-10 space-y-6 max-w-5xl mx-auto">
+      <div className="relative z-10 space-y-6 w-full">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
             <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold")}>

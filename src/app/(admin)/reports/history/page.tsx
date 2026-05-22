@@ -55,7 +55,7 @@ export default function ReportHistoryPage() {
     <>
       <></>
       
-      <div className="relative z-10 space-y-6 max-w-7xl mx-auto">
+      <div className="relative z-10 space-y-6 w-full">
         <ReportsHubNav />
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
@@ -68,7 +68,7 @@ export default function ReportHistoryPage() {
           </div>
         </header>
         
-      {error && <p className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-6 py-4 text-sm text-rose-600 dark:text-rose-400 font-medium max-w-7xl mx-auto">{error}</p>}
+      {error && <p className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-6 py-4 text-sm text-rose-600 dark:text-rose-400 font-medium w-full">{error}</p>}
       
       <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible z-10 w-full transition-all">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
