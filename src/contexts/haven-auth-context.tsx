@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
@@ -35,6 +36,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,7 +92,13 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const safeLoad = async () => {
-      await load();
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      try {
+        await load();
+      } finally {
+        loadingRef.current = false;
+      }
     };
 
     queueMicrotask(() => {

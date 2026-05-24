@@ -39,15 +39,24 @@ export async function loadConversationContext(
   admin: SupabaseClient,
   sessionId: string | null,
   organizationId: string,
+  userId?: string,
 ): Promise<ConversationContext> {
   if (!sessionId) return { ...EMPTY_CONTEXT };
 
-  const { data: session, error: sessionError } = await admin
+  let sessionQuery = admin
     .from("exec_nlq_sessions")
     .select("message_count, rolling_summary_text")
     .eq("id", sessionId)
     .eq("organization_id", organizationId)
-    .is("deleted_at", null)
+    .is("deleted_at", null);
+
+  if (userId) {
+    sessionQuery = sessionQuery.or(
+      `user_id.eq.${userId},shared_with_org.eq.true`,
+    );
+  }
+
+  const { data: session, error: sessionError } = await sessionQuery
     .maybeSingle();
 
   if (sessionError || !session) return { ...EMPTY_CONTEXT };

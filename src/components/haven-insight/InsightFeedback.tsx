@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -14,12 +14,12 @@ import { cn } from "@/lib/utils";
  * heuristic to filter them out without a separate flag.
  */
 export function InsightFeedback({ sessionId }: { sessionId: string }) {
+  const supabase = useMemo(() => createClient(), []);
   const [value, setValue] = useState<"positive" | "negative" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const submit = useCallback(
     async (next: "positive" | "negative") => {
-      const supabase = createClient();
       const newVal = value === next ? null : next;
       setError(null);
       const { error: uErr } = await supabase
@@ -32,7 +32,7 @@ export function InsightFeedback({ sessionId }: { sessionId: string }) {
       }
       setValue(newVal);
     },
-    [sessionId, value],
+    [sessionId, supabase, value],
   );
 
   return (

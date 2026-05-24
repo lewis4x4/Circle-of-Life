@@ -61,18 +61,19 @@ export function UserMenu({
       <DropdownMenuTrigger
         aria-label={`Open account menu — signed in as ${signedInAs}`}
         className={cn(
-          "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+          // P1 #19: ring lives outside the avatar circle via offset; subtle hover so transition-colors actually has a target.
+          "rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           triggerClassName,
         )}
       >
         {renderedTriggerChildren ?? (
+          // P2 #40: size="md" already resolves to size-9 in avatarSizeClasses; drop redundant className.
           <IdentityAvatar
             fullName={fullName}
             email={email}
             avatarUrl={avatarUrl}
             userId={userId}
             size="md"
-            className="size-9"
           />
         )}
       </DropdownMenuTrigger>
@@ -114,19 +115,20 @@ export function UserMenu({
             onClick={() => navigateTo(HELP_DOCS_HREF)}
           >
             <LifeBuoy className="size-3.5 text-muted-foreground" aria-hidden />
-            Help &amp; docs
+            Help & docs
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="my-0" />
 
         <DropdownMenuGroup className="p-1">
+          {/* P1 #18: aria-description is not standard ARIA; use aria-describedby pointing to a sr-only span. */}
           <DropdownMenuItem
             variant="destructive"
             className="flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
             disabled={signingOut}
             onClick={() => void onSignOut()}
-            aria-description="Signs you out of Haven on this device"
+            aria-describedby="user-menu-signout-desc"
           >
             {signingOut ? (
               <>
@@ -140,6 +142,9 @@ export function UserMenu({
               </>
             )}
           </DropdownMenuItem>
+          <span id="user-menu-signout-desc" className="sr-only">
+            Signs you out of Haven on this device
+          </span>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -86,6 +86,10 @@ const MAX_MESSAGES = 50;
 const NLQ_ROUTE = "/admin/executive/nlq";
 const NLQ_MODULE = "executive";
 
+function isAbortError(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "name" in err && err.name === "AbortError";
+}
+
 function formatErrorMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
   // Rate limit
@@ -198,11 +202,20 @@ export default function ExecutiveNlqPage() {
   const [paletteIndex, setPaletteIndex] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sendAbortRef = useRef<AbortController | null>(null);
+  const syncedSessionRef = useRef<string | null>(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      sendAbortRef.current?.abort();
+      sendAbortRef.current = null;
+    };
+  }, []);
 
   // Check auth on mount
   useEffect(() => {
@@ -249,15 +262,28 @@ export default function ExecutiveNlqPage() {
     };
   }, [sessionParam, supabase]);
 
+  const syncSessionUrl = useCallback((sessionId: string) => {
+    if (sessionId.length !== 36) return;
+    if (sessionId === syncedSessionRef.current || sessionId === sessionParam) return;
+    syncedSessionRef.current = sessionId;
+    router.replace(`${NLQ_ROUTE}?session=${sessionId}`, { scroll: false });
+  }, [router, sessionParam]);
+
   // After a successful send, make the router-provided session_id the URL source of truth.
   useEffect(() => {
     const last = messages[messages.length - 1];
-    if (last?.role === "assistant" && last.id.length === 36 && last.id !== sessionParam) {
-      router.replace(`${NLQ_ROUTE}?session=${last.id}`, { scroll: false });
-    }
-  }, [messages, router, sessionParam]);
+    if (!last || last.role !== "assistant" || last.id.length !== 36) return;
+    if (last.id === syncedSessionRef.current || last.id === sessionParam) return;
+    syncedSessionRef.current = last.id;
+    router.replace(`/admin/executive/nlq?session=${last.id}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionParam, router]);
 
   const startNewConversation = useCallback(() => {
+    sendAbortRef.current?.abort();
+    sendAbortRef.current = null;
+    setLoading(false);
+    setAwaitingFirstToken(false);
     router.replace(NLQ_ROUTE, { scroll: false });
     setMessages([]);
   }, [router]);
@@ -298,6 +324,10 @@ export default function ExecutiveNlqPage() {
     const q = question.trim();
     if (!q || loading) return;
 
+    sendAbortRef.current?.abort();
+    const abortController = new AbortController();
+    sendAbortRef.current = abortController;
+
     setInput("");
     setPaletteOpen(false);
     setPaletteIndex(0);
@@ -324,7 +354,7 @@ export default function ExecutiveNlqPage() {
     let shouldRetryJson = true;
 
     const appendAssistantToken = (content: string) => {
-      if (!content) return;
+      if (!content || sendAbortRef.current !== abortController) return;
       setAwaitingFirstToken(false);
 
       if (!hasAssistantMessage) {
@@ -341,12 +371,15 @@ export default function ExecutiveNlqPage() {
         return;
       }
 
-      setMessages(prev => prev.map((msg) => (
-        msg.id === assistantId ? { ...msg, content: `${msg.content}${content}` } : msg
-      )));
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (!last || last.id !== assistantId) return prev;
+        return [...prev.slice(0, -1), { ...last, content: `${last.content}${content}` }];
+      });
     };
 
     const applyAssistantMeta = (payload: RouterPayload) => {
+      if (sendAbortRef.current !== abortController) return;
       setAwaitingFirstToken(false);
       const nextId = typeof payload.session_id === "string" ? payload.session_id : assistantId;
       const meta = {
@@ -386,14 +419,17 @@ export default function ExecutiveNlqPage() {
         ];
       });
       assistantId = nextId;
+      syncSessionUrl(nextId);
     };
 
     const appendJsonAssistant = (payload: RouterPayload) => {
+      if (sendAbortRef.current !== abortController) return;
       const assistantMsg = assistantMessageFromPayload(payload, assistantId);
       setAwaitingFirstToken(false);
       hasAssistantMessage = true;
       assistantId = assistantMsg.id;
       setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), assistantMsg]);
+      syncSessionUrl(assistantMsg.id);
     };
 
     const requestRouter = (stream: boolean) => authorizedEdgeFetch("haven-ai-router", {
@@ -403,6 +439,7 @@ export default function ExecutiveNlqPage() {
         "Content-Type": "application/json",
       },
       body,
+      signal: abortController.signal,
     }, "haven-insight");
 
     const fetchJsonAnswer = async () => {
@@ -473,7 +510,16 @@ export default function ExecutiveNlqPage() {
       let streamDone = false;
 
       while (!streamDone) {
-        const chunk = await reader.read();
+        let chunk: ReadableStreamReadResult<Uint8Array>;
+        try {
+          chunk = await reader.read();
+        } catch (err) {
+          if (isAbortError(err)) {
+            streamDone = true;
+            break;
+          }
+          throw err;
+        }
         if (chunk.done) break;
         buffer += decoder.decode(chunk.value, { stream: true });
         buffer = buffer.replace(/\r\n/g, "\n");
@@ -501,10 +547,12 @@ export default function ExecutiveNlqPage() {
       try {
         await streamAnswer();
       } catch (streamErr) {
+        if (isAbortError(streamErr)) throw streamErr;
         if (hasAssistantMessage || !shouldRetryJson) throw streamErr;
         await fetchJsonAnswer();
       }
     } catch (err) {
+      if (isAbortError(err) || sendAbortRef.current !== abortController) return;
       const errMsg: NlqMessage = {
         id: `err-${Date.now()}`,
         role: "assistant",
@@ -513,17 +561,20 @@ export default function ExecutiveNlqPage() {
       };
       setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), errMsg]);
     } finally {
-      setLoading(false);
-      setAwaitingFirstToken(false);
+      if (sendAbortRef.current === abortController) {
+        sendAbortRef.current = null;
+        setLoading(false);
+        setAwaitingFirstToken(false);
+      }
     }
-  }, [activeSessionId, loading]);
+  }, [activeSessionId, loading, syncSessionUrl]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     void sendQuestion(input);
-  };
+  }, [input, sendQuestion]);
 
-  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleInputKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!paletteOpen) return;
 
     if (event.key === "ArrowDown") {
@@ -549,7 +600,7 @@ export default function ExecutiveNlqPage() {
       setPaletteOpen(false);
       setPaletteIndex(0);
     }
-  };
+  }, [fillSlashTemplate, paletteIndex, paletteOpen]);
 
   if (initialLoading) {
     return (
@@ -646,7 +697,8 @@ export default function ExecutiveNlqPage() {
                         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Sources</p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {msg.citations.map((citation, index) => {
-                            const className = "inline-flex h-6 items-center gap-1 rounded-md border border-border bg-secondary/50 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground";
+                            // P0-5: drop /50 opacity + bump text color so citation chip clears WCAG AA over the assistant bubble fill.
+                            const className = "inline-flex h-6 items-center gap-1 rounded-md border border-border bg-secondary px-2 text-[11px] font-medium text-foreground transition-colors hover:bg-secondary/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
                             const key = `${citation.label}-${citation.href ?? citation.facility_id ?? index}`;
                             return citation.href ? (
                               <Link key={key} href={citation.href} className={className}>
@@ -674,7 +726,8 @@ export default function ExecutiveNlqPage() {
                             key={suggestion}
                             type="button"
                             onClick={() => void sendQuestion(suggestion)}
-                            className="inline-flex h-7 items-center rounded-md border border-border bg-secondary/40 px-2.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            // P0-5: same contrast bump on follow-up chips — solid secondary fill + foreground text.
+                            className="inline-flex h-7 items-center rounded-md border border-border bg-secondary px-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-secondary/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             {suggestion}
                           </button>
@@ -752,7 +805,8 @@ export default function ExecutiveNlqPage() {
             <div className="flex items-center justify-center gap-4 mt-3">
               <button
                 onClick={startNewConversation}
-                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                // P0-2: bump from 10px → 12px (12px floor) and add focus-visible ring for keyboard users.
+                className="text-[12px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 rounded-md px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <RotateCcw className="w-3 h-3" /> Clear conversation
               </button>

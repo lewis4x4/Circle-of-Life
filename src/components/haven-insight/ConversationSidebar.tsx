@@ -10,9 +10,17 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ChevronLeft, ChevronRight, Menu, MessageSquare, Plus, Search, Star, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Menu, MessageSquare, Plus, Search, Star, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
@@ -120,8 +128,16 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
   const deferredSearch = useDeferredValue(debouncedSearch);
   const [searchResults, setSearchResults] = useState<{ query: string; ids: string[] }>({ query: "", ids: [] });
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  // P0-6: pending-delete thread drives the themed AlertDialog. window.confirm() removed.
+  const [pendingDeleteThread, setPendingDeleteThread] = useState<ThreadRow | null>(null);
+  const [deleteInFlight, setDeleteInFlight] = useState(false);
   const refetchTimer = useRef<number | null>(null);
   const clickTimer = useRef<number | null>(null);
+  // P1: refs used to break the search effect's dependency cycle (avoid re-running when threads/searchResults mutate).
+  const threadsRef = useRef<ThreadRow[]>([]);
+  const searchResultsRef = useRef<{ query: string; ids: string[] }>({ query: "", ids: [] });
+  useEffect(() => { threadsRef.current = threads; }, [threads]);
+  useEffect(() => { searchResultsRef.current = searchResults; }, [searchResults]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -220,6 +236,8 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     return sortThreads(threads.filter((thread) => includesQuery(thread, query) || rpcMatches.has(thread.id)));
   }, [deferredSearch, searchResults, threads]);
 
+  // P1: deps cleaned — the effect now only re-runs when the query or local-match count change;
+  // threads/searchResults are read via refs so internal setState calls don't loop the effect.
   useEffect(() => {
     if (!deferredSearch || filteredThreads.length >= 3) return;
     let cancelled = false;
@@ -232,11 +250,13 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
         } as never);
         if (cancelled || error || !data) return;
 
+        const currentThreads = threadsRef.current;
+        const lastResults = searchResultsRef.current;
         const rpcRows = (data as unknown as SearchThreadRow[]).filter((row) => row.session_id);
         const ids = rpcRows.map((row) => row.session_id);
-        const existingIds = new Set(threads.map((thread) => thread.id));
+        const existingIds = new Set(currentThreads.map((thread) => thread.id));
         const missingIds = ids.filter((id) => !existingIds.has(id));
-        if (!missingIds.length && deferredSearch === searchResults.query && ids.join("|") === searchResults.ids.join("|")) return;
+        if (!missingIds.length && deferredSearch === lastResults.query && ids.join("|") === lastResults.ids.join("|")) return;
         setSearchResults({ query: deferredSearch, ids });
         let missingRows: ThreadRow[] = [];
 
@@ -245,7 +265,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
           if (cancelled) return;
         }
 
-        const byId = new Map([...threads, ...missingRows].map((thread) => [thread.id, thread]));
+        const byId = new Map([...currentThreads, ...missingRows].map((thread) => [thread.id, thread]));
         const ranked = ids.flatMap((id) => {
           const thread = byId.get(id);
           return thread ? [thread] : [];
@@ -266,7 +286,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     return () => {
       cancelled = true;
     };
-  }, [deferredSearch, fetchThreadRows, filteredThreads.length, searchResults, supabase, threads]);
+  }, [deferredSearch, fetchThreadRows, filteredThreads.length, supabase]);
 
   const activateThread = useCallback((threadId: string) => {
     setMobileOpen(false);
@@ -324,8 +344,21 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     void refetchThreads();
   }, [refetchThreads, supabase, threads]);
 
-  const confirmDelete = useCallback(async (thread: ThreadRow) => {
-    if (!window.confirm(`Delete “${thread.title}”?`)) return;
+  // P0-6: open the themed delete dialog instead of window.confirm(). Single-keystroke (Delete key) now
+  // triggers a confirm step rather than wiping the row outright.
+  const requestDelete = useCallback((thread: ThreadRow) => {
+    setPendingDeleteThread(thread);
+  }, []);
+
+  const cancelDelete = useCallback(() => {
+    if (deleteInFlight) return;
+    setPendingDeleteThread(null);
+  }, [deleteInFlight]);
+
+  const performDelete = useCallback(async () => {
+    const thread = pendingDeleteThread;
+    if (!thread) return;
+    setDeleteInFlight(true);
     const previous = threads;
     setThreads((prev) => prev.filter((item) => item.id !== thread.id));
     if (currentSessionId === thread.id) {
@@ -337,13 +370,25 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     } as never);
 
     if (error) setThreads(previous);
+    setDeleteInFlight(false);
+    setPendingDeleteThread(null);
     void refetchThreads();
-  }, [currentSessionId, refetchThreads, router, supabase, threads]);
+  }, [currentSessionId, pendingDeleteThread, refetchThreads, router, supabase, threads]);
 
   const visibleThreads = filteredThreads;
-  const pinnedThreads = visibleThreads.filter((thread) => Boolean(thread.pinned_at));
-  const dateSections = groupThreads(visibleThreads.filter((thread) => !thread.pinned_at));
-  const focusableThreadIds = visibleThreads.map((thread) => thread.id);
+  // P1: memoise these derived collections so renderSection/handleListKeyDown identities stay stable per visibleThreads change.
+  const pinnedThreads = useMemo(
+    () => visibleThreads.filter((thread) => Boolean(thread.pinned_at)),
+    [visibleThreads],
+  );
+  const dateSections = useMemo(
+    () => groupThreads(visibleThreads.filter((thread) => !thread.pinned_at)),
+    [visibleThreads],
+  );
+  const focusableThreadIds = useMemo(
+    () => visibleThreads.map((thread) => thread.id),
+    [visibleThreads],
+  );
 
   const focusThreadByIndex = useCallback((index: number) => {
     const id = focusableThreadIds[index];
@@ -376,9 +421,9 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     } else if (event.key === "Delete" && currentId) {
       event.preventDefault();
       const thread = threads.find((item) => item.id === currentId);
-      if (thread) void confirmDelete(thread);
+      if (thread) requestDelete(thread);
     }
-  }, [activateThread, confirmDelete, focusThreadByIndex, focusableThreadIds, threads]);
+  }, [activateThread, requestDelete, focusThreadByIndex, focusableThreadIds, threads]);
 
   const renderThread = (thread: ThreadRow, forceExpanded = false) => {
     const isActive = currentSessionId === thread.id;
@@ -466,7 +511,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                void confirmDelete(thread);
+                requestDelete(thread);
               }}
               aria-label="Delete"
             >
@@ -510,16 +555,17 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
             <MessageSquare className="mx-auto size-4 text-muted-foreground" aria-hidden />
           )}
           {!forceExpanded ? (
+            // P1 #10: bump touch target from 24px → 32px so it clears WCAG 2.5.5.
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={() => setCollapsed((value) => !value)}
               aria-expanded={!collapsed}
               aria-controls={SIDEBAR_ID}
               aria-label={collapsed ? "Expand conversations sidebar" : "Collapse conversations sidebar"}
             >
-              {collapsed ? <ChevronRight className="size-3" aria-hidden /> : <ChevronLeft className="size-3" aria-hidden />}
+              {collapsed ? <ChevronRight className="size-3.5" aria-hidden /> : <ChevronLeft className="size-3.5" aria-hidden />}
             </Button>
           ) : null}
         </div>
@@ -544,9 +590,23 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="Search conversations"
-                className="h-9 w-full rounded-[var(--radius)] border border-input bg-background pl-8 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                className={cn(
+                  "h-9 w-full rounded-[var(--radius)] border border-input bg-background pl-8 text-[13px] text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring",
+                  searchValue ? "pr-8" : "pr-3",
+                )}
                 aria-label="Search conversations"
               />
+              {/* P1 #11: visible clear-input affordance once the user types something. */}
+              {searchValue ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchValue("")}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="size-3" aria-hidden />
+                </button>
+              ) : null}
             </label>
           ) : null}
 
@@ -580,9 +640,10 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
   return (
     <>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        {/* P0-4: anchor to top-left so the trigger lives next to the page heading rather than overlapping ExecutiveHubNav on tablets. */}
         <SheetTrigger
           className={cn(
-            "absolute right-0 top-0 z-40 lg:hidden inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[12px] font-medium",
+            "absolute left-0 top-0 z-40 lg:hidden inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[12px] font-medium",
             "text-foreground transition-colors hover:bg-secondary",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
@@ -602,6 +663,48 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
       <div className="absolute inset-y-0 left-0 z-30 hidden border-r border-border lg:block">
         {sidebarBody(false)}
       </div>
+
+      {/* P0-6: themed delete confirmation, replaces window.confirm(). */}
+      <Dialog
+        open={pendingDeleteThread !== null}
+        onOpenChange={(open) => {
+          if (!open) cancelDelete();
+        }}
+      >
+        <DialogContent className="max-w-md" hideDefaultClose>
+          <DialogHeader>
+            <DialogTitle>Delete conversation?</DialogTitle>
+            <DialogDescription>
+              {pendingDeleteThread ? (
+                <>
+                  “<span className="font-medium text-foreground">{pendingDeleteThread.title}</span>” will be removed from your
+                  Haven Insight history. This cannot be undone.
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={cancelDelete} disabled={deleteInFlight}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void performDelete()}
+              disabled={deleteInFlight}
+            >
+              {deleteInFlight ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Deleting…
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

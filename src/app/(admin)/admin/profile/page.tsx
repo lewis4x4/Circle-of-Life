@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Loader2, Lock, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -55,9 +55,11 @@ export default function AdminProfilePage() {
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
   const [displayName, setDisplayName] = useState(fullName ?? "");
   const [saving, setSaving] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
+  // P0-3: scope focus to THIS page's h1, not the first h1 globally (which would hijack the layout shell heading).
   useEffect(() => {
-    document.querySelector("h1")?.focus();
+    headingRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -93,7 +95,11 @@ export default function AdminProfilePage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <header className="flex flex-col gap-4 rounded-[var(--radius)] border border-border bg-card p-5 shadow-[var(--shadow-card)] md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <h1 tabIndex={-1} className="text-2xl font-semibold tracking-tight text-foreground outline-none">
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-2xl font-semibold tracking-tight text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+          >
             My profile
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -113,6 +119,7 @@ export default function AdminProfilePage() {
         />
       </header>
 
+      {/* P0-7: tab semantics — each Link is a role=tab linked to its panel via aria-controls. */}
       <nav
         role="tablist"
         aria-label="Profile sections"
@@ -125,9 +132,12 @@ export default function AdminProfilePage() {
             <Link
               key={tab.value}
               href={href}
+              id={`profile-tab-${tab.value}`}
               role="tab"
               aria-selected={active}
+              aria-controls="profile-tabpanel"
               aria-current={active ? "page" : undefined}
+              tabIndex={active ? 0 : -1}
               data-state={active ? "active" : "inactive"}
               className={cn(
                 "inline-flex h-7 items-center rounded-md px-3 text-[12px] font-medium",
@@ -142,6 +152,14 @@ export default function AdminProfilePage() {
         })}
       </nav>
 
+      {/* P0-7: tabpanel shell — single panel labelled by the active tab; tabIndex=0 so screen readers can land here. */}
+      <section
+        id="profile-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`profile-tab-${activeTab}`}
+        tabIndex={0}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-[var(--radius)]"
+      >
       {activeTab === "profile" ? (
         <Card size="lg">
           <CardHeader>
@@ -151,14 +169,13 @@ export default function AdminProfilePage() {
           <CardContent className="grid gap-6 md:grid-cols-[160px_1fr]">
             <div className="space-y-3">
               <Label>Avatar</Label>
+              {/* P1 #16: drop fake role=button + tabIndex=0 on a disabled affordance; tooltip can still trigger on hover/focus of a non-interactive wrapper. */}
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <div
-                      role="button"
-                      aria-disabled="true"
-                      tabIndex={0}
-                      className="group relative flex size-[120px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full border border-dashed border-border bg-muted/30 text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                      aria-label="Avatar upload coming soon"
+                      className="group relative flex size-[120px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full border border-dashed border-border bg-muted/30 text-muted-foreground outline-none"
                     />
                   }
                 >
@@ -242,6 +259,7 @@ export default function AdminProfilePage() {
           </CardContent>
         </Card>
       )}
+      </section>
     </div>
   );
 }

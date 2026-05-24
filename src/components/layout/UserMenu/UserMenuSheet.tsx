@@ -79,17 +79,18 @@ export function UserMenuSheet({
       <SheetTrigger
         aria-label={`Open account menu — signed in as ${signedInAs}`}
         className={cn(
-          "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+          // P1 #19 parity with desktop UserMenu: ring outside the avatar circle.
+          "rounded-full outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           triggerClassName,
         )}
       >
+        {/* P2 #40: size="md" already resolves to size-9 in IdentityAvatar; drop redundant className. */}
         <IdentityAvatar
           fullName={fullName}
           email={email}
           avatarUrl={avatarUrl}
           userId={userId}
           size="md"
-          className="size-9"
         />
       </SheetTrigger>
       <SheetContent

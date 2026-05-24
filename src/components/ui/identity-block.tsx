@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Building2, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -117,8 +118,13 @@ export function IdentityAvatar({
 }: Pick<IdentityBlockProps, "fullName" | "email" | "avatarUrl" | "userId" | "size"> & {
   className?: string;
 }) {
-  const initials = getIdentityInitials(fullName, email);
-  const fallbackStyle = userId ? { background: gradientFromUserId(userId) } : undefined;
+  const initials = useMemo(() => getIdentityInitials(fullName, email), [fullName, email]);
+  // Memo the gradient style so identical userId renders don't churn the inline-style object
+  // (P1 #1 — avoid downstream re-renders on parents like UserMenu/IdentityBlock).
+  const fallbackStyle = useMemo(
+    () => (userId ? { background: gradientFromUserId(userId) } : undefined),
+    [userId],
+  );
 
   return (
     <Avatar
@@ -127,7 +133,8 @@ export function IdentityAvatar({
     >
       {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
       <AvatarFallback
-        className="font-semibold text-foreground group-data-[size=sm]/avatar:text-[10px]"
+        // P0-1: gradient terminates at L≈92%; hard-set near-black text so dark mode + light gradient end keep ≥4.5:1.
+        className="font-semibold text-zinc-900 group-data-[size=sm]/avatar:text-[10px]"
         style={fallbackStyle}
       >
         {initials}

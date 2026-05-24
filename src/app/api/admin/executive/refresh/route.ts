@@ -54,6 +54,7 @@ async function invokeEdgeRefresh({
       },
       body: JSON.stringify(body ?? { organization_id: organizationId }),
       cache: "no-store",
+      signal: AbortSignal.timeout(22_000),
     });
 
     const responseBody = await parseResponseBody(response);

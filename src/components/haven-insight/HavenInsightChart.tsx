@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import { cn } from "@/lib/utils";
 
 export type ChartSpec = {
@@ -26,7 +28,7 @@ function piePath(cx: number, cy: number, r: number, start: number, end: number) 
   return `M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z`;
 }
 
-export function HavenInsightChart({ spec, className }: Props) {
+export const HavenInsightChart = memo(function HavenInsightChart({ spec, className }: Props) {
   const data = spec.series.filter((item) => Number.isFinite(item.value)).slice(0, 8);
   if (!data.length) return null;
 
@@ -74,4 +76,4 @@ export function HavenInsightChart({ spec, className }: Props) {
       </svg>
     </div>
   );
-}
+});

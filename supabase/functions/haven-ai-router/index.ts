@@ -366,23 +366,6 @@ async function reconcileTokenBudget(
   }
 }
 
-async function nextOrdinal(
-  admin: SupabaseClient,
-  sessionId: string,
-): Promise<number> {
-  const { data, error } = await admin
-    .from("exec_nlq_messages")
-    .select("ordinal")
-    .eq("session_id", sessionId)
-    .is("deleted_at", null)
-    .order("ordinal", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const ordinal = typeof data?.ordinal === "number" ? data.ordinal : 0;
-  return ordinal + 1;
-}
-
 type ThreadStateRow = {
   message_count: number | null;
   rolling_summary_text: string | null;
@@ -436,52 +419,75 @@ async function insertTurnMessages(args: {
   aiInvocationId: string | null;
   streamed: boolean;
   fallbackUsed: boolean;
-}): Promise<void> {
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const userOrdinal = await nextOrdinal(args.admin, args.sessionId);
-    const { error } = await args.admin
-      .from("exec_nlq_messages")
-      .insert([
-        {
-          session_id: args.sessionId,
-          organization_id: args.organizationId,
-          role: "user",
-          content: args.question,
-          ordinal: userOrdinal,
-          streamed: args.streamed,
-        },
-        {
-          session_id: args.sessionId,
-          organization_id: args.organizationId,
-          role: "assistant",
-          content: args.dispatchResult.answer,
-          ordinal: userOrdinal + 1,
-          ai_invocation_id: args.aiInvocationId,
-          citations: args.dispatchResult.citations,
-          follow_ups: args.parsedAnswerMetadata.followUpSuggestions,
-          chart_spec: args.parsedAnswerMetadata.chartSpec,
-          intent: args.intent.intent,
-          intent_confidence: args.intent.confidence,
-          tools_used: args.dispatchResult.toolsUsed,
-          fallback_used: args.fallbackUsed,
-          tokens_used: args.dispatchResult.tokensUsed,
-          tokens_in: args.dispatchResult.tokensIn,
-          tokens_out: args.dispatchResult.tokensOut,
-          model_used: args.dispatchResult.modelUsed ?? SONNET_MODEL,
-          streamed: args.streamed,
-        },
-      ]);
-
-    if (!error) return;
-    if (error.code === "23505" && attempt < 3) continue;
+}): Promise<boolean> {
+  const { data: reservedOrdinal, error: reserveErr } = await args.admin.rpc(
+    "reserve_nlq_ordinals",
+    { p_session_id: args.sessionId },
+  );
+  if (reserveErr) {
     args.t.log({
-      event: "thread_message_insert_failed",
+      event: "thread_ordinal_reserve_failed",
       outcome: "error",
       session_id: args.sessionId,
-      error_message: error.message,
+      error_message: reserveErr.message,
     });
-    return;
+    return false;
   }
+
+  const userOrdinal = typeof reservedOrdinal === "number"
+    ? reservedOrdinal
+    : Number(reservedOrdinal);
+  if (!Number.isFinite(userOrdinal) || userOrdinal <= 0) {
+    args.t.log({
+      event: "thread_ordinal_reserve_invalid",
+      outcome: "error",
+      session_id: args.sessionId,
+      reserved_ordinal: reservedOrdinal,
+    });
+    return false;
+  }
+
+  const { error } = await args.admin
+    .from("exec_nlq_messages")
+    .insert([
+      {
+        session_id: args.sessionId,
+        organization_id: args.organizationId,
+        role: "user",
+        content: args.question,
+        ordinal: userOrdinal,
+        streamed: args.streamed,
+      },
+      {
+        session_id: args.sessionId,
+        organization_id: args.organizationId,
+        role: "assistant",
+        content: args.dispatchResult.answer,
+        ordinal: userOrdinal + 1,
+        ai_invocation_id: args.aiInvocationId,
+        citations: args.dispatchResult.citations,
+        follow_ups: args.parsedAnswerMetadata.followUpSuggestions,
+        chart_spec: args.parsedAnswerMetadata.chartSpec,
+        intent: args.intent.intent,
+        intent_confidence: args.intent.confidence,
+        tools_used: args.dispatchResult.toolsUsed,
+        fallback_used: args.fallbackUsed,
+        tokens_used: args.dispatchResult.tokensUsed,
+        tokens_in: args.dispatchResult.tokensIn,
+        tokens_out: args.dispatchResult.tokensOut,
+        model_used: args.dispatchResult.modelUsed ?? SONNET_MODEL,
+        streamed: args.streamed,
+      },
+    ]);
+
+  if (!error) return true;
+  args.t.log({
+    event: "thread_message_insert_failed",
+    outcome: "error",
+    session_id: args.sessionId,
+    error_message: error.message,
+  });
+  return false;
 }
 
 async function persistRouterResponse(
@@ -564,37 +570,30 @@ async function persistRouterResponse(
 
   try {
     if (sessionId) {
-      const { data: updatedSession, error: updErr } = await admin
+      const { data: existingSession, error: existingErr } = await admin
         .from("exec_nlq_sessions")
-        .update({
-          status: sessionStatus,
-          ai_invocation_id: aiInvocationId,
-          result_summary: dispatchResult.answer.slice(0, 4000),
-          intent_json: intentJson,
-          updated_at: new Date().toISOString(),
-        })
+        .select("id, title_auto")
         .eq("id", sessionId)
         .eq("organization_id", organizationId)
         .eq("user_id", userId)
         .is("deleted_at", null)
-        .select("id, title_auto")
         .maybeSingle();
-      if (updErr) {
+      if (existingErr) {
         t.log({
-          event: "session_update_failed",
+          event: "session_lookup_failed",
           outcome: "error",
-          error_message: updErr.message,
+          error_message: existingErr.message,
         });
         sessionId = null;
-      } else if (!updatedSession?.id) {
+      } else if (!existingSession?.id) {
         t.log({
-          event: "session_update_missing",
+          event: "session_lookup_missing",
           outcome: "miss",
           session_id: sessionId,
         });
         sessionId = null;
       } else {
-        sessionTitleAuto = updatedSession.title_auto !== false;
+        sessionTitleAuto = existingSession.title_auto !== false;
       }
     }
     if (!sessionId) {
@@ -604,14 +603,8 @@ async function persistRouterResponse(
           organization_id: organizationId,
           user_id: userId,
           title: fallbackThreadTitle(question),
-          status: sessionStatus,
-          ai_invocation_id: aiInvocationId,
-          result_summary: dispatchResult.answer.slice(0, 4000),
-          intent_json: intentJson,
+          status: "submitted",
           created_by: userId,
-          title_generated_at: args.shouldAutoTitle
-            ? new Date().toISOString()
-            : null,
         })
         .select("id, title_auto")
         .single();
@@ -634,9 +627,10 @@ async function persistRouterResponse(
     });
   }
 
+  let messagesInserted = false;
   if (sessionId) {
     try {
-      await insertTurnMessages({
+      messagesInserted = await insertTurnMessages({
         admin,
         t,
         sessionId,
@@ -655,6 +649,30 @@ async function persistRouterResponse(
         outcome: "error",
         session_id: sessionId,
         error_message: String(err),
+      });
+    }
+  }
+
+  if (sessionId && messagesInserted) {
+    const { error: updErr } = await admin
+      .from("exec_nlq_sessions")
+      .update({
+        status: sessionStatus,
+        ai_invocation_id: aiInvocationId,
+        result_summary: dispatchResult.answer.slice(0, 4000),
+        intent_json: intentJson,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", sessionId)
+      .eq("organization_id", organizationId)
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+    if (updErr) {
+      t.log({
+        event: "session_update_failed",
+        outcome: "error",
+        session_id: sessionId,
+        error_message: updErr.message,
       });
     }
 
@@ -866,7 +884,7 @@ function enqueueBackgroundTask(task: Promise<void>): void {
     edgeRuntime.waitUntil(task);
     return;
   }
-  void task;
+  void task.catch(() => undefined);
 }
 
 function buildStreamingFinalizerPrompt(args: {
@@ -1271,7 +1289,6 @@ Deno.serve(async (req) => {
   const routeContext = body.route ?? null;
   const moduleContext = body.module ?? null;
   const selectedFacilityId = body.facility_id ?? null;
-  const userRoleHint = body.role ?? null;
 
   // --- Profile lookup ---
   let role = "caregiver";
@@ -1282,7 +1299,7 @@ Deno.serve(async (req) => {
       .select("app_role, organization_id")
       .eq("id", userId)
       .single();
-    role = String(profile?.app_role ?? userRoleHint ?? "caregiver");
+    role = String(profile?.app_role ?? "caregiver");
     organizationId = (profile?.organization_id ?? null) as string | null;
   } catch (err) {
     t.log({
@@ -1517,6 +1534,7 @@ Deno.serve(async (req) => {
       admin,
       bodySessionId,
       organizationId,
+      userId,
     );
   } catch (err) {
     t.log({
