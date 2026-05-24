@@ -299,11 +299,23 @@ export function ExecutiveOverviewPageClient({
   );
 }
 
+type ExecutiveRefreshFunctionStatus = {
+  name: string;
+  ok: boolean;
+  status: number;
+};
+
 type ExecutiveRefreshState =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "success"; message: string }
-  | { kind: "error"; message: string };
+  | {
+      kind: "error";
+      message: string;
+      snapshot?: ExecutiveRefreshFunctionStatus;
+      scorer?: ExecutiveRefreshFunctionStatus;
+      missing?: string[];
+    };
 
 function ExecutiveEmptyOnboarding({
   facilityCount,
@@ -343,18 +355,75 @@ function ExecutiveEmptyOnboarding({
     },
   ] as const;
 
+  const getStatusHint = (status: number) => {
+    switch (status) {
+      case 0:
+        return "Function is not deployed to Supabase.";
+      case 401:
+        return "Secret mismatch between Netlify and Supabase Edge Function.";
+      case 404:
+        return "Organization not found in the database.";
+      case 500:
+        return "Function threw an error — check the Edge Function logs in Supabase Dashboard.";
+      case 502:
+        return "Upstream Edge Function did not return a 2xx response — see other status row.";
+      case 503:
+        return "Required environment variable missing on Supabase Edge side.";
+      case 504:
+        return "Netlify gateway timeout — the Edge Function took longer than the serverless function limit. Try parallelization or background invocation.";
+      default:
+        return null;
+    }
+  };
+
   const refreshExecutiveDashboard = useCallback(async () => {
     setRefreshState({ kind: "loading" });
+
+    const isRecord = (value: unknown): value is Record<string, unknown> =>
+      typeof value === "object" && value !== null;
+
+    const isFunctionStatus = (value: unknown): value is ExecutiveRefreshFunctionStatus => {
+      if (!isRecord(value)) return false;
+      return (
+        typeof value.name === "string" &&
+        typeof value.ok === "boolean" &&
+        typeof value.status === "number"
+      );
+    };
+
+    const isStringArray = (value: unknown): value is string[] =>
+      Array.isArray(value) && value.every((item) => typeof item === "string");
 
     try {
       const response = await fetch("/api/admin/executive/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-      const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+      const rawPayload: unknown = await response.json().catch(() => null);
+      const payload = isRecord(rawPayload) ? rawPayload : null;
+      const payloadOk = payload?.ok === true;
+      const payloadError = typeof payload?.error === "string" ? payload.error : null;
+      const snapshot = isFunctionStatus(payload?.snapshot) ? payload.snapshot : undefined;
+      const scorer = isFunctionStatus(payload?.scorer) ? payload.scorer : undefined;
+      const missing = isStringArray(payload?.missing) ? payload.missing : undefined;
 
-      if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error || "Executive refresh failed.");
+      if (!response.ok || !payloadOk) {
+        if (response.status === 504 && !payload) {
+          setRefreshState({
+            kind: "error",
+            message: "Netlify gateway timeout (504) — the refresh took longer than the serverless function limit.",
+          });
+          return;
+        }
+
+        setRefreshState({
+          kind: "error",
+          message: payloadError || "Executive refresh failed.",
+          snapshot,
+          scorer,
+          missing,
+        });
+        return;
       }
 
       setRefreshState({
@@ -367,6 +436,16 @@ function ExecutiveEmptyOnboarding({
       setRefreshState({
         kind: "error",
         message: error instanceof Error ? error.message : "Executive refresh failed.",
+        snapshot: {
+          name: "exec-kpi-snapshot",
+          ok: false,
+          status: 0,
+        },
+        scorer: {
+          name: "resident-safety-scorer",
+          ok: false,
+          status: 0,
+        },
       });
     }
   }, [onRefreshComplete, router]);
@@ -413,9 +492,34 @@ function ExecutiveEmptyOnboarding({
           </p>
         )}
         {refreshState.kind === "error" && (
-          <p className="mt-3 text-[12px] font-medium text-destructive" role="alert">
-            {refreshState.message}
-          </p>
+          <div className="mt-3" role="alert">
+            <p className="text-[12px] font-medium text-destructive">{refreshState.message}</p>
+            {(refreshState.snapshot || refreshState.scorer) && (
+              <div className="mt-2 flex flex-col gap-2">
+                {[refreshState.snapshot, refreshState.scorer].filter(Boolean).map((fnStatus) => {
+                  if (!fnStatus) return null;
+                  const hint = getStatusHint(fnStatus.status);
+                  return (
+                    <div key={fnStatus.name} className="text-[12px]">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("font-medium", fnStatus.ok ? "text-success" : "text-destructive")}>
+                          {fnStatus.ok ? "✓" : "✗"}
+                        </span>
+                        <span className="font-medium text-foreground">{fnStatus.name}</span>
+                        <span className="tabular-nums text-muted-foreground">{fnStatus.status}</span>
+                      </div>
+                      {hint && <p className="mt-0.5 text-[12px] text-muted-foreground">{hint}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {refreshState.missing && refreshState.missing.length > 0 && (
+              <p className="mt-2 text-[12px] text-muted-foreground">
+                Missing environment variables: <span className="font-medium">{refreshState.missing.join(", ")}</span>
+              </p>
+            )}
+          </div>
         )}
       </div>
 

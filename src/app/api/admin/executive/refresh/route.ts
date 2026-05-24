@@ -4,6 +4,9 @@ import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import { logError } from "@/lib/observability/logger";
 
+// Netlify Pro caps serverless execution at 26s; lower this if the site downgrades tiers.
+export const maxDuration = 26;
+
 type EdgeRefreshResult = {
   name: "exec-kpi-snapshot" | "resident-safety-scorer";
   ok: boolean;
@@ -118,19 +121,20 @@ export async function POST() {
   const normalizedSupabaseUrl = normalizeSupabaseUrl(supabaseUrl);
   const organizationId = roleContext.ctx.organizationId;
 
-  const snapshot = await invokeEdgeRefresh({
-    name: "exec-kpi-snapshot",
-    supabaseUrl: normalizedSupabaseUrl,
-    secret: snapshotSecret,
-    organizationId,
-  });
-
-  const scorer = await invokeEdgeRefresh({
-    name: "resident-safety-scorer",
-    supabaseUrl: normalizedSupabaseUrl,
-    secret: scorerSecret,
-    organizationId,
-  });
+  const [snapshot, scorer] = await Promise.all([
+    invokeEdgeRefresh({
+      name: "exec-kpi-snapshot",
+      supabaseUrl: normalizedSupabaseUrl,
+      secret: snapshotSecret,
+      organizationId,
+    }),
+    invokeEdgeRefresh({
+      name: "resident-safety-scorer",
+      supabaseUrl: normalizedSupabaseUrl,
+      secret: scorerSecret,
+      organizationId,
+    }),
+  ]);
 
   const snapshotClient = toClientResult(snapshot);
   const scorerClient = toClientResult(scorer);
