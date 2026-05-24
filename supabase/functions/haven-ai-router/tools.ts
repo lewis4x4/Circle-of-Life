@@ -81,6 +81,13 @@ export type ToolLoopResult = {
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 const DEFAULT_MAX_TURNS = 5;
 const DEFAULT_MAX_TOKENS = 1024;
+const ANSWER_METADATA_INSTRUCTIONS = `After your visible answer, on a new line, output a JSON block:
+<follow_ups>{"suggestions":["question 1","question 2","question 3"]}</follow_ups>
+These should be natural next questions an executive would ask given your answer. Each suggestion must be 80 characters or fewer.
+
+If your answer compares facilities, shows a trend, or aggregates by category, ALSO output:
+<chart>{"kind":"bar"|"line"|"pie","series":[{"label":"...","value":N}],"x_label":"...","y_label":"..."}</chart>
+Otherwise omit the chart block entirely.`;
 const ANTHROPIC_TIMEOUT_MS = 60_000;
 const RPC_TIMEOUT_MS = 15_000;
 
@@ -183,7 +190,7 @@ async function callAnthropicWithTools(args: {
       body: JSON.stringify({
         model: args.model,
         max_tokens: args.maxTokens,
-        system: args.systemPrompt,
+        system: `${args.systemPrompt}\n\n${ANSWER_METADATA_INSTRUCTIONS}`,
         tools: args.tools,
         messages: args.messages,
       }),

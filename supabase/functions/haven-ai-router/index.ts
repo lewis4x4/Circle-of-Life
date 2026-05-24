@@ -18,7 +18,10 @@
  *   X-Router-Failure: true   — on internal error; frontend may fall back to exec-nlq-executor.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  createClient,
+  type SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
@@ -26,8 +29,8 @@ import { captureException, captureMessage } from "../_shared/sentry-edge.ts";
 import {
   classifyIntent,
   intentCache,
-  normalizeQuestion,
   type IntentClassification,
+  normalizeQuestion,
 } from "../_shared/router-intent.ts";
 import { dispatch, type DispatchResult } from "../_shared/router-dispatch.ts";
 
@@ -35,9 +38,9 @@ import { dispatch, type DispatchResult } from "../_shared/router-dispatch.ts";
 /*  Per-token pricing (Sonnet 4.5) — used for token-budget accounting */
 /* ------------------------------------------------------------------ */
 
-const SONNET_INPUT_USD_PER_TOKEN = 0.000003;   // $3 / 1M input tokens
-const SONNET_OUTPUT_USD_PER_TOKEN = 0.000015;  // $15 / 1M output tokens
-const PER_QUESTION_RESERVATION_USD = 0.05;     // conservative pre-flight reservation
+const SONNET_INPUT_USD_PER_TOKEN = 0.000003; // $3 / 1M input tokens
+const SONNET_OUTPUT_USD_PER_TOKEN = 0.000015; // $15 / 1M output tokens
+const PER_QUESTION_RESERVATION_USD = 0.05; // conservative pre-flight reservation
 
 /* ------------------------------------------------------------------ */
 /*  Env                                                               */
@@ -46,6 +49,9 @@ const PER_QUESTION_RESERVATION_USD = 0.05;     // conservative pre-flight reserv
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ROUTER_MODEL_LABEL = "haven-ai-router";
+const SONNET_MODEL = "claude-sonnet-4-6";
+const ANTHROPIC_TIMEOUT_MS = 60_000;
+const MAX_STREAM_ANSWER_TOKENS = 1200;
 
 const ALLOWED_ROLES = [
   "owner",
@@ -72,13 +78,57 @@ type RequestBody = {
   role?: string;
 };
 
+type ChartKind = "bar" | "line" | "pie";
+
+type ChartSpec = {
+  kind: ChartKind;
+  series: Array<{ label: string; value: number }>;
+  x_label?: string;
+  y_label?: string;
+};
+
+type ParsedAnswerMetadata = {
+  answer: string;
+  followUpSuggestions: string[];
+  chartSpec: ChartSpec | null;
+};
+
+type RouterLogger = {
+  log: (payload: Record<string, unknown>) => void;
+};
+
+type PersistRouterResponseArgs = {
+  admin: SupabaseClient;
+  t: RouterLogger;
+  bodySessionId: string | null;
+  organizationId: string;
+  userId: string;
+  question: string;
+  routeContext: string | null;
+  moduleContext: string | null;
+  intent: IntentClassification;
+  dispatchResult: DispatchResult;
+  primaryIntentOnlyWhenSpeculative: boolean;
+};
+
+type StreamFinalAnswerResult = {
+  rawAnswer: string;
+  tokensIn: number;
+  tokensOut: number;
+  ok: boolean;
+};
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
 
 async function sha256Hex(text: string): Promise<string> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(text),
+  );
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function jsonResponseWithHeader(
@@ -97,13 +147,607 @@ function jsonResponseWithHeader(
   });
 }
 
-function routerFailureResponse(origin: string | null, message: string, status = 500): Response {
+function routerFailureResponse(
+  origin: string | null,
+  message: string,
+  status = 500,
+): Response {
   return jsonResponseWithHeader(
     { ok: false, error: message },
     status,
     origin,
     { "X-Router-Failure": "true" },
   );
+}
+
+function wantsSse(req: Request): boolean {
+  const accept = req.headers.get("accept")?.toLowerCase() ?? "";
+  return accept.split(",").some((part) =>
+    part.trim().startsWith("text/event-stream")
+  );
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function parseJsonObject(text: string): Record<string, unknown> | null {
+  try {
+    return asRecord(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+function extractXmlBlock(
+  text: string,
+  tag: "follow_ups" | "chart",
+): string | null {
+  const pattern = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const match = pattern.exec(text);
+  return typeof match?.[1] === "string" ? match[1].trim() : null;
+}
+
+function stripMetadataBlocks(text: string): string {
+  return text
+    .replace(/<follow_ups>[\s\S]*?<\/follow_ups>/gi, "")
+    .replace(/<chart>[\s\S]*?<\/chart>/gi, "")
+    .trim();
+}
+
+function normalizeSuggestion(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.replace(/\s+/g, " ").trim();
+  if (!trimmed) return null;
+  return trimmed.length <= 80 ? trimmed : trimmed.slice(0, 79).trimEnd() + "…";
+}
+
+function parseFollowUpSuggestions(block: string | null): string[] {
+  if (!block) return [];
+  const parsed = parseJsonObject(block);
+  const suggestions = parsed?.suggestions;
+  if (!Array.isArray(suggestions)) return [];
+  return suggestions
+    .map(normalizeSuggestion)
+    .filter((suggestion): suggestion is string => suggestion !== null)
+    .slice(0, 3);
+}
+
+function isChartKind(value: unknown): value is ChartKind {
+  return value === "bar" || value === "line" || value === "pie";
+}
+
+function normalizeChartLabel(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.replace(/\s+/g, " ").trim();
+  if (!trimmed || trimmed.length > 80) return null;
+  return trimmed;
+}
+
+function validateChartSpec(block: string | null): ChartSpec | null {
+  if (!block) return null;
+  const parsed = parseJsonObject(block);
+  if (!parsed || !isChartKind(parsed.kind) || !Array.isArray(parsed.series)) {
+    return null;
+  }
+  if (parsed.series.length === 0 || parsed.series.length > 12) return null;
+
+  const series: Array<{ label: string; value: number }> = [];
+  for (const point of parsed.series) {
+    const rec = asRecord(point);
+    if (!rec) return null;
+    const label = normalizeChartLabel(rec.label);
+    const value = typeof rec.value === "number" ? rec.value : null;
+    if (!label || value === null || !Number.isFinite(value)) return null;
+    series.push({ label, value });
+  }
+
+  const xLabel = parsed.x_label === undefined
+    ? undefined
+    : normalizeChartLabel(parsed.x_label);
+  const yLabel = parsed.y_label === undefined
+    ? undefined
+    : normalizeChartLabel(parsed.y_label);
+  if (parsed.x_label !== undefined && !xLabel) return null;
+  if (parsed.y_label !== undefined && !yLabel) return null;
+
+  return {
+    kind: parsed.kind,
+    series,
+    ...(xLabel ? { x_label: xLabel } : {}),
+    ...(yLabel ? { y_label: yLabel } : {}),
+  };
+}
+
+function parseAnswerMetadata(rawAnswer: string): ParsedAnswerMetadata {
+  return {
+    answer: stripMetadataBlocks(rawAnswer),
+    followUpSuggestions: parseFollowUpSuggestions(
+      extractXmlBlock(rawAnswer, "follow_ups"),
+    ),
+    chartSpec: validateChartSpec(extractXmlBlock(rawAnswer, "chart")),
+  };
+}
+
+function mergeDispatchAnswer(
+  dispatchResult: DispatchResult,
+  parsed: ParsedAnswerMetadata,
+): DispatchResult {
+  return {
+    ...dispatchResult,
+    answer: parsed.answer,
+  };
+}
+
+function withAdditionalTokens(
+  dispatchResult: DispatchResult,
+  tokensIn: number,
+  tokensOut: number,
+  answer: string,
+): DispatchResult {
+  return {
+    ...dispatchResult,
+    answer,
+    tokensIn: dispatchResult.tokensIn + tokensIn,
+    tokensOut: dispatchResult.tokensOut + tokensOut,
+    tokensUsed: dispatchResult.tokensUsed + tokensIn + tokensOut,
+  };
+}
+
+async function reconcileTokenBudget(
+  admin: SupabaseClient,
+  t: RouterLogger,
+  organizationId: string,
+  dispatchResult: DispatchResult,
+): Promise<void> {
+  try {
+    const actualCost = dispatchResult.tokensIn * SONNET_INPUT_USD_PER_TOKEN +
+      dispatchResult.tokensOut * SONNET_OUTPUT_USD_PER_TOKEN;
+    const delta = actualCost - PER_QUESTION_RESERVATION_USD;
+    if (delta > 0) {
+      await admin.rpc("_ai_token_budget_check", {
+        p_organization_id: organizationId,
+        p_cost_usd: delta,
+      });
+    }
+  } catch (reconErr) {
+    t.log({
+      event: "budget_reconcile_failed",
+      outcome: "error",
+      organization_id: organizationId,
+      error_message: String(reconErr),
+    });
+  }
+}
+
+async function persistRouterResponse(
+  args: PersistRouterResponseArgs,
+): Promise<string | null> {
+  const {
+    admin,
+    t,
+    organizationId,
+    userId,
+    question,
+    routeContext,
+    moduleContext,
+    intent,
+    dispatchResult,
+  } = args;
+  const phiClass = intent.intent === "clinical_record" ? "phi" : "limited";
+  const [promptHash, responseHash] = await Promise.all([
+    sha256Hex(`${intent.intent}::${question}`),
+    sha256Hex(dispatchResult.answer),
+  ]);
+
+  let aiInvocationId: string | null = null;
+  try {
+    const { data: invRow, error: invErr } = await admin
+      .from("ai_invocations")
+      .insert({
+        organization_id: organizationId,
+        model: dispatchResult.modelUsed ?? ROUTER_MODEL_LABEL,
+        phi_class: phiClass,
+        prompt_hash: promptHash,
+        response_hash: responseHash,
+        tokens_used: dispatchResult.tokensUsed,
+        created_by: userId,
+        metadata_json: {
+          function: "haven-ai-router",
+          intent: intent.intent,
+          intent_confidence: intent.confidence,
+          intent_secondary: intent.secondary ?? null,
+          tools_used: dispatchResult.toolsUsed,
+          surface_route: routeContext,
+          module_context: moduleContext,
+          primary_intent_only_when_speculative:
+            args.primaryIntentOnlyWhenSpeculative,
+          tokens_in: dispatchResult.tokensIn,
+          tokens_out: dispatchResult.tokensOut,
+          refusal: dispatchResult.refusal ?? false,
+          refusal_reason: dispatchResult.refusalReason ?? null,
+          phi_blocked: dispatchResult.phiBlocked ?? false,
+        },
+      })
+      .select("id")
+      .single();
+    if (invErr) {
+      t.log({
+        event: "ai_invocation_insert_failed",
+        outcome: "error",
+        error_message: invErr.message,
+      });
+    } else {
+      aiInvocationId = (invRow?.id as string | null) ?? null;
+    }
+  } catch (err) {
+    t.log({
+      event: "ai_invocation_insert_threw",
+      outcome: "error",
+      error_message: String(err),
+    });
+  }
+
+  let sessionId = args.bodySessionId;
+  const sessionStatus = dispatchResult.answer ? "completed" : "failed";
+  const intentJson = {
+    question_length: question.length,
+    router_intent: intent.intent,
+    router_confidence: intent.confidence,
+    tools_used: dispatchResult.toolsUsed,
+  };
+
+  try {
+    if (sessionId) {
+      const { data: updatedSession, error: updErr } = await admin
+        .from("exec_nlq_sessions")
+        .update({
+          status: sessionStatus,
+          ai_invocation_id: aiInvocationId,
+          result_summary: dispatchResult.answer.slice(0, 4000),
+          intent_json: intentJson,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sessionId)
+        .eq("organization_id", organizationId)
+        .select("id")
+        .maybeSingle();
+      if (updErr) {
+        t.log({
+          event: "session_update_failed",
+          outcome: "error",
+          error_message: updErr.message,
+        });
+        sessionId = null;
+      } else if (!updatedSession?.id) {
+        t.log({
+          event: "session_update_missing",
+          outcome: "miss",
+          session_id: sessionId,
+        });
+        sessionId = null;
+      }
+    }
+    if (!sessionId) {
+      const title = question.length > 100
+        ? question.slice(0, 97) + "..."
+        : question;
+      const { data: sessRow, error: sessErr } = await admin
+        .from("exec_nlq_sessions")
+        .insert({
+          organization_id: organizationId,
+          user_id: userId,
+          title,
+          status: sessionStatus,
+          ai_invocation_id: aiInvocationId,
+          result_summary: dispatchResult.answer.slice(0, 4000),
+          intent_json: intentJson,
+          created_by: userId,
+        })
+        .select("id")
+        .single();
+      if (sessErr) {
+        t.log({
+          event: "session_insert_failed",
+          outcome: "error",
+          error_message: sessErr.message,
+        });
+      } else {
+        sessionId = (sessRow?.id as string | null) ?? null;
+      }
+    }
+  } catch (err) {
+    t.log({
+      event: "session_persist_threw",
+      outcome: "error",
+      error_message: String(err),
+    });
+  }
+
+  return sessionId;
+}
+
+function buildStreamingFinalizerPrompt(args: {
+  question: string;
+  intent: IntentClassification;
+  dispatchResult: DispatchResult;
+}): { system: string; user: string } {
+  const citationsJson = JSON.stringify(
+    args.dispatchResult.citations.slice(0, 12),
+  );
+  const toolsJson = JSON.stringify(args.dispatchResult.toolsUsed);
+  const groundedDraft =
+    parseAnswerMetadata(args.dispatchResult.answer).answer ||
+    args.dispatchResult.answer;
+  return {
+    system:
+      `You are Haven Executive Intelligence for assisted living facility operators.
+
+You are given a grounded draft answer produced by Haven's backend tools. Stream the final answer for the executive.
+
+Rules:
+- Use ONLY the facts in the grounded draft answer and citation/tool context.
+- Preserve all numbers, facility names, and caveats from the draft.
+- Do not add new claims or fabricate data.
+- Keep the visible answer concise and executive-grade.
+- After the visible answer, on a new line, output:
+<follow_ups>{"suggestions":["question 1","question 2","question 3"]}</follow_ups>
+Each suggestion must be a natural next question and 80 characters or fewer.
+- If the answer compares facilities, shows a trend, or aggregates by category, ALSO output:
+<chart>{"kind":"bar"|"line"|"pie","series":[{"label":"...","value":N}],"x_label":"...","y_label":"..."}</chart>
+Otherwise omit the chart block entirely.`,
+    user:
+      `<user_question>\n${args.question}\n</user_question>\n\n<intent>${args.intent.intent}</intent>\n<tools_used>${toolsJson}</tools_used>\n<citations>${citationsJson}</citations>\n\n<grounded_draft_answer>\n${groundedDraft}\n</grounded_draft_answer>`,
+  };
+}
+
+function readNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function createMetadataAwareEmitter(emit: (text: string) => void): {
+  push: (chunk: string) => void;
+  flush: () => void;
+} {
+  const maxTagLength = "<follow_ups>".length;
+  let pending = "";
+  let hidden = false;
+
+  return {
+    push(chunk: string) {
+      if (hidden) return;
+      pending += chunk;
+      const lower = pending.toLowerCase();
+      const followIdx = lower.indexOf("<follow_ups>");
+      const chartIdx = lower.indexOf("<chart>");
+      const indexes = [followIdx, chartIdx].filter((idx) => idx >= 0);
+      if (indexes.length > 0) {
+        const firstMetaIdx = Math.min(...indexes);
+        const visible = pending.slice(0, firstMetaIdx);
+        if (visible) emit(visible);
+        pending = "";
+        hidden = true;
+        return;
+      }
+      if (pending.length > maxTagLength) {
+        const flushUntil = pending.length - maxTagLength;
+        emit(pending.slice(0, flushUntil));
+        pending = pending.slice(flushUntil);
+      }
+    },
+    flush() {
+      if (!hidden && pending) emit(pending);
+      pending = "";
+    },
+  };
+}
+
+async function streamAnthropicFinalAnswer(args: {
+  question: string;
+  intent: IntentClassification;
+  dispatchResult: DispatchResult;
+  onTextDelta: (text: string) => void;
+}): Promise<StreamFinalAnswerResult> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return { rawAnswer: "", tokensIn: 0, tokensOut: 0, ok: false };
+
+  const prompt = buildStreamingFinalizerPrompt(args);
+  let rawAnswer = "";
+  let tokensIn = 0;
+  let tokensOut = 0;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: SONNET_MODEL,
+        max_tokens: MAX_STREAM_ANSWER_TOKENS,
+        stream: true,
+        system: prompt.system,
+        messages: [{ role: "user", content: prompt.user }],
+      }),
+      signal: AbortSignal.timeout(ANTHROPIC_TIMEOUT_MS),
+    });
+    if (!res.ok || !res.body) {
+      return { rawAnswer, tokensIn, tokensOut, ok: false };
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const data = trimmed.slice("data:".length).trim();
+        if (!data || data === "[DONE]") continue;
+        const event = parseJsonObject(data);
+        if (!event) continue;
+
+        if (event.type === "message_start") {
+          const message = asRecord(event.message);
+          const usage = asRecord(message?.usage);
+          tokensIn += readNumber(usage?.input_tokens);
+        } else if (event.type === "content_block_delta") {
+          const delta = asRecord(event.delta);
+          if (delta?.type === "text_delta" && typeof delta.text === "string") {
+            rawAnswer += delta.text;
+            args.onTextDelta(delta.text);
+          }
+        } else if (event.type === "message_delta") {
+          const usage = asRecord(event.usage);
+          const outputTokens = readNumber(usage?.output_tokens);
+          if (outputTokens > 0) tokensOut = outputTokens;
+        }
+      }
+    }
+
+    buffer += decoder.decode();
+    return { rawAnswer, tokensIn, tokensOut, ok: rawAnswer.trim().length > 0 };
+  } catch {
+    return { rawAnswer, tokensIn, tokensOut, ok: false };
+  }
+}
+
+function enqueueSse(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  payload: unknown,
+): void {
+  const encoder = new TextEncoder();
+  const text = typeof payload === "string" ? payload : JSON.stringify(payload);
+  controller.enqueue(encoder.encode(`data: ${text}\n\n`));
+}
+
+function emitAnswerInChunks(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  answer: string,
+): void {
+  const chunkSize = 80;
+  for (let i = 0; i < answer.length; i += chunkSize) {
+    enqueueSse(controller, {
+      type: "token",
+      content: answer.slice(i, i + chunkSize),
+    });
+  }
+}
+
+function streamResponse(args: {
+  origin: string | null;
+  admin: SupabaseClient;
+  t: RouterLogger;
+  bodySessionId: string | null;
+  organizationId: string;
+  userId: string;
+  question: string;
+  routeContext: string | null;
+  moduleContext: string | null;
+  intent: IntentClassification;
+  dispatchResult: DispatchResult;
+  primaryIntentOnlyWhenSpeculative: boolean;
+}): Response {
+  let emittedVisibleToken = false;
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        const filteredEmitter = createMetadataAwareEmitter((content) => {
+          if (!content) return;
+          emittedVisibleToken = true;
+          enqueueSse(controller, { type: "token", content });
+        });
+        const streamed = await streamAnthropicFinalAnswer({
+          question: args.question,
+          intent: args.intent,
+          dispatchResult: args.dispatchResult,
+          onTextDelta: filteredEmitter.push,
+        });
+        filteredEmitter.flush();
+
+        const rawAnswer = streamed.ok
+          ? streamed.rawAnswer
+          : args.dispatchResult.answer;
+        const parsed = parseAnswerMetadata(rawAnswer);
+        if (!emittedVisibleToken && parsed.answer) {
+          emitAnswerInChunks(controller, parsed.answer);
+        }
+
+        const finalResult = streamed.ok
+          ? withAdditionalTokens(
+            args.dispatchResult,
+            streamed.tokensIn,
+            streamed.tokensOut,
+            parsed.answer,
+          )
+          : mergeDispatchAnswer(args.dispatchResult, parsed);
+        await reconcileTokenBudget(
+          args.admin,
+          args.t,
+          args.organizationId,
+          finalResult,
+        );
+        const sessionId = await persistRouterResponse({
+          admin: args.admin,
+          t: args.t,
+          bodySessionId: args.bodySessionId,
+          organizationId: args.organizationId,
+          userId: args.userId,
+          question: args.question,
+          routeContext: args.routeContext,
+          moduleContext: args.moduleContext,
+          intent: args.intent,
+          dispatchResult: finalResult,
+          primaryIntentOnlyWhenSpeculative:
+            args.primaryIntentOnlyWhenSpeculative,
+        });
+
+        enqueueSse(controller, {
+          type: "meta",
+          session_id: sessionId,
+          citations: finalResult.citations,
+          intent: args.intent.intent,
+          intent_confidence: args.intent.confidence,
+          tools_used: finalResult.toolsUsed,
+          fallback_used: !args.primaryIntentOnlyWhenSpeculative,
+          follow_up_suggestions: parsed.followUpSuggestions,
+          chart_spec: parsed.chartSpec,
+          tokens_used: finalResult.tokensUsed,
+        });
+        enqueueSse(controller, "[DONE]");
+      } catch (err) {
+        captureException(err, {
+          event: "router_stream_failed",
+          organization_id: args.organizationId,
+        });
+        enqueueSse(controller, { type: "error", message: "Stream failed" });
+        enqueueSse(controller, "[DONE]");
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      ...getCorsHeaders(args.origin),
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -128,7 +772,11 @@ Deno.serve(async (req) => {
   try {
     admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   } catch (err) {
-    t.log({ event: "client_create_failed", outcome: "error", error_message: String(err) });
+    t.log({
+      event: "client_create_failed",
+      outcome: "error",
+      error_message: String(err),
+    });
     captureException(err, { event: "router_init_failed" });
     return routerFailureResponse(origin, "Router initialization failed");
   }
@@ -145,15 +793,28 @@ Deno.serve(async (req) => {
     }
     userId = data.user.id;
   } catch (err) {
-    t.log({ event: "auth_threw", outcome: "error", error_message: String(err) });
+    t.log({
+      event: "auth_threw",
+      outcome: "error",
+      error_message: String(err),
+    });
     captureException(err, { event: "router_auth_failed" });
     return routerFailureResponse(origin, "Auth check failed");
   }
 
   // --- Rate limit (per-user + per-org, KB-NEXT-03 G3) ---
   if (isRateLimited(userId)) {
-    t.log({ event: "rate_limited", outcome: "blocked", scope: "user", user_id: userId });
-    return jsonResponse({ error: "Rate limit exceeded. Try again in a minute." }, 429, origin);
+    t.log({
+      event: "rate_limited",
+      outcome: "blocked",
+      scope: "user",
+      user_id: userId,
+    });
+    return jsonResponse(
+      { error: "Rate limit exceeded. Try again in a minute." },
+      429,
+      origin,
+    );
   }
 
   // --- Parse body ---
@@ -164,12 +825,18 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Invalid JSON body" }, 400, origin);
   }
 
-  const question = typeof body.question === "string" ? body.question.trim() : "";
+  const question = typeof body.question === "string"
+    ? body.question.trim()
+    : "";
   if (!question) {
     return jsonResponse({ error: "question is required" }, 400, origin);
   }
   if (question.length > 2000) {
-    return jsonResponse({ error: "question exceeds 2000 characters" }, 400, origin);
+    return jsonResponse(
+      { error: "question exceeds 2000 characters" },
+      400,
+      origin,
+    );
   }
 
   const routeContext = body.route ?? null;
@@ -189,7 +856,11 @@ Deno.serve(async (req) => {
     role = String(profile?.app_role ?? userRoleHint ?? "caregiver");
     organizationId = (profile?.organization_id ?? null) as string | null;
   } catch (err) {
-    t.log({ event: "profile_lookup_failed", outcome: "error", error_message: String(err) });
+    t.log({
+      event: "profile_lookup_failed",
+      outcome: "error",
+      error_message: String(err),
+    });
     captureException(err, { event: "router_profile_lookup_failed" });
     return routerFailureResponse(origin, "Profile lookup failed");
   }
@@ -199,12 +870,25 @@ Deno.serve(async (req) => {
   }
   if (!ALLOWED_ROLES.includes(role)) {
     t.log({ event: "role_denied", outcome: "blocked", role });
-    return jsonResponse({ error: "Insufficient permissions for Haven AI" }, 403, origin);
+    return jsonResponse(
+      { error: "Insufficient permissions for Haven AI" },
+      403,
+      origin,
+    );
   }
 
   if (isOrgRateLimited(organizationId)) {
-    t.log({ event: "rate_limited", outcome: "blocked", scope: "org", organization_id: organizationId });
-    return jsonResponse({ error: "Organization rate limit exceeded. Try again in a minute." }, 429, origin);
+    t.log({
+      event: "rate_limited",
+      outcome: "blocked",
+      scope: "org",
+      organization_id: organizationId,
+    });
+    return jsonResponse(
+      { error: "Organization rate limit exceeded. Try again in a minute." },
+      429,
+      origin,
+    );
   }
 
   // --- Token budget pre-check (KB-NEXT-03 §D) ---
@@ -213,10 +897,13 @@ Deno.serve(async (req) => {
   // refuse with 429 + Sentry alert. Falls open if the RPC errors out — safer
   // than blocking on infra hiccups.
   try {
-    const { data: budgetData, error: budgetErr } = await admin.rpc("_ai_token_budget_check", {
-      p_organization_id: organizationId,
-      p_cost_usd: PER_QUESTION_RESERVATION_USD,
-    });
+    const { data: budgetData, error: budgetErr } = await admin.rpc(
+      "_ai_token_budget_check",
+      {
+        p_organization_id: organizationId,
+        p_cost_usd: PER_QUESTION_RESERVATION_USD,
+      },
+    );
     if (budgetErr) {
       t.log({
         event: "budget_check_failed",
@@ -289,7 +976,11 @@ Deno.serve(async (req) => {
         .eq("organization_id", organizationId)
         .is("deleted_at", null);
       if (error) {
-        t.log({ event: "facility_lookup_failed", outcome: "error", error_message: error.message });
+        t.log({
+          event: "facility_lookup_failed",
+          outcome: "error",
+          error_message: error.message,
+        });
       } else {
         facilityIds = ((data ?? []) as { id: string }[]).map((r) => r.id);
       }
@@ -301,13 +992,23 @@ Deno.serve(async (req) => {
         .eq("organization_id", organizationId)
         .is("revoked_at", null);
       if (error) {
-        t.log({ event: "facility_lookup_failed", outcome: "error", error_message: error.message });
+        t.log({
+          event: "facility_lookup_failed",
+          outcome: "error",
+          error_message: error.message,
+        });
       } else {
-        facilityIds = ((data ?? []) as { facility_id: string }[]).map((r) => r.facility_id);
+        facilityIds = ((data ?? []) as { facility_id: string }[]).map((r) =>
+          r.facility_id
+        );
       }
     }
   } catch (err) {
-    t.log({ event: "facility_lookup_threw", outcome: "error", error_message: String(err) });
+    t.log({
+      event: "facility_lookup_threw",
+      outcome: "error",
+      error_message: String(err),
+    });
   }
 
   // --- Classify intent (with cache) ---
@@ -316,7 +1017,11 @@ Deno.serve(async (req) => {
   const cached = intentCache.get(cacheKey);
   if (cached) {
     intent = cached;
-    t.log({ event: "intent_cache_hit", intent: intent.intent, confidence: intent.confidence });
+    t.log({
+      event: "intent_cache_hit",
+      intent: intent.intent,
+      confidence: intent.confidence,
+    });
   } else {
     try {
       intent = await classifyIntent(question, {
@@ -331,8 +1036,15 @@ Deno.serve(async (req) => {
         secondary: intent.secondary ?? null,
       });
     } catch (err) {
-      t.log({ event: "classify_threw", outcome: "error", error_message: String(err) });
-      captureException(err, { event: "router_classify_failed", organization_id: organizationId });
+      t.log({
+        event: "classify_threw",
+        outcome: "error",
+        error_message: String(err),
+      });
+      captureException(err, {
+        event: "router_classify_failed",
+        organization_id: organizationId,
+      });
       return routerFailureResponse(origin, "Intent classification failed");
     }
   }
@@ -372,7 +1084,10 @@ Deno.serve(async (req) => {
     });
 
     const lowConfidence = intent.confidence < SPECULATIVE_DISPATCH_THRESHOLD;
-    if (lowConfidence && dispatchResult.refusal && intent.intent !== "mixed" && intent.intent !== "refuse") {
+    if (
+      lowConfidence && dispatchResult.refusal && intent.intent !== "mixed" &&
+      intent.intent !== "refuse"
+    ) {
       const fallbackIntent: IntentClassification = {
         intent: "mixed",
         confidence: intent.confidence,
@@ -395,7 +1110,11 @@ Deno.serve(async (req) => {
       }
     }
   } catch (err) {
-    t.log({ event: "dispatch_threw", outcome: "error", error_message: String(err) });
+    t.log({
+      event: "dispatch_threw",
+      outcome: "error",
+      error_message: String(err),
+    });
     captureException(err, {
       event: "router_dispatch_failed",
       organization_id: organizationId,
@@ -404,144 +1123,24 @@ Deno.serve(async (req) => {
     return routerFailureResponse(origin, "Dispatch failed");
   }
 
-  // --- Budget reconciliation (KB-NEXT-03 §D) ---
-  // Pre-flight reserved PER_QUESTION_RESERVATION_USD. If the real cost from
-  // token usage exceeds that, charge the delta. Underspend is left in place
-  // (small over-charge is acceptable; under-billing is not).
-  try {
-    const actualCost =
-      dispatchResult.tokensIn * SONNET_INPUT_USD_PER_TOKEN +
-      dispatchResult.tokensOut * SONNET_OUTPUT_USD_PER_TOKEN;
-    const delta = actualCost - PER_QUESTION_RESERVATION_USD;
-    if (delta > 0) {
-      await admin.rpc("_ai_token_budget_check", {
-        p_organization_id: organizationId,
-        p_cost_usd: delta,
-      });
-    }
-  } catch (reconErr) {
-    t.log({
-      event: "budget_reconcile_failed",
-      outcome: "error",
-      organization_id: organizationId,
-      error_message: String(reconErr),
-    });
-  }
-
-  // --- Audit: ai_invocations + exec_nlq_sessions ---
-  const phiClass = intent.intent === "clinical_record" ? "phi" : "limited";
-  const [promptHash, responseHash] = await Promise.all([
-    sha256Hex(`${intent.intent}::${question}`),
-    sha256Hex(dispatchResult.answer),
-  ]);
-
-  let aiInvocationId: string | null = null;
-  try {
-    const { data: invRow, error: invErr } = await admin
-      .from("ai_invocations")
-      .insert({
-        organization_id: organizationId,
-        model: dispatchResult.modelUsed ?? ROUTER_MODEL_LABEL,
-        phi_class: phiClass,
-        prompt_hash: promptHash,
-        response_hash: responseHash,
-        tokens_used: dispatchResult.tokensUsed,
-        created_by: userId,
-        metadata_json: {
-          function: "haven-ai-router",
-          intent: intent.intent,
-          intent_confidence: intent.confidence,
-          intent_secondary: intent.secondary ?? null,
-          tools_used: dispatchResult.toolsUsed,
-          surface_route: routeContext,
-          module_context: moduleContext,
-          primary_intent_only_when_speculative: primaryIntentOnlyWhenSpeculative,
-          tokens_in: dispatchResult.tokensIn,
-          tokens_out: dispatchResult.tokensOut,
-          refusal: dispatchResult.refusal ?? false,
-          refusal_reason: dispatchResult.refusalReason ?? null,
-          phi_blocked: dispatchResult.phiBlocked ?? false,
-        },
-      })
-      .select("id")
-      .single();
-    if (invErr) {
-      t.log({
-        event: "ai_invocation_insert_failed",
-        outcome: "error",
-        error_message: invErr.message,
-      });
-    } else {
-      aiInvocationId = (invRow?.id as string | null) ?? null;
-    }
-  } catch (err) {
-    t.log({ event: "ai_invocation_insert_threw", outcome: "error", error_message: String(err) });
-  }
-
-  // --- exec_nlq_sessions parity ---
-  let sessionId = body.session_id ?? null;
-  const sessionStatus = dispatchResult.answer ? "completed" : "failed";
-  const intentJson = {
-    question_length: question.length,
-    router_intent: intent.intent,
-    router_confidence: intent.confidence,
-    tools_used: dispatchResult.toolsUsed,
-  };
-
-  try {
-    if (sessionId) {
-      const { error: updErr } = await admin
-        .from("exec_nlq_sessions")
-        .update({
-          status: sessionStatus,
-          ai_invocation_id: aiInvocationId,
-          result_summary: dispatchResult.answer.slice(0, 4000),
-          intent_json: intentJson,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", sessionId)
-        .eq("organization_id", organizationId);
-      if (updErr) {
-        t.log({
-          event: "session_update_failed",
-          outcome: "error",
-          error_message: updErr.message,
-        });
-        sessionId = null;
-      }
-    }
-    if (!sessionId) {
-      const title = question.length > 100 ? question.slice(0, 97) + "..." : question;
-      const { data: sessRow, error: sessErr } = await admin
-        .from("exec_nlq_sessions")
-        .insert({
-          organization_id: organizationId,
-          user_id: userId,
-          title,
-          status: sessionStatus,
-          ai_invocation_id: aiInvocationId,
-          result_summary: dispatchResult.answer.slice(0, 4000),
-          intent_json: intentJson,
-          created_by: userId,
-        })
-        .select("id")
-        .single();
-      if (sessErr) {
-        t.log({
-          event: "session_insert_failed",
-          outcome: "error",
-          error_message: sessErr.message,
-        });
-      } else {
-        sessionId = (sessRow?.id as string | null) ?? null;
-      }
-    }
-  } catch (err) {
-    t.log({ event: "session_persist_threw", outcome: "error", error_message: String(err) });
-  }
-
-  // --- PHI gate → 403 (still audited above) ---
+  // --- PHI gate → 403 (still audited; no streaming for blocked PHI responses) ---
   if (dispatchResult.phiBlocked) {
+    const parsed = parseAnswerMetadata(dispatchResult.answer);
+    dispatchResult = mergeDispatchAnswer(dispatchResult, parsed);
+    await reconcileTokenBudget(admin, t, organizationId, dispatchResult);
+    const sessionId = await persistRouterResponse({
+      admin,
+      t,
+      bodySessionId: body.session_id ?? null,
+      organizationId,
+      userId,
+      question,
+      routeContext,
+      moduleContext,
+      intent,
+      dispatchResult,
+      primaryIntentOnlyWhenSpeculative,
+    });
     t.log({
       event: "phi_blocked",
       outcome: "blocked",
@@ -558,11 +1157,48 @@ Deno.serve(async (req) => {
         intent: intent.intent,
         intent_confidence: intent.confidence,
         tools_used: dispatchResult.toolsUsed,
+        fallback_used: !primaryIntentOnlyWhenSpeculative,
+        follow_up_suggestions: parsed.followUpSuggestions,
+        chart_spec: parsed.chartSpec,
       },
       403,
       origin,
     );
   }
+
+  if (wantsSse(req)) {
+    return streamResponse({
+      origin,
+      admin,
+      t,
+      bodySessionId: body.session_id ?? null,
+      organizationId,
+      userId,
+      question,
+      routeContext,
+      moduleContext,
+      intent,
+      dispatchResult,
+      primaryIntentOnlyWhenSpeculative,
+    });
+  }
+
+  const parsed = parseAnswerMetadata(dispatchResult.answer);
+  dispatchResult = mergeDispatchAnswer(dispatchResult, parsed);
+  await reconcileTokenBudget(admin, t, organizationId, dispatchResult);
+  const sessionId = await persistRouterResponse({
+    admin,
+    t,
+    bodySessionId: body.session_id ?? null,
+    organizationId,
+    userId,
+    question,
+    routeContext,
+    moduleContext,
+    intent,
+    dispatchResult,
+    primaryIntentOnlyWhenSpeculative,
+  });
 
   t.log({
     event: "router_completed",
@@ -585,9 +1221,11 @@ Deno.serve(async (req) => {
       intent: intent.intent,
       intent_confidence: intent.confidence,
       tools_used: dispatchResult.toolsUsed,
-      fallback_used: false,
+      fallback_used: !primaryIntentOnlyWhenSpeculative,
       refusal: dispatchResult.refusal ?? false,
       refusal_reason: dispatchResult.refusalReason ?? null,
+      follow_up_suggestions: parsed.followUpSuggestions,
+      chart_spec: parsed.chartSpec,
     },
     200,
     origin,

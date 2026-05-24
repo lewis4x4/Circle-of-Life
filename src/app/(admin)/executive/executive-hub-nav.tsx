@@ -28,7 +28,7 @@ const PRIMARY = [
   { href: "/admin/executive", label: "Overview" },
   { href: "/admin/executive/standup", label: "Standup" },
   { href: "/admin/executive/reports", label: "Reports" },
-  { href: "/admin/executive/nlq", label: "Insight" },
+  { href: "/admin/executive/nlq", label: "Haven Insight" },
 ] as const;
 
 const SECONDARY = [

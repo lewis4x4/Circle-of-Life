@@ -86,6 +86,13 @@ const EMBEDDING_TIMEOUT_MS = 30_000;
 const KB_MIN_SCORE = 0.4;
 const KB_MATCH_COUNT = 8;
 const MAX_ANSWER_TOKENS = 1024;
+const ANSWER_METADATA_INSTRUCTIONS = `After your visible answer, on a new line, output a JSON block:
+<follow_ups>{"suggestions":["question 1","question 2","question 3"]}</follow_ups>
+These should be natural next questions an executive would ask given your answer. Each suggestion must be 80 characters or fewer.
+
+If your answer compares facilities, shows a trend, or aggregates by category, ALSO output:
+<chart>{"kind":"bar"|"line"|"pie","series":[{"label":"...","value":N}],"x_label":"...","y_label":"..."}</chart>
+Otherwise omit the chart block entirely.`;
 const CANNED_REFUSAL =
   "I can't help with that. I'm Haven's operations assistant — ask me about your facilities, residents, staff, compliance, or policies.";
 
@@ -199,7 +206,7 @@ async function callAnthropic(args: {
       body: JSON.stringify({
         model: SONNET_MODEL,
         max_tokens: args.maxTokens ?? MAX_ANSWER_TOKENS,
-        system: args.systemPrompt,
+        system: `${args.systemPrompt}\n\n${ANSWER_METADATA_INSTRUCTIONS}`,
         messages: [{ role: "user", content: args.userContent }],
       }),
       signal: AbortSignal.timeout(ANTHROPIC_TIMEOUT_MS),
