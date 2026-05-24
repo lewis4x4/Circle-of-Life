@@ -24,8 +24,7 @@ export function AuditFooter({
   const updatedDate = typeof updatedAt === "string" ? new Date(updatedAt) : updatedAt;
   const reference = now ?? new Date();
   const relative = formatRelative(updatedDate, reference);
-  const tzLabel = formatInTimeZone(updatedDate, timezone, "zzz");
-  const absoluteLabel = formatInTimeZone(updatedDate, timezone, "yyyy-MM-dd HH:mm");
+  const { tzLabel, absoluteLabel } = formatAuditTimestamp(updatedDate, timezone);
   const statusLabel = live ? "Live" : "Offline";
 
   return (
@@ -70,6 +69,23 @@ export function AuditFooter({
       </div>
     </footer>
   );
+}
+
+function formatAuditTimestamp(updatedDate: Date, timezone: string): {
+  tzLabel: string;
+  absoluteLabel: string;
+} {
+  try {
+    return {
+      tzLabel: formatInTimeZone(updatedDate, timezone, "zzz"),
+      absoluteLabel: formatInTimeZone(updatedDate, timezone, "yyyy-MM-dd HH:mm"),
+    };
+  } catch {
+    return {
+      tzLabel: "UTC",
+      absoluteLabel: formatInTimeZone(updatedDate, "UTC", "yyyy-MM-dd HH:mm"),
+    };
+  }
 }
 
 function formatRelative(updated: Date, now: Date): string {

@@ -27,6 +27,10 @@ import {
   type ToolCallerContext,
   type ToolLoopResult,
 } from "../haven-ai-router/tools.ts";
+import {
+  prependConversationHistory,
+  type ConversationContext,
+} from "./router-context.ts";
 import { pickRedacted } from "./redact-pii.ts";
 
 /* ------------------------------------------------------------------ */
@@ -60,6 +64,7 @@ export type DispatchArgs = {
    * and fall back to the existing org-wide queries when empty.
    */
   facilityIds?: string[];
+  conversationContext?: ConversationContext;
 };
 
 export type DispatchResult = {
@@ -190,6 +195,7 @@ async function callAnthropic(args: {
   systemPrompt: string;
   userContent: string;
   maxTokens?: number;
+  conversationContext?: ConversationContext;
 }): Promise<{ answer: string; tokensIn: number; tokensOut: number; ok: boolean }> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) {
@@ -206,7 +212,7 @@ async function callAnthropic(args: {
       body: JSON.stringify({
         model: SONNET_MODEL,
         max_tokens: args.maxTokens ?? MAX_ANSWER_TOKENS,
-        system: `${args.systemPrompt}\n\n${ANSWER_METADATA_INSTRUCTIONS}`,
+        system: `${prependConversationHistory(args.systemPrompt, args.conversationContext)}\n\n${ANSWER_METADATA_INSTRUCTIONS}`,
         messages: [{ role: "user", content: args.userContent }],
       }),
       signal: AbortSignal.timeout(ANTHROPIC_TIMEOUT_MS),
@@ -438,6 +444,7 @@ Keep your response to 2–3 short sentences. Do not fabricate any data.`;
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: args.question,
     maxTokens: 256,
   });
@@ -527,6 +534,7 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
@@ -570,7 +578,7 @@ INSTRUCTIONS:
 
   const loop = await runToolLoop({
     admin: args.admin,
-    systemPrompt,
+    systemPrompt: prependConversationHistory(systemPrompt, args.conversationContext),
     userQuestion: args.question,
     caller,
     allowedToolNames: [
@@ -641,7 +649,7 @@ INSTRUCTIONS:
 
     const loop = await runToolLoop({
       admin: args.admin,
-      systemPrompt,
+      systemPrompt: prependConversationHistory(systemPrompt, args.conversationContext),
       userQuestion: `<user_question>\n${args.question}\n</user_question>`,
       caller,
       allowedToolNames: [
@@ -683,6 +691,7 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
@@ -843,6 +852,7 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
@@ -943,7 +953,7 @@ PHI rules:
 
   const loop = await runToolLoop({
     admin: args.admin,
-    systemPrompt,
+    systemPrompt: prependConversationHistory(systemPrompt, args.conversationContext),
     userQuestion: args.question,
     caller,
     allowedToolNames: ["resident_summary", "med_orders", "incident_summary"],
@@ -1035,7 +1045,7 @@ INSTRUCTIONS:
 
     const loop = await runToolLoop({
       admin: args.admin,
-      systemPrompt,
+      systemPrompt: prependConversationHistory(systemPrompt, args.conversationContext),
       userQuestion: `<user_question>\n${args.question}\n</user_question>`,
       caller,
       allowedToolNames: [
@@ -1079,6 +1089,7 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 

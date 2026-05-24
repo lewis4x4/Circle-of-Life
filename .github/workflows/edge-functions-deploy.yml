@@ -1,0 +1,196 @@
+name: Supabase Edge Functions — changed deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+  pull_request:
+    paths:
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  detect-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_CLI_VERSION: ${{ vars.SUPABASE_CLI_VERSION || '2.84.2' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      # Design:
+      # - Deploys only changed Supabase Edge Function directories on pushes to main.
+      # - PRs are dry-run only so reviewers can see which functions would deploy.
+      # - `_shared` changes redeploy only functions that import shared modules, preserving correctness
+      #   without redeploying the full Edge Function inventory on every helper edit.
+      # - `supabase/config.toml` changes deploy functions whose verify_jwt/config block changed.
+      # - Deployment fails loud: any failed function deploy fails the workflow.
+      # - Direct main commits have no PR to comment on, so they write to GITHUB_STEP_SUMMARY instead.
+      - name: Detect changed Edge Functions
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+            if [[ "$base" == "0000000000000000000000000000000000000000" ]]; then
+              base="${head}^"
+            fi
+          fi
+
+          git diff --name-only "$base" "$head" > /tmp/changed-files.txt
+
+          direct_functions=$(
+            awk -F/ '$1=="supabase" && $2=="functions" && $3 != "_shared" && $3 != "" {print $3}' /tmp/changed-files.txt \
+              | sort -u
+          )
+
+          shared_changed=false
+          if grep -q '^supabase/functions/_shared/' /tmp/changed-files.txt; then
+            shared_changed=true
+          fi
+
+          dependent_functions=""
+          if [[ "$shared_changed" == "true" ]]; then
+            # Redeploy functions that reference _shared imports. This preserves correctness
+            # without redeploying every function directory on every shared helper edit.
+            dependent_functions=$(
+              find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name _shared -print0 \
+                | while IFS= read -r -d '' dir; do
+                    if grep -R -q "\.\./_shared\|/_shared" "$dir"; then basename "$dir"; fi
+                  done \
+                | sort -u
+            )
+          fi
+
+          config_functions=""
+          if grep -q '^supabase/config.toml$' /tmp/changed-files.txt; then
+            config_functions=$(python3 - "$base" "$head" <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          base, head = sys.argv[1], sys.argv[2]
+          pattern = re.compile(r'^\[functions\.(?:"([^"]+)"|([^\]]+))\]\s*$', re.M)
+
+          def read_config(ref):
+              try:
+                  return subprocess.check_output(['git', 'show', f'{ref}:supabase/config.toml'], text=True)
+              except subprocess.CalledProcessError:
+                  return ''
+
+          def blocks(text):
+              matches = list(pattern.finditer(text))
+              result = {}
+              for index, match in enumerate(matches):
+                  name = match.group(1) or match.group(2)
+                  start = match.end()
+                  end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+                  result[name.strip()] = text[start:end].strip()
+              return result
+
+          old = blocks(read_config(base))
+          new = blocks(read_config(head))
+          changed = sorted(name for name in set(old) | set(new) if old.get(name) != new.get(name))
+          print('\n'.join(changed))
+          PY
+            )
+          fi
+
+          functions=$({ printf '%s\n' "$direct_functions"; printf '%s\n' "$dependent_functions"; printf '%s\n' "$config_functions"; } | sed '/^$/d' | sort -u)
+
+          {
+            echo 'functions<<EOF'
+            printf '%s\n' "$functions"
+            echo 'EOF'
+            echo "count=$(printf '%s\n' "$functions" | sed '/^$/d' | wc -l | tr -d ' ')"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Edge Function deploy detection"
+            echo
+            echo "Diff range: \`$base..$head\`"
+            echo
+            if [[ -z "$functions" ]]; then
+              echo "No deployable function directories changed."
+            else
+              echo "Functions selected:"
+              printf '%s\n' "$functions" | sed 's/^/- `/' | sed 's/$/`/'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate deploy configuration
+        if: github.event_name == 'push' && steps.detect.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "SUPABASE_ACCESS_TOKEN is missing" >&2; exit 1; }
+          test -n "${SUPABASE_PROJECT_REF:-}" || { echo "SUPABASE_PROJECT_REF is missing" >&2; exit 1; }
+
+      - name: Deploy changed functions
+        if: github.event_name == 'push' && steps.detect.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          failures=0
+          while IFS= read -r fn; do
+            [[ -z "$fn" ]] && continue
+            echo "::group::Deploy $fn"
+            if supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF"; then
+              echo "deployed: $fn"
+            else
+              echo "failed: $fn" >&2
+              failures=$((failures + 1))
+            fi
+            echo "::endgroup::"
+          done <<< "${{ steps.detect.outputs.functions }}"
+
+          if [[ "$failures" -gt 0 ]]; then
+            echo "$failures Edge Function deploy(s) failed" >&2
+            exit 1
+          fi
+
+      - name: Comment PR deploy preview
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const functions = `${{ steps.detect.outputs.functions }}`.trim();
+            const count = Number(`${{ steps.detect.outputs.count }}`);
+            const body = [
+              '### Supabase Edge Function deploy preview',
+              '',
+              count === 0
+                ? 'No deployable function directories were detected.'
+                : `On merge to \`main\`, this workflow will deploy:\n${functions.split('\n').map((fn) => `- \`${fn}\``).join('\n')}`,
+              '',
+              '_Direct pushes to main skip PR comments and write the same summary to the workflow step summary._',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

@@ -34,16 +34,12 @@ import {
   Check,
   ChevronDown,
   LineChart,
-  Loader2,
-  LogOut,
   Menu as MenuIcon,
   MessageSquare,
   Moon,
   Search,
-  Settings,
   ShieldAlert,
   Sun,
-  UserCircle2,
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
@@ -69,6 +65,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
+import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
+import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { SurveyVisitWorkspaceDock } from "@/components/compliance/SurveyVisitWorkspaceChrome";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
@@ -114,7 +112,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
   const clearFacilityCache = useFacilityStore((s) => s.clearFacilityCache);
 
-  const { email: sessionEmail, appRole, user, loading: authLoading } = useHavenAuth();
+  const {
+    email: sessionEmail,
+    appRole,
+    user,
+    organizationId,
+    fullName,
+    avatarUrl,
+    loading: authLoading,
+  } = useHavenAuth();
   const currentUserId = user?.id ?? null;
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
 
@@ -629,60 +635,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const renderProfileMenu = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Account menu"
-        className={cn(
-          WORKSPACE_ICON_LG,
-          "outline-none",
-          "transition-colors",
-          "focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-      >
-        <UserCircle2 className="size-5" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60 p-1">
-        <DropdownMenuLabel className="flex flex-col gap-0.5 px-2 py-1.5">
-          <span className="truncate text-[12px] font-medium text-foreground">
-            {sessionEmail ?? "Signed in"}
-          </span>
-          <span className="truncate text-[11px] font-normal text-muted-foreground">
-            {roleConfig.roleLabel}
-          </span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="my-1" />
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-            onClick={() => router.push("/admin/settings/notifications")}
-          >
-            <Settings className="size-3.5 text-muted-foreground" /> Account settings
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="my-1" />
-        <DropdownMenuItem
-          variant="destructive"
-          className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-          disabled={signingOut}
-          onClick={() => void handleSignOut()}
-        >
-          {signingOut ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" />
-              Signing out…
-            </>
-          ) : (
-            <>
-              <LogOut className="size-3.5" />
-              Sign out
-            </>
-          )}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
   const renderRailItem = (item: PillarItem) => {
     const Icon = item.icon;
     const active = isItemActive(item.href);
@@ -763,7 +715,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {suppressSurveyVisitChrome ? null : <SurveyVisitShellToggle survey={surveyVisit} />}
           {renderNotificationsButton()}
           {renderThemeToggle()}
-          {renderProfileMenu()}
+          <div className="hidden md:block">
+            <UserMenu
+              fullName={fullName}
+              email={sessionEmail}
+              roleLabel={roleConfig.roleLabel}
+              organizationId={organizationId}
+              avatarUrl={avatarUrl}
+              userId={currentUserId}
+              signingOut={signingOut}
+              onSignOut={handleSignOut}
+              triggerClassName={WORKSPACE_ICON_LG}
+            />
+          </div>
+          <div className="md:hidden">
+            <UserMenuSheet
+              fullName={fullName}
+              email={sessionEmail}
+              roleLabel={roleConfig.roleLabel}
+              organizationId={organizationId}
+              avatarUrl={avatarUrl}
+              userId={currentUserId}
+              signingOut={signingOut}
+              onSignOut={handleSignOut}
+              triggerClassName={WORKSPACE_ICON_LG}
+            />
+          </div>
         </div>
       </header>
 

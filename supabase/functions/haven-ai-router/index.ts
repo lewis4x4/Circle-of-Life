@@ -33,6 +33,11 @@ import {
   normalizeQuestion,
 } from "../_shared/router-intent.ts";
 import { dispatch, type DispatchResult } from "../_shared/router-dispatch.ts";
+import {
+  type ConversationContext,
+  loadConversationContext,
+  renderConversationHistory,
+} from "../_shared/router-context.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Per-token pricing (Sonnet 4.5) — used for token-budget accounting */
@@ -50,6 +55,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ROUTER_MODEL_LABEL = "haven-ai-router";
 const SONNET_MODEL = "claude-sonnet-4-6";
+const HAIKU_MODEL = "claude-haiku-4-5";
 const ANTHROPIC_TIMEOUT_MS = 60_000;
 const MAX_STREAM_ANSWER_TOKENS = 1200;
 
@@ -91,6 +97,7 @@ type ParsedAnswerMetadata = {
   answer: string;
   followUpSuggestions: string[];
   chartSpec: ChartSpec | null;
+  threadTitle: string | null;
 };
 
 type RouterLogger = {
@@ -109,6 +116,9 @@ type PersistRouterResponseArgs = {
   intent: IntentClassification;
   dispatchResult: DispatchResult;
   primaryIntentOnlyWhenSpeculative: boolean;
+  parsedAnswerMetadata: ParsedAnswerMetadata;
+  streamed: boolean;
+  shouldAutoTitle: boolean;
 };
 
 type StreamFinalAnswerResult = {
@@ -116,6 +126,13 @@ type StreamFinalAnswerResult = {
   tokensIn: number;
   tokensOut: number;
   ok: boolean;
+};
+
+type PersistRouterResponseResult = {
+  sessionId: string | null;
+  messageCount: number;
+  rollingSummaryText: string | null;
+  rollingSummaryUpdatedAt: string | null;
 };
 
 /* ------------------------------------------------------------------ */
@@ -183,7 +200,7 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
 
 function extractXmlBlock(
   text: string,
-  tag: "follow_ups" | "chart",
+  tag: "follow_ups" | "chart" | "thread_title",
 ): string | null {
   const pattern = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "i");
   const match = pattern.exec(text);
@@ -194,6 +211,7 @@ function stripMetadataBlocks(text: string): string {
   return text
     .replace(/<follow_ups>[\s\S]*?<\/follow_ups>/gi, "")
     .replace(/<chart>[\s\S]*?<\/chart>/gi, "")
+    .replace(/<thread_title>[\s\S]*?<\/thread_title>/gi, "")
     .trim();
 }
 
@@ -261,6 +279,31 @@ function validateChartSpec(block: string | null): ChartSpec | null {
   };
 }
 
+function normalizeThreadTitle(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const cleaned = value
+    .replace(/[\"“”]/g, "")
+    .replace(/[.!?;:]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return null;
+  const words = cleaned.split(" ").filter(Boolean);
+  if (words.length < 2 || words.length > 10) return null;
+  return cleaned.length <= 80 ? cleaned : cleaned.slice(0, 80).trimEnd();
+}
+
+function parseThreadTitle(block: string | null): string | null {
+  if (!block) return null;
+  const parsed = parseJsonObject(block);
+  return normalizeThreadTitle(parsed?.title);
+}
+
+function fallbackThreadTitle(question: string): string {
+  const normalized = question.replace(/\s+/g, " ").trim();
+  if (normalized.length <= 60) return normalized;
+  return normalized.slice(0, 57).trimEnd() + "...";
+}
+
 function parseAnswerMetadata(rawAnswer: string): ParsedAnswerMetadata {
   return {
     answer: stripMetadataBlocks(rawAnswer),
@@ -268,6 +311,7 @@ function parseAnswerMetadata(rawAnswer: string): ParsedAnswerMetadata {
       extractXmlBlock(rawAnswer, "follow_ups"),
     ),
     chartSpec: validateChartSpec(extractXmlBlock(rawAnswer, "chart")),
+    threadTitle: parseThreadTitle(extractXmlBlock(rawAnswer, "thread_title")),
   };
 }
 
@@ -322,9 +366,127 @@ async function reconcileTokenBudget(
   }
 }
 
+async function nextOrdinal(
+  admin: SupabaseClient,
+  sessionId: string,
+): Promise<number> {
+  const { data, error } = await admin
+    .from("exec_nlq_messages")
+    .select("ordinal")
+    .eq("session_id", sessionId)
+    .is("deleted_at", null)
+    .order("ordinal", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const ordinal = typeof data?.ordinal === "number" ? data.ordinal : 0;
+  return ordinal + 1;
+}
+
+type ThreadStateRow = {
+  message_count: number | null;
+  rolling_summary_text: string | null;
+  rolling_summary_updated_at: string | null;
+};
+
+async function resolveOwnedActiveSessionId(
+  admin: SupabaseClient,
+  sessionId: string | null,
+  organizationId: string,
+  userId: string,
+): Promise<string | null> {
+  if (!sessionId) return null;
+  const { data, error } = await admin
+    .from("exec_nlq_sessions")
+    .select("id")
+    .eq("id", sessionId)
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error || !data?.id) return null;
+  return data.id as string;
+}
+
+async function loadThreadState(
+  admin: SupabaseClient,
+  sessionId: string | null,
+  organizationId: string,
+): Promise<ThreadStateRow | null> {
+  if (!sessionId) return null;
+  const { data, error } = await admin
+    .from("exec_nlq_sessions")
+    .select("message_count, rolling_summary_text, rolling_summary_updated_at")
+    .eq("id", sessionId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as ThreadStateRow;
+}
+
+async function insertTurnMessages(args: {
+  admin: SupabaseClient;
+  t: RouterLogger;
+  sessionId: string;
+  organizationId: string;
+  question: string;
+  intent: IntentClassification;
+  dispatchResult: DispatchResult;
+  parsedAnswerMetadata: ParsedAnswerMetadata;
+  aiInvocationId: string | null;
+  streamed: boolean;
+  fallbackUsed: boolean;
+}): Promise<void> {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const userOrdinal = await nextOrdinal(args.admin, args.sessionId);
+    const { error } = await args.admin
+      .from("exec_nlq_messages")
+      .insert([
+        {
+          session_id: args.sessionId,
+          organization_id: args.organizationId,
+          role: "user",
+          content: args.question,
+          ordinal: userOrdinal,
+          streamed: args.streamed,
+        },
+        {
+          session_id: args.sessionId,
+          organization_id: args.organizationId,
+          role: "assistant",
+          content: args.dispatchResult.answer,
+          ordinal: userOrdinal + 1,
+          ai_invocation_id: args.aiInvocationId,
+          citations: args.dispatchResult.citations,
+          follow_ups: args.parsedAnswerMetadata.followUpSuggestions,
+          chart_spec: args.parsedAnswerMetadata.chartSpec,
+          intent: args.intent.intent,
+          intent_confidence: args.intent.confidence,
+          tools_used: args.dispatchResult.toolsUsed,
+          fallback_used: args.fallbackUsed,
+          tokens_used: args.dispatchResult.tokensUsed,
+          tokens_in: args.dispatchResult.tokensIn,
+          tokens_out: args.dispatchResult.tokensOut,
+          model_used: args.dispatchResult.modelUsed ?? SONNET_MODEL,
+          streamed: args.streamed,
+        },
+      ]);
+
+    if (!error) return;
+    if (error.code === "23505" && attempt < 3) continue;
+    args.t.log({
+      event: "thread_message_insert_failed",
+      outcome: "error",
+      session_id: args.sessionId,
+      error_message: error.message,
+    });
+    return;
+  }
+}
+
 async function persistRouterResponse(
   args: PersistRouterResponseArgs,
-): Promise<string | null> {
+): Promise<PersistRouterResponseResult> {
   const {
     admin,
     t,
@@ -391,6 +553,7 @@ async function persistRouterResponse(
   }
 
   let sessionId = args.bodySessionId;
+  let sessionTitleAuto = true;
   const sessionStatus = dispatchResult.answer ? "completed" : "failed";
   const intentJson = {
     question_length: question.length,
@@ -412,7 +575,9 @@ async function persistRouterResponse(
         })
         .eq("id", sessionId)
         .eq("organization_id", organizationId)
-        .select("id")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .select("id, title_auto")
         .maybeSingle();
       if (updErr) {
         t.log({
@@ -428,25 +593,27 @@ async function persistRouterResponse(
           session_id: sessionId,
         });
         sessionId = null;
+      } else {
+        sessionTitleAuto = updatedSession.title_auto !== false;
       }
     }
     if (!sessionId) {
-      const title = question.length > 100
-        ? question.slice(0, 97) + "..."
-        : question;
       const { data: sessRow, error: sessErr } = await admin
         .from("exec_nlq_sessions")
         .insert({
           organization_id: organizationId,
           user_id: userId,
-          title,
+          title: fallbackThreadTitle(question),
           status: sessionStatus,
           ai_invocation_id: aiInvocationId,
           result_summary: dispatchResult.answer.slice(0, 4000),
           intent_json: intentJson,
           created_by: userId,
+          title_generated_at: args.shouldAutoTitle
+            ? new Date().toISOString()
+            : null,
         })
-        .select("id")
+        .select("id, title_auto")
         .single();
       if (sessErr) {
         t.log({
@@ -456,6 +623,7 @@ async function persistRouterResponse(
         });
       } else {
         sessionId = (sessRow?.id as string | null) ?? null;
+        sessionTitleAuto = sessRow?.title_auto !== false;
       }
     }
   } catch (err) {
@@ -466,13 +634,247 @@ async function persistRouterResponse(
     });
   }
 
-  return sessionId;
+  if (sessionId) {
+    try {
+      await insertTurnMessages({
+        admin,
+        t,
+        sessionId,
+        organizationId,
+        question,
+        intent,
+        dispatchResult,
+        parsedAnswerMetadata: args.parsedAnswerMetadata,
+        aiInvocationId,
+        streamed: args.streamed,
+        fallbackUsed: !args.primaryIntentOnlyWhenSpeculative,
+      });
+    } catch (err) {
+      t.log({
+        event: "thread_message_insert_threw",
+        outcome: "error",
+        session_id: sessionId,
+        error_message: String(err),
+      });
+    }
+
+    if (args.shouldAutoTitle && sessionTitleAuto) {
+      const nextTitle = args.parsedAnswerMetadata.threadTitle ??
+        fallbackThreadTitle(question);
+      const { error: titleErr } = await admin
+        .from("exec_nlq_sessions")
+        .update({
+          title: nextTitle,
+          title_generated_at: new Date().toISOString(),
+        })
+        .eq("id", sessionId)
+        .eq("organization_id", organizationId)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .eq("title_auto", true);
+      if (titleErr) {
+        t.log({
+          event: "thread_title_update_failed",
+          outcome: "error",
+          session_id: sessionId,
+          error_message: titleErr.message,
+        });
+      } else {
+        t.log({
+          event: "thread_title_generated",
+          outcome: "success",
+          session_id: sessionId,
+          source: args.parsedAnswerMetadata.threadTitle ? "llm" : "fallback",
+        });
+      }
+    }
+  }
+
+  const state = await loadThreadState(admin, sessionId, organizationId);
+  return {
+    sessionId,
+    messageCount: typeof state?.message_count === "number"
+      ? state.message_count
+      : 0,
+    rollingSummaryText: state?.rolling_summary_text ?? null,
+    rollingSummaryUpdatedAt: state?.rolling_summary_updated_at ?? null,
+  };
+}
+
+type SummaryMessageRow = {
+  role: string;
+  content: string | null;
+  ordinal: number;
+};
+
+async function messagesSinceSummary(
+  admin: SupabaseClient,
+  sessionId: string,
+  organizationId: string,
+  rollingSummaryUpdatedAt: string | null,
+): Promise<number> {
+  if (!rollingSummaryUpdatedAt) return Number.POSITIVE_INFINITY;
+  const { count, error } = await admin
+    .from("exec_nlq_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .gt("created_at", rollingSummaryUpdatedAt);
+  if (error) return 0;
+  return count ?? 0;
+}
+
+async function refreshRollingSummary(args: {
+  admin: SupabaseClient;
+  t: RouterLogger;
+  sessionId: string;
+  organizationId: string;
+}): Promise<void> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return;
+
+  const { data, error } = await args.admin
+    .from("exec_nlq_messages")
+    .select("role, content, ordinal")
+    .eq("session_id", args.sessionId)
+    .eq("organization_id", args.organizationId)
+    .is("deleted_at", null)
+    .in("role", ["user", "assistant"])
+    .order("ordinal", { ascending: false })
+    .limit(24);
+  if (error) {
+    args.t.log({
+      event: "rolling_summary_load_failed",
+      outcome: "error",
+      session_id: args.sessionId,
+      error_message: error.message,
+    });
+    return;
+  }
+
+  const transcript = ((data ?? []) as SummaryMessageRow[])
+    .reverse()
+    .map((row) => {
+      const role = row.role === "assistant" ? "Assistant" : "User";
+      const content = (row.content ?? "").replace(/\s+/g, " ").trim().slice(
+        0,
+        900,
+      );
+      return `${role}: ${content}`;
+    })
+    .join("\n");
+  if (!transcript) return;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: HAIKU_MODEL,
+        max_tokens: 180,
+        system:
+          "Summarize Haven Insight conversation history for future turns. Keep it under 500 characters. Preserve unresolved asks, facility names, metrics, caveats, and user preferences. Do not add facts.",
+        messages: [{
+          role: "user",
+          content: `<conversation>\n${
+            transcript.slice(0, 12000)
+          }\n</conversation>`,
+        }],
+      }),
+      signal: AbortSignal.timeout(ANTHROPIC_TIMEOUT_MS),
+    });
+    if (!res.ok) return;
+    const json = (await res.json()) as Record<string, unknown>;
+    const blocks = json.content as
+      | { type: string; text?: string }[]
+      | undefined;
+    const summary = String(blocks?.find((b) => b.type === "text")?.text ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 500);
+    if (!summary) return;
+
+    const { error: updateErr } = await args.admin
+      .from("exec_nlq_sessions")
+      .update({
+        rolling_summary_text: summary,
+        rolling_summary_updated_at: new Date().toISOString(),
+      })
+      .eq("id", args.sessionId)
+      .eq("organization_id", args.organizationId);
+    if (updateErr) {
+      args.t.log({
+        event: "rolling_summary_update_failed",
+        outcome: "error",
+        session_id: args.sessionId,
+        error_message: updateErr.message,
+      });
+      return;
+    }
+    args.t.log({
+      event: "rolling_summary_refreshed",
+      outcome: "success",
+      session_id: args.sessionId,
+      model: HAIKU_MODEL,
+    });
+  } catch (err) {
+    args.t.log({
+      event: "rolling_summary_refresh_failed",
+      outcome: "error",
+      session_id: args.sessionId,
+      error_message: String(err),
+    });
+  }
+}
+
+async function maybeRefreshRollingSummary(args: {
+  admin: SupabaseClient;
+  t: RouterLogger;
+  persistResult: PersistRouterResponseResult;
+  organizationId: string;
+}): Promise<void> {
+  const sessionId = args.persistResult.sessionId;
+  if (!sessionId || args.persistResult.messageCount <= 12) return;
+
+  const shouldRefresh = !args.persistResult.rollingSummaryText ||
+    (await messagesSinceSummary(
+        args.admin,
+        sessionId,
+        args.organizationId,
+        args.persistResult.rollingSummaryUpdatedAt,
+      )) >= 6;
+  if (!shouldRefresh) return;
+
+  await refreshRollingSummary({
+    admin: args.admin,
+    t: args.t,
+    sessionId,
+    organizationId: args.organizationId,
+  });
+}
+
+function enqueueBackgroundTask(task: Promise<void>): void {
+  const edgeRuntime = (globalThis as {
+    EdgeRuntime?: { waitUntil?: (promise: Promise<void>) => void };
+  }).EdgeRuntime;
+  if (typeof edgeRuntime?.waitUntil === "function") {
+    edgeRuntime.waitUntil(task);
+    return;
+  }
+  void task;
 }
 
 function buildStreamingFinalizerPrompt(args: {
   question: string;
   intent: IntentClassification;
   dispatchResult: DispatchResult;
+  conversationContext: ConversationContext;
+  isFirstTurn: boolean;
 }): { system: string; user: string } {
   const citationsJson = JSON.stringify(
     args.dispatchResult.citations.slice(0, 12),
@@ -481,9 +883,12 @@ function buildStreamingFinalizerPrompt(args: {
   const groundedDraft =
     parseAnswerMetadata(args.dispatchResult.answer).answer ||
     args.dispatchResult.answer;
-  return {
-    system:
-      `You are Haven Executive Intelligence for assisted living facility operators.
+  const history = renderConversationHistory(args.conversationContext);
+  const firstTurnFlag = args.isFirstTurn
+    ? "\n<is_first_turn>true</is_first_turn>"
+    : "";
+  const baseSystem =
+    `You are Haven Executive Intelligence for assisted living facility operators.
 
 You are given a grounded draft answer produced by Haven's backend tools. Stream the final answer for the executive.
 
@@ -497,9 +902,18 @@ Rules:
 Each suggestion must be a natural next question and 80 characters or fewer.
 - If the answer compares facilities, shows a trend, or aggregates by category, ALSO output:
 <chart>{"kind":"bar"|"line"|"pie","series":[{"label":"...","value":N}],"x_label":"...","y_label":"..."}</chart>
-Otherwise omit the chart block entirely.`,
+Otherwise omit the chart block entirely.
+
+If <is_first_turn>true</is_first_turn>, ALSO output a thread title block:
+<thread_title>{"title":"..."}</thread_title>
+The title must be 4–8 words, Title Case, no quotes, no trailing punctuation, and
+summarise the topic the executive will recognise on returning to this thread
+tomorrow. Examples: "Q3 Occupancy By Region", "Sunny Acres Incident Review",
+"AR Aging Next Steps". If you cannot produce a clean title, omit the block.`;
+  return {
+    system: history ? `${history}\n\n${baseSystem}` : baseSystem,
     user:
-      `<user_question>\n${args.question}\n</user_question>\n\n<intent>${args.intent.intent}</intent>\n<tools_used>${toolsJson}</tools_used>\n<citations>${citationsJson}</citations>\n\n<grounded_draft_answer>\n${groundedDraft}\n</grounded_draft_answer>`,
+      `<user_question>\n${args.question}\n</user_question>\n\n<intent>${args.intent.intent}</intent>${firstTurnFlag}\n<tools_used>${toolsJson}</tools_used>\n<citations>${citationsJson}</citations>\n\n<grounded_draft_answer>\n${groundedDraft}\n</grounded_draft_answer>`,
   };
 }
 
@@ -511,7 +925,7 @@ function createMetadataAwareEmitter(emit: (text: string) => void): {
   push: (chunk: string) => void;
   flush: () => void;
 } {
-  const maxTagLength = "<follow_ups>".length;
+  const maxTagLength = "<thread_title>".length;
   let pending = "";
   let hidden = false;
 
@@ -522,7 +936,8 @@ function createMetadataAwareEmitter(emit: (text: string) => void): {
       const lower = pending.toLowerCase();
       const followIdx = lower.indexOf("<follow_ups>");
       const chartIdx = lower.indexOf("<chart>");
-      const indexes = [followIdx, chartIdx].filter((idx) => idx >= 0);
+      const titleIdx = lower.indexOf("<thread_title>");
+      const indexes = [followIdx, chartIdx, titleIdx].filter((idx) => idx >= 0);
       if (indexes.length > 0) {
         const firstMetaIdx = Math.min(...indexes);
         const visible = pending.slice(0, firstMetaIdx);
@@ -548,6 +963,8 @@ async function streamAnthropicFinalAnswer(args: {
   question: string;
   intent: IntentClassification;
   dispatchResult: DispatchResult;
+  conversationContext: ConversationContext;
+  isFirstTurn: boolean;
   onTextDelta: (text: string) => void;
 }): Promise<StreamFinalAnswerResult> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -656,6 +1073,7 @@ function streamResponse(args: {
   moduleContext: string | null;
   intent: IntentClassification;
   dispatchResult: DispatchResult;
+  conversationContext: ConversationContext;
   primaryIntentOnlyWhenSpeculative: boolean;
 }): Response {
   let emittedVisibleToken = false;
@@ -671,6 +1089,8 @@ function streamResponse(args: {
           question: args.question,
           intent: args.intent,
           dispatchResult: args.dispatchResult,
+          conversationContext: args.conversationContext,
+          isFirstTurn: args.conversationContext.messageCount === 0,
           onTextDelta: filteredEmitter.push,
         });
         filteredEmitter.flush();
@@ -697,7 +1117,7 @@ function streamResponse(args: {
           args.organizationId,
           finalResult,
         );
-        const sessionId = await persistRouterResponse({
+        const persistResult = await persistRouterResponse({
           admin: args.admin,
           t: args.t,
           bodySessionId: args.bodySessionId,
@@ -710,11 +1130,20 @@ function streamResponse(args: {
           dispatchResult: finalResult,
           primaryIntentOnlyWhenSpeculative:
             args.primaryIntentOnlyWhenSpeculative,
+          parsedAnswerMetadata: parsed,
+          streamed: true,
+          shouldAutoTitle: args.conversationContext.messageCount === 0,
         });
+        enqueueBackgroundTask(maybeRefreshRollingSummary({
+          admin: args.admin,
+          t: args.t,
+          persistResult,
+          organizationId: args.organizationId,
+        }));
 
         enqueueSse(controller, {
           type: "meta",
-          session_id: sessionId,
+          session_id: persistResult.sessionId,
           citations: finalResult.citations,
           intent: args.intent.intent,
           intent_confidence: args.intent.confidence,
@@ -1064,6 +1493,48 @@ Deno.serve(async (req) => {
     );
   }
 
+  const requestedSessionId = body.session_id ?? null;
+  const bodySessionId = await resolveOwnedActiveSessionId(
+    admin,
+    requestedSessionId,
+    organizationId,
+    userId,
+  );
+  if (requestedSessionId && !bodySessionId) {
+    t.log({
+      event: "session_id_rejected",
+      outcome: "blocked",
+      session_id: requestedSessionId,
+    });
+  }
+  let conversationContext: ConversationContext = {
+    priorTurns: [],
+    rollingSummary: null,
+    messageCount: 0,
+  };
+  try {
+    conversationContext = await loadConversationContext(
+      admin,
+      bodySessionId,
+      organizationId,
+    );
+  } catch (err) {
+    t.log({
+      event: "context_window_load_failed",
+      outcome: "error",
+      session_id: bodySessionId,
+      error_message: String(err),
+    });
+  }
+  t.log({
+    event: "context_window_assembled",
+    outcome: "success",
+    session_id: bodySessionId,
+    message_count: conversationContext.messageCount,
+    prior_turns: conversationContext.priorTurns.length,
+    has_rolling_summary: Boolean(conversationContext.rollingSummary),
+  });
+
   // --- Speculative dispatch on low confidence ---
   // Don't pay for two Sonnet calls. Run the top intent's branch first; only
   // fall through to `mixed` when the top intent returned a refusal AND the
@@ -1081,6 +1552,7 @@ Deno.serve(async (req) => {
       selectedFacilityId,
       moduleContext,
       facilityIds,
+      conversationContext,
     });
 
     const lowConfidence = intent.confidence < SPECULATIVE_DISPATCH_THRESHOLD;
@@ -1103,6 +1575,7 @@ Deno.serve(async (req) => {
         selectedFacilityId,
         moduleContext,
         facilityIds,
+        conversationContext,
       });
       if (!fallbackResult.refusal && fallbackResult.answer.length > 0) {
         dispatchResult = fallbackResult;
@@ -1128,10 +1601,10 @@ Deno.serve(async (req) => {
     const parsed = parseAnswerMetadata(dispatchResult.answer);
     dispatchResult = mergeDispatchAnswer(dispatchResult, parsed);
     await reconcileTokenBudget(admin, t, organizationId, dispatchResult);
-    const sessionId = await persistRouterResponse({
+    const persistResult = await persistRouterResponse({
       admin,
       t,
-      bodySessionId: body.session_id ?? null,
+      bodySessionId,
       organizationId,
       userId,
       question,
@@ -1140,7 +1613,16 @@ Deno.serve(async (req) => {
       intent,
       dispatchResult,
       primaryIntentOnlyWhenSpeculative,
+      parsedAnswerMetadata: parsed,
+      streamed: false,
+      shouldAutoTitle: conversationContext.messageCount === 0,
     });
+    enqueueBackgroundTask(maybeRefreshRollingSummary({
+      admin,
+      t,
+      persistResult,
+      organizationId,
+    }));
     t.log({
       event: "phi_blocked",
       outcome: "blocked",
@@ -1151,7 +1633,7 @@ Deno.serve(async (req) => {
       {
         ok: false,
         error: "phi_blocked",
-        session_id: sessionId,
+        session_id: persistResult.sessionId,
         answer: dispatchResult.answer,
         citations: dispatchResult.citations,
         intent: intent.intent,
@@ -1171,7 +1653,7 @@ Deno.serve(async (req) => {
       origin,
       admin,
       t,
-      bodySessionId: body.session_id ?? null,
+      bodySessionId,
       organizationId,
       userId,
       question,
@@ -1179,6 +1661,7 @@ Deno.serve(async (req) => {
       moduleContext,
       intent,
       dispatchResult,
+      conversationContext,
       primaryIntentOnlyWhenSpeculative,
     });
   }
@@ -1186,10 +1669,10 @@ Deno.serve(async (req) => {
   const parsed = parseAnswerMetadata(dispatchResult.answer);
   dispatchResult = mergeDispatchAnswer(dispatchResult, parsed);
   await reconcileTokenBudget(admin, t, organizationId, dispatchResult);
-  const sessionId = await persistRouterResponse({
+  const persistResult = await persistRouterResponse({
     admin,
     t,
-    bodySessionId: body.session_id ?? null,
+    bodySessionId,
     organizationId,
     userId,
     question,
@@ -1198,12 +1681,21 @@ Deno.serve(async (req) => {
     intent,
     dispatchResult,
     primaryIntentOnlyWhenSpeculative,
+    parsedAnswerMetadata: parsed,
+    streamed: false,
+    shouldAutoTitle: conversationContext.messageCount === 0,
   });
+  enqueueBackgroundTask(maybeRefreshRollingSummary({
+    admin,
+    t,
+    persistResult,
+    organizationId,
+  }));
 
   t.log({
     event: "router_completed",
     outcome: "success",
-    session_id: sessionId,
+    session_id: persistResult.sessionId,
     intent: intent.intent,
     intent_confidence: intent.confidence,
     tokens_used: dispatchResult.tokensUsed,
@@ -1214,7 +1706,7 @@ Deno.serve(async (req) => {
   return jsonResponse(
     {
       ok: true,
-      session_id: sessionId,
+      session_id: persistResult.sessionId,
       answer: dispatchResult.answer,
       citations: dispatchResult.citations,
       tokens_used: dispatchResult.tokensUsed,

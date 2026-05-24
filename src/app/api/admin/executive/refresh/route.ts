@@ -8,7 +8,7 @@ import { logError } from "@/lib/observability/logger";
 export const maxDuration = 26;
 
 type EdgeRefreshResult = {
-  name: "exec-kpi-snapshot" | "resident-safety-scorer";
+  name: "exec-kpi-snapshot" | "resident-safety-scorer" | "risk-nightly-scorer";
   ok: boolean;
   status: number;
   body?: unknown;
@@ -37,11 +37,13 @@ async function invokeEdgeRefresh({
   supabaseUrl,
   secret,
   organizationId,
+  body,
 }: {
   name: EdgeRefreshResult["name"];
   supabaseUrl: string;
   secret: string;
   organizationId: string;
+  body?: Record<string, unknown>;
 }): Promise<EdgeRefreshResult> {
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
@@ -50,16 +52,16 @@ async function invokeEdgeRefresh({
         "Content-Type": "application/json",
         "x-cron-secret": secret,
       },
-      body: JSON.stringify({ organization_id: organizationId }),
+      body: JSON.stringify(body ?? { organization_id: organizationId }),
       cache: "no-store",
     });
 
-    const body = await parseResponseBody(response);
+    const responseBody = await parseResponseBody(response);
     return {
       name,
       ok: response.ok,
       status: response.status,
-      body,
+      body: responseBody,
     };
   } catch (error) {
     return {
@@ -105,13 +107,15 @@ export async function POST() {
   const supabaseUrl = process.env.SUPABASE_URL?.trim();
   const snapshotSecret = process.env.EXEC_KPI_SNAPSHOT_SECRET?.trim();
   const scorerSecret = process.env.RESIDENT_SAFETY_SCORER_SECRET?.trim();
+  const riskSecret = process.env.RISK_NIGHTLY_SCORER_SECRET?.trim();
   const missing = [
     !supabaseUrl ? "SUPABASE_URL" : null,
     !snapshotSecret ? "EXEC_KPI_SNAPSHOT_SECRET" : null,
     !scorerSecret ? "RESIDENT_SAFETY_SCORER_SECRET" : null,
+    !riskSecret ? "RISK_NIGHTLY_SCORER_SECRET" : null,
   ].filter((value): value is string => Boolean(value));
 
-  if (!supabaseUrl || !snapshotSecret || !scorerSecret) {
+  if (!supabaseUrl || !snapshotSecret || !scorerSecret || !riskSecret) {
     return NextResponse.json(
       { ok: false, error: "Executive refresh is not configured on this server.", missing },
       { status: 503 },
@@ -121,7 +125,7 @@ export async function POST() {
   const normalizedSupabaseUrl = normalizeSupabaseUrl(supabaseUrl);
   const organizationId = roleContext.ctx.organizationId;
 
-  const [snapshot, scorer] = await Promise.all([
+  const [snapshot, scorer, risk] = await Promise.all([
     invokeEdgeRefresh({
       name: "exec-kpi-snapshot",
       supabaseUrl: normalizedSupabaseUrl,
@@ -134,14 +138,23 @@ export async function POST() {
       secret: scorerSecret,
       organizationId,
     }),
+    invokeEdgeRefresh({
+      name: "risk-nightly-scorer",
+      supabaseUrl: normalizedSupabaseUrl,
+      secret: riskSecret,
+      organizationId,
+      body: { organization_id: organizationId, notify: false },
+    }),
   ]);
 
   const snapshotClient = toClientResult(snapshot);
   const scorerClient = toClientResult(scorer);
+  const riskClient = toClientResult(risk);
 
-  if (!snapshot.ok || !scorer.ok) {
+  if (!snapshot.ok || !scorer.ok || !risk.ok) {
     if (!snapshot.ok) logRefreshFailure(snapshot);
     if (!scorer.ok) logRefreshFailure(scorer);
+    if (!risk.ok) logRefreshFailure(risk);
 
     return NextResponse.json(
       {
@@ -149,10 +162,11 @@ export async function POST() {
         error: "Executive refresh did not complete successfully.",
         snapshot: snapshotClient,
         scorer: scorerClient,
+        risk: riskClient,
       },
       { status: 502 },
     );
   }
 
-  return NextResponse.json({ ok: true, snapshot: snapshotClient, scorer: scorerClient });
+  return NextResponse.json({ ok: true, snapshot: snapshotClient, scorer: scorerClient, risk: riskClient });
 }

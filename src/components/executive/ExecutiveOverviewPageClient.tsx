@@ -314,6 +314,7 @@ type ExecutiveRefreshState =
       message: string;
       snapshot?: ExecutiveRefreshFunctionStatus;
       scorer?: ExecutiveRefreshFunctionStatus;
+      risk?: ExecutiveRefreshFunctionStatus;
       missing?: string[];
     };
 
@@ -336,22 +337,25 @@ function ExecutiveEmptyOnboarding({
       cta: "Open settings",
     },
     {
-      title: "Smart Rounding assurance hub",
-      body: "Review the operational assurance workspace. These settings tune the view; they do not run the scorer by themselves.",
-      href: "/admin/rounding",
-      cta: "Open hub",
-    },
-    {
-      title: "Executive alert rules",
-      body: "Define which live exceptions should rise into leadership watchlists after data exists.",
-      href: "/admin/executive/alerts",
-      cta: "Open alerts",
-    },
-    {
       title: "Facility metric thresholds",
       body: "Set per-facility color thresholds for metrics produced by snapshots and rollups.",
       href: "/admin/settings/thresholds",
       cta: "Open thresholds",
+    },
+  ] as const;
+
+  const operationalShortcutLinks = [
+    {
+      title: "Open Smart Rounding hub",
+      body: "Review live rounding coverage, assurance signals, and follow-up work. This is an operational dashboard, not a setup step.",
+      href: "/admin/rounding",
+      cta: "Open hub",
+    },
+    {
+      title: "Open alert triage queue",
+      body: "Work active executive alerts and exceptions after refresh jobs create them. Alert thresholds are configured elsewhere.",
+      href: "/admin/executive/alerts",
+      cta: "Open triage",
     },
   ] as const;
 
@@ -405,6 +409,7 @@ function ExecutiveEmptyOnboarding({
       const payloadError = typeof payload?.error === "string" ? payload.error : null;
       const snapshot = isFunctionStatus(payload?.snapshot) ? payload.snapshot : undefined;
       const scorer = isFunctionStatus(payload?.scorer) ? payload.scorer : undefined;
+      const risk = isFunctionStatus(payload?.risk) ? payload.risk : undefined;
       const missing = isStringArray(payload?.missing) ? payload.missing : undefined;
 
       if (!response.ok || !payloadOk) {
@@ -421,6 +426,7 @@ function ExecutiveEmptyOnboarding({
           message: payloadError || "Executive refresh failed.",
           snapshot,
           scorer,
+          risk,
           missing,
         });
         return;
@@ -443,6 +449,11 @@ function ExecutiveEmptyOnboarding({
         },
         scorer: {
           name: "resident-safety-scorer",
+          ok: false,
+          status: 0,
+        },
+        risk: {
+          name: "risk-nightly-scorer",
           ok: false,
           status: 0,
         },
@@ -472,7 +483,7 @@ function ExecutiveEmptyOnboarding({
               Generate dashboard data
             </h3>
             <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-muted-foreground">
-              Runs the executive KPI snapshot and resident safety scorer server-side, then refreshes this page.
+              Runs the executive KPI snapshot, resident safety scorer, and risk nightly scorer server-side, then refreshes this page.
             </p>
           </div>
           <Button
@@ -494,9 +505,9 @@ function ExecutiveEmptyOnboarding({
         {refreshState.kind === "error" && (
           <div className="mt-3" role="alert">
             <p className="text-[12px] font-medium text-destructive">{refreshState.message}</p>
-            {(refreshState.snapshot || refreshState.scorer) && (
+            {(refreshState.snapshot || refreshState.scorer || refreshState.risk) && (
               <div className="mt-2 flex flex-col gap-2">
-                {[refreshState.snapshot, refreshState.scorer].filter(Boolean).map((fnStatus) => {
+                {[refreshState.snapshot, refreshState.scorer, refreshState.risk].filter(Boolean).map((fnStatus) => {
                   if (!fnStatus) return null;
                   const hint = getStatusHint(fnStatus.status);
                   return (
@@ -533,34 +544,74 @@ function ExecutiveEmptyOnboarding({
           </p>
         </div>
 
-        <ol className="mt-4 grid gap-3 md:grid-cols-2">
-          {configurationLinks.map((step, i) => (
-            <li key={step.title} className="flex items-start gap-3">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
-                {i + 1}
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <h4 className="text-[13px] font-semibold tracking-tight text-foreground">
-                  {step.title}
-                </h4>
-                <p className="text-[12px] leading-relaxed text-muted-foreground">
-                  {step.body}
-                </p>
-                <Link
-                  href={step.href}
-                  className={cn(
-                    "inline-flex h-7 w-fit items-center gap-1 rounded-md border border-border bg-card px-2.5",
-                    "text-[12px] font-medium text-muted-foreground transition-colors",
-                    "hover:bg-secondary hover:text-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
-                >
-                  {step.cta} <ArrowRight className="size-3" aria-hidden />
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ol>
+        <div className="mt-4 flex flex-col gap-4">
+          <section className="flex flex-col gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Configuration</p>
+            <ol className="grid gap-3 md:grid-cols-2">
+              {configurationLinks.map((step, i) => (
+                <li key={step.title} className="flex items-start gap-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <h4 className="text-[13px] font-semibold tracking-tight text-foreground">
+                      {step.title}
+                    </h4>
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
+                      {step.body}
+                    </p>
+                    <Link
+                      href={step.href}
+                      className={cn(
+                        "inline-flex h-7 w-fit items-center gap-1 rounded-md border border-border bg-card px-2.5",
+                        "text-[12px] font-medium text-muted-foreground transition-colors",
+                        "hover:bg-secondary hover:text-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      )}
+                    >
+                      {step.cta} <ArrowRight className="size-3" aria-hidden />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Operational shortcuts</p>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              These links open live operational dashboards. They do not generate data or change configuration.
+            </p>
+            <ol className="grid gap-3 md:grid-cols-2">
+              {operationalShortcutLinks.map((step, i) => (
+                <li key={step.title} className="flex items-start gap-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <h4 className="text-[13px] font-semibold tracking-tight text-foreground">
+                      {step.title}
+                    </h4>
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
+                      {step.body}
+                    </p>
+                    <Link
+                      href={step.href}
+                      className={cn(
+                        "inline-flex h-7 w-fit items-center gap-1 rounded-md border border-border bg-card px-2.5",
+                        "text-[12px] font-medium text-muted-foreground transition-colors",
+                        "hover:bg-secondary hover:text-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      )}
+                    >
+                      {step.cta} <ArrowRight className="size-3" aria-hidden />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
       </div>
 
       <div className="mt-5 flex items-center gap-2 border-t border-border/60 pt-4 text-[12px] text-muted-foreground">

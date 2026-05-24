@@ -6,6 +6,7 @@
 | `dispatch-push` | no | `POST { "user_id", "title", "body", "url"? }` — Web Push via `notification_subscriptions`. Auth: `Authorization: Bearer` (owner/org_admin, same org) **or** `x-dispatch-secret` matching `DISPATCH_PUSH_SECRET`. |
 | `generate-monthly-invoices` | no | Draft monthly invoices (same logic as admin **Billing → Generate**). Auth: **`x-cron-secret`** = `GENERATE_MONTHLY_INVOICES_SECRET`. Idempotent per facility + resident + `period_start` (migration `071`). |
 | `exec-kpi-snapshot` | no | `POST { "organization_id", "snapshot_date"? }` — writes **`exec_kpi_snapshots`** for org, each entity, and each facility (Module 24). Auth: **`x-cron-secret`** = `EXEC_KPI_SNAPSHOT_SECRET`. Deletes same-day rows for that org before insert (idempotent per day). |
+| `resident-safety-scorer` | no | `POST { "organization_id", "facility_id"? }` — writes `resident_safety_scores` and opens safety-related `exec_alerts` on downward risk-tier transitions. Auth: **`x-cron-secret`** = `RESIDENT_SAFETY_SCORER_SECRET`. |
 | `report-scheduler` | no | `POST` — processes due **`report_schedules`** into **`report_runs`**. Auth: **`x-cron-secret`** = `REPORT_SCHEDULER_SECRET`. |
 | `ar-aging-check` | no | `POST` — marks past-due `sent`/`partial` invoices as **`overdue`**. Auth: **`x-cron-secret`** = `AR_AGING_CHECK_SECRET`. |
 | `generate-emar-schedule` | no | `POST` — creates future **`emar_records`** for scheduled meds. Auth: **`x-cron-secret`** = `GENERATE_EMAR_SCHEDULE_SECRET`. |
@@ -73,6 +74,7 @@ Do **not** send `facility_id` and `organization_id` together.
 - `DISPATCH_PUSH_SECRET` — optional but recommended for server/cron callers (header `x-dispatch-secret`).
 - `GENERATE_MONTHLY_INVOICES_SECRET` — required for `generate-monthly-invoices` (header `x-cron-secret`). Rotate if leaked.
 - `EXEC_KPI_SNAPSHOT_SECRET` — required for `exec-kpi-snapshot` (header `x-cron-secret`). Rotate if leaked.
+- `RESIDENT_SAFETY_SCORER_SECRET` — required for `resident-safety-scorer` and the Executive Overview manual refresh route.
 - `REPORT_SCHEDULER_SECRET` — required for `report-scheduler`.
 - `AR_AGING_CHECK_SECRET` — required for `ar-aging-check`.
 - `GENERATE_EMAR_SCHEDULE_SECRET` — required for `generate-emar-schedule`.
@@ -140,6 +142,33 @@ curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/exec-kpi-snapsh
 
 Schedule **daily** per org (e.g. Supabase **Edge Functions → Cron** or external scheduler) after `GENERATE_MONTHLY_INVOICES_SECRET` / billing jobs if needed.
 
+## `resident-safety-scorer` + `risk-nightly-scorer` — refresh and scheduling
+
+Manual Executive refresh should call both functions with separate secrets:
+
+```bash
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/resident-safety-scorer" \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: $RESIDENT_SAFETY_SCORER_SECRET" \
+  -d '{"organization_id":"<org-uuid>"}'
+```
+
+```bash
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/risk-nightly-scorer" \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: $RISK_NIGHTLY_SCORER_SECRET" \
+  -d '{"organization_id":"<org-uuid>","notify":false}'
+```
+
+Nightly automation should invoke `risk-nightly-scorer` with `notify: true` so owner alerting runs when material high/critical risk appears:
+
+```bash
+curl -sS -X POST "https://<project-ref>.supabase.co/functions/v1/risk-nightly-scorer" \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: $RISK_NIGHTLY_SCORER_SECRET" \
+  -d '{"organization_id":"<org-uuid>","notify":true}'
+```
+
 ## Deploy
 
 ```bash
@@ -147,6 +176,7 @@ supabase functions deploy export-audit-log --project-ref manfqmasfqppukpobpld
 supabase functions deploy dispatch-push --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-monthly-invoices --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-kpi-snapshot --project-ref manfqmasfqppukpobpld
+supabase functions deploy resident-safety-scorer --project-ref manfqmasfqppukpobpld --no-verify-jwt
 supabase functions deploy report-scheduler --project-ref manfqmasfqppukpobpld
 supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld

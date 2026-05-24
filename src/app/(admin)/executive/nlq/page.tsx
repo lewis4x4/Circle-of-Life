@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { Send, Loader2, MessageSquare, RotateCcw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import { HavenInsightChart, type ChartSpec } from "@/components/haven-insight/HavenInsightChart";
+import { ConversationSidebar } from "@/components/haven-insight/ConversationSidebar";
 import { InsightFeedback } from "@/components/haven-insight/InsightFeedback";
 
 // ── Types ──
@@ -40,6 +42,19 @@ interface NlqMessage {
 }
 
 type RouterPayload = Record<string, unknown>;
+
+type ExecNlqMessageRow = {
+  id: string;
+  role: string;
+  content: string;
+  citations: unknown;
+  follow_ups: unknown;
+  chart_spec: unknown;
+  fallback_used: boolean | null;
+  tokens_used: number | null;
+  created_at: string | null;
+  session_id: string;
+};
 
 type SlashTemplate = {
   label: string;
@@ -153,7 +168,25 @@ function assistantMessageFromPayload(payload: RouterPayload, fallbackId: string)
   };
 }
 
+function rowToNlqMessage(row: ExecNlqMessageRow): NlqMessage {
+  return {
+    id: row.role === "assistant" ? row.session_id : row.id,
+    role: row.role === "user" ? "user" : "assistant",
+    content: row.content,
+    timestamp: row.created_at ? new Date(row.created_at) : new Date(),
+    tokensUsed: typeof row.tokens_used === "number" ? row.tokens_used : undefined,
+    citations: normalizeCitations(row.citations),
+    fallbackUsed: row.fallback_used === true,
+    followUpSuggestions: normalizeStringArray(row.follow_ups, 3),
+    chartSpec: normalizeChartSpec(row.chart_spec),
+  };
+}
+
 export default function ExecutiveNlqPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
+  const activeSessionId = sessionParam;
   const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<NlqMessage[]>([]);
   const [input, setInput] = useState("");
@@ -188,6 +221,46 @@ export default function ExecutiveNlqPage() {
     }
     void checkAuth();
   }, [supabase]);
+
+  // Hydrate persisted conversation messages when the URL session changes.
+  useEffect(() => {
+    if (!sessionParam) {
+      setMessages([]);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("exec_nlq_messages" as never)
+        .select("id, role, content, ordinal, citations, follow_ups, chart_spec, fallback_used, tokens_used, created_at, session_id" as never)
+        .eq("session_id" as never, sessionParam as never)
+        .neq("role" as never, "system" as never)
+        .order("ordinal" as never, { ascending: true });
+
+      if (cancelled) return;
+      if (!error && data) {
+        setMessages(((data ?? []) as unknown as ExecNlqMessageRow[]).map(rowToNlqMessage));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionParam, supabase]);
+
+  // After a successful send, make the router-provided session_id the URL source of truth.
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === "assistant" && last.id.length === 36 && last.id !== sessionParam) {
+      router.replace(`${NLQ_ROUTE}?session=${last.id}`, { scroll: false });
+    }
+  }, [messages, router, sessionParam]);
+
+  const startNewConversation = useCallback(() => {
+    router.replace(NLQ_ROUTE, { scroll: false });
+    setMessages([]);
+  }, [router]);
 
   // Cmd+K / Ctrl+K focuses the question input.
   useEffect(() => {
@@ -244,6 +317,7 @@ export default function ExecutiveNlqPage() {
       question: q,
       route: NLQ_ROUTE,
       module: NLQ_MODULE,
+      session_id: activeSessionId ?? undefined,
     });
     let assistantId = `ai-${Date.now()}`;
     let hasAssistantMessage = false;
@@ -442,7 +516,7 @@ export default function ExecutiveNlqPage() {
       setLoading(false);
       setAwaitingFirstToken(false);
     }
-  }, [loading]);
+  }, [activeSessionId, loading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -496,36 +570,38 @@ export default function ExecutiveNlqPage() {
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-col gap-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
-            Haven Insight
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            Portfolio Q&A — natural-language answers grounded in your live operational data.
-          </p>
+    <div className="relative flex min-h-dvh w-full">
+      <ConversationSidebar currentSessionId={activeSessionId} onNewConversation={startNewConversation} />
+      <main className="flex flex-1 flex-col gap-6 lg:pl-[var(--haven-sidebar-width,280px)]">
+        <div className="flex flex-col gap-3 pt-11 md:flex-row md:items-start md:justify-between lg:pt-0">
+          <div className="min-w-0">
+            <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
+              Haven Insight
+            </h1>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Portfolio Q&A — natural-language answers grounded in your live operational data.
+            </p>
+          </div>
+          <div className="hidden md:block">
+            <ExecutiveHubNav />
+          </div>
         </div>
-        <div className="hidden md:block">
-          <ExecutiveHubNav />
-        </div>
-      </div>
 
-      <div className="rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] flex flex-col h-[calc(100dvh-220px)] min-h-[520px]">
-        <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] flex flex-col h-[calc(100dvh-220px)] min-h-[520px]">
+          <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="space-y-4">
             {messages.length === 0 && (
               <div className="mx-auto flex w-full max-w-2xl flex-col justify-center py-16">
                 <h2 className="text-sm font-medium text-foreground">Ask Haven about your portfolio.</h2>
                 <p className="max-w-md text-sm text-muted-foreground">Spans occupancy · revenue · incidents · compliance · staffing · any portfolio metric.</p>
                 <p className="mb-2 mt-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Try a question</p>
-                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:auto-rows-fr">
                   {SUGGESTED_QUESTIONS.map((q) => (
-                    <li key={q}>
+                    <li key={q} className="h-full">
                       <button
                         type="button"
                         onClick={() => void sendQuestion(q)}
-                        className="h-9 w-full rounded-[var(--radius)] border border-border bg-background px-[11px] py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-full min-h-9 w-full items-center rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-left text-[13px] leading-snug text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {q}
                       </button>
@@ -535,9 +611,9 @@ export default function ExecutiveNlqPage() {
               </div>
             )}
 
-            {messages.map((msg) => (
+            {messages.map((msg, index) => (
               <div
-                key={msg.id}
+                key={`${msg.id}-${index}`}
                 className={cn(
                   "flex max-w-3xl gap-3",
                   msg.role === "user" ? "ml-auto justify-end" : ""
@@ -675,7 +751,7 @@ export default function ExecutiveNlqPage() {
           {messages.length > 0 && (
             <div className="flex items-center justify-center gap-4 mt-3">
               <button
-                onClick={() => setMessages([])}
+                onClick={startNewConversation}
                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
               >
                 <RotateCcw className="w-3 h-3" /> Clear conversation
@@ -683,7 +759,8 @@ export default function ExecutiveNlqPage() {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

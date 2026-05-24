@@ -17,6 +17,8 @@ export type HavenAuthContextValue = {
   /** Resolved from `user_profiles.app_role` when available, else JWT metadata */
   appRole: string;
   organizationId: string | null;
+  fullName: string | null;
+  avatarUrl: string | null;
   email: string | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -30,6 +32,8 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [appRole, setAppRole] = useState<string>("facility_admin");
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -45,12 +49,14 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       if (!u) {
         setAppRole("facility_admin");
         setOrganizationId(null);
+        setFullName(null);
+        setAvatarUrl(null);
         return;
       }
 
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
-        .select("app_role, organization_id")
+        .select("app_role, organization_id, full_name, avatar_url")
         .eq("id", u.id)
         .maybeSingle();
 
@@ -67,12 +73,16 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       const roleFromMeta = u.app_metadata?.app_role as string | undefined;
       setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
       setOrganizationId((profile?.organization_id as string) ?? null);
+      setFullName((profile?.full_name as string | null | undefined) ?? null);
+      setAvatarUrl((profile?.avatar_url as string | null | undefined) ?? null);
     } catch (error) {
       console.error("[HavenAuth] Failed to resolve browser session", error);
       setSession(null);
       setUser(null);
       setAppRole("facility_admin");
       setOrganizationId(null);
+      setFullName(null);
+      setAvatarUrl(null);
     } finally {
       setLoading(false);
     }
@@ -102,11 +112,13 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       session,
       appRole,
       organizationId,
+      fullName,
+      avatarUrl,
       email: user?.email ?? null,
       loading,
       refresh: load,
     }),
-    [user, session, appRole, organizationId, loading, load],
+    [user, session, appRole, organizationId, fullName, avatarUrl, loading, load],
   );
 
   return <HavenAuthContext.Provider value={value}>{children}</HavenAuthContext.Provider>;
