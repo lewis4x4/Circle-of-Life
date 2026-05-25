@@ -19,7 +19,7 @@ BEGIN
   -- Alternative Transport
   -- Source: Section 21 "Transport vendor routing"
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
-  VALUES (v_org_id, 'Alternative Transport', 'other', 'active', 'Kathy', NULL, '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'Alternative Transport', 'other', 'active', 'Kathy', NULL, '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   -- Assign to ALL facilities
@@ -29,7 +29,7 @@ BEGIN
 
   -- Jackson Transport
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
-  VALUES (v_org_id, 'Jackson Transport', 'other', 'active', 'John', NULL, '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'Jackson Transport', 'other', 'active', 'John', NULL, '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
@@ -38,7 +38,7 @@ BEGIN
 
   -- Parrish Medivan
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
-  VALUES (v_org_id, 'Parrish Medivan', 'other', 'active', 'Hanah', NULL, '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'Parrish Medivan', 'other', 'active', 'Hanah', NULL, '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
@@ -47,7 +47,7 @@ BEGIN
 
   -- Peeler Transport
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
-  VALUES (v_org_id, 'Peeler Transport', 'other', 'active', 'Carlene', NULL, '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'Peeler Transport', 'other', 'active', 'Carlene', NULL, '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
@@ -57,7 +57,7 @@ BEGIN
   -- D's Transport
   -- Note: The name uses a single quote for "D's" which must be escaped
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
-  VALUES (v_org_id, 'D''s Transport', 'other', 'active', 'Lavern', NULL, '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'D''s Transport', 'other', 'active', 'Lavern', NULL, '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
@@ -67,7 +67,7 @@ BEGIN
   -- Lafayette County
   -- Source: Section 21 "Lafayette County" — specific to Homewood and Oakridge
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
-  VALUES (v_org_id, 'Lafayette County', 'other', 'active', 'Robbie Edwards', NULL, '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'Lafayette County', 'other', 'active', 'Robbie Edwards', NULL, '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)
@@ -77,7 +77,7 @@ BEGIN
   -- Suwannee River Economic Council
   -- Source: Section 21 "Suwannee River Economic Council" — specific to Homewood, Oakridge, Rising Oaks
   INSERT INTO vendors (organization_id, name, category, status, created_by)
-  VALUES (v_org_id, 'Suwannee River Economic Council', 'other', 'active', '00000000-0000-0000-0000-000000000001')
+  VALUES (v_org_id, 'Suwannee River Economic Council', 'other', 'active', '062c3cfb-53a5-4482-814a-cbef2b028760')
   RETURNING id INTO v_vendor_id;
 
   INSERT INTO vendor_facilities (organization_id, vendor_id, facility_id)

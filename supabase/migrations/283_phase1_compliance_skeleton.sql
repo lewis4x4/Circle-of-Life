@@ -165,14 +165,14 @@ COMMENT ON COLUMN background_screenings.clearinghouse_reference IS 'FL Clearingh
 -- Select high-impact statutes for initial seed
 
 INSERT INTO fl_statutes (organization_id, statute_code, statute_title, chapter, agency, description, category, created_by) VALUES
-('00000000-0000-0000-0000-000000000001', '429.28', 'Resident Bill of Rights', '429', 'AHCA', 'Rights of residents in assisted living facilities including privacy, dignity, and self-determination.', 'resident_rights', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '429.255', 'Advance Directives', '429', 'AHCA', 'DNRO per FL Ch 765, resident right to refuse treatment.', 'resident_rights', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '59A-36.006', 'Admission Criteria', '59A', 'AHCA', 'Minimum admission criteria for ALF facilities.', 'admission', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '59A-36.010', 'Assessment', '59A', 'AHCA', 'Resident assessment requirements including 3-year reassessment.', 'care_delivery', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '59A-36.011', 'Background Screening', '59A', 'AHCA', 'Level 2 background screening requirements for staff.', 'staffing', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '59A-36.012', 'Staffing', '59A', 'AHCA', 'Minimum staffing requirements and staffing plans.', 'staffing', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '59A-36.018', 'Incident Reporting', '59A', 'AHCA', 'Requirements for reporting incidents to AHCA.', 'incident_reporting', '00000000-0000-0000-0000-000000000001'),
-('00000000-0000-0000-0000-000000000001', '59A-36.019', 'Emergency Preparedness', '59A', 'AHCA', 'Emergency and disaster preparedness requirements.', 'emergency_preparedness', '00000000-0000-0000-0000-000000000001');
+('00000000-0000-0000-0000-000000000001', '429.28', 'Resident Bill of Rights', '429', 'AHCA', 'Rights of residents in assisted living facilities including privacy, dignity, and self-determination.', 'resident_rights', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '429.255', 'Advance Directives', '429', 'AHCA', 'DNRO per FL Ch 765, resident right to refuse treatment.', 'resident_rights', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '59A-36.006', 'Admission Criteria', '59A', 'AHCA', 'Minimum admission criteria for ALF facilities.', 'admission', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '59A-36.010', 'Assessment', '59A', 'AHCA', 'Resident assessment requirements including 3-year reassessment.', 'care_delivery', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '59A-36.011', 'Background Screening', '59A', 'AHCA', 'Level 2 background screening requirements for staff.', 'staffing', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '59A-36.012', 'Staffing', '59A', 'AHCA', 'Minimum staffing requirements and staffing plans.', 'staffing', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '59A-36.018', 'Incident Reporting', '59A', 'AHCA', 'Requirements for reporting incidents to AHCA.', 'incident_reporting', '062c3cfb-53a5-4482-814a-cbef2b028760'),
+('00000000-0000-0000-0000-000000000001', '59A-36.019', 'Emergency Preparedness', '59A', 'AHCA', 'Emergency and disaster preparedness requirements.', 'emergency_preparedness', '062c3cfb-53a5-4482-814a-cbef2b028760');
 
 -- ============================================================
 -- RLS POLICIES
