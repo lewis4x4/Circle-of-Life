@@ -24,6 +24,7 @@ import { InsightFeedback } from "@/components/haven-insight/InsightFeedback";
 
 interface NlqMessage {
   id: string;
+  sessionId?: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
@@ -157,8 +158,10 @@ function normalizeChartSpec(value: unknown): ChartSpec | null {
 }
 
 function assistantMessageFromPayload(payload: RouterPayload, fallbackId: string): NlqMessage {
+  const sessionId = typeof payload.session_id === "string" ? payload.session_id : undefined;
   return {
-    id: typeof payload.session_id === "string" ? payload.session_id : fallbackId,
+    id: typeof payload.message_id === "string" ? payload.message_id : fallbackId,
+    sessionId,
     role: "assistant",
     content: typeof payload.answer === "string" && payload.answer.length > 0 ? payload.answer : "No response generated.",
     timestamp: new Date(),
@@ -174,7 +177,8 @@ function assistantMessageFromPayload(payload: RouterPayload, fallbackId: string)
 
 function rowToNlqMessage(row: ExecNlqMessageRow): NlqMessage {
   return {
-    id: row.role === "assistant" ? row.session_id : row.id,
+    id: row.id,
+    sessionId: row.session_id,
     role: row.role === "user" ? "user" : "assistant",
     content: row.content,
     timestamp: row.created_at ? new Date(row.created_at) : new Date(),
@@ -272,10 +276,11 @@ export default function ExecutiveNlqPage() {
   // After a successful send, make the router-provided session_id the URL source of truth.
   useEffect(() => {
     const last = messages[messages.length - 1];
-    if (!last || last.role !== "assistant" || last.id.length !== 36) return;
-    if (last.id === syncedSessionRef.current || last.id === sessionParam) return;
-    syncedSessionRef.current = last.id;
-    router.replace(`/admin/executive/nlq?session=${last.id}`, { scroll: false });
+    const lastSessionId = last?.sessionId;
+    if (!last || last.role !== "assistant" || !lastSessionId || lastSessionId.length !== 36) return;
+    if (lastSessionId === syncedSessionRef.current || lastSessionId === sessionParam) return;
+    syncedSessionRef.current = lastSessionId;
+    router.replace(`/admin/executive/nlq?session=${lastSessionId}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionParam, router]);
 
@@ -291,6 +296,14 @@ export default function ExecutiveNlqPage() {
   // Cmd+K / Ctrl+K focuses the question input.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing || event.repeat) return;
+      const target = event.target;
+      const isTextTarget = target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || (target instanceof HTMLElement && target.isContentEditable);
+      if (isTextTarget && target !== inputRef.current) return;
+
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         inputRef.current?.focus();
@@ -381,8 +394,10 @@ export default function ExecutiveNlqPage() {
     const applyAssistantMeta = (payload: RouterPayload) => {
       if (sendAbortRef.current !== abortController) return;
       setAwaitingFirstToken(false);
-      const nextId = typeof payload.session_id === "string" ? payload.session_id : assistantId;
+      const nextId = typeof payload.message_id === "string" ? payload.message_id : assistantId;
+      const nextSessionId = typeof payload.session_id === "string" ? payload.session_id : undefined;
       const meta = {
+        sessionId: nextSessionId,
         tokensUsed: typeof payload.tokens_used === "number" ? payload.tokens_used : undefined,
         citations: normalizeCitations(payload.citations),
         intent: typeof payload.intent === "string" ? payload.intent : undefined,
@@ -419,7 +434,7 @@ export default function ExecutiveNlqPage() {
         ];
       });
       assistantId = nextId;
-      syncSessionUrl(nextId);
+      if (nextSessionId) syncSessionUrl(nextSessionId);
     };
 
     const appendJsonAssistant = (payload: RouterPayload) => {
@@ -429,7 +444,7 @@ export default function ExecutiveNlqPage() {
       hasAssistantMessage = true;
       assistantId = assistantMsg.id;
       setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), assistantMsg]);
-      syncSessionUrl(assistantMsg.id);
+      if (assistantMsg.sessionId) syncSessionUrl(assistantMsg.sessionId);
     };
 
     const requestRouter = (stream: boolean) => authorizedEdgeFetch("haven-ai-router", {
@@ -575,6 +590,10 @@ export default function ExecutiveNlqPage() {
   }, [input, sendQuestion]);
 
   const handleInputKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.nativeEvent.isComposing) {
+      if (event.key === "Enter") event.preventDefault();
+      return;
+    }
     if (!paletteOpen) return;
 
     if (event.key === "ArrowDown") {
@@ -622,8 +641,7 @@ export default function ExecutiveNlqPage() {
 
   return (
     <div className="relative flex min-h-dvh w-full">
-      <ConversationSidebar currentSessionId={activeSessionId} onNewConversation={startNewConversation} />
-      <main className="flex flex-1 flex-col gap-6 lg:pl-[var(--haven-sidebar-width,280px)]">
+      <main className="flex min-h-dvh flex-1 flex-col gap-6 lg:pl-[var(--haven-sidebar-width,280px)]">
         <div className="flex flex-col gap-3 pt-11 md:flex-row md:items-start md:justify-between lg:pt-0">
           <div className="min-w-0">
             <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
@@ -638,7 +656,7 @@ export default function ExecutiveNlqPage() {
           </div>
         </div>
 
-        <div className="rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] flex flex-col h-[calc(100dvh-220px)] min-h-[520px]">
+        <div className="flex min-h-0 flex-1 flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)]">
           <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="space-y-4">
             {messages.length === 0 && (
@@ -646,7 +664,7 @@ export default function ExecutiveNlqPage() {
                 <h2 className="text-sm font-medium text-foreground">Ask Haven about your portfolio.</h2>
                 <p className="max-w-md text-sm text-muted-foreground">Spans occupancy · revenue · incidents · compliance · staffing · any portfolio metric.</p>
                 <p className="mb-2 mt-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Try a question</p>
-                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:auto-rows-fr">
+                <ul className="grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2">
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <li key={q} className="h-full">
                       <button
@@ -690,11 +708,11 @@ export default function ExecutiveNlqPage() {
                     ) : null}
                     <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
                     {process.env.NODE_ENV === "development" && msg.tokensUsed && (
-                      <p className="mt-2 font-mono text-[10px] text-muted-foreground">{msg.tokensUsed} tokens</p>
+                      <p className="mt-2 font-mono text-[10px] tabular-nums text-muted-foreground">{msg.tokensUsed} tokens</p>
                     )}
                     {msg.role === "assistant" && msg.citations?.length ? (
                       <div className="mt-3 border-t border-border pt-2">
-                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Sources</p>
+                        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Sources</h4>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {msg.citations.map((citation, index) => {
                             // P0-5: drop /50 opacity + bump text color so citation chip clears WCAG AA over the assistant bubble fill.
@@ -714,11 +732,11 @@ export default function ExecutiveNlqPage() {
                       </div>
                     ) : null}
                     {msg.role === "assistant" && msg.id.length === 36 ? (
-                      <InsightFeedback sessionId={msg.id} />
+                      <InsightFeedback messageId={msg.id} />
                     ) : null}
                   </div>
                   {msg.role === "assistant" && msg.followUpSuggestions?.length ? (
-                    <div className="pl-0.5">
+                    <div>
                       <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Follow-up</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {msg.followUpSuggestions.map((suggestion) => (
@@ -740,12 +758,12 @@ export default function ExecutiveNlqPage() {
             ))}
 
             {loading && awaitingFirstToken && (
-              <div className="flex gap-3 max-w-3xl">
+              <div className="flex max-w-3xl gap-3" role="status" aria-live="polite">
                 <div className="size-8 rounded-[var(--radius)] border border-border bg-card flex items-center justify-center shrink-0 text-muted-foreground">
                   <MessageSquare className="w-4 h-4" />
                 </div>
                 <div className="rounded-[var(--radius)] px-[13px] py-3 bg-card border border-border">
-                  <div className="flex items-center gap-1" aria-label="Haven Insight is typing">
+                  <div className="flex items-center gap-1" aria-label="Haven Insight is preparing an answer">
                     <span className="size-1.5 rounded-full bg-muted-foreground/70 animate-pulse [animation-delay:0ms]" />
                     <span className="size-1.5 rounded-full bg-muted-foreground/70 animate-pulse [animation-delay:150ms]" />
                     <span className="size-1.5 rounded-full bg-muted-foreground/70 animate-pulse [animation-delay:300ms]" />
@@ -761,13 +779,21 @@ export default function ExecutiveNlqPage() {
         <div className="shrink-0 border-t border-border bg-card px-4 py-3">
           <form onSubmit={handleSubmit} className="relative mx-auto flex max-w-3xl gap-3">
             {paletteOpen && (
-              <div className="absolute bottom-full left-0 right-20 z-10 mb-2 overflow-hidden rounded-[var(--radius)] border border-border bg-popover shadow-[var(--shadow-lift)]">
+              <div
+                id="haven-slash-palette"
+                role="listbox"
+                aria-label="Slash templates"
+                className="absolute bottom-full left-0 right-20 z-10 mb-2 overflow-hidden rounded-[var(--radius)] border border-border bg-popover shadow-[var(--shadow-lift)]"
+              >
                 <div className="border-b border-border px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Templates</div>
                 <div className="p-1.5">
                   {SLASH_TEMPLATES.map((template, index) => (
                     <button
                       key={template.label}
                       type="button"
+                      id={`palette-item-${index}`}
+                      role="option"
+                      aria-selected={index === paletteIndex}
                       onMouseEnter={() => setPaletteIndex(index)}
                       onClick={() => fillSlashTemplate(template)}
                       className={cn(
@@ -788,6 +814,11 @@ export default function ExecutiveNlqPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleInputKeyDown}
+              role="combobox"
+              aria-expanded={paletteOpen}
+              aria-controls="haven-slash-palette"
+              aria-autocomplete="list"
+              aria-activedescendant={paletteOpen ? `palette-item-${paletteIndex}` : undefined}
               placeholder="Ask about your portfolio…  ⌘K"
               disabled={loading}
               className="flex-1 rounded-[var(--radius)] border border-input bg-background px-[13px] py-3 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
@@ -795,10 +826,11 @@ export default function ExecutiveNlqPage() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="rounded-[var(--radius)] bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-2"
+              aria-label={loading ? "Sending question" : "Send question"}
+              className="flex items-center gap-2 rounded-[var(--radius)] bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
-              Ask
+              {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+              {loading ? "Sending…" : "Ask"}
             </button>
           </form>
           {messages.length > 0 && (
@@ -815,6 +847,7 @@ export default function ExecutiveNlqPage() {
         </div>
         </div>
       </main>
+      <ConversationSidebar currentSessionId={activeSessionId} onNewConversation={startNewConversation} />
     </div>
   );
 }

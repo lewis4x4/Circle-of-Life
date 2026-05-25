@@ -10,7 +10,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ChevronLeft, ChevronRight, Loader2, Menu, MessageSquare, Plus, Search, Star, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Menu, MessageSquare, Pencil, Plus, Search, Star, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -136,6 +136,8 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
   // P1: refs used to break the search effect's dependency cycle (avoid re-running when threads/searchResults mutate).
   const threadsRef = useRef<ThreadRow[]>([]);
   const searchResultsRef = useRef<{ query: string; ids: string[] }>({ query: "", ids: [] });
+  const desktopSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => { threadsRef.current = threads; }, [threads]);
   useEffect(() => { searchResultsRef.current = searchResults; }, [searchResults]);
 
@@ -393,11 +395,34 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
   const focusThreadByIndex = useCallback((index: number) => {
     const id = focusableThreadIds[index];
     if (!id) return;
-    const target = document.querySelector<HTMLElement>(`[data-thread-id="${id}"]`);
+    const target = document.querySelector<HTMLElement>(`button[data-thread-id="${id}"]`);
     target?.focus();
   }, [focusableThreadIds]);
 
+  useEffect(() => {
+    if (!deferredSearch || !focusableThreadIds.length) return;
+    const activeElement = document.activeElement;
+    if (!(activeElement instanceof HTMLInputElement) || activeElement.dataset.conversationSearch !== "true") return;
+
+    const frame = window.requestAnimationFrame(() => focusThreadByIndex(0));
+    return () => window.cancelAnimationFrame(frame);
+  }, [deferredSearch, focusThreadByIndex, focusableThreadIds.length]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const frame = window.requestAnimationFrame(() => mobileSearchInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [mobileOpen]);
+
   const handleListKeyDown = useCallback((event: KeyboardEvent<HTMLUListElement>) => {
+    const eventTarget = event.target;
+    if (
+      eventTarget instanceof HTMLInputElement ||
+      eventTarget instanceof HTMLTextAreaElement ||
+      (eventTarget instanceof HTMLElement && eventTarget.isContentEditable)
+    ) {
+      return;
+    }
     if (!focusableThreadIds.length) return;
     const activeElement = document.activeElement as HTMLElement | null;
     const currentId = activeElement?.dataset.threadId ?? activeElement?.closest<HTMLElement>("[data-thread-id]")?.dataset.threadId;
@@ -405,10 +430,11 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      focusThreadByIndex(currentIndex >= 0 ? Math.min(currentIndex + 1, focusableThreadIds.length - 1) : 0);
+      focusThreadByIndex(currentIndex >= 0 ? (currentIndex + 1) % focusableThreadIds.length : 0);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      focusThreadByIndex(currentIndex >= 0 ? Math.max(currentIndex - 1, 0) : focusableThreadIds.length - 1);
+      const len = focusableThreadIds.length;
+      focusThreadByIndex(currentIndex >= 0 ? (currentIndex - 1 + len) % len : len - 1);
     } else if (event.key === "Home") {
       event.preventDefault();
       focusThreadByIndex(0);
@@ -418,6 +444,9 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     } else if (event.key === "Enter" && currentId) {
       event.preventDefault();
       activateThread(currentId);
+    } else if (event.key === "F2" && currentId) {
+      event.preventDefault();
+      setRenamingId(currentId);
     } else if (event.key === "Delete" && currentId) {
       event.preventDefault();
       const thread = threads.find((item) => item.id === currentId);
@@ -432,7 +461,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     const itemCollapsed = collapsed && !forceExpanded;
 
     return (
-      <li key={thread.id} role="option" aria-selected={isActive} className="group relative">
+      <li key={thread.id} role="option" aria-selected={isActive} data-thread-id={thread.id} className="group relative">
         {isRenaming ? (
           <div className="flex h-10 items-center gap-2 rounded-md bg-muted/30 px-2">
             {thread.pinned_at ? <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden /> : null}
@@ -441,6 +470,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               defaultValue={thread.title}
               onBlur={(event) => void commitRename(thread.id, event.target.value)}
               onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
                 if (event.key === "Enter") {
                   event.preventDefault();
                   void commitRename(thread.id, event.currentTarget.value);
@@ -477,10 +507,15 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               itemCollapsed && "justify-center px-1",
             )}
           >
-            {thread.pinned_at ? (
+            {itemCollapsed ? (
+              <div className="relative shrink-0">
+                <MessageSquare className="size-3.5" aria-hidden />
+                {thread.pinned_at ? (
+                  <span className="absolute bottom-0 right-0 size-1.5 rounded-full bg-amber-500" aria-hidden />
+                ) : null}
+              </div>
+            ) : thread.pinned_at ? (
               <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden />
-            ) : itemCollapsed ? (
-              <MessageSquare className="size-3.5 shrink-0" aria-hidden />
             ) : null}
             <span className={cn("min-w-0 flex-1 truncate", itemCollapsed && "sr-only")}>
               {thread.title}
@@ -511,6 +546,19 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
+                setRenamingId(thread.id);
+              }}
+              aria-label="Rename conversation"
+            >
+              <Pencil className="size-3" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 requestDelete(thread);
               }}
               aria-label="Delete"
@@ -523,17 +571,31 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     );
   };
 
-  const renderSection = (section: ThreadSection, forceExpanded = false) => {
+  const threadSections = useMemo<ThreadSection[]>(() => [
+    ...(pinnedThreads.length ? [{ key: "pinned", label: "Pinned", threads: pinnedThreads }] : []),
+    ...dateSections,
+  ], [dateSections, pinnedThreads]);
+
+  const renderThreadList = (forceExpanded = false) => {
     const showSectionLabels = forceExpanded || !collapsed;
     return (
-      <section key={section.key} className="space-y-1.5">
-        {showSectionLabels ? (
-          <p className="px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{section.label}</p>
-        ) : null}
-        <ul role="listbox" aria-label={section.label === "Pinned" ? "Pinned conversations" : "Conversations"} className="space-y-1" onKeyDown={handleListKeyDown}>
-          {section.threads.map((thread) => renderThread(thread, forceExpanded))}
-        </ul>
-      </section>
+      <ul role="listbox" aria-label="Conversations" className="space-y-1" onKeyDown={handleListKeyDown}>
+        {threadSections.flatMap((section, sectionIndex) => [
+          showSectionLabels ? (
+            <li
+              key={`${section.key}-header`}
+              role="presentation"
+              className={cn(
+                "px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
+                sectionIndex > 0 && "pt-3",
+              )}
+            >
+              {section.label}
+            </li>
+          ) : null,
+          ...section.threads.map((thread) => renderThread(thread, forceExpanded)),
+        ])}
+      </ul>
     );
   };
 
@@ -550,7 +612,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
       >
         <div className="flex items-center gap-2 border-b border-border/60 px-3 py-3">
           {showExpanded ? (
-            <h2 className="min-w-0 flex-1 truncate text-[13px] font-semibold tracking-tight text-foreground">Conversations</h2>
+            <h2 className="min-w-0 flex-1 truncate text-[14px] font-semibold tracking-tight text-foreground">Conversations</h2>
           ) : (
             <MessageSquare className="mx-auto size-4 text-muted-foreground" aria-hidden />
           )}
@@ -587,6 +649,8 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
             <label className="relative block">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
               <input
+                ref={forceExpanded ? mobileSearchInputRef : desktopSearchInputRef}
+                data-conversation-search="true"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="Search conversations"
@@ -616,7 +680,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
                 <MessageSquare className="mb-2 size-5 text-muted-foreground" aria-hidden />
                 {showExpanded ? (
                   <>
-                    <p className="text-sm font-medium text-foreground">No conversations yet</p>
+                    <p className="text-[13px] font-medium text-foreground">No conversations yet</p>
                     <p className="mt-1 text-[12px] leading-snug text-muted-foreground">Ask Haven a question to start your first thread.</p>
                   </>
                 ) : null}
@@ -626,10 +690,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
                 No matching conversations.
               </div>
             ) : (
-              <div className="space-y-4">
-                {pinnedThreads.length ? renderSection({ key: "pinned", label: "Pinned", threads: pinnedThreads }, forceExpanded) : null}
-                {dateSections.map((section) => renderSection(section, forceExpanded))}
-              </div>
+              renderThreadList(forceExpanded)
             )}
           </div>
         </div>
@@ -652,7 +713,11 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
           <Menu className="size-4" aria-hidden />
           Conversations
         </SheetTrigger>
-        <SheetContent side="left" className="w-[280px] p-0" showCloseButton={false}>
+        <SheetContent
+          side="left"
+          className="w-[280px] p-0"
+          showCloseButton={false}
+        >
           <SheetHeader className="sr-only">
             <SheetTitle>Conversations</SheetTitle>
           </SheetHeader>

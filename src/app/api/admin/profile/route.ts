@@ -67,7 +67,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: updated });
   } catch (error) {
-    console.error("[ProfileRoute] Failed to update profile", error);
+    console.error(
+      "[ProfileRoute] Failed to update profile",
+      error instanceof Error ? error.message : String(error),
+    );
     return NextResponse.json({ error: "Profile update is not configured on this server" }, { status: 503 });
   }
 }

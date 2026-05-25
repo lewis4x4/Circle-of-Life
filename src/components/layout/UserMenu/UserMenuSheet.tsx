@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
 import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
-import { HELP_DOCS_HREF, useOrganizationName } from "./user-menu-data";
+import { HELP_DOCS_HREF } from "./user-menu-data";
 
 export type UserMenuSheetProps = {
   fullName: string | null;
@@ -52,7 +53,6 @@ export function UserMenuSheet({
   fullName,
   email,
   roleLabel,
-  organizationId,
   avatarUrl,
   userId,
   signingOut,
@@ -60,7 +60,7 @@ export function UserMenuSheet({
   triggerClassName,
 }: UserMenuSheetProps) {
   const router = useRouter();
-  const orgName = useOrganizationName(organizationId);
+  const { orgName } = useHavenAuth();
   const [open, setOpen] = useState(false);
   const signedInAs = fullName?.trim() || email || "signed-in user";
 
@@ -95,7 +95,7 @@ export function UserMenuSheet({
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="max-h-[85dvh] rounded-t-[14px] border-t border-border bg-card p-0"
+        className="mx-auto max-h-[85dvh] w-[min(320px,calc(100vw-32px))] rounded-t-[14px] border-t border-border bg-card p-0"
         showCloseButton
       >
         <SheetHeader className="sr-only">

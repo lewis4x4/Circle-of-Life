@@ -117,8 +117,9 @@ export async function POST() {
   ].filter((value): value is string => Boolean(value));
 
   if (!supabaseUrl || !snapshotSecret || !scorerSecret || !riskSecret) {
+    logError("executive.refresh.config", "missing env vars", { missing });
     return NextResponse.json(
-      { ok: false, error: "Executive refresh is not configured on this server.", missing },
+      { ok: false, error: "Executive refresh is not configured on this server." },
       { status: 503 },
     );
   }

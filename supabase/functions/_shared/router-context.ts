@@ -17,9 +17,10 @@ const EMPTY_CONTEXT: ConversationContext = {
   messageCount: 0,
 };
 
-type SessionContextRow = {
-  message_count: number | null;
-  rolling_summary_text: string | null;
+type ConversationContextRpcData = {
+  message_count?: unknown;
+  rolling_summary_text?: unknown;
+  messages?: unknown;
 };
 
 type MessageContextRow = {
@@ -27,6 +28,22 @@ type MessageContextRow = {
   content: string | null;
   ordinal: number;
 };
+
+function normalizeRpcData(data: unknown): ConversationContextRpcData | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  return data as ConversationContextRpcData;
+}
+
+function normalizeMessageRow(value: unknown): MessageContextRow | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.role !== "string") return null;
+  return {
+    role: row.role,
+    content: typeof row.content === "string" ? row.content : null,
+    ordinal: typeof row.ordinal === "number" ? row.ordinal : Number(row.ordinal),
+  };
+}
 
 function normalizeMessage(row: MessageContextRow): ConversationTurn | null {
   if (row.role !== "user" && row.role !== "assistant") return null;
@@ -41,55 +58,36 @@ export async function loadConversationContext(
   organizationId: string,
   userId?: string,
 ): Promise<ConversationContext> {
-  if (!sessionId) return { ...EMPTY_CONTEXT };
+  if (!sessionId || !userId) return { ...EMPTY_CONTEXT };
 
-  let sessionQuery = admin
-    .from("exec_nlq_sessions")
-    .select("message_count, rolling_summary_text")
-    .eq("id", sessionId)
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null);
+  const { data, error } = await admin.rpc("get_nlq_conversation_context", {
+    p_session_id: sessionId,
+    p_org_id: organizationId,
+    p_user_id: userId,
+    p_limit: 12,
+  });
 
-  if (userId) {
-    sessionQuery = sessionQuery.or(
-      `user_id.eq.${userId},shared_with_org.eq.true`,
-    );
-  }
+  const context = normalizeRpcData(data);
+  if (error || !context) return { ...EMPTY_CONTEXT };
 
-  const { data: session, error: sessionError } = await sessionQuery
-    .maybeSingle();
-
-  if (sessionError || !session) return { ...EMPTY_CONTEXT };
-
-  const row = session as SessionContextRow;
-  const messageCount = typeof row.message_count === "number"
-    ? row.message_count
-    : 0;
-  if (messageCount <= 0) return { ...EMPTY_CONTEXT };
+  const messageCount = typeof context.message_count === "number"
+    ? context.message_count
+    : Number(context.message_count ?? 0);
+  if (!Number.isFinite(messageCount) || messageCount <= 0) return { ...EMPTY_CONTEXT };
 
   const fetchAll = messageCount <= 12;
   const recentLimit = messageCount <= 24 ? 6 : 4;
-  const rollingSummary = messageCount > 24
-    ? (row.rolling_summary_text?.trim() || null)
+  const rollingSummary = messageCount > 24 && typeof context.rolling_summary_text === "string"
+    ? (context.rolling_summary_text.trim() || null)
     : null;
 
-  const baseQuery = admin
-    .from("exec_nlq_messages")
-    .select("role, content, ordinal")
-    .eq("session_id", sessionId)
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .in("role", ["user", "assistant"]);
-
-  const { data: messages, error: messagesError } = fetchAll
-    ? await baseQuery.order("ordinal", { ascending: true })
-    : await baseQuery.order("ordinal", { ascending: false }).limit(recentLimit);
-  if (messagesError) {
-    return { priorTurns: [], rollingSummary, messageCount };
-  }
-
-  const rows = (messages ?? []) as MessageContextRow[];
-  const chronological = fetchAll ? rows : rows.reverse();
+  const rows = Array.isArray(context.messages)
+    ? context.messages.flatMap((row): MessageContextRow[] => {
+      const normalized = normalizeMessageRow(row);
+      return normalized ? [normalized] : [];
+    })
+    : [];
+  const chronological = fetchAll ? rows : rows.slice(-recentLimit);
 
   return {
     priorTurns: chronological

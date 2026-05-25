@@ -18,6 +18,7 @@ export type HavenAuthContextValue = {
   /** Resolved from `user_profiles.app_role` when available, else JWT metadata */
   appRole: string;
   organizationId: string | null;
+  orgName: string | null;
   fullName: string | null;
   avatarUrl: string | null;
   email: string | null;
@@ -33,6 +34,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [appRole, setAppRole] = useState<string>("facility_admin");
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [orgName, setOrgName] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,15 +44,19 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const {
+        data: { user: u },
+      } = await withSupabaseAuthLockRetry(() => supabase.auth.getUser());
+      setUser(u ?? null);
+
+      const {
         data: { session: s },
       } = await withSupabaseAuthLockRetry(() => supabase.auth.getSession());
       setSession(s ?? null);
-      const u = s?.user ?? null;
-      setUser(u);
 
       if (!u) {
         setAppRole("facility_admin");
         setOrganizationId(null);
+        setOrgName(null);
         setFullName(null);
         setAvatarUrl(null);
         return;
@@ -72,9 +78,33 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
+      const organizationIdFromProfile = (profile?.organization_id as string | null | undefined) ?? null;
+      let organizationName: string | null = null;
+
+      if (organizationIdFromProfile) {
+        const { data: organization, error: organizationError } = await supabase
+          .from("organizations")
+          .select("name")
+          .eq("id", organizationIdFromProfile)
+          .maybeSingle();
+
+        if (organizationError) {
+          const errObj = organizationError as unknown as Record<string, unknown>;
+          console.error("[HavenAuth] organizations query failed", {
+            message: organizationError.message,
+            code: errObj.code,
+            hint: errObj.hint,
+            organizationId: organizationIdFromProfile,
+          });
+        } else {
+          organizationName = (organization?.name as string | null | undefined) ?? null;
+        }
+      }
+
       const roleFromMeta = u.app_metadata?.app_role as string | undefined;
       setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
-      setOrganizationId((profile?.organization_id as string) ?? null);
+      setOrganizationId(organizationIdFromProfile);
+      setOrgName(organizationName);
       setFullName((profile?.full_name as string | null | undefined) ?? null);
       setAvatarUrl((profile?.avatar_url as string | null | undefined) ?? null);
     } catch (error) {
@@ -83,6 +113,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setAppRole("facility_admin");
       setOrganizationId(null);
+      setOrgName(null);
       setFullName(null);
       setAvatarUrl(null);
     } finally {
@@ -120,13 +151,14 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       session,
       appRole,
       organizationId,
+      orgName,
       fullName,
       avatarUrl,
       email: user?.email ?? null,
       loading,
       refresh: load,
     }),
-    [user, session, appRole, organizationId, fullName, avatarUrl, loading, load],
+    [user, session, appRole, organizationId, orgName, fullName, avatarUrl, loading, load],
   );
 
   return <HavenAuthContext.Provider value={value}>{children}</HavenAuthContext.Provider>;

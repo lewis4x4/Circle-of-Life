@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
-import { HELP_DOCS_HREF, useOrganizationName } from "./user-menu-data";
+import { HELP_DOCS_HREF } from "./user-menu-data";
 
 export type UserMenuProps = {
   fullName: string | null;
@@ -35,7 +36,6 @@ export function UserMenu({
   fullName,
   email,
   roleLabel,
-  organizationId,
   avatarUrl,
   userId,
   signingOut,
@@ -47,7 +47,7 @@ export function UserMenu({
   triggerChildren,
 }: UserMenuProps) {
   const router = useRouter();
-  const orgName = useOrganizationName(organizationId);
+  const { orgName } = useHavenAuth();
   const signedInAs = fullName?.trim() || email || "signed-in user";
   const renderedTriggerChildren =
     typeof triggerChildren === "function" ? triggerChildren(orgName) : triggerChildren;
@@ -81,7 +81,7 @@ export function UserMenu({
         align={contentAlign}
         side={contentSide}
         sideOffset={contentSideOffset}
-        className="w-[320px] overflow-hidden rounded-[var(--radius)] border border-border bg-popover p-0 shadow-[var(--shadow-card)] ring-1 ring-foreground/5"
+        className="w-[min(320px,calc(100vw-32px))] overflow-hidden rounded-[var(--radius)] border border-border bg-popover p-0 shadow-[var(--shadow-card)] ring-1 ring-foreground/5"
       >
         <header className="border-b border-border bg-muted/30 px-3 py-3">
           <IdentityBlock

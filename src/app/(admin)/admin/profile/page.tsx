@@ -119,7 +119,7 @@ export default function AdminProfilePage() {
         />
       </header>
 
-      {/* P0-7: tab semantics — each Link is a role=tab linked to its panel via aria-controls. */}
+      {/* P0-7 + ROAD-28: stub tabs render as disabled <button> with "Soon" badge — still in tablist for ARIA, no navigation. */}
       <nav
         role="tablist"
         aria-label="Profile sections"
@@ -127,7 +127,40 @@ export default function AdminProfilePage() {
       >
         {PROFILE_TABS.map((tab) => {
           const active = activeTab === tab.value;
+          const isStub = tab.value !== "profile";
           const href = tab.value === "profile" ? "/admin/profile" : `/admin/profile?tab=${tab.value}`;
+          const className = cn(
+            "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium",
+            "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+            active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            isStub && "cursor-not-allowed opacity-70",
+          );
+          const soonBadge = isStub ? (
+            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Soon
+            </span>
+          ) : null;
+          if (isStub) {
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                id={`profile-tab-${tab.value}`}
+                role="tab"
+                aria-selected={false}
+                aria-controls="profile-tabpanel"
+                aria-disabled={true}
+                disabled
+                tabIndex={-1}
+                data-state="inactive"
+                className={className}
+              >
+                {tab.label}
+                {soonBadge}
+              </button>
+            );
+          }
           return (
             <Link
               key={tab.value}
@@ -139,12 +172,7 @@ export default function AdminProfilePage() {
               aria-current={active ? "page" : undefined}
               tabIndex={active ? 0 : -1}
               data-state={active ? "active" : "inactive"}
-              className={cn(
-                "inline-flex h-7 items-center rounded-md px-3 text-[12px] font-medium",
-                "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
-                active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-              )}
+              className={className}
             >
               {tab.label}
             </Link>
@@ -219,15 +247,20 @@ export default function AdminProfilePage() {
 
               <div className="grid gap-2">
                 <Label>Role</Label>
-                <div className="flex h-9 items-center rounded-[var(--radius)] border border-input bg-background px-3">
+                {/* ROAD-31: read-only badge instead of fake disabled input — communicates "computed metadata". */}
+                <div className="flex items-center gap-2 py-1">
                   <Badge variant="default">{roleConfig.roleLabel}</Badge>
+                  <span className="text-[11px] text-muted-foreground">Assigned by your org admin</span>
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="profile-organization">Organization</Label>
-                <Input id="profile-organization" value={orgName ?? "Organization"} readOnly disabled />
-              </div>
+              {/* ROAD-30: hide entirely when orgName is genuinely missing; render only when known. */}
+              {orgName ? (
+                <div className="grid gap-2">
+                  <Label htmlFor="profile-organization">Organization</Label>
+                  <Input id="profile-organization" value={orgName} readOnly disabled />
+                </div>
+              ) : null}
             </div>
           </CardContent>
           <CardFooter className="justify-end gap-2">
@@ -241,7 +274,7 @@ export default function AdminProfilePage() {
             </Button>
             <Button type="button" onClick={() => void handleSave()} disabled={saving || authLoading || !hasChanges}>
               {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Save changes
+              {saving ? "Saving…" : "Save changes"}
             </Button>
           </CardFooter>
         </Card>

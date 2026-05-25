@@ -130,6 +130,7 @@ type StreamFinalAnswerResult = {
 
 type PersistRouterResponseResult = {
   sessionId: string | null;
+  assistantMessageId: string | null;
   messageCount: number;
   rollingSummaryText: string | null;
   rollingSummaryUpdatedAt: string | null;
@@ -419,7 +420,7 @@ async function insertTurnMessages(args: {
   aiInvocationId: string | null;
   streamed: boolean;
   fallbackUsed: boolean;
-}): Promise<boolean> {
+}): Promise<string | null> {
   const { data: reservedOrdinal, error: reserveErr } = await args.admin.rpc(
     "reserve_nlq_ordinals",
     { p_session_id: args.sessionId },
@@ -431,7 +432,7 @@ async function insertTurnMessages(args: {
       session_id: args.sessionId,
       error_message: reserveErr.message,
     });
-    return false;
+    return null;
   }
 
   const userOrdinal = typeof reservedOrdinal === "number"
@@ -444,10 +445,10 @@ async function insertTurnMessages(args: {
       session_id: args.sessionId,
       reserved_ordinal: reservedOrdinal,
     });
-    return false;
+    return null;
   }
 
-  const { error } = await args.admin
+  const { data, error } = await args.admin
     .from("exec_nlq_messages")
     .insert([
       {
@@ -478,16 +479,20 @@ async function insertTurnMessages(args: {
         model_used: args.dispatchResult.modelUsed ?? SONNET_MODEL,
         streamed: args.streamed,
       },
-    ]);
+    ])
+    .select("id, role");
 
-  if (!error) return true;
+  if (!error) {
+    const assistantRow = (data ?? []).find((row) => row.role === "assistant");
+    return typeof assistantRow?.id === "string" ? assistantRow.id : null;
+  }
   args.t.log({
     event: "thread_message_insert_failed",
     outcome: "error",
     session_id: args.sessionId,
     error_message: error.message,
   });
-  return false;
+  return null;
 }
 
 async function persistRouterResponse(
@@ -627,10 +632,10 @@ async function persistRouterResponse(
     });
   }
 
-  let messagesInserted = false;
+  let assistantMessageId: string | null = null;
   if (sessionId) {
     try {
-      messagesInserted = await insertTurnMessages({
+      assistantMessageId = await insertTurnMessages({
         admin,
         t,
         sessionId,
@@ -653,7 +658,7 @@ async function persistRouterResponse(
     }
   }
 
-  if (sessionId && messagesInserted) {
+  if (sessionId && assistantMessageId) {
     const { error: updErr } = await admin
       .from("exec_nlq_sessions")
       .update({
@@ -711,6 +716,7 @@ async function persistRouterResponse(
   const state = await loadThreadState(admin, sessionId, organizationId);
   return {
     sessionId,
+    assistantMessageId,
     messageCount: typeof state?.message_count === "number"
       ? state.message_count
       : 0,
@@ -1162,6 +1168,7 @@ function streamResponse(args: {
         enqueueSse(controller, {
           type: "meta",
           session_id: persistResult.sessionId,
+          message_id: persistResult.assistantMessageId,
           citations: finalResult.citations,
           intent: args.intent.intent,
           intent_confidence: args.intent.confidence,
@@ -1652,6 +1659,7 @@ Deno.serve(async (req) => {
         ok: false,
         error: "phi_blocked",
         session_id: persistResult.sessionId,
+        message_id: persistResult.assistantMessageId,
         answer: dispatchResult.answer,
         citations: dispatchResult.citations,
         intent: intent.intent,
@@ -1725,6 +1733,7 @@ Deno.serve(async (req) => {
     {
       ok: true,
       session_id: persistResult.sessionId,
+      message_id: persistResult.assistantMessageId,
       answer: dispatchResult.answer,
       citations: dispatchResult.citations,
       tokens_used: dispatchResult.tokensUsed,

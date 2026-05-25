@@ -6,33 +6,44 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
+type FeedbackValue = "positive" | "negative" | null;
+
+type InsightFeedbackProps =
+  | { messageId: string; sessionId?: never }
+  | { messageId?: never; sessionId: string };
+
 /**
- * KB-NEXT-10: tri-state thumbs writing to exec_nlq_sessions.feedback. Only
- * render for assistant messages whose id is the session UUID (returned by
- * haven-ai-router as `session_id`). Locally generated errors / streaming
- * stubs get string ids like "e-…", "a-…", so callers can use the UUID-length
- * heuristic to filter them out without a separate flag.
+ * Tri-state thumbs for Haven Insight answers. Threaded NLQ messages write
+ * per-message feedback through `set_nlq_message_feedback`; the legacy
+ * one-shot panel may still pass a session id until it emits message ids.
  */
-export function InsightFeedback({ sessionId }: { sessionId: string }) {
+export function InsightFeedback({ messageId, sessionId }: InsightFeedbackProps) {
   const supabase = useMemo(() => createClient(), []);
-  const [value, setValue] = useState<"positive" | "negative" | null>(null);
+  const [value, setValue] = useState<FeedbackValue>(null);
   const [error, setError] = useState<string | null>(null);
 
   const submit = useCallback(
-    async (next: "positive" | "negative") => {
+    async (next: Exclude<FeedbackValue, null>) => {
       const newVal = value === next ? null : next;
       setError(null);
-      const { error: uErr } = await supabase
-        .from("exec_nlq_sessions" as never)
-        .update({ feedback: newVal, feedback_at: new Date().toISOString() } as never)
-        .eq("id" as never, sessionId as never);
+
+      const { error: uErr } = messageId
+        ? await supabase.rpc("set_nlq_message_feedback" as never, {
+          p_message_id: messageId,
+          p_feedback: newVal,
+        } as never)
+        : await supabase
+          .from("exec_nlq_sessions" as never)
+          .update({ feedback: newVal, feedback_at: new Date().toISOString() } as never)
+          .eq("id" as never, sessionId as never);
+
       if (uErr) {
         setError(uErr.message);
         return;
       }
       setValue(newVal);
     },
-    [sessionId, supabase, value],
+    [messageId, sessionId, supabase, value],
   );
 
   return (
