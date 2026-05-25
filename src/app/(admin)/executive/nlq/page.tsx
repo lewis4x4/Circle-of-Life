@@ -208,10 +208,6 @@ export default function ExecutiveNlqPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const sendAbortRef = useRef<AbortController | null>(null);
   const syncedSessionRef = useRef<string | null>(null);
-  // HOTFIX: track sessions whose messages we have locally (just sent), so the
-  // hydration effect doesn't wipe them when the DB race returns 0 rows before
-  // the BE finishes persisting.
-  const localSessionsRef = useRef<Set<string>>(new Set());
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -247,18 +243,11 @@ export default function ExecutiveNlqPage() {
   useEffect(() => {
     if (!sessionParam) {
       // Don't wipe messages if we just locally synced this URL ourselves
-      // (post-send URL update). Only clear when we're genuinely landing on the
-      // new-conversation route.
+      // (post-send URL update with no session_id). Only clear when we're
+      // genuinely landing on the new-conversation route.
       if (syncedSessionRef.current === null) {
         setMessages([]);
       }
-      return;
-    }
-
-    // HOTFIX: if this session was just created locally by sendQuestion, the
-    // messages are already in state and a DB race could return 0 rows before
-    // the BE finishes persisting. Skip hydration in that window.
-    if (localSessionsRef.current.has(sessionParam)) {
       return;
     }
 
@@ -272,11 +261,17 @@ export default function ExecutiveNlqPage() {
         .order("ordinal" as never, { ascending: true });
 
       if (cancelled) return;
-      // HOTFIX: only overwrite local state when the DB has rows. An empty
-      // result is almost always a BE-persist race, not an intentional empty
-      // conversation — leaving local messages in place is the safe default.
-      if (!error && data && (data as unknown[]).length > 0) {
-        setMessages(((data ?? []) as unknown as ExecNlqMessageRow[]).map(rowToNlqMessage));
+      if (error) return;
+      const rows = (data ?? []) as unknown as ExecNlqMessageRow[];
+      // HOTFIX: when the DB has rows, hydrate. When it doesn't AND we
+      // already have the same session's messages in local state (race after
+      // we just streamed), don't wipe — keep what we have. When local state
+      // is for a different session OR empty, accept the empty result.
+      if (rows.length > 0) {
+        setMessages(rows.map(rowToNlqMessage));
+      } else if (syncedSessionRef.current !== sessionParam) {
+        // Genuine empty thread the user navigated to from elsewhere.
+        setMessages([]);
       }
     })();
 
@@ -289,7 +284,6 @@ export default function ExecutiveNlqPage() {
     if (sessionId.length !== 36) return;
     if (sessionId === syncedSessionRef.current || sessionId === sessionParam) return;
     syncedSessionRef.current = sessionId;
-    localSessionsRef.current.add(sessionId);
     router.replace(`${NLQ_ROUTE}?session=${sessionId}`, { scroll: false });
   }, [router, sessionParam]);
 
@@ -304,7 +298,6 @@ export default function ExecutiveNlqPage() {
     if (!lastAssistantSessionId || lastAssistantSessionId.length !== 36) return;
     if (lastAssistantSessionId === syncedSessionRef.current || lastAssistantSessionId === sessionParam) return;
     syncedSessionRef.current = lastAssistantSessionId;
-    localSessionsRef.current.add(lastAssistantSessionId);
     router.replace(`/admin/executive/nlq?session=${lastAssistantSessionId}`, { scroll: false });
   }, [lastAssistantSessionId, sessionParam, router]);
 
@@ -667,11 +660,14 @@ export default function ExecutiveNlqPage() {
   }
 
   return (
-    // HOTFIX: container is h-dvh (exact viewport) not min-h-dvh (floor) so the
-    // inner flex column can bound the conversation card height and keep the
-    // input bar docked above the fold instead of growing off-screen.
-    <div className="relative flex h-dvh w-full overflow-hidden">
-      <main className="flex h-dvh flex-1 flex-col gap-6 overflow-hidden lg:pl-[var(--haven-sidebar-width,280px)]">
+    // HOTFIX: page renders inside AppShell's <main overflow-y-auto>, which
+    // already accounts for the 56px topbar + py padding. We use h-full so
+    // we fill that available space, then size the inner conversation card
+    // with a viewport-relative calc that subtracts AppShell chrome + page
+    // header (≈ 200px on desktop). This keeps the input docked above the
+    // fold without ever requiring a scroll-to-find.
+    <div className="relative flex h-full w-full">
+      <main className="flex h-full flex-1 flex-col gap-6 lg:pl-[var(--haven-sidebar-width,280px)]">
         <div className="flex flex-col gap-3 pt-11 md:flex-row md:items-start md:justify-between lg:pt-0">
           <div className="min-w-0">
             <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
@@ -686,7 +682,7 @@ export default function ExecutiveNlqPage() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)]">
+        <div className="flex min-h-[480px] flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] h-[calc(100dvh-200px)]">
           <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="space-y-4">
             {messages.length === 0 && (

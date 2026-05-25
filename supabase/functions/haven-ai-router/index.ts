@@ -448,6 +448,10 @@ async function insertTurnMessages(args: {
     return null;
   }
 
+  // HOTFIX: PostgREST PGRST102 — multi-row inserts require IDENTICAL key sets
+  // across every row. The original code had 6 keys on the user row and 17 on
+  // the assistant row, which silently failed in production with
+  // "All object keys must match". Both rows now share the full key set.
   const { data, error } = await args.admin
     .from("exec_nlq_messages")
     .insert([
@@ -457,6 +461,18 @@ async function insertTurnMessages(args: {
         role: "user",
         content: args.question,
         ordinal: userOrdinal,
+        ai_invocation_id: null,
+        citations: null,
+        follow_ups: null,
+        chart_spec: null,
+        intent: null,
+        intent_confidence: null,
+        tools_used: null,
+        fallback_used: false,
+        tokens_used: null,
+        tokens_in: null,
+        tokens_out: null,
+        model_used: null,
         streamed: args.streamed,
       },
       {
@@ -466,16 +482,16 @@ async function insertTurnMessages(args: {
         content: args.dispatchResult.answer,
         ordinal: userOrdinal + 1,
         ai_invocation_id: args.aiInvocationId,
-        citations: args.dispatchResult.citations,
-        follow_ups: args.parsedAnswerMetadata.followUpSuggestions,
-        chart_spec: args.parsedAnswerMetadata.chartSpec,
-        intent: args.intent.intent,
-        intent_confidence: args.intent.confidence,
-        tools_used: args.dispatchResult.toolsUsed,
+        citations: args.dispatchResult.citations ?? null,
+        follow_ups: args.parsedAnswerMetadata.followUpSuggestions ?? null,
+        chart_spec: args.parsedAnswerMetadata.chartSpec ?? null,
+        intent: args.intent.intent ?? null,
+        intent_confidence: args.intent.confidence ?? null,
+        tools_used: args.dispatchResult.toolsUsed ?? null,
         fallback_used: args.fallbackUsed,
-        tokens_used: args.dispatchResult.tokensUsed,
-        tokens_in: args.dispatchResult.tokensIn,
-        tokens_out: args.dispatchResult.tokensOut,
+        tokens_used: args.dispatchResult.tokensUsed ?? null,
+        tokens_in: args.dispatchResult.tokensIn ?? null,
+        tokens_out: args.dispatchResult.tokensOut ?? null,
         model_used: args.dispatchResult.modelUsed ?? SONNET_MODEL,
         streamed: args.streamed,
       },
