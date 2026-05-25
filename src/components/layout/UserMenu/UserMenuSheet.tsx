@@ -95,7 +95,10 @@ export function UserMenuSheet({
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[85dvh] w-[min(320px,calc(100vw-32px))] rounded-t-[14px] border-t border-border bg-card p-0"
+        // FIX-P2-C / UI audit P1-16: bottom sheets are full-bleed by convention; the prior
+        // w-[min(320px,calc(100vw-32px))] clamp made the sheet look like an orphaned popover
+        // floating mid-screen. Drop the width clamp and mx-auto so the sheet spans the viewport.
+        className="max-h-[85dvh] rounded-t-[14px] border-t border-border bg-card p-0"
         showCloseButton
       >
         <SheetHeader className="sr-only">

@@ -2,10 +2,11 @@
 --
 -- ROAD-03 NOTE: haven-ai-router's ALLOWED_ROLES constant lists
 --   ('owner','org_admin','clinical_admin','administrator','clinical','caregiver','family')
--- but only owner/org_admin/caregiver/family exist in the public.app_role enum.
--- The other three values are dead — the router will never see a session from a
--- role it can't resolve. We mirror only the intersection here so the policy
--- is valid Postgres and matches the actual reachable role set.
+-- but 'clinical_admin', 'administrator', and 'clinical' do NOT exist in the
+-- public.app_role enum (see 001_enum_types.sql). The roles facility_admin,
+-- nurse, med_tech, dietary, maintenance_role, broker, dietary_aide DO exist
+-- in the enum but are intentionally excluded from Haven AI access by design.
+-- We mirror only the intersection of ALLOWED_ROLES ∩ real enum here.
 
 DROP POLICY IF EXISTS exec_nlq_messages_select ON public.exec_nlq_messages;
 

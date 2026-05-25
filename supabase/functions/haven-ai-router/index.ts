@@ -59,15 +59,9 @@ const HAIKU_MODEL = "claude-haiku-4-5";
 const ANTHROPIC_TIMEOUT_MS = 60_000;
 const MAX_STREAM_ANSWER_TOKENS = 1200;
 
-const ALLOWED_ROLES = [
-  "owner",
-  "org_admin",
-  "clinical_admin",
-  "administrator",
-  "clinical",
-  "caregiver",
-  "family",
-];
+// Keep this as the intersection with public.app_role enum values only.
+// Role aliases belong at the caller boundary, not in router authorization.
+const ALLOWED_ROLES = ["owner", "org_admin", "caregiver", "family"];
 
 const SPECULATIVE_DISPATCH_THRESHOLD = 0.7;
 
@@ -373,40 +367,32 @@ type ThreadStateRow = {
   rolling_summary_updated_at: string | null;
 };
 
-async function resolveOwnedActiveSessionId(
+type ActiveSessionRow = {
+  id: string;
+  message_count: number | null;
+};
+
+function contextFetchLimitForMessageCount(messageCount: number): number {
+  return messageCount <= 12 ? 12 : messageCount <= 24 ? 6 : 4;
+}
+
+async function resolveOwnedActiveSession(
   admin: SupabaseClient,
   sessionId: string | null,
   organizationId: string,
   userId: string,
-): Promise<string | null> {
+): Promise<ActiveSessionRow | null> {
   if (!sessionId) return null;
   const { data, error } = await admin
     .from("exec_nlq_sessions")
-    .select("id")
+    .select("id, message_count")
     .eq("id", sessionId)
     .eq("organization_id", organizationId)
     .eq("user_id", userId)
     .is("deleted_at", null)
     .maybeSingle();
   if (error || !data?.id) return null;
-  return data.id as string;
-}
-
-async function loadThreadState(
-  admin: SupabaseClient,
-  sessionId: string | null,
-  organizationId: string,
-): Promise<ThreadStateRow | null> {
-  if (!sessionId) return null;
-  const { data, error } = await admin
-    .from("exec_nlq_sessions")
-    .select("message_count, rolling_summary_text, rolling_summary_updated_at")
-    .eq("id", sessionId)
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as ThreadStateRow;
+  return data as ActiveSessionRow;
 }
 
 async function insertTurnMessages(args: {
@@ -544,122 +530,136 @@ async function persistRouterResponse(
     sha256Hex(dispatchResult.answer),
   ]);
 
-  let aiInvocationId: string | null = null;
-  try {
-    const { data: invRow, error: invErr } = await admin
-      .from("ai_invocations")
-      .insert({
-        organization_id: organizationId,
-        model: dispatchResult.modelUsed ?? ROUTER_MODEL_LABEL,
-        phi_class: phiClass,
-        prompt_hash: promptHash,
-        response_hash: responseHash,
-        tokens_used: dispatchResult.tokensUsed,
-        created_by: userId,
-        metadata_json: {
-          function: "haven-ai-router",
-          intent: intent.intent,
-          intent_confidence: intent.confidence,
-          intent_secondary: intent.secondary ?? null,
-          tools_used: dispatchResult.toolsUsed,
-          surface_route: routeContext,
-          module_context: moduleContext,
-          primary_intent_only_when_speculative:
-            args.primaryIntentOnlyWhenSpeculative,
-          tokens_in: dispatchResult.tokensIn,
-          tokens_out: dispatchResult.tokensOut,
-          refusal: dispatchResult.refusal ?? false,
-          refusal_reason: dispatchResult.refusalReason ?? null,
-          phi_blocked: dispatchResult.phiBlocked ?? false,
-        },
-      })
-      .select("id")
-      .single();
-    if (invErr) {
+  const persistAiInvocation = async (): Promise<string | null> => {
+    try {
+      const { data: invRow, error: invErr } = await admin
+        .from("ai_invocations")
+        .insert({
+          organization_id: organizationId,
+          model: dispatchResult.modelUsed ?? ROUTER_MODEL_LABEL,
+          phi_class: phiClass,
+          prompt_hash: promptHash,
+          response_hash: responseHash,
+          tokens_used: dispatchResult.tokensUsed,
+          created_by: userId,
+          metadata_json: {
+            function: "haven-ai-router",
+            intent: intent.intent,
+            intent_confidence: intent.confidence,
+            intent_secondary: intent.secondary ?? null,
+            tools_used: dispatchResult.toolsUsed,
+            surface_route: routeContext,
+            module_context: moduleContext,
+            primary_intent_only_when_speculative:
+              args.primaryIntentOnlyWhenSpeculative,
+            tokens_in: dispatchResult.tokensIn,
+            tokens_out: dispatchResult.tokensOut,
+            refusal: dispatchResult.refusal ?? false,
+            refusal_reason: dispatchResult.refusalReason ?? null,
+            phi_blocked: dispatchResult.phiBlocked ?? false,
+          },
+        })
+        .select("id")
+        .single();
+      if (invErr) {
+        t.log({
+          event: "ai_invocation_insert_failed",
+          outcome: "error",
+          error_message: invErr.message,
+        });
+        return null;
+      }
+      return (invRow?.id as string | null) ?? null;
+    } catch (err) {
       t.log({
-        event: "ai_invocation_insert_failed",
+        event: "ai_invocation_insert_threw",
         outcome: "error",
-        error_message: invErr.message,
+        error_message: String(err),
       });
-    } else {
-      aiInvocationId = (invRow?.id as string | null) ?? null;
+      return null;
     }
-  } catch (err) {
-    t.log({
-      event: "ai_invocation_insert_threw",
-      outcome: "error",
-      error_message: String(err),
-    });
-  }
+  };
 
-  let sessionId = args.bodySessionId;
-  let sessionTitleAuto = true;
-  const sessionStatus = dispatchResult.answer ? "completed" : "failed";
+  const persistSession = async (): Promise<{
+    sessionId: string | null;
+    sessionTitleAuto: boolean;
+  }> => {
+    let sessionId = args.bodySessionId;
+    let sessionTitleAuto = true;
+    try {
+      if (sessionId) {
+        const { data: existingSession, error: existingErr } = await admin
+          .from("exec_nlq_sessions")
+          .select("id, title_auto")
+          .eq("id", sessionId)
+          .eq("organization_id", organizationId)
+          .eq("user_id", userId)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (existingErr) {
+          t.log({
+            event: "session_lookup_failed",
+            outcome: "error",
+            error_message: existingErr.message,
+          });
+          sessionId = null;
+        } else if (!existingSession?.id) {
+          t.log({
+            event: "session_lookup_missing",
+            outcome: "miss",
+            session_id: sessionId,
+          });
+          sessionId = null;
+        } else {
+          sessionTitleAuto = existingSession.title_auto !== false;
+        }
+      }
+      if (!sessionId) {
+        const { data: sessRow, error: sessErr } = await admin
+          .from("exec_nlq_sessions")
+          .insert({
+            organization_id: organizationId,
+            user_id: userId,
+            title: fallbackThreadTitle(question),
+            status: "submitted",
+            created_by: userId,
+          })
+          .select(
+            "id, title_auto, message_count, rolling_summary_text, rolling_summary_updated_at",
+          )
+          .single();
+        if (sessErr) {
+          t.log({
+            event: "session_insert_failed",
+            outcome: "error",
+            error_message: sessErr.message,
+          });
+        } else {
+          sessionId = (sessRow?.id as string | null) ?? null;
+          sessionTitleAuto = sessRow?.title_auto !== false;
+        }
+      }
+    } catch (err) {
+      t.log({
+        event: "session_persist_threw",
+        outcome: "error",
+        error_message: String(err),
+      });
+    }
+    return { sessionId, sessionTitleAuto };
+  };
+
+  const [aiInvocationId, sessionResult] = await Promise.all([
+    persistAiInvocation(),
+    persistSession(),
+  ]);
+  const { sessionId, sessionTitleAuto } = sessionResult;
   const intentJson = {
     question_length: question.length,
     router_intent: intent.intent,
     router_confidence: intent.confidence,
     tools_used: dispatchResult.toolsUsed,
   };
-
-  try {
-    if (sessionId) {
-      const { data: existingSession, error: existingErr } = await admin
-        .from("exec_nlq_sessions")
-        .select("id, title_auto")
-        .eq("id", sessionId)
-        .eq("organization_id", organizationId)
-        .eq("user_id", userId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (existingErr) {
-        t.log({
-          event: "session_lookup_failed",
-          outcome: "error",
-          error_message: existingErr.message,
-        });
-        sessionId = null;
-      } else if (!existingSession?.id) {
-        t.log({
-          event: "session_lookup_missing",
-          outcome: "miss",
-          session_id: sessionId,
-        });
-        sessionId = null;
-      } else {
-        sessionTitleAuto = existingSession.title_auto !== false;
-      }
-    }
-    if (!sessionId) {
-      const { data: sessRow, error: sessErr } = await admin
-        .from("exec_nlq_sessions")
-        .insert({
-          organization_id: organizationId,
-          user_id: userId,
-          title: fallbackThreadTitle(question),
-          status: "submitted",
-          created_by: userId,
-        })
-        .select("id, title_auto")
-        .single();
-      if (sessErr) {
-        t.log({
-          event: "session_insert_failed",
-          outcome: "error",
-          error_message: sessErr.message,
-        });
-      } else {
-        sessionId = (sessRow?.id as string | null) ?? null;
-        sessionTitleAuto = sessRow?.title_auto !== false;
-      }
-    }
-  } catch (err) {
-    t.log({
-      event: "session_persist_threw",
-      outcome: "error",
-      error_message: String(err),
-    });
-  }
 
   let assistantMessageId: string | null = null;
   if (sessionId) {
@@ -687,20 +687,35 @@ async function persistRouterResponse(
     }
   }
 
-  if (sessionId && assistantMessageId) {
-    const { error: updErr } = await admin
+  let threadState: ThreadStateRow | null = null;
+  if (sessionId) {
+    // Always flip status — even if message insert fails, the session should not
+    // remain stuck in submitted. Title generation remains gated on persistence.
+    const shouldUpdateTitle = Boolean(
+      assistantMessageId && args.shouldAutoTitle && sessionTitleAuto,
+    );
+    const nextTitle = shouldUpdateTitle
+      ? args.parsedAnswerMetadata.threadTitle ?? fallbackThreadTitle(question)
+      : null;
+    const now = new Date().toISOString();
+    const { data: updatedSession, error: updErr } = await admin
       .from("exec_nlq_sessions")
       .update({
-        status: sessionStatus,
+        status: assistantMessageId ? "completed" : "failed",
         ai_invocation_id: aiInvocationId,
         result_summary: dispatchResult.answer.slice(0, 4000),
         intent_json: intentJson,
-        updated_at: new Date().toISOString(),
+        ...(shouldUpdateTitle
+          ? { title: nextTitle, title_generated_at: now }
+          : {}),
+        updated_at: now,
       })
       .eq("id", sessionId)
       .eq("organization_id", organizationId)
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .select("message_count, rolling_summary_text, rolling_summary_updated_at")
+      .maybeSingle();
     if (updErr) {
       t.log({
         event: "session_update_failed",
@@ -708,30 +723,9 @@ async function persistRouterResponse(
         session_id: sessionId,
         error_message: updErr.message,
       });
-    }
-
-    if (args.shouldAutoTitle && sessionTitleAuto) {
-      const nextTitle = args.parsedAnswerMetadata.threadTitle ??
-        fallbackThreadTitle(question);
-      const { error: titleErr } = await admin
-        .from("exec_nlq_sessions")
-        .update({
-          title: nextTitle,
-          title_generated_at: new Date().toISOString(),
-        })
-        .eq("id", sessionId)
-        .eq("organization_id", organizationId)
-        .eq("user_id", userId)
-        .is("deleted_at", null)
-        .eq("title_auto", true);
-      if (titleErr) {
-        t.log({
-          event: "thread_title_update_failed",
-          outcome: "error",
-          session_id: sessionId,
-          error_message: titleErr.message,
-        });
-      } else {
+    } else {
+      threadState = (updatedSession as ThreadStateRow | null) ?? null;
+      if (shouldUpdateTitle) {
         t.log({
           event: "thread_title_generated",
           outcome: "success",
@@ -742,15 +736,14 @@ async function persistRouterResponse(
     }
   }
 
-  const state = await loadThreadState(admin, sessionId, organizationId);
   return {
     sessionId,
     assistantMessageId,
-    messageCount: typeof state?.message_count === "number"
-      ? state.message_count
+    messageCount: typeof threadState?.message_count === "number"
+      ? threadState.message_count
       : 0,
-    rollingSummaryText: state?.rolling_summary_text ?? null,
-    rollingSummaryUpdatedAt: state?.rolling_summary_updated_at ?? null,
+    rollingSummaryText: threadState?.rolling_summary_text ?? null,
+    rollingSummaryUpdatedAt: threadState?.rolling_summary_updated_at ?? null,
   };
 }
 
@@ -1326,8 +1319,6 @@ Deno.serve(async (req) => {
 
   const routeContext = body.route ?? null;
   const moduleContext = body.module ?? null;
-  const selectedFacilityId = body.facility_id ?? null;
-
   // --- Profile lookup ---
   let role = "caregiver";
   let organizationId: string | null = null;
@@ -1496,6 +1487,11 @@ Deno.serve(async (req) => {
     });
   }
 
+  const selectedFacilityId =
+    body.facility_id && facilityIds.includes(body.facility_id)
+      ? body.facility_id
+      : null;
+
   // --- Classify intent (with cache) ---
   let intent: IntentClassification;
   const cacheKey = `${role}::${normalizeQuestion(question)}`;
@@ -1550,12 +1546,13 @@ Deno.serve(async (req) => {
   }
 
   const requestedSessionId = body.session_id ?? null;
-  const bodySessionId = await resolveOwnedActiveSessionId(
+  const activeSession = await resolveOwnedActiveSession(
     admin,
     requestedSessionId,
     organizationId,
     userId,
   );
+  const bodySessionId = activeSession?.id ?? null;
   if (requestedSessionId && !bodySessionId) {
     t.log({
       event: "session_id_rejected",
@@ -1574,6 +1571,7 @@ Deno.serve(async (req) => {
       bodySessionId,
       organizationId,
       userId,
+      contextFetchLimitForMessageCount(activeSession?.message_count ?? 0),
     );
   } catch (err) {
     t.log({

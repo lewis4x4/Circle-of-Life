@@ -5,7 +5,11 @@ import { X, Send, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHavenInsight } from "@/lib/haven-insight/HavenInsightContext";
 import { Button } from "@/components/ui/button";
-import { InsightFeedback } from "@/components/haven-insight/InsightFeedback";
+// FIX-P2-C: InsightFeedback intentionally NOT imported here. After R2-C dropped the
+// sessionId fallback path on set_nlq_message_feedback, the legacy HavenInsightPanel — which
+// surfaces ephemeral, session-scoped messages and does not carry the persisted message UUID
+// — has no way to call the RPC. Feedback now lives exclusively in /executive/nlq, which
+// threads real exec_nlq_messages.id values through to InsightFeedback.
 
 export function HavenInsightPanel() {
   const { isOpen, close, messages, currentModule, suggestedQuestions, loading, sendQuestion, clearChat } = useHavenInsight();
@@ -80,9 +84,9 @@ export function HavenInsightPanel() {
                 {msg.tokensUsed != null && (
                   <p className="mt-1.5 font-mono text-[9px] text-muted-foreground">{msg.tokensUsed} tokens</p>
                 )}
-                {msg.role === "assistant" && msg.id.length === 36 ? (
-                  <InsightFeedback sessionId={msg.id} />
-                ) : null}
+                {/* FIX-P2-C: InsightFeedback removed from this legacy panel. The R2-C migration
+                    dropped the sessionId fallback, and this panel only carries client-side msg ids,
+                    not exec_nlq_messages.id. Feedback collection lives in /executive/nlq. */}
               </div>
             </div>
           ))}

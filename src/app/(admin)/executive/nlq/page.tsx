@@ -209,6 +209,7 @@ export default function ExecutiveNlqPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const sendAbortRef = useRef<AbortController | null>(null);
   const syncedSessionRef = useRef<string | null>(null);
+  const loadingRef = useRef(false);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -360,7 +361,8 @@ export default function ExecutiveNlqPage() {
   // Send question
   const sendQuestion = useCallback(async (question: string) => {
     const q = question.trim();
-    if (!q || loading) return;
+    if (!q || loadingRef.current) return;
+    loadingRef.current = true;
 
     sendAbortRef.current?.abort();
     const abortController = new AbortController();
@@ -606,8 +608,9 @@ export default function ExecutiveNlqPage() {
         setLoading(false);
         setAwaitingFirstToken(false);
       }
+      loadingRef.current = false;
     }
-  }, [activeSessionId, loading, syncSessionUrl]);
+  }, [activeSessionId, syncSessionUrl]);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -686,7 +689,7 @@ export default function ExecutiveNlqPage() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-none flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] h-[calc(100dvh-252px)] lg:h-[calc(100dvh-176px)]">
+        <div className="flex min-h-0 flex-none flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] h-[calc(100dvh-252px)] lg:h-[calc(100dvh-176px)] 2xl:h-[calc(100dvh-192px)]">
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
           <div className="space-y-4">
             {messages.length === 0 && (

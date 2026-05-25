@@ -818,7 +818,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Full-bleed: pages that need a narrow column for long-form
               content (settings forms, etc.) apply max-w on an inner block,
               not on this wrapper. */}
-          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8">{children}</div>
+          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8 [--haven-page-chrome-y:40px] lg:[--haven-page-chrome-y:48px] 2xl:[--haven-page-chrome-y:64px]">{children}</div>
         </main>
       </div>
 

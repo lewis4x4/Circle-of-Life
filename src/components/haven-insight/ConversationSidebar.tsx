@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
+import React, {
   useCallback,
   useDeferredValue,
   useEffect,
@@ -28,6 +28,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -116,8 +117,158 @@ function groupThreads(threads: ThreadRow[]): ThreadSection[] {
   return sections.filter((section) => section.threads.length > 0);
 }
 
+type ThreadRowProps = {
+  thread: ThreadRow;
+  isActive: boolean;
+  isRenaming: boolean;
+  itemCollapsed: boolean;
+  focusableId: string;
+  onRequestRename: (threadId: string) => void;
+  onCommitRename: (threadId: string, rawTitle: string) => void | Promise<void>;
+  onCancelRename: () => void;
+  onTogglePin: (thread: ThreadRow) => void | Promise<void>;
+  onRequestDelete: (thread: ThreadRow) => void;
+  onScheduleActivateThread: (threadId: string) => void;
+  clickTimerRef: React.MutableRefObject<number | null>;
+};
+
+const ThreadRow = React.memo(function ThreadRow({
+  thread,
+  isActive,
+  isRenaming,
+  itemCollapsed,
+  focusableId,
+  onRequestRename,
+  onCommitRename,
+  onCancelRename,
+  onTogglePin,
+  onRequestDelete,
+  onScheduleActivateThread,
+  clickTimerRef,
+}: ThreadRowProps) {
+  const messageCount = thread.message_count ?? 0;
+
+  return (
+    <li role="option" aria-selected={isActive} data-thread-id={focusableId} className="group relative">
+      {isRenaming ? (
+        <div className="flex h-10 items-center gap-2 rounded-md bg-muted/30 px-2">
+          {thread.pinned_at ? <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden /> : null}
+          <input
+            autoFocus
+            defaultValue={thread.title}
+            onBlur={(event) => void onCommitRename(thread.id, event.target.value)}
+            onKeyDown={(event) => {
+              if (event.nativeEvent.isComposing) return;
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void onCommitRename(thread.id, event.currentTarget.value);
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                onCancelRename();
+              }
+            }}
+            className="min-w-0 flex-1 rounded-sm border border-input bg-background px-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            aria-label="Rename conversation"
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onScheduleActivateThread(thread.id)}
+          onDoubleClick={(event) => {
+            event.preventDefault();
+            if (clickTimerRef.current) {
+              window.clearTimeout(clickTimerRef.current);
+              clickTimerRef.current = null;
+            }
+            onRequestRename(thread.id);
+          }}
+          aria-current={isActive ? "page" : undefined}
+          aria-label={itemCollapsed ? thread.title : undefined}
+          title={itemCollapsed ? thread.title : undefined}
+          data-state={isActive ? "active" : "inactive"}
+          data-thread-id={focusableId}
+          className={cn(
+            "flex h-10 items-center gap-2 rounded-md px-2 text-[13px]",
+            "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "data-[state=active]:bg-secondary data-[state=active]:font-medium data-[state=active]:text-foreground",
+            "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-muted/40 data-[state=inactive]:hover:text-foreground",
+            itemCollapsed && "justify-center px-1",
+          )}
+        >
+          {itemCollapsed ? (
+            <div className="relative shrink-0">
+              <MessageSquare className="size-3.5" aria-hidden />
+              {thread.pinned_at ? (
+                <span className="absolute bottom-0 right-0 size-1.5 rounded-full bg-amber-500" aria-hidden />
+              ) : null}
+            </div>
+          ) : thread.pinned_at ? (
+            <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden />
+          ) : null}
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate",
+              itemCollapsed ? "sr-only" : "pr-16 group-focus-within:pr-20 group-hover:pr-20 [@media(hover:none)]:pr-20",
+            )}
+          >
+            {thread.title}
+          </span>
+          <span aria-label={`${messageCount} messages`} className={cn("text-[11px] tabular-nums text-muted-foreground", itemCollapsed && "sr-only")}>{messageCount}</span>
+        </button>
+      )}
+      {!isRenaming && !itemCollapsed ? (
+        <div className="absolute right-1 top-1/2 flex flex-shrink-0 -translate-y-1/2 items-center gap-0.5 rounded-md bg-card/95 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void onTogglePin(thread);
+            }}
+            aria-label={thread.pinned_at ? "Unpin" : "Pin"}
+            className={thread.pinned_at ? "text-amber-500" : undefined}
+          >
+            <Star className={cn("size-3", thread.pinned_at && "fill-current")} aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onRequestRename(thread.id);
+            }}
+            aria-label="Rename conversation"
+          >
+            <Pencil className="size-3" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onRequestDelete(thread);
+            }}
+            aria-label="Delete"
+          >
+            <Trash2 className="size-3" aria-hidden />
+          </Button>
+        </div>
+      ) : null}
+    </li>
+  );
+});
+
 export function ConversationSidebar({ currentSessionId, onNewConversation }: ConversationSidebarProps) {
   const router = useRouter();
+  const { organizationId: orgId } = useHavenAuth();
   const supabase = useMemo(() => createClient(), []);
   const [threads, setThreads] = useState<ThreadRow[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -214,11 +365,14 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
 
   useEffect(() => {
     if (!userId) return;
+    const realtimeFilter = orgId
+      ? `user_id=eq.${userId}&organization_id=eq.${orgId}`
+      : `user_id=eq.${userId}`;
     const channel = supabase
       .channel(`nlq-threads:${userId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "exec_nlq_sessions", filter: `user_id=eq.${userId}` },
+        { event: "*", schema: "public", table: "exec_nlq_sessions", filter: realtimeFilter },
         () => scheduleRefetch(),
       )
       .subscribe();
@@ -230,7 +384,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
         refetchTimer.current = null;
       }
     };
-  }, [scheduleRefetch, supabase, userId]);
+  }, [orgId, scheduleRefetch, supabase, userId]);
 
   const filteredThreads = useMemo(() => {
     const query = deferredSearch.toLowerCase();
@@ -454,129 +608,6 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     }
   }, [activateThread, requestDelete, focusThreadByIndex, focusableThreadIds, threads]);
 
-  const renderThread = (thread: ThreadRow, forceExpanded = false) => {
-    const isActive = currentSessionId === thread.id;
-    const messageCount = thread.message_count ?? 0;
-    const isRenaming = renamingId === thread.id;
-    const itemCollapsed = collapsed && !forceExpanded;
-
-    return (
-      <li key={thread.id} role="option" aria-selected={isActive} data-thread-id={thread.id} className="group relative">
-        {isRenaming ? (
-          <div className="flex h-10 items-center gap-2 rounded-md bg-muted/30 px-2">
-            {thread.pinned_at ? <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden /> : null}
-            <input
-              autoFocus
-              defaultValue={thread.title}
-              onBlur={(event) => void commitRename(thread.id, event.target.value)}
-              onKeyDown={(event) => {
-                if (event.nativeEvent.isComposing) return;
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  void commitRename(thread.id, event.currentTarget.value);
-                }
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  setRenamingId(null);
-                }
-              }}
-              className="min-w-0 flex-1 rounded-sm border border-input bg-background px-1 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              aria-label="Rename conversation"
-            />
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => scheduleActivateThread(thread.id)}
-            onDoubleClick={(event) => {
-              event.preventDefault();
-              if (clickTimer.current) {
-                window.clearTimeout(clickTimer.current);
-                clickTimer.current = null;
-              }
-              setRenamingId(thread.id);
-            }}
-            aria-current={isActive ? "page" : undefined}
-            aria-label={itemCollapsed ? thread.title : undefined}
-            title={itemCollapsed ? thread.title : undefined}
-            data-state={isActive ? "active" : "inactive"}
-            data-thread-id={thread.id}
-            className={cn(
-              "flex h-10 items-center gap-2 rounded-md px-2 text-[13px]",
-              "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "data-[state=active]:bg-secondary data-[state=active]:font-medium data-[state=active]:text-foreground",
-              "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-muted/40 data-[state=inactive]:hover:text-foreground",
-              itemCollapsed && "justify-center px-1",
-            )}
-          >
-            {itemCollapsed ? (
-              <div className="relative shrink-0">
-                <MessageSquare className="size-3.5" aria-hidden />
-                {thread.pinned_at ? (
-                  <span className="absolute bottom-0 right-0 size-1.5 rounded-full bg-amber-500" aria-hidden />
-                ) : null}
-              </div>
-            ) : thread.pinned_at ? (
-              <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden />
-            ) : null}
-            <span
-              className={cn(
-                "min-w-0 flex-1 truncate",
-                itemCollapsed ? "sr-only" : "pr-16 group-focus-within:pr-20 group-hover:pr-20 [@media(hover:none)]:pr-20",
-              )}
-            >
-              {thread.title}
-            </span>
-            <span aria-label={`${messageCount} messages`} className={cn("text-[11px] tabular-nums text-muted-foreground", itemCollapsed && "sr-only")}>{messageCount}</span>
-          </button>
-        )}
-        {!isRenaming && !itemCollapsed ? (
-          <div className="absolute right-1 top-1/2 flex flex-shrink-0 -translate-y-1/2 items-center gap-0.5 rounded-md bg-card/95 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void togglePin(thread);
-              }}
-              aria-label={thread.pinned_at ? "Unpin" : "Pin"}
-              className={thread.pinned_at ? "text-amber-500" : undefined}
-            >
-              <Star className={cn("size-3", thread.pinned_at && "fill-current")} aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setRenamingId(thread.id);
-              }}
-              aria-label="Rename conversation"
-            >
-              <Pencil className="size-3" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                requestDelete(thread);
-              }}
-              aria-label="Delete"
-            >
-              <Trash2 className="size-3" aria-hidden />
-            </Button>
-          </div>
-        ) : null}
-      </li>
-    );
-  };
 
   const threadSections = useMemo<ThreadSection[]>(() => [
     ...(pinnedThreads.length ? [{ key: "pinned", label: "Pinned", threads: pinnedThreads }] : []),
@@ -600,7 +631,28 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               {section.label}
             </li>
           ) : null,
-          ...section.threads.map((thread) => renderThread(thread, forceExpanded)),
+          ...section.threads.map((thread) => {
+            const isActive = currentSessionId === thread.id;
+            const isRenaming = renamingId === thread.id;
+            const itemCollapsed = collapsed && !forceExpanded;
+            return (
+              <ThreadRow
+                key={thread.id}
+                thread={thread}
+                isActive={isActive}
+                isRenaming={isRenaming}
+                itemCollapsed={itemCollapsed}
+                focusableId={thread.id}
+                onRequestRename={setRenamingId}
+                onCommitRename={commitRename}
+                onCancelRename={() => setRenamingId(null)}
+                onTogglePin={togglePin}
+                onRequestDelete={requestDelete}
+                onScheduleActivateThread={scheduleActivateThread}
+                clickTimerRef={clickTimer}
+              />
+            );
+          }),
         ])}
       </ul>
     );

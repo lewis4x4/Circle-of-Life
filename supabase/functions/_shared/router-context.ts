@@ -41,7 +41,9 @@ function normalizeMessageRow(value: unknown): MessageContextRow | null {
   return {
     role: row.role,
     content: typeof row.content === "string" ? row.content : null,
-    ordinal: typeof row.ordinal === "number" ? row.ordinal : Number(row.ordinal),
+    ordinal: typeof row.ordinal === "number"
+      ? row.ordinal
+      : Number(row.ordinal),
   };
 }
 
@@ -73,7 +75,8 @@ export async function loadConversationContext(
   admin: SupabaseClient,
   sessionId: string | null,
   organizationId: string,
-  userId?: string,
+  userId: string | undefined,
+  fetchLimit: number,
 ): Promise<ConversationContext> {
   if (!sessionId || !userId) return { ...EMPTY_CONTEXT };
 
@@ -89,9 +92,10 @@ export async function loadConversationContext(
   const messageCount = typeof countContext.message_count === "number"
     ? countContext.message_count
     : Number(countContext.message_count ?? 0);
-  if (!Number.isFinite(messageCount) || messageCount <= 0) return { ...EMPTY_CONTEXT };
+  if (!Number.isFinite(messageCount) || messageCount <= 0) {
+    return { ...EMPTY_CONTEXT };
+  }
 
-  const fetchLimit = messageCount <= 12 ? 12 : messageCount <= 24 ? 6 : 4;
   const context = await loadConversationContextRpc(
     admin,
     sessionId,
@@ -101,9 +105,10 @@ export async function loadConversationContext(
   );
   if (!context) return { ...EMPTY_CONTEXT };
 
-  const rollingSummary = messageCount > 24 && typeof context.rolling_summary_text === "string"
-    ? (context.rolling_summary_text.trim() || null)
-    : null;
+  const rollingSummary =
+    messageCount > 24 && typeof context.rolling_summary_text === "string"
+      ? (context.rolling_summary_text.trim() || null)
+      : null;
 
   const chronological = Array.isArray(context.messages)
     ? context.messages.flatMap((row): MessageContextRow[] => {

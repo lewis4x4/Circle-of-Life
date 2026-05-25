@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { Camera, Loader2, Lock, UploadCloud } from "lucide-react";
+import { Camera, Copy, Loader2, Lock, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,8 +59,12 @@ export default function AdminProfilePage() {
   const tablistRef = useRef<HTMLElement>(null);
 
   // P0-3: scope focus to THIS page's h1, not the first h1 globally (which would hijack the layout shell heading).
+  // FIX-P2-C / UI audit P2-3: only auto-focus when nothing else owns focus, so round-trips
+  // (close a tooltip, return from a child route) don't re-announce "My profile, heading".
   useEffect(() => {
-    headingRef.current?.focus();
+    if (document.activeElement === document.body || document.activeElement === null) {
+      headingRef.current?.focus();
+    }
   }, []);
 
   useEffect(() => {
@@ -90,6 +94,18 @@ export default function AdminProfilePage() {
           : (currentIndex - 1 + enabledTabs.length) % enabledTabs.length;
 
     enabledTabs[nextIndex]?.focus();
+  }
+
+  // FIX-P2-C / UI audit P1-4: keyboard users need to copy email + org name; readOnly+disabled
+  // blocked that path entirely. Drop disabled (keep readOnly) and offer an explicit Copy button.
+  async function copyToClipboard(text: string, label: string) {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard`);
+    } catch {
+      toast.error(`Could not copy ${label.toLowerCase()} to clipboard`);
+    }
   }
 
   async function handleSave() {
@@ -185,6 +201,9 @@ export default function AdminProfilePage() {
               </button>
             );
           }
+          // FIX-P2-C / UI audit P2-8: tabs already carry aria-selected; aria-current is
+          // redundant here and semantically mixed with role="tab". Reserve aria-current for
+          // non-tab nav patterns (breadcrumb, primary site nav).
           return (
             <Link
               key={tab.value}
@@ -193,7 +212,6 @@ export default function AdminProfilePage() {
               role="tab"
               aria-selected={active}
               aria-controls="profile-tabpanel"
-              aria-current={active ? "page" : undefined}
               tabIndex={active ? 0 : -1}
               data-state={active ? "active" : "inactive"}
               className={className}
@@ -266,7 +284,21 @@ export default function AdminProfilePage() {
 
               <div className="grid gap-2">
                 <Label htmlFor="profile-email">Email</Label>
-                <Input id="profile-email" value={email ?? ""} readOnly disabled />
+                <div className="flex items-center gap-2">
+                  <Input id="profile-email" value={email ?? ""} readOnly className="flex-1" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void copyToClipboard(email ?? "", "Email")}
+                    disabled={!email}
+                    aria-label="Copy email to clipboard"
+                    className="shrink-0"
+                  >
+                    <Copy className="size-3.5" aria-hidden />
+                    Copy
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-2">
@@ -274,7 +306,8 @@ export default function AdminProfilePage() {
                 {/* ROAD-31: read-only badge instead of fake disabled input — communicates "computed metadata". */}
                 <div className="flex items-center gap-2 py-1">
                   <Badge variant="default">{roleConfig.roleLabel}</Badge>
-                  <span className="text-[11px] text-muted-foreground">Assigned by your org admin</span>
+                  {/* FIX-P2-C / UI audit P1-3: 12px floor for caption text. */}
+                  <span className="text-[12px] text-muted-foreground">Assigned by your org admin</span>
                 </div>
               </div>
 
@@ -282,7 +315,20 @@ export default function AdminProfilePage() {
               {orgName ? (
                 <div className="grid gap-2">
                   <Label htmlFor="profile-organization">Organization</Label>
-                  <Input id="profile-organization" value={orgName} readOnly disabled />
+                  <div className="flex items-center gap-2">
+                    <Input id="profile-organization" value={orgName} readOnly className="flex-1" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void copyToClipboard(orgName, "Organization")}
+                      aria-label="Copy organization name to clipboard"
+                      className="shrink-0"
+                    >
+                      <Copy className="size-3.5" aria-hidden />
+                      Copy
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </div>
