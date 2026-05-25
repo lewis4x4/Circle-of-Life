@@ -19,6 +19,7 @@ import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import { HavenInsightChart, type ChartSpec } from "@/components/haven-insight/HavenInsightChart";
 import { ConversationSidebar } from "@/components/haven-insight/ConversationSidebar";
 import { InsightFeedback } from "@/components/haven-insight/InsightFeedback";
+import { HavenErrorBoundary } from "@/components/common/HavenErrorBoundary";
 
 // ── Types ──
 
@@ -258,6 +259,7 @@ export default function ExecutiveNlqPage() {
         .select("id, role, content, ordinal, citations, follow_ups, chart_spec, fallback_used, tokens_used, created_at, session_id" as never)
         .eq("session_id" as never, sessionParam as never)
         .neq("role" as never, "system" as never)
+        .is("deleted_at" as never, null)
         .order("ordinal" as never, { ascending: true });
 
       if (cancelled) return;
@@ -277,6 +279,9 @@ export default function ExecutiveNlqPage() {
 
     return () => {
       cancelled = true;
+      if (syncedSessionRef.current === sessionParam) {
+        syncedSessionRef.current = null;
+      }
     };
   }, [sessionParam, supabase]);
 
@@ -660,14 +665,13 @@ export default function ExecutiveNlqPage() {
   }
 
   return (
-    // HOTFIX: page renders inside AppShell's <main overflow-y-auto>, which
-    // already accounts for the 56px topbar + py padding. We use h-full so
-    // we fill that available space, then size the inner conversation card
-    // with a viewport-relative calc that subtracts AppShell chrome + page
-    // header (≈ 200px on desktop). This keeps the input docked above the
-    // fold without ever requiring a scroll-to-find.
+    // HOTFIX: AppShell owns the scroll container, so pure flex sizing cannot
+    // reliably derive the remaining viewport height here. Keep the parent
+    // chain min-h-0, then use breakpoint-aware viewport math so the input stays
+    // docked above the fold on mobile/tablet and desktop chrome. Mobile/tablet
+    // subtracts the topbar, pillar strip, page header, gap, and shell padding.
     <div className="relative flex h-full w-full">
-      <main className="flex h-full flex-1 flex-col gap-6 lg:pl-[var(--haven-sidebar-width,280px)]">
+      <main className="flex h-full min-h-0 flex-1 flex-col gap-6 lg:pl-[var(--haven-sidebar-width,280px)]">
         <div className="flex flex-col gap-3 pt-11 md:flex-row md:items-start md:justify-between lg:pt-0">
           <div className="min-w-0">
             <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
@@ -682,8 +686,8 @@ export default function ExecutiveNlqPage() {
           </div>
         </div>
 
-        <div className="flex min-h-[480px] flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] h-[calc(100dvh-200px)]">
-          <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="flex min-h-0 flex-none flex-col rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-card)] h-[calc(100dvh-252px)] lg:h-[calc(100dvh-176px)]">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
           <div className="space-y-4">
             {messages.length === 0 && (
               <div className="mx-auto flex w-full max-w-2xl flex-col justify-center py-16">
@@ -719,7 +723,7 @@ export default function ExecutiveNlqPage() {
                     <MessageSquare className="h-4 w-4" />
                   </div>
                 )}
-                <div className="flex max-w-[600px] flex-col gap-1.5">
+                <div className="flex min-w-0 max-w-[600px] flex-col gap-1.5">
                   {msg.role === "assistant" && msg.fallbackUsed === true && (
                     <p className="text-[11px] font-medium uppercase tracking-wider text-warning">Fallback model — answer may be less precise</p>
                   )}
@@ -732,17 +736,17 @@ export default function ExecutiveNlqPage() {
                     {msg.role === "assistant" && msg.chartSpec ? (
                       <HavenInsightChart spec={msg.chartSpec} className="mb-3" />
                     ) : null}
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{msg.content}</p>
                     {process.env.NODE_ENV === "development" && msg.tokensUsed && (
                       <p className="mt-2 font-mono text-[10px] tabular-nums text-muted-foreground">{msg.tokensUsed} tokens</p>
                     )}
                     {msg.role === "assistant" && msg.citations?.length ? (
                       <div className="mt-3 border-t border-border pt-2">
-                        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Sources</h4>
+                        <h4 className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">Sources</h4>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {msg.citations.map((citation, index) => {
                             // P0-5: drop /50 opacity + bump text color so citation chip clears WCAG AA over the assistant bubble fill.
-                            const className = "inline-flex h-6 items-center gap-1 rounded-md border border-border bg-secondary px-2 text-[11px] font-medium text-foreground transition-colors hover:bg-secondary/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+                            const className = "inline-flex h-6 items-center gap-1 rounded-md border border-border bg-secondary px-2 text-[12px] font-medium text-foreground transition-colors hover:bg-secondary/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
                             const key = `${citation.label}-${citation.href ?? citation.facility_id ?? index}`;
                             return citation.href ? (
                               <Link key={key} href={citation.href} className={className}>
@@ -763,7 +767,7 @@ export default function ExecutiveNlqPage() {
                   </div>
                   {msg.role === "assistant" && msg.followUpSuggestions?.length ? (
                     <div>
-                      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Follow-up</p>
+                      <p className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">Follow-up</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {msg.followUpSuggestions.map((suggestion) => (
                           <button
@@ -785,11 +789,12 @@ export default function ExecutiveNlqPage() {
 
             {loading && awaitingFirstToken && (
               <div className="flex max-w-3xl gap-3" role="status" aria-live="polite">
+                <span className="sr-only">Haven is thinking</span>
                 <div className="size-8 rounded-[var(--radius)] border border-border bg-card flex items-center justify-center shrink-0 text-muted-foreground">
                   <MessageSquare className="w-4 h-4" />
                 </div>
                 <div className="rounded-[var(--radius)] px-[13px] py-3 bg-card border border-border">
-                  <div className="flex items-center gap-1" aria-label="Haven Insight is preparing an answer">
+                  <div className="flex items-center gap-1" aria-hidden="true">
                     <span className="size-1.5 rounded-full bg-muted-foreground/70 animate-pulse [animation-delay:0ms]" />
                     <span className="size-1.5 rounded-full bg-muted-foreground/70 animate-pulse [animation-delay:150ms]" />
                     <span className="size-1.5 rounded-full bg-muted-foreground/70 animate-pulse [animation-delay:300ms]" />
@@ -842,7 +847,7 @@ export default function ExecutiveNlqPage() {
               onKeyDown={handleInputKeyDown}
               role="combobox"
               aria-expanded={paletteOpen}
-              aria-controls="haven-slash-palette"
+              aria-controls={paletteOpen ? "haven-slash-palette" : undefined}
               aria-autocomplete="list"
               aria-activedescendant={paletteOpen ? `palette-item-${paletteIndex}` : undefined}
               placeholder="Ask about your portfolio…  ⌘K"
@@ -873,7 +878,15 @@ export default function ExecutiveNlqPage() {
         </div>
         </div>
       </main>
-      <ConversationSidebar currentSessionId={activeSessionId} onNewConversation={startNewConversation} />
+      <HavenErrorBoundary
+        fallback={(
+          <div className="absolute inset-y-0 left-0 z-30 hidden w-[280px] items-center justify-center border-r border-border bg-card px-4 text-center text-[12px] text-muted-foreground lg:flex">
+            Sidebar failed to load
+          </div>
+        )}
+      >
+        <ConversationSidebar currentSessionId={activeSessionId} onNewConversation={startNewConversation} />
+      </HavenErrorBoundary>
     </div>
   );
 }

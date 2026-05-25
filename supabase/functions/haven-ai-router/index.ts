@@ -403,6 +403,7 @@ async function loadThreadState(
     .select("message_count, rolling_summary_text, rolling_summary_updated_at")
     .eq("id", sessionId)
     .eq("organization_id", organizationId)
+    .is("deleted_at", null)
     .maybeSingle();
   if (error || !data) return null;
   return data as ThreadStateRow;
@@ -473,7 +474,7 @@ async function insertTurnMessages(args: {
         tokens_in: null,
         tokens_out: null,
         model_used: null,
-        streamed: args.streamed,
+        streamed: false,
       },
       {
         session_id: args.sessionId,
@@ -772,8 +773,8 @@ async function messagesSinceSummary(
     .eq("session_id", sessionId)
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .gt("created_at", rollingSummaryUpdatedAt);
-  if (error) return 0;
+    .gte("created_at", rollingSummaryUpdatedAt);
+  if (error) return Number.POSITIVE_INFINITY;
   return count ?? 0;
 }
 
@@ -858,7 +859,8 @@ async function refreshRollingSummary(args: {
         rolling_summary_updated_at: new Date().toISOString(),
       })
       .eq("id", args.sessionId)
-      .eq("organization_id", args.organizationId);
+      .eq("organization_id", args.organizationId)
+      .is("deleted_at", null);
     if (updateErr) {
       args.t.log({
         event: "rolling_summary_update_failed",
@@ -1086,7 +1088,8 @@ async function streamAnthropicFinalAnswer(args: {
 
     buffer += decoder.decode();
     return { rawAnswer, tokensIn, tokensOut, ok: rawAnswer.trim().length > 0 };
-  } catch {
+  } catch (err) {
+    console.error("[haven-ai-router] streamFinalAnswer failed", String(err));
     return { rawAnswer, tokensIn, tokensOut, ok: false };
   }
 }
@@ -1333,6 +1336,7 @@ Deno.serve(async (req) => {
       .from("user_profiles")
       .select("app_role, organization_id")
       .eq("id", userId)
+      .is("deleted_at", null)
       .single();
     role = String(profile?.app_role ?? "caregiver");
     organizationId = (profile?.organization_id ?? null) as string | null;

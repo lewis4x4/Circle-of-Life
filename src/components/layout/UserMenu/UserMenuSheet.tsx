@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
 import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { HELP_DOCS_HREF } from "./user-menu-data";
 
@@ -14,6 +13,7 @@ export type UserMenuSheetProps = {
   email: string | null;
   roleLabel: string;
   organizationId: string | null;
+  orgName: string | null;
   avatarUrl: string | null;
   userId: string | null;
   signingOut: boolean;
@@ -53,6 +53,7 @@ export function UserMenuSheet({
   fullName,
   email,
   roleLabel,
+  orgName,
   avatarUrl,
   userId,
   signingOut,
@@ -60,7 +61,6 @@ export function UserMenuSheet({
   triggerClassName,
 }: UserMenuSheetProps) {
   const router = useRouter();
-  const { orgName } = useHavenAuth();
   const [open, setOpen] = useState(false);
   const signedInAs = fullName?.trim() || email || "signed-in user";
 

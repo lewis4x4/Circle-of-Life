@@ -117,6 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     appRole,
     user,
     organizationId,
+    orgName,
     fullName,
     avatarUrl,
     loading: authLoading,
@@ -721,6 +722,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               email={sessionEmail}
               roleLabel={roleConfig.roleLabel}
               organizationId={organizationId}
+              orgName={orgName}
               avatarUrl={avatarUrl}
               userId={currentUserId}
               signingOut={signingOut}
@@ -734,6 +736,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               email={sessionEmail}
               roleLabel={roleConfig.roleLabel}
               organizationId={organizationId}
+              orgName={orgName}
               avatarUrl={avatarUrl}
               userId={currentUserId}
               signingOut={signingOut}

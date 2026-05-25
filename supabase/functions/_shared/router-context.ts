@@ -52,6 +52,23 @@ function normalizeMessage(row: MessageContextRow): ConversationTurn | null {
   return { role: row.role, content };
 }
 
+async function loadConversationContextRpc(
+  admin: SupabaseClient,
+  sessionId: string,
+  organizationId: string,
+  userId: string,
+  limit: number,
+): Promise<ConversationContextRpcData | null> {
+  const { data, error } = await admin.rpc("get_nlq_conversation_context", {
+    p_session_id: sessionId,
+    p_org_id: organizationId,
+    p_user_id: userId,
+    p_limit: limit,
+  });
+  if (error) return null;
+  return normalizeRpcData(data);
+}
+
 export async function loadConversationContext(
   admin: SupabaseClient,
   sessionId: string | null,
@@ -60,34 +77,40 @@ export async function loadConversationContext(
 ): Promise<ConversationContext> {
   if (!sessionId || !userId) return { ...EMPTY_CONTEXT };
 
-  const { data, error } = await admin.rpc("get_nlq_conversation_context", {
-    p_session_id: sessionId,
-    p_org_id: organizationId,
-    p_user_id: userId,
-    p_limit: 12,
-  });
+  const countContext = await loadConversationContextRpc(
+    admin,
+    sessionId,
+    organizationId,
+    userId,
+    0,
+  );
+  if (!countContext) return { ...EMPTY_CONTEXT };
 
-  const context = normalizeRpcData(data);
-  if (error || !context) return { ...EMPTY_CONTEXT };
-
-  const messageCount = typeof context.message_count === "number"
-    ? context.message_count
-    : Number(context.message_count ?? 0);
+  const messageCount = typeof countContext.message_count === "number"
+    ? countContext.message_count
+    : Number(countContext.message_count ?? 0);
   if (!Number.isFinite(messageCount) || messageCount <= 0) return { ...EMPTY_CONTEXT };
 
-  const fetchAll = messageCount <= 12;
-  const recentLimit = messageCount <= 24 ? 6 : 4;
+  const fetchLimit = messageCount <= 12 ? 12 : messageCount <= 24 ? 6 : 4;
+  const context = await loadConversationContextRpc(
+    admin,
+    sessionId,
+    organizationId,
+    userId,
+    fetchLimit,
+  );
+  if (!context) return { ...EMPTY_CONTEXT };
+
   const rollingSummary = messageCount > 24 && typeof context.rolling_summary_text === "string"
     ? (context.rolling_summary_text.trim() || null)
     : null;
 
-  const rows = Array.isArray(context.messages)
+  const chronological = Array.isArray(context.messages)
     ? context.messages.flatMap((row): MessageContextRow[] => {
       const normalized = normalizeMessageRow(row);
       return normalized ? [normalized] : [];
     })
     : [];
-  const chronological = fetchAll ? rows : rows.slice(-recentLimit);
 
   return {
     priorTurns: chronological

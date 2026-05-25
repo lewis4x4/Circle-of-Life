@@ -43,17 +43,17 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const {
-        data: { user: u },
-      } = await withSupabaseAuthLockRetry(() => supabase.auth.getUser());
-      setUser(u ?? null);
+      const [userRes, sessionRes] = await Promise.all([
+        withSupabaseAuthLockRetry(() => supabase.auth.getUser()),
+        withSupabaseAuthLockRetry(() => supabase.auth.getSession()),
+      ]);
+      const user = userRes.data.user;
+      const session = sessionRes.data.session;
 
-      const {
-        data: { session: s },
-      } = await withSupabaseAuthLockRetry(() => supabase.auth.getSession());
-      setSession(s ?? null);
+      setUser(user ?? null);
+      setSession(session ?? null);
 
-      if (!u) {
+      if (!user) {
         setAppRole("facility_admin");
         setOrganizationId(null);
         setOrgName(null);
@@ -65,7 +65,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
         .select("app_role, organization_id, full_name, avatar_url")
-        .eq("id", u.id)
+        .eq("id", user.id)
         .maybeSingle();
 
       if (profileError) {
@@ -74,7 +74,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
           message: profileError.message,
           code: errObj.code,
           hint: errObj.hint,
-          userId: u.id,
+          userId: user.id,
         });
       }
 
@@ -101,7 +101,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const roleFromMeta = u.app_metadata?.app_role as string | undefined;
+      const roleFromMeta = user.app_metadata?.app_role as string | undefined;
       setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
       setOrganizationId(organizationIdFromProfile);
       setOrgName(organizationName);

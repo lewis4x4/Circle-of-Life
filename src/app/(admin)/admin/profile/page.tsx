@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Camera, Loader2, Lock, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,7 @@ export default function AdminProfilePage() {
   const [displayName, setDisplayName] = useState(fullName ?? "");
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const tablistRef = useRef<HTMLElement>(null);
 
   // P0-3: scope focus to THIS page's h1, not the first h1 globally (which would hijack the layout shell heading).
   useEffect(() => {
@@ -69,6 +70,27 @@ export default function AdminProfilePage() {
   const trimmedDisplayName = displayName.trim();
   const initialDisplayName = fullName?.trim() ?? "";
   const hasChanges = trimmedDisplayName !== initialDisplayName;
+
+  function handleTablistKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+
+    const enabledTabs = Array.from(
+      tablistRef.current?.querySelectorAll<HTMLElement>('[role="tab"]:not([aria-disabled="true"])') ?? [],
+    );
+    if (enabledTabs.length === 0) return;
+
+    const currentIndex = enabledTabs.findIndex((element) => element === document.activeElement);
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? enabledTabs.length - 1
+        : event.key === "ArrowRight"
+          ? (currentIndex + 1) % enabledTabs.length
+          : (currentIndex - 1 + enabledTabs.length) % enabledTabs.length;
+
+    enabledTabs[nextIndex]?.focus();
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -121,8 +143,10 @@ export default function AdminProfilePage() {
 
       {/* P0-7 + ROAD-28: stub tabs render as disabled <button> with "Soon" badge — still in tablist for ARIA, no navigation. */}
       <nav
+        ref={tablistRef}
         role="tablist"
         aria-label="Profile sections"
+        onKeyDown={handleTablistKeyDown}
         className="inline-flex h-9 w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-muted/50 p-1"
       >
         {PROFILE_TABS.map((tab) => {
@@ -264,6 +288,9 @@ export default function AdminProfilePage() {
             </div>
           </CardContent>
           <CardFooter className="justify-end gap-2">
+            <span aria-live="polite" className="sr-only">
+              {saving ? "Saving profile…" : ""}
+            </span>
             <Button
               type="button"
               variant="outline"

@@ -314,7 +314,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
 
   const commitRename = useCallback(async (threadId: string, rawTitle: string) => {
     const title = rawTitle.trim();
-    const previous = threads;
+    const previous = threadsRef.current;
     setRenamingId(null);
     if (!title) return;
 
@@ -326,10 +326,10 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
 
     if (error) setThreads(previous);
     void refetchThreads();
-  }, [refetchThreads, supabase, threads]);
+  }, [refetchThreads, supabase]);
 
   const togglePin = useCallback(async (thread: ThreadRow) => {
-    const previous = threads;
+    const previous = threadsRef.current;
     const nextPinned = !thread.pinned_at;
     const optimisticPinnedAt = nextPinned ? new Date().toISOString() : null;
 
@@ -344,7 +344,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
 
     if (error) setThreads(previous);
     void refetchThreads();
-  }, [refetchThreads, supabase, threads]);
+  }, [refetchThreads, supabase]);
 
   // P0-6: open the themed delete dialog instead of window.confirm(). Single-keystroke (Delete key) now
   // triggers a confirm step rather than wiping the row outright.
@@ -361,7 +361,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     const thread = pendingDeleteThread;
     if (!thread) return;
     setDeleteInFlight(true);
-    const previous = threads;
+    const previous = threadsRef.current;
     setThreads((prev) => prev.filter((item) => item.id !== thread.id));
     if (currentSessionId === thread.id) {
       router.replace(NLQ_PATH, { scroll: false });
@@ -375,7 +375,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     setDeleteInFlight(false);
     setPendingDeleteThread(null);
     void refetchThreads();
-  }, [currentSessionId, pendingDeleteThread, refetchThreads, router, supabase, threads]);
+  }, [currentSessionId, pendingDeleteThread, refetchThreads, router, supabase]);
 
   const visibleThreads = filteredThreads;
   // P1: memoise these derived collections so renderSection/handleListKeyDown identities stay stable per visibleThreads change.
@@ -497,6 +497,8 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               setRenamingId(thread.id);
             }}
             aria-current={isActive ? "page" : undefined}
+            aria-label={itemCollapsed ? thread.title : undefined}
+            title={itemCollapsed ? thread.title : undefined}
             data-state={isActive ? "active" : "inactive"}
             data-thread-id={thread.id}
             className={cn(
@@ -517,18 +519,23 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
             ) : thread.pinned_at ? (
               <Star className="size-3 shrink-0 fill-amber-500 text-amber-500" aria-hidden />
             ) : null}
-            <span className={cn("min-w-0 flex-1 truncate", itemCollapsed && "sr-only")}>
+            <span
+              className={cn(
+                "min-w-0 flex-1 truncate",
+                itemCollapsed ? "sr-only" : "pr-16 group-focus-within:pr-20 group-hover:pr-20 [@media(hover:none)]:pr-20",
+              )}
+            >
               {thread.title}
             </span>
-            <span className={cn("text-[10px] tabular-nums text-muted-foreground", itemCollapsed && "sr-only")}>{messageCount}</span>
+            <span aria-label={`${messageCount} messages`} className={cn("text-[11px] tabular-nums text-muted-foreground", itemCollapsed && "sr-only")}>{messageCount}</span>
           </button>
         )}
         {!isRenaming && !itemCollapsed ? (
-          <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-card/95 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+          <div className="absolute right-1 top-1/2 flex flex-shrink-0 -translate-y-1/2 items-center gap-0.5 rounded-md bg-card/95 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -542,7 +549,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -555,7 +562,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -586,7 +593,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
               key={`${section.key}-header`}
               role="presentation"
               className={cn(
-                "px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
+                "px-2 text-[12px] font-medium uppercase tracking-wider text-muted-foreground",
                 sectionIndex > 0 && "pt-3",
               )}
             >
@@ -715,7 +722,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="w-[280px] p-0"
+          className="w-[min(280px,90vw)] p-0"
           showCloseButton={false}
         >
           <SheetHeader className="sr-only">

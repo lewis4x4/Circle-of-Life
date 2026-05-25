@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { HELP_DOCS_HREF } from "./user-menu-data";
 
@@ -21,6 +20,7 @@ export type UserMenuProps = {
   email: string | null;
   roleLabel: string;
   organizationId: string | null;
+  orgName: string | null;
   avatarUrl: string | null;
   userId: string | null;
   signingOut: boolean;
@@ -36,6 +36,7 @@ export function UserMenu({
   fullName,
   email,
   roleLabel,
+  orgName,
   avatarUrl,
   userId,
   signingOut,
@@ -47,7 +48,6 @@ export function UserMenu({
   triggerChildren,
 }: UserMenuProps) {
   const router = useRouter();
-  const { orgName } = useHavenAuth();
   const signedInAs = fullName?.trim() || email || "signed-in user";
   const renderedTriggerChildren =
     typeof triggerChildren === "function" ? triggerChildren(orgName) : triggerChildren;
