@@ -486,11 +486,23 @@ async function insertTurnMessages(args: {
     const assistantRow = (data ?? []).find((row) => row.role === "assistant");
     return typeof assistantRow?.id === "string" ? assistantRow.id : null;
   }
+  // HOTFIX: surface the actual error to stderr so it's visible in Supabase
+  // Edge Function logs. Previously the structured-log channel was the only
+  // sink and the failure was silent in production (sessions inserted but
+  // exec_nlq_messages never wrote).
+  console.error("[haven-ai-router] thread_message_insert_failed", {
+    session_id: args.sessionId,
+    error_code: (error as { code?: string }).code ?? null,
+    error_message: error.message,
+    error_details: (error as { details?: string }).details ?? null,
+    error_hint: (error as { hint?: string }).hint ?? null,
+  });
   args.t.log({
     event: "thread_message_insert_failed",
     outcome: "error",
     session_id: args.sessionId,
     error_message: error.message,
+    error_code: (error as { code?: string }).code ?? null,
   });
   return null;
 }
