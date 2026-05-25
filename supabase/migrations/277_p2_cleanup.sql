@@ -1,4 +1,11 @@
 -- P2 cleanup wave 1: NLQ RLS parity, message feedback, and router context RPC.
+--
+-- ROAD-03 NOTE: haven-ai-router's ALLOWED_ROLES constant lists
+--   ('owner','org_admin','clinical_admin','administrator','clinical','caregiver','family')
+-- but only owner/org_admin/caregiver/family exist in the public.app_role enum.
+-- The other three values are dead — the router will never see a session from a
+-- role it can't resolve. We mirror only the intersection here so the policy
+-- is valid Postgres and matches the actual reachable role set.
 
 DROP POLICY IF EXISTS exec_nlq_messages_select ON public.exec_nlq_messages;
 
@@ -10,9 +17,6 @@ CREATE POLICY exec_nlq_messages_select ON public.exec_nlq_messages
     AND haven.app_role() IN (
       'owner',
       'org_admin',
-      'clinical_admin',
-      'administrator',
-      'clinical',
       'caregiver',
       'family'
     )
@@ -40,12 +44,10 @@ BEGIN
     RAISE EXCEPTION 'invalid_feedback' USING ERRCODE = '22023';
   END IF;
 
+  -- See ROAD-03 note above re: enum reachability.
   IF COALESCE(haven.app_role(), '') NOT IN (
     'owner',
     'org_admin',
-    'clinical_admin',
-    'administrator',
-    'clinical',
     'caregiver',
     'family'
   ) THEN
