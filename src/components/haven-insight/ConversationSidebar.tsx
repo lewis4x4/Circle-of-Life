@@ -378,7 +378,10 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      // removeChannel returns a Promise that may reject with "Connection closed."
+      // if the WebSocket already closed (e.g., during signOut → /login navigation).
+      // Catch it so it doesn't surface as an unhandled rejection in Sentry.
+      void supabase.removeChannel(channel).catch(() => {});
       if (refetchTimer.current) {
         window.clearTimeout(refetchTimer.current);
         refetchTimer.current = null;
