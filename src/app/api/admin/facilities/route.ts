@@ -164,7 +164,8 @@ export async function GET(request: NextRequest) {
         .eq("organization_id", orgId)
         .in("facility_id", facilityIds)
         .is("deleted_at", null)
-        .order("computed_at", { ascending: false }),
+        .order("computed_at", { ascending: false })
+        .limit(Math.max(25, facilityIds.length * 10)),
     ]);
 
     const typedBeds =

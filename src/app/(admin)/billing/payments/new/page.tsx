@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Banknote, Check, Loader2 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -37,6 +38,7 @@ type InvoiceOption = {
   id: string;
   invoice_number: string;
   balance_due: number;
+  amount_paid: number | null;
   status: string;
   period_start: string;
   period_end: string;
@@ -56,16 +58,20 @@ function formatDate(iso: string): string {
 
 export default function AdminNewPaymentPage() {
   const supabase = useMemo(() => createClient(), []);
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
+  const requestedResidentId = searchParams.get("residentId") ?? "";
+  const requestedInvoiceId = searchParams.get("invoiceId") ?? "";
+  const requestedAmount = searchParams.get("amount") ?? "";
 
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [invoices, setInvoices] = useState<InvoiceOption[]>([]);
   const [residentsLoading, setResidentsLoading] = useState(true);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
 
-  const [residentId, setResidentId] = useState("");
-  const [invoiceId, setInvoiceId] = useState("");
-  const [amountDollars, setAmountDollars] = useState("");
+  const [residentId, setResidentId] = useState(() => requestedResidentId);
+  const [invoiceId, setInvoiceId] = useState(() => requestedInvoiceId);
+  const [amountDollars, setAmountDollars] = useState(() => requestedAmount);
   const [paymentMethod, setPaymentMethod] = useState("check");
   const [paymentDate, setPaymentDate] = useState(
     new Date().toISOString().slice(0, 10),
@@ -130,7 +136,7 @@ export default function AdminNewPaymentPage() {
         const { data, error: err } = (await supabase
           .from("invoices" as never)
           .select(
-            "id, invoice_number, balance_due, status, period_start, period_end",
+            "id, invoice_number, balance_due, amount_paid, status, period_start, period_end",
           )
           .eq("resident_id", rid)
           .is("deleted_at", null)
@@ -157,13 +163,20 @@ export default function AdminNewPaymentPage() {
   }, [loadResidents]);
 
   useEffect(() => {
-    setInvoiceId("");
+    const prefillsMatchResident = residentId === requestedResidentId;
+    setInvoiceId(prefillsMatchResident ? requestedInvoiceId : "");
+    setAmountDollars((current) => {
+      if (prefillsMatchResident) {
+        return current || requestedAmount;
+      }
+      return current === requestedAmount ? "" : current;
+    });
     if (residentId) {
       void loadInvoices(residentId);
     } else {
       setInvoices([]);
     }
-  }, [residentId, loadInvoices]);
+  }, [loadInvoices, requestedAmount, requestedInvoiceId, requestedResidentId, residentId]);
 
   const selectedInvoice = invoices.find((i) => i.id === invoiceId);
   const amountCents = Math.round(parseFloat(amountDollars || "0") * 100);
@@ -226,17 +239,15 @@ export default function AdminNewPaymentPage() {
         if (insErr) throw insErr;
 
         if (invoiceId && selectedInvoice) {
-          const newPaid = (selectedInvoice.balance_due - amountCents >= 0)
-            ? amountCents
-            : selectedInvoice.balance_due;
-          const newBalance = selectedInvoice.balance_due - newPaid;
+          const appliedCents = Math.min(amountCents, Math.max(0, selectedInvoice.balance_due));
+          const newBalance = selectedInvoice.balance_due - appliedCents;
           const newStatus =
             newBalance <= 0 ? "paid" : "partial";
 
           await supabase
             .from("invoices" as never)
             .update({
-              amount_paid: amountCents,
+              amount_paid: Math.max(0, selectedInvoice.amount_paid ?? 0) + appliedCents,
               balance_due: Math.max(0, newBalance),
               status: newStatus,
             } as never)
@@ -307,10 +318,10 @@ export default function AdminNewPaymentPage() {
               Record another
             </Button>
             <Link
-              href="/admin/billing/invoices"
+              href={residentId ? `/admin/residents/${residentId}/billing` : "/admin/billing/invoices"}
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              Back to invoices
+              {residentId ? "Resident billing" : "Back to invoices"}
             </Link>
           </CardContent>
         </Card>

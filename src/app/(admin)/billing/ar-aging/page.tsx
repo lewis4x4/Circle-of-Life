@@ -121,6 +121,19 @@ function csvEscape(s: string): string {
   return s;
 }
 
+function collectionActivityHref(residentId: string, invoiceId?: string): string {
+  const params = new URLSearchParams({ residentId });
+  if (invoiceId) params.set("invoiceId", invoiceId);
+  return `/admin/billing/collections/new?${params.toString()}`;
+}
+
+function paymentHref(residentId: string, invoiceId?: string, amountCents?: number): string {
+  const params = new URLSearchParams({ residentId });
+  if (invoiceId) params.set("invoiceId", invoiceId);
+  if (amountCents != null && amountCents > 0) params.set("amount", (amountCents / 100).toFixed(2));
+  return `/admin/billing/payments/new?${params.toString()}`;
+}
+
 /** When org-wide hub scope (no pinned facility), empty array means “all facilities”. */
 function effectiveFacilityFilterIds(
   scopeFacilityId: string | null,
@@ -135,6 +148,7 @@ function AdminArAgingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bucketParam = searchParams.get("bucket");
+  const requestedFacilityId = searchParams.get("facilityId");
   const bucketFilter = (
     ["current", "31-60", "61-90", "91-plus"].includes(bucketParam ?? "") ? bucketParam : null
   ) as ArBucketUrlKey | null;
@@ -148,9 +162,16 @@ function AdminArAgingPageContent() {
   const [asOfDate, setAsOfDate] = useState(initialAsOf);
   const [rollupMode, setRollupMode] = useState<"resident" | "invoice">("resident");
   /** Org-wide only; empty = all facilities */
-  const [facilitySelection, setFacilitySelection] = useState<string[]>([]);
+  const [facilitySelection, setFacilitySelection] = useState<string[]>(() =>
+    isValidFacilityIdForQuery(requestedFacilityId) ? [requestedFacilityId] : [],
+  );
   /** Empty set = all payer types */
   const [payerSelection, setPayerSelection] = useState<PayerDb[]>([]);
+
+  useEffect(() => {
+    if (selectedFacilityId != null || !isValidFacilityIdForQuery(requestedFacilityId)) return;
+    setFacilitySelection([requestedFacilityId]);
+  }, [requestedFacilityId, selectedFacilityId]);
 
   const [rawInvoices, setRawInvoices] = useState<RawInv[]>([]);
   const [residentCount, setResidentCount] = useState<number | null>(null);
@@ -897,10 +918,16 @@ function AdminArAgingPageContent() {
                                 View resident billing
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem disabled>Send reminder</DropdownMenuItem>
-                              <DropdownMenuItem disabled>Mark paid</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(collectionActivityHref(r.residentId))}>
+                                Log reminder/contact
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(paymentHref(r.residentId))}>
+                                Record payment
+                              </DropdownMenuItem>
                               <DropdownMenuItem disabled>Apply credit</DropdownMenuItem>
-                              <DropdownMenuItem disabled>View payment history</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/admin/residents/${r.residentId}/billing`)}>
+                                View payment history
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -969,8 +996,12 @@ function AdminArAgingPageContent() {
                           <DropdownMenuItem onClick={() => router.push(`/admin/residents/${inv.resident_id}/billing`)}>
                             View resident
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled>Send reminder</DropdownMenuItem>
-                          <DropdownMenuItem disabled>Mark paid</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(collectionActivityHref(inv.resident_id, inv.id))}>
+                            Log reminder/contact
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(paymentHref(inv.resident_id, inv.id, inv.balance_due))}>
+                            Record payment
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

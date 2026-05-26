@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Phone } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -55,15 +56,18 @@ function formatDate(iso: string): string {
 
 export default function AdminNewCollectionActivityPage() {
   const supabase = useMemo(() => createClient(), []);
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
+  const requestedResidentId = searchParams.get("residentId") ?? "";
+  const requestedInvoiceId = searchParams.get("invoiceId") ?? "";
 
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [residentsLoading, setResidentsLoading] = useState(true);
   const [invoices, setInvoices] = useState<InvoiceOption[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
 
-  const [residentId, setResidentId] = useState("");
-  const [invoiceId, setInvoiceId] = useState("");
+  const [residentId, setResidentId] = useState(() => requestedResidentId);
+  const [invoiceId, setInvoiceId] = useState(() => requestedInvoiceId);
   const [activityType, setActivityType] = useState<string>("phone_call");
   const [activityDate, setActivityDate] = useState(
     () => new Date().toISOString().slice(0, 10),
@@ -154,13 +158,13 @@ export default function AdminNewCollectionActivityPage() {
   );
 
   useEffect(() => {
-    setInvoiceId("");
+    setInvoiceId(residentId === requestedResidentId ? requestedInvoiceId : "");
     if (residentId) {
       void loadInvoices(residentId);
     } else {
       setInvoices([]);
     }
-  }, [residentId, loadInvoices]);
+  }, [loadInvoices, requestedInvoiceId, requestedResidentId, residentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

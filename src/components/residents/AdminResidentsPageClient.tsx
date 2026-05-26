@@ -577,9 +577,11 @@ export function AdminResidentsPageClient({
           <span className="truncate text-[13px] font-medium text-foreground underline-offset-4 group-hover:underline">
             {resident.name}
           </span>
-          <span className="hidden truncate text-[11px] text-muted-foreground md:block" title={resident.careSummary}>
-            {truncateCareNoteSubtitle(resident.careSummary, 60)}
-          </span>
+          {resident.careSummary.trim().length > 0 ? (
+            <span className="hidden truncate text-[11px] text-muted-foreground md:block" title={resident.careSummary}>
+              {truncateCareNoteSubtitle(resident.careSummary, 60)}
+            </span>
+          ) : null}
         </div>
       </div>
 

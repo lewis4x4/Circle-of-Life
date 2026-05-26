@@ -6,6 +6,7 @@ let mockViewResult: { data: unknown[] | null; error: { message: string } | null 
   data: [],
   error: null,
 };
+let mockFacilityCount = 5;
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -19,6 +20,11 @@ vi.mock("@/lib/supabase/server", () => ({
         }),
       }),
     }),
+    from: () => ({
+      select: () => ({
+        is: () => Promise.resolve({ count: mockFacilityCount, error: null }),
+      }),
+    }),
   })),
 }));
 
@@ -27,6 +33,7 @@ import { loadV2Dashboard } from "./v2-dashboard-loader";
 describe("loadV2Dashboard", () => {
   beforeEach(() => {
     mockViewResult = { data: [], error: null };
+    mockFacilityCount = 5;
   });
 
   afterEach(() => {

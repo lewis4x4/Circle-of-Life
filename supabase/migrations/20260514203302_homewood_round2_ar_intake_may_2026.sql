@@ -2,6 +2,16 @@
 -- 33 residents staged into facility_launch_module_values (M5/M6); 3 duplicate beds flagged needs_review
 -- Supersedes the stale M6.billingSystemSource row pointing to 2025 data.
 
+DO $homewood_ar_intake$
+DECLARE
+  v_active int;
+  v_residents int;
+BEGIN
+  IF to_regclass('public.facility_launch_module_values') IS NULL THEN
+    RAISE NOTICE 'Skipping Homewood Round-2 A/R intake; facility_launch_module_values is not present yet in replay order.';
+    RETURN;
+  END IF;
+
 -- 1) Supersede stale active rows we are replacing
 UPDATE public.facility_launch_module_values
    SET superseded_at = now(), updated_at = now(), updated_by = '399c531e-2237-4c55-9a09-c9f0a1bc4558'::uuid
@@ -24,8 +34,6 @@ VALUES
   ('00000000-0000-0000-0000-000000000001'::uuid, '00000000-0000-0000-0002-000000000003'::uuid, 'M6', 'billingSystemSource', $JSON$"Manual A/R workbook — AR May 2026.xlsx (Homewood Lodge ALF sheet, 33 rows)"$JSON$::jsonb, $JSON${"source":"scripts/import-homewood-ar.mjs (run by Claude via Supabase MCP)","sourceFile":"AR May 2026.xlsx (Drive 1HMm0PXnA6yKvgaQeZ9F4lcRJo2OFFGCe)","round":2,"exportedAt":"2026-05-14","facilityName":"Homewood Lodge ALF","sheetName":"Homewood","rowCount":33}$JSON$::jsonb, '399c531e-2237-4c55-9a09-c9f0a1bc4558'::uuid, now());
 
 -- 3) Verification
-DO $$ DECLARE v_active int; v_residents int;
-BEGIN
   SELECT COUNT(*) INTO v_active FROM public.facility_launch_module_values
     WHERE facility_id='00000000-0000-0000-0002-000000000003' AND module_code IN ('M5','M6')
       AND field_path IN ('censusDate','residentSource','residentValidationOwner','residents','rateRecords','currentArSummary','billingSystemSource')
@@ -35,4 +43,5 @@ BEGIN
       AND deleted_at IS NULL AND superseded_at IS NULL;
   RAISE NOTICE 'Active M5/M6 A/R-related rows=%, residents in array=%', v_active, v_residents;
   IF v_active <> 7 OR v_residents <> 33 THEN RAISE EXCEPTION 'A/R import verification failed (active=%, residents=%)', v_active, v_residents; END IF;
-END $$;
+END
+$homewood_ar_intake$;

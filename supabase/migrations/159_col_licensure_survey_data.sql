@@ -8,11 +8,15 @@
 --            administrator_name, address_line_1, city, state, zip, phone
 -- ══════════════════════════════════════════════════════════
 
+ALTER TABLE public.facilities
+  ADD COLUMN IF NOT EXISTS ahca_license_number text,
+  ADD COLUMN IF NOT EXISTS ahca_license_expiration date;
+
 -- 001 — Oakridge ALF (Pinehouse Inc)
 UPDATE public.facilities SET
   total_licensed_beds = 52,
   ahca_license_number = '9863',
-  ahca_license_expiration = '2026-04-14'::timestamptz,
+  ahca_license_expiration = '2026-04-14'::date,
   administrator_name = 'Jessica Lawson',
   address_line_1 = '297 SW County Road 300',
   city = 'Mayo',
@@ -26,7 +30,7 @@ WHERE id = '00000000-0000-0000-0002-000000000001';
 UPDATE public.facilities SET
   total_licensed_beds = 52,
   ahca_license_number = '13041',
-  ahca_license_expiration = '2025-11-06'::timestamptz,
+  ahca_license_expiration = '2025-11-06'::date,
   address_line_1 = '201 Ranchera St NW',
   city = 'Live Oak',
   state = 'FL',
@@ -39,7 +43,7 @@ WHERE id = '00000000-0000-0000-0002-000000000002';
 UPDATE public.facilities SET
   total_licensed_beds = 36,
   ahca_license_number = '12528',
-  ahca_license_expiration = '2026-09-27'::timestamptz,
+  ahca_license_expiration = '2026-09-27'::date,
   address_line_1 = '430 SE Mills St',
   city = 'Mayo',
   state = 'FL',
@@ -52,7 +56,7 @@ WHERE id = '00000000-0000-0000-0002-000000000003';
 UPDATE public.facilities SET
   total_licensed_beds = 64,
   ahca_license_number = '5191',
-  ahca_license_expiration = '2026-07-16'::timestamptz,
+  ahca_license_expiration = '2026-07-16'::date,
   administrator_name = 'Bobbi Jo Johnson',
   address_line_1 = '147 SW Summers Ln',
   city = 'Lake City',
@@ -66,7 +70,7 @@ WHERE id = '00000000-0000-0000-0002-000000000004';
 UPDATE public.facilities SET
   total_licensed_beds = 54,
   ahca_license_number = '13688',
-  ahca_license_expiration = '2028-01-30'::timestamptz,
+  ahca_license_expiration = '2028-01-30'::date,
   administrator_name = 'Jennifer Allender',
   address_line_1 = '970 SW Pinemount Road',
   city = 'Lake City',

@@ -118,7 +118,7 @@ export async function fetchResidentsFromSupabase(
       acuity,
       adlStatus: mapAdlStatusFromAcuity(acuity),
       status,
-      careSummary: buildCareSubtitle(resident.id, status, acuity),
+      careSummary: "",
       updatedAtIso: resident.updated_at ?? null,
     } satisfies ResidentRow;
   });
@@ -140,57 +140,4 @@ function mapAdlStatusFromAcuity(acuity: Acuity): AdlStatus {
   if (acuity === 3) return "dependent";
   if (acuity === 2) return "assisted";
   return "independent";
-}
-
-const HOSPITAL_SNIPPETS = [
-  "Hospital hold — coordinating discharge paperwork and bedside transport.",
-  "Off-site acute stay — documenting follow-up labs and bedside plan.",
-  "Return pending — aligning therapy orders with ALF restorative goals.",
-];
-
-const LOA_SNIPPETS = [
-  "Approved LOA — family transport confirmed; meds reconciled prior to departure.",
-  "Short leave — therapy hold documented; bedside safety review on return.",
-  "Travel LOA — 30-day med supply packed; caregiver check-in cadence logged.",
-];
-
-const ACUITY_3_SNIPPETS = [
-  "Two-person lift for all transfers — watch skin integrity during turns.",
-  "Aspiration precautions — thickened liquids only; supervise all meals.",
-  "High fall-risk — gait belt required; bedside alarm armed overnight.",
-  "Diabetes brittle — nightly glucose sweep and PRN hypo kit at bedside.",
-  "Behavior escalation plan — redirection cues laminated at nurse desk.",
-];
-
-const ACUITY_2_SNIPPETS = [
-  "Stand-by showers twice weekly — refill soap and non-slip mats after each.",
-  "Med pass observer for PRNs — caregiver initial when symptoms resolve.",
-  "Evening restroom escorts — lighted path audit each shift.",
-  "Meal setups with cueing — document intake percentages for dietary.",
-];
-
-const ROUTINE_SNIPPETS = [
-  "Self-directs mornings — appreciates printed posted schedule weekly.",
-  "Walks clubhouse loop daily — hydrate before outdoor time.",
-  "Prefers downstairs dining — RSVP headcount emailed by 10 AM.",
-  "Morning newspaper + coffee ritual — lactose-free creamer stocked.",
-  "Family video calls Thursdays — headset charged at kiosk.",
-  "Likes puzzle table after lunch — supervise small pieces.",
-  "Aquarist hobbies — aquarium lights on timer behind nursing desk.",
-];
-
-function snippetFromId(seed: string, pool: readonly string[]): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return pool[hash % pool.length] ?? pool[0];
-}
-
-function buildCareSubtitle(residentId: string, status: ResidencyStatus, acuity: Acuity): string {
-  if (status === "hospital") return snippetFromId(`${residentId}-hosp`, HOSPITAL_SNIPPETS);
-  if (status === "loa") return snippetFromId(`${residentId}-loa`, LOA_SNIPPETS);
-  if (acuity === 3) return snippetFromId(`${residentId}-a3`, ACUITY_3_SNIPPETS);
-  if (acuity === 2) return snippetFromId(`${residentId}-a2`, ACUITY_2_SNIPPETS);
-  return snippetFromId(`${residentId}-ind`, ROUTINE_SNIPPETS);
 }

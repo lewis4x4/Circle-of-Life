@@ -8,7 +8,9 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { SourceReadinessCallout } from "@/components/common/source-readiness-callout";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { REVENUE_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -103,10 +105,12 @@ export default function AdminRevenuePage() {
                Received Revenue
             </h1>
             <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
-               Cash collected from payments (refunds excluded), grouped by calendar month.
+               Cash collected from payments already recorded in Haven, grouped by calendar month.
             </p>
           </div>
         </header>
+
+        <SourceReadinessCallout copy={REVENUE_SOURCE_READINESS} />
 
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
@@ -134,7 +138,10 @@ export default function AdminRevenuePage() {
 
         {isLoading ? <AdminTableLoadingState /> : null}
         {!isLoading && byMonth.length === 0 && !error ? (
-          <AdminEmptyState title="No payments in range" description="Try another facility or extend the data window." />
+          <AdminEmptyState
+            title="No recorded payments in range"
+            description="This page stays empty until payment activity is entered or imported into Haven for the selected scope."
+          />
         ) : null}
         
         {!isLoading && byMonth.length > 0 ? (

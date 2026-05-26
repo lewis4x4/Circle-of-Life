@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Building2 } from "lucide-react";
 
 import {
@@ -18,18 +19,30 @@ import { billingCurrency } from "../billing-invoice-ledger";
 
 const OPEN = ["draft", "sent", "partial", "overdue"] as const;
 
-type Row = { entityId: string; entityName: string; totalCents: number };
+type Row = {
+  entityId: string;
+  facilityId: string;
+  entityName: string;
+  facilityName: string;
+  totalCents: number;
+};
 
 type SupabaseInv = {
   entity_id: string;
+  facility_id: string;
   balance_due: number;
   status: string;
   deleted_at: string | null;
 };
 
 type SupabaseEntity = { id: string; name: string };
+type SupabaseFacility = { id: string; name: string };
 
 type QueryListResult<T> = { data: T[] | null; error: { message: string } | null };
+
+function facilityArLabel(name: string): string {
+  return name.replace(/\s+/g, " ").trim() || "Facility";
+}
 
 export default function AdminOrgArAgingPage() {
   const { selectedFacilityId } = useFacilityStore();
@@ -44,7 +57,7 @@ export default function AdminOrgArAgingPage() {
       const supabase = createClient();
       let q = supabase
         .from("invoices" as never)
-        .select("entity_id, balance_due, status, deleted_at")
+        .select("entity_id, facility_id, balance_due, status, deleted_at")
         .is("deleted_at", null)
         .gt("balance_due", 0)
         .in("status", [...OPEN])
@@ -60,23 +73,38 @@ export default function AdminOrgArAgingPage() {
         setIsLoading(false);
         return;
       }
-      const agg = new Map<string, number>();
+      const agg = new Map<string, { entityId: string; facilityId: string; totalCents: number }>();
       for (const inv of invs) {
-        agg.set(inv.entity_id, (agg.get(inv.entity_id) ?? 0) + Math.max(0, inv.balance_due));
+        const key = `${inv.entity_id}:${inv.facility_id}`;
+        const cur = agg.get(key) ?? { entityId: inv.entity_id, facilityId: inv.facility_id, totalCents: 0 };
+        cur.totalCents += Math.max(0, inv.balance_due);
+        agg.set(key, cur);
       }
-      const entityIds = [...agg.keys()];
-      const eres = (await supabase
-        .from("entities" as never)
-        .select("id, name")
-        .in("id", entityIds)) as unknown as QueryListResult<SupabaseEntity>;
+      const entries = [...agg.values()];
+      const entityIds = [...new Set(entries.map((entry) => entry.entityId))];
+      const facilityIds = [...new Set(entries.map((entry) => entry.facilityId))];
+      const [eres, fres] = await Promise.all([
+        supabase
+          .from("entities" as never)
+          .select("id, name")
+          .in("id", entityIds) as unknown as Promise<QueryListResult<SupabaseEntity>>,
+        supabase
+          .from("facilities" as never)
+          .select("id, name")
+          .in("id", facilityIds) as unknown as Promise<QueryListResult<SupabaseFacility>>,
+      ]);
       if (eres.error) throw eres.error;
+      if (fres.error) throw fres.error;
       const nameBy = new Map((eres.data ?? []).map((e) => [e.id, e.name] as const));
+      const facilityNameBy = new Map((fres.data ?? []).map((f) => [f.id, f.name] as const));
       setRows(
-        [...agg.entries()]
-          .map(([entityId, totalCents]) => ({
-            entityId,
-            entityName: nameBy.get(entityId) ?? "Entity",
-            totalCents,
+        entries
+          .map((entry) => ({
+            entityId: entry.entityId,
+            facilityId: entry.facilityId,
+            entityName: nameBy.get(entry.entityId) ?? "Entity",
+            facilityName: facilityArLabel(facilityNameBy.get(entry.facilityId) ?? "Facility"),
+            totalCents: entry.totalCents,
           }))
           .sort((a, b) => b.totalCents - a.totalCents),
       );
@@ -120,7 +148,7 @@ export default function AdminOrgArAgingPage() {
         {!isLoading && rows.length > 0 ? (
           <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">By Entity</h3>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">By entity and facility</h3>
               <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
                  Sum of open invoices
               </p>
@@ -129,8 +157,11 @@ export default function AdminOrgArAgingPage() {
             <div className="relative z-10">
                <MotionList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {rows.map((r) => (
-                    <MotionItem key={r.entityId}>
-                      <div className="group flex flex-col justify-between p-6 rounded-lg border border-slate-200/90 bg-white dark:border-white/5 shadow-sm transition-all hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-500/40 min-h-[140px]">
+                    <MotionItem key={`${r.entityId}:${r.facilityId}`}>
+                      <Link
+                        href={`/admin/billing/ar-aging?facilityId=${r.facilityId}`}
+                        className="group flex min-h-[150px] flex-col justify-between rounded-lg border border-slate-200/90 bg-white p-6 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/5 dark:hover:border-emerald-500/40"
+                      >
                          <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 transition-colors">
                                <Building2 className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
@@ -138,6 +169,9 @@ export default function AdminOrgArAgingPage() {
                             <div className="flex-1 mt-1">
                                <span className="font-semibold text-slate-900 dark:text-slate-100 tracking-tight text-lg line-clamp-2 leading-tight">
                                   {r.entityName}
+                               </span>
+                               <span className="mt-1 block text-sm font-medium text-slate-500 dark:text-slate-400">
+                                  {r.facilityName}
                                </span>
                             </div>
                          </div>
@@ -147,7 +181,7 @@ export default function AdminOrgArAgingPage() {
                                {billingCurrency.format(r.totalCents / 100)}
                             </span>
                          </div>
-                      </div>
+                      </Link>
                     </MotionItem>
                   ))}
                </MotionList>

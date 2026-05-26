@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileSpreadsheet, MessageSquare } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 
+import { SourceReadinessCallout } from "@/components/common/source-readiness-callout";
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import {
   fetchStandupSnapshotDetail,
 } from "@/lib/executive/standup";
 import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { EXECUTIVE_REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { createClient } from "@/lib/supabase/client";
 import type { Database, Json } from "@/types/database";
 
@@ -517,6 +519,8 @@ export default function ExecutiveSavedReportsPage() {
         </Link>{" "}
         for template library, scheduling, packs, and audit history.
       </p>
+
+      <SourceReadinessCallout copy={EXECUTIVE_REPORTING_SOURCE_READINESS} />
 
       {error && (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

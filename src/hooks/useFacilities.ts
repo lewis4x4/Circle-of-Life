@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { FacilityRow } from "@/types/facility";
+
+const FACILITIES_CACHE_TTL_MS = 60_000;
+
+type FacilitiesCacheEntry = {
+  fetchedAt: number;
+  data: FacilitiesResponse;
+};
+
+const facilitiesCache = new Map<string, FacilitiesCacheEntry>();
 
 function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
   type ListApi = FacilityRow & {
@@ -83,6 +92,7 @@ interface UseFacilitiesReturn {
 
 export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilitiesReturn {
   const { status, search, page = 1, pageSize = 20 } = options;
+  const lastFetchAtRef = useRef(0);
 
   const [facilities, setFacilities] = useState<FacilityRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,21 +106,39 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
   });
 
   const refetch = useCallback(async () => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+    if (status) params.set("status", status);
+    if (search) params.set("search", search);
+    const cacheKey = params.toString();
+    const cached = facilitiesCache.get(cacheKey);
+    if (cached && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS) {
+      const json = cached.data;
+      setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
+      setPagination({
+        total: json.total ?? 0,
+        page: json.page ?? page,
+        page_size: pageSize,
+        total_pages: Math.ceil((json.total ?? 0) / pageSize),
+        has_next: json.has_next ?? false,
+      });
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        page_size: pageSize.toString(),
-      });
-      if (status) params.set("status", status);
-      if (search) params.set("search", search);
-
       const res = await fetch(`/api/admin/facilities?${params}`);
       if (!res.ok) {
         throw new Error("Failed to fetch facilities");
       }
       const json = (await res.json()) as FacilitiesResponse;
+      facilitiesCache.set(cacheKey, { fetchedAt: Date.now(), data: json });
+      lastFetchAtRef.current = Date.now();
       setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
       setPagination({
         total: json.total ?? 0,
@@ -135,7 +163,10 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
 
   useEffect(() => {
     const onVis = () => {
-      if (document.visibilityState === "visible") {
+      if (
+        document.visibilityState === "visible" &&
+        Date.now() - lastFetchAtRef.current > FACILITIES_CACHE_TTL_MS
+      ) {
         void refetch();
       }
     };

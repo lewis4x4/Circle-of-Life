@@ -5,9 +5,11 @@ import Link from "next/link";
 import { History, ArrowRight, X } from "lucide-react";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
+import { SourceReadinessCallout } from "@/components/common/source-readiness-callout";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
+import { REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { createClient } from "@/lib/supabase/client";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import {
@@ -334,6 +336,8 @@ export default function ReportsOverviewPage() {
             </Link>
           </div>
         </header>
+
+        <SourceReadinessCallout copy={REPORTING_SOURCE_READINESS} />
 
         {onboardingVisible ? (
           <section

@@ -9,6 +9,7 @@ export type PayerTypeUi = "private_pay" | "medicaid" | "ltc_insurance";
 
 export type BillingRow = {
   id: string;
+  residentId: string;
   invoiceNumber: string;
   residentName: string;
   payerType: PayerTypeUi;
@@ -82,6 +83,7 @@ export async function fetchInvoicesFromSupabase(
     const residentName = `${fn} ${ln}`.trim() || "Resident";
     return {
       id: inv.id,
+      residentId: inv.resident_id,
       invoiceNumber: inv.invoice_number,
       residentName,
       payerType: mapDbPayerTypeToUi(inv.payer_type),
