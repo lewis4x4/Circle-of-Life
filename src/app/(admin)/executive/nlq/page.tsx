@@ -203,6 +203,7 @@ export default function ExecutiveNlqPage() {
   const [awaitingFirstToken, setAwaitingFirstToken] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [canUse, setCanUse] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteIndex, setPaletteIndex] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -230,6 +231,7 @@ export default function ExecutiveNlqPage() {
         const ctx = await loadFinanceRoleContext(supabase);
         if (ctx.ok) {
           const allowed = ctx.ctx.appRole === "owner" || ctx.ctx.appRole === "org_admin";
+          setOrganizationId(ctx.ctx.organizationId);
           setCanUse(allowed);
         }
       } catch {
@@ -253,12 +255,15 @@ export default function ExecutiveNlqPage() {
       return;
     }
 
+    if (!organizationId) return;
+
     let cancelled = false;
     void (async () => {
       const { data, error } = await supabase
         .from("exec_nlq_messages" as never)
         .select("id, role, content, ordinal, citations, follow_ups, chart_spec, fallback_used, tokens_used, created_at, session_id" as never)
         .eq("session_id" as never, sessionParam as never)
+        .eq("organization_id" as never, organizationId as never)
         .neq("role" as never, "system" as never)
         .is("deleted_at" as never, null)
         .order("ordinal" as never, { ascending: true });
@@ -284,7 +289,7 @@ export default function ExecutiveNlqPage() {
         syncedSessionRef.current = null;
       }
     };
-  }, [sessionParam, supabase]);
+  }, [organizationId, sessionParam, supabase]);
 
   const syncSessionUrl = useCallback((sessionId: string) => {
     if (sessionId.length !== 36) return;
@@ -713,9 +718,9 @@ export default function ExecutiveNlqPage() {
               </div>
             )}
 
-            {messages.map((msg, index) => (
+            {messages.map((msg) => (
               <div
-                key={`${msg.id}-${index}`}
+                key={msg.id}
                 className={cn(
                   "flex max-w-3xl gap-3",
                   msg.role === "user" ? "ml-auto justify-end" : ""

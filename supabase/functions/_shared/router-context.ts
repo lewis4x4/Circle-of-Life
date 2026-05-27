@@ -57,14 +57,10 @@ function normalizeMessage(row: MessageContextRow): ConversationTurn | null {
 async function loadConversationContextRpc(
   admin: SupabaseClient,
   sessionId: string,
-  organizationId: string,
-  userId: string,
   limit: number,
 ): Promise<ConversationContextRpcData | null> {
   const { data, error } = await admin.rpc("get_nlq_conversation_context", {
     p_session_id: sessionId,
-    p_org_id: organizationId,
-    p_user_id: userId,
     p_limit: limit,
   });
   if (error) return null;
@@ -74,7 +70,6 @@ async function loadConversationContextRpc(
 export async function loadConversationContext(
   admin: SupabaseClient,
   sessionId: string | null,
-  organizationId: string,
   userId: string | undefined,
   fetchLimit: number,
 ): Promise<ConversationContext> {
@@ -83,8 +78,6 @@ export async function loadConversationContext(
   const countContext = await loadConversationContextRpc(
     admin,
     sessionId,
-    organizationId,
-    userId,
     0,
   );
   if (!countContext) return { ...EMPTY_CONTEXT };
@@ -99,8 +92,6 @@ export async function loadConversationContext(
   const context = await loadConversationContextRpc(
     admin,
     sessionId,
-    organizationId,
-    userId,
     fetchLimit,
   );
   if (!context) return { ...EMPTY_CONTEXT };

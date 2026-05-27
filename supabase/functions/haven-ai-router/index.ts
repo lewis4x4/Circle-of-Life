@@ -1570,7 +1570,6 @@ Deno.serve(async (req) => {
     conversationContext = await loadConversationContext(
       admin,
       bodySessionId,
-      organizationId,
       userId,
       contextFetchLimitForMessageCount(activeSession?.message_count ?? 0),
     );

@@ -318,11 +318,14 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
   }, [supabase]);
 
   const fetchThreadRows = useCallback(async (ids?: string[]) => {
+    if (!orgId) return [];
+
     let query = supabase
       .from("exec_nlq_sessions" as never)
       .select("id,title,message_count,last_message_at,created_at,pinned_at" as never)
       .is("deleted_at" as never, null)
-      .is("archived_at" as never, null);
+      .is("archived_at" as never, null)
+      .eq("organization_id" as never, orgId as never);
 
     if (ids?.length) {
       query = query.in("id" as never, ids as never);
@@ -333,7 +336,7 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     const { data, error } = await query;
     if (error) throw error;
     return (data ?? []) as unknown as ThreadRow[];
-  }, [supabase]);
+  }, [orgId, supabase]);
 
   const refetchThreads = useCallback(async () => {
     try {

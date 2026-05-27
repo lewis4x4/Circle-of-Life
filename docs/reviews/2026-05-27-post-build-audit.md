@@ -796,7 +796,7 @@ toast.success("Password updated");
 
 ---
 
-## 33. `src/components/haven-insight/ConversationSidebar.tsx:320–336` — Thread fetch missing `organization_id` predicate
+## 33. `src/components/haven-insight/ConversationSidebar.tsx:320–336` — Thread fetch missing `organization_id` predicate ✅ Implemented in this commit
 
 **Category:** Performance / defense-in-depth
 **Description:** The realtime subscription filter (added in `7ff29ff2`) is org-scoped, but the initial `.from('exec_nlq_sessions').select(...)` fetch is not. RLS will filter the result, but the query plan still scans wider than necessary, and a future widening of the SELECT policy creates a leak.
@@ -815,7 +815,7 @@ toast.success("Password updated");
 
 ---
 
-## 34. `src/app/(admin)/executive/nlq/page.tsx:258–264` — Message hydration missing `organization_id` predicate
+## 34. `src/app/(admin)/executive/nlq/page.tsx:258–264` — Message hydration missing `organization_id` predicate ✅ Implemented in this commit
 
 **Category:** Performance / defense-in-depth
 **Description:** Same shape as #33 — `.from("exec_nlq_messages").select(...).eq("session_id", sessionId)` with no org filter. RLS catches it; the query plan is wider than necessary.
@@ -823,7 +823,7 @@ toast.success("Password updated");
 
 ---
 
-## 35. `src/app/(admin)/executive/nlq/page.tsx:716–719` — Message list key includes array index
+## 35. `src/app/(admin)/executive/nlq/page.tsx:716–719` — Message list key includes array index ✅ Implemented in this commit
 
 **Category:** Performance / React-TS
 **Description:** `key={\`${msg.id}-${index}\`}` destabilizes reconciliation on insert/reorder. Streaming responses re-mount instead of re-rendering, costing token-level paints.
