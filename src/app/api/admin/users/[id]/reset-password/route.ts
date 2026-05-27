@@ -8,6 +8,9 @@ import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { resetUserPasswordSchema } from "@/lib/validation/user-management";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 import { logError } from "@/lib/observability/logger";
+import { canActorManageTarget } from "@/lib/rbac";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -26,6 +29,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const admin = actor.admin;
 
   const { id: targetUserId } = await ctx.params;
+  if (!UUID_RE.test(targetUserId)) {
+    return NextResponse.json({ error: "Invalid user id" }, { status: 400 });
+  }
   if (actor.id === targetUserId) {
     return NextResponse.json({ error: "Cannot reset your own password here" }, { status: 422 });
   }
@@ -51,12 +57,16 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .select("id, organization_id, email, full_name, app_role, is_active, deleted_at")
     .eq("id", targetUserId)
+    .eq("organization_id", actor.organization_id!)
     .maybeSingle();
   if (targetErr || !target) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
-  if (target.organization_id !== actor.organization_id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!canActorManageTarget(actor.app_role, target.app_role)) {
+    return NextResponse.json(
+      { error: "Only owners can reset owner passwords" },
+      { status: 403 },
+    );
   }
   if (!target.email) {
     return NextResponse.json({ error: "User does not have an email address" }, { status: 422 });

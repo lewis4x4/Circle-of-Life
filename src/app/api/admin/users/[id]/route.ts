@@ -53,7 +53,7 @@ type UserFacilityAccessDetailRow = Pick<
   Database["public"]["Tables"]["user_facility_access"]["Row"],
   "id" | "facility_id" | "is_primary" | "granted_at" | "granted_by" | "revoked_at" | "revoked_by"
 > & {
-  facilities: { name: string | null } | null;
+  facilities: { name: string | null; organization_id?: string | null } | null;
 };
 
 // ── GET: User Detail ──────────────────────────────────────────────
@@ -75,6 +75,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .select("id, organization_id, email, full_name, phone, app_role, job_title, avatar_url, is_active, last_login_at, manager_user_id, created_at, updated_at, deleted_at")
     .eq("id", id)
+    .eq("organization_id", actor.organization_id!)
     .maybeSingle();
   const profile = profileResult.data as UserDetailRow | null;
   const error = profileResult.error;
@@ -90,8 +91,9 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   // Facility access
   const facilitiesResult = await admin
     .from("user_facility_access")
-    .select("id, facility_id, is_primary, granted_at, granted_by, revoked_at, revoked_by, facilities(name)")
+    .select("id, facility_id, is_primary, granted_at, granted_by, revoked_at, revoked_by, facilities!inner(name, organization_id)")
     .eq("user_id", id)
+    .eq("facilities.organization_id", actor.organization_id!)
     .order("granted_at", { ascending: false });
   const facilities = (facilitiesResult.data ?? []) as UserFacilityAccessDetailRow[];
 
@@ -159,6 +161,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .select("id, organization_id, email, full_name, phone, app_role, job_title, is_active, manager_user_id")
     .eq("id", id)
+    .eq("organization_id", actor.organization_id!)
     .maybeSingle();
   const target = targetResult.data as UserUpdateTargetRow | null;
   const targetErr = targetResult.error;
@@ -204,6 +207,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
       .from("user_profiles")
       .select("id")
       .eq("email", updates.email)
+      .eq("organization_id", actor.organization_id!)
       .neq("id", id)
       .maybeSingle();
     if (existing) {
@@ -226,6 +230,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .update(updatePayload)
     .eq("id", id)
+    .eq("organization_id", actor.organization_id!)
     .select()
     .single();
   if (updateErr) {
@@ -285,6 +290,7 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .select("id, organization_id, app_role, is_active")
     .eq("id", id)
+    .eq("organization_id", actor.organization_id!)
     .maybeSingle();
   if (targetErr || !target) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -312,14 +318,23 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   await admin
     .from("user_profiles")
     .update({ deleted_at: now, is_active: false, updated_at: now })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", actor.organization_id!);
 
   // Revoke all facility access
-  await admin
+  const { data: accessRows } = await admin
     .from("user_facility_access")
-    .update({ revoked_at: now, revoked_by: actor.id })
+    .select("id, facilities!inner(organization_id)")
     .eq("user_id", id)
+    .eq("facilities.organization_id", actor.organization_id!)
     .is("revoked_at", null);
+  const accessIds = (accessRows ?? []).map((row) => row.id);
+  if (accessIds.length > 0) {
+    await admin
+      .from("user_facility_access")
+      .update({ revoked_at: now, revoked_by: actor.id })
+      .in("id", accessIds);
+  }
 
   // Disable auth account
   try {

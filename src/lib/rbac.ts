@@ -72,6 +72,13 @@ export function canManageUser(actor: string, target: string): boolean {
   return actorTier > targetTier;
 }
 
+/** Returns true when `actor` is at least the same tier as `target`. */
+export function canActorManageTarget(actor: string, target: string): boolean {
+  const actorTier = ROLE_HIERARCHY[actor] ?? 0;
+  const targetTier = ROLE_HIERARCHY[target] ?? 0;
+  return actorTier > 0 && targetTier > 0 && actorTier >= targetTier;
+}
+
 /** Returns the numeric tier for a role (0 if unknown). */
 export function getRoleTier(role: string): number {
   return ROLE_HIERARCHY[role] ?? 0;

@@ -27,7 +27,7 @@ Already-fixed items (NOT re-reported): NLQ viewport math, dashboard snapshot LRU
 
 # P0 — Security / data loss
 
-## 1. `src/app/api/admin/users/[id]/reset-password/route.ts:50–60` — Privilege escalation: `org_admin` can reset an `owner`'s password
+## 1. `src/app/api/admin/users/[id]/reset-password/route.ts:50–60` — Privilege escalation: `org_admin` can reset an `owner`'s password ✅ Implemented in 74f4ffeb
 
 **Category:** Security
 **Description:** The new route added in `27859dbe` allows both `owner` and `org_admin` to call it (`allowedRoles: ["owner", "org_admin"]`) and then only verifies the target shares the actor's `organization_id`. An `org_admin` can therefore reset the password of any user in the org — including the `owner` — and either receive a temporary password in the response or trigger a recovery email. This is account takeover with full audit attribution to the org_admin (which is the wrong attribution).
@@ -55,7 +55,7 @@ Already-fixed items (NOT re-reported): NLQ viewport math, dashboard snapshot LRU
 
 ---
 
-## 2. `src/app/api/admin/users/[id]/reactivate/route.ts:33–38` — Privilege escalation: `org_admin` can reactivate an `owner` account
+## 2. `src/app/api/admin/users/[id]/reactivate/route.ts:33–38` — Privilege escalation: `org_admin` can reactivate an `owner` account ✅ Implemented in 74f4ffeb
 
 **Category:** Security
 **Description:** Same shape as finding #1 in the pre-existing route. `requireAdminApiActor({ allowedRoles: ["owner", "org_admin"] })` followed only by an `organization_id` equality check lets an `org_admin` un-soft-delete an owner that was previously revoked. Pairs with finding #1 to enable a hostile takeover chain: an org_admin disables an owner, reactivates them, then resets their password.
@@ -341,7 +341,7 @@ ALTER TABLE public.facilities
 
 # P1 — API routes (admin user management)
 
-## 11. `src/app/api/admin/users/[id]/route.ts:74–80, 96–100, 171–177, 313–322` — Service-role writes/reads scoped by `id` only
+## 11. `src/app/api/admin/users/[id]/route.ts:74–80, 96–100, 171–177, 313–322` — Service-role writes/reads scoped by `id` only ✅ Implemented in 74f4ffeb
 
 **Category:** Security / defense-in-depth
 **Description:** GET, PATCH, and DELETE all look up the target user with `.eq("id", id)` then post-fetch verify `organization_id`. Under service-role this means the query plan touches rows outside the actor's org before the application throws them out. The codebase rule (see migrations 273/276/278/279) is "every service-role write asserts org scope at the query level". This is a soft P1 because the post-fetch check still blocks the response, but a future `.select()` widening or accidental return-before-check change becomes a leak.
@@ -368,7 +368,7 @@ Same pattern in:
 
 ---
 
-## 12. `src/app/api/admin/users/[id]/reactivate/route.ts:53–58` — `.select()` returns full row after service-role update
+## 12. `src/app/api/admin/users/[id]/reactivate/route.ts:53–58` — `.select()` returns full row after service-role update ✅ Implemented in 74f4ffeb
 
 **Category:** Security / minimization
 **Description:** `.select()` with no projection returns every column on `user_profiles` (including columns intended to be admin-only). The handler then returns `data: updated` to the client. Even though the actor is owner/org_admin, this exposes more than the API contract documents.
@@ -387,7 +387,7 @@ Same pattern in:
 
 ---
 
-## 13. `src/app/api/admin/users/[id]/reset-password/route.ts:28` — URL parameter not validated as UUID
+## 13. `src/app/api/admin/users/[id]/reset-password/route.ts:28` — URL parameter not validated as UUID ✅ Implemented in 74f4ffeb
 
 **Category:** Security / input validation
 **Description:** `targetUserId` from the dynamic param is passed straight into `auth.admin.updateUserById` and the DB filter. Supabase parameterizes the value, so this is not SQL injection; it is a validation gap. Malformed IDs should fail fast at 400 rather than fanning out to two slow backends.

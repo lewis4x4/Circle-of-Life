@@ -8,6 +8,7 @@ import { reactivateUserSchema } from "@/lib/validation/user-management";
 import { adminEnableUser } from "@/lib/supabase/admin-client";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 import { logError } from "@/lib/observability/logger";
+import { canActorManageTarget } from "@/lib/rbac";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -28,13 +29,17 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .select("id, organization_id, email, full_name, app_role, is_active, deleted_at")
     .eq("id", targetUserId)
+    .eq("organization_id", actor.organization_id!)
     .not("deleted_at", "is", null)
     .maybeSingle();
   if (targetErr || !target) {
     return NextResponse.json({ error: "Deleted user not found" }, { status: 404 });
   }
-  if (target.organization_id !== actor.organization_id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!canActorManageTarget(actor.app_role, target.app_role)) {
+    return NextResponse.json(
+      { error: "Only owners can reactivate owner accounts" },
+      { status: 403 },
+    );
   }
 
   // Optional reason
@@ -54,7 +59,8 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .from("user_profiles")
     .update({ deleted_at: null, is_active: true, updated_at: now })
     .eq("id", targetUserId)
-    .select()
+    .eq("organization_id", actor.organization_id!)
+    .select("id, organization_id, email, full_name, app_role, is_active, deleted_at, updated_at")
     .single();
   if (updateErr) {
     return NextResponse.json({ error: "Failed to reactivate user" }, { status: 500 });
