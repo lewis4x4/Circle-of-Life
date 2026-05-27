@@ -115,6 +115,14 @@ export const reactivateUserSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
+// ── Reset User Password (POST body) ───────────────────────────────
+
+export const resetUserPasswordSchema = z
+  .object({
+    mode: z.enum(["email", "temp"]),
+  })
+  .strict();
+
 // ── Audit Log (GET query params) ──────────────────────────────────
 
 export const auditLogQuerySchema = z.object({
@@ -143,4 +151,5 @@ export type UpdateUserBody = z.infer<typeof updateUserSchema>;
 export type GrantFacilityAccessBody = z.infer<typeof grantFacilityAccessSchema>;
 export type DeleteUserBody = z.infer<typeof deleteUserSchema>;
 export type ReactivateUserBody = z.infer<typeof reactivateUserSchema>;
+export type ResetUserPasswordBody = z.infer<typeof resetUserPasswordSchema>;
 export type AuditLogQuery = z.infer<typeof auditLogQuerySchema>;

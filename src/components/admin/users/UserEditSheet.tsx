@@ -6,12 +6,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { UserRoleSelector } from "./UserRoleSelector";
 import { FacilityAccessManager } from "./FacilityAccessManager";
 import { UserStatusBadge } from "./UserStatusBadge";
 import { ROLE_LABELS } from "@/lib/rbac";
-import { X, Loader2, User, Shield, Building2, Clock, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { X, Loader2, User, Shield, Building2, Clock, AlertTriangle, KeyRound, Copy, Check } from "lucide-react";
 
 interface UserEditSheetProps {
   userId: string;
@@ -19,6 +29,7 @@ interface UserEditSheetProps {
 }
 
 type Tab = "profile" | "role" | "facilities" | "audit" | "danger";
+type ResetPasswordMode = "email" | "temp";
 
 interface UserData {
   id: string;
@@ -58,11 +69,19 @@ const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
+  const { user: currentUser } = useAuth();
+  const currentRole = (currentUser?.app_metadata?.app_role as string) ?? "";
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
+  const [resetPasswordMode, setResetPasswordMode] = useState<ResetPasswordMode>("email");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [copiedTemporaryPassword, setCopiedTemporaryPassword] = useState(false);
 
   // Editable fields
   const [fullName, setFullName] = useState("");
@@ -74,6 +93,13 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
 
   // Audit
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
+
+  const canResetPassword = Boolean(
+    user &&
+      !user.deleted_at &&
+      currentUser?.id !== user.id &&
+      ["owner", "org_admin"].includes(currentRole),
+  );
 
   // Fetch user
   const fetchUser = useCallback(async () => {
@@ -189,6 +215,63 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
       await fetchUser();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to reactivate");
+    }
+  };
+
+  const openResetPasswordDialog = () => {
+    setResetPasswordMode("email");
+    setResetPasswordError(null);
+    setTemporaryPassword(null);
+    setCopiedTemporaryPassword(false);
+    setShowResetPasswordDialog(true);
+  };
+
+  const handleResetPasswordDialogOpenChange = (open: boolean) => {
+    setShowResetPasswordDialog(open);
+    if (!open) {
+      setResetPasswordMode("email");
+      setResetPasswordError(null);
+      setTemporaryPassword(null);
+      setCopiedTemporaryPassword(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!user || temporaryPassword) return;
+    setIsResettingPassword(true);
+    setResetPasswordError(null);
+    setCopiedTemporaryPassword(false);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: resetPasswordMode }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error ?? "Failed to reset password");
+      }
+      if (json.mode === "temp") {
+        setTemporaryPassword(json.temporary_password ?? null);
+        return;
+      }
+      toast.success(`Reset email sent to ${user.email}`);
+      handleResetPasswordDialogOpenChange(false);
+    } catch (err) {
+      setResetPasswordError(err instanceof Error ? err.message : "Failed to reset password");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleCopyTemporaryPassword = async () => {
+    if (!temporaryPassword) return;
+    try {
+      await navigator.clipboard.writeText(temporaryPassword);
+      setCopiedTemporaryPassword(true);
+      toast.success("Temporary password copied.");
+    } catch {
+      setResetPasswordError("Could not copy password. Select and copy it manually.");
     }
   };
 
@@ -333,6 +416,27 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
 
               {activeTab === "danger" && (
                 <div className="space-y-4">
+                  {canResetPassword && (
+                    <div className="rounded-lg border bg-card p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h3 className="font-medium">Password reset</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Send a recovery email or generate a one-time temporary password.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={openResetPasswordDialog}
+                          className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                          Reset password
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
                     <h3 className="font-medium text-destructive">Danger Zone</h3>
                     {user?.deleted_at ? (
@@ -363,6 +467,116 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
           )}
         </div>
       </div>
+
+      <Dialog open={showResetPasswordDialog} onOpenChange={handleResetPasswordDialogOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reset password</DialogTitle>
+            <DialogDescription>
+              Choose how to reset {user?.email ?? "this user's"} password. Email reset is the safer default.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/50">
+                <input
+                  type="radio"
+                  name="reset-password-mode"
+                  value="email"
+                  checked={resetPasswordMode === "email"}
+                  onChange={() => setResetPasswordMode("email")}
+                  disabled={isResettingPassword || Boolean(temporaryPassword)}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block text-sm font-medium">Email reset link</span>
+                  <span className="block text-sm text-muted-foreground">
+                    Supabase sends the user a recovery link. No password is shown to the admin.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-muted/50">
+                <input
+                  type="radio"
+                  name="reset-password-mode"
+                  value="temp"
+                  checked={resetPasswordMode === "temp"}
+                  onChange={() => setResetPasswordMode("temp")}
+                  disabled={isResettingPassword || Boolean(temporaryPassword)}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block text-sm font-medium">Generate one-time temporary password</span>
+                  <span className="block text-sm text-muted-foreground">
+                    Show a random temporary password once so the admin can copy it for the user.
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {resetPasswordError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {resetPasswordError}
+              </div>
+            )}
+
+            {temporaryPassword && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-3">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                  This password will not be shown again. Copy it now.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="min-w-0 flex-1 select-all break-all rounded-md bg-background px-3 py-2 text-sm">
+                    {temporaryPassword}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyTemporaryPassword}
+                    className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium hover:bg-muted"
+                  >
+                    {copiedTemporaryPassword ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copiedTemporaryPassword ? "Copied" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            {temporaryPassword ? (
+              <button
+                type="button"
+                onClick={() => handleResetPasswordDialogOpenChange(false)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                I&apos;ve copied it
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleResetPasswordDialogOpenChange(false)}
+                  disabled={isResettingPassword}
+                  className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={isResettingPassword}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {isResettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {resetPasswordMode === "email" ? "Send reset email" : "Generate temporary password"}
+                </button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
