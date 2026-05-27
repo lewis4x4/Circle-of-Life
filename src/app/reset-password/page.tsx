@@ -58,6 +58,30 @@ export default function ResetPasswordPage() {
       if (timeoutId) window.clearTimeout(timeoutId);
     };
 
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+
+    if (code) {
+      void supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data.session?.user) {
+          if (error) {
+            console.warn("Password reset code exchange failed:", error.message);
+          }
+          setHasSession(false);
+          setSessionReady(true);
+          return;
+        }
+        setHasSession(true);
+        setSessionReady(true);
+        window.history.replaceState(null, "", url.pathname);
+      });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
