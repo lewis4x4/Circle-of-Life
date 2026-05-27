@@ -681,7 +681,7 @@ const [showTemporaryPassword, setShowTemporaryPassword] = useState(false);
 
 ---
 
-## 28. `src/app/(admin)/admin/settings/SettingsHubClient.tsx:55–63` — Hub shows "Search tools" to roles that can't access the subpage
+## 28. `src/app/(admin)/admin/settings/SettingsHubClient.tsx:55–63` — Hub shows "Search tools" to roles that can't access the subpage ✅ Implemented
 
 **Category:** UI-a11y / permission gating
 **Description:** The hub card uses `ADMIN_ELIGIBLE_ROLES` (which includes `maintenance_role`) but the `/admin/settings/search-tools` subpage gates on `<PermissionGuard feature="reports" level="view">`, and `reports.view` does not include `maintenance_role`. A maintenance user lands on the card, clicks it, and bounces back with "Access denied." This violates the Slice 4 spec: "unauthorized cards must be hidden."
@@ -709,7 +709,7 @@ const [showTemporaryPassword, setShowTemporaryPassword] = useState(false);
 
 ---
 
-## 29. `src/app/(admin)/admin/settings/notifications/page.tsx:137,294,302,309,317` — `as never` casts hide schema drift
+## 29. `src/app/(admin)/admin/settings/notifications/page.tsx:137,294,302,309,317` — `as never` casts hide schema drift ✅ Implemented
 
 **Category:** React-TS
 **Description:** Five `.from("notification_routes").update(... as never)` / `.insert(... as never)` casts silently bypass the `Database` generic. If the column set drifts, the call still type-checks but blows up at runtime. The codebase otherwise treats `as never` as a smell.
@@ -736,7 +736,7 @@ await supabase
 
 ---
 
-## 30. `src/app/(admin)/admin/settings/notifications/page.tsx:365–375` — Async error/success messages not announced
+## 30. `src/app/(admin)/admin/settings/notifications/page.tsx:365–375` — Async error/success messages not announced ✅ Implemented
 
 **Category:** UI-a11y
 **Description:** Same shape as finding #22 — `<p className="text-destructive">{err}</p>` / `<p className="text-success">{msg}</p>` with no `role`/`aria-live`. SR users get no feedback when notification routes save or fail.

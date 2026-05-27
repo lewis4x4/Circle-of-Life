@@ -60,7 +60,15 @@ const SETTINGS_CARDS: SettingsCard[] = [
       "Manage search indexing, scope, and synonyms used across Haven.",
     href: "/admin/settings/search-tools",
     icon: Search,
-    roles: ADMIN_ELIGIBLE_ROLES,
+    roles: [
+      "owner",
+      "org_admin",
+      "facility_admin",
+      "manager",
+      "coordinator",
+      "nurse",
+      "admin_assistant",
+    ],
   },
   {
     key: "audit-log",

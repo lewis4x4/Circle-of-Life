@@ -16207,6 +16207,20 @@ export type Database = {
         | "housekeeping"
         | "driver"
         | "other"
+        | "owner"
+        | "ceo"
+        | "coo"
+        | "cfo"
+        | "assistant_administrator"
+        | "admin_support_coordinator"
+        | "marketing_consultant"
+        | "maintenance_director"
+        | "maintenance_standby"
+        | "medication_tech"
+        | "resident_aide"
+        | "dietary_aide"
+        | "activity_aide"
+        | "resident_services_coordinator"
       training_delivery_method: "in_person" | "external" | "online" | "hybrid"
       training_frequency:
         | "at_hire"
@@ -16868,6 +16882,20 @@ export const Constants = {
         "housekeeping",
         "driver",
         "other",
+        "owner",
+        "ceo",
+        "coo",
+        "cfo",
+        "assistant_administrator",
+        "admin_support_coordinator",
+        "marketing_consultant",
+        "maintenance_director",
+        "maintenance_standby",
+        "medication_tech",
+        "resident_aide",
+        "dietary_aide",
+        "activity_aide",
+        "resident_services_coordinator",
       ],
       training_delivery_method: ["in_person", "external", "online", "hybrid"],
       training_frequency: [

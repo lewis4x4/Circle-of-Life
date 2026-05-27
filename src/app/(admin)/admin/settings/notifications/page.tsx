@@ -14,15 +14,19 @@ import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
+
+type IncidentSeverity = Database["public"]["Enums"]["incident_severity"];
+type StaffRole = Database["public"]["Enums"]["staff_role"];
 
 type RouteRow = {
   id: string;
   organization_id: string;
   facility_id: string | null;
   name: string;
-  severity_min: "level_1" | "level_2" | "level_3" | "level_4";
+  severity_min: IncidentSeverity;
   channels: string[] | null;
-  staff_role_targets: string[] | null;
+  staff_role_targets: StaffRole[] | null;
   is_active: boolean;
   facilities: { name: string } | null;
 };
@@ -44,7 +48,7 @@ const CHANNEL_OPTIONS = [
   { value: "call", label: "Phone call" },
 ];
 
-const ROLE_OPTIONS = [
+const ROLE_OPTIONS: Array<{ value: StaffRole; label: string }> = [
   { value: "owner", label: "Owner" },
   { value: "ceo", label: "CEO" },
   { value: "coo", label: "COO" },
@@ -72,7 +76,7 @@ const ROLE_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
-function toggleValue(values: string[], value: string): string[] {
+function toggleValue<T extends string>(values: T[], value: T): T[] {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
 
@@ -99,7 +103,7 @@ export default function AdminNotificationsSettingsPage() {
   const [routeFacilityId, setRouteFacilityId] = useState("");
   const [routeSeverity, setRouteSeverity] = useState<RouteRow["severity_min"]>("level_2");
   const [routeChannels, setRouteChannels] = useState<string[]>(["email", "push"]);
-  const [routeRoles, setRouteRoles] = useState<string[]>(["administrator", "assistant_administrator"]);
+  const [routeRoles, setRouteRoles] = useState<StaffRole[]>(["administrator", "assistant_administrator"]);
   const [routeActive, setRouteActive] = useState(true);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -134,7 +138,7 @@ export default function AdminNotificationsSettingsPage() {
 
     const [routeRes, facilityRes] = await Promise.all([
       supabase
-        .from("notification_routes" as never)
+        .from("notification_routes")
         .select(
           "id, organization_id, facility_id, name, severity_min, channels, staff_role_targets, is_active, facilities(name)",
         )
@@ -291,7 +295,7 @@ export default function AdminNotificationsSettingsPage() {
     try {
       if (editingId) {
         const { error: updateError } = await supabase
-          .from("notification_routes" as never)
+          .from("notification_routes")
           .update({
             name: routeName.trim(),
             facility_id: routeFacilityId || null,
@@ -299,14 +303,14 @@ export default function AdminNotificationsSettingsPage() {
             channels,
             staff_role_targets: roles.length > 0 ? roles : null,
             is_active: routeActive,
-          } as never)
+          })
           .eq("id", editingId)
           .eq("organization_id", organizationId)
           .is("deleted_at", null);
         if (updateError) throw updateError;
         setMsg("Notification route updated.");
       } else {
-        const { error: insertError } = await supabase.from("notification_routes" as never).insert({
+        const { error: insertError } = await supabase.from("notification_routes").insert({
           organization_id: organizationId,
           facility_id: routeFacilityId || null,
           name: routeName.trim(),
@@ -314,7 +318,7 @@ export default function AdminNotificationsSettingsPage() {
           channels,
           staff_role_targets: roles.length > 0 ? roles : null,
           is_active: routeActive,
-        } as never);
+        });
         if (insertError) throw insertError;
         setMsg("Notification route created.");
       }
@@ -378,12 +382,19 @@ export default function AdminNotificationsSettingsPage() {
       </div>
 
       {err && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {err}
         </p>
       )}
       {msg && (
-        <p className="rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200"
+        >
           {msg}
         </p>
       )}
