@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LifeBuoy, Loader2, LogOut, UserCircle2 } from "lucide-react";
+import { Bell, LifeBuoy, Loader2, LogOut, Settings, UserCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
@@ -109,6 +109,13 @@ export function UserMenu({
           >
             <Bell className="size-3.5 text-muted-foreground" aria-hidden />
             Notification preferences
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] text-foreground"
+            onClick={() => navigateTo("/admin/settings")}
+          >
+            <Settings className="size-3.5 text-muted-foreground" aria-hidden />
+            Settings
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] text-foreground"

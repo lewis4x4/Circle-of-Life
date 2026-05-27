@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronRight, LifeBuoy, Loader2, LogOut, UserCircle2 } from "lucide-react";
+import { Bell, ChevronRight, LifeBuoy, Loader2, LogOut, Settings, UserCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type ReactNode } from "react";
 import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
@@ -127,6 +127,11 @@ export function UserMenuSheet({
             icon={Bell}
             label="Notification preferences"
             onSelect={() => navigateTo("/admin/profile?tab=notifications")}
+          />
+          <SheetMenuItem
+            icon={Settings}
+            label="Settings"
+            onSelect={() => navigateTo("/admin/settings")}
           />
           <SheetMenuItem
             icon={LifeBuoy}
