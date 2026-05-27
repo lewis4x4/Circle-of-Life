@@ -21,12 +21,29 @@ function isKnownBenignNoise(event: Sentry.ErrorEvent): boolean {
   // and is unactionable from app code. Drop here so it stops paging the team.
   // Next: revisit when upgrading past 16.2.6 — re-evaluate the filter.
   const exception = event.exception?.values?.[0];
-  if (exception?.value === "Connection closed.") {
-    const mechanism = exception.mechanism?.type;
-    if (mechanism === "onunhandledrejection") {
-      return true;
-    }
+  const value = exception?.value ?? "";
+  const mechanism = exception?.mechanism?.type;
+
+  if (value === "Connection closed." && mechanism === "onunhandledrejection") {
+    return true;
   }
+
+  // Supabase auth-token lock contention. When two concurrent operations
+  // race for the auth-token lock during page init / auth refresh / parallel
+  // data fetch, the second steals the lock and the first rejects with a
+  // message like:
+  //   Lock "lock:sb-<project>-auth-token" was released because another request stole it
+  // Supabase's own helper `isSupabaseAuthLockStealError` (in
+  // `src/lib/supabase/client.ts`) documents this as a transient race. The
+  // SDK retries the call internally; the unhandled rejection here is just
+  // outer-promise noise with no actionable signal. Drop it.
+  if (
+    mechanism === "onunhandledrejection" &&
+    /Lock ".*auth-token" was released because another request stole it/.test(value)
+  ) {
+    return true;
+  }
+
   return false;
 }
 
