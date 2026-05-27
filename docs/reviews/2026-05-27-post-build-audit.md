@@ -756,7 +756,7 @@ await supabase
 
 ---
 
-## 31. `src/app/(admin)/admin/profile/page.tsx:221–279` — Profile tab targets below 44×44
+## 31. `src/app/(admin)/admin/profile/page.tsx:221–279` — Profile tab targets below 44×44 ✅ Implemented in this commit
 
 **Category:** UI-a11y / WCAG 2.5.5
 **Description:** The profile tablist nav is `h-9`, tabs are `h-7`. Both below WCAG 2.5.5 minimum.
@@ -776,7 +776,7 @@ await supabase
 
 ---
 
-## 32. `src/app/(admin)/admin/profile/page.tsx:176–190` — Password-change success only signaled by toast
+## 32. `src/app/(admin)/admin/profile/page.tsx:176–190` — Password-change success only signaled by toast ✅ Implemented in this commit
 
 **Category:** UI-a11y
 **Description:** Error path uses `role="alert"`, pending state is announced — but success only fires `toast.success("Password updated")`. Users on the page who Tab past the toast lose the only feedback that anything happened.

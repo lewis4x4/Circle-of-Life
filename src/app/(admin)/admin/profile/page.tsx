@@ -62,6 +62,7 @@ export default function AdminProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordPending, setPasswordPending] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const tablistRef = useRef<HTMLElement>(null);
 
@@ -139,6 +140,7 @@ export default function AdminProfilePage() {
   async function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPasswordError(null);
+    setPasswordSuccess(null);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordError("All password fields are required.");
@@ -178,6 +180,7 @@ export default function AdminProfilePage() {
         return;
       }
 
+      setPasswordSuccess("Password updated.");
       toast.success("Password updated");
       setCurrentPassword("");
       setNewPassword("");
@@ -223,14 +226,14 @@ export default function AdminProfilePage() {
         role="tablist"
         aria-label="Profile sections"
         onKeyDown={handleTablistKeyDown}
-        className="inline-flex h-9 w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-muted/50 p-1"
+        className="inline-flex min-h-11 w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-muted/50 p-1"
       >
         {PROFILE_TABS.map((tab) => {
           const active = activeTab === tab.value;
           const isStub = tab.value !== "profile" && tab.value !== "security";
           const href = tab.value === "profile" ? "/admin/profile" : `/admin/profile?tab=${tab.value}`;
           const className = cn(
-            "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium",
+            "inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium",
             "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
             active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
@@ -467,6 +470,11 @@ export default function AdminProfilePage() {
               {passwordError ? (
                 <p id="password-change-error" role="alert" className="text-sm text-destructive">
                   {passwordError}
+                </p>
+              ) : null}
+              {passwordSuccess ? (
+                <p role="status" aria-live="polite" className="text-sm text-success">
+                  {passwordSuccess}
                 </p>
               ) : null}
             </CardContent>
