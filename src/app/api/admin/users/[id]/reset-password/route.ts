@@ -4,11 +4,13 @@
 
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { resetUserPasswordSchema } from "@/lib/validation/user-management";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 import { logError } from "@/lib/observability/logger";
 import { canActorManageTarget } from "@/lib/rbac";
+import type { Database } from "@/types/database";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -18,6 +20,20 @@ interface RouteContext {
 
 function generateTemporaryPassword(): string {
   return randomBytes(24).toString("base64url");
+}
+
+function createPasswordResetClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+  return createClient<Database>(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }
 
 export async function POST(request: NextRequest, ctx: RouteContext) {
@@ -73,15 +89,26 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
 
   let temporaryPassword: string | undefined;
+  let auditWritten = false;
 
   try {
     if (mode === "email") {
-      const { error } = await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: target.email,
+      await writeUserAuditEntry({
+        organizationId: actor.organization_id!,
+        actingUserId: actor.id,
+        targetUserId,
+        action: "password_reset",
+        changes: { before: {}, after: {}, meta: { mode: "email" } },
+      });
+      auditWritten = true;
+
+      const resetClient = createPasswordResetClient();
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://circleoflifealf.com";
+      const { error } = await resetClient.auth.resetPasswordForEmail(target.email, {
+        redirectTo: `${siteUrl}/login`,
       });
       if (error) {
-        return NextResponse.json({ error: "Failed to send password reset email" }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
     } else {
       temporaryPassword = generateTemporaryPassword();
@@ -102,13 +129,15 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
 
   // Audit — never include temporaryPassword in changes, reason, logs, or metadata.
-  await writeUserAuditEntry({
-    organizationId: actor.organization_id!,
-    actingUserId: actor.id,
-    targetUserId,
-    action: "password_reset",
-    changes: { before: {}, after: { mode } },
-  });
+  if (!auditWritten) {
+    await writeUserAuditEntry({
+      organizationId: actor.organization_id!,
+      actingUserId: actor.id,
+      targetUserId,
+      action: "password_reset",
+      changes: { before: {}, after: { mode } },
+    });
+  }
 
   if (mode === "temp") {
     return NextResponse.json({
