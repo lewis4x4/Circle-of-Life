@@ -74,7 +74,7 @@ Already-fixed items (NOT re-reported): NLQ viewport math, dashboard snapshot LRU
 
 ---
 
-## 3. `supabase/functions/resident-assurance-ai/index.ts:183–185` — Clinical/PHI text leak into broadly-visible `exec_alerts.body`
+## 3. `supabase/functions/resident-assurance-ai/index.ts:183–185` — Clinical/PHI text leak into broadly-visible `exec_alerts.body` ✅ Implemented in this commit
 
 **Category:** Security / PHI
 **Description:** When the AI flags a resident insight, the function inserts a row into `exec_alerts` with `body: p.body?.slice(0, 2000)` — i.e. the model's free-form clinical explanation, truncated to 2000 chars. `exec_alerts` is surfaced to executive/owner/org_admin dashboards (and any other RLS arm) and is not gated by a resident-access check the way `resident_observation_logs` is. The body can include resident initials, vitals, observation text, and AHCA-relevant clinical reasoning — i.e. PHI distributed to readers who may not have direct facility-level access to that resident's chart.
@@ -100,7 +100,7 @@ The PHI-bearing detail stays on `resident_safety_scores` / `resident_observation
 
 ---
 
-## 4. `supabase/functions/observation-escalation-engine/index.ts:46–95` — Service-role writes scoped by ID only (cross-org write risk)
+## 4. `supabase/functions/observation-escalation-engine/index.ts:46–95` — Service-role writes scoped by ID only (cross-org write risk) ✅ Implemented in this commit
 
 **Category:** Security / multi-tenant
 **Description:** The scanner pulls overdue tasks across orgs (the for-loop iterates orgs), then for each row issues `UPDATE … WHERE id = r.id` and `SELECT … WHERE observation_task_id = r.id` using the service-role client. Because service-role bypasses RLS, any mismatched/cached `r.id` value (or a future code path that re-uses the same client) writes/reads cross-tenant data without RLS protection. The function is currently safe because the input set is itself service-role-filtered, but it violates the codebase's "every service-role write asserts org scope" rule and is one rebase away from a real leak.
@@ -145,7 +145,7 @@ And on every write/read within the per-row loop:
 
 ---
 
-## 5. `supabase/functions/process-referral-hl7-inbound/index.ts:81–143` — Cron path processes every org's queue when `organization_id` is omitted
+## 5. `supabase/functions/process-referral-hl7-inbound/index.ts:81–143` — Cron path processes every org's queue when `organization_id` is omitted ✅ Implemented in this commit
 
 **Category:** Security / multi-tenant
 **Description:** The cron entry accepts an optional `organization_id`, validates it only if present, and falls through to a `.from('referral_hl7_inbound_queue').select(...)` with NO org filter when `orgId` is null. Under service-role this fans out across every tenant. Every row update inside the loop then writes by `id` only, also without an org guard.
@@ -176,7 +176,7 @@ If the scheduler genuinely needs all-org processing, expose a separate explicit 
 
 ---
 
-## 6. `supabase/functions/_shared/router-dispatch.ts:300–420` — Caregiver/family see org-wide facility KPI and directory facts via service-role calls
+## 6. `supabase/functions/_shared/router-dispatch.ts:300–420` — Caregiver/family see org-wide facility KPI and directory facts via service-role calls ✅ Implemented in this commit
 
 **Category:** Security / multi-tenant (IDOR-by-omission)
 **Description:** `haven-ai-router` permits `caregiver` and `family` roles. Three loaders feed the model with org-wide content using only `organization_id`:
@@ -405,7 +405,7 @@ Same pattern in:
 
 # P1 — Edge Functions (handler hygiene + tenant scope)
 
-## 14. `supabase/functions/haven-ai-router/index.ts:1235` — No outer try/catch around the handler body
+## 14. `supabase/functions/haven-ai-router/index.ts:1235` — No outer try/catch around the handler body ✅ Implemented in this commit
 
 **Category:** Edge / reliability
 **Description:** The handler has inner try/catches around individual steps (auth, profile load, dispatch), but no outer wrapper. An unhandled rejection inside any non-wrapped code path (e.g. `await loadKpiBundle` if `computeKpiForFacilityIds` throws) escapes Deno.serve and surfaces as a generic 500 with no Sentry attribution.
@@ -429,7 +429,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 ---
 
-## 15. `supabase/functions/exec-nlq-executor/index.ts:444–454` — Session update scoped by org, not by user
+## 15. `supabase/functions/exec-nlq-executor/index.ts:444–454` — Session update scoped by org, not by user ✅ Implemented in this commit
 
 **Category:** Security / IDOR
 **Description:** When the executor records the result of a query, it does `update().eq("id", sessionId).eq("organization_id", organizationId)`. The role gate already restricts callers to owner/org_admin/caregiver/family, but the user_id check is missing — any same-org user who knows or guesses a `session_id` can clobber another user's session row.
@@ -446,7 +446,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 ---
 
-## 16. `supabase/functions/exec-nlq-executor/index.ts:253–254` — `body.facility_id` and `body.role` accepted without verification
+## 16. `supabase/functions/exec-nlq-executor/index.ts:253–254` — `body.facility_id` and `body.role` accepted without verification ✅ Implemented in this commit
 
 **Category:** Security / prompt-injection-adjacent
 **Description:** Both values flow into the prompt context. `body.role` ends up in the system prompt that decides which dispatchers run; a caregiver claiming `role: "owner"` doesn't pass DB RLS but does shift the model's reasoning. `body.facility_id` becomes a soft filter on KPI selection; if it points at a facility the caller can't access, the model's narrative will reference data the caller still can't fetch — but the framing leaks the existence of the other facility.
@@ -463,7 +463,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 ---
 
-## 17. `supabase/functions/process-referral-hl7-inbound/index.ts:117,143,170` — Raw DB error text returned in HTTP response
+## 17. `supabase/functions/process-referral-hl7-inbound/index.ts:117,143,170` — Raw DB error text returned in HTTP response ✅ Implemented in this commit
 
 **Category:** Security / info disclosure (low)
 **Description:** When a queue row fails, `{ errors: [...] }` is bubbled back to the caller with Postgres `error.message` strings, which can include constraint names, column names, and partial data values. For an internal cron endpoint this is acceptable; if the route is ever exposed via gateway it leaks schema.
@@ -479,7 +479,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 ---
 
-## 18. `supabase/functions/_shared/router-dispatch.ts:304` and `supabase/functions/exec-alert-evaluator/index.ts:140` and `supabase/functions/observation-escalation-engine/index.ts:46–55` — Unbounded org-scoped SELECTs
+## 18. `supabase/functions/_shared/router-dispatch.ts:304` and `supabase/functions/exec-alert-evaluator/index.ts:140` and `supabase/functions/observation-escalation-engine/index.ts:46–55` — Unbounded org-scoped SELECTs ✅ Implemented in this commit
 
 **Category:** Performance
 **Description:** Three loaders return every matching row in the org with no `.limit()` and no ordering. On large tenants (the COL multi-facility demo is the start, multi-LLC operators will eventually be larger), these hit the slow path.
@@ -495,7 +495,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 ---
 
-## 19. `supabase/functions/_shared/router-dispatch.ts:407–422` — Per-facility KPI fan-out (N+1 across facilities)
+## 19. `supabase/functions/_shared/router-dispatch.ts:407–422` — Per-facility KPI fan-out (N+1 across facilities) ✅ Implemented in this commit
 
 **Category:** Performance
 **Description:** `loadKpiBundle` calls `computeKpiForFacilityIds` once for the portfolio aggregate and then once per facility via `facilities.map(async (f) => computeKpiForFacilityIds(...[f.id]))`. For an org with 5 facilities this is 6 round trips and at 20+ becomes painful. Each dispatch call from the router triggers this.
@@ -504,7 +504,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 ---
 
-## 20. `supabase/functions/resident-assurance-ai/index.ts:75–80` — Clinical reads filter only by `resident_id` under service-role
+## 20. `supabase/functions/resident-assurance-ai/index.ts:75–80` — Clinical reads filter only by `resident_id` under service-role ✅ Implemented in this commit
 
 **Category:** Security / defense-in-depth
 **Description:** `resident_observation_logs`, `incidents`, `emar_records`, `resident_safety_scores`, `assessments` all carry `organization_id` and `facility_id` columns. The function reads them with `.eq("resident_id", r.id)` only — service-role bypasses RLS so this works, but the codebase rule is to assert org/facility scope on every service-role read.
@@ -523,7 +523,7 @@ Apply the identical wrapper to: `exec-alert-evaluator/index.ts:110`, `exec-nlq-e
 
 # P1 — Front-end (Settings IA + admin user mgmt)
 
-## 21. `src/components/admin/users/UserEditSheet.tsx:278–326` — Modal has `aria-modal` but no focus trap, no focus restore, no Escape handler
+## 21. `src/components/admin/users/UserEditSheet.tsx:278–326` — Modal has `aria-modal` but no focus trap, no focus restore, no Escape handler ✅ Implemented
 
 **Category:** UI-a11y
 **Description:** The hand-rolled sheet declares `role="dialog" aria-modal="true"` but keyboard users can Tab to elements behind the overlay, focus is not moved into the dialog on open, and focus is not restored to the trigger on close. Escape doesn't close it either.
@@ -546,7 +546,7 @@ return (
 
 ---
 
-## 22. `src/components/admin/users/UserEditSheet.tsx:331,365,524` — Error messages are color-only, no `role="alert"`
+## 22. `src/components/admin/users/UserEditSheet.tsx:331,365,524` — Error messages are color-only, no `role="alert"` ✅ Implemented
 
 **Category:** UI-a11y
 **Description:** `<div className="… text-destructive">{error}</div>` triggers nothing for SR users. After a failed save / failed password reset, SR users see no feedback at all.
@@ -565,7 +565,7 @@ Same fix on `resetPasswordError` (line 524).
 
 ---
 
-## 23. `src/components/admin/users/UserEditSheet.tsx:312–327` — Tab buttons missing `role="tab"`, `aria-selected`, `type="button"`
+## 23. `src/components/admin/users/UserEditSheet.tsx:312–327` — Tab buttons missing `role="tab"`, `aria-selected`, `type="button"` ✅ Implemented
 
 **Category:** UI-a11y
 **Description:** SR users get no selected state; the buttons would also accidentally submit if this sheet is ever moved into a form. Active state is also indicated by `text-teal-600` only — color-only signal.
@@ -599,7 +599,7 @@ Same fix on `resetPasswordError` (line 524).
 
 ---
 
-## 24. `src/components/admin/users/UserEditSheet.tsx:319` — Hardcoded `text-teal-500`/`text-teal-600`/`border-teal-500`
+## 24. `src/components/admin/users/UserEditSheet.tsx:319` — Hardcoded `text-teal-500`/`text-teal-600`/`border-teal-500` ✅ Implemented
 
 **Category:** UI-a11y / design tokens
 **Description:** The active tab uses raw teal palette classes. The design system rule (`no-raw-color` ESLint plugin) requires `text-primary` / `border-primary` etc. through tokens. This is also why the active state collapses when the theme switches.
@@ -608,7 +608,7 @@ Same fix on `resetPasswordError` (line 524).
 
 ---
 
-## 25. `src/components/admin/users/UserEditSheet.tsx:280` — Backdrop is a `<div onClick>` (no role / no keyboard)
+## 25. `src/components/admin/users/UserEditSheet.tsx:280` — Backdrop is a `<div onClick>` (no role / no keyboard) ✅ Implemented
 
 **Category:** UI-a11y
 **Description:** Clickable non-button div without keyboard support. Fixed automatically if you adopt the `<Dialog>` primitive (finding #21). If keeping the hand-rolled sheet:
@@ -623,7 +623,7 @@ Same fix on `resetPasswordError` (line 524).
 
 ---
 
-## 26. `src/components/admin/users/UserEditSheet.tsx:301–308` — Close button below 44×44 tap target
+## 26. `src/components/admin/users/UserEditSheet.tsx:301–308` — Close button below 44×44 tap target ✅ Implemented
 
 **Category:** UI-a11y / WCAG 2.5.5
 **Description:** `p-1` + 16px icon = ~24×24px. Below WCAG 2.5.5 minimum.
@@ -641,7 +641,7 @@ Same fix on `resetPasswordError` (line 524).
 
 ---
 
-## 27. `src/components/admin/users/UserEditSheet.tsx:529–540` — Temporary password rendered as plaintext
+## 27. `src/components/admin/users/UserEditSheet.tsx:529–540` — Temporary password rendered as plaintext ✅ Implemented
 
 **Category:** Security / privacy
 **Description:** The temp password is the single most sensitive payload in this flow. It's intentionally returned once to the initiating admin, but it's shown in plaintext by default — over-the-shoulder leak risk, screenshot risk, screen-share risk.
