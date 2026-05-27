@@ -73,11 +73,11 @@ Deno.serve(async (req) => {
   for (const r of residents) {
     // Gather 7-day clinical data in parallel
     const [obsRes, incRes, emarRes, scoreRes, assessRes] = await Promise.all([
-      admin.from("resident_observation_logs").select("quick_status, exception_present").eq("resident_id", r.id).gte("observed_at", since).is("deleted_at", null),
-      admin.from("incidents").select("category, severity").eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
-      admin.from("emar_records").select("status, is_prn, prn_effectiveness_result").eq("resident_id", r.id).gte("scheduled_time", since).is("deleted_at", null),
-      admin.from("resident_safety_scores").select("score, risk_tier, score_delta").eq("resident_id", r.id).is("deleted_at", null).order("computed_at", { ascending: false }).limit(1).maybeSingle(),
-      admin.from("assessments").select("assessment_type, total_score").eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
+      admin.from("resident_observation_logs").select("quick_status, exception_present").eq("organization_id", orgId).eq("facility_id", r.facility_id).eq("resident_id", r.id).gte("observed_at", since).is("deleted_at", null),
+      admin.from("incidents").select("category, severity").eq("organization_id", orgId).eq("facility_id", r.facility_id).eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
+      admin.from("emar_records").select("status, is_prn, prn_effectiveness_result").eq("organization_id", orgId).eq("facility_id", r.facility_id).eq("resident_id", r.id).gte("scheduled_time", since).is("deleted_at", null),
+      admin.from("resident_safety_scores").select("score, risk_tier, score_delta").eq("organization_id", orgId).eq("facility_id", r.facility_id).eq("resident_id", r.id).is("deleted_at", null).order("computed_at", { ascending: false }).limit(1).maybeSingle(),
+      admin.from("assessments").select("assessment_type, total_score").eq("organization_id", orgId).eq("facility_id", r.facility_id).eq("resident_id", r.id).gte("created_at", since).is("deleted_at", null),
     ]);
 
     if (obsRes.error || incRes.error || emarRes.error || scoreRes.error || assessRes.error) {
@@ -170,21 +170,22 @@ Respond with JSON only:
       const sev = VALID_SEV.includes(p.severity) ? p.severity : "medium";
       const iType = VALID_TYPES.includes(p.type) ? p.type : "pattern_detected";
 
-      const { error: insErr } = await admin.from("resident_safety_insights").insert({
+      const { data: insightRow, error: insErr } = await admin.from("resident_safety_insights").insert({
         organization_id: orgId, entity_id: entityByFacility.get(r.facility_id) ?? null, facility_id: r.facility_id,
         resident_id: r.id, insight_type: iType, severity: sev,
         title: (p.title ?? "").slice(0, 200), body: (p.body ?? "").slice(0, 2000),
         clinical_domains: Array.isArray(p.clinical_domains) ? p.clinical_domains : [],
         ai_model: MODEL, source_data_json: { observation_count: obs.length, incident_count: incidents.length },
-      });
+      }).select("id").single();
       if (!insErr) insightsGenerated++;
+      const insertedInsightId = (insightRow?.id as string | undefined) ?? null;
 
       if (sev === "high" || sev === "critical") {
         const { error: aErr } = await admin.from("exec_alerts").insert({
           organization_id: orgId, facility_id: r.facility_id, entity_id: entityByFacility.get(r.facility_id) ?? null, source_module: "system",
-          severity: sev === "critical" ? "critical" : "warning", title: `[AI] ${(p.title ?? "").slice(0, 180)}`, body: p.body?.slice(0, 2000),
+          severity: sev === "critical" ? "critical" : "warning", title: `[AI] ${(p.title ?? "").slice(0, 180)}`, body: "AI-detected clinical pattern for a resident. Open Resident Assurance for details.",
           category: "clinical", why_it_matters: "AI-detected clinical pattern requiring attention",
-          current_value_json: { resident_id: r.id, insight_type: iType },
+          current_value_json: { resident_id: r.id, facility_id: r.facility_id, insight_type: iType, insight_id: insertedInsightId },
           deep_link_path: "/admin/rounding/insights",
         });
         if (!aErr) alertsCreated++;

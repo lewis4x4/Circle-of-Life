@@ -571,20 +571,360 @@ export async function computeKpiForFacilityIds(
   };
 }
 
+type FacilityKpiHandle = { id: string; total_licensed_beds: number | null };
+type FacilityScopedRow = { facility_id?: string | null };
+type OpenInvoiceRow = FacilityScopedRow & { balance_due?: number | null };
+type MtdInvoiceRow = FacilityScopedRow & { total?: number | null };
+type FacilityTimeRecordRow = TimeRecordRow & FacilityScopedRow;
+
+function groupByFacility<T extends FacilityScopedRow>(rows: T[]): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    const facilityId = row.facility_id;
+    if (!facilityId) continue;
+    const bucket = grouped.get(facilityId) ?? [];
+    bucket.push(row);
+    grouped.set(facilityId, bucket);
+  }
+  return grouped;
+}
+
+function rowsForFacilities<T extends FacilityScopedRow>(
+  rowsByFacility: Map<string, T[]>,
+  facilityIds: string[],
+): T[] {
+  return facilityIds.flatMap((facilityId) => rowsByFacility.get(facilityId) ?? []);
+}
+
+function buildKpiPayloadFromRows(args: {
+  facilities: FacilityKpiHandle[];
+  residentRows: FacilityScopedRow[];
+  openInvoiceRows: OpenInvoiceRow[];
+  mtdInvoiceRows: MtdInvoiceRow[];
+  openIncidentRows: FacilityScopedRow[];
+  trailingIncidentRows: FacilityScopedRow[];
+  medErrorRows: FacilityScopedRow[];
+  deficiencyRows: FacilityScopedRow[];
+  certRows: FacilityScopedRow[];
+  outbreakRows: FacilityScopedRow[];
+  timeRecordRows: FacilityTimeRecordRow[];
+  surveyRows: RiskSnapshotRow[];
+}): ExecKpiPayload {
+  const licensedBeds = args.facilities.reduce(
+    (sum, f) => sum + (f.total_licensed_beds ?? 0),
+    0,
+  );
+  const occupiedResidents = args.residentRows.length;
+  const occupancyRate = licensedBeds > 0
+    ? roundTo(occupiedResidents / licensedBeds, 4)
+    : null;
+  const occupancyPct = occupancyRate != null
+    ? roundTo(occupancyRate * 100, 1)
+    : null;
+
+  const openInvoicesCount = args.openInvoiceRows.length;
+  const totalBalanceDueCents = args.openInvoiceRows.reduce(
+    (sum, row) => sum + (row.balance_due ?? 0),
+    0,
+  );
+  const billedRevenueMtdCents = args.mtdInvoiceRows.reduce(
+    (sum, row) => sum + (row.total ?? 0),
+    0,
+  );
+  const laborCostMtdCents = computeLaborCostCents(args.timeRecordRows);
+  const laborCostPct = laborCostMtdCents != null && billedRevenueMtdCents > 0
+    ? roundTo(laborCostMtdCents / billedRevenueMtdCents, 4)
+    : null;
+  const residentDays = occupiedResidents * 30;
+  const incidentRatePer1kResidentDays = residentDays > 0
+    ? roundTo((args.trailingIncidentRows.length / residentDays) * 1000, 2)
+    : null;
+  const surveyReadinessRate = latestSurveyReadinessRate(args.surveyRows);
+
+  const dashboardMetrics = buildDashboardMetrics({
+    occupancyRate,
+    billedRevenueMtdCents,
+    laborCostPct,
+    incidentRatePer1kResidentDays,
+    surveyReadinessRate,
+  });
+
+  return {
+    version: EXEC_KPI_METRICS_VERSION,
+    census: {
+      occupiedResidents,
+      licensedBeds,
+      occupancyPct,
+      occupancyRate,
+    },
+    financial: {
+      openInvoicesCount,
+      totalBalanceDueCents,
+      billedRevenueMtdCents,
+    },
+    clinical: {
+      openIncidents: args.openIncidentRows.length,
+      medicationErrorsMtd: args.medErrorRows.length,
+      incidentRatePer1kResidentDays,
+    },
+    compliance: {
+      openSurveyDeficiencies: args.deficiencyRows.length,
+      surveyReadinessRate,
+    },
+    workforce: {
+      certificationsExpiring30d: args.certRows.length,
+      laborCostMtdCents,
+      laborCostPct,
+    },
+    infection: {
+      activeOutbreaks: args.outbreakRows.length,
+    },
+    dashboardMetrics,
+  };
+}
+
+export async function computeKpiBundleForFacilityIds(
+  supabase: SupabaseClient,
+  organizationId: string,
+  facilities: FacilityKpiHandle[],
+  options: { snapshotDate?: string } = {},
+): Promise<{
+  portfolio: ExecKpiPayload;
+  perFacility: { facilityId: string; kpi: ExecKpiPayload }[];
+}> {
+  const facilityIds = facilities.map((f) => f.id);
+  if (facilityIds.length === 0) {
+    return { portfolio: emptyPayload(), perFacility: [] };
+  }
+
+  const snapshotDate = options.snapshotDate ?? utcTodayDate();
+  const { today, plus30 } = todayAndPlus30Iso(snapshotDate);
+  const mtdStart = startOfMonthIsoDate(snapshotDate);
+  const nextSnapshotDate = addDaysIsoDate(snapshotDate, 1);
+  const trailing30Start = addDaysIsoDate(snapshotDate, -29);
+
+  const residentsQuery = supabase
+    .from("residents")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .in("status", ["active", "hospital_hold", "loa"])
+    .in("facility_id", facilityIds);
+
+  const invoicesOpenQuery = supabase
+    .from("invoices")
+    .select("facility_id, balance_due")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .is("voided_at", null)
+    .gt("balance_due", 0)
+    .in("facility_id", facilityIds);
+
+  const invoicesMtdQuery = supabase
+    .from("invoices")
+    .select("facility_id, total")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .is("voided_at", null)
+    .gte("invoice_date", mtdStart)
+    .lte("invoice_date", snapshotDate)
+    .in("status", ["sent", "paid", "partial", "overdue"])
+    .in("facility_id", facilityIds);
+
+  const incidentsOpenQuery = supabase
+    .from("incidents")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .in("status", ["open", "investigating"])
+    .in("facility_id", facilityIds);
+
+  const incidentsTrailingRateQuery = supabase
+    .from("incidents")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .gte("occurred_at", `${trailing30Start}T00:00:00.000Z`)
+    .lt("occurred_at", `${nextSnapshotDate}T00:00:00.000Z`)
+    .in("facility_id", facilityIds);
+
+  const medErrorsMtdQuery = supabase
+    .from("medication_errors")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .gte("occurred_at", `${mtdStart}T00:00:00.000Z`)
+    .lt("occurred_at", `${nextSnapshotDate}T00:00:00.000Z`)
+    .in("facility_id", facilityIds);
+
+  const deficienciesOpenQuery = supabase
+    .from("survey_deficiencies")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .in("status", ["open", "poc_submitted", "poc_accepted", "recited"])
+    .in("facility_id", facilityIds);
+
+  const certsExpiringQuery = supabase
+    .from("staff_certifications")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .eq("status", "active")
+    .not("expiration_date", "is", null)
+    .gte("expiration_date", today)
+    .lte("expiration_date", plus30)
+    .in("facility_id", facilityIds);
+
+  const outbreaksActiveQuery = supabase
+    .from("infection_outbreaks")
+    .select("facility_id")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .is("resolved_at", null)
+    .in("facility_id", facilityIds);
+
+  const timeRecordsMtdQuery = supabase
+    .from("time_records")
+    .select(
+      "facility_id, actual_hours, regular_hours, overtime_hours, staff:staff_id(hourly_rate, overtime_rate)",
+    )
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .not("clock_out", "is", null)
+    .gte("clock_in", `${mtdStart}T00:00:00.000Z`)
+    .lt("clock_in", `${nextSnapshotDate}T00:00:00.000Z`)
+    .in("facility_id", facilityIds);
+
+  const surveyReadinessQuery = supabase
+    .from("risk_score_snapshots")
+    .select("facility_id, summary_json, computed_at")
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .in("facility_id", facilityIds)
+    .order("computed_at", { ascending: false })
+    .limit(Math.max(10, facilityIds.length * 10));
+
+  const [
+    residentsRes,
+    invoicesOpenRes,
+    invoicesMtdRes,
+    incidentsOpenRes,
+    incidentsTrailingRateRes,
+    medErrorsMtdRes,
+    deficienciesOpenRes,
+    certsExpiringRes,
+    outbreaksActiveRes,
+    timeRecordsMtdRes,
+    surveyReadinessRes,
+  ] = await Promise.all([
+    residentsQuery,
+    invoicesOpenQuery,
+    invoicesMtdQuery,
+    incidentsOpenQuery,
+    incidentsTrailingRateQuery,
+    medErrorsMtdQuery,
+    deficienciesOpenQuery,
+    certsExpiringQuery,
+    outbreaksActiveQuery,
+    timeRecordsMtdQuery,
+    surveyReadinessQuery,
+  ]);
+
+  const batchError = residentsRes.error ??
+    invoicesOpenRes.error ??
+    invoicesMtdRes.error ??
+    incidentsOpenRes.error ??
+    incidentsTrailingRateRes.error ??
+    medErrorsMtdRes.error ??
+    deficienciesOpenRes.error ??
+    certsExpiringRes.error ??
+    outbreaksActiveRes.error ??
+    timeRecordsMtdRes.error;
+  if (batchError) throw new Error(batchError.message);
+
+  const residentRows = (residentsRes.data ?? []) as FacilityScopedRow[];
+  const openInvoiceRows = (invoicesOpenRes.data ?? []) as OpenInvoiceRow[];
+  const mtdInvoiceRows = (invoicesMtdRes.data ?? []) as MtdInvoiceRow[];
+  const openIncidentRows = (incidentsOpenRes.data ?? []) as FacilityScopedRow[];
+  const trailingIncidentRows = (incidentsTrailingRateRes.data ?? []) as FacilityScopedRow[];
+  const medErrorRows = (medErrorsMtdRes.data ?? []) as FacilityScopedRow[];
+  const deficiencyRows = (deficienciesOpenRes.data ?? []) as FacilityScopedRow[];
+  const certRows = (certsExpiringRes.data ?? []) as FacilityScopedRow[];
+  const outbreakRows = (outbreaksActiveRes.data ?? []) as FacilityScopedRow[];
+  const timeRecordRows = (timeRecordsMtdRes.data ?? []) as FacilityTimeRecordRow[];
+  const surveyRows = surveyReadinessRes.error
+    ? []
+    : (surveyReadinessRes.data ?? []) as RiskSnapshotRow[];
+
+  const grouped = {
+    residents: groupByFacility(residentRows),
+    openInvoices: groupByFacility(openInvoiceRows),
+    mtdInvoices: groupByFacility(mtdInvoiceRows),
+    openIncidents: groupByFacility(openIncidentRows),
+    trailingIncidents: groupByFacility(trailingIncidentRows),
+    medErrors: groupByFacility(medErrorRows),
+    deficiencies: groupByFacility(deficiencyRows),
+    certs: groupByFacility(certRows),
+    outbreaks: groupByFacility(outbreakRows),
+    timeRecords: groupByFacility(timeRecordRows),
+    surveys: groupByFacility(surveyRows),
+  };
+
+  const portfolio = buildKpiPayloadFromRows({
+    facilities,
+    residentRows,
+    openInvoiceRows,
+    mtdInvoiceRows,
+    openIncidentRows,
+    trailingIncidentRows,
+    medErrorRows,
+    deficiencyRows,
+    certRows,
+    outbreakRows,
+    timeRecordRows,
+    surveyRows,
+  });
+
+  const perFacility = facilities.map((facility) => {
+    const ids = [facility.id];
+    return {
+      facilityId: facility.id,
+      kpi: buildKpiPayloadFromRows({
+        facilities: [facility],
+        residentRows: rowsForFacilities(grouped.residents, ids),
+        openInvoiceRows: rowsForFacilities(grouped.openInvoices, ids),
+        mtdInvoiceRows: rowsForFacilities(grouped.mtdInvoices, ids),
+        openIncidentRows: rowsForFacilities(grouped.openIncidents, ids),
+        trailingIncidentRows: rowsForFacilities(grouped.trailingIncidents, ids),
+        medErrorRows: rowsForFacilities(grouped.medErrors, ids),
+        deficiencyRows: rowsForFacilities(grouped.deficiencies, ids),
+        certRows: rowsForFacilities(grouped.certs, ids),
+        outbreakRows: rowsForFacilities(grouped.outbreaks, ids),
+        timeRecordRows: rowsForFacilities(grouped.timeRecords, ids),
+        surveyRows: rowsForFacilities(grouped.surveys, ids),
+      }),
+    };
+  });
+
+  return { portfolio, perFacility };
+}
+
 export async function loadFacilitiesForOrganization(
   supabase: SupabaseClient,
   organizationId: string,
 ): Promise<
-  { id: string; total_licensed_beds: number | null; entity_id: string }[]
+  { id: string; name: string | null; total_licensed_beds: number | null; entity_id: string }[]
 > {
   const { data, error } = await supabase
     .from("facilities")
-    .select("id, total_licensed_beds, entity_id")
+    .select("id, name, total_licensed_beds, entity_id")
     .eq("organization_id", organizationId)
     .is("deleted_at", null);
   if (error) throw new Error(error.message);
   return (data ?? []) as {
     id: string;
+    name: string | null;
     total_licensed_beds: number | null;
     entity_id: string;
   }[];

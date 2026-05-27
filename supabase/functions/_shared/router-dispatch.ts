@@ -17,7 +17,7 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
-  computeKpiForFacilityIds,
+  computeKpiBundleForFacilityIds,
   type ExecKpiPayload,
 } from "./exec-kpi-metrics.ts";
 import {
@@ -165,6 +165,14 @@ function centsToUsd(cents: number): string {
   }`;
 }
 
+function isOrgWideRole(role: string): boolean {
+  return role === "owner" || role === "org_admin";
+}
+
+function facilityScopeForLoader(args: DispatchArgs): string[] | undefined {
+  return isOrgWideRole(args.userRole) ? undefined : (args.facilityIds ?? []);
+}
+
 /**
  * Known-safe keys for router-dispatch logging. We whitelist rather than spread
  * caller-supplied `extra` so unbounded keys cannot leak via log size or
@@ -300,12 +308,18 @@ async function embedQuestion(question: string): Promise<number[] | null> {
 async function loadFacilitiesWithName(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<FacilityRow[]> {
-  const { data, error } = await admin
+  if (facilityIds && facilityIds.length === 0) return [];
+  let q = admin
     .from("facilities")
     .select("id, name, total_licensed_beds, entity_id")
     .eq("organization_id", organizationId)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (facilityIds) q = q.in("id", facilityIds);
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data ?? []) as FacilityRow[];
 }
@@ -313,10 +327,12 @@ async function loadFacilitiesWithName(
 async function loadRecentAlerts(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<AlertRow[]> {
+  if (facilityIds && facilityIds.length === 0) return [];
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - 30);
-  const { data, error } = await admin
+  let q = admin
     .from("exec_alerts")
     .select("id, severity, title, body, source_module, facility_id, created_at")
     .eq("organization_id", organizationId)
@@ -325,6 +341,8 @@ async function loadRecentAlerts(
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false })
     .limit(10);
+  if (facilityIds) q = q.in("facility_id", facilityIds);
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data ?? []) as AlertRow[];
 }
@@ -398,30 +416,38 @@ function buildKpiBlock(
 async function loadKpiBundle(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<{
   facilities: FacilityRow[];
   portfolio: ExecKpiPayload;
   perFacility: { facilityId: string; name: string; kpi: ExecKpiPayload }[];
   alerts: AlertRow[];
 }> {
-  const facilities = await loadFacilitiesWithName(admin, organizationId);
+  const facilities = await loadFacilitiesWithName(admin, organizationId, facilityIds);
   const facilityHandles = facilities.map((f) => ({
     id: f.id,
     total_licensed_beds: f.total_licensed_beds,
   }));
-  const [portfolio, perFacility, alerts] = await Promise.all([
-    computeKpiForFacilityIds(admin, organizationId, facilityHandles),
-    Promise.all(
-      facilities.map(async (f) => {
-        const kpi = await computeKpiForFacilityIds(admin, organizationId, [
-          { id: f.id, total_licensed_beds: f.total_licensed_beds },
-        ]);
-        return { facilityId: f.id, name: f.name, kpi };
-      }),
-    ),
-    loadRecentAlerts(admin, organizationId),
+  const [kpis, alerts] = await Promise.all([
+    computeKpiBundleForFacilityIds(admin, organizationId, facilityHandles),
+    loadRecentAlerts(admin, organizationId, facilityIds),
   ]);
-  return { facilities, portfolio, perFacility, alerts };
+  const kpiByFacility = new Map(kpis.perFacility.map((row) => [row.facilityId, row.kpi]));
+  const perFacility = facilities.map((f) => ({
+    facilityId: f.id,
+    name: f.name,
+    kpi: kpiByFacility.get(f.id) ?? {
+      ...kpis.portfolio,
+      census: {
+        ...kpis.portfolio.census,
+        occupiedResidents: 0,
+        licensedBeds: f.total_licensed_beds ?? 0,
+        occupancyPct: null,
+        occupancyRate: null,
+      },
+    },
+  }));
+  return { facilities, portfolio: kpis.portfolio, perFacility, alerts };
 }
 
 function citationsFromEvidence(rows: EvidenceRow[]): Citation[] {
@@ -535,8 +561,9 @@ function dispatchRefuse(_args: DispatchArgs): DispatchResult {
 async function loadDirectoryBlock(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<{ block: string; facts: FacilityFact[] }> {
-  const facts = await loadFacilityFacts(admin, organizationId);
+  const facts = await loadFacilityFacts(admin, organizationId, facilityIds);
   return { block: formatFacilityFactsBlock(facts), facts };
 }
 
@@ -559,7 +586,11 @@ async function dispatchDirectoryFactPack(
   let block = "";
   let facts: FacilityFact[] = [];
   try {
-    const loaded = await loadDirectoryBlock(args.admin, args.organizationId);
+    const loaded = await loadDirectoryBlock(
+      args.admin,
+      args.organizationId,
+      facilityScopeForLoader(args),
+    );
     block = loaded.block;
     facts = loaded.facts;
   } catch (err) {
@@ -670,7 +701,11 @@ INSTRUCTIONS:
 async function dispatchMetric(args: DispatchArgs): Promise<DispatchResult> {
   let bundle: Awaited<ReturnType<typeof loadKpiBundle>>;
   try {
-    bundle = await loadKpiBundle(args.admin, args.organizationId);
+    bundle = await loadKpiBundle(
+      args.admin,
+      args.organizationId,
+      facilityScopeForLoader(args),
+    );
   } catch (err) {
     logError("kpi_load_failed", err);
     return emptyResult(
@@ -1116,8 +1151,8 @@ async function dispatchMixed(args: DispatchArgs): Promise<DispatchResult> {
   let facts: FacilityFact[] = [];
   try {
     const [b, d] = await Promise.all([
-      loadKpiBundle(args.admin, args.organizationId),
-      loadDirectoryBlock(args.admin, args.organizationId),
+      loadKpiBundle(args.admin, args.organizationId, facilityScopeForLoader(args)),
+      loadDirectoryBlock(args.admin, args.organizationId, facilityScopeForLoader(args)),
     ]);
     bundle = b;
     dirBlock = d.block;

@@ -1235,6 +1235,7 @@ function streamResponse(args: {
 Deno.serve(async (req) => {
   const t = withTiming("haven-ai-router");
   const origin = req.headers.get("origin");
+  try {
   const url = new URL(req.url);
   const dryRun = url.searchParams.get("dry_run");
 
@@ -1779,4 +1780,13 @@ Deno.serve(async (req) => {
     200,
     origin,
   );
+  } catch (err) {
+    t.log({
+      event: "router_unhandled",
+      outcome: "error",
+      error_message: String(err),
+    });
+    captureException(err, { event: "router_unhandled" });
+    return routerFailureResponse(origin, "Internal router error");
+  }
 });

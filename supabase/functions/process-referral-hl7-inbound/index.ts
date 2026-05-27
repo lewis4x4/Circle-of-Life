@@ -2,7 +2,7 @@
  * Module 22 — Track D12: minimal HL7 v2 MSH parse for `referral_hl7_inbound` queue rows.
  * Does not create `referral_leads` (deferred per spec).
  *
- * POST JSON: `{ "organization_id"?: uuid, "limit"?: number }` (limit default 50, max 200).
+ * POST JSON: `{ "organization_id": uuid, "limit"?: number }` (limit default 50, max 200).
  * Auth: `x-cron-secret` = `PROCESS_REFERRAL_HL7_INBOUND_SECRET`.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -79,8 +79,8 @@ Deno.serve(async (req) => {
   }
 
   const orgId = body.organization_id?.trim();
-  if (orgId && !UUID_RE.test(orgId)) {
-    return jsonResponse({ error: "organization_id must be a valid uuid" }, 400);
+  if (!orgId || !UUID_RE.test(orgId)) {
+    return jsonResponse({ error: "organization_id is required and must be a valid uuid" }, 400);
   }
 
   const limit = Math.min(Math.max(Number(body.limit) || 50, 1), 200);
@@ -89,16 +89,15 @@ Deno.serve(async (req) => {
     .from("referral_hl7_inbound")
     .select("id, organization_id, facility_id, raw_message, message_control_id")
     .eq("status", "pending")
+    .eq("organization_id", orgId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true })
     .limit(limit);
 
-  if (orgId) q = q.eq("organization_id", orgId);
-
   const { data: rows, error: fetchErr } = await q;
   if (fetchErr) {
     t.log({ event: "fetch_pending_failed", outcome: "error", error_message: fetchErr.message });
-    return jsonResponse({ error: fetchErr.message }, 500);
+    return jsonResponse({ error: "Failed to fetch pending HL7 rows" }, 500);
   }
 
   let processed = 0;
@@ -114,7 +113,8 @@ Deno.serve(async (req) => {
           status: "failed",
           parse_error: parsed.error,
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("organization_id", orgId);
       if (upErr) errors.push(`${row.id}: ${upErr.message}`);
       failed += 1;
       continue;
@@ -130,7 +130,8 @@ Deno.serve(async (req) => {
         message_control_id: nextControl,
         trigger_event: parsed.triggerEvent,
       })
-      .eq("id", row.id);
+      .eq("id", row.id)
+      .eq("organization_id", orgId);
 
     if (upErr) {
       const isDup =
@@ -143,7 +144,8 @@ Deno.serve(async (req) => {
             status: "failed",
             parse_error: "duplicate_message_control_id",
           })
-          .eq("id", row.id);
+          .eq("id", row.id)
+          .eq("organization_id", orgId);
         if (failErr) errors.push(`${row.id}: ${failErr.message}`);
       } else {
         errors.push(`${row.id}: ${upErr.message}`);
@@ -163,11 +165,15 @@ Deno.serve(async (req) => {
     failed,
   });
 
+  if (errors.length) {
+    t.log({ event: "hl7_queue_partial_failure", outcome: "error", error_count: errors.length });
+  }
+
   return jsonResponse({
     ok,
     examined: rows?.length ?? 0,
     processed,
     failed,
-    ...(errors.length ? { errors } : {}),
+    ...(errors.length ? { error_count: errors.length } : {}),
   });
 });

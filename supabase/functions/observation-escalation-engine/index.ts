@@ -49,7 +49,9 @@ Deno.serve(async (req) => {
     .eq("organization_id", orgId)
     .not("status", "in", `(${TERMINAL.join(",")})`)
     .lt("grace_ends_at", new Date().toISOString())
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .order("grace_ends_at", { ascending: true })
+    .limit(500);
 
   if (qErr) { t.log({ event: "query_failed", outcome: "error", error_message: qErr.message }); return jsonResponse({ error: "Failed to query tasks" }, 500, origin); }
 
@@ -63,11 +65,21 @@ Deno.serve(async (req) => {
     if (newStatus === r.status) continue;
 
     // 2. Update task status
-    await admin.from("resident_observation_tasks").update({ status: newStatus, updated_at: now.toISOString() }).eq("id", r.id);
+    await admin
+      .from("resident_observation_tasks")
+      .update({ status: newStatus, updated_at: now.toISOString() })
+      .eq("id", r.id)
+      .eq("organization_id", orgId);
 
     // 3. Critically overdue -> level-1 escalation
     if (newStatus === "critically_overdue") {
-      const { data: dup } = await admin.from("resident_observation_escalations").select("id").eq("observation_task_id", r.id).is("resolved_at", null).maybeSingle();
+      const { data: dup } = await admin
+        .from("resident_observation_escalations")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("observation_task_id", r.id)
+        .is("resolved_at", null)
+        .maybeSingle();
       if (!dup) {
         await admin.from("resident_observation_escalations").insert({ organization_id: orgId, facility_id: r.facility_id, observation_task_id: r.id, resident_id: r.resident_id, escalation_level: 1, escalation_type: "auto_overdue" });
         const title = `Critically overdue observation at ${facName}`;
@@ -80,11 +92,25 @@ Deno.serve(async (req) => {
     // 4. Missed -> level-2 escalation + watch severity boost
     if (newStatus === "missed") {
       missedCount++;
-      const { data: dup } = await admin.from("resident_observation_escalations").select("id").eq("observation_task_id", r.id).eq("escalation_level", 2).is("resolved_at", null).maybeSingle();
+      const { data: dup } = await admin
+        .from("resident_observation_escalations")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("observation_task_id", r.id)
+        .eq("escalation_level", 2)
+        .is("resolved_at", null)
+        .maybeSingle();
       if (!dup) {
         let sw = 1;
         if (r.resident_id) {
-          const { data: w } = await admin.from("resident_watch_instances").select("id").eq("resident_id", r.resident_id).is("ended_at", null).is("deleted_at", null).maybeSingle();
+          const { data: w } = await admin
+            .from("resident_watch_instances")
+            .select("id")
+            .eq("organization_id", orgId)
+            .eq("resident_id", r.resident_id)
+            .is("ended_at", null)
+            .is("deleted_at", null)
+            .maybeSingle();
           if (w) sw = 2;
         }
         await admin.from("resident_observation_escalations").insert({ organization_id: orgId, facility_id: r.facility_id, observation_task_id: r.id, resident_id: r.resident_id, escalation_level: 2, escalation_type: "auto_overdue", severity_weight: sw });
