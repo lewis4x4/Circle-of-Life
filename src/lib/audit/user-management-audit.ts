@@ -13,7 +13,8 @@ type AuditAction =
   | "grant_access"
   | "revoke_access"
   | "soft_delete"
-  | "reactivate";
+  | "reactivate"
+  | "password_reset";
 
 interface WriteAuditParams {
   organizationId: string;

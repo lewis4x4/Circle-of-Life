@@ -96,7 +96,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     organizationId: actor.organization_id!,
     actingUserId: actor.id,
     targetUserId,
-    action: "user.password.reset" as never,
+    action: "password_reset",
     changes: { before: {}, after: { mode } },
   });
 

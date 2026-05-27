@@ -137,6 +137,7 @@ export const auditLogQuerySchema = z.object({
       "revoke_access",
       "soft_delete",
       "reactivate",
+      "password_reset",
     ])
     .optional(),
   start_date: z.string().datetime().optional(),
