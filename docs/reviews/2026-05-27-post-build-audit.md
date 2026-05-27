@@ -215,7 +215,7 @@ Add the same `facilityIds?: string[]` parameter to `loadDirectoryBlock`, `loadKp
 
 # P1 — Database integrity (migrations 274–284)
 
-## 7. `supabase/migrations/277_p2_cleanup.sql:73–122` — `get_nlq_conversation_context` trusts caller-supplied `p_org_id` / `p_user_id`
+## 7. `supabase/migrations/277_p2_cleanup.sql:73–122` — `get_nlq_conversation_context` trusts caller-supplied `p_org_id` / `p_user_id` ✅ Implemented in migration 285
 
 **Category:** Security / SECURITY DEFINER hygiene
 **Description:** The RPC is `SECURITY DEFINER` and granted only to `service_role`. It scopes by `p_org_id` / `p_user_id` as passed by the caller, with no cross-check that those values match `auth.uid()` or the session's actual ownership. The router currently passes verified values, but defense-in-depth requires the function to derive identity from a trusted source. A single mis-ordered argument in any future caller leaks another user's conversation history.
@@ -267,7 +267,7 @@ $$;
 
 ---
 
-## 8. `supabase/migrations/283_phase1_compliance_skeleton.sql:32,72,128–129` — New FKs missing explicit `ON DELETE`
+## 8. `supabase/migrations/283_phase1_compliance_skeleton.sql:32,72,128–129` — New FKs missing explicit `ON DELETE` ✅ Implemented in migration 285
 
 **Category:** DB integrity
 **Description:** `legal_entities.organization_id`, `fl_statutes.organization_id`, `background_screenings.facility_id`, and `background_screenings.organization_id` are declared without an explicit `ON DELETE` clause. Postgres defaults to `NO ACTION`, which makes the behaviour ambiguous against the codebase rule (every FK should be explicit). Compliance tables in particular need `RESTRICT` so a stale org/facility cannot vanish data underneath them.
@@ -297,7 +297,7 @@ ALTER TABLE public.background_screenings
 
 ---
 
-## 9. `supabase/migrations/283_phase1_compliance_skeleton.sql:148–153` — `background_screenings` missing composite RLS index
+## 9. `supabase/migrations/283_phase1_compliance_skeleton.sql:148–153` — `background_screenings` missing composite RLS index ✅ Implemented in migration 285
 
 **Category:** Performance / DB
 **Description:** RLS on `background_screenings` filters by `organization_id` (cheapest), then `facility_id IN (SELECT haven.accessible_facility_ids())`, then `deleted_at IS NULL`. The migration ships an `idx_bg_screenings_facility (facility_id)` partial — but no composite `(organization_id, facility_id)` index. On large tenants the planner has to bitmap-AND two narrow indexes instead of seeking one composite. Standard pattern across the rest of the schema.
@@ -315,7 +315,7 @@ CREATE INDEX IF NOT EXISTS idx_background_screenings_org_staff
 
 ---
 
-## 10. `supabase/migrations/280_phase1_facilities_enhancement.sql:20,24` — New columns lack CHECK constraints
+## 10. `supabase/migrations/280_phase1_facilities_enhancement.sql:20,24` — New columns lack CHECK constraints ✅ Implemented in migration 285
 
 **Category:** DB integrity
 **Description:** `pharmacy_vendor` is documented to be one of `BAYA_PHARMACY` / `NORTH_FLORIDA_PHARMACY` / NULL but has no CHECK; `occupancy_pct` is documented as `0.00–1.00` but the column type accepts any numeric. Both will eventually drift.
