@@ -45,6 +45,7 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let cancelled = false;
     let timeoutId: number | null = null;
+    let unsubscribe: (() => void) | null = null;
 
     if (!isBrowserSupabaseConfigured()) {
       setHasSession(false);
@@ -52,61 +53,110 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    const clearGraceTimeout = () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
     const markSessionReady = () => {
       setHasSession(true);
       setSessionReady(true);
-      if (timeoutId) window.clearTimeout(timeoutId);
+      clearGraceTimeout();
+      unsubscribe?.();
+      unsubscribe = null;
+    };
+
+    const markNoSession = () => {
+      setHasSession(false);
+      setSessionReady(true);
+      clearGraceTimeout();
+      unsubscribe?.();
+      unsubscribe = null;
     };
 
     const url = new URL(window.location.href);
     const code = url.searchParams.get("code");
+    const hash = window.location.hash.startsWith("#")
+      ? new URLSearchParams(window.location.hash.slice(1))
+      : new URLSearchParams();
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
+    const hashType = hash.get("type");
 
-    if (code) {
-      void supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data.session?.user) {
-          if (error) {
-            console.warn("Password reset code exchange failed:", error.message);
-          }
-          setHasSession(false);
-          setSessionReady(true);
-          return;
-        }
-        setHasSession(true);
-        setSessionReady(true);
-        window.history.replaceState(null, "", url.pathname);
-      });
-
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (cancelled) return;
-      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session?.user)) {
-        markSessionReady();
-      }
+    console.info("[reset-password] URL detection", {
+      has_code: Boolean(code),
+      has_access_token: Boolean(accessToken),
+      has_refresh_token: Boolean(refreshToken),
+      hash_type: hashType,
     });
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
+    async function attempt(): Promise<void> {
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (error || !data.session?.user) {
+          console.warn("[reset-password] exchangeCodeForSession failed:", error?.message);
+          markNoSession();
+          return;
+        }
+        markSessionReady();
+        window.history.replaceState(null, "", url.pathname);
+        return;
+      }
+
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (cancelled) return;
+        if (error || !data.session?.user) {
+          console.warn("[reset-password] setSession failed:", error?.message);
+          markNoSession();
+          return;
+        }
+        markSessionReady();
+        window.history.replaceState(null, "", url.pathname);
+        return;
+      }
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        if (cancelled) return;
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session?.user)) {
+          markSessionReady();
+        }
+      });
+      unsubscribe = () => subscription.unsubscribe();
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (cancelled) return;
       if (session?.user) {
         markSessionReady();
+        return;
       }
-    });
 
-    timeoutId = window.setTimeout(() => {
-      if (cancelled) return;
-      setSessionReady(true);
-    }, 2000);
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) return;
+        setSessionReady(true);
+        clearGraceTimeout();
+        unsubscribe?.();
+        unsubscribe = null;
+      }, 2000);
+    }
+
+    void attempt();
 
     return () => {
       cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
-      subscription.unsubscribe();
+      clearGraceTimeout();
+      unsubscribe?.();
+      unsubscribe = null;
     };
   }, [supabase]);
 
