@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Camera, Copy, Loader2, Lock, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useOrganizationName } from "@/components/layout/UserMenu/user-menu-data";
 
@@ -53,8 +54,14 @@ export default function AdminProfilePage() {
   } = useHavenAuth();
   const orgName = useOrganizationName(organizationId);
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
+  const supabase = useMemo(() => createClient(), []);
   const [displayName, setDisplayName] = useState(fullName ?? "");
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordPending, setPasswordPending] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const tablistRef = useRef<HTMLElement>(null);
 
@@ -129,6 +136,59 @@ export default function AdminProfilePage() {
     }
   }
 
+  async function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordError(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("All password fields are required.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation must match.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("New password must be different from your current password.");
+      return;
+    }
+    if (!email) {
+      setPasswordError("Could not confirm your account email. Refresh and try again.");
+      return;
+    }
+
+    setPasswordPending(true);
+    try {
+      const signInResult = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+      if (signInResult.error) {
+        setPasswordError("Current password is incorrect");
+        return;
+      }
+
+      const updateResult = await supabase.auth.updateUser({ password: newPassword });
+      if (updateResult.error) {
+        setPasswordError(updateResult.error.message);
+        return;
+      }
+
+      toast.success("Password updated");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Could not update password.");
+    } finally {
+      setPasswordPending(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <header className="flex flex-col gap-4 rounded-[var(--radius)] border border-border bg-card p-5 shadow-[var(--shadow-card)] md:flex-row md:items-center md:justify-between">
@@ -167,7 +227,7 @@ export default function AdminProfilePage() {
       >
         {PROFILE_TABS.map((tab) => {
           const active = activeTab === tab.value;
-          const isStub = tab.value !== "profile";
+          const isStub = tab.value !== "profile" && tab.value !== "security";
           const href = tab.value === "profile" ? "/admin/profile" : `/admin/profile?tab=${tab.value}`;
           const className = cn(
             "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium",
@@ -350,6 +410,76 @@ export default function AdminProfilePage() {
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </CardFooter>
+        </Card>
+      ) : activeTab === "security" ? (
+        <Card size="lg">
+          <form onSubmit={(event) => void handlePasswordChange(event)} noValidate>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>Change your password after confirming your current password.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="current-password">Current password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  autoComplete="current-password"
+                  disabled={passwordPending}
+                  aria-invalid={passwordError === "Current password is incorrect"}
+                  aria-describedby={passwordError ? "password-change-error" : undefined}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="new-password">New password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={passwordPending}
+                  aria-invalid={Boolean(passwordError)}
+                  aria-describedby={passwordError ? "new-password-help password-change-error" : "new-password-help"}
+                />
+                <p id="new-password-help" className="text-[12px] text-muted-foreground">
+                  Use at least 8 characters.
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">Confirm new password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={passwordPending}
+                  aria-invalid={Boolean(passwordError)}
+                  aria-describedby={passwordError ? "password-change-error" : undefined}
+                />
+              </div>
+
+              {passwordError ? (
+                <p id="password-change-error" role="alert" className="text-sm text-destructive">
+                  {passwordError}
+                </p>
+              ) : null}
+            </CardContent>
+            <CardFooter className="justify-end">
+              <span aria-live="polite" className="sr-only">
+                {passwordPending ? "Updating password…" : ""}
+              </span>
+              <Button type="submit" disabled={passwordPending || authLoading}>
+                {passwordPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                {passwordPending ? "Updating…" : "Update password"}
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
       ) : (
         <Card>
