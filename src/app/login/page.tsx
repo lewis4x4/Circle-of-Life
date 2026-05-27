@@ -216,7 +216,7 @@ export default function LoginPage() {
     setResetRequesting(true);
     try {
       await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       setResetNotice("If that account exists, a password reset link has been sent.");
     } catch {

@@ -105,7 +105,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       const resetClient = createPasswordResetClient();
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://circleoflifealf.com";
       const { error } = await resetClient.auth.resetPasswordForEmail(target.email, {
-        redirectTo: `${siteUrl}/login`,
+        redirectTo: `${siteUrl}/reset-password`,
       });
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
