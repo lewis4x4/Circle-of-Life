@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRoleSelector } from "./UserRoleSelector";
 import { FacilityAccessManager } from "./FacilityAccessManager";
 import { UserStatusBadge } from "./UserStatusBadge";
-import { ROLE_LABELS } from "@/lib/rbac";
+import { canActorManageTarget, ROLE_LABELS } from "@/lib/rbac";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
@@ -115,6 +115,10 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [deactivateReason, setDeactivateReason] = useState("");
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [resetPasswordMode, setResetPasswordMode] = useState<ResetPasswordMode>("email");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -134,6 +138,8 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   // Audit
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
 
+  const isDeactivated = Boolean(user?.deleted_at);
+  const canManageTarget = Boolean(user && currentUser?.id !== user.id && canActorManageTarget(currentRole, user.app_role));
   const canResetPassword = Boolean(
     user &&
       !user.deleted_at &&
@@ -227,24 +233,28 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     }
   };
 
-  // Delete / Reactivate
-  const handleDelete = async () => {
-    const reason = prompt("Reason for deactivation (optional):");
-    if (reason === null) return;
+  // Deactivate / Reactivate
+  const handleDeactivate = async () => {
+    setIsDeactivating(true);
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason || undefined }),
+        body: JSON.stringify({ reason: deactivateReason || undefined }),
       });
       if (!res.ok) throw new Error("Failed to deactivate");
+      toast.success("Deactivated.");
+      setShowDeactivateDialog(false);
       onClose();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to deactivate");
+      toast.error(err instanceof Error ? err.message : "Failed to deactivate");
+    } finally {
+      setIsDeactivating(false);
     }
   };
 
   const handleReactivate = async () => {
+    setIsReactivating(true);
     try {
       const res = await fetch(`/api/admin/users/${userId}/reactivate`, {
         method: "POST",
@@ -253,8 +263,11 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
       });
       if (!res.ok) throw new Error("Failed to reactivate");
       await fetchUser();
+      toast.success("Reactivated.");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reactivate");
+      toast.error(err instanceof Error ? err.message : "Failed to reactivate");
+    } finally {
+      setIsReactivating(false);
     }
   };
 
@@ -331,6 +344,23 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     }
   };
 
+  const DeactivatedBanner = () => (
+    <div className="flex flex-col gap-3 rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <span>This user is deactivated. Reactivate to restore access.</span>
+      {canManageTarget && (
+        <Button
+          type="button"
+          variant="default"
+          onClick={handleReactivate}
+          disabled={isReactivating}
+          className="min-h-11 shrink-0"
+        >
+          {isReactivating ? "Reactivating..." : "Reactivate"}
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent
@@ -391,49 +421,65 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
             ) : (
               <>
                 <TabsContent value="profile" className="space-y-4">
-                  {error && <ErrorAlert>{error}</ErrorAlert>}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <label htmlFor="edit-user-full-name" className="text-sm font-medium">Full Name</label>
-                      <Input id="edit-user-full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <label htmlFor="edit-user-phone" className="text-sm font-medium">Phone</label>
-                      <Input id="edit-user-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label htmlFor="edit-user-job-title" className="text-sm font-medium">Job Title</label>
-                    <Input id="edit-user-job-title" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
-                  </div>
-                  <Button type="button" onClick={handleSaveProfile} disabled={isSaving} className="min-h-11">
-                    {isSaving ? "Saving..." : "Save Changes"}
-                  </Button>
+                  {isDeactivated ? (
+                    <DeactivatedBanner />
+                  ) : (
+                    <>
+                      {error && <ErrorAlert>{error}</ErrorAlert>}
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <label htmlFor="edit-user-full-name" className="text-sm font-medium">Full Name</label>
+                          <Input id="edit-user-full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <label htmlFor="edit-user-phone" className="text-sm font-medium">Phone</label>
+                          <Input id="edit-user-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="edit-user-job-title" className="text-sm font-medium">Job Title</label>
+                        <Input id="edit-user-job-title" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+                      </div>
+                      <Button type="button" onClick={handleSaveProfile} disabled={isSaving} className="min-h-11">
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="role" className="space-y-4">
-                  {error && <ErrorAlert>{error}</ErrorAlert>}
-                  <div className="rounded-lg border bg-muted/50 px-4 py-3 text-sm">
-                    Current role: <strong>{ROLE_LABELS[user?.app_role ?? ""] ?? user?.app_role}</strong>
-                  </div>
-                  <UserRoleSelector id="edit-user-role" value={appRole} onChange={setAppRole} />
-                  <Button
-                    type="button"
-                    onClick={handleSaveRole}
-                    disabled={isSaving || appRole === user?.app_role}
-                    className="min-h-11"
-                  >
-                    {isSaving ? "Saving..." : "Change Role"}
-                  </Button>
+                  {isDeactivated ? (
+                    <DeactivatedBanner />
+                  ) : (
+                    <>
+                      {error && <ErrorAlert>{error}</ErrorAlert>}
+                      <div className="rounded-lg border bg-muted/50 px-4 py-3 text-sm">
+                        Current role: <strong>{ROLE_LABELS[user?.app_role ?? ""] ?? user?.app_role}</strong>
+                      </div>
+                      <UserRoleSelector id="edit-user-role" value={appRole} onChange={setAppRole} />
+                      <Button
+                        type="button"
+                        onClick={handleSaveRole}
+                        disabled={isSaving || appRole === user?.app_role}
+                        className="min-h-11"
+                      >
+                        {isSaving ? "Saving..." : "Change Role"}
+                      </Button>
+                    </>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="facilities">
-                  <FacilityAccessManager
-                    selected={facilityIds}
-                    onChange={setFacilityIds}
-                    primaryId={primaryFacilityId}
-                    onPrimaryChange={setPrimaryFacilityId}
-                  />
+                  {isDeactivated ? (
+                    <DeactivatedBanner />
+                  ) : (
+                    <FacilityAccessManager
+                      selected={facilityIds}
+                      onChange={setFacilityIds}
+                      primaryId={primaryFacilityId}
+                      onPrimaryChange={setPrimaryFacilityId}
+                    />
+                  )}
                 </TabsContent>
 
                 <TabsContent value="audit" className="space-y-3">
@@ -482,30 +528,87 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                     </div>
                   )}
 
-                  <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                    <h3 className="font-medium text-destructive">Danger Zone</h3>
-                    {user?.deleted_at ? (
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="text-sm">This account is deactivated. Reactivate to restore access.</span>
-                        <Button type="button" variant="default" onClick={handleReactivate} className="min-h-11">
-                          Reactivate User
-                        </Button>
+                  {isDeactivated ? (
+                    <div className="space-y-3 rounded-lg border bg-card p-4">
+                      <DeactivatedBanner />
+                    </div>
+                  ) : (
+                    <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                      <h3 className="font-medium text-destructive">Danger Zone</h3>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                          <span className="block text-sm">Deactivate this user. They will lose access immediately.</span>
+                          <p className="text-xs text-muted-foreground">
+                            Deactivates the user — they stop appearing in Haven and are signed out. Their history stays in audit logs. Use Permanently delete for test or family accounts you actually want gone.
+                          </p>
+                        </div>
+                        {canManageTarget && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={() => setShowDeactivateDialog(true)}
+                            className="min-h-11 shrink-0"
+                          >
+                            Deactivate
+                          </Button>
+                        )}
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="text-sm">Deactivate this user. They will lose access immediately.</span>
-                        <Button type="button" variant="destructive" onClick={handleDelete} className="min-h-11">
-                          Deactivate User
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </TabsContent>
               </>
             )}
           </div>
         </Tabs>
       </SheetContent>
+
+      <Dialog
+        open={showDeactivateDialog}
+        onOpenChange={(open) => {
+          setShowDeactivateDialog(open);
+          if (!open) setDeactivateReason("");
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Deactivate user?</DialogTitle>
+            <DialogDescription>
+              Deactivates the user — they stop appearing in Haven and are signed out. Their history stays in audit logs. Use Permanently delete for test or family accounts you actually want gone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="deactivate-user-reason" className="text-sm font-medium">
+              Reason (optional)
+            </label>
+            <Input
+              id="deactivate-user-reason"
+              value={deactivateReason}
+              onChange={(event) => setDeactivateReason(event.target.value)}
+              placeholder="Reason for deactivation"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowDeactivateDialog(false)}
+              disabled={isDeactivating}
+              className="min-h-11"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeactivate}
+              disabled={isDeactivating}
+              className="min-h-11"
+            >
+              {isDeactivating ? "Deactivating..." : "Deactivate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showResetPasswordDialog} onOpenChange={handleResetPasswordDialogOpenChange}>
         <DialogContent className="max-w-lg" hideDefaultClose={Boolean(temporaryPassword)}>

@@ -4,7 +4,7 @@
 
 "use client";
 
-import { canManageUser } from "@/lib/rbac";
+import { canActorManageTarget } from "@/lib/rbac";
 import { useAuth } from "@/hooks/useAuth";
 
 interface UserRowActionsProps {
@@ -27,7 +27,7 @@ export function UserRowActions({
 }: UserRowActionsProps) {
   const { user: currentUser } = useAuth();
   const currentRole = (currentUser?.app_metadata?.app_role as string) ?? "";
-  const canManage = canManageUser(currentRole, user.app_role);
+  const canManage = canActorManageTarget(currentRole, user.app_role);
   const isSelf = currentUser?.id === user.id;
 
   return (
@@ -46,10 +46,10 @@ export function UserRowActions({
           Deactivate
         </button>
       )}
-      {user.deleted_at && onReactivate && (
+      {canManage && !isSelf && user.deleted_at && onReactivate && (
         <button
           onClick={() => onReactivate(user.id)}
-          className="text-xs px-2 py-1 rounded text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+          className="text-xs px-2 py-1 rounded text-primary hover:bg-muted transition-colors"
         >
           Reactivate
         </button>

@@ -16,6 +16,7 @@ import { ArrowLeft, Users, UserPlus } from "lucide-react";
 export default function UserManagementPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDeactivated, setShowDeactivated] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleUserCreated = useCallback(() => {
@@ -95,6 +96,8 @@ export default function UserManagementPage() {
         {/* User List */}
         <UserListView
           key={refreshKey}
+          showDeactivated={showDeactivated}
+          onShowDeactivatedChange={setShowDeactivated}
           onSelectUser={setSelectedUserId}
           onDeactivate={handleDeactivate}
           onReactivate={handleReactivate}

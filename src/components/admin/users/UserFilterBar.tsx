@@ -13,10 +13,12 @@ interface UserFilterBarProps {
   role: string;
   facilityId: string;
   status: string;
+  showDeactivated: boolean;
   onSearchChange: (v: string) => void;
   onRoleChange: (v: string) => void;
   onFacilityChange: (v: string) => void;
   onStatusChange: (v: string) => void;
+  onShowDeactivatedChange: (v: boolean) => void;
 }
 
 export function UserFilterBar({
@@ -24,16 +26,17 @@ export function UserFilterBar({
   role,
   facilityId,
   status,
+  showDeactivated,
   onSearchChange,
   onRoleChange,
   onFacilityChange,
   onStatusChange,
+  onShowDeactivatedChange,
 }: UserFilterBarProps) {
   const { availableFacilities: facilities } = useFacilityStore();
   const statusOptions = [
     { value: "active", label: "Active" },
     { value: "inactive", label: "Inactive" },
-    { value: "deleted", label: "Deleted" },
   ] as const;
 
   return (
@@ -124,6 +127,16 @@ export function UserFilterBar({
             ))}
           </select>
         </div>
+
+        <label className="flex h-9 items-center gap-2 rounded-md border border-input px-3 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={showDeactivated}
+            onChange={(e) => onShowDeactivatedChange(e.target.checked)}
+            className="h-4 w-4 rounded border-input"
+          />
+          Show deactivated
+        </label>
       </div>
     </div>
   );

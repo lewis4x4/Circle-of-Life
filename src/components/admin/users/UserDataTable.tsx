@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserStatusBadge } from "./UserStatusBadge";
 import { UserRowActions } from "./UserRowActions";
 import { ROLE_LABELS } from "@/lib/rbac";
+import { cn } from "@/lib/utils";
 
 interface UserData {
   id: string;
@@ -89,7 +90,14 @@ export function UserDataTable({
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <TableRow key={user.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onSelectUser(user.id)}>
+            <TableRow
+              key={user.id}
+              className={cn(
+                "cursor-pointer hover:bg-muted/30",
+                user.deleted_at && "bg-muted/30 text-muted-foreground",
+              )}
+              onClick={() => onSelectUser(user.id)}
+            >
               <TableCell className="font-medium">
                 <div>
                   {user.full_name}

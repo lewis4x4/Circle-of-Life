@@ -1,5 +1,5 @@
 /**
- * UserStatusBadge — displays active/inactive/deleted status.
+ * UserStatusBadge — displays active/inactive/deactivated status.
  */
 
 "use client";
@@ -14,8 +14,8 @@ interface UserStatusBadgeProps {
 export function UserStatusBadge({ is_active, deleted_at }: UserStatusBadgeProps) {
   if (deleted_at) {
     return (
-      <Badge variant="destructive" className="text-[10px]">
-        Deleted
+      <Badge variant="secondary" className="bg-muted text-[10px] text-muted-foreground">
+        Deactivated
       </Badge>
     );
   }
