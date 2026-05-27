@@ -79,6 +79,20 @@ export function canActorManageTarget(actor: string, target: string): boolean {
   return actorTier > 0 && targetTier > 0 && actorTier >= targetTier;
 }
 
+const HARD_DELETE_PROTECTED_TARGET_ROLES = new Set<string>(["owner", "org_admin"]);
+
+/**
+ * Returns true when an actor may attempt permanent account deletion by role.
+ * Data-history checks still decide whether deletion is safe for a specific user.
+ */
+export function canActorHardDeleteTarget(actor: string, target: string): boolean {
+  return (
+    actor === "owner" &&
+    (ALL_APP_ROLES as readonly string[]).includes(target) &&
+    !HARD_DELETE_PROTECTED_TARGET_ROLES.has(target)
+  );
+}
+
 /** Returns the numeric tier for a role (0 if unknown). */
 export function getRoleTier(role: string): number {
   return ROLE_HIERARCHY[role] ?? 0;

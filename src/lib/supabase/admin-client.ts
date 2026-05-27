@@ -228,3 +228,17 @@ export async function adminEnableUser(userId: string): Promise<void> {
     throw new Error(`Auth enable error: ${error.message}`);
   }
 }
+
+/**
+ * Permanently remove a user from Supabase Auth.
+ * Caller must complete all product-level role/history gates first.
+ */
+export async function adminHardDeleteUser(userId: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+
+  if (error) {
+    throw new Error(`Auth hard delete error: ${error.message}`);
+  }
+}

@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Sheet,
   SheetContent,
@@ -28,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRoleSelector } from "./UserRoleSelector";
 import { FacilityAccessManager } from "./FacilityAccessManager";
 import { UserStatusBadge } from "./UserStatusBadge";
-import { canActorManageTarget, ROLE_LABELS } from "@/lib/rbac";
+import { canActorHardDeleteTarget, canActorManageTarget, ROLE_LABELS } from "@/lib/rbac";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
@@ -84,6 +85,11 @@ interface AuditEntry {
   created_at: string;
 }
 
+interface HardDeleteReference {
+  table: string;
+  column: string;
+}
+
 const TABS: { key: Tab; label: string; icon: ElementType }[] = [
   { key: "profile", label: "Profile", icon: User },
   { key: "role", label: "Role", icon: Shield },
@@ -91,6 +97,10 @@ const TABS: { key: Tab; label: string; icon: ElementType }[] = [
   { key: "audit", label: "Audit", icon: Clock },
   { key: "danger", label: "Danger Zone", icon: AlertTriangle },
 ];
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
 
 function ErrorAlert({ children, className }: { children: string; className?: string }) {
   return (
@@ -118,6 +128,11 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState("");
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [showHardDeleteDialog, setShowHardDeleteDialog] = useState(false);
+  const [hardDeleteConfirmEmail, setHardDeleteConfirmEmail] = useState("");
+  const [isHardDeleting, setIsHardDeleting] = useState(false);
+  const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
+  const [hardDeleteReferences, setHardDeleteReferences] = useState<HardDeleteReference[]>([]);
   const [isReactivating, setIsReactivating] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [resetPasswordMode, setResetPasswordMode] = useState<ResetPasswordMode>("email");
@@ -140,6 +155,21 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
 
   const isDeactivated = Boolean(user?.deleted_at);
   const canManageTarget = Boolean(user && currentUser?.id !== user.id && canActorManageTarget(currentRole, user.app_role));
+  const canHardDeleteTarget = Boolean(
+    user && currentUser?.id !== user.id && canActorHardDeleteTarget(currentRole, user.app_role),
+  );
+  const hardDeleteDisabledReason = !user
+    ? "Load the user before permanently deleting."
+    : currentRole !== "owner"
+      ? "Only owners can permanently delete users."
+      : user.app_role === "owner" || user.app_role === "org_admin"
+        ? "Cannot permanently delete owners or org admins."
+        : currentUser?.id === user.id
+          ? "Cannot permanently delete your own account."
+          : "";
+  const hardDeleteEmailMatches = Boolean(
+    user && normalizeEmail(hardDeleteConfirmEmail) === normalizeEmail(user.email),
+  );
   const canResetPassword = Boolean(
     user &&
       !user.deleted_at &&
@@ -271,6 +301,53 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     }
   };
 
+  const openHardDeleteDialog = () => {
+    setHardDeleteConfirmEmail("");
+    setHardDeleteError(null);
+    setHardDeleteReferences([]);
+    setShowHardDeleteDialog(true);
+  };
+
+  const closeHardDeleteDialog = () => {
+    setShowHardDeleteDialog(false);
+    setHardDeleteConfirmEmail("");
+    setHardDeleteError(null);
+    setHardDeleteReferences([]);
+  };
+
+  const handleHardDelete = async () => {
+    if (!user || !hardDeleteEmailMatches || hardDeleteReferences.length > 0) return;
+    setIsHardDeleting(true);
+    setHardDeleteError(null);
+    setHardDeleteReferences([]);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/hard-delete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm_email: hardDeleteConfirmEmail }),
+      });
+      const json = await res.json().catch(() => ({}));
+
+      if (res.status === 409 && json.reason === "has_history") {
+        setHardDeleteReferences(Array.isArray(json.references) ? json.references : []);
+        return;
+      }
+
+      if (!res.ok) {
+        const reason = typeof json.reason === "string" ? json.reason.replace(/_/g, " ") : null;
+        throw new Error(typeof json.error === "string" ? json.error : reason ?? "Failed to permanently delete user");
+      }
+
+      toast.success("User permanently deleted");
+      closeHardDeleteDialog();
+      onClose();
+    } catch (err) {
+      setHardDeleteError(err instanceof Error ? err.message : "Failed to permanently delete user");
+    } finally {
+      setIsHardDeleting(false);
+    }
+  };
+
   const resetTemporaryPasswordState = () => {
     setTemporaryPassword(null);
     setShowTemporaryPassword(false);
@@ -358,6 +435,51 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
           {isReactivating ? "Reactivating..." : "Reactivate"}
         </Button>
       )}
+    </div>
+  );
+
+  const PermanentDeleteAction = ({ bordered = true }: { bordered?: boolean }) => (
+    <div className={cn(bordered && "border-t border-destructive/20 pt-4")}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <span className="block text-sm font-medium text-destructive">Permanently delete this user.</span>
+          <p className="text-xs text-muted-foreground">
+            Removes the user from Haven and Supabase Auth only when no protected clinical, financial, audit, or admin history exists.
+          </p>
+        </div>
+        {canHardDeleteTarget ? (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={openHardDeleteDialog}
+            className="min-h-11 shrink-0"
+          >
+            Permanently delete
+          </Button>
+        ) : (
+          <TooltipProvider delay={250}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="inline-flex shrink-0" tabIndex={0}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      disabled
+                      className="min-h-11 shrink-0"
+                    >
+                      Permanently delete
+                    </Button>
+                  </span>
+                }
+              />
+              <TooltipContent side="left" className="max-w-xs text-left">
+                {hardDeleteDisabledReason}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
     </div>
   );
 
@@ -529,17 +651,18 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                   )}
 
                   {isDeactivated ? (
-                    <div className="space-y-3 rounded-lg border bg-card p-4">
+                    <div className="space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                       <DeactivatedBanner />
+                      <PermanentDeleteAction bordered={false} />
                     </div>
                   ) : (
-                    <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                    <div className="space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                       <h3 className="font-medium text-destructive">Danger Zone</h3>
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-1">
                           <span className="block text-sm">Deactivate this user. They will lose access immediately.</span>
                           <p className="text-xs text-muted-foreground">
-                            Deactivates the user — they stop appearing in Haven and are signed out. Their history stays in audit logs. Use Permanently delete for test or family accounts you actually want gone.
+                            Deactivates the user — they stop appearing in Haven and are signed out. Their history stays in audit logs.
                           </p>
                         </div>
                         {canManageTarget && (
@@ -553,6 +676,8 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                           </Button>
                         )}
                       </div>
+
+                      <PermanentDeleteAction />
                     </div>
                   )}
                 </TabsContent>
@@ -606,6 +731,69 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
             >
               {isDeactivating ? "Deactivating..." : "Deactivate"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showHardDeleteDialog} onOpenChange={(open) => (open ? setShowHardDeleteDialog(true) : closeHardDeleteDialog())}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Permanently delete {user?.full_name ?? "this user"}?</DialogTitle>
+            <DialogDescription>
+              This cannot be undone. The user record will be removed from Haven and Supabase Auth. Audit logs of this action will remain.
+            </DialogDescription>
+          </DialogHeader>
+
+          {hardDeleteReferences.length > 0 ? (
+            <div className="space-y-3 rounded-lg border border-warning/30 bg-warning/10 p-3">
+              <p className="text-sm font-medium text-warning">This user has protected history and cannot be permanently deleted.</p>
+              <p className="text-sm text-muted-foreground">Use Deactivate instead so clinical, financial, audit, and admin records remain attributable.</p>
+              <ul className="max-h-48 space-y-1 overflow-y-auto text-sm text-muted-foreground">
+                {hardDeleteReferences.map((ref) => (
+                  <li key={`${ref.table}.${ref.column}`} className="font-mono text-xs">
+                    {ref.table}.{ref.column}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <label htmlFor="hard-delete-confirm-email" className="text-sm font-medium">
+                Type <strong>{user?.email}</strong> to confirm:
+              </label>
+              <Input
+                id="hard-delete-confirm-email"
+                value={hardDeleteConfirmEmail}
+                onChange={(event) => setHardDeleteConfirmEmail(event.target.value)}
+                placeholder={user?.email ?? "user@example.com"}
+                autoComplete="off"
+              />
+            </div>
+          )}
+
+          {hardDeleteError && <ErrorAlert>{hardDeleteError}</ErrorAlert>}
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeHardDeleteDialog}
+              disabled={isHardDeleting}
+              className="min-h-11"
+            >
+              {hardDeleteReferences.length > 0 ? "Close" : "Cancel"}
+            </Button>
+            {hardDeleteReferences.length === 0 && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleHardDelete}
+                disabled={isHardDeleting || !hardDeleteEmailMatches}
+                className="min-h-11"
+              >
+                {isHardDeleting ? "Deleting..." : "Permanently delete"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
