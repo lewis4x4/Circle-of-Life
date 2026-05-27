@@ -58,6 +58,24 @@ export async function adminInviteUser(
     throw new Error(`Auth invite error: ${error.message}`);
   }
 
+  // inviteUserByEmail only writes user_metadata. Mirror the role + org into
+  // app_metadata so `getAppRoleFromClaims` (which only trusts app_metadata)
+  // can route the user correctly on first sign-in.
+  if (data.user?.id) {
+    const { error: metaError } = await supabase.auth.admin.updateUserById(data.user.id, {
+      app_metadata: {
+        app_role: options.app_role,
+        organization_id: options.organization_id,
+      },
+    });
+
+    if (metaError) {
+      // The invite already went out. If the metadata write fails, we'd produce
+      // the same bug we're fixing — surface clearly so the admin can react.
+      throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
+    }
+  }
+
   return {
     id: data.user.id,
     email: data.user.email ?? email,
