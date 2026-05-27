@@ -44,33 +44,45 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeoutId: number | null = null;
 
-    async function verifyResetSession() {
-      if (!isBrowserSupabaseConfigured()) {
-        if (!cancelled) {
-          setHasSession(false);
-          setSessionReady(true);
-        }
-        return;
-      }
-
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-        if (cancelled) return;
-        setHasSession(!error && Boolean(session?.user));
-      } catch {
-        if (!cancelled) setHasSession(false);
-      } finally {
-        if (!cancelled) setSessionReady(true);
-      }
+    if (!isBrowserSupabaseConfigured()) {
+      setHasSession(false);
+      setSessionReady(true);
+      return;
     }
 
-    void verifyResetSession();
+    const markSessionReady = () => {
+      setHasSession(true);
+      setSessionReady(true);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session?.user)) {
+        markSessionReady();
+      }
+    });
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session?.user) {
+        markSessionReady();
+      }
+    });
+
+    timeoutId = window.setTimeout(() => {
+      if (cancelled) return;
+      setSessionReady(true);
+    }, 2000);
+
     return () => {
       cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+      subscription.unsubscribe();
     };
   }, [supabase]);
 
