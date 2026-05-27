@@ -10,7 +10,6 @@ import {
   invokeDispatchPushTest,
   subscribePushAndSave,
 } from "@/lib/push-notifications";
-import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,7 +87,6 @@ export default function AdminNotificationsSettingsPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const [homeHref, setHomeHref] = useState<string | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
   const [vapidConfigured, setVapidConfigured] = useState(false);
@@ -124,7 +122,6 @@ export default function AdminNotificationsSettingsPage() {
     if (!ctx.ok) {
       setErr(ctx.error);
       setRole(null);
-      setHomeHref("/admin");
       setOrganizationId(null);
       setRoutes([]);
       setFacilities([]);
@@ -133,7 +130,6 @@ export default function AdminNotificationsSettingsPage() {
     }
 
     setRole(ctx.ctx.appRole);
-    setHomeHref(getDashboardRouteForRole(ctx.ctx.appRole));
     setOrganizationId(ctx.ctx.organizationId);
 
     const [routeRes, facilityRes] = await Promise.all([
@@ -365,20 +361,13 @@ export default function AdminNotificationsSettingsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       <div>
-        {homeHref ? (
-          <Link
-            href={homeHref}
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1")}
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Dashboard
-          </Link>
-        ) : (
-          <span className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1 pointer-events-none text-slate-400")}>
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Resolving home…
-          </span>
-        )}
+        <Link
+          href="/admin/settings"
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1")}
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Settings
+        </Link>
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-900 dark:text-white">
           <BellRing className="h-7 w-7 text-slate-600 dark:text-slate-300" aria-hidden />
           Notifications

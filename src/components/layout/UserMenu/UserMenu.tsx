@@ -15,6 +15,9 @@ import {
 import { cn } from "@/lib/utils";
 import { HELP_DOCS_HREF } from "./user-menu-data";
 
+const MENU_KBD =
+  "rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground";
+
 export type UserMenuProps = {
   fullName: string | null;
   email: string | null;
@@ -115,7 +118,8 @@ export function UserMenu({
             onClick={() => navigateTo("/admin/settings")}
           >
             <Settings className="size-3.5 text-muted-foreground" aria-hidden />
-            Settings
+            <span>Settings</span>
+            <kbd className={cn(MENU_KBD, "ml-auto")}>⌘,</kbd>
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] text-foreground"

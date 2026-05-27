@@ -154,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activePillar = useMemo(() => findActivePillar(pathname), [pathname]);
   const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
 
-  // ── ⌘K global hotkey ─────────────────────────────────────────────
+  // ── ⌘K / ⌘, global hotkeys ──────────────────────────────────────
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -168,10 +168,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         event.preventDefault();
         setPaletteOpen((v) => !v);
       }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === ",") {
+        event.preventDefault();
+        if (!pathname.startsWith("/admin/settings")) {
+          router.push("/admin/settings");
+        }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [pathname, router]);
 
   // Close transient surfaces on route change.
   useEffect(() => {
