@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  RefreshCw,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -23,7 +25,12 @@ import {
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
+import {
+  buildAggregateSnapshotQuery,
+  buildFacilitySnapshotQuery,
+} from "@/lib/executive/metric-snapshot-queries";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
   fetchResidentAssuranceFacilityHeatMap,
@@ -49,7 +56,7 @@ export function ExecutiveOverviewPageClient({
   initialAssuranceTrends,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { user } = useAuth();
   const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
   const [, setLoading] = useState(!initialHasServerData);
@@ -87,25 +94,17 @@ export function ExecutiveOverviewPageClient({
       // 1. Fetch latest scoped executive snapshots. Aggregate metrics stay
       // separate from facility metrics; never smear portfolio averages into
       // facility rows.
-      const { data: snapData, error: snapErr } = await supabase
-        .from("exec_metric_snapshots")
-        .select("facility_id, metric_code, metric_value_numeric")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("facility_id", null)
-        .is("deleted_at", null)
-        .order("snapshot_date", { ascending: false })
-        .limit(50);
+      const { data: snapData, error: snapErr } = await buildAggregateSnapshotQuery(
+        supabase,
+        ctx.ctx.organizationId,
+      );
         
       if (snapErr) throw snapErr;
 
-      const { data: facilityMetricData, error: facilityMetricErr } = await supabase
-        .from("exec_metric_snapshots")
-        .select("facility_id, metric_code, metric_value_numeric")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .not("facility_id", "is", null)
-        .is("deleted_at", null)
-        .order("snapshot_date", { ascending: false })
-        .limit(500);
+      const { data: facilityMetricData, error: facilityMetricErr } = await buildFacilitySnapshotQuery(
+        supabase,
+        ctx.ctx.organizationId,
+      );
 
       if (facilityMetricErr) throw facilityMetricErr;
 
@@ -279,7 +278,7 @@ export function ExecutiveOverviewPageClient({
       </div>
 
       {isOrgEmpty ? (
-        <ExecutiveEmptyOnboarding facilityCount={facilities.length} />
+        <ExecutiveEmptyOnboarding facilityCount={facilities.length} onRefreshComplete={load} />
       ) : (
         <ExecutiveDashboardBody
           metrics={metrics}
@@ -300,77 +299,320 @@ export function ExecutiveOverviewPageClient({
   );
 }
 
-function ExecutiveEmptyOnboarding({ facilityCount }: { facilityCount: number }) {
-  const steps = [
+type ExecutiveRefreshFunctionStatus = {
+  name: string;
+  ok: boolean;
+  status: number;
+};
+
+type ExecutiveRefreshState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "success"; message: string }
+  | {
+      kind: "error";
+      message: string;
+      snapshot?: ExecutiveRefreshFunctionStatus;
+      scorer?: ExecutiveRefreshFunctionStatus;
+      risk?: ExecutiveRefreshFunctionStatus;
+      missing?: string[];
+    };
+
+function ExecutiveEmptyOnboarding({
+  facilityCount,
+  onRefreshComplete,
+}: {
+  facilityCount: number;
+  onRefreshComplete: () => Promise<void>;
+}) {
+  const router = useRouter();
+  const [refreshState, setRefreshState] = useState<ExecutiveRefreshState>({ kind: "idle" });
+  const isRefreshing = refreshState.kind === "loading";
+
+  const configurationLinks = [
     {
-      title: "Run the executive KPI snapshot",
-      body: "Generates occupancy, billed MTD, labor cost %, incident rate, and survey readiness from live operational data.",
+      title: "Executive snapshot settings",
+      body: "Adjust snapshot preferences for scheduled runs. Use the refresh button above to generate data now.",
       href: "/admin/executive/settings",
-      cta: "Open snapshot settings",
+      cta: "Open settings",
     },
     {
-      title: "Generate the first resident assurance rollup",
-      body: "Computes watch load, escalation pressure, and integrity flags per facility. Populates the heat map and 7-day trend chart.",
-      href: "/admin/rounding",
-      cta: "Open assurance hub",
-    },
-    {
-      title: "Configure executive alert rules",
-      body: "Define the thresholds that surface critical alerts in the watchlist (occupancy drop, labor overrun, severity-4 incident, etc.).",
-      href: "/admin/executive/alerts",
-      cta: "Open alerts",
-    },
-    {
-      title: "Set facility-level metric thresholds",
-      body: "Each facility can carry its own occupancy / labor / incident thresholds. The dashboard colors these once they're set.",
+      title: "Facility metric thresholds",
+      body: "Set per-facility color thresholds for metrics produced by snapshots and rollups.",
       href: "/admin/settings/thresholds",
       cta: "Open thresholds",
     },
   ] as const;
 
+  const operationalShortcutLinks = [
+    {
+      title: "Open Smart Rounding hub",
+      body: "Review live rounding coverage, assurance signals, and follow-up work. This is an operational dashboard, not a setup step.",
+      href: "/admin/rounding",
+      cta: "Open hub",
+    },
+    {
+      title: "Open alert triage queue",
+      body: "Work active executive alerts and exceptions after refresh jobs create them. Alert thresholds are configured elsewhere.",
+      href: "/admin/executive/alerts",
+      cta: "Open triage",
+    },
+  ] as const;
+
+  const getStatusHint = (status: number) => {
+    switch (status) {
+      case 0:
+        return "Function is not deployed to Supabase.";
+      case 401:
+        return "Secret mismatch between Netlify and Supabase Edge Function.";
+      case 404:
+        return "Organization not found in the database.";
+      case 500:
+        return "Function threw an error — check the Edge Function logs in Supabase Dashboard.";
+      case 502:
+        return "Upstream Edge Function did not return a 2xx response — see other status row.";
+      case 503:
+        return "Required environment variable missing on Supabase Edge side.";
+      case 504:
+        return "Netlify gateway timeout — the Edge Function took longer than the serverless function limit. Try parallelization or background invocation.";
+      default:
+        return null;
+    }
+  };
+
+  const refreshExecutiveDashboard = useCallback(async () => {
+    setRefreshState({ kind: "loading" });
+
+    const isRecord = (value: unknown): value is Record<string, unknown> =>
+      typeof value === "object" && value !== null;
+
+    const isFunctionStatus = (value: unknown): value is ExecutiveRefreshFunctionStatus => {
+      if (!isRecord(value)) return false;
+      return (
+        typeof value.name === "string" &&
+        typeof value.ok === "boolean" &&
+        typeof value.status === "number"
+      );
+    };
+
+    const isStringArray = (value: unknown): value is string[] =>
+      Array.isArray(value) && value.every((item) => typeof item === "string");
+
+    try {
+      const response = await fetch("/api/admin/executive/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const rawPayload: unknown = await response.json().catch(() => null);
+      const payload = isRecord(rawPayload) ? rawPayload : null;
+      const payloadOk = payload?.ok === true;
+      const payloadError = typeof payload?.error === "string" ? payload.error : null;
+      const snapshot = isFunctionStatus(payload?.snapshot) ? payload.snapshot : undefined;
+      const scorer = isFunctionStatus(payload?.scorer) ? payload.scorer : undefined;
+      const risk = isFunctionStatus(payload?.risk) ? payload.risk : undefined;
+      const missing = isStringArray(payload?.missing) ? payload.missing : undefined;
+
+      if (!response.ok || !payloadOk) {
+        if (response.status === 504 && !payload) {
+          setRefreshState({
+            kind: "error",
+            message: "Netlify gateway timeout (504) — the refresh took longer than the serverless function limit.",
+          });
+          return;
+        }
+
+        setRefreshState({
+          kind: "error",
+          message: payloadError || "Executive refresh failed.",
+          snapshot,
+          scorer,
+          risk,
+          missing,
+        });
+        return;
+      }
+
+      setRefreshState({
+        kind: "success",
+        message: "Refresh complete. Reloading the executive dashboard with the latest snapshot data.",
+      });
+      router.refresh();
+      await onRefreshComplete();
+    } catch (error) {
+      setRefreshState({
+        kind: "error",
+        message: error instanceof Error ? error.message : "Executive refresh failed.",
+        snapshot: {
+          name: "exec-kpi-snapshot",
+          ok: false,
+          status: 0,
+        },
+        scorer: {
+          name: "resident-safety-scorer",
+          ok: false,
+          status: 0,
+        },
+        risk: {
+          name: "risk-nightly-scorer",
+          ok: false,
+          status: 0,
+        },
+      });
+    }
+  }, [onRefreshComplete, router]);
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 lg:p-6">
       <div className="flex flex-col gap-1">
         <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
-          You&rsquo;re connected, but no live data has landed yet
+          {facilityCount > 0
+            ? "Snapshot pending — run the executive refresh"
+            : "We couldn't load facilities for your organization"}
         </h2>
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           {facilityCount > 0
-            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. Once the executive snapshot runs and the first rollups complete, this dashboard fills in automatically.`
-            : "Add a facility to start collecting operational data. Once it's in scope, the executive snapshot and rollups will populate this dashboard."}
+            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. The executive KPI snapshot hasn't been computed yet — click below to generate the latest KPIs and resident safety scores from your live operational data.`
+            : "Underlying data may exist, but the dashboard couldn't read it. Confirm you're signed in with an account that has owner or org-admin access to this organization, then refresh this page. If the issue persists, the executive snapshot may need to be triggered server-side."}
         </p>
       </div>
 
-      <ol className="mt-5 flex flex-col gap-3">
-        {steps.map((step, i) => (
-          <li key={step.title} className="flex items-start gap-3">
-            <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
-              {i + 1}
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-                <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
-                  {step.title}
-                </h3>
-                <Link
-                  href={step.href}
-                  className={cn(
-                    "inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5",
-                    "text-[12px] font-medium text-muted-foreground transition-colors",
-                    "hover:bg-secondary hover:text-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
-                >
-                  {step.cta} <ArrowRight className="size-3" aria-hidden />
-                </Link>
+      <div className="mt-5 rounded-lg border border-border/70 bg-secondary/30 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+              Generate dashboard data
+            </h3>
+            <p className="mt-1 max-w-2xl text-[12px] leading-relaxed text-muted-foreground">
+              Runs the executive KPI snapshot, resident safety scorer, and risk nightly scorer server-side, then refreshes this page.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="lg"
+            onClick={refreshExecutiveDashboard}
+            disabled={isRefreshing}
+            className="w-full sm:w-auto"
+          >
+            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} aria-hidden />
+            {isRefreshing ? "Refreshing dashboard…" : "Refresh executive dashboard now"}
+          </Button>
+        </div>
+        {refreshState.kind === "success" && (
+          <p className="mt-3 text-[12px] font-medium text-success" role="status">
+            {refreshState.message}
+          </p>
+        )}
+        {refreshState.kind === "error" && (
+          <div className="mt-3" role="alert">
+            <p className="text-[12px] font-medium text-destructive">{refreshState.message}</p>
+            {(refreshState.snapshot || refreshState.scorer || refreshState.risk) && (
+              <div className="mt-2 flex flex-col gap-2">
+                {[refreshState.snapshot, refreshState.scorer, refreshState.risk].filter(Boolean).map((fnStatus) => {
+                  if (!fnStatus) return null;
+                  const hint = getStatusHint(fnStatus.status);
+                  return (
+                    <div key={fnStatus.name} className="text-[12px]">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("font-medium", fnStatus.ok ? "text-success" : "text-destructive")}>
+                          {fnStatus.ok ? "✓" : "✗"}
+                        </span>
+                        <span className="font-medium text-foreground">{fnStatus.name}</span>
+                        <span className="tabular-nums text-muted-foreground">{fnStatus.status}</span>
+                      </div>
+                      {hint && <p className="mt-0.5 text-[12px] text-muted-foreground">{hint}</p>}
+                    </div>
+                  );
+                })}
               </div>
-              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                {step.body}
+            )}
+            {refreshState.missing && refreshState.missing.length > 0 && (
+              <p className="mt-2 text-[12px] text-muted-foreground">
+                Missing environment variables: <span className="font-medium">{refreshState.missing.join(", ")}</span>
               </p>
-            </div>
-          </li>
-        ))}
-      </ol>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 rounded-lg border border-border/60 bg-card p-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-[13px] font-semibold tracking-tight text-foreground">
+            Configuration
+          </h3>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            Optional configuration — these tune the dashboard but don&rsquo;t generate data themselves.
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4">
+          <section className="flex flex-col gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Configuration</p>
+            <ol className="grid gap-3 md:grid-cols-2">
+              {configurationLinks.map((step, i) => (
+                <li key={step.title} className="flex items-start gap-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <h4 className="text-[13px] font-semibold tracking-tight text-foreground">
+                      {step.title}
+                    </h4>
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
+                      {step.body}
+                    </p>
+                    <Link
+                      href={step.href}
+                      className={cn(
+                        "inline-flex h-7 w-fit items-center gap-1 rounded-md border border-border bg-card px-2.5",
+                        "text-[12px] font-medium text-muted-foreground transition-colors",
+                        "hover:bg-secondary hover:text-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      )}
+                    >
+                      {step.cta} <ArrowRight className="size-3" aria-hidden />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Operational shortcuts</p>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              These links open live operational dashboards. They do not generate data or change configuration.
+            </p>
+            <ol className="grid gap-3 md:grid-cols-2">
+              {operationalShortcutLinks.map((step, i) => (
+                <li key={step.title} className="flex items-start gap-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border border-border bg-secondary/60 text-[11px] font-medium tabular-nums text-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <h4 className="text-[13px] font-semibold tracking-tight text-foreground">
+                      {step.title}
+                    </h4>
+                    <p className="text-[12px] leading-relaxed text-muted-foreground">
+                      {step.body}
+                    </p>
+                    <Link
+                      href={step.href}
+                      className={cn(
+                        "inline-flex h-7 w-fit items-center gap-1 rounded-md border border-border bg-card px-2.5",
+                        "text-[12px] font-medium text-muted-foreground transition-colors",
+                        "hover:bg-secondary hover:text-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      )}
+                    >
+                      {step.cta} <ArrowRight className="size-3" aria-hidden />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+      </div>
 
       <div className="mt-5 flex items-center gap-2 border-t border-border/60 pt-4 text-[12px] text-muted-foreground">
         <CheckCircle2 className="size-3.5 text-success" aria-hidden />
@@ -703,11 +945,11 @@ function ExecutiveDashboardBody({
         </div>
       </div>
 
-      {/* Resident assurance heat map */}
+      {/* Smart rounding heat map */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-            <Activity className="size-4 text-destructive" /> Resident assurance heat map
+            <Activity className="size-4 text-destructive" /> Smart rounding heat map
           </h2>
           <Link
             href="/admin/rounding"
@@ -766,12 +1008,12 @@ function ExecutiveDashboardBody({
         )}
       </section>
 
-      {/* Resident assurance trend */}
+      {/* Smart rounding trend */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
-              <Activity className="size-4 text-info" /> Resident assurance trend (7d)
+              <Activity className="size-4 text-info" /> Smart rounding trend (7d)
             </h2>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
               Daily heat pressure by facility.

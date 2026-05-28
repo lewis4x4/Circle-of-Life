@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 
 type Body = {
@@ -43,7 +44,7 @@ export async function POST(
     .maybeSingle();
 
   if (taskError) {
-    console.error("[rounding/tasks/reassign] task lookup", taskError);
+    logError("rounding.tasks.reassign.lookup", taskError, { taskId });
   }
   if (taskError || !task) {
     return NextResponse.json({ error: "Observation task not found" }, { status: 404 });
@@ -77,7 +78,7 @@ export async function POST(
       .is("released_at", null);
 
     if (releaseError) {
-      console.error("[rounding/tasks/reassign] release current assignment", releaseError);
+      logError("rounding.tasks.reassign.release", releaseError, { taskId: task.id });
       return NextResponse.json({ error: "Could not release current assignment" }, { status: 500 });
     }
   }
@@ -99,7 +100,7 @@ export async function POST(
     });
 
   if (assignmentError) {
-    console.error("[rounding/tasks/reassign] insert assignment", assignmentError);
+    logError("rounding.tasks.reassign.insert", assignmentError, { taskId: task.id });
     return NextResponse.json({ error: "Could not create reassignment history" }, { status: 500 });
   }
 
@@ -115,7 +116,7 @@ export async function POST(
     .eq("organization_id", context.organizationId);
 
   if (taskUpdateError) {
-    console.error("[rounding/tasks/reassign] update task", taskUpdateError);
+    logError("rounding.tasks.reassign.update", taskUpdateError, { taskId: task.id });
     return NextResponse.json({ error: "Could not reassign observation task" }, { status: 500 });
   }
 

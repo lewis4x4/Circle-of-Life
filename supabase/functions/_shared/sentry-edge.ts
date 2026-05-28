@@ -13,6 +13,8 @@
  * `captureMessage` directly — no init step required.
  */
 
+import { redactValue } from "./redact-pii.ts";
+
 type SentryLevel = "info" | "warning" | "error";
 
 type SentryContext = Record<string, unknown>;
@@ -34,7 +36,10 @@ function sanitizeContext(context?: SentryContext): SentryContext | undefined {
   for (const [k, v] of Object.entries(context)) {
     const lk = k.toLowerCase();
     if (lk === "authorization" || lk === "cookie" || lk === "set-cookie") continue;
-    clean[k] = v;
+    // PHI safety: deep-redact every remaining value before it reaches Sentry
+    // or the structured-console fallback. The header/cookie strip above runs
+    // first so we never even hash secrets.
+    clean[k] = redactValue(v);
   }
   return clean;
 }

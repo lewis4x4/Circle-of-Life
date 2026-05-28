@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 
 type HistoryRow = {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     .limit(300);
 
   if (error) {
-    console.error("[rounding/integrity-flags/history] audit log", error);
+    logError("rounding.integrity-flags.history", error, { facilityId, idCount: ids.length });
     return NextResponse.json({ error: "Could not load integrity history" }, { status: 500 });
   }
 

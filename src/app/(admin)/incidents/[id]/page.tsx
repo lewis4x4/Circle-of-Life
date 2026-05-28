@@ -519,7 +519,7 @@ export default function AdminIncidentDetailPage() {
         {watchInstances.length > 0 ? (
           <RecordDetailSection
             className="lg:col-span-2"
-            title="Resident Assurance Timeline"
+            title="Smart rounding timeline"
             description="Watch activity automatically or manually linked to this incident."
           >
             <div className="space-y-4">
@@ -598,7 +598,7 @@ export default function AdminIncidentDetailPage() {
         {assuranceEscalations.length > 0 ? (
           <RecordDetailSection
             className="lg:col-span-2"
-            title="Active Resident Assurance Escalations"
+            title="Active Smart rounding escalations"
             description="Open supervision work triggered by observation tasks linked to this incident."
           >
             <div className="space-y-3">

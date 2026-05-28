@@ -187,21 +187,28 @@ export async function loadExecutiveKpiBulk(
     ),
   ]);
 
-  const batchErrors = [
-    residentsRes.error,
-    invoicesRes.error,
-    incidentsRes.error,
-    medErrorsRes.error,
-    deficienciesRes.error,
-    certsRes.error,
-    outbreaksRes.error,
-    overdueTasksRes.error,
-    openExceptionsRes.error,
-    activeWatchRes.error,
-  ].filter((error): error is NonNullable<typeof error> => error != null);
+  const allBatchEntries = [
+    { table: "residents", error: residentsRes.error },
+    { table: "invoices", error: invoicesRes.error },
+    { table: "incidents", error: incidentsRes.error },
+    { table: "medication_errors", error: medErrorsRes.error },
+    { table: "survey_deficiencies", error: deficienciesRes.error },
+    { table: "staff_certifications", error: certsRes.error },
+    { table: "infection_outbreaks", error: outbreaksRes.error },
+    { table: "overdue_tasks", error: overdueTasksRes.error },
+    { table: "open_exceptions", error: openExceptionsRes.error },
+    { table: "resident_watch_instances", error: activeWatchRes.error },
+  ];
+  const batchErrors = allBatchEntries.filter((entry) => entry.error != null);
 
   if (batchErrors.length > 0) {
-    throw new Error(batchErrors[0].message);
+    // Surface every failing table, not just the first — the previous code
+    // threw on batchErrors[0] and silently dropped any later failures.
+    console.error("[exec-kpi-bulk] batch query failures", batchErrors);
+    const summary = batchErrors
+      .map((entry) => `${entry.table}: ${entry.error?.message ?? "unknown"}`)
+      .join("; ");
+    throw new Error(`exec KPI bulk batch failed — ${summary}`);
   }
 
   const residentsByFacility = countRows((residentsRes.data ?? []) as CountByFacilityRow[]);

@@ -146,7 +146,8 @@ export async function fetchStaffMessageThreads(
     const { data: beds } = await supabase
       .from("beds")
       .select("id, room_id")
-      .in("id", bedIds);
+      .in("id", bedIds)
+      .is("deleted_at", null);
     const roomIds = [...new Set(
       ((beds ?? []) as unknown as { id: string; room_id: string | null }[])
         .map((b) => b.room_id)
@@ -156,7 +157,8 @@ export async function fetchStaffMessageThreads(
       const { data: rooms } = await supabase
         .from("rooms")
         .select("id, room_number")
-        .in("id", roomIds);
+        .in("id", roomIds)
+        .is("deleted_at", null);
       const roomMap = new Map(
         ((rooms ?? []) as unknown as { id: string; room_number: string }[]).map((r) => [r.id, r.room_number]),
       );

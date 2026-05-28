@@ -1,3 +1,4 @@
+import { AppRuntimeProviders } from "@/components/layout/AppRuntimeProviders";
 import { MedTechShell } from "@/components/layout/MedTechShell";
 
 export default function MedTechRouteLayout({
@@ -5,5 +6,9 @@ export default function MedTechRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <MedTechShell>{children}</MedTechShell>;
+  return (
+    <AppRuntimeProviders>
+      <MedTechShell>{children}</MedTechShell>
+    </AppRuntimeProviders>
+  );
 }

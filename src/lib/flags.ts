@@ -30,7 +30,8 @@ export const UI_V2_IMPLEMENTED_ROUTES = new Set<string>([
   "/settings/thresholds", // /admin/settings/thresholds — facility metric thresholds CRUD
   "/settings/audit-log", // /admin/settings/audit-log — global audit log viewer
   "/settings/users", // /admin/settings/users — read-only roster
-  "/settings/notifications", // /admin/settings/notifications — V2 stub
+  // TEMP: keep notifications on V1; V2 stub is currently not production-safe.
+  // Re-add `/settings/notifications` at UI-V2-S11.5 when the V2 surface is fully production-ready.
 ]);
 
 /**

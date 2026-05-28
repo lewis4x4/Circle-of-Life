@@ -4,6 +4,12 @@ import { T2List } from "@/design-system/templates";
 import type { DataTableColumn, DataTableRow } from "@/design-system/components/DataTable";
 
 import type { V2ListId, V2ListRow, V2LiveSource } from "@/lib/v2-lists";
+import {
+  isV2PaginationOutOfRange,
+  type V2PaginationMeta,
+} from "@/lib/v2-pagination";
+
+import { V2PaginationControls } from "./V2PaginationControls";
 
 const LIST_TITLES: Record<V2ListId, { title: string; subtitle: string; basePath: string }> = {
   residents: { title: "Residents", subtitle: "All admitted residents in scope", basePath: "/admin/residents" },
@@ -57,6 +63,7 @@ export type W2ListClientProps = {
   rows: V2ListRow[];
   source: V2LiveSource;
   generatedAt: string;
+  pagination: V2PaginationMeta;
   /** Optional `now` override for deterministic relative-time rendering. */
   now?: Date;
 };
@@ -66,6 +73,7 @@ export function W2ListClient({
   rows,
   source,
   generatedAt,
+  pagination,
   now,
 }: W2ListClientProps) {
   const meta = LIST_TITLES[listId];
@@ -88,6 +96,8 @@ export function W2ListClient({
       : source === "unavailable"
         ? "Live source unavailable; no fallback rows shown"
         : null;
+  const isOutOfRange = isV2PaginationOutOfRange(pagination);
+  const emptyStateCopy = isOutOfRange ? "No rows on this page." : (sourceNote ?? `No ${listId} in scope.`);
 
   return (
     <T2List<V2ListRow>
@@ -101,11 +111,12 @@ export function W2ListClient({
           { id: "resolved", label: "Resolved" },
         ],
       }}
+      actions={<V2PaginationControls pagination={pagination} showCurrentPageExportNote />}
       table={{
         columns: COLUMNS,
         rows: tableRows,
         userPreferencesKey: meta.basePath,
-        emptyState: <span>{sourceNote ?? `No ${listId} in scope.`}</span>,
+        emptyState: <span>{emptyStateCopy}</span>,
         onRowOpenNewTab: (id) => {
           if (typeof window !== "undefined") {
             window.open(`${meta.basePath}/${id}`, "_blank", "noopener");

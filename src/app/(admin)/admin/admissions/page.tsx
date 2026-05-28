@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -89,6 +89,8 @@ type ConferenceRow = Pick<
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
+
+const ADMISSIONS_HUB_PREVIEW_LIMIT = 100;
 
 function formatStatus(s: string) {
   return formatColLabel(s);
@@ -302,11 +304,21 @@ function AdminAdmissionsOverviewInner() {
   const searchParams = useSearchParams();
   const hubScope = admissionsHubScopeFromSearchParam(searchParams.get("scope"));
 
-  const { selectedFacilityId, availableFacilities } = useFacilityStore((s) => ({
-    selectedFacilityId: s.selectedFacilityId,
-    availableFacilities: s.availableFacilities,
-  }));
+  // Zustand v5: separate selector calls return stable primitives/refs so
+  // the store doesn't re-snapshot and force a render loop.
+  const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
+  const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const { user } = useHavenAuth();
+
+  const loadContextRef = useRef({ selectedFacilityId, hubScope });
+  useEffect(() => {
+    loadContextRef.current = { selectedFacilityId, hubScope };
+  }, [hubScope, selectedFacilityId]);
+  const isCurrentLoadContext = useCallback(
+    (facilityId: string | null, scope: AdmissionsHubScope) =>
+      loadContextRef.current.selectedFacilityId === facilityId && loadContextRef.current.hubScope === scope,
+    [],
+  );
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -327,10 +339,12 @@ function AdminAdmissionsOverviewInner() {
   const [familyActionError, setFamilyActionError] = useState<string | null>(null);
   const [familyActionMessage, setFamilyActionMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isCurrent: () => boolean = () => true) => {
+    if (!isCurrent()) return;
     setLoading(true);
     setLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      if (!isCurrent()) return;
       setReferrals([]);
       setAdmissions([]);
       setDischarges([]);
@@ -357,6 +371,7 @@ function AdminAdmissionsOverviewInner() {
         .not("status", "in", "(converted,lost,merged)")
         .order("updated_at", { ascending: false });
       if (activityLower) refSel = refSel.gte("updated_at", activityLower);
+      refSel = refSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let admSel = supabase
         .from("admission_cases")
@@ -368,6 +383,7 @@ function AdminAdmissionsOverviewInner() {
         .not("status", "eq", "cancelled")
         .order("updated_at", { ascending: false });
       if (activityLower) admSel = admSel.gte("updated_at", activityLower);
+      admSel = admSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let disSel = supabase
         .from("discharge_med_reconciliation")
@@ -377,6 +393,7 @@ function AdminAdmissionsOverviewInner() {
         .not("status", "eq", "cancelled")
         .order("updated_at", { ascending: false });
       if (activityLower) disSel = disSel.gte("updated_at", activityLower);
+      disSel = disSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let triSel = supabase
         .from("family_message_triage_items")
@@ -386,6 +403,7 @@ function AdminAdmissionsOverviewInner() {
         .in("triage_status", ["pending_review", "in_review"])
         .order("updated_at", { ascending: false });
       if (activityLower) triSel = triSel.gte("updated_at", activityLower);
+      triSel = triSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let confSel = supabase
         .from("family_care_conference_sessions")
@@ -395,6 +413,7 @@ function AdminAdmissionsOverviewInner() {
         .gte("scheduled_start", nowIso)
         .order("scheduled_start", { ascending: true });
       if (calendarUpper) confSel = confSel.lte("scheduled_start", calendarUpper);
+      confSel = confSel.limit(ADMISSIONS_HUB_PREVIEW_LIMIT);
 
       let cRefPipe = supabase
         .from("referral_leads")
@@ -485,6 +504,8 @@ function AdminAdmissionsOverviewInner() {
         cFamConsent,
       ]);
 
+      if (!isCurrent()) return;
+
       setReferrals((refList.data ?? []) as LeadRow[]);
       const admissionRows = (admList.data ?? []) as CaseRow[];
       setAdmissions(admissionRows);
@@ -505,14 +526,20 @@ function AdminAdmissionsOverviewInner() {
         consentsPending: (famConsentCt.count ?? 0) as number,
       });
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load data.");
+      if (isCurrent()) {
+        setLoadError(e instanceof Error ? e.message : "Could not load data.");
+      }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [supabase, selectedFacilityId, hubScope]);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    void load(() => !cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   async function updateTriageStatus(
@@ -520,6 +547,9 @@ function AdminAdmissionsOverviewInner() {
     triageStatus: Database["public"]["Enums"]["family_message_triage_status"],
     successMessage: string,
   ) {
+    const actionFacilityId = selectedFacilityId;
+    const actionHubScope = hubScope;
+
     setFamilyActionLoading(itemId);
     setFamilyActionError(null);
     setFamilyActionMessage(null);
@@ -535,10 +565,12 @@ function AdminAdmissionsOverviewInner() {
         })
         .eq("id", itemId);
       if (error) throw error;
-      setFamilyActionMessage(successMessage);
-      await load();
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) setFamilyActionMessage(successMessage);
+      await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));
     } catch (err) {
-      setFamilyActionError(err instanceof Error ? err.message : "Could not update triage item.");
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) {
+        setFamilyActionError(err instanceof Error ? err.message : "Could not update triage item.");
+      }
     } finally {
       setFamilyActionLoading(null);
     }
@@ -549,6 +581,9 @@ function AdminAdmissionsOverviewInner() {
     patch: Partial<Database["public"]["Tables"]["family_care_conference_sessions"]["Update"]>,
     successMessage: string,
   ) {
+    const actionFacilityId = selectedFacilityId;
+    const actionHubScope = hubScope;
+
     setFamilyActionLoading(sessionId);
     setFamilyActionError(null);
     setFamilyActionMessage(null);
@@ -562,25 +597,29 @@ function AdminAdmissionsOverviewInner() {
         })
         .eq("id", sessionId);
       if (error) throw error;
-      setFamilyActionMessage(successMessage);
-      await load();
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) setFamilyActionMessage(successMessage);
+      await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));
     } catch (err) {
-      setFamilyActionError(err instanceof Error ? err.message : "Could not update care conference.");
+      if (isCurrentLoadContext(actionFacilityId, actionHubScope)) {
+        setFamilyActionError(err instanceof Error ? err.message : "Could not update care conference.");
+      }
     } finally {
       setFamilyActionLoading(null);
     }
   }
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadOnboardingState() {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || admissions.length === 0) {
-        setOnboardingState({});
+        if (!cancelled) setOnboardingState({});
         return;
       }
       const moveInCases = admissions.filter((row) => row.status === "move_in" && row.resident_id);
       const residentIds = moveInCases.map((row) => row.resident_id).filter(Boolean) as string[];
       if (residentIds.length === 0) {
-        setOnboardingState({});
+        if (!cancelled) setOnboardingState({});
         return;
       }
       const client = createClient();
@@ -590,6 +629,7 @@ function AdminAdmissionsOverviewInner() {
         client.from("resident_payers").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
         client.from("family_consent_records").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
       ]);
+      if (cancelled) return;
       if (carePlansRes.error || medsRes.error || payersRes.error || consentsRes.error) {
         setOnboardingState({});
         return;
@@ -615,6 +655,9 @@ function AdminAdmissionsOverviewInner() {
     }
 
     void loadOnboardingState();
+    return () => {
+      cancelled = true;
+    };
   }, [admissions, selectedFacilityId]);
 
   const featuredAdmissions = useMemo(() => {
@@ -785,6 +828,34 @@ function AdminAdmissionsOverviewInner() {
           {loadError}
         </div>
       ) : null}
+
+      {(() => {
+        if (noFacility || loading || loadError || hubScope === "all") return null;
+        const allEmpty =
+          referrals.length === 0 &&
+          admissions.length === 0 &&
+          discharges.length === 0 &&
+          triage.length === 0 &&
+          conferences.length === 0;
+        if (!allEmpty) return null;
+        const scopeLabel =
+          hubScope === "today" ? "today" : hubScope === "week" ? "this week" : "this month";
+        return (
+          <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Nothing updated within the current scope ({scopeLabel}).
+              Imported or historical records may live outside this window.
+            </p>
+            <button
+              type="button"
+              onClick={() => setHubScopeParam("all")}
+              className="inline-flex h-8 shrink-0 items-center rounded-md border border-amber-500/40 bg-amber-500/15 px-3 text-[12px] font-medium text-amber-900 transition-colors hover:bg-amber-500/25 dark:text-amber-100"
+            >
+              View all time
+            </button>
+          </div>
+        );
+      })()}
 
       <HubSection
         title="Referrals"

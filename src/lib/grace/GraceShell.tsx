@@ -6,7 +6,12 @@ import { FlowEngineUI } from "./FlowEngineUI";
 import { GraceUndoToast } from "./GraceUndoToast";
 import { GraceStoreProvider, useGraceStore } from "./store";
 
-function GraceShellInner() {
+type GraceShellInnerProps = {
+  openRequestToken?: number;
+  toggleRequestToken?: number;
+};
+
+function GraceShellInner({ openRequestToken, toggleRequestToken }: GraceShellInnerProps) {
   const { state, openBar, closeBar } = useGraceStore();
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -21,23 +26,19 @@ function GraceShellInner() {
   }, [closeBar]);
 
   useEffect(() => {
-    const onOpenGrace = () => openGrace();
-    const onKeyDown = (event: KeyboardEvent) => {
-      const isMac = navigator.platform.toLowerCase().includes("mac");
-      const cmd = isMac ? event.metaKey : event.ctrlKey;
-      if (cmd && event.key.toLowerCase() === "g") {
-        event.preventDefault();
-        if (panelOpen) closeGrace();
-        else openGrace();
-      }
-    };
-    window.addEventListener("grace:open", onOpenGrace);
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("grace:open", onOpenGrace);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [closeGrace, openGrace, panelOpen]);
+    if (openRequestToken == null || openRequestToken < 1) return undefined;
+    const timer = window.setTimeout(openGrace, 0);
+    return () => window.clearTimeout(timer);
+  }, [openGrace, openRequestToken]);
+
+  useEffect(() => {
+    if (toggleRequestToken == null || toggleRequestToken < 1) return undefined;
+    const timer = window.setTimeout(() => {
+      if (panelOpen) closeGrace();
+      else openGrace();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [closeGrace, openGrace, panelOpen, toggleRequestToken]);
 
   return (
     <>
@@ -48,10 +49,18 @@ function GraceShellInner() {
   );
 }
 
-export function GraceShell() {
+type GraceShellProps = {
+  openRequestToken?: number;
+  toggleRequestToken?: number;
+};
+
+export function GraceShell({ openRequestToken, toggleRequestToken }: GraceShellProps) {
   return (
     <GraceStoreProvider>
-      <GraceShellInner />
+      <GraceShellInner
+        openRequestToken={openRequestToken}
+        toggleRequestToken={toggleRequestToken}
+      />
     </GraceStoreProvider>
   );
 }

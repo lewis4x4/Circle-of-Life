@@ -92,6 +92,8 @@ class FakeQuery {
 }
 
 class FakeAdminClient {
+  public rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
+  public failM3RpcAfterUnits = false;
   public auth = {
     getUser: (token: string) => token === "valid"
       ? Promise.resolve({ data: { user: { id: USER_ID } }, error: null })
@@ -144,6 +146,154 @@ class FakeAdminClient {
     }
     this.tables[table].push(next);
     return next;
+  }
+
+  async rpc(fn: string, args: Record<string, unknown>) {
+    this.rpcCalls.push({ fn, args });
+    if (fn !== "promote_facility_launch_m3") return { data: null, error: { message: `unknown rpc ${fn}` } };
+
+    const snapshotTables = structuredClone(this.tables);
+    const snapshotCounters = structuredClone(this.counters);
+    try {
+      const orgId = String(args.p_organization_id);
+      const facilityId = String(args.p_facility_id);
+      const runItemId = String(args.p_run_item_id);
+      const moduleValueId = args.p_module_value_id ? String(args.p_module_value_id) : null;
+      const units = Array.isArray(args.p_units) ? args.p_units as Row[] : [];
+      const rooms = Array.isArray(args.p_rooms) ? args.p_rooms as Row[] : [];
+      const beds = Array.isArray(args.p_beds) ? args.p_beds as Row[] : [];
+      const warnings: string[] = [];
+
+      let unitsCreated = 0;
+      let unitsNoop = 0;
+      let roomsCreated = 0;
+      let roomsNoop = 0;
+      let bedsCreated = 0;
+      let bedsNoop = 0;
+
+      for (const unit of units) {
+        const existing = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === unit.name);
+        if (!existing) {
+          const inserted = this.insert("units", {
+            organization_id: orgId,
+            facility_id: facilityId,
+            name: unit.name,
+            floor_number: unit.floor_number,
+            sort_order: unit.sort_order,
+          });
+          unitsCreated += 1;
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: orgId,
+            facility_id: facilityId,
+            module_value_id: moduleValueId,
+            target_table: "units",
+            target_row_id: String(inserted.id),
+            action: "insert",
+            before_value: null,
+            after_value: {
+              facility_id: facilityId,
+              organization_id: orgId,
+              name: unit.name,
+              floor_number: unit.floor_number,
+              sort_order: unit.sort_order,
+            },
+          });
+        } else {
+          unitsNoop += 1;
+        }
+      }
+
+      if (this.failM3RpcAfterUnits) throw new Error("simulated late M3 failure");
+
+      for (const room of rooms) {
+        const existing = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === room.room_number);
+        const unit = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === room.unit_name);
+        if (!existing) {
+          const inserted = this.insert("rooms", {
+            organization_id: orgId,
+            facility_id: facilityId,
+            unit_id: unit?.id ?? null,
+            room_number: room.room_number,
+            room_type: room.room_type,
+            max_occupancy: room.max_occupancy,
+            floor_number: room.floor_number,
+            sort_order: room.sort_order,
+            launch_profile_metadata: room.launch_profile_metadata,
+          });
+          roomsCreated += 1;
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: orgId,
+            facility_id: facilityId,
+            module_value_id: moduleValueId,
+            target_table: "rooms",
+            target_row_id: String(inserted.id),
+            action: "insert",
+            before_value: null,
+            after_value: {
+              facility_id: facilityId,
+              organization_id: orgId,
+              unit_id: unit?.id ?? null,
+              room_number: room.room_number,
+              room_type: room.room_type,
+              max_occupancy: room.max_occupancy,
+              floor_number: room.floor_number,
+              sort_order: room.sort_order,
+              launch_profile_metadata: room.launch_profile_metadata,
+            },
+          });
+        } else {
+          roomsNoop += 1;
+        }
+      }
+
+      for (const bed of beds) {
+        const room = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === bed.room_number);
+        if (!room) throw new Error(`room missing for bed ${String(bed.room_number)}`);
+        const existing = this.tables.beds.find((row) => row.deleted_at == null && row.room_id === room.id && row.bed_label === bed.bed_label);
+        if (!existing) {
+          const inserted = this.insert("beds", {
+            room_id: room.id,
+            organization_id: orgId,
+            facility_id: facilityId,
+            bed_label: bed.bed_label,
+            bed_type: bed.bed_type,
+            status: bed.status,
+          });
+          bedsCreated += 1;
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: orgId,
+            facility_id: facilityId,
+            module_value_id: moduleValueId,
+            target_table: "beds",
+            target_row_id: String(inserted.id),
+            action: "insert",
+            before_value: null,
+            after_value: {
+              room_id: room.id,
+              organization_id: orgId,
+              facility_id: facilityId,
+              bed_label: bed.bed_label,
+              bed_type: bed.bed_type,
+              status: bed.status,
+            },
+          });
+        } else {
+          bedsNoop += 1;
+        }
+      }
+
+      return {
+        data: { units_created: unitsCreated, units_noop: unitsNoop, rooms_created: roomsCreated, rooms_noop: roomsNoop, beds_created: bedsCreated, beds_noop: bedsNoop, warnings },
+        error: null,
+      };
+    } catch (error) {
+      this.tables = snapshotTables;
+      this.counters = snapshotCounters;
+      return { data: null, error: { message: error instanceof Error ? error.message : String(error) } };
+    }
   }
 }
 
@@ -310,6 +460,20 @@ Deno.test("m3_creates_units_rooms_beds", async () => {
   assertEquals(admin.tables.beds.length, 36);
   assertEquals(admin.tables.rooms.filter((row) => row.room_type === "private").length, 4);
   assertEquals(admin.tables.rooms.filter((row) => row.room_type === "semi_private").length, 16);
+  assertEquals(admin.rpcCalls.filter((call) => call.fn === "promote_facility_launch_m3").length, 1);
+});
+
+Deno.test("m3_apply_rpc_failure_rolls_back_partial_rows", async () => {
+  const admin = new FakeAdminClient(m3Rows);
+  admin.failM3RpcAfterUnits = true;
+  const res = await handler(admin)(request(["M3"]));
+  const payload = await res.json();
+  assertEquals(res.status, 200, JSON.stringify(payload));
+  assertEquals(payload.modules_promoted[0].status, "failed");
+  assertEquals(admin.tables.units.length, 0);
+  assertEquals(admin.tables.rooms.length, 0);
+  assertEquals(admin.tables.beds.length, 0);
+  assertEquals(admin.tables.facility_launch_promotion_run_links.length, 0);
 });
 
 Deno.test("m17_registers_facility_documents", async () => {

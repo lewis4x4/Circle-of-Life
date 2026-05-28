@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 
 type Action = "assign" | "start_review" | "resolve" | "dismiss";
@@ -51,7 +52,7 @@ export async function PATCH(
     .maybeSingle();
 
   if (flagError) {
-    console.error("[rounding/integrity-flags] lookup", flagError);
+    logError("rounding.integrity-flags.lookup", flagError, { flagId });
   }
   if (flagError || !flag) {
     return NextResponse.json({ error: "Integrity flag not found" }, { status: 404 });
@@ -102,14 +103,14 @@ export async function PATCH(
         return NextResponse.json({ error: `Integrity flag is already ${flag.status}` }, { status: 409 });
       }
       patch.status = "resolved";
-      patch.disposition_note = note || "Resolved from the Resident Assurance integrity review queue.";
+      patch.disposition_note = note || "Resolved from the Smart Rounding integrity review queue.";
       break;
     case "dismiss":
       if (flag.status === "resolved" || flag.status === "dismissed") {
         return NextResponse.json({ error: `Integrity flag is already ${flag.status}` }, { status: 409 });
       }
       patch.status = "dismissed";
-      patch.disposition_note = note || "Dismissed from the Resident Assurance integrity review queue.";
+      patch.disposition_note = note || "Dismissed from the Smart Rounding integrity review queue.";
       break;
   }
 
@@ -120,7 +121,7 @@ export async function PATCH(
     .eq("organization_id", context.organizationId);
 
   if (updateError) {
-    console.error("[rounding/integrity-flags] update", updateError);
+    logError("rounding.integrity-flags.update", updateError, { flagId: flag.id, action });
     return NextResponse.json({ error: "Could not update integrity flag" }, { status: 500 });
   }
 

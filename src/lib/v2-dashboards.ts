@@ -4,7 +4,7 @@
  * This module intentionally does not ship deterministic facility metrics. Live
  * rows are supplied by `loadV2Dashboard()` from `haven.vw_v2_facility_rollup`.
  * When a live source is empty or unavailable, the UI renders honest empty/gap
- * states instead of old COL fixture values.
+ * states instead of old COL sample data.
  */
 import type { ActionQueueItem } from "@/design-system/components/ActionQueue";
 import type { AlertItem } from "@/design-system/components/PriorityAlertStack";
@@ -60,7 +60,7 @@ export type V2DashboardPayload = {
   thresholds: ThresholdMap;
 };
 
-const LIVE_SOURCE_PENDING = "Live source pending; no fixture value is shown.";
+const LIVE_SOURCE_PENDING = "Live source pending; no value is shown yet.";
 
 const SHARED_THRESHOLDS: ThresholdMap = {
   occupancy_pct: { target: 90, direction: "up", warningBandPct: 10 },

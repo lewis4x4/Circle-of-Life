@@ -1,0 +1,509 @@
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { Camera, Copy, Loader2, Lock, UploadCloud } from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { IdentityAvatar, IdentityBlock } from "@/components/ui/identity-block";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import { useOrganizationName } from "@/components/layout/UserMenu/user-menu-data";
+
+const PROFILE_TABS = [
+  { value: "profile", label: "Profile" },
+  { value: "notifications", label: "Notifications" },
+  { value: "security", label: "Security" },
+  { value: "sessions", label: "Sessions" },
+  { value: "preferences", label: "Preferences" },
+] as const;
+
+type ProfileTabValue = (typeof PROFILE_TABS)[number]["value"];
+
+function normalizeTab(value: string | null): ProfileTabValue {
+  return PROFILE_TABS.some((tab) => tab.value === value) ? (value as ProfileTabValue) : "profile";
+}
+
+export default function AdminProfilePage() {
+  const searchParams = useSearchParams();
+  const activeTab = normalizeTab(searchParams.get("tab"));
+  const {
+    user,
+    email,
+    appRole,
+    organizationId,
+    fullName,
+    avatarUrl,
+    loading: authLoading,
+    refresh,
+  } = useHavenAuth();
+  const orgName = useOrganizationName(organizationId);
+  const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
+  const supabase = useMemo(() => createClient(), []);
+  const [displayName, setDisplayName] = useState(fullName ?? "");
+  const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordPending, setPasswordPending] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const tablistRef = useRef<HTMLElement>(null);
+
+  // P0-3: scope focus to THIS page's h1, not the first h1 globally (which would hijack the layout shell heading).
+  // FIX-P2-C / UI audit P2-3: only auto-focus when nothing else owns focus, so round-trips
+  // (close a tooltip, return from a child route) don't re-announce "My profile, heading".
+  useEffect(() => {
+    if (document.activeElement === document.body || document.activeElement === null) {
+      headingRef.current?.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    setDisplayName(fullName ?? "");
+  }, [fullName]);
+
+  const trimmedDisplayName = displayName.trim();
+  const initialDisplayName = fullName?.trim() ?? "";
+  const hasChanges = trimmedDisplayName !== initialDisplayName;
+
+  function handleTablistKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+
+    const enabledTabs = Array.from(
+      tablistRef.current?.querySelectorAll<HTMLElement>('[role="tab"]:not([aria-disabled="true"])') ?? [],
+    );
+    if (enabledTabs.length === 0) return;
+
+    const currentIndex = enabledTabs.findIndex((element) => element === document.activeElement);
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? enabledTabs.length - 1
+        : event.key === "ArrowRight"
+          ? (currentIndex + 1) % enabledTabs.length
+          : (currentIndex - 1 + enabledTabs.length) % enabledTabs.length;
+
+    enabledTabs[nextIndex]?.focus();
+  }
+
+  // FIX-P2-C / UI audit P1-4: keyboard users need to copy email + org name; readOnly+disabled
+  // blocked that path entirely. Drop disabled (keep readOnly) and offer an explicit Copy button.
+  async function copyToClipboard(text: string, label: string) {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard`);
+    } catch {
+      toast.error(`Could not copy ${label.toLowerCase()} to clipboard`);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName: trimmedDisplayName || null }),
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Could not save profile.");
+      }
+      toast.success("Profile updated");
+      await refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save profile.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePasswordChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("All password fields are required.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation must match.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("New password must be different from your current password.");
+      return;
+    }
+    if (!email) {
+      setPasswordError("Could not confirm your account email. Refresh and try again.");
+      return;
+    }
+
+    setPasswordPending(true);
+    try {
+      const signInResult = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+      if (signInResult.error) {
+        setPasswordError("Current password is incorrect");
+        return;
+      }
+
+      const updateResult = await supabase.auth.updateUser({ password: newPassword });
+      if (updateResult.error) {
+        setPasswordError(updateResult.error.message);
+        return;
+      }
+
+      setPasswordSuccess("Password updated.");
+      toast.success("Password updated");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Could not update password.");
+    } finally {
+      setPasswordPending(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <header className="flex flex-col gap-4 rounded-[var(--radius)] border border-border bg-card p-5 shadow-[var(--shadow-card)] md:flex-row md:items-center md:justify-between">
+        <div className="space-y-2">
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-2xl font-semibold tracking-tight text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+          >
+            My profile
+          </h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Manage your account identity. Personal notification, security, sessions, and preference
+            controls are staged here for the next profile phase.
+          </p>
+        </div>
+        <IdentityBlock
+          fullName={fullName}
+          email={email}
+          roleLabel={roleConfig.roleLabel}
+          orgName={orgName}
+          avatarUrl={avatarUrl}
+          userId={user?.id ?? null}
+          size="lg"
+          className="w-full rounded-[var(--radius)] border border-border bg-muted/30 p-3 md:w-[320px]"
+        />
+      </header>
+
+      {/* P0-7 + ROAD-28: stub tabs render as disabled <button> with "Soon" badge — still in tablist for ARIA, no navigation. */}
+      <nav
+        ref={tablistRef}
+        role="tablist"
+        aria-label="Profile sections"
+        onKeyDown={handleTablistKeyDown}
+        className="inline-flex min-h-11 w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-muted/50 p-1"
+      >
+        {PROFILE_TABS.map((tab) => {
+          const active = activeTab === tab.value;
+          const isStub = tab.value !== "profile" && tab.value !== "security";
+          const href = tab.value === "profile" ? "/admin/profile" : `/admin/profile?tab=${tab.value}`;
+          const className = cn(
+            "inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium",
+            "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+            active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            isStub && "cursor-not-allowed opacity-70",
+          );
+          const soonBadge = isStub ? (
+            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Soon
+            </span>
+          ) : null;
+          if (isStub) {
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                id={`profile-tab-${tab.value}`}
+                role="tab"
+                aria-selected={false}
+                aria-controls="profile-tabpanel"
+                aria-disabled={true}
+                disabled
+                tabIndex={-1}
+                data-state="inactive"
+                className={className}
+              >
+                {tab.label}
+                {soonBadge}
+              </button>
+            );
+          }
+          // FIX-P2-C / UI audit P2-8: tabs already carry aria-selected; aria-current is
+          // redundant here and semantically mixed with role="tab". Reserve aria-current for
+          // non-tab nav patterns (breadcrumb, primary site nav).
+          return (
+            <Link
+              key={tab.value}
+              href={href}
+              id={`profile-tab-${tab.value}`}
+              role="tab"
+              aria-selected={active}
+              aria-controls="profile-tabpanel"
+              tabIndex={active ? 0 : -1}
+              data-state={active ? "active" : "inactive"}
+              className={className}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* P0-7: tabpanel shell — single panel labelled by the active tab; tabIndex=0 so screen readers can land here. */}
+      <section
+        id="profile-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`profile-tab-${activeTab}`}
+        tabIndex={0}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-[var(--radius)]"
+      >
+      {activeTab === "profile" ? (
+        <Card size="lg">
+          <CardHeader>
+            <CardTitle>Profile</CardTitle>
+            <CardDescription>Update the name displayed across Haven.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-[160px_1fr]">
+            <div className="space-y-3">
+              <Label>Avatar</Label>
+              {/* P1 #16: drop fake role=button + tabIndex=0 on a disabled affordance; tooltip can still trigger on hover/focus of a non-interactive wrapper. */}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <div
+                      aria-label="Avatar upload coming soon"
+                      className="group relative flex size-[120px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full border border-dashed border-border bg-muted/30 text-muted-foreground outline-none"
+                    />
+                  }
+                >
+                  <IdentityAvatar
+                    fullName={displayName || fullName}
+                    email={email}
+                    avatarUrl={avatarUrl}
+                    userId={user?.id ?? null}
+                    size="xl"
+                    className="size-[120px]"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Camera className="size-5" aria-hidden />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right">Avatar upload coming soon</TooltipContent>
+              </Tooltip>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <UploadCloud className="size-3.5" aria-hidden />
+                Drag-and-drop upload coming soon
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="display-name">Display name</Label>
+                <Input
+                  id="display-name"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder={email ?? "Your name"}
+                  disabled={authLoading || saving}
+                  maxLength={120}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="profile-email">Email</Label>
+                <div className="flex items-center gap-2">
+                  <Input id="profile-email" value={email ?? ""} readOnly className="flex-1" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void copyToClipboard(email ?? "", "Email")}
+                    disabled={!email}
+                    aria-label="Copy email to clipboard"
+                    className="shrink-0"
+                  >
+                    <Copy className="size-3.5" aria-hidden />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Role</Label>
+                {/* ROAD-31: read-only badge instead of fake disabled input — communicates "computed metadata". */}
+                <div className="flex items-center gap-2 py-1">
+                  <Badge variant="default">{roleConfig.roleLabel}</Badge>
+                  {/* FIX-P2-C / UI audit P1-3: 12px floor for caption text. */}
+                  <span className="text-[12px] text-muted-foreground">Assigned by your org admin</span>
+                </div>
+              </div>
+
+              {/* ROAD-30: hide entirely when orgName is genuinely missing; render only when known. */}
+              {orgName ? (
+                <div className="grid gap-2">
+                  <Label htmlFor="profile-organization">Organization</Label>
+                  <div className="flex items-center gap-2">
+                    <Input id="profile-organization" value={orgName} readOnly className="flex-1" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void copyToClipboard(orgName, "Organization")}
+                      aria-label="Copy organization name to clipboard"
+                      className="shrink-0"
+                    >
+                      <Copy className="size-3.5" aria-hidden />
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </CardContent>
+          <CardFooter className="justify-end gap-2">
+            <span aria-live="polite" className="sr-only">
+              {saving ? "Saving profile…" : ""}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDisplayName(fullName ?? "")}
+              disabled={saving || !hasChanges}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => void handleSave()} disabled={saving || authLoading || !hasChanges}>
+              {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </CardFooter>
+        </Card>
+      ) : activeTab === "security" ? (
+        <Card size="lg">
+          <form onSubmit={(event) => void handlePasswordChange(event)} noValidate>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>Change your password after confirming your current password.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="current-password">Current password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  autoComplete="current-password"
+                  disabled={passwordPending}
+                  aria-invalid={passwordError === "Current password is incorrect"}
+                  aria-describedby={passwordError ? "password-change-error" : undefined}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="new-password">New password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={passwordPending}
+                  aria-invalid={Boolean(passwordError)}
+                  aria-describedby={passwordError ? "new-password-help password-change-error" : "new-password-help"}
+                />
+                <p id="new-password-help" className="text-[12px] text-muted-foreground">
+                  Use at least 8 characters.
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">Confirm new password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={passwordPending}
+                  aria-invalid={Boolean(passwordError)}
+                  aria-describedby={passwordError ? "password-change-error" : undefined}
+                />
+              </div>
+
+              {passwordError ? (
+                <p id="password-change-error" role="alert" className="text-sm text-destructive">
+                  {passwordError}
+                </p>
+              ) : null}
+              {passwordSuccess ? (
+                <p role="status" aria-live="polite" className="text-sm text-success">
+                  {passwordSuccess}
+                </p>
+              ) : null}
+            </CardContent>
+            <CardFooter className="justify-end">
+              <span aria-live="polite" className="sr-only">
+                {passwordPending ? "Updating password…" : ""}
+              </span>
+              <Button type="submit" disabled={passwordPending || authLoading}>
+                {passwordPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                {passwordPending ? "Updating…" : "Update password"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>{PROFILE_TABS.find((tab) => tab.value === activeTab)?.label}</CardTitle>
+            <CardDescription>This profile section is planned for the next phase.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3 rounded-[var(--radius)] border border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground">
+              <Lock className="size-4" aria-hidden />
+              Coming soon
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      </section>
+    </div>
+  );
+}

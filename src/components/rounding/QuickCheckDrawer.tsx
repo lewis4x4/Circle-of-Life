@@ -16,7 +16,6 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { CompletionPayload, ObservationQuickStatus, ObservationExceptionType } from "@/lib/rounding/types";
-import { isRoundingLiveDemoTaskId } from "@/lib/rounding/demo-live-tasks";
 
 export type QuickCheckTask = {
   id: string;
@@ -148,8 +147,7 @@ export function QuickCheckDrawer({
       note: note.trim() || null,
     };
 
-    const completeLocally =
-      isRoundingLiveDemoTaskId(task.id) || !persistCompletion;
+    const completeLocally = !persistCompletion;
 
     try {
       if (completeLocally) {
@@ -244,9 +242,9 @@ export function QuickCheckDrawer({
           </button>
         </div>
 
-        {task && isRoundingLiveDemoTaskId(task.id) && !justCompleted && (
+        {task && !persistCompletion && !justCompleted && (
           <div className="border-b border-cyan-500/20 bg-cyan-950/25 px-3 py-2 text-center text-[11px] text-cyan-200/90 sm:px-5">
-            Preview mode — this board is showing demo tasks; checks are not saved to the database.
+            Preview mode — checks are not saved to the database.
           </div>
         )}
 
@@ -255,7 +253,9 @@ export function QuickCheckDrawer({
             <div className="rounded-full bg-emerald-500/20 p-4">
               <CheckCircle2 className="h-12 w-12 text-emerald-400" />
             </div>
-            <p className="text-lg font-semibold text-emerald-300">Check complete</p>
+            <p className="text-lg font-semibold text-emerald-300">
+              {persistCompletion ? "Check complete" : "Preview complete — not saved"}
+            </p>
             {onNextTask && queuePosition && queuePosition.current < queuePosition.total && (
               <p className="text-sm text-slate-400">Advancing to next resident...</p>
             )}

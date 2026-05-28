@@ -2,9 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -61,19 +58,15 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <TooltipProvider delay={250} closeDelay={100}>
-            <ServiceWorkerRegister />
-            <div id="haven-app-root" className="flex min-h-full flex-col">
-              <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                Skip to main content
-              </a>
-              <div id="main-content">{children}</div>
-            </div>
-            <Toaster richColors closeButton position="bottom-right" />
-          </TooltipProvider>
+          <div id="haven-app-root" className="flex min-h-full flex-col">
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              Skip to main content
+            </a>
+            <div id="main-content">{children}</div>
+          </div>
         </ThemeProvider>
       </body>
     </html>

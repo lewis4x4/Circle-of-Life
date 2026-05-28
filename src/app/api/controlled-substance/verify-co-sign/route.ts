@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/lib/supabase/server";
 import {
   checkFailureRateLimit,
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
   try {
     admin = createServiceRoleClient();
   } catch (e) {
-    console.error("[verify-co-sign] service role client", e);
+    logError("controlled-substance.verify-co-sign", e, { action: "service_role_client" });
     return NextResponse.json(
       { verified: false, error: "Server configuration error" },
       { status: 503 },
@@ -255,7 +256,7 @@ export async function POST(request: Request) {
     .is("incoming_staff_id", null);
 
   if (upErr) {
-    console.error("[verify-co-sign] update", upErr);
+    logError("controlled-substance.verify-co-sign", upErr, { action: "update_counts", countCount: countIds.length, facilityId });
     return NextResponse.json({ verified: false, error: "Could not save signature" }, { status: 500 });
   }
 
@@ -276,7 +277,7 @@ export async function POST(request: Request) {
   const { error: auditErr } = await admin.from("audit_log").insert(auditRows);
 
   if (auditErr) {
-    console.warn("[verify-co-sign] audit_log insert failed", auditErr);
+    logError("controlled-substance.verify-co-sign", auditErr, { action: "audit_log_insert", countCount: countIds.length });
   }
 
   const displayName =

@@ -1,7 +1,7 @@
 /index.html
   Cache-Control: no-store
 
-/src/*
+/dist/*
   Cache-Control: no-cache, must-revalidate
 
 /styles.css

@@ -43,7 +43,8 @@ const GROUP_ICONS: Record<string, ReactNode> = {
   "Staffing coverage": <Users className="h-4 w-4 text-primary-400" aria-hidden />,
   "Labor & overtime": <Activity className="h-4 w-4 text-primary-400" aria-hidden />,
   Medication: <Stethoscope className="h-4 w-4 text-pink-400" aria-hidden />,
-  "Resident assurance": <Shield className="h-4 w-4 text-teal-400" aria-hidden />,
+  "Smart rounding": <Shield className="h-4 w-4 text-teal-400" aria-hidden />,
+  "Smart rounding heat": <Shield className="h-4 w-4 text-teal-400" aria-hidden />,
   "Executive pack": <Landmark className="h-4 w-4 text-primary-400" aria-hidden />,
   Other: <ClipboardList className="h-4 w-4 text-slate-400" aria-hidden />,
 };

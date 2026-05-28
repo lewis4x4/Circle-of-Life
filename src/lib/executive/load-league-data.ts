@@ -114,14 +114,21 @@ export async function loadExecutiveLeagueData(
       .limit(50),
   ]);
 
-  if (facilitiesRes.error) throw facilitiesRes.error;
-  if (entitiesRes.error) throw entitiesRes.error;
-  if (policiesRes.error) throw policiesRes.error;
-  if (renewalsRes.error) throw renewalsRes.error;
-  if (packagesRes.error) throw packagesRes.error;
-  if (riskRes.error) throw riskRes.error;
-  if (standupRes.error) throw standupRes.error;
-  if (reportsRes.error) throw reportsRes.error;
+  // Partial-failure tolerant: log any per-query errors but render whatever
+  // succeeded. Downstream extractors already default missing rows to [].
+  const queryErrors = [
+    facilitiesRes.error && { table: "facilities", ...facilitiesRes.error },
+    entitiesRes.error && { table: "entities", ...entitiesRes.error },
+    policiesRes.error && { table: "insurance_policies", ...policiesRes.error },
+    renewalsRes.error && { table: "insurance_renewals", ...renewalsRes.error },
+    packagesRes.error && { table: "renewal_data_packages", ...packagesRes.error },
+    riskRes.error && { table: "risk_score_snapshots", ...riskRes.error },
+    standupRes.error && { table: "exec_standup_snapshots", ...standupRes.error },
+    reportsRes.error && { table: "exec_saved_reports", ...reportsRes.error },
+  ].filter(Boolean);
+  if (queryErrors.length > 0) {
+    console.warn("[Haven] Executive league partial failure", queryErrors);
+  }
 
   const facilities = (facilitiesRes.data ?? []) as FacilityRow[];
   const entities = new Map(((entitiesRes.data ?? []) as EntityRow[]).map((entity) => [entity.id, entity.name]));

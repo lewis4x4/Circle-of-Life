@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
 
 import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { buildExecutiveLeaguePrintHtml } from "@/lib/executive/league-print";
 import { loadExecutiveLeagueData } from "@/lib/executive/load-league-data";
+import { logError } from "@/lib/observability/logger";
 import {
   REPORT_EXPORT_BUCKET,
   executiveLeaguePdfStoragePath,
@@ -20,6 +20,7 @@ export async function GET() {
 
   let browser;
   try {
+    const { chromium } = await import("playwright");
     browser = await chromium.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -46,7 +47,7 @@ export async function GET() {
         upsert: true,
       });
     if (upload.error) {
-      console.error("[executive-league-pdf] storage", upload.error);
+      logError("executive.league.pdf.storage", upload.error);
     }
 
     return new NextResponse(new Uint8Array(pdf), {
@@ -58,7 +59,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("[executive-league-pdf] render", error);
+    logError("executive.league.pdf.render", error);
     return NextResponse.json(
       { error: "Could not generate executive league PDF." },
       { status: 500 },

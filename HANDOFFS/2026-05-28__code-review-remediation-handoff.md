@@ -5,6 +5,8 @@
 **Branch:** `codex/complete-app-cleanup`
 **State:** all changes are in the working tree, **uncommitted / unpushed**.
 
+> **2026-05-28 merge update (PR #54):** Merged `main` (133 commits). The two numbered migrations were **renumbered to dodge collisions** with main: `260→287` (ahca→date) and `261→288` (apply_invoice_payment); the SQL is unchanged. Prod SELECTs confirmed `staff_role` already complete, `ahca_license_expiration` already `date`, `diet_orders.iddsi_food_level` is `integer` — so `20260514180000` and `287` are **no-ops on prod**, and **only `288_apply_invoice_payment` has real effect**.
+
 This remediates the `/code-review` findings on commit `f959b58e` ("Make walkthrough cleanup verifiable end to end"). The dominant theme was that the new billing deep‑link prefills (`?residentId=…&invoiceId=…&amount=…`) were trusted without being reconciled against the destination form's own scope; the rest were a facilities query regression, a cache hole, a migration replay hazard, and cleanups.
 
 ---
@@ -18,7 +20,7 @@ This remediates the `/code-review` findings on commit `f959b58e` ("Make walkthro
 - **4c — diet_orders:** investigated and intentionally left alone; only act if you want to resolve a documented app-layer inconsistency (optional, separate effort).
 - **4d — Browser gate** (`segment:gates --ui`, needs Playwright).
 
-The atomic payment RPC (originally listed as optional "4b") is **now implemented** — see §2 / migration `261`.
+The atomic payment RPC (originally listed as optional "4b") is **now implemented** — see §2 / migration `288`.
 
 ---
 
@@ -43,8 +45,8 @@ The atomic payment RPC (originally listed as optional "4b") is **now implemented
 - `src/lib/billing/billing-links.ts` — shared `collectionActivityHref` / `paymentHref`
 - `src/app/(admin)/billing/payments/new/page.test.tsx`, `…/collections/new/page.test.tsx` — prefill reconciliation tests
 - `supabase/migrations/20260514180000_staff_role_enum_values.sql` — `staff_role` `ADD VALUE` split out (txn-safe replay)
-- `supabase/migrations/260_align_facilities_ahca_expiration_to_date.sql` — guarded `timestamptz→date` convergence
-- `supabase/migrations/261_apply_invoice_payment.sql` — atomic payment RPC (`SECURITY INVOKER`, row lock)
+- `supabase/migrations/287_align_facilities_ahca_expiration_to_date.sql` — guarded `timestamptz→date` convergence
+- `supabase/migrations/288_apply_invoice_payment.sql` — atomic payment RPC (`SECURITY INVOKER`, row lock)
 
 > ⚠️ The untracked `test-results/agent-gates/*.json` files are pre-existing artifacts, **not** part of this work. Don't stage them.
 
@@ -74,7 +76,7 @@ I could not reach Haven prod (`manfqmasfqppukpobpld`) from my session, so the th
 SELECT e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid=e.enumtypid
 WHERE t.typname='staff_role' ORDER BY e.enumsortorder;
 
--- 2) is ahca col date or timestamptz? (drives whether 260 does anything)
+-- 2) is ahca col date or timestamptz? (drives whether 287 does anything)
 SELECT column_name, data_type FROM information_schema.columns
 WHERE table_schema='public' AND table_name='facilities'
   AND column_name='ahca_license_expiration';
@@ -86,15 +88,15 @@ WHERE table_schema='public' AND table_name='diet_orders' ORDER BY ordinal_positi
 
 **Apply order** (your normal Supabase deploy / CLI / MCP `apply_migration`):
 1. `20260514180000_staff_role_enum_values.sql`
-2. `260_align_facilities_ahca_expiration_to_date.sql`
-3. `261_apply_invoice_payment.sql`
+2. `287_align_facilities_ahca_expiration_to_date.sql`
+3. `288_apply_invoice_payment.sql`
 
 **Two gotchas:**
 - `20260514180000…` sorts **before** the already-applied `20260514180707…` seed. That ordering is required for fresh replay (the enum values must commit before the seed's transaction uses them). On **prod the values already exist**, so it's a pure no-op there — if your tracker rejects an out-of-order insert, record it as applied/skip on prod; it only matters for fresh-replay/CI.
 - `20260514180707…` was **edited** (ALTER TYPE block removed). It's already applied on prod, so it won't re-run. If your tooling checksums applied migrations, expect a "modified" notice — the repo's `MIGRATION-REPLAY-HARDENING` policy sanctions editing historical migrations; confirm your pipeline tolerates it.
 
 ### 4b. (DONE) Atomic payment RPC — finding #8
-Implemented as `261_apply_invoice_payment.sql` and wired into `payments/new/page.tsx`. The function locks the invoice row (`FOR UPDATE`), clamps against the live balance, and updates `amount_paid`/`balance_due`/`status` atomically. It is `SECURITY INVOKER`, so the caller's RLS on `invoices` still applies (same authorization as the prior client UPDATE) and audit triggers fire. Just apply the migration (4a).
+Implemented as `288_apply_invoice_payment.sql` and wired into `payments/new/page.tsx`. The function locks the invoice row (`FOR UPDATE`), clamps against the live balance, and updates `amount_paid`/`balance_due`/`status` atomically. It is `SECURITY INVOKER`, so the caller's RLS on `invoices` still applies (same authorization as the prior client UPDATE) and audit triggers fire. Just apply the migration (4a).
 
 ### 4c. diet_orders (finding #1) — intentionally NOT changed
 Investigated and skipped on purpose: migration **174 unconditionally `DROP … CASCADE` + recreates `diet_orders`** before 237 runs, so prod and fresh-replay already converge to the same shape — the finding's premise (an 089 enum table surviving to 237) can't occur. Migration 238's own header documents the real residual as an **app-layer enum-vs-int inconsistency** ("the hook layer expects 174 shape, the admin layer expects 089 shape"), deliberately deferred. **Do not** ship a blind enum→int migration — `src/lib/dietary/med-fluid-diet-hints.ts` and `dietary/page.tsx` read `iddsi_food_level` as the enum string and it would break live dietary pages. If you want to close the inconsistency, it's a separate effort: pick the canonical representation and align the dietary admin pages + hooks; confirm prod's actual `diet_orders` shape first (check #3 above).
@@ -115,8 +117,8 @@ npm run segment:gates -- --segment "code-review-remediation" --ui   # writes tes
 # 2) stage ONLY this work (exclude unrelated pre-existing agent-gates json noise)
 git add src/ \
         supabase/migrations/20260514180000_staff_role_enum_values.sql \
-        supabase/migrations/260_align_facilities_ahca_expiration_to_date.sql \
-        supabase/migrations/261_apply_invoice_payment.sql \
+        supabase/migrations/287_align_facilities_ahca_expiration_to_date.sql \
+        supabase/migrations/288_apply_invoice_payment.sql \
         "supabase/migrations/20260514180707_homewood_round2_employee_seed.sql" \
         HANDOFFS/2026-05-28__code-review-remediation-handoff.md
 #    plus the new gate artifact this run produced, if your process commits it.
@@ -150,7 +152,7 @@ fix(billing,facilities,migrations): remediate code-review findings
 
 ## 6. Jarvis Frontend Handoff (backend/migration changes)
 
-1. **Tables/columns:** `facilities.ahca_license_expiration` may change `timestamptz → date` on prod (migration 260, only if currently timestamptz). This **fixes** `src/lib/admin/facilities/license-record-metrics.ts`, which expects bare `YYYY-MM-DD` and was getting `null` from a timestamptz serialization. No frontend change required.
+1. **Tables/columns:** `facilities.ahca_license_expiration` may change `timestamptz → date` on prod (migration 287, only if currently timestamptz). This **fixes** `src/lib/admin/facilities/license-record-metrics.ts`, which expects bare `YYYY-MM-DD` and was getting `null` from a timestamptz serialization. No frontend change required.
 2. **RPC functions:** **new** `public.apply_invoice_payment(p_invoice_id uuid, p_amount_cents int) RETURNS void`. Applies a payment to an invoice atomically (locks the row, clamps to live balance, updates `amount_paid`/`balance_due`/`status`). `SECURITY INVOKER` (RLS enforced). Called from `payments/new`.
 3. **TypeScript types:** no regen required for the column change (both `date` and `timestamptz` map to `string | null`). **Do** regenerate `src/types/database.ts` after deploy so `apply_invoice_payment` is typed (the client currently calls it via an `as never` cast); once typed, drop the cast.
 4. **New data/UI surfaces:** none — behavior fixes only.

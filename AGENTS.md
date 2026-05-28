@@ -189,7 +189,11 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 EXEC_KPI_SNAPSHOT_SECRET=
+RESIDENT_SAFETY_SCORER_SECRET=
+RISK_NIGHTLY_SCORER_SECRET=
 ```
+
+The complete environment and Edge Function secret inventory lives in `docs/specs/SECRETS-MANIFEST.md`; keep this quick-start block aligned with that manifest.
 
 Additional variables are documented in individual spec files as features require them (e.g. VAPID keys for push notifications, SendGrid/Twilio for alerts). See each module's spec for its variable requirements.
 

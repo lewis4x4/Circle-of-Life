@@ -68,7 +68,7 @@ export default function CoordinatorDashboardPage() {
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Care Plans Due */}
         <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
-          <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
             <CalendarClock className="w-5 h-5 text-warning" /> Care Plans Due for Review
           </h3>
           {brief.carePlansDue.length === 0 ? (
@@ -93,7 +93,7 @@ export default function CoordinatorDashboardPage() {
 
         {/* Pending Admissions */}
         <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
-          <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
+          <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
             <UserPlus className="w-5 h-5 text-info" /> Admission Pipeline
           </h3>
           {brief.pendingAdmissions.length === 0 ? (

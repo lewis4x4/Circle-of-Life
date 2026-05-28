@@ -101,6 +101,7 @@ class FakeQuery {
   }
 
   private execute(): { data: Row[]; error: null } {
+    this.db.recordQuery(this.table, this.operation);
     if (this.operation === "insert") {
       const rows = (Array.isArray(this.payload) ? this.payload : [this.payload])
         .map((row) => this.db.insert(this.table, row as Row));
@@ -146,6 +147,16 @@ class FakeAdminClient {
   };
   private counters: Record<string, number> = {};
   public tables: Record<string, Row[]>;
+  public rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
+  public failScalarRpc = false;
+  public failScalarRpcAfterFirstWrite = false;
+  public failCollectionRpc = false;
+  public failCollectionRpcAfterFirstWrite = false;
+  public failVendorRpc = false;
+  public failVendorRpcAfterFirstWrite = false;
+  public failM6RatesRpc = false;
+  public failM6RatesRpcAfterFirstWrite = false;
+  private queryCounts: Record<string, Record<string, number>> = {};
 
   constructor(moduleValues: Row[]) {
     this.tables = {
@@ -186,6 +197,560 @@ class FakeAdminClient {
   from(table: string) {
     if (!this.tables[table]) this.tables[table] = [];
     return new FakeQuery(this, table);
+  }
+
+  recordQuery(table: string, operation: string) {
+    const entry = this.queryCounts[table] ?? {};
+    entry[operation] = (entry[operation] ?? 0) + 1;
+    this.queryCounts[table] = entry;
+  }
+
+  queryCount(table: string, operation: "select" | "insert" | "update") {
+    return this.queryCounts[table]?.[operation] ?? 0;
+  }
+
+  async rpc(fn: string, args: Record<string, unknown>) {
+    this.rpcCalls.push({ fn, args });
+    if (fn === "promote_facility_launch_scalar_config") {
+      if (this.failScalarRpc) {
+        return { data: null, error: { message: "Injected scalar RPC failure" } };
+      }
+      return this.runScalarRpc(args);
+    }
+    if (fn === "promote_facility_launch_simple_collection") {
+      if (this.failCollectionRpc) {
+        return {
+          data: null,
+          error: { message: "Injected simple collection RPC failure" },
+        };
+      }
+      return this.runSimpleCollectionRpc(args);
+    }
+    if (fn === "promote_facility_launch_vendor_contacts") {
+      if (this.failVendorRpc) {
+        return {
+          data: null,
+          error: { message: "Injected vendor collection RPC failure" },
+        };
+      }
+      return this.runVendorContactsRpc(args);
+    }
+    if (fn === "promote_facility_launch_m6_rates") {
+      if (this.failM6RatesRpc) {
+        return {
+          data: null,
+          error: { message: "Injected M6 rates RPC failure" },
+        };
+      }
+      return this.runM6RatesRpc(args);
+    }
+    return { data: null, error: { message: `Unsupported rpc ${fn}` } };
+  }
+
+  private runScalarRpc(args: Record<string, unknown>) {
+    const table = String(args.p_table ?? "");
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+
+    const snapshot = this.tables[table].map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const tableCounter = this.counters[table] ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+      for (const rawRow of rows) {
+        const fieldPath = String(rawRow.field_path ?? "").trim();
+        if (!fieldPath) continue;
+        const existing = this.tables[table].find((row) =>
+          row.organization_id === args.p_organization_id &&
+          row.facility_id === args.p_facility_id &&
+          row.field_path === fieldPath &&
+          (row.deleted_at === null || row.deleted_at === undefined)
+        );
+
+        const updatePayload = {
+          value: rawRow.value,
+          provenance: rawRow.provenance,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          updated_by: args.p_actor_user_id,
+        };
+
+        if (!existing) {
+          const inserted = this.insert(table, {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            field_path: fieldPath,
+            ...updatePayload,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failScalarRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected scalar RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: updatePayload.promoted_from_module_value_id,
+              target_table: table,
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                field_path: fieldPath,
+                ...updatePayload,
+              },
+            });
+          }
+          continue;
+        }
+
+        const changed = valuesDiffer(existing.value, updatePayload.value) ||
+          valuesDiffer(existing.provenance, updatePayload.provenance) ||
+          valuesDiffer(
+            existing.promoted_from_module_value_id ?? null,
+            updatePayload.promoted_from_module_value_id ?? null,
+          ) ||
+          valuesDiffer(existing.updated_by ?? null, updatePayload.updated_by ?? null);
+
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload);
+        updated += 1;
+        if (this.failScalarRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected scalar RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: updatePayload.promoted_from_module_value_id,
+            target_table: table,
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables[table] = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters[table] = tableCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
+  }
+
+  private runSimpleCollectionRpc(args: Record<string, unknown>) {
+    const table = String(args.p_table ?? "");
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+    const naturalKey = table === "incident_workflow_templates"
+      ? "incident_type"
+      : "kpi_name";
+
+    const snapshot = this.tables[table].map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const tableCounter = this.counters[table] ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+      for (const rawRow of rows) {
+        const keyValue = String(rawRow[naturalKey] ?? "").trim();
+        if (!keyValue) continue;
+
+        const matches = this.tables[table].filter((row) =>
+          row.organization_id === args.p_organization_id &&
+          row.facility_id === args.p_facility_id &&
+          row[naturalKey] === keyValue &&
+          (row.deleted_at === null || row.deleted_at === undefined)
+        );
+        if (matches.length > 1) {
+          throw new Error(`Duplicate active ${table} rows for ${naturalKey} ${keyValue}`);
+        }
+        const existing = matches[0];
+
+        const updatePayload = {
+          ...rawRow,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          updated_by: args.p_actor_user_id,
+        };
+
+        if (!existing) {
+          const inserted = this.insert(table, {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            ...updatePayload,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failCollectionRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected simple collection RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: updatePayload.promoted_from_module_value_id,
+              target_table: table,
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                ...updatePayload,
+              },
+            });
+          }
+          continue;
+        }
+
+        const changed = Object.entries(updatePayload).some(([key, value]) =>
+          valuesDiffer(existing[key], value)
+        );
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload);
+        updated += 1;
+        if (this.failCollectionRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected simple collection RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: updatePayload.promoted_from_module_value_id,
+            target_table: table,
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables[table] = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters[table] = tableCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
+  }
+
+  private runVendorContactsRpc(args: Record<string, unknown>) {
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+
+    const snapshot = this.tables.facility_vendors.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const vendorCounter = this.counters.facility_vendors ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+
+      for (const rawRow of rows) {
+        const sourceVendorId = typeof rawRow.source_vendor_id === "string" && rawRow.source_vendor_id.trim().length > 0
+          ? rawRow.source_vendor_id.trim()
+          : null;
+        const organization = typeof rawRow.organization === "string" && rawRow.organization.trim().length > 0
+          ? rawRow.organization.trim()
+          : null;
+        const category = typeof rawRow.category === "string" && rawRow.category.trim().length > 0
+          ? rawRow.category.trim()
+          : null;
+        const phone = typeof rawRow.phone === "string" && rawRow.phone.trim().length > 0
+          ? rawRow.phone.trim()
+          : null;
+
+        const matches = this.tables.facility_vendors.filter((row) => {
+          const sameOrg = row.organization_id === args.p_organization_id;
+          const sameFacility = row.facility_id === args.p_facility_id;
+          const active = row.deleted_at === null || row.deleted_at === undefined;
+          if (!sameOrg || !sameFacility || !active) return false;
+          if (sourceVendorId) {
+            return row.source_vendor_id === sourceVendorId;
+          }
+          return (row.source_vendor_id === null || row.source_vendor_id === undefined) &&
+            row.organization === organization &&
+            (row.category ?? null) === category &&
+            (row.phone ?? null) === phone;
+        });
+
+        if (matches.length > 1) {
+          throw new Error("Duplicate active facility vendors for natural key");
+        }
+
+        const updatePayload = {
+          source_vendor_id: sourceVendorId,
+          organization,
+          category,
+          primary_contact: rawRow.primary_contact ?? null,
+          phone,
+          after_hours_phone: rawRow.after_hours_phone ?? null,
+          account_number: rawRow.account_number ?? null,
+          contract_status: rawRow.contract_status ?? null,
+          insurance_required: rawRow.insurance_required ?? null,
+          escalation_owner: rawRow.escalation_owner ?? null,
+          provenance: rawRow.provenance ?? {},
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          updated_by: args.p_actor_user_id,
+        };
+
+        const existing = matches[0];
+        if (!existing) {
+          const inserted = this.insert("facility_vendors", {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            ...updatePayload,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failVendorRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected vendor RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: updatePayload.promoted_from_module_value_id,
+              target_table: "facility_vendors",
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                ...updatePayload,
+              },
+            });
+          }
+          continue;
+        }
+
+        const changed = Object.entries(updatePayload).some(([key, value]) =>
+          valuesDiffer(existing[key], value)
+        );
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload);
+        updated += 1;
+        if (this.failVendorRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected vendor RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: updatePayload.promoted_from_module_value_id,
+            target_table: "facility_vendors",
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables.facility_vendors = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters.facility_vendors = vendorCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
+  }
+
+  private runM6RatesRpc(args: Record<string, unknown>) {
+    const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
+    const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
+
+    const snapshot = this.tables.rate_schedule_versions.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const ratesCounter = this.counters.rate_schedule_versions ?? 0;
+    const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
+
+    try {
+      let created = 0;
+      let updated = 0;
+      let noop = 0;
+
+      for (const rawRow of rows) {
+        const rateType = String(rawRow.rate_type ?? "");
+        const effectiveFrom = String(rawRow.effective_from ?? "");
+        const amountCents = Number(rawRow.amount_cents ?? NaN);
+        if (!rateType) throw new Error("M6 rates promotion row missing rate_type");
+        if (effectiveFrom !== "2026-01-01") {
+          throw new Error(`M6 rates promotion expects effective_from=2026-01-01 for rate_type ${rateType}`);
+        }
+        if (!Number.isFinite(amountCents) || amountCents < 0) {
+          throw new Error(`M6 rates promotion requires non-negative amount_cents for rate_type ${rateType}`);
+        }
+
+        const exactRows = this.tables.rate_schedule_versions.filter((row) =>
+          row.organization_id === args.p_organization_id &&
+          row.facility_id === args.p_facility_id &&
+          row.rate_type === rateType &&
+          row.effective_from === "2026-01-01" &&
+          (row.deleted_at === null || row.deleted_at === undefined)
+        );
+        if (exactRows.length > 1) {
+          throw new Error(`Duplicate active exact rate_schedule_versions rows for rate_type ${rateType}`);
+        }
+
+        const existing = exactRows[0];
+        const candidateTo = rawRow.effective_to ? String(rawRow.effective_to) : null;
+        const hasOverlap = this.tables.rate_schedule_versions.some((row) => {
+          if (
+            row.organization_id !== args.p_organization_id ||
+            row.facility_id !== args.p_facility_id ||
+            row.rate_type !== rateType ||
+            (existing?.id && row.id === existing.id) ||
+            !(row.deleted_at === null || row.deleted_at === undefined)
+          ) return false;
+          const from = String(row.effective_from ?? "");
+          const to = row.effective_to ? String(row.effective_to) : null;
+          return from < (candidateTo ?? "9999-12-31") &&
+            "2026-01-01" < (to ?? "9999-12-31");
+        });
+        if (hasOverlap) {
+          throw new Error(`Overlapping active rate exists for rate_type ${rateType} candidate range starting 2026-01-01`);
+        }
+
+        if (!existing) {
+          const inserted = this.insert("rate_schedule_versions", {
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            rate_type: rateType,
+            amount_cents: amountCents,
+            effective_from: "2026-01-01",
+            effective_to: rawRow.effective_to ?? null,
+            rate_confirmed: rawRow.rate_confirmed ?? false,
+            approved_by: rawRow.approved_by ?? null,
+            approved_at: rawRow.approved_at ?? null,
+            notes: rawRow.notes ?? null,
+            created_by: args.p_actor_user_id,
+            deleted_at: null,
+          });
+          created += 1;
+          if (this.failM6RatesRpcAfterFirstWrite && created + updated === 1) {
+            throw new Error("Injected M6 rates RPC failure after first write");
+          }
+          if (runItemId) {
+            this.insert("facility_launch_promotion_run_links", {
+              run_item_id: runItemId,
+              organization_id: args.p_organization_id,
+              facility_id: args.p_facility_id,
+              module_value_id: rawRow.promoted_from_module_value_id ?? null,
+              target_table: "rate_schedule_versions",
+              target_row_id: String(inserted.id),
+              action: "insert",
+              before_value: null,
+              after_value: {
+                organization_id: args.p_organization_id,
+                facility_id: args.p_facility_id,
+                rate_type: rateType,
+                amount_cents: amountCents,
+                effective_from: "2026-01-01",
+                effective_to: rawRow.effective_to ?? null,
+                rate_confirmed: rawRow.rate_confirmed ?? false,
+                approved_by: rawRow.approved_by ?? null,
+                approved_at: rawRow.approved_at ?? null,
+                notes: rawRow.notes ?? null,
+                created_by: args.p_actor_user_id,
+              },
+            });
+          }
+          continue;
+        }
+
+        const updatePayload = {
+          amount_cents: amountCents,
+          effective_to: rawRow.effective_to ?? null,
+          rate_confirmed: rawRow.rate_confirmed ?? false,
+          approved_by: rawRow.approved_by ?? null,
+          approved_at: rawRow.approved_at ?? null,
+          notes: rawRow.notes ?? null,
+        };
+        const changed = valuesDiffer(existing.amount_cents, updatePayload.amount_cents) ||
+          valuesDiffer(existing.effective_to ?? null, updatePayload.effective_to) ||
+          valuesDiffer(existing.rate_confirmed ?? null, updatePayload.rate_confirmed) ||
+          valuesDiffer(existing.notes ?? null, updatePayload.notes);
+        if (!changed) {
+          noop += 1;
+          continue;
+        }
+
+        const beforeValue = { ...existing };
+        Object.assign(existing, updatePayload, {
+          updated_by: args.p_actor_user_id,
+          updated_at: new Date().toISOString(),
+        });
+        updated += 1;
+        if (this.failM6RatesRpcAfterFirstWrite && created + updated === 1) {
+          throw new Error("Injected M6 rates RPC failure after first write");
+        }
+        if (runItemId) {
+          this.insert("facility_launch_promotion_run_links", {
+            run_item_id: runItemId,
+            organization_id: args.p_organization_id,
+            facility_id: args.p_facility_id,
+            module_value_id: rawRow.promoted_from_module_value_id ?? null,
+            target_table: "rate_schedule_versions",
+            target_row_id: String(existing.id),
+            action: "update",
+            before_value: beforeValue,
+            after_value: updatePayload,
+          });
+        }
+      }
+
+      return { data: { created, updated, noop }, error: null };
+    } catch (error) {
+      this.tables.rate_schedule_versions = snapshot;
+      this.tables.facility_launch_promotion_run_links = linksSnapshot;
+      this.counters.rate_schedule_versions = ratesCounter;
+      this.counters.facility_launch_promotion_run_links = linkCounter;
+      return { data: null, error: { message: String(error) } };
+    }
   }
 
   select(table: string): Row[] {
@@ -351,6 +916,33 @@ const incidentRows = [
   ]),
 ];
 
+const kpiRows = [
+  mv("M19", "kpiDefinitions", [
+    {
+      id: "kpi-1",
+      kpiName: "Medication pass completion",
+      businessQuestion: "Are med passes completed on time?",
+      dataSource: "QuickMar",
+      owner: "DON",
+      refreshCadence: "Daily",
+      target: ">= 98%",
+      launchThreshold: "< 95%",
+      actionIfOffTrack: "Run med-tech coaching huddle",
+    },
+    {
+      id: "kpi-2",
+      kpiName: "Incident closure lag",
+      businessQuestion: "Are incident investigations closing quickly?",
+      dataSource: "Incident tracker",
+      owner: "ED",
+      refreshCadence: "Weekly",
+      target: "< 3 days",
+      launchThreshold: "> 5 days",
+      actionIfOffTrack: "Escalate to ED/DON review",
+    },
+  ]),
+];
+
 const vendorRows = [
   mv(
     "M18",
@@ -460,7 +1052,31 @@ Deno.test("round2 dry-run writes no target rows or promotion runs", async () => 
   assertEquals(admin.select("facility_vendors").length, 0);
 });
 
-Deno.test("m18 keeps same-organization vendor contacts distinct by source id", async () => {
+Deno.test("m18 source_vendor_id aliases normalize into payload source_vendor_id", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [
+      {
+        id: "vendor-id-alias",
+        organization: "Alias One",
+      },
+      {
+        sourceVendorId: "vendor-camel-alias",
+        organization: "Alias Two",
+      },
+      {
+        source_vendor_id: "vendor-snake-alias",
+        organization: "Alias Three",
+      },
+    ]),
+  ]);
+
+  await apply(admin, ["M18"]);
+
+  const ids = admin.select("facility_vendors").map((row) => row.source_vendor_id);
+  assertEquals(ids, ["vendor-id-alias", "vendor-camel-alias", "vendor-snake-alias"]);
+});
+
+Deno.test("m18 keeps same organization/category/phone contacts distinct when source ids differ", async () => {
   const admin = new FakeAdminClient([
     mv("M18", "vendorContacts", [
       {
@@ -470,10 +1086,10 @@ Deno.test("m18 keeps same-organization vendor contacts distinct by source id", a
         phone: "386-555-0101",
       },
       {
-        id: "vendor-fire-after-hours",
+        source_vendor_id: "vendor-fire-after-hours",
         organization: "Acme Services",
         category: "Fire",
-        phone: "386-555-0199",
+        phone: "386-555-0101",
       },
     ]),
   ]);
@@ -481,6 +1097,191 @@ Deno.test("m18 keeps same-organization vendor contacts distinct by source id", a
   await apply(admin, ["M18"]);
 
   assertEquals(admin.select("facility_vendors").length, 2);
+});
+
+Deno.test("m18 updates existing source-key row by source_vendor_id", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      source_vendor_id: "vendor-source-1",
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+      primaryContact: "New Contact",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "vendor-source-1",
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    primary_contact: "Old Contact",
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M18"]);
+
+  assertEquals(admin.select("facility_vendors").length, 1);
+  assertEquals(admin.select("facility_vendors")[0].primary_contact, "New Contact");
+});
+
+Deno.test("m18 updates fallback-key row when source_vendor_id is absent", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+      primaryContact: "New Contact",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    primary_contact: "Old Contact",
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M18"]);
+
+  assertEquals(admin.select("facility_vendors").length, 1);
+  assertEquals(admin.select("facility_vendors")[0].primary_contact, "New Contact");
+});
+
+Deno.test("m18 dry-run fallback preview does not cross-match source-key rows", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-123",
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+
+  const body = await apply(admin, ["M18"], true);
+  const vendorTable = body.modules_promoted[0].tables_touched.find((table: Row) =>
+    table.table === "facility_vendors"
+  );
+
+  assertEquals(vendorTable?.rows_created, 1);
+  assertEquals(vendorTable?.rows_updated, 0);
+  assertEquals(admin.select("facility_vendors").length, 1);
+});
+
+Deno.test("m18 source-key and fallback-key rows do not cross-match", async () => {
+  const sourceIncoming = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      source_vendor_id: "source-123",
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  sourceIncoming.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+  await apply(sourceIncoming, ["M18"]);
+  assertEquals(sourceIncoming.select("facility_vendors").length, 2);
+
+  const fallbackIncoming = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  fallbackIncoming.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-123",
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+  await apply(fallbackIncoming, ["M18"]);
+  assertEquals(fallbackIncoming.select("facility_vendors").length, 2);
+});
+
+Deno.test("m18 duplicate active source-key matches fail", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      source_vendor_id: "source-dup",
+      organization: "Acme",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-dup",
+    organization: "Acme",
+    deleted_at: null,
+  });
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: "source-dup",
+    organization: "Acme",
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M18"]));
+  const body = await response.json();
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+});
+
+Deno.test("m18 duplicate active fallback-key matches fail", async () => {
+  const admin = new FakeAdminClient([
+    mv("M18", "vendorContacts", [{
+      organization: "Acme",
+      category: "Fire",
+      phone: "386-555-0101",
+    }]),
+  ]);
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+  admin.insert("facility_vendors", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    source_vendor_id: null,
+    organization: "Acme",
+    category: "Fire",
+    phone: "386-555-0101",
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M18"]));
+  const body = await response.json();
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
 });
 
 Deno.test("round2 collection warnings mark a module partial even when config writes", async () => {
@@ -526,4 +1327,456 @@ Deno.test("round2 promoters are idempotent and do not create links on no-op reru
     vendorConfigCount,
   );
   assertEquals(admin.select("facility_vendors").length, vendorCount);
+});
+
+Deno.test("round2 scalar config apply uses bounded rpc calls", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6", "M10", "M11", "M13", "M14", "M19"]);
+
+  const scalarRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_scalar_config"
+  );
+  assertEquals(scalarRpcCalls.length, 6);
+  assertEquals(admin.queryCount("facility_billing_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_medication_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_dining_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_maintenance_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_admissions_config", "select"), 0);
+  assertEquals(admin.queryCount("facility_launch_scoreboard_config", "select"), 0);
+});
+
+Deno.test("round2 dry-run does not call scalar config rpc", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6", "M10", "M11", "M13", "M14", "M19"], true);
+
+  const scalarRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_scalar_config"
+  );
+  assertEquals(scalarRpcCalls.length, 0);
+});
+
+Deno.test("m6 apply uses one rate rpc and no direct rate table writes", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6"]);
+
+  const rateRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_m6_rates"
+  );
+  assertEquals(rateRpcCalls.length, 1);
+  assertEquals(admin.queryCount("rate_schedule_versions", "select"), 0);
+  assertEquals(admin.queryCount("rate_schedule_versions", "insert"), 0);
+  assertEquals(admin.queryCount("rate_schedule_versions", "update"), 0);
+});
+
+Deno.test("m6 dry-run does not call rate rpc or write rate rows", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+
+  await apply(admin, ["M6"], true);
+
+  const rateRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_m6_rates"
+  );
+  assertEquals(rateRpcCalls.length, 0);
+  assertEquals(admin.select("rate_schedule_versions").length, 0);
+});
+
+Deno.test("m6 exact effective_from rows update without duplicate inserts and create update links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 111111,
+    effective_from: "2026-01-01",
+    effective_to: null,
+    rate_confirmed: false,
+    approved_by: null,
+    approved_at: null,
+    notes: "old",
+    deleted_at: null,
+  });
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "semi_private_room",
+    amount_cents: 222222,
+    effective_from: "2026-01-01",
+    effective_to: null,
+    rate_confirmed: false,
+    approved_by: null,
+    approved_at: null,
+    notes: "old",
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M6"]);
+
+  assertEquals(admin.select("rate_schedule_versions").length, 2);
+  assertEquals(
+    admin.select("rate_schedule_versions").find((row) => row.rate_type === "private_room")?.amount_cents,
+    555000,
+  );
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions" && row.action === "update"
+    ).length,
+    2,
+  );
+});
+
+Deno.test("m6 idempotent rerun creates no additional rate links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  await apply(admin, ["M6"]);
+  const rateLinkCount = admin.select("facility_launch_promotion_run_links").filter((row) =>
+    row.target_table === "rate_schedule_versions"
+  ).length;
+
+  await apply(admin, ["M6"]);
+
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    rateLinkCount,
+  );
+});
+
+Deno.test("m6 overlap guard allows prior rate ending on effective_from boundary", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2025-12-01",
+    effective_to: "2026-01-01",
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  await apply(admin, ["M6"]);
+
+  assertEquals(
+    admin.select("rate_schedule_versions").filter((row) =>
+      row.rate_type === "private_room"
+    ).length,
+    2,
+  );
+});
+
+Deno.test("m6 rate rpc failure rolls back rate rows and links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.failM6RatesRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("rate RPC failed"));
+  assertEquals(admin.select("rate_schedule_versions").length, 0);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("m6 future overlap guard fails cleanly with no new rows or links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2026-06-01",
+    effective_to: null,
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Overlapping active rate exists"));
+  assertEquals(
+    admin.select("rate_schedule_versions").filter((row) => row.rate_type === "semi_private_room").length,
+    0,
+  );
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("m6 dry-run future overlap fails like apply mode", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2026-06-01",
+    effective_to: null,
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M6"], true));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("overlap failed"));
+  assertEquals(admin.select("rate_schedule_versions").length, 1);
+});
+
+Deno.test("m6 overlap guard fails cleanly with no new rows or links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.insert("rate_schedule_versions", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    rate_type: "private_room",
+    amount_cents: 123456,
+    effective_from: "2025-12-01",
+    effective_to: null,
+    rate_confirmed: true,
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Overlapping active rate exists"));
+  assertEquals(
+    admin.select("rate_schedule_versions").filter((row) => row.rate_type === "semi_private_room").length,
+    0,
+  );
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("round2 scalar config rpc failure writes no config rows/links", async () => {
+  const admin = new FakeAdminClient(scalarRows);
+  admin.failScalarRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M6"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("scalar RPC failed"));
+  assertEquals(admin.select("facility_billing_config").length, 0);
+  assertEquals(admin.select("facility_launch_promotion_run_links").length, 0);
+});
+
+Deno.test("round2 simple collection apply uses bounded rpc calls for M16/M19", async () => {
+  const admin = new FakeAdminClient([...incidentRows, ...kpiRows]);
+
+  await apply(admin, ["M16", "M19"]);
+
+  const collectionRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_simple_collection"
+  );
+  assertEquals(collectionRpcCalls.length, 2);
+  const workflowInsertLink = admin.select("facility_launch_promotion_run_links")
+    .find((row) =>
+      row.target_table === "incident_workflow_templates" && row.action === "insert"
+    );
+  assertEquals((workflowInsertLink?.after_value as Row)?.organization_id, ORG_ID);
+  assertEquals((workflowInsertLink?.after_value as Row)?.facility_id, FACILITY_ID);
+  const kpiInsertLink = admin.select("facility_launch_promotion_run_links")
+    .find((row) =>
+      row.target_table === "facility_kpi_definitions" && row.action === "insert"
+    );
+  assertEquals((kpiInsertLink?.after_value as Row)?.organization_id, ORG_ID);
+  assertEquals((kpiInsertLink?.after_value as Row)?.facility_id, FACILITY_ID);
+  assertEquals(admin.queryCount("incident_workflow_templates", "select"), 0);
+  assertEquals(admin.queryCount("facility_kpi_definitions", "select"), 0);
+});
+
+Deno.test("round2 simple collection dry-run does not call rpc", async () => {
+  const admin = new FakeAdminClient([...incidentRows, ...kpiRows]);
+
+  await apply(admin, ["M16", "M19"], true);
+
+  const collectionRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_simple_collection"
+  );
+  assertEquals(collectionRpcCalls.length, 0);
+});
+
+Deno.test("m18 apply uses one bounded vendor rpc and no direct facility_vendors writes", async () => {
+  const admin = new FakeAdminClient(vendorRows);
+
+  await apply(admin, ["M18"]);
+
+  const vendorRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_vendor_contacts"
+  );
+  assertEquals(vendorRpcCalls.length, 1);
+  assertEquals(admin.queryCount("facility_vendors", "select"), 0);
+  assertEquals(admin.queryCount("facility_vendors", "insert"), 0);
+  assertEquals(admin.queryCount("facility_vendors", "update"), 0);
+});
+
+Deno.test("m18 dry-run does not call vendor rpc", async () => {
+  const admin = new FakeAdminClient(vendorRows);
+
+  await apply(admin, ["M18"], true);
+
+  const vendorRpcCalls = admin.rpcCalls.filter((call) =>
+    call.fn === "promote_facility_launch_vendor_contacts"
+  );
+  assertEquals(vendorRpcCalls.length, 0);
+});
+
+Deno.test("m18 vendor rpc failure rolls back vendor rows and links", async () => {
+  const admin = new FakeAdminClient(vendorRows);
+  admin.failVendorRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M18"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("collection RPC failed"));
+  assertEquals(admin.select("facility_vendors").length, 0);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "facility_vendors"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("round2 simple collection rpc failure writes no rows/links", async () => {
+  const admin = new FakeAdminClient(incidentRows);
+  admin.failCollectionRpcAfterFirstWrite = true;
+
+  const response = await handler(admin)(request(["M16"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("collection RPC failed"));
+  assertEquals(admin.select("incident_workflow_templates").length, 0);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "incident_workflow_templates"
+    ).length,
+    0,
+  );
+});
+
+Deno.test("round2 simple collection handles mixed create/update/noop/missing natural key", async () => {
+  const admin = new FakeAdminClient([
+    mv("M16", "incidentPolicySource", "Policy v2"),
+    mv("M16", "incidentWorkflows", [
+      {
+        id: "workflow-update",
+        incidentType: "Medication Incident Report",
+        severityRule: "Updated",
+      },
+      {
+        id: "workflow-noop",
+        incidentType: "Elopement Incident Form",
+        severityRule: "No change",
+      },
+      {
+        id: "workflow-create",
+        incidentType: "Fall Incident",
+        severityRule: "Create",
+      },
+      {
+        id: "workflow-missing",
+        severityRule: "Missing key",
+      },
+    ]),
+  ]);
+
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Medication Incident Report",
+    severity_rule: "Old",
+    deleted_at: null,
+  });
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Elopement Incident Form",
+    severity_rule: "No change",
+    provenance: {
+      source: "facility-launch-promote",
+      module_code: "M16",
+      field_path: "incidentWorkflows",
+    },
+    promoted_from_module_value_id: "M16-incidentWorkflows",
+    updated_by: USER_ID,
+    deleted_at: null,
+  });
+
+  const body = await apply(admin, ["M16"]);
+
+  assertEquals(body.modules_promoted[0].status, "partial");
+  assert(body.modules_promoted[0].warnings[0].includes("missing natural key"));
+  assertEquals(admin.select("incident_workflow_templates").length, 3);
+  assertEquals(
+    admin.select("incident_workflow_templates").find((row) =>
+      row.incident_type === "Medication Incident Report"
+    )?.severity_rule,
+    "Updated",
+  );
+});
+
+Deno.test("round2 simple collection rpc rejects duplicate active natural keys", async () => {
+  const admin = new FakeAdminClient(incidentRows);
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Medication Incident Report",
+    deleted_at: null,
+  });
+  admin.insert("incident_workflow_templates", {
+    organization_id: ORG_ID,
+    facility_id: FACILITY_ID,
+    incident_type: "Medication Incident Report",
+    deleted_at: null,
+  });
+
+  const response = await handler(admin)(request(["M16"]));
+  const body = await response.json();
+
+  assertEquals(response.status, 200);
+  assertEquals(body.modules_promoted[0].status, "failed");
+  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+});
+
+Deno.test("round2 simple collection idempotency for M16/M19 suppresses noop links", async () => {
+  const admin = new FakeAdminClient([...incidentRows, ...kpiRows]);
+  await apply(admin, ["M16", "M19"]);
+  const linkCount = admin.select("facility_launch_promotion_run_links").length;
+  const workflowCount = admin.select("incident_workflow_templates").length;
+  const kpiCount = admin.select("facility_kpi_definitions").length;
+
+  await apply(admin, ["M16", "M19"]);
+
+  assertEquals(admin.select("facility_launch_promotion_run_links").length, linkCount);
+  assertEquals(admin.select("incident_workflow_templates").length, workflowCount);
+  assertEquals(admin.select("facility_kpi_definitions").length, kpiCount);
 });

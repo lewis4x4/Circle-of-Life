@@ -7,10 +7,7 @@ import { useParams } from "next/navigation";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
 import { Badge } from "@/components/ui/badge";
 
-/**
- * Survey record detail router shell — placeholders until compliance imports full survey dossiers + deficiency links.
- */
-export default function FacilitySurveyDetailPlaceholderPage() {
+export default function FacilitySurveyDetailPage() {
   const params = useParams<{ facilityId?: string | string[]; surveyId?: string | string[] }>();
   const fid = typeof params.facilityId === "string" ? params.facilityId : Array.isArray(params.facilityId) ? params.facilityId[0] : "";
   const sid = typeof params.surveyId === "string" ? params.surveyId : Array.isArray(params.surveyId) ? params.surveyId[0] : "";
@@ -25,8 +22,8 @@ export default function FacilitySurveyDetailPlaceholderPage() {
 
       <RecordDetailSection
         title="Survey record detail"
-        description="This route is scaffolded so licensing history stays drill-in ready for survey dossiers."
-        action={<Badge variant="secondary">Coming soon</Badge>}
+        description="Use the facility compliance tab for licensing history and survey source records."
+        action={<Badge variant="secondary">Source record</Badge>}
       >
         <dl className="grid gap-2 text-sm">
           <div>
@@ -39,7 +36,7 @@ export default function FacilitySurveyDetailPlaceholderPage() {
           </div>
         </dl>
         <p className="mt-3 text-xs text-muted-foreground">
-          Exports will eventually pull together deficiency tags, corrective action PDFs, and timeline events into a single verifier-friendly page.
+          Open the facility compliance tab to review licensing history, deficiency tags, corrective action documents, and timeline context.
         </p>
       </RecordDetailSection>
     </div>

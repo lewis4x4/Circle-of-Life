@@ -2,24 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { FacilityRow } from "@/types/facility";
-
-const FACILITIES_CACHE_TTL_MS = 60_000;
-
-type FacilitiesCacheEntry = {
-  fetchedAt: number;
-  data: FacilitiesResponse;
-};
-
-const facilitiesCache = new Map<string, FacilitiesCacheEntry>();
-
-/**
- * Clear the module-level facilities cache. Call after any facility mutation
- * (create / edit / archive) so the next list read reflects the change instead
- * of serving a stale entry for up to the TTL.
- */
-export function invalidateFacilitiesCache(): void {
-  facilitiesCache.clear();
-}
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
   type ListApi = FacilityRow & {
@@ -99,84 +82,104 @@ interface UseFacilitiesReturn {
   refetch: () => Promise<void>;
 }
 
+// Module-level cache survives client-side navigations within a session.
+// Keyed by query params; ~60s freshness window then stale-while-revalidate.
+// LRU-bounded so unique searches/filters don't grow memory unbounded.
+type CacheEntry = {
+  facilities: FacilityRow[];
+  pagination: UseFacilitiesReturn["pagination"];
+  fetchedAt: number;
+};
+const facilitiesCache = new Map<string, CacheEntry>();
+const FACILITIES_CACHE_TTL_MS = 60_000;
+const FACILITIES_CACHE_MAX = 16;
+
+/**
+ * Clear the module-level facilities cache. Call after any facility mutation
+ * (create / edit / archive) so the next list read reflects the change instead
+ * of serving a stale entry for up to the TTL.
+ */
+export function invalidateFacilitiesCache(): void {
+  facilitiesCache.clear();
+}
+
 export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilitiesReturn {
   const { status, search, page = 1, pageSize = 20 } = options;
-  const lastFetchAtRef = useRef(0);
 
-  const [facilities, setFacilities] = useState<FacilityRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cacheKey = `${page}|${pageSize}|${status ?? ""}|${search ?? ""}`;
+  const cached = lruGet(facilitiesCache, cacheKey);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS;
+
+  // Track the age of the data we currently hold so the visibility-refetch
+  // throttle behaves the same for cache-seeded instances as for ones that
+  // fetched over the network.
+  const lastFetchAtRef = useRef(cached?.fetchedAt ?? 0);
+
+  const [facilities, setFacilities] = useState<FacilityRow[]>(cached?.facilities ?? []);
+  // Only show the full-page spinner when we have nothing to paint.
+  const [isLoading, setIsLoading] = useState(cached == null);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    page_size: 20,
-    total_pages: 0,
-    has_next: false,
-  });
+  const [pagination, setPagination] = useState(
+    cached?.pagination ?? {
+      total: 0,
+      page: 1,
+      page_size: 20,
+      total_pages: 0,
+      has_next: false,
+    },
+  );
 
   const refetch = useCallback(async () => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      page_size: pageSize.toString(),
-    });
-    if (status) params.set("status", status);
-    if (search) params.set("search", search);
-    const cacheKey = params.toString();
-    const cached = facilitiesCache.get(cacheKey);
-    if (cached && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS) {
-      const json = cached.data;
-      // Track the data's age so the visibility-refetch throttle behaves the same
-      // for cache-served instances as for ones that fetched over the network.
-      lastFetchAtRef.current = cached.fetchedAt;
-      setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
-      setPagination({
-        total: json.total ?? 0,
-        page: json.page ?? page,
-        page_size: pageSize,
-        total_pages: Math.ceil((json.total ?? 0) / pageSize),
-        has_next: json.has_next ?? false,
-      });
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
+    const hasCached = facilitiesCache.has(cacheKey);
+    if (!hasCached) setIsLoading(true);
     setError(null);
     try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: pageSize.toString(),
+      });
+      if (status) params.set("status", status);
+      if (search) params.set("search", search);
+
       const res = await fetch(`/api/admin/facilities?${params}`);
       if (!res.ok) {
         throw new Error("Failed to fetch facilities");
       }
       const json = (await res.json()) as FacilitiesResponse;
-      const now = Date.now();
-      // Drop expired entries so the cache can't grow unbounded over a long
-      // session of varied search/filter/page combinations.
-      for (const [key, entry] of facilitiesCache) {
-        if (now - entry.fetchedAt >= FACILITIES_CACHE_TTL_MS) facilitiesCache.delete(key);
-      }
-      facilitiesCache.set(cacheKey, { fetchedAt: now, data: json });
-      lastFetchAtRef.current = now;
-      setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
-      setPagination({
+      const normalized = (json.facilities ?? []).map((row) => normalizeListRow(row));
+      const nextPagination = {
         total: json.total ?? 0,
         page: json.page ?? page,
         page_size: pageSize,
         total_pages: Math.ceil((json.total ?? 0) / pageSize),
         has_next: json.has_next ?? false,
-      });
+      };
+      const now = Date.now();
+      setFacilities(normalized);
+      setPagination(nextPagination);
+      lruSet(
+        facilitiesCache,
+        cacheKey,
+        { facilities: normalized, pagination: nextPagination, fetchedAt: now },
+        FACILITIES_CACHE_MAX,
+      );
+      lastFetchAtRef.current = now;
     } catch (err) {
       console.error("[useFacilities] error:", err);
       const message = err instanceof Error ? err.message : "Failed to fetch facilities";
       setError(message);
-      setFacilities([]);
+      if (!hasCached) setFacilities([]);
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, status, search]);
+  }, [page, pageSize, status, search, cacheKey]);
 
   useEffect(() => {
-    refetch();
+    // If we have a fresh cache hit, skip the network round-trip entirely.
+    if (cacheIsFresh) return;
+    void refetch();
+    // refetch is stable for this query shape; cacheIsFresh is read once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetch]);
 
   useEffect(() => {

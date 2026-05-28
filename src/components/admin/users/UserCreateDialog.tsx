@@ -110,15 +110,25 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
       <div className="absolute inset-0 bg-black/50 " onClick={handleClose} />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.5rem] bg-background border shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-user-title"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.5rem] bg-background border shadow-2xl"
+      >
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-background/95 ">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-teal-500" />
-            <h2 className="text-lg font-semibold">Add New User</h2>
+            <h2 id="create-user-title" className="text-lg font-semibold">Add New User</h2>
           </div>
-          <button onClick={handleClose} className="p-1 rounded-md hover:bg-muted transition-colors">
-            <X className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close add user dialog"
+            className="p-1 rounded-md hover:bg-muted transition-colors"
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
 
@@ -132,8 +142,9 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium">Email *</label>
+              <label htmlFor="new-user-email" className="text-sm font-medium">Email *</label>
               <Input
+                id="new-user-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -142,8 +153,9 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Full Name *</label>
+              <label htmlFor="new-user-full-name" className="text-sm font-medium">Full Name *</label>
               <Input
+                id="new-user-full-name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Jane Doe"
@@ -154,8 +166,9 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium">Phone</label>
+              <label htmlFor="new-user-phone" className="text-sm font-medium">Phone</label>
               <Input
+                id="new-user-phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -163,8 +176,9 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Job Title</label>
+              <label htmlFor="new-user-job-title" className="text-sm font-medium">Job Title</label>
               <Input
+                id="new-user-job-title"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder="Med-Tech, Lead Cook, etc."
@@ -172,7 +186,7 @@ export function UserCreateDialog({ open, onClose, onCreated }: UserCreateDialogP
             </div>
           </div>
 
-          <UserRoleSelector value={appRole} onChange={setAppRole} />
+          <UserRoleSelector id="new-user-role" value={appRole} onChange={setAppRole} />
 
           <FacilityAccessManager
             selected={facilityIds}

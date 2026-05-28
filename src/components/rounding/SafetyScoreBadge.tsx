@@ -11,10 +11,10 @@ interface SafetyScoreBadgeProps {
 }
 
 const TIER_STYLES = {
-  low: { bg: "bg-emerald-500/20", text: "text-emerald-400", ring: "ring-emerald-500/30", label: "LOW RISK" },
-  moderate: { bg: "bg-amber-500/20", text: "text-amber-400", ring: "ring-amber-500/30", label: "MODERATE" },
-  high: { bg: "bg-orange-500/20", text: "text-orange-400", ring: "ring-orange-500/30", label: "HIGH RISK" },
-  critical: { bg: "bg-rose-500/20", text: "text-rose-400", ring: "ring-rose-500/30", label: "CRITICAL" },
+  low: { bg: "bg-success/10", text: "text-success", ring: "ring-success/30", label: "Low risk" },
+  moderate: { bg: "bg-warning/10", text: "text-warning", ring: "ring-warning/30", label: "Moderate" },
+  high: { bg: "bg-warning/10", text: "text-warning", ring: "ring-warning/30", label: "High risk" },
+  critical: { bg: "bg-destructive/10", text: "text-destructive", ring: "ring-destructive/30", label: "Critical" },
 };
 
 const SIZE_STYLES = {
@@ -29,11 +29,11 @@ export function SafetyScoreBadge({ score, tier, size = "md", showTier = true, cl
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 rounded-full font-bold tracking-wider ring-1",
+      "inline-flex items-center gap-1.5 rounded-full font-semibold tracking-normal ring-1",
       t.bg, t.text, t.ring, s.badge, className
     )}>
       <span className={cn("font-mono", s.score)}>{score}</span>
-      {showTier && <span className="uppercase">{t.label}</span>}
+      {showTier && <span>{t.label}</span>}
     </span>
   );
 }

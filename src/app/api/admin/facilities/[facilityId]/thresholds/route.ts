@@ -9,6 +9,7 @@ import { thresholdSchema } from "@/lib/validation/facility-admin";
 import { z } from "zod";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -126,7 +127,6 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   const thresholds = parsed.data;
 
   const admin = actor.admin;
-  const untypedAdmin = asUntypedAdmin(admin);
 
   // Verify facility exists and belongs to org
   const { data: facility } = await admin
@@ -141,103 +141,27 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
   }
 
   try {
-    const now = new Date().toISOString();
-    const results: unknown[] = [];
+    const rpcAdmin = admin as unknown as {
+      rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
+    };
 
-    for (const threshold of thresholds) {
-      if (threshold.id) {
-        // Update existing
-        const { data: updated, error: updateErr } = await untypedAdmin
-          .from("facility_operational_thresholds")
-          .update({
-            yellow_threshold: threshold.yellow_threshold,
-            red_threshold: threshold.red_threshold,
-            notify_roles: threshold.notify_roles,
-            enabled: threshold.enabled,
-            alert_frequency: threshold.alert_frequency ?? null,
-            updated_at: now,
-            updated_by: actor.id,
-          } as Record<string, unknown>)
-          .eq("id", threshold.id)
-          .eq("facility_id", facilityId)
-          .select()
-          .single();
+    const { data, error } = await rpcAdmin.rpc("upsert_facility_operational_thresholds", {
+      p_facility_id: facilityId,
+      p_organization_id: actor.organization_id!,
+      p_actor_id: actor.id,
+      p_thresholds: thresholds,
+    });
 
-        if (updateErr) {
-          return NextResponse.json(
-            { error: `Failed to update threshold ${threshold.id}` },
-            { status: 500 },
-          );
-        }
-        results.push(updated);
-      } else {
-        // Create new (upsert by threshold_type)
-        const { data: existing } = await untypedAdmin
-          .from("facility_operational_thresholds")
-          .select("id")
-          .eq("facility_id", facilityId)
-          .eq("threshold_type", threshold.threshold_type)
-          .maybeSingle();
-
-        if (existing) {
-          // Update existing by type
-          const { data: updated, error: updateErr } = await untypedAdmin
-            .from("facility_operational_thresholds")
-            .update({
-              yellow_threshold: threshold.yellow_threshold,
-              red_threshold: threshold.red_threshold,
-              notify_roles: threshold.notify_roles,
-              enabled: threshold.enabled,
-              alert_frequency: threshold.alert_frequency ?? null,
-              updated_at: now,
-              updated_by: actor.id,
-            } as Record<string, unknown>)
-            .eq("id", existing.id)
-            .select()
-            .single();
-
-          if (updateErr) {
-            return NextResponse.json(
-              { error: `Failed to update threshold ${threshold.threshold_type}` },
-              { status: 500 },
-            );
-          }
-          results.push(updated);
-        } else {
-          // Create new
-          const { data: created, error: insertErr } = await untypedAdmin
-            .from("facility_operational_thresholds")
-            .insert({
-              facility_id: facilityId,
-              organization_id: actor.organization_id!,
-              threshold_type: threshold.threshold_type,
-              yellow_threshold: threshold.yellow_threshold,
-              red_threshold: threshold.red_threshold,
-              notify_roles: threshold.notify_roles,
-              enabled: threshold.enabled,
-              alert_frequency: threshold.alert_frequency ?? null,
-              created_by: actor.id,
-              updated_by: actor.id,
-            } as Record<string, unknown>)
-            .select()
-            .single();
-
-          if (insertErr) {
-            return NextResponse.json(
-              { error: `Failed to create threshold ${threshold.threshold_type}` },
-              { status: 500 },
-            );
-          }
-          results.push(created);
-        }
-      }
+    if (error) {
+      return NextResponse.json({ error: "Failed to save thresholds" }, { status: 500 });
     }
 
-    return NextResponse.json({
-      data: results,
-    });
+    return NextResponse.json({ data: data ?? [] });
   } catch (err) {
-    console.error("[thresholds-upsert] Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logError("admin.facilities.thresholds.upsert", err, {
+      facilityId,
+      thresholdCount: thresholds.length,
+    });
+    return NextResponse.json({ error: "Failed to save thresholds" }, { status: 500 });
   }
 }

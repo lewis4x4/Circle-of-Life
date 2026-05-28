@@ -2,6 +2,13 @@
 -- Source: 5 facility license certificates + survey letters provided by owner (April 2026)
 -- All facilities have ZERO deficiencies on most recent surveys.
 
+-- Schema guard: production already has these columns (added out-of-band before
+-- this migration was written), so live deploys are unaffected. A fresh
+-- Docker replay needs them defined before the UPDATEs below. ADD COLUMN
+-- IF NOT EXISTS keeps both paths green.
+ALTER TABLE public.facilities ADD COLUMN IF NOT EXISTS ahca_license_number text;
+ALTER TABLE public.facilities ADD COLUMN IF NOT EXISTS ahca_license_expiration date;
+
 -- ══════════════════════════════════════════════════════════
 -- FACILITY TABLE UPDATES
 -- Populates: total_licensed_beds, ahca_license_number, ahca_license_expiration,

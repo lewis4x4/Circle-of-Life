@@ -45,10 +45,10 @@ describe("rounding pages seeded fallback removal", () => {
   it("keeps explicit live-source empty states instead of seeded fallback rows", () => {
     const sources = ROUNDING_SOURCES.map(readSource).join("\n");
 
-    expect(sources).toContain("No fallback metrics are shown");
-    expect(sources).toContain("No fallback report rows are shown");
-    expect(sources).toContain("No fallback tasks are shown");
-    expect(sources).toContain("No fallback plans are shown");
+    expect(sources).toContain("No active rounding cycle");
+    expect(sources).toContain("No reports generated yet");
+    expect(sources).toContain("No checks match the current filter");
+    expect(sources).toContain("No observation plans at");
   });
 
   it("does not render healthy or fake-derived statuses for empty live sources", () => {
@@ -57,8 +57,9 @@ describe("rounding pages seeded fallback removal", () => {
     const reportsSource = readSource("src/app/(admin)/admin/rounding/reports/page.tsx");
 
     expect(hubSource).toContain("summary.expectedCount > 0");
-    expect(liveSource).toContain("sourceNotice ? \"No live tasks shown\" : \"All Clear\"");
+    expect(liveSource).toContain("No active rounding cycle");
     expect(reportsSource).not.toContain("Select a broader window.");
-    expect(reportsSource).toContain("No live rows returned");
+    expect(reportsSource).toContain("No matching entries for this window");
+    expect(reportsSource).not.toContain("No live rows returned");
   });
 });

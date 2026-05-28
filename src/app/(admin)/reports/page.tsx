@@ -301,7 +301,7 @@ export default function ReportsOverviewPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-16">
-      <div className="relative z-10 mx-auto max-w-7xl space-y-6 px-4 sm:px-6 xl:px-0">
+      <div className="relative z-10 w-full space-y-6">
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <ReportsHubNav />
         </div>

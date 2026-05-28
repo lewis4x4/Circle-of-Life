@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
   id: string;
@@ -38,7 +39,10 @@ export async function POST(request: NextRequest) {
 
   const tasks = (data ?? []) as unknown as TaskRow[];
   if (error) {
-    console.error("[operations/tasks/bulk-complete] query", error);
+    logError("admin.operations.tasks.bulk-complete", error, {
+      action: "query",
+      taskIdCount: body.task_ids.length,
+    });
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
 
@@ -49,51 +53,37 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (updatableTasks.length === 0) {
+  if (tasks.length === 0) {
     return NextResponse.json({ error: "No tasks to update" }, { status: 400 });
   }
 
-  const now = new Date().toISOString();
-  let completedCount = 0;
-
-  for (const task of updatableTasks) {
-    const slaMet = task.due_at ? new Date(task.due_at) >= new Date(now) : true;
-
-    const { error: updateError } = await actor.admin
-      .from("operation_task_instances" as never)
-      .update({
-        status: "completed",
-        completed_at: now,
-        completion_notes: body.completion_notes || "End of shift bulk complete",
-        verified_by: actor.id,
-        verified_at: now,
-        sla_met: slaMet,
-        sla_miss_reason: slaMet ? null : "Completed after due time",
-        updated_at: now,
-        updated_by: actor.id,
-      } as never)
-      .eq("id", task.id);
-
-    if (updateError) {
-      console.error("[operations/tasks/bulk-complete] update", updateError);
-      continue;
-    }
-
-    completedCount += 1;
-
-    await actor.admin.from("operation_audit_log" as never).insert({
-      organization_id: task.organization_id,
-      facility_id: task.facility_id,
-      task_instance_id: task.id,
-      event_type: "completed",
-      from_status: task.status,
-      to_status: "completed",
-      actor_id: actor.id,
-      actor_role: actor.appRole,
-      event_notes: body.completion_notes || "Bulk completed (end of shift)",
-      event_data: { bulk_complete: true, sla_met: slaMet },
-    } as never);
+  if (updatableTasks.length === 0) {
+    return NextResponse.json({ error: "No authorized tasks to update" }, { status: 403 });
   }
+
+  const completedAt = new Date().toISOString();
+  const { data: completedRows, error: rpcError } = await actor.admin.rpc(
+    "bulk_complete_operation_tasks" as never,
+    {
+      p_task_ids: updatableTasks.map((task) => task.id),
+      p_actor_id: actor.id,
+      p_actor_role: actor.appRole,
+      p_completion_notes: body.completion_notes || null,
+      p_completed_at: completedAt,
+    } as never,
+  );
+
+  if (rpcError) {
+    logError("admin.operations.tasks.bulk-complete", rpcError, {
+      action: "rpc",
+      taskCount: updatableTasks.length,
+    });
+    return NextResponse.json({ error: "Failed to complete tasks" }, { status: 500 });
+  }
+
+  const completedCount = Array.isArray(completedRows)
+    ? (completedRows as Array<{ task_instance_id: string }>).length
+    : 0;
 
   return NextResponse.json({
     success: true,

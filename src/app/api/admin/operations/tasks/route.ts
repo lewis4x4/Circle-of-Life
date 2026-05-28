@@ -4,6 +4,7 @@ import { actorCanAccessFacility, actorCanViewOperations, listActorAccessibleFaci
 import type { OperationsActor } from "@/lib/operations/auth";
 import { buildOperationTaskResponse, parseOperationTaskFilters, summarizeOperationTasks } from "@/lib/operations/server";
 import type { OperationTaskResponse } from "@/lib/operations/types";
+import { logError } from "@/lib/observability/logger";
 
 type OperationTaskRow = {
   id: string;
@@ -56,6 +57,15 @@ export async function GET(request: Request) {
     return NextResponse.json(emptyTaskResponse(filters.dateFrom, filters.dateTo));
   }
 
+  // Bound the result set. Caller can request more via ?limit up to a hard ceiling.
+  const DEFAULT_TASK_LIMIT = 250;
+  const MAX_TASK_LIMIT = 1000;
+  const requestedLimit = Number.parseInt(searchParams.get("limit") ?? "", 10);
+  const effectiveLimit =
+    Number.isFinite(requestedLimit) && requestedLimit > 0
+      ? Math.min(requestedLimit, MAX_TASK_LIMIT)
+      : DEFAULT_TASK_LIMIT;
+
   let query = actor.admin
     .from("operation_task_instances" as never)
     .select(`
@@ -86,7 +96,7 @@ export async function GET(request: Request) {
     .in("facility_id", accessibleFacilityIds)
     .gte("assigned_shift_date", filters.dateFrom)
     .lte("assigned_shift_date", filters.dateTo)
-    .limit(1000);
+    .limit(effectiveLimit);
 
   if (filters.status) {
     query = query.eq("status", filters.status);
@@ -106,7 +116,10 @@ export async function GET(request: Request) {
 
   const { data, error } = await query.order("assigned_shift_date", { ascending: true }).order("created_at", { ascending: true });
   if (error) {
-    console.error("[operations/tasks] list", error);
+    logError("admin.operations.tasks.list", error, {
+      facilityCount: accessibleFacilityIds.length,
+      limit: effectiveLimit,
+    });
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
 

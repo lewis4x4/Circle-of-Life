@@ -1,3 +1,4 @@
+import { AppRuntimeProviders } from "@/components/layout/AppRuntimeProviders";
 import { CaregiverShell } from "@/components/layout/CaregiverShell";
 import { HavenAuthProvider } from "@/contexts/haven-auth-context";
 
@@ -17,10 +18,12 @@ export default function CaregiverRouteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <HavenAuthProvider>
-      <div className="dark">
-        <CaregiverShell>{children}</CaregiverShell>
-      </div>
-    </HavenAuthProvider>
+    <AppRuntimeProviders>
+      <HavenAuthProvider>
+        <div className="dark">
+          <CaregiverShell>{children}</CaregiverShell>
+        </div>
+      </HavenAuthProvider>
+    </AppRuntimeProviders>
   );
 }

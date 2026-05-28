@@ -13,7 +13,9 @@ type AuditAction =
   | "grant_access"
   | "revoke_access"
   | "soft_delete"
-  | "reactivate";
+  | "reactivate"
+  | "password_reset"
+  | "hard_delete";
 
 interface WriteAuditParams {
   organizationId: string;
@@ -24,8 +26,10 @@ interface WriteAuditParams {
   changes: {
     before: Record<string, unknown>;
     after: Record<string, unknown>;
+    meta?: Record<string, unknown>;
   };
   reason?: string;
+  strict?: boolean;
 }
 
 type UserManagementAuditInsert = Database["public"]["Tables"]["user_management_audit_log"]["Insert"];
@@ -46,7 +50,11 @@ export async function writeUserAuditEntry(params: WriteAuditParams): Promise<voi
   const { error } = await supabase.from("user_management_audit_log").insert(payload);
 
   if (error) {
-    // Log but don't throw — audit failure shouldn't block the operation
+    // Existing user-management flows keep audit failures non-blocking. Destructive
+    // flows can opt into strict mode so deletion never proceeds without an audit row.
     console.error("[user-audit] Failed to write audit entry:", error.message);
+    if (params.strict) {
+      throw new Error("Failed to write user audit entry");
+    }
   }
 }

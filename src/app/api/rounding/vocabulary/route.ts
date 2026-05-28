@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext } from "@/lib/rounding/auth";
 
 type VocabField = "location" | "position" | "state";
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     .order("display_label", { ascending: true });
 
   if (error) {
-    console.error("[rounding/vocabulary] get", error);
+    logError("rounding.vocabulary.get", error, { facilityId });
     return NextResponse.json({ error: "Could not load rounds vocabulary" }, { status: 500 });
   }
 

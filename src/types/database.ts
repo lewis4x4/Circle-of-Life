@@ -1114,6 +1114,7 @@ export type Database = {
           name: string
           organization_id: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
@@ -1125,6 +1126,7 @@ export type Database = {
           name: string
           organization_id: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
@@ -1136,6 +1138,7 @@ export type Database = {
           name?: string
           organization_id?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -3679,6 +3682,7 @@ export type Database = {
           organization_id: string
           snoozed_until: string | null
           updated_at: string
+          updated_by: string | null
           user_id: string
         }
         Insert: {
@@ -3691,6 +3695,7 @@ export type Database = {
           organization_id: string
           snoozed_until?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id: string
         }
         Update: {
@@ -3703,6 +3708,7 @@ export type Database = {
           organization_id?: string
           snoozed_until?: string | null
           updated_at?: string
+          updated_by?: string | null
           user_id?: string
         }
         Relationships: [
@@ -3751,6 +3757,7 @@ export type Database = {
           threshold_json: Json | null
           title: string
           updated_at: string
+          updated_by: string | null
           why_it_matters: string | null
         }
         Insert: {
@@ -3781,6 +3788,7 @@ export type Database = {
           threshold_json?: Json | null
           title: string
           updated_at?: string
+          updated_by?: string | null
           why_it_matters?: string | null
         }
         Update: {
@@ -3811,6 +3819,7 @@ export type Database = {
           threshold_json?: Json | null
           title?: string
           updated_at?: string
+          updated_by?: string | null
           why_it_matters?: string | null
         }
         Relationships: [
@@ -3852,6 +3861,7 @@ export type Database = {
           id: string
           organization_id: string
           updated_at: string
+          updated_by: string | null
           user_id: string
           widgets: Json
         }
@@ -3862,6 +3872,7 @@ export type Database = {
           id?: string
           organization_id: string
           updated_at?: string
+          updated_by?: string | null
           user_id: string
           widgets?: Json
         }
@@ -3872,6 +3883,7 @@ export type Database = {
           id?: string
           organization_id?: string
           updated_at?: string
+          updated_by?: string | null
           user_id?: string
           widgets?: Json
         }
@@ -4154,6 +4166,7 @@ export type Database = {
           parameters: Json
           template: Database["public"]["Enums"]["exec_report_template"]
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
@@ -4167,6 +4180,7 @@ export type Database = {
           parameters?: Json
           template?: Database["public"]["Enums"]["exec_report_template"]
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
@@ -4180,6 +4194,7 @@ export type Database = {
           parameters?: Json
           template?: Database["public"]["Enums"]["exec_report_template"]
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -11433,7 +11448,7 @@ export type Database = {
           facility_id: string
           id: string
           organization_id: string
-          rationale: string | null
+          rationale: string
           resident_id: string
           source_type: Database["public"]["Enums"]["resident_observation_source_type"]
           status: Database["public"]["Enums"]["resident_observation_plan_status"]
@@ -11451,7 +11466,7 @@ export type Database = {
           facility_id: string
           id?: string
           organization_id: string
-          rationale?: string | null
+          rationale: string
           resident_id: string
           source_type?: Database["public"]["Enums"]["resident_observation_source_type"]
           status?: Database["public"]["Enums"]["resident_observation_plan_status"]
@@ -11469,7 +11484,7 @@ export type Database = {
           facility_id?: string
           id?: string
           organization_id?: string
-          rationale?: string | null
+          rationale?: string
           resident_id?: string
           source_type?: Database["public"]["Enums"]["resident_observation_source_type"]
           status?: Database["public"]["Enums"]["resident_observation_plan_status"]
@@ -16192,6 +16207,20 @@ export type Database = {
         | "housekeeping"
         | "driver"
         | "other"
+        | "owner"
+        | "ceo"
+        | "coo"
+        | "cfo"
+        | "assistant_administrator"
+        | "admin_support_coordinator"
+        | "marketing_consultant"
+        | "maintenance_director"
+        | "maintenance_standby"
+        | "medication_tech"
+        | "resident_aide"
+        | "dietary_aide"
+        | "activity_aide"
+        | "resident_services_coordinator"
       training_delivery_method: "in_person" | "external" | "online" | "hybrid"
       training_frequency:
         | "at_hire"
@@ -16853,6 +16882,20 @@ export const Constants = {
         "housekeeping",
         "driver",
         "other",
+        "owner",
+        "ceo",
+        "coo",
+        "cfo",
+        "assistant_administrator",
+        "admin_support_coordinator",
+        "marketing_consultant",
+        "maintenance_director",
+        "maintenance_standby",
+        "medication_tech",
+        "resident_aide",
+        "dietary_aide",
+        "activity_aide",
+        "resident_services_coordinator",
       ],
       training_delivery_method: ["in_person", "external", "online", "hybrid"],
       training_frequency: [

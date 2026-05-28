@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 import { invalidateFacilitiesCache } from "@/hooks/useFacilities";
 
 function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
@@ -43,15 +45,27 @@ interface UseFacilityReturn {
   isUpdating: boolean;
 }
 
+// 60s in-memory cache keyed by facilityId so tab switches and remounts
+// repaint instantly. LRU-bounded so multi-facility browsing doesn't grow
+// memory unbounded. Mutations bust the entry directly.
+type FacilityCacheEntry = { facility: FacilityDetailRow; fetchedAt: number };
+const facilityCache = new Map<string, FacilityCacheEntry>();
+const FACILITY_CACHE_TTL_MS = 60_000;
+const FACILITY_CACHE_MAX = 16;
+
 export function useFacility(facilityId: string): UseFacilityReturn {
-  const [facility, setFacility] = useState<FacilityDetailRow | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const cached = lruGet(facilityCache, facilityId);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITY_CACHE_TTL_MS;
+
+  const [facility, setFacility] = useState<FacilityDetailRow | null>(cached?.facility ?? null);
+  const [isLoading, setIsLoading] = useState(cached == null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = useCallback(
     async (showLoading: boolean): Promise<FacilityDetailRow | null> => {
-      if (showLoading) setIsLoading(true);
+      const hasCached = facilityCache.has(facilityId);
+      if (showLoading && !hasCached) setIsLoading(true);
       setError(null);
       try {
         const res = await fetch(`/api/admin/facilities/${facilityId}`);
@@ -68,12 +82,13 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         }
         const n = normalizeFacilityDetail(json.data);
         setFacility(n);
+        lruSet(facilityCache, facilityId, { facility: n, fetchedAt: Date.now() }, FACILITY_CACHE_MAX);
         return n;
       } catch (err) {
         console.error("[useFacility] fetch error:", err);
         const message = err instanceof Error ? err.message : "Failed to fetch facility";
         setError(message);
-        setFacility(null);
+        if (!hasCached) setFacility(null);
         return null;
       } finally {
         if (showLoading) setIsLoading(false);
@@ -85,6 +100,8 @@ export function useFacility(facilityId: string): UseFacilityReturn {
   const refetch = useCallback(async () => {
     await loadDetail(true);
   }, [loadDetail]);
+
+  const clearFacilityListCache = useFacilityStore((s) => s.clearFacilityCache);
 
   const updateFacility = useCallback(
     async (updates: Partial<FacilityRow>): Promise<FacilityDetailRow | null> => {
@@ -99,8 +116,12 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         if (!res.ok) {
           throw new Error("Failed to update facility");
         }
-        // Core fields shown in the portfolio list changed — drop the list cache
-        // so /admin/facilities reflects the edit instead of serving stale rows.
+        // Core fields shown across facility surfaces changed — bust every
+        // facility cache so the next reads (detail, facility-list dropdowns,
+        // and the /admin/facilities portfolio list) reflect the rename /
+        // status change instead of waiting out the TTLs.
+        facilityCache.delete(facilityId);
+        clearFacilityListCache();
         invalidateFacilitiesCache();
         return await loadDetail(false);
       } catch (err) {
@@ -112,11 +133,13 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         setIsUpdating(false);
       }
     },
-    [facilityId, loadDetail],
+    [facilityId, loadDetail, clearFacilityListCache],
   );
 
   useEffect(() => {
+    if (cacheIsFresh) return;
     void loadDetail(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDetail]);
 
   return {

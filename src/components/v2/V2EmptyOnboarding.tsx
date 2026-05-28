@@ -42,7 +42,7 @@ const STEPS_BY_DASHBOARD: Record<V2DashboardId, readonly Step[]> = {
       cta: "Open snapshot settings",
     },
     {
-      title: "Generate the first resident assurance rollup",
+      title: "Generate the first Smart Rounding rollup",
       body: "Computes watch load, escalation pressure, and integrity flags per facility. Populates the heat map and 7-day trend chart.",
       href: "/admin/rounding",
       cta: "Open assurance hub",

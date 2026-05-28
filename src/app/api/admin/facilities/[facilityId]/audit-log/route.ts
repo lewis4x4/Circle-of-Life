@@ -9,6 +9,7 @@ import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
 import { formatAuditJsonCell } from "@/lib/admin/facilities/facility-audit-ui";
+import { logError } from "@/lib/observability/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
@@ -243,7 +244,11 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
     const { data: logs, count, error } = await query;
 
     if (error) {
-      console.error("[audit-log] query:", error.message);
+      logError("admin.facilities.audit-log.query", error, {
+        facilityId,
+        page,
+        per_page,
+      });
       return NextResponse.json({ error: "Failed to fetch audit log" }, { status: 500 });
     }
 
@@ -261,7 +266,11 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
       },
     });
   } catch (err) {
-    console.error("[audit-log] Error:", err);
+    logError("admin.facilities.audit-log", err, {
+      facilityId,
+      page,
+      per_page,
+    });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

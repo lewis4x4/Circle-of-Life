@@ -52,19 +52,20 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     }
 
     const role = getAppRoleFromClaims(user);
-    if (isMedTechRole(role)) {
+    // Med-tech staff use this surface day-to-day. Admins/owners also need
+    // visibility here for support and oversight, so they're allowed through
+    // rather than bounced back to their own dashboard.
+    if (isMedTechRole(role) || isAdminEligibleAppRole(role)) {
       setAuthorized(true);
       setChecking(false);
       return;
     }
 
-    // Redirect to appropriate shell
+    // Other roles get redirected to their proper shell.
     if (role === "caregiver" || role === "housekeeper") {
       router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");
-    } else if (isAdminEligibleAppRole(role)) {
-      router.replace(getDashboardRouteForRole(role));
     } else {
       router.replace("/login");
     }

@@ -57,7 +57,22 @@ describe("<KPITile />", () => {
         sparkline={[80, 82, 85, 88, 90, 91, 92]}
       />,
     );
-    expect(screen.getByRole("img", { name: /occupancy sparkline trend/i })).toBeInTheDocument();
+    const sparkline = screen.getByRole("img", { name: /occupancy sparkline trend/i });
+    expect(sparkline).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: /occupancy: 92/i })).toContainElement(sparkline);
+    expect(sparkline.querySelector(".recharts-wrapper")).toBeNull();
+  });
+
+  it("does not render sparkline when fewer than two finite datapoints are provided", () => {
+    render(
+      <KPITile
+        label="Occupancy"
+        value={92}
+        info="Census / capacity"
+        sparkline={[92, Number.NaN]}
+      />,
+    );
+    expect(screen.queryByRole("img", { name: /occupancy sparkline trend/i })).toBeNull();
   });
 
   it("renders a breach message note when provided", () => {

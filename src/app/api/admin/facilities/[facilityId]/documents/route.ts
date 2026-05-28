@@ -9,6 +9,7 @@ import { documentMetadataSchema } from "@/lib/validation/facility-admin";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { asUntypedAdmin, type UntypedQueryBuilder } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 import type { Database } from "@/types/database";
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
@@ -49,6 +50,19 @@ async function enrichDocumentsWithUploaderLabels(
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
 }
+
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+const MAX_MULTIPART_UPLOAD_BYTES = MAX_UPLOAD_BYTES + 1024 * 1024;
+const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
 
 // ── GET: List Documents ───────────────────────────────────────────
 
@@ -135,6 +149,14 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   }
 
   try {
+    const contentLengthHeader = request.headers.get("content-length");
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader);
+      if (Number.isFinite(contentLength) && contentLength > MAX_MULTIPART_UPLOAD_BYTES) {
+        return NextResponse.json({ error: "Upload request exceeds 25MB file limit" }, { status: 413 });
+      }
+    }
+
     // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -165,6 +187,15 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
     const documentMetadata = metadataParsed.data;
 
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: "File exceeds 25MB limit" }, { status: 413 });
+    }
+
+    const mimeType = file.type || "application/octet-stream";
+    if (!ALLOWED_DOCUMENT_MIME_TYPES.has(mimeType)) {
+      return NextResponse.json({ error: "Unsupported file type" }, { status: 415 });
+    }
+
     let vaultSeriesId = documentMetadata.vault_series_id ?? null;
     let superseded: Record<string, unknown> | null = null;
 
@@ -188,23 +219,76 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
       vaultSeriesId = crypto.randomUUID();
     }
 
+    const normalizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/^\.+$/, "");
+    const safeFileNameSegment = normalizedFileName.length > 0 ? normalizedFileName : "document";
+
     // Upload file to Supabase Storage
     const fileId = crypto.randomUUID();
-    const storagePath = `${facilityId}/${fileId}/${file.name}`;
+    const storagePath = `${facilityId}/${fileId}/${safeFileNameSegment}`;
 
     const buffer = await file.arrayBuffer();
     const { error: uploadErr } = await admin.storage
       .from("facility-documents")
       .upload(storagePath, buffer, {
-        contentType: file.type || "application/octet-stream",
+        contentType: mimeType,
       });
 
     if (uploadErr) {
-      console.error("[document-upload] Storage error:", uploadErr);
+      logError("admin.facilities.documents", uploadErr, { action: "storage_upload", facilityId });
       return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
     }
 
     const nowIso = new Date().toISOString();
+
+    const { data: docRecord, error: insertErr } = await untypedAdmin
+      .from("facility_documents")
+      .insert({
+        facility_id: facilityId,
+        organization_id: actor.organization_id!,
+        document_category: documentMetadata.document_category,
+        document_name: documentMetadata.document_name,
+        friendly_title: documentMetadata.friendly_title ?? null,
+        carrier: documentMetadata.carrier ?? null,
+        effective_date: documentMetadata.effective_date ?? null,
+        file_path: storagePath,
+        file_size_bytes: file.size,
+        mime_type: mimeType,
+        expiration_date: documentMetadata.expiration_date ?? null,
+        alert_yellow_days: documentMetadata.alert_yellow_days,
+        alert_red_days: documentMetadata.alert_red_days,
+        notes: documentMetadata.notes ?? null,
+        uploaded_by: actor.id,
+        vault_series_id: vaultSeriesId,
+        supersedes_document_id: superseded ? (superseded.id as string) : null,
+      } as Record<string, unknown>)
+      .select()
+      .single();
+
+    if (insertErr) {
+      logError("admin.facilities.documents", insertErr, { action: "insert_document", facilityId });
+      const { error: removeErr } = await admin.storage.from("facility-documents").remove([storagePath]);
+      if (removeErr) {
+        logError("admin.facilities.documents", removeErr, { action: "cleanup_uploaded_object", facilityId });
+      }
+      return NextResponse.json({ error: "Failed to create document record" }, { status: 500 });
+    }
+
+    const rollbackInsertedDocument = async (reason: string) => {
+      const insertedId = (docRecord as Record<string, unknown>).id;
+      if (typeof insertedId === "string") {
+        const { error: rollbackErr } = await untypedAdmin
+          .from("facility_documents")
+          .update({ deleted_at: nowIso } as Record<string, unknown>)
+          .eq("id", insertedId);
+        if (rollbackErr) {
+          logError("admin.facilities.documents", rollbackErr, { action: "rollback_soft_delete", reason, facilityId });
+        }
+      }
+      const { error: removeErr } = await admin.storage.from("facility-documents").remove([storagePath]);
+      if (removeErr) {
+        logError("admin.facilities.documents", removeErr, { action: "rollback_storage_cleanup", reason, facilityId });
+      }
+    };
 
     if (superseded) {
       const { data: priorVersions } = await untypedAdmin
@@ -219,7 +303,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         }) ?? [];
       const vn = Math.max(0, ...nums) + 1;
 
-      const { error: verInsErr } = await untypedAdmin.from("facility_document_versions").insert({
+      const { data: versionRecord, error: verInsErr } = await untypedAdmin.from("facility_document_versions").insert({
         organization_id: actor.organization_id!,
         facility_id: facilityId,
         superseded_document_id: superseded.id,
@@ -233,10 +317,14 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         document_category: superseded.document_category,
         replaced_by: actor.id,
         replaced_at: nowIso,
-      } as Record<string, unknown>);
+      } as Record<string, unknown>)
+        .select("id")
+        .single();
 
       if (verInsErr) {
-        console.error("[document-upload] version ledger error:", verInsErr);
+        logError("admin.facilities.documents", verInsErr, { action: "insert_version_ledger", facilityId });
+        await rollbackInsertedDocument("version ledger error");
+        return NextResponse.json({ error: "Version ledger update failed" }, { status: 500 });
       }
 
       const { error: softErr } = await untypedAdmin
@@ -244,44 +332,27 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
         .update({ deleted_at: nowIso } as Record<string, unknown>)
         .eq("id", superseded.id as string);
       if (softErr) {
-        console.error("[document-upload] supersede soft-delete error:", softErr);
+        logError("admin.facilities.documents", softErr, { action: "supersede_soft_delete", facilityId });
+        const versionId = versionRecord?.id;
+        if (typeof versionId === "string") {
+          const { error: versionRollbackErr } = await untypedAdmin
+            .from("facility_document_versions")
+            .delete()
+            .eq("id", versionId);
+          if (versionRollbackErr) {
+            logError("admin.facilities.documents", versionRollbackErr, { action: "version_ledger_rollback", facilityId });
+          }
+        }
+        await rollbackInsertedDocument("supersede soft-delete error");
+        return NextResponse.json({ error: "Superseded document update failed" }, { status: 500 });
       }
-    }
-
-    const { data: docRecord, error: insertErr } = await untypedAdmin
-      .from("facility_documents")
-      .insert({
-        facility_id: facilityId,
-        organization_id: actor.organization_id!,
-        document_category: documentMetadata.document_category,
-        document_name: documentMetadata.document_name,
-        friendly_title: documentMetadata.friendly_title ?? null,
-        carrier: documentMetadata.carrier ?? null,
-        effective_date: documentMetadata.effective_date ?? null,
-        file_path: storagePath,
-        file_size_bytes: file.size,
-        mime_type: file.type || "application/octet-stream",
-        expiration_date: documentMetadata.expiration_date ?? null,
-        alert_yellow_days: documentMetadata.alert_yellow_days,
-        alert_red_days: documentMetadata.alert_red_days,
-        notes: documentMetadata.notes ?? null,
-        uploaded_by: actor.id,
-        vault_series_id: vaultSeriesId,
-        supersedes_document_id: superseded ? (superseded.id as string) : null,
-      } as Record<string, unknown>)
-      .select()
-      .single();
-
-    if (insertErr) {
-      console.error("[document-upload] Insert error:", insertErr);
-      return NextResponse.json({ error: "Failed to create document record" }, { status: 500 });
     }
 
     const [enriched] = await enrichDocumentsWithUploaderLabels(admin, [docRecord as Record<string, unknown>]);
 
     return NextResponse.json({ data: enriched }, { status: 201 });
   } catch (err) {
-    console.error("[document-upload] Error:", err);
+    logError("admin.facilities.documents", err, { action: "upload_document", facilityId });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

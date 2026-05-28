@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2, ArrowRight } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 
 import { getAppRoleFromClaims, isAdminEligibleAppRole, isOnboardingAppRole, isMedTechRole, isDietaryRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
@@ -22,6 +23,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+
+const SIGN_IN_UNAVAILABLE_MESSAGE =
+  "Sign-in is temporarily unavailable. Contact your facility administrator or support.";
+const SESSION_VERIFICATION_ERROR_MESSAGE =
+  "Could not verify your session. Check your connection, then refresh this page.";
 
 function readSafeNextDestination(): string | null {
   if (typeof window === "undefined") return null;
@@ -46,10 +52,27 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = React.useMemo(() => createClient(), []);
   const [globalError, setGlobalError] = useState<string | null>(null);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const [resetRequesting, setResetRequesting] = useState(false);
   const [sessionProbeError, setSessionProbeError] = useState<string | null>(null);
 
-  const resolveRouteFromRole = useCallback(async () => {
+  const resolveRouteFromRole = useCallback(async (candidateUser?: Pick<User, "app_metadata" | "user_metadata"> | null) => {
+    const mapRoleToRoute = (role: ReturnType<typeof getAppRoleFromClaims>) => {
+      if (isOnboardingAppRole(role)) return "/onboarding";
+      if (role === "nurse") return getDashboardRouteForRole(role);
+      if (isMedTechRole(role)) return "/med-tech";
+      if (isDietaryRole(role)) return "/dietary";
+      if (role === "caregiver" || role === "housekeeper") return getDashboardRouteForRole(role);
+      if (role === "family") return "/family";
+      if (isAdminEligibleAppRole(role)) return getDashboardRouteForRole(role);
+      return null;
+    };
+
+    if (candidateUser) {
+      const candidateRoute = mapRoleToRoute(getAppRoleFromClaims(candidateUser));
+      if (candidateRoute) return candidateRoute;
+    }
+
     let userResult: Awaited<ReturnType<typeof supabase.auth.getUser>>;
     try {
       userResult = await supabase.auth.getUser();
@@ -75,17 +98,7 @@ export default function LoginPage() {
       return null;
     }
     if (!user) return null;
-
-    const role = getAppRoleFromClaims(user);
-
-    if (isOnboardingAppRole(role)) return "/onboarding";
-    if (role === "nurse") return getDashboardRouteForRole(role);
-    if (isMedTechRole(role)) return "/med-tech";
-    if (isDietaryRole(role)) return "/dietary";
-    if (role === "caregiver" || role === "housekeeper") return getDashboardRouteForRole(role);
-    if (role === "family") return "/family";
-    if (isAdminEligibleAppRole(role)) return getDashboardRouteForRole(role);
-    return null;
+    return mapRoleToRoute(getAppRoleFromClaims(user));
   }, [supabase]);
 
   useEffect(() => {
@@ -94,31 +107,43 @@ export default function LoginPage() {
     const routeIfAuthenticated = async () => {
       if (!isBrowserSupabaseConfigured()) {
         if (!cancelled) {
-          setSessionProbeError(
-            "Sign-in is not configured. Copy .env.example to .env.local, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your Supabase project (Settings → API), then restart `npm run dev`.",
-          );
-          setCheckingSession(false);
+          setSessionProbeError(SIGN_IN_UNAVAILABLE_MESSAGE);
         }
         return;
       }
 
       try {
-        const destination = await resolveRouteFromRole();
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
         if (cancelled) return;
-        if (!destination) {
-          setCheckingSession(false);
+
+        if (sessionError) {
+          const hint = `${sessionError.message ?? ""} ${"name" in sessionError ? String(sessionError.name) : ""}`.toLowerCase();
+          if (
+            hint.includes("fetch") ||
+            hint.includes("network") ||
+            hint.includes("load failed") ||
+            hint.includes("failed to send")
+          ) {
+            throw new Error("AUTH_NETWORK");
+          }
           return;
         }
+
+        if (!session?.user) return;
+
+        const destination = await resolveRouteFromRole(session.user);
+        if (cancelled || !destination) return;
         router.replace(readSafeNextDestination() ?? destination);
-        router.refresh();
       } catch (e) {
         if (cancelled) return;
-        const message =
+        setSessionProbeError(
           e instanceof Error && e.message === "AUTH_NETWORK"
-            ? "Cannot reach Supabase (network or URL). Confirm the project is running, NEXT_PUBLIC_SUPABASE_URL is correct, and nothing is blocking the browser. Then restart the dev server."
-            : "Could not verify your session. Check your connection and Supabase settings, then refresh this page.";
-        setSessionProbeError(message);
-        setCheckingSession(false);
+            ? SIGN_IN_UNAVAILABLE_MESSAGE
+            : SESSION_VERIFICATION_ERROR_MESSAGE,
+        );
       }
     };
 
@@ -126,8 +151,7 @@ export default function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [resolveRouteFromRole, router]);
-
+  }, [resolveRouteFromRole, router, supabase]);
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -138,13 +162,17 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginFormData) {
     setGlobalError(null);
+    setResetNotice(null);
     if (!isBrowserSupabaseConfigured()) {
-      setGlobalError("Supabase environment variables are missing. Configure .env.local and restart the dev server.");
+      setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
       return;
     }
     try {
       // Execute strict Supabase SSR logic
-      const { error } = await supabase.auth.signInWithPassword({
+      const {
+        data: signInData,
+        error,
+      } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
@@ -154,7 +182,7 @@ export default function LoginPage() {
         return;
       }
 
-      const destination = await resolveRouteFromRole();
+      const destination = await resolveRouteFromRole(signInData.user ?? signInData.session?.user ?? null);
       if (!destination) {
         setGlobalError(
           "Your account does not have an operations role assigned in Haven, or your role cannot open the staff dashboard. Contact your administrator.",
@@ -162,72 +190,77 @@ export default function LoginPage() {
         return;
       }
       router.push(readSafeNextDestination() ?? destination);
-      router.refresh();
     } catch {
-      setGlobalError(
-        "Sign-in request failed to complete. This is usually a network issue or an invalid Supabase URL. Check .env.local and your Supabase project status.",
-      );
+      setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
     }
   }
 
-  if (checkingSession) {
-    return (
-      <div className="min-h-screen bg-[#050914] flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Preparing secure sign in...
-        </div>
-      </div>
-    );
+  async function requestPasswordReset() {
+    setGlobalError(null);
+    setResetNotice(null);
+
+    const email = form.getValues("email").trim();
+    if (!email) {
+      form.setError("email", {
+        type: "manual",
+        message: "Enter your work email before requesting a reset link.",
+      });
+      return;
+    }
+
+    if (!isBrowserSupabaseConfigured()) {
+      setGlobalError(SIGN_IN_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
+    setResetRequesting(true);
+    try {
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      setResetNotice("If that account exists, a password reset link has been sent.");
+    } catch {
+      setGlobalError("Unable to request a reset link right now. Contact your facility administrator.");
+    } finally {
+      setResetRequesting(false);
+    }
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#050914] font-sans text-slate-100 lg:grid lg:grid-cols-2">
-      <div className="relative hidden lg:flex min-h-screen overflow-hidden border-r border-white/10 flex-col justify-end p-12 xl:p-16">
-        {/* Photographic Background Layer */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/login-bg.png')",
-          }}
-        />
-        
-        {/* Gradient overlays to ensure white text readability */}
-        <div className="absolute inset-0 bg-slate-950/20 mix-blend-multiply" />
-        <div className="absolute inset-0 from-[#050914] via-[#050914]/80 opacity-90" />
-        
-        {/* Subtle grid pattern for texture */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#050914] font-sans text-slate-100">
+      {/* Full-bleed photographic background */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/login-bg.png')" }}
+      />
+      {/* Readability overlays */}
+      <div className="absolute inset-0 bg-slate-950/55" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#050914]/70 via-[#050914]/55 to-[#050914]/85" />
+      {/* Subtle grid texture */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:2.8rem_2.8rem]" />
 
-        {/* Content */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-white/95 text-slate-900 flex items-center justify-center shadow-lg">
-              <div className="h-4 w-4 rounded-sm bg-[#0a192f]" />
-            </div>
-            <span className="text-2xl font-serif tracking-tight text-white drop-shadow-md">Haven</span>
+      {/* Top brand bar */}
+      <header className="relative z-10 flex items-center justify-between px-6 pt-8 sm:px-10 lg:px-16">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/95 text-slate-900 shadow-lg">
+            <div className="h-4 w-4 rounded-sm bg-[#0a192f]" />
           </div>
-
-          <div className="max-w-xl mt-auto pb-8">
-            <h1 className="text-2xl md:text-2xl font-bold leading-[1.05] tracking-tight text-white drop-shadow-sm">
-              Elevating <br /><span className="text-emerald-400">Human Care.</span>
-            </h1>
-            <p className="mt-8 text-lg font-medium leading-relaxed text-slate-200">
-              The comprehensive platform for assisted living operators. Streamline your operations from clinical workflows to compliance.
-            </p>
-          </div>
+          <span className="font-serif text-2xl tracking-tight text-white drop-shadow-md">Haven</span>
         </div>
-      </div>
+        <p className="hidden text-xs uppercase tracking-[0.22em] text-slate-300 sm:block">
+          Operations Platform
+        </p>
+      </header>
 
-      <div className="flex min-h-screen items-center justify-center p-6 sm:p-10 lg:p-14">
-        <div className="w-full max-w-md space-y-7">
-          <div className="space-y-2 text-center lg:text-left">
-            <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Haven Access</p>
-            <h2 className="text-4xl font-semibold tracking-tight text-white">
-              Sign in
-            </h2>
-            <p className="text-sm text-slate-400">
-              Use your organizational credentials. Your dashboard is selected automatically by role.
+      {/* Centered hero + form */}
+      <main className="relative z-10 flex min-h-[calc(100vh-7rem)] items-center justify-center px-6 py-16 sm:px-10">
+        <div className="w-full max-w-lg space-y-10">
+          <div className="space-y-4 text-center">
+            <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white drop-shadow-sm sm:text-6xl">
+              Elevating <span className="text-emerald-400">Human Care.</span>
+            </h1>
+            <p className="mx-auto max-w-md text-base leading-relaxed text-slate-300">
+              The unified platform for assisted living operators — clinical, compliance, and family engagement on one secure layer.
             </p>
           </div>
 
@@ -241,8 +274,8 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <Card className="border border-white/10 bg-slate-900/65 shadow-2xl ">
-            <CardContent className="p-6 sm:p-8">
+          <Card className="border border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-md">
+            <CardContent className="p-7 sm:p-9">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField
@@ -253,7 +286,7 @@ export default function LoginPage() {
                         <FormLabel className="font-medium text-slate-200">Work Email</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="jane@oakridge.com"
+                            placeholder="name@organization.com"
                             type="email"
                             disabled={form.formState.isSubmitting}
                             className="h-12 border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500"
@@ -272,8 +305,13 @@ export default function LoginPage() {
                       <FormItem>
                         <div className="flex items-center justify-between">
                           <FormLabel className="font-medium text-slate-200">Password</FormLabel>
-                          <button type="button" className="tap-responsive text-xs font-medium text-amber-400 hover:text-amber-300">
-                            Forgot password?
+                          <button
+                            type="button"
+                            onClick={() => void requestPasswordReset()}
+                            disabled={form.formState.isSubmitting || resetRequesting}
+                            className="tap-responsive text-xs font-medium text-amber-400 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {resetRequesting ? "Sending..." : "Forgot password?"}
                           </button>
                         </div>
                         <FormControl>
@@ -294,6 +332,14 @@ export default function LoginPage() {
                     <input className="h-4 w-4 rounded border-slate-600 bg-slate-950/70" type="checkbox" />
                     Remember me
                   </label>
+
+                  {resetNotice && (
+                    <div className="animate-in fade-in slide-in-from-top-1 rounded-md border border-emerald-700/60 bg-emerald-900/25 p-3">
+                      <p className="text-center text-sm font-medium text-emerald-100">
+                        {resetNotice}
+                      </p>
+                    </div>
+                  )}
 
                   {globalError && (
                     <div className="animate-in fade-in slide-in-from-top-1 rounded-md border border-red-700/60 bg-red-900/25 p-3">
@@ -325,11 +371,11 @@ export default function LoginPage() {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-slate-300 lg:text-left">
+          <p className="text-center text-sm text-slate-300">
             Need access? Contact your facility administrator.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

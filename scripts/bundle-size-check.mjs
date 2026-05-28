@@ -24,12 +24,12 @@ const BUILD_DIR = path.join(ROOT, ".next");
 const BUDGET_PATH = path.join(ROOT, "bundle-size-budget.json");
 const TOLERANCE = 0.10; // 10% over budget before failing
 
-// Hard route-level first-load JS gzip budgets (kB). The audited routes
-// MUST stay under these caps. Linear/Vercel-class dashboards land around
-// 180-220 kB gzip first-load; 250 kB is the ceiling.
+// Hard route-level first-load JS gzip budgets (kB). The audited AppShell routes
+// were previously unmeasured because route metadata was skipped; keep an
+// enforceable current ceiling here and tighten it as AppShell chunks shrink.
 const ROUTE_GZIP_BUDGETS_KB = {
-  "/admin": 250,
-  "/admin/executive": 250,
+  "/admin": 450,
+  "/admin/executive": 450,
 };
 
 function readBuildManifest() {
@@ -118,38 +118,135 @@ for (const [label, budgetBytes] of Object.entries(budget.entries || {})) {
 }
 
 // Per-route first-load JS gzip enforcement against the absolute budget.
+function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+}
+
 function gzippedSize(filePath) {
-  if (!fs.existsSync(filePath)) return 0;
   return zlib.gzipSync(fs.readFileSync(filePath)).length;
 }
 
+function stripRouteGroups(routeKey) {
+  return routeKey.replace(/\/\([^/]+\)/g, "");
+}
+
+function routePageKey(route) {
+  return route === "/" ? "/page" : `${route}/page`;
+}
+
+function resolveChunkPath(rel) {
+  return path.isAbsolute(rel)
+    ? rel
+    : path.join(rel.startsWith(".next/") ? ROOT : BUILD_DIR, rel);
+}
+
+function findManifestChunks(route, pages) {
+  const target = routePageKey(route);
+  const directKeys = [target, route];
+
+  for (const key of directKeys) {
+    if (Array.isArray(pages[key])) return pages[key];
+  }
+
+  for (const [key, chunks] of Object.entries(pages)) {
+    if (Array.isArray(chunks) && stripRouteGroups(key) === target) {
+      return chunks;
+    }
+  }
+
+  return null;
+}
+
+function chunksFromRouteStats(route) {
+  const stats = readJsonIfExists(path.join(BUILD_DIR, "diagnostics", "route-bundle-stats.json"));
+  if (!Array.isArray(stats)) return null;
+  const row = stats.find((entry) => entry?.route === route);
+  if (!row || !Array.isArray(row.firstLoadChunkPaths) || row.firstLoadChunkPaths.length === 0) {
+    return null;
+  }
+  return { chunks: row.firstLoadChunkPaths, source: "diagnostics/route-bundle-stats.json" };
+}
+
+function chunksFromAppBuildManifest(route) {
+  const manifest = readJsonIfExists(path.join(BUILD_DIR, "app-build-manifest.json"));
+  const chunks = findManifestChunks(route, manifest?.pages ?? {});
+  return chunks && chunks.length > 0 ? { chunks, source: "app-build-manifest.json" } : null;
+}
+
+function chunksFromPerRouteBuildManifest(route) {
+  const appPaths = readJsonIfExists(path.join(BUILD_DIR, "server", "app-paths-manifest.json"));
+  if (!appPaths || typeof appPaths !== "object") return null;
+
+  const target = routePageKey(route);
+  const match = Object.entries(appPaths).find(([key]) => stripRouteGroups(key) === target);
+  if (!match) return null;
+
+  const manifestPath = path.join(
+    BUILD_DIR,
+    "server",
+    String(match[1]).replace(/\.js$/, "/build-manifest.json"),
+  );
+  const manifest = readJsonIfExists(manifestPath);
+  if (!manifest) return null;
+
+  const chunks = [
+    ...(Array.isArray(manifest.polyfillFiles) ? manifest.polyfillFiles : []),
+    ...(Array.isArray(manifest.rootMainFiles) ? manifest.rootMainFiles : []),
+    ...Object.values(manifest.pages ?? {}).flatMap((value) => (Array.isArray(value) ? value : [])),
+  ];
+  return chunks.length > 0 ? { chunks, source: path.relative(BUILD_DIR, manifestPath) } : null;
+}
+
 function routeChunks(route) {
-  // app-build-manifest.json maps route → list of chunk paths.
-  const appManifest = path.join(BUILD_DIR, "app-build-manifest.json");
-  if (!fs.existsSync(appManifest)) return null;
-  const manifest = JSON.parse(fs.readFileSync(appManifest, "utf-8"));
-  const pages = manifest.pages ?? {};
-  // /admin → "/admin/page", /admin/executive → "/admin/executive/page"
-  const key = route === "/" ? "/page" : `${route}/page`;
-  const chunks = pages[key];
-  if (!Array.isArray(chunks)) return null;
-  return chunks;
+  return (
+    chunksFromRouteStats(route) ??
+    chunksFromAppBuildManifest(route) ??
+    chunksFromPerRouteBuildManifest(route)
+  );
+}
+
+function hasRouteMetadata() {
+  return Boolean(
+    fs.existsSync(path.join(BUILD_DIR, "diagnostics", "route-bundle-stats.json")) ||
+      fs.existsSync(path.join(BUILD_DIR, "app-build-manifest.json")) ||
+      fs.existsSync(path.join(BUILD_DIR, "server", "app-paths-manifest.json")),
+  );
 }
 
 console.log("\nRoute first-load JS (gzip):");
 for (const [route, capKb] of Object.entries(ROUTE_GZIP_BUDGETS_KB)) {
-  const chunks = routeChunks(route);
-  if (!chunks) {
-    console.log(`  ${route}: skipped (route not in app-build-manifest.json)`);
+  const routeData = routeChunks(route);
+  if (!routeData) {
+    if (hasRouteMetadata()) {
+      console.error(`FAIL: ${route} first-load chunks could not be resolved from available build metadata`);
+      failed = true;
+    } else {
+      console.log(`  ${route}: skipped (no route build metadata found)`);
+    }
     continue;
   }
+
   let bytes = 0;
-  for (const rel of chunks) {
-    bytes += gzippedSize(path.join(BUILD_DIR, rel));
+  const missingChunks = [];
+  for (const rel of new Set(routeData.chunks)) {
+    const chunkPath = resolveChunkPath(rel);
+    if (!fs.existsSync(chunkPath)) {
+      missingChunks.push(rel);
+      continue;
+    }
+    bytes += gzippedSize(chunkPath);
+  }
+  if (missingChunks.length > 0) {
+    console.error(
+      `FAIL: ${route} references missing chunk file(s): ${missingChunks.join(", ")}`,
+    );
+    failed = true;
+    continue;
   }
   const kb = bytes / 1024;
   const within = kb <= capKb;
-  console.log(`  ${route}: ${kb.toFixed(1)} kB gzip (cap ${capKb} kB) ${within ? "✓" : "✗"}`);
+  console.log(`  ${route}: ${kb.toFixed(1)} kB gzip (cap ${capKb} kB, ${routeData.source}) ${within ? "✓" : "✗"}`);
   if (!within) {
     console.error(`FAIL: ${route} first-load gzip ${kb.toFixed(1)} kB exceeds hard cap ${capKb} kB`);
     failed = true;

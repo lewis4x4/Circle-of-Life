@@ -13,10 +13,12 @@ interface UserFilterBarProps {
   role: string;
   facilityId: string;
   status: string;
+  showDeactivated: boolean;
   onSearchChange: (v: string) => void;
   onRoleChange: (v: string) => void;
   onFacilityChange: (v: string) => void;
   onStatusChange: (v: string) => void;
+  onShowDeactivatedChange: (v: boolean) => void;
 }
 
 export function UserFilterBar({
@@ -24,16 +26,17 @@ export function UserFilterBar({
   role,
   facilityId,
   status,
+  showDeactivated,
   onSearchChange,
   onRoleChange,
   onFacilityChange,
   onStatusChange,
+  onShowDeactivatedChange,
 }: UserFilterBarProps) {
   const { availableFacilities: facilities } = useFacilityStore();
   const statusOptions = [
     { value: "active", label: "Active" },
     { value: "inactive", label: "Inactive" },
-    { value: "deleted", label: "Deleted" },
   ] as const;
 
   return (
@@ -56,50 +59,84 @@ export function UserFilterBar({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Input
-          placeholder="Search email or name..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="text-sm"
-        />
+        <div>
+          <label htmlFor="user-search" className="sr-only">
+            Search users
+          </label>
+          <Input
+            id="user-search"
+            placeholder="Search email or name..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="text-sm"
+          />
+        </div>
 
-        <select
-          value={role}
-          onChange={(e) => onRoleChange(e.target.value)}
-          className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="">All Roles</option>
-          {ALL_APP_ROLES.filter((r) => r !== "family").map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABELS[r] ?? r}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label htmlFor="user-role-filter" className="sr-only">
+            Filter by role
+          </label>
+          <select
+            id="user-role-filter"
+            value={role}
+            onChange={(e) => onRoleChange(e.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">All Roles</option>
+            {ALL_APP_ROLES.filter((r) => r !== "family").map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r] ?? r}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          value={facilityId}
-          onChange={(e) => onFacilityChange(e.target.value)}
-          className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="">All Facilities</option>
-          {facilities.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label htmlFor="user-facility-filter" className="sr-only">
+            Filter by facility
+          </label>
+          <select
+            id="user-facility-filter"
+            value={facilityId}
+            onChange={(e) => onFacilityChange(e.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">All Facilities</option>
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          value={status}
-          onChange={(e) => onStatusChange(e.target.value)}
-          className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label htmlFor="user-status-filter" className="sr-only">
+            Filter by status
+          </label>
+          <select
+            id="user-status-filter"
+            value={status}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <label className="flex h-9 items-center gap-2 rounded-md border border-input px-3 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={showDeactivated}
+            onChange={(e) => onShowDeactivatedChange(e.target.checked)}
+            className="h-4 w-4 rounded border-input"
+          />
+          Show deactivated
+        </label>
       </div>
     </div>
   );

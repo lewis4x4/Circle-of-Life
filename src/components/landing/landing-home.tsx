@@ -1,16 +1,5 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import React, { useEffect, useRef } from "react";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-import { useTheme } from "next-themes";
 import {
   Activity,
   ArrowRight,
@@ -21,31 +10,17 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
-const easeOut = [0.22, 1, 0.36, 1] as const;
+const navChipClassName =
+  "hidden border border-teal-500/35 bg-teal-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-200/90 sm:inline-flex";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  show: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.06, duration: 0.65, ease: easeOut },
-  }),
-};
+const buttonBaseClassName =
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
 
-const bentoReveal = {
-  hidden: { opacity: 0, y: 36, filter: "blur(8px)" },
-  show: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.7, ease: easeOut },
-  },
-};
+const buttonSmClassName = "h-9 rounded-md px-4";
+const buttonLgClassName = "h-10 rounded-md px-8";
+const buttonOutlineClassName = "border border-input bg-background";
 
 const trustItems = [
   { icon: CheckCircle2, label: "HIPAA-ready architecture" },
@@ -58,26 +33,9 @@ const accessEmailHref =
   "mailto:brian.lewis@blackrockai.co?subject=Haven%20Access%20Request&body=Brian%2C%0A%0AI%27d%20like%20to%20request%20access%20to%20Haven.%0A%0AName%3A%0AOrganization%3A%0APhone%3A%0A";
 
 export default function LandingHome() {
-  const { setTheme } = useTheme();
-  const reduceMotion = useReducedMotion();
-  const heroVisualRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroVisualRef,
-    offset: ["start end", "end start"],
-  });
-  const parallaxY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 56]);
-  const parallaxSpring = useSpring(parallaxY, { stiffness: 80, damping: 28 });
-
-  useEffect(() => {
-    setTheme("dark");
-  }, [setTheme]);
-
   return (
     <div
-      className={cn(
-        "landing-root relative flex min-h-screen flex-col overflow-hidden bg-[#030712] text-slate-50",
-        "selection:bg-teal-500/40 selection:text-white",
-      )}
+      className="landing-root relative flex min-h-screen flex-col overflow-hidden bg-[#030712] text-slate-50 selection:bg-teal-500/40 selection:text-white"
     >
       <div className="landing-noise pointer-events-none absolute inset-0 z-0" aria-hidden />
       <div
@@ -89,34 +47,22 @@ export default function LandingHome() {
         aria-hidden
       />
 
-      <nav className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-[#030712]/70  backdrop-saturate-150">
+      <nav className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-[#030712]/70 backdrop-saturate-150">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6">
-          <motion.div
+          <div
             className="flex items-center gap-3"
-            initial={reduceMotion ? false : { opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: easeOut }}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg shadow-teal-500/20 ring-1 ring-white/20">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <span className="text-lg font-semibold tracking-tight text-white">Haven</span>
-            <Badge
-              variant="outline"
-              className="hidden border-teal-500/35 bg-teal-500/10 text-[10px] font-semibold uppercase tracking-wider text-teal-200/90 sm:inline-flex"
-            >
-              Operations OS
-            </Badge>
-          </motion.div>
+            <span className={navChipClassName}>Operations OS</span>
+          </div>
 
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-400 md:flex">
             {["Platform", "Clinical", "Multi-entity", "Security"].map((label, i) => (
-              <motion.span
+              <span
                 key={label}
-                initial={reduceMotion ? false : { opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 * i, duration: 0.45 }}
-                whileHover={reduceMotion ? undefined : { y: -1 }}
               >
                 <Link
                   href={`#${["platform", "clinical", "operations", "security"][i]}`}
@@ -124,15 +70,12 @@ export default function LandingHome() {
                 >
                   {label}
                 </Link>
-              </motion.span>
+              </span>
             ))}
           </div>
 
-          <motion.div
+          <div
             className="flex items-center gap-3"
-            initial={reduceMotion ? false : { opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: easeOut }}
           >
             <Link
               href="/login"
@@ -142,25 +85,18 @@ export default function LandingHome() {
             </Link>
             <Link
               href={accessEmailHref}
-              className={cn(
-                buttonVariants({ size: "sm" }),
-                "hidden border border-teal-400/40 bg-teal-500/20 text-teal-50 hover:bg-teal-500/30 sm:inline-flex",
-              )}
+              className={`${buttonBaseClassName} ${buttonSmClassName} hidden border border-teal-400/40 bg-teal-500/20 text-teal-50 hover:bg-teal-500/30 sm:inline-flex`}
             >
               Request access
             </Link>
-          </motion.div>
+          </div>
         </div>
       </nav>
 
-      <main id="main-content" className="relative z-10 flex flex-1 flex-col">
+      <main className="relative z-10 flex flex-1 flex-col">
         <section className="mx-auto grid w-full max-w-7xl gap-12 px-5 pb-20 pt-28 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:items-center lg:gap-16 lg:pb-28 lg:pt-36">
           <div className="flex flex-col">
-            <motion.div
-              custom={0}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
+            <div
               className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/[0.08] px-4 py-1.5 text-sm text-teal-100/95 "
             >
               <span className="relative flex h-2 w-2">
@@ -169,66 +105,44 @@ export default function LandingHome() {
               </span>
               Haven for multi-site operators
               <ArrowRight className="h-3.5 w-3.5 opacity-70" />
-            </motion.div>
+            </div>
 
-            <motion.h1
-              custom={1}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
+            <h1
               className="text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[3.35rem] xl:text-[3.75rem]"
             >
               One calm layer for{" "}
-              <span className="bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-teal-200 via-cyan-100 to-indigo-200 bg-clip-text text-transparent">
                 bedside to boardroom
               </span>{" "}
               operations.
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              custom={2}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
+            <p
               className="mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg"
             >
               Assisted living, home health, and HCBS on a single role-governed platform—census, clinical
               workflows, compliance signals, and owner visibility without the legacy patchwork.
-            </motion.p>
+            </p>
 
-            <motion.div
-              custom={3}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
+            <div
               className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center"
             >
               <Link
                 href="/login"
-                className={cn(
-                  buttonVariants({ size: "lg" }),
-                  "h-12 rounded-xl bg-white px-7 text-base font-semibold text-slate-950 shadow-[0_0_48px_-12px_rgba(45,212,191,0.55)] hover:bg-slate-100",
-                )}
+                className={`${buttonBaseClassName} ${buttonLgClassName} h-12 rounded-xl bg-white px-7 text-base font-semibold text-slate-950 shadow-[0_0_48px_-12px_rgba(45,212,191,0.55)] hover:bg-slate-100`}
               >
                 Sign in to Haven
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
                 href={accessEmailHref}
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "outline" }),
-                  "h-12 rounded-xl border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]",
-                )}
+                className={`${buttonBaseClassName} ${buttonLgClassName} ${buttonOutlineClassName} h-12 rounded-xl border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]`}
               >
                 Request early access
               </Link>
-            </motion.div>
+            </div>
 
-            <motion.div
-              custom={4}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
+            <div
               className="mt-10 flex flex-wrap gap-x-8 gap-y-2 text-xs text-slate-500"
             >
               <span className="flex items-center gap-2">
@@ -239,13 +153,9 @@ export default function LandingHome() {
                 <span className="h-1 w-1 rounded-full bg-primary-400" />
                 Audit-friendly trails
               </span>
-            </motion.div>
+            </div>
 
-            <motion.div
-              custom={5}
-              variants={fadeUp}
-              initial="hidden"
-              animate="show"
+            <div
               className="mt-6 max-w-xl rounded-2xl border border-teal-400/25 bg-teal-500/[0.08] p-4 "
             >
               <div className="flex items-start gap-3">
@@ -267,16 +177,11 @@ export default function LandingHome() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
 
-          <motion.div
-            ref={heroVisualRef}
-            style={{ y: parallaxSpring }}
+          <div
             className="relative mx-auto w-full max-w-lg lg:max-w-none"
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.85, delay: 0.15, ease: easeOut }}
           >
             <div className="absolute -inset-4 rounded-xl opacity-60 blur-3xl" />
             <div className="relative aspect-square overflow-hidden rounded-xl border border-white/[0.08] shadow-2xl shadow-black/50 ring-1 ring-white/[0.06]">
@@ -284,6 +189,7 @@ export default function LandingHome() {
                 src="/luxury-alf-interior.png"
                 alt="Luxury Assisted Living Interior"
                 fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover object-center"
                 priority
               />
@@ -297,18 +203,14 @@ export default function LandingHome() {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         <section
           id="platform"
           className="relative mx-auto w-full max-w-6xl scroll-mt-24 px-5 pb-24 sm:px-6"
         >
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            variants={bentoReveal}
+          <div
           >
             <div className="absolute -inset-x-8 -top-8 h-64 rounded-full bg-teal-500/5 blur-3xl" aria-hidden />
             <Card className="relative overflow-hidden border-white/[0.08] bg-white/[0.03] py-0 text-slate-50 shadow-2xl ring-1 ring-white/[0.05] ">
@@ -328,32 +230,26 @@ export default function LandingHome() {
                 <div className="col-span-12 hidden flex-col gap-3 border-r border-white/[0.06] pr-4 md:col-span-3 md:flex">
                   <div className="h-5 w-20 rounded bg-white/10" />
                   {Array.from({ length: 7 }).map((_, i) => (
-                    <motion.div
+                    <div
                       key={i}
                       className="h-3 rounded bg-white/[0.06]"
-                      initial={reduceMotion ? false : { opacity: 0, x: -8 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.04 * i, duration: 0.4 }}
                     />
                   ))}
                 </div>
                 <div className="col-span-12 flex flex-col gap-4 md:col-span-9">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="h-7 w-44 rounded-md bg-white/10" />
-                    <Badge className="border-0 bg-teal-500/20 text-teal-100">North Florida</Badge>
+                    <span className="inline-flex items-center rounded-full bg-teal-500/20 px-2.5 py-0.5 text-xs text-teal-100">North Florida</span>
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <motion.div
+                      <div
                         key={i}
                         className="flex h-20 flex-col justify-between rounded-xl border border-white/[0.06] bg-white/[0.04] p-3 sm:h-24"
-                        whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 22 }}
                       >
                         <div className="h-2 w-1/2 rounded bg-white/15" />
                         <div className="h-5 w-3/4 rounded" />
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                   <div className="min-h-0 flex-1 rounded-xl border border-white/[0.06] bg-black/25 p-3">
@@ -364,13 +260,9 @@ export default function LandingHome() {
                     </div>
                     <div className="flex flex-col gap-2">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <motion.div
+                        <div
                           key={i}
                           className="flex h-11 items-center gap-3 rounded-lg bg-white/[0.04] px-3"
-                          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: 0.05 * i }}
                         >
                           <div className="h-7 w-7 shrink-0 rounded-full" />
                           <div className="min-w-0 flex-1 space-y-1.5">
@@ -382,14 +274,14 @@ export default function LandingHome() {
                               Alert
                             </span>
                           ) : null}
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </section>
 
         <section
@@ -414,12 +306,8 @@ export default function LandingHome() {
           id="operations"
           className="relative mx-auto w-full max-w-7xl scroll-mt-24 px-5 py-24 sm:px-6 lg:py-32"
         >
-          <motion.div
+          <div
             className="mb-16 text-center"
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            variants={bentoReveal}
           >
             <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               Built for operators who cannot afford drift.
@@ -428,15 +316,11 @@ export default function LandingHome() {
               Dense where it matters—census, clinical signals, workforce, and collections—without the noise of
               fifteen disconnected tools.
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:grid-rows-[minmax(280px,auto)_minmax(240px,auto)]">
-            <motion.div
+            <div
               className="md:row-span-2"
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-40px" }}
-              variants={bentoReveal}
             >
               <Card className="h-full border-white/[0.08] bg-white/[0.03] py-6 text-slate-50 ring-1 ring-white/[0.05] transition-colors hover:border-teal-500/20 hover:bg-white/[0.045]">
                 <CardHeader>
@@ -453,14 +337,10 @@ export default function LandingHome() {
                   <div className="h-1 w-1/3 rounded-full" />
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
 
-            <motion.div
+            <div
               className="md:col-span-2"
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-40px" }}
-              variants={bentoReveal}
             >
               <Card className="h-full border-white/[0.08] bg-white/[0.03] py-6 text-slate-50 ring-1 ring-white/[0.05] transition-colors hover:border-amber-500/20">
                 <CardHeader className="relative">
@@ -482,26 +362,19 @@ export default function LandingHome() {
                         key={i}
                         className="relative h-14 w-8 overflow-hidden rounded-md border border-white/10 bg-white/[0.04]"
                       >
-                        <motion.div
+                        <div
                           className="absolute bottom-0 left-0 right-0 bg-amber-400/35"
-                          initial={reduceMotion ? { height: "40%" } : { height: 0 }}
-                          whileInView={{ height: `${38 + (i % 4) * 12}%` }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.8, delay: 0.06 * i, ease: easeOut }}
+                          style={{ height: `${38 + (i % 4) * 12}%` }}
                         />
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
 
-            <motion.div
+            <div
               id="security"
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-40px" }}
-              variants={bentoReveal}
               className="scroll-mt-24"
             >
               <Card className="h-full border-white/[0.08] bg-white/[0.03] py-6 text-slate-50 ring-1 ring-white/[0.05]">
@@ -515,13 +388,9 @@ export default function LandingHome() {
                   </CardDescription>
                 </CardHeader>
               </Card>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: "-40px" }}
-              variants={bentoReveal}
+            <div
             >
               <Card className="h-full border-white/[0.08] bg-white/[0.03] py-6 text-slate-50 ring-1 ring-white/[0.05] transition-colors hover:border-rose-500/25">
                 <CardHeader>
@@ -535,16 +404,12 @@ export default function LandingHome() {
                   </CardDescription>
                 </CardHeader>
               </Card>
-            </motion.div>
+            </div>
           </div>
         </section>
 
         <section id="demo" className="mx-auto max-w-3xl scroll-mt-24 px-5 pb-28 text-center sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            variants={bentoReveal}
+          <div
           >
             <h3 className="text-2xl font-semibold text-white sm:text-3xl">Start with a focused pilot.</h3>
             <p className="mt-3 text-slate-400">
@@ -552,14 +417,11 @@ export default function LandingHome() {
             </p>
             <Link
               href={accessEmailHref}
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "mt-8 inline-flex h-12 rounded-xl bg-teal-500 px-8 text-base font-semibold text-slate-950 hover:bg-teal-400",
-              )}
+              className={`${buttonBaseClassName} ${buttonLgClassName} mt-8 inline-flex h-12 rounded-xl bg-teal-500 px-8 text-base font-semibold text-slate-950 hover:bg-teal-400`}
             >
               Email Brian for access
             </Link>
-          </motion.div>
+          </div>
         </section>
       </main>
 

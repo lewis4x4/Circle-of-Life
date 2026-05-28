@@ -25,6 +25,7 @@ export async function serviceRoleUserHasFacilityAccess(
     .select("facility_id")
     .eq("user_id", args.userId)
     .eq("facility_id", args.facilityId)
+    .eq("organization_id", args.organizationId)
     .is("revoked_at", null)
     .maybeSingle();
   return !!data;

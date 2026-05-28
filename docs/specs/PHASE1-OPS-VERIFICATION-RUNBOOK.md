@@ -140,6 +140,8 @@ supabase functions deploy export-audit-log --project-ref manfqmasfqppukpobpld
 supabase functions deploy dispatch-push --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-monthly-invoices --project-ref manfqmasfqppukpobpld
 supabase functions deploy exec-kpi-snapshot --project-ref manfqmasfqppukpobpld
+supabase functions deploy resident-safety-scorer --project-ref manfqmasfqppukpobpld --no-verify-jwt
+supabase functions deploy risk-nightly-scorer --project-ref manfqmasfqppukpobpld --no-verify-jwt
 supabase functions deploy report-scheduler --project-ref manfqmasfqppukpobpld
 supabase functions deploy ar-aging-check --project-ref manfqmasfqppukpobpld
 supabase functions deploy generate-emar-schedule --project-ref manfqmasfqppukpobpld
@@ -155,7 +157,7 @@ supabase functions list --project-ref manfqmasfqppukpobpld
 
 Expected:
 
-- all nine functions appear in the list
+- all eleven functions appear in the list
 - deploy output is either success or `No change found`
 
 `demo:ops-status` checks the current `functions list` inventory for required slugs and `ACTIVE` status.
@@ -174,6 +176,8 @@ All required secrets verified via `supabase secrets list`:
 
 - `GENERATE_MONTHLY_INVOICES_SECRET` ✅
 - `EXEC_KPI_SNAPSHOT_SECRET` ✅
+- `RESIDENT_SAFETY_SCORER_SECRET` ⚠️ pending verification
+- `RISK_NIGHTLY_SCORER_SECRET` ⚠️ pending verification
 - `REPORT_SCHEDULER_SECRET` ✅
 - `AR_AGING_CHECK_SECRET` ✅
 - `GENERATE_EMAR_SCHEDULE_SECRET` ✅
@@ -198,6 +202,7 @@ Verified via `SELECT jobid, schedule, command, active FROM cron.job;` — all `p
 | eMAR schedule | `generate-emar-schedule` | `0 5 * * *` (daily 05:00) | pg_cron + pg_net | Brian Lewis | 2 | Re-POST; skips existing rows |
 | Missed-dose alerts | `emar-missed-dose-check` | `*/30 * * * *` (every 30 min) | pg_cron + pg_net | Brian Lewis | 3 | Re-POST; dedupes via `deep_link_path` |
 | Daily KPI snapshot | `exec-kpi-snapshot` | `0 3 * * *` (daily 03:00) | pg_cron + pg_net | Brian Lewis | 4 | Re-POST with same `organization_id` + `snapshot_date`; deletes same-day rows before insert |
+| Executive refresh pipeline | `exec-kpi-snapshot` + `resident-safety-scorer` + `risk-nightly-scorer` | `10 8,9 * * *` with local-hour guard for 04:10 America/New_York | pg_cron + pg_net | Brian Lewis | TBD | Re-POST manually through `/api/admin/executive/refresh`; individual Edge calls are idempotent per function contract. |
 | Monthly invoices | `generate-monthly-invoices` | `0 2 1 * *` (1st of month 02:00) | pg_cron + pg_net | Brian Lewis | 6 | Re-POST with same `organization_id` + explicit `billing_year`/`billing_month`; idempotent via unique index (migration `071`) |
 | Report scheduler | `report-scheduler` | `0 6 * * *` (daily 06:00) | pg_cron + pg_net | Brian Lewis | 10 | Re-POST; picks up schedules whose `next_run_at` is overdue; safe to rerun |
 | Executive alerts | `exec-alert-evaluator` | `30 3 * * *` (daily 03:30) | pg_cron + pg_net | Brian Lewis | 11 | Re-POST; dedupes on unresolved title + facility |
@@ -211,6 +216,8 @@ Verified via `SELECT jobid, schedule, command, active FROM cron.job;` — all `p
 |--------|---------|-----------------|----------------|---------------|
 | `GENERATE_MONTHLY_INVOICES_SECRET` | `generate-monthly-invoices` | Quarterly or on leak | Brian Lewis | `supabase secrets set GENERATE_MONTHLY_INVOICES_SECRET=<new>` then update `cron.job` command (jobid 6) |
 | `EXEC_KPI_SNAPSHOT_SECRET` | `exec-kpi-snapshot` | Quarterly or on leak | Brian Lewis | `supabase secrets set EXEC_KPI_SNAPSHOT_SECRET=<new>` then update `cron.job` command (jobid 4) |
+| `RESIDENT_SAFETY_SCORER_SECRET` | `resident-safety-scorer`, Executive refresh route, executive pipeline cron | Quarterly or on leak | Brian Lewis | `supabase secrets set RESIDENT_SAFETY_SCORER_SECRET=<new>` then update Netlify env and pg_cron/Vault-backed cron secret reference |
+| `RISK_NIGHTLY_SCORER_SECRET` | `risk-nightly-scorer`, Executive refresh route, executive pipeline cron | Quarterly or on leak | Brian Lewis | `supabase secrets set RISK_NIGHTLY_SCORER_SECRET=<new>` then update Netlify env and pg_cron/Vault-backed cron secret reference |
 | `REPORT_SCHEDULER_SECRET` | `report-scheduler` | Quarterly or on leak | Brian Lewis | `supabase secrets set REPORT_SCHEDULER_SECRET=<new>` then update `cron.job` command (jobid 10) |
 | `AR_AGING_CHECK_SECRET` | `ar-aging-check` | Quarterly or on leak | Brian Lewis | `supabase secrets set AR_AGING_CHECK_SECRET=<new>` then update `cron.job` command (jobid 1) |
 | `GENERATE_EMAR_SCHEDULE_SECRET` | `generate-emar-schedule` | Quarterly or on leak | Brian Lewis | `supabase secrets set GENERATE_EMAR_SCHEDULE_SECRET=<new>` then update `cron.job` command (jobid 2) |

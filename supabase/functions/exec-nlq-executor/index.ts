@@ -252,8 +252,6 @@ Deno.serve(async (req) => {
 
   const routeContext = body.route ?? null;
   const moduleContext = body.module ?? null;
-  const selectedFacilityId = body.facility_id ?? null;
-  const userRole = body.role ?? null;
 
   const question = typeof body.question === "string" ? body.question.trim() : "";
   if (!question) {
@@ -303,6 +301,10 @@ Deno.serve(async (req) => {
   }
 
   const nameMap = facilityNameMap(facilities);
+  const selectedFacilityId = facilities.some((f) => f.id === body.facility_id)
+    ? body.facility_id
+    : null;
+  const userRole = role;
 
   let portfolioKpi: ExecKpiPayload;
   let perFacility: { facilityId: string; name: string; kpi: ExecKpiPayload }[];
@@ -435,6 +437,7 @@ Deno.serve(async (req) => {
   const intentJson = {
     question_length: question.length,
     facilities_in_scope: facilities.length,
+    selected_facility_id: selectedFacilityId,
     model: MODEL,
   };
 
@@ -451,7 +454,8 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", sessionId)
-        .eq("organization_id", organizationId);
+        .eq("organization_id", organizationId)
+        .eq("user_id", user.id);
 
       if (updErr) {
         t.log({ event: "session_update_failed", outcome: "error", error_message: updErr.message });

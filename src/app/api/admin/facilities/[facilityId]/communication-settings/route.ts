@@ -11,6 +11,7 @@ import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-au
 import { communicationSettingsSchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -193,7 +194,9 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ data: created }, { status: 201 });
     }
   } catch (err) {
-    console.error("[communication-settings-upsert] Error:", err);
+    logError("admin.facilities.communication-settings.upsert", err, {
+      facilityId,
+    });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

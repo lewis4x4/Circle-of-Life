@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { logError } from "@/lib/observability/logger";
 import type { CompletionPayload, ObservationExceptionType, ObservationEntryMode, ObservationQuickStatus } from "@/lib/rounding/types";
 import { getCompletionTaskStatus } from "@/lib/rounding/update-task-status";
 
@@ -144,7 +145,7 @@ export async function POST(
     .maybeSingle();
 
   if (taskError) {
-    console.error("[rounding/tasks/complete] task lookup", taskError);
+    logError("rounding.tasks.complete", taskError, { taskId });
   }
   if (taskError || !task) {
     return NextResponse.json({ error: "Observation task not found" }, { status: 404 });
@@ -187,7 +188,7 @@ export async function POST(
     graceEndsAt: task.grace_ends_at,
   });
 
-  const { data: insertedLog, error: logError } = await context.admin
+  const { data: insertedLog, error: logInsertError } = await context.admin
     .from("resident_observation_logs")
     .insert({
       organization_id: task.organization_id,
@@ -222,8 +223,8 @@ export async function POST(
     .select("id")
     .single();
 
-  if (logError || !insertedLog) {
-    console.error("[rounding/tasks/complete] insert log", logError);
+  if (logInsertError || !insertedLog) {
+    logError("rounding.tasks.complete", logInsertError, { taskId, residentId: task.resident_id });
     return NextResponse.json({ error: "Could not save observation log" }, { status: 500 });
   }
 
@@ -243,7 +244,7 @@ export async function POST(
       });
 
     if (exceptionError) {
-      console.error("[rounding/tasks/complete] insert exception", exceptionError);
+      logError("rounding.tasks.complete", exceptionError, { taskId, logId: insertedLog.id, action: "insert_exception" });
       return NextResponse.json({ error: "Could not save observation exception" }, { status: 500 });
     }
   }
@@ -269,7 +270,7 @@ export async function POST(
       });
 
     if (integrityFlagError) {
-      console.error("[rounding/tasks/complete] insert integrity flag", integrityFlagError);
+      logError("rounding.tasks.complete", integrityFlagError, { taskId, logId: insertedLog.id, action: "insert_integrity_flag" });
     } else {
       integrityFlagCreated = true;
     }
@@ -292,7 +293,7 @@ export async function POST(
     .lte("entered_at", sameMinuteEnd.toISOString());
 
   if (recentLogsError) {
-    console.error("[rounding/tasks/complete] recent logs", recentLogsError);
+    logError("rounding.tasks.complete", recentLogsError, { taskId, action: "recent_logs_lookup" });
   } else {
     const recentWindowCount = (recentLogs ?? []).length;
     const sameMinuteCount = (recentLogs ?? []).filter((row) => {
@@ -319,7 +320,7 @@ export async function POST(
         });
 
       if (suspiciousFlagError) {
-        console.error("[rounding/tasks/complete] insert suspicious integrity flag", suspiciousFlagError);
+        logError("rounding.tasks.complete", suspiciousFlagError, { taskId, logId: insertedLog.id, action: "insert_suspicious_flag" });
       } else {
         suspiciousPatternFlagCreated = true;
       }
@@ -355,7 +356,7 @@ export async function POST(
     .lte("entered_at", now.toISOString());
 
   if (repeatedPatternError) {
-    console.error("[rounding/tasks/complete] repeated pattern logs", repeatedPatternError);
+    logError("rounding.tasks.complete", repeatedPatternError, { taskId, action: "repeated_pattern_lookup" });
   } else {
     const targetSignature = payloadSignature(body);
     const matchingResidents = new Set(
@@ -413,7 +414,7 @@ export async function POST(
         });
 
       if (repeatedFlagError) {
-        console.error("[rounding/tasks/complete] insert repeated payload integrity flag", repeatedFlagError);
+        logError("rounding.tasks.complete", repeatedFlagError, { taskId, logId: insertedLog.id, action: "insert_repeated_payload_flag" });
       } else {
         suspiciousPatternFlagCreated = true;
       }
@@ -430,7 +431,7 @@ export async function POST(
     .eq("organization_id", context.organizationId);
 
   if (taskUpdateError) {
-    console.error("[rounding/tasks/complete] update task", taskUpdateError);
+    logError("rounding.tasks.complete", taskUpdateError, { taskId, logId: insertedLog.id, action: "update_task" });
     return NextResponse.json({ error: "Could not update observation task" }, { status: 500 });
   }
 

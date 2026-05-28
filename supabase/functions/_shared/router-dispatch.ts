@@ -17,16 +17,25 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
-  computeKpiForFacilityIds,
+  computeKpiBundleForFacilityIds,
   type ExecKpiPayload,
 } from "./exec-kpi-metrics.ts";
-import { formatFacilityFactsBlock, loadFacilityFacts, type FacilityFact } from "./facility-facts.ts";
+import {
+  type FacilityFact,
+  formatFacilityFactsBlock,
+  loadFacilityFacts,
+} from "./facility-facts.ts";
 import type { IntentClassification, RouterIntent } from "./router-intent.ts";
 import {
   runToolLoop,
   type ToolCallerContext,
   type ToolLoopResult,
 } from "../haven-ai-router/tools.ts";
+import {
+  type ConversationContext,
+  prependConversationHistory,
+} from "./router-context.ts";
+import { pickRedacted } from "./redact-pii.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Public types                                                      */
@@ -50,6 +59,11 @@ export type DispatchArgs = {
   organizationId: string;
   userRole: string;
   userId: string;
+  /**
+   * Validated request-level facility selection. Currently retained for the
+   * facility-specific dispatch branches awaiting downstream wiring; do not
+   * pass an unvalidated body.facility_id here.
+   */
   selectedFacilityId: string | null;
   moduleContext: string | null;
   /**
@@ -59,6 +73,7 @@ export type DispatchArgs = {
    * and fall back to the existing org-wide queries when empty.
    */
   facilityIds?: string[];
+  conversationContext?: ConversationContext;
 };
 
 export type DispatchResult = {
@@ -85,6 +100,14 @@ const EMBEDDING_TIMEOUT_MS = 30_000;
 const KB_MIN_SCORE = 0.4;
 const KB_MATCH_COUNT = 8;
 const MAX_ANSWER_TOKENS = 1024;
+const ANSWER_METADATA_INSTRUCTIONS =
+  `After your visible answer, on a new line, output a JSON block:
+<follow_ups>{"suggestions":["question 1","question 2","question 3"]}</follow_ups>
+These should be natural next questions an executive would ask given your answer. Each suggestion must be 80 characters or fewer.
+
+If your answer compares facilities, shows a trend, or aggregates by category, ALSO output:
+<chart>{"kind":"bar"|"line"|"pie","series":[{"label":"...","value":N}],"x_label":"...","y_label":"..."}</chart>
+Otherwise omit the chart block entirely.`;
 const CANNED_REFUSAL =
   "I can't help with that. I'm Haven's operations assistant — ask me about your facilities, residents, staff, compliance, or policies.";
 
@@ -118,7 +141,10 @@ type EvidenceRow = {
 /*  Shared helpers                                                    */
 /* ------------------------------------------------------------------ */
 
-function emptyResult(answer: string, extras: Partial<DispatchResult> = {}): DispatchResult {
+function emptyResult(
+  answer: string,
+  extras: Partial<DispatchResult> = {},
+): DispatchResult {
   return {
     answer,
     citations: [],
@@ -131,30 +157,62 @@ function emptyResult(answer: string, extras: Partial<DispatchResult> = {}): Disp
 }
 
 function centsToUsd(cents: number): string {
-  return `$${(cents / 100).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return `$${
+    (cents / 100).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }`;
 }
 
+function isOrgWideRole(role: string): boolean {
+  return role === "owner" || role === "org_admin";
+}
+
+function facilityScopeForLoader(args: DispatchArgs): string[] | undefined {
+  return isOrgWideRole(args.userRole) ? undefined : (args.facilityIds ?? []);
+}
+
+/**
+ * Known-safe keys for router-dispatch logging. We whitelist rather than spread
+ * caller-supplied `extra` so unbounded keys cannot leak via log size or
+ * surprise field names. Values are also deep-redacted via `pickRedacted`.
+ */
+const DISPATCH_LOG_WHITELIST = [
+  "status",
+  "reason",
+  "has_question",
+  "tool",
+  "rpc",
+  "run_id",
+  "count",
+  "error_code",
+] as const;
+
 function logEvent(event: string, extra: Record<string, unknown> = {}): void {
+  const safe = pickRedacted(extra, DISPATCH_LOG_WHITELIST);
   console.log(
     JSON.stringify({
       fn: "router-dispatch",
       event,
-      ...extra,
+      ...safe,
     }),
   );
 }
 
-function logError(event: string, error: unknown, extra: Record<string, unknown> = {}): void {
+function logError(
+  event: string,
+  error: unknown,
+  extra: Record<string, unknown> = {},
+): void {
+  const safe = pickRedacted(extra, DISPATCH_LOG_WHITELIST);
   console.error(
     JSON.stringify({
       fn: "router-dispatch",
       event,
       outcome: "error",
       error_message: error instanceof Error ? error.message : String(error),
-      ...extra,
+      ...safe,
     }),
   );
 }
@@ -164,7 +222,10 @@ async function callAnthropic(args: {
   systemPrompt: string;
   userContent: string;
   maxTokens?: number;
-}): Promise<{ answer: string; tokensIn: number; tokensOut: number; ok: boolean }> {
+  conversationContext?: ConversationContext;
+}): Promise<
+  { answer: string; tokensIn: number; tokensOut: number; ok: boolean }
+> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) {
     return { answer: "", tokensIn: 0, tokensOut: 0, ok: false };
@@ -180,20 +241,32 @@ async function callAnthropic(args: {
       body: JSON.stringify({
         model: SONNET_MODEL,
         max_tokens: args.maxTokens ?? MAX_ANSWER_TOKENS,
-        system: args.systemPrompt,
+        system: `${
+          prependConversationHistory(
+            args.systemPrompt,
+            args.conversationContext,
+          )
+        }\n\n${ANSWER_METADATA_INSTRUCTIONS}`,
         messages: [{ role: "user", content: args.userContent }],
       }),
       signal: AbortSignal.timeout(ANTHROPIC_TIMEOUT_MS),
     });
     if (!res.ok) {
       const errText = await res.text();
-      logError("anthropic_non_ok", new Error(errText.slice(0, 200)), { status: res.status });
+      logError("anthropic_non_ok", new Error(errText.slice(0, 200)), {
+        status: res.status,
+      });
       return { answer: "", tokensIn: 0, tokensOut: 0, ok: false };
     }
     const json = (await res.json()) as Record<string, unknown>;
-    const blocks = json.content as { type: string; text?: string }[] | undefined;
+    const blocks = json.content as
+      | { type: string; text?: string }[]
+      | undefined;
     const answer = String(blocks?.find((b) => b.type === "text")?.text ?? "");
-    const usage = json.usage as { input_tokens?: number; output_tokens?: number } | undefined;
+    const usage = json.usage as {
+      input_tokens?: number;
+      output_tokens?: number;
+    } | undefined;
     return {
       answer,
       tokensIn: Number(usage?.input_tokens ?? 0),
@@ -235,12 +308,18 @@ async function embedQuestion(question: string): Promise<number[] | null> {
 async function loadFacilitiesWithName(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<FacilityRow[]> {
-  const { data, error } = await admin
+  if (facilityIds && facilityIds.length === 0) return [];
+  let q = admin
     .from("facilities")
     .select("id, name, total_licensed_beds, entity_id")
     .eq("organization_id", organizationId)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (facilityIds) q = q.in("id", facilityIds);
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data ?? []) as FacilityRow[];
 }
@@ -248,10 +327,12 @@ async function loadFacilitiesWithName(
 async function loadRecentAlerts(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<AlertRow[]> {
+  if (facilityIds && facilityIds.length === 0) return [];
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - 30);
-  const { data, error } = await admin
+  let q = admin
     .from("exec_alerts")
     .select("id, severity, title, body, source_module, facility_id, created_at")
     .eq("organization_id", organizationId)
@@ -260,6 +341,8 @@ async function loadRecentAlerts(
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false })
     .limit(10);
+  if (facilityIds) q = q.in("facility_id", facilityIds);
+  const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data ?? []) as AlertRow[];
 }
@@ -274,8 +357,12 @@ function buildKpiBlock(
   for (const f of facilities) nameMap[f.id] = f.name;
 
   const portfolioLines = [
-    `  Total occupancy: ${portfolioKpi.census.occupiedResidents}/${portfolioKpi.census.licensedBeds} beds (${portfolioKpi.census.occupancyPct ?? "N/A"}%)`,
-    `  Total open invoices: ${portfolioKpi.financial.openInvoicesCount} totaling ${centsToUsd(portfolioKpi.financial.totalBalanceDueCents)}`,
+    `  Total occupancy: ${portfolioKpi.census.occupiedResidents}/${portfolioKpi.census.licensedBeds} beds (${
+      portfolioKpi.census.occupancyPct ?? "N/A"
+    }%)`,
+    `  Total open invoices: ${portfolioKpi.financial.openInvoicesCount} totaling ${
+      centsToUsd(portfolioKpi.financial.totalBalanceDueCents)
+    }`,
     `  Total open incidents: ${portfolioKpi.clinical.openIncidents} | Med errors MTD: ${portfolioKpi.clinical.medicationErrorsMtd}`,
     `  Total open survey deficiencies: ${portfolioKpi.compliance.openSurveyDeficiencies}`,
     `  Total certifications expiring 30d: ${portfolioKpi.workforce.certificationsExpiring30d}`,
@@ -287,8 +374,12 @@ function buildKpiBlock(
       const k = pf.kpi;
       return [
         `  ${pf.name}:`,
-        `    Occupancy: ${k.census.occupiedResidents}/${k.census.licensedBeds} beds (${k.census.occupancyPct ?? "N/A"}%)`,
-        `    Open invoices: ${k.financial.openInvoicesCount} totaling ${centsToUsd(k.financial.totalBalanceDueCents)}`,
+        `    Occupancy: ${k.census.occupiedResidents}/${k.census.licensedBeds} beds (${
+          k.census.occupancyPct ?? "N/A"
+        }%)`,
+        `    Open invoices: ${k.financial.openInvoicesCount} totaling ${
+          centsToUsd(k.financial.totalBalanceDueCents)
+        }`,
         `    Open incidents: ${k.clinical.openIncidents} | Med errors MTD: ${k.clinical.medicationErrorsMtd}`,
         `    Open survey deficiencies: ${k.compliance.openSurveyDeficiencies}`,
         `    Certifications expiring 30d: ${k.workforce.certificationsExpiring30d}`,
@@ -297,17 +388,18 @@ function buildKpiBlock(
     })
     .join("\n\n");
 
-  const alertLines =
-    alerts.length > 0
-      ? alerts
-          .map((a) => {
-            const facLabel = a.facility_id ? nameMap[a.facility_id] ?? "Unknown" : "Portfolio";
-            return `  - [${a.severity.toUpperCase()}] ${facLabel}: ${a.title}${
-              a.body ? ` — ${a.body.slice(0, 120)}` : ""
-            }`;
-          })
-          .join("\n")
-      : "  (none)";
+  const alertLines = alerts.length > 0
+    ? alerts
+      .map((a) => {
+        const facLabel = a.facility_id
+          ? nameMap[a.facility_id] ?? "Unknown"
+          : "Portfolio";
+        return `  - [${a.severity.toUpperCase()}] ${facLabel}: ${a.title}${
+          a.body ? ` — ${a.body.slice(0, 120)}` : ""
+        }`;
+      })
+      .join("\n")
+    : "  (none)";
 
   return [
     "PORTFOLIO SUMMARY:",
@@ -321,27 +413,41 @@ function buildKpiBlock(
   ].join("\n");
 }
 
-async function loadKpiBundle(admin: SupabaseClient, organizationId: string): Promise<{
+async function loadKpiBundle(
+  admin: SupabaseClient,
+  organizationId: string,
+  facilityIds?: string[],
+): Promise<{
   facilities: FacilityRow[];
   portfolio: ExecKpiPayload;
   perFacility: { facilityId: string; name: string; kpi: ExecKpiPayload }[];
   alerts: AlertRow[];
 }> {
-  const facilities = await loadFacilitiesWithName(admin, organizationId);
-  const facilityHandles = facilities.map((f) => ({ id: f.id, total_licensed_beds: f.total_licensed_beds }));
-  const [portfolio, perFacility, alerts] = await Promise.all([
-    computeKpiForFacilityIds(admin, organizationId, facilityHandles),
-    Promise.all(
-      facilities.map(async (f) => {
-        const kpi = await computeKpiForFacilityIds(admin, organizationId, [
-          { id: f.id, total_licensed_beds: f.total_licensed_beds },
-        ]);
-        return { facilityId: f.id, name: f.name, kpi };
-      }),
-    ),
-    loadRecentAlerts(admin, organizationId),
+  const facilities = await loadFacilitiesWithName(admin, organizationId, facilityIds);
+  const facilityHandles = facilities.map((f) => ({
+    id: f.id,
+    total_licensed_beds: f.total_licensed_beds,
+  }));
+  const [kpis, alerts] = await Promise.all([
+    computeKpiBundleForFacilityIds(admin, organizationId, facilityHandles),
+    loadRecentAlerts(admin, organizationId, facilityIds),
   ]);
-  return { facilities, portfolio, perFacility, alerts };
+  const kpiByFacility = new Map(kpis.perFacility.map((row) => [row.facilityId, row.kpi]));
+  const perFacility = facilities.map((f) => ({
+    facilityId: f.id,
+    name: f.name,
+    kpi: kpiByFacility.get(f.id) ?? {
+      ...kpis.portfolio,
+      census: {
+        ...kpis.portfolio.census,
+        occupiedResidents: 0,
+        licensedBeds: f.total_licensed_beds ?? 0,
+        occupancyPct: null,
+        occupancyRate: null,
+      },
+    },
+  }));
+  return { facilities, portfolio: kpis.portfolio, perFacility, alerts };
 }
 
 function citationsFromEvidence(rows: EvidenceRow[]): Citation[] {
@@ -404,7 +510,8 @@ function toolLoopToDispatchResult(
 /* ------------------------------------------------------------------ */
 
 async function dispatchChitchat(args: DispatchArgs): Promise<DispatchResult> {
-  const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida.
+  const systemPrompt =
+    `You are Haven, an operations assistant for assisted living facility operators in Florida.
 
 The user has sent a greeting, meta-question, or casual rapport message. Respond briefly and warmly, then steer them toward what you can help with: facilities, residents (no PHI without authorization), staff, compliance, policies, and operational KPIs.
 
@@ -412,6 +519,7 @@ Keep your response to 2–3 short sentences. Do not fabricate any data.`;
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: args.question,
     maxTokens: 256,
   });
@@ -453,8 +561,9 @@ function dispatchRefuse(_args: DispatchArgs): DispatchResult {
 async function loadDirectoryBlock(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<{ block: string; facts: FacilityFact[] }> {
-  const facts = await loadFacilityFacts(admin, organizationId);
+  const facts = await loadFacilityFacts(admin, organizationId, facilityIds);
   return { block: formatFacilityFactsBlock(facts), facts };
 }
 
@@ -471,23 +580,34 @@ function citationsFromFacts(facts: FacilityFact[]): Citation[] {
 
 /** Direct-load (Phase-0 fact-pack) directory branch. Used as fallback when the
  *  KB-NEXT-02 tool loop is not available or fails. */
-async function dispatchDirectoryFactPack(args: DispatchArgs): Promise<DispatchResult> {
+async function dispatchDirectoryFactPack(
+  args: DispatchArgs,
+): Promise<DispatchResult> {
   let block = "";
   let facts: FacilityFact[] = [];
   try {
-    const loaded = await loadDirectoryBlock(args.admin, args.organizationId);
+    const loaded = await loadDirectoryBlock(
+      args.admin,
+      args.organizationId,
+      facilityScopeForLoader(args),
+    );
     block = loaded.block;
     facts = loaded.facts;
   } catch (err) {
     logError("directory_load_failed", err);
     return emptyResult(
       "I couldn't load the facility directory right now. Please try again in a moment.",
-      { refusal: true, refusalReason: "directory_load_failed", toolsUsed: ["facility_facts"] },
+      {
+        refusal: true,
+        refusalReason: "directory_load_failed",
+        toolsUsed: ["facility_facts"],
+      },
     );
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida.
+  const systemPrompt =
+    `You are Haven, an operations assistant for assisted living facility operators in Florida.
 
 CURRENT DATE: ${today}
 
@@ -501,13 +621,18 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
   if (!result.ok) {
     return emptyResult(
       "I couldn't reach the AI service right now. Please try again in a moment.",
-      { refusal: true, refusalReason: "model_unavailable", toolsUsed: ["facility_facts"] },
+      {
+        refusal: true,
+        refusalReason: "model_unavailable",
+        toolsUsed: ["facility_facts"],
+      },
     );
   }
 
@@ -531,7 +656,8 @@ async function dispatchDirectory(args: DispatchArgs): Promise<DispatchResult> {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida.
+  const systemPrompt =
+    `You are Haven, an operations assistant for assisted living facility operators in Florida.
 
 CURRENT DATE: ${today}
 
@@ -544,7 +670,10 @@ INSTRUCTIONS:
 
   const loop = await runToolLoop({
     admin: args.admin,
-    systemPrompt,
+    systemPrompt: prependConversationHistory(
+      systemPrompt,
+      args.conversationContext,
+    ),
     userQuestion: args.question,
     caller,
     allowedToolNames: [
@@ -572,25 +701,41 @@ INSTRUCTIONS:
 async function dispatchMetric(args: DispatchArgs): Promise<DispatchResult> {
   let bundle: Awaited<ReturnType<typeof loadKpiBundle>>;
   try {
-    bundle = await loadKpiBundle(args.admin, args.organizationId);
+    bundle = await loadKpiBundle(
+      args.admin,
+      args.organizationId,
+      facilityScopeForLoader(args),
+    );
   } catch (err) {
     logError("kpi_load_failed", err);
     return emptyResult(
       "I couldn't load operational metrics right now. Please try again in a moment.",
-      { refusal: true, refusalReason: "kpi_load_failed", toolsUsed: ["exec_kpi"] },
+      {
+        refusal: true,
+        refusalReason: "kpi_load_failed",
+        toolsUsed: ["exec_kpi"],
+      },
     );
   }
 
   if (bundle.facilities.length === 0) {
-    return emptyResult("I don't see any facilities for your organization yet.", {
-      refusal: true,
-      refusalReason: "no_facilities",
-      toolsUsed: ["exec_kpi"],
-    });
+    return emptyResult(
+      "I don't see any facilities for your organization yet.",
+      {
+        refusal: true,
+        refusalReason: "no_facilities",
+        toolsUsed: ["exec_kpi"],
+      },
+    );
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const kpiBlock = buildKpiBlock(bundle.facilities, bundle.perFacility, bundle.portfolio, bundle.alerts);
+  const kpiBlock = buildKpiBlock(
+    bundle.facilities,
+    bundle.perFacility,
+    bundle.portfolio,
+    bundle.alerts,
+  );
   const caller = makeCallerContext(args);
 
   // KB-NEXT-02 augmentation: when the caller's facility scope is known we
@@ -598,7 +743,8 @@ async function dispatchMetric(args: DispatchArgs): Promise<DispatchResult> {
   // into incidents / AR / certs / follow-ups when the question is more
   // specific than the static aggregates.
   if (caller) {
-    const systemPrompt = `You are Haven Executive Intelligence for an assisted living facility operator in Florida.
+    const systemPrompt =
+      `You are Haven Executive Intelligence for an assisted living facility operator in Florida.
 
 CURRENT DATE: ${today}
 
@@ -615,7 +761,10 @@ INSTRUCTIONS:
 
     const loop = await runToolLoop({
       admin: args.admin,
-      systemPrompt,
+      systemPrompt: prependConversationHistory(
+        systemPrompt,
+        args.conversationContext,
+      ),
       userQuestion: `<user_question>\n${args.question}\n</user_question>`,
       caller,
       allowedToolNames: [
@@ -635,14 +784,20 @@ INSTRUCTIONS:
         row_id: f.id,
         source_table: "facilities",
       }));
-      const merged = toolLoopToDispatchResult(loop, ["exec_kpi", "exec_alerts"]);
+      const merged = toolLoopToDispatchResult(loop, [
+        "exec_kpi",
+        "exec_alerts",
+      ]);
       merged.citations = [...facilityCites, ...merged.citations];
       return merged;
     }
-    logEvent("metric_tool_loop_fallback", { reason: loop.refusalReason ?? "empty_answer" });
+    logEvent("metric_tool_loop_fallback", {
+      reason: loop.refusalReason ?? "empty_answer",
+    });
   }
 
-  const systemPrompt = `You are Haven Executive Intelligence for an assisted living facility operator in Florida.
+  const systemPrompt =
+    `You are Haven Executive Intelligence for an assisted living facility operator in Florida.
 
 CURRENT DATE: ${today}
 
@@ -657,13 +812,18 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
   if (!result.ok) {
     return emptyResult(
       "I couldn't reach the AI service right now. Please try again in a moment.",
-      { refusal: true, refusalReason: "model_unavailable", toolsUsed: ["exec_kpi"] },
+      {
+        refusal: true,
+        refusalReason: "model_unavailable",
+        toolsUsed: ["exec_kpi"],
+      },
     );
   }
 
@@ -756,11 +916,15 @@ async function logKnowledgeGap(args: {
 }
 
 function composeEvidenceContext(rows: EvidenceRow[]): string {
-  if (rows.length === 0) return "(no published documents matched this question)";
+  if (rows.length === 0) {
+    return "(no published documents matched this question)";
+  }
   return rows
     .map((r, idx) => {
       const sect = r.section_title ? ` — ${r.section_title}` : "";
-      const score = typeof r.confidence === "number" ? ` (score=${r.confidence.toFixed(2)})` : "";
+      const score = typeof r.confidence === "number"
+        ? ` (score=${r.confidence.toFixed(2)})`
+        : "";
       return `[#${idx + 1}] ${r.source_title}${sect}${score}\n${r.excerpt}`;
     })
     .join("\n\n---\n\n");
@@ -770,8 +934,15 @@ async function dispatchKbBranch(
   args: DispatchArgs,
   variant: "policy" | "regulatory",
 ): Promise<DispatchResult> {
-  const rows = await retrieveKbEvidence(args.admin, args.organizationId, args.question, args.userRole);
-  const goodRows = rows.filter((r) => typeof r.confidence === "number" && r.confidence >= KB_MIN_SCORE);
+  const rows = await retrieveKbEvidence(
+    args.admin,
+    args.organizationId,
+    args.question,
+    args.userRole,
+  );
+  const goodRows = rows.filter((r) =>
+    typeof r.confidence === "number" && r.confidence >= KB_MIN_SCORE
+  );
 
   if (goodRows.length === 0) {
     await logKnowledgeGap({
@@ -797,9 +968,12 @@ async function dispatchKbBranch(
 
   const today = new Date().toISOString().slice(0, 10);
   const context = composeEvidenceContext(goodRows);
-  const intentLabel = variant === "regulatory" ? "regulatory excerpts" : "internal policy documents";
+  const intentLabel = variant === "regulatory"
+    ? "regulatory excerpts"
+    : "internal policy documents";
 
-  const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida.
+  const systemPrompt =
+    `You are Haven, an operations assistant for assisted living facility operators in Florida.
 
 CURRENT DATE: ${today}
 
@@ -817,6 +991,7 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
@@ -846,7 +1021,9 @@ INSTRUCTIONS:
 /*  Branch: clinical_record (PHI-gated stub)                           */
 /* ------------------------------------------------------------------ */
 
-async function dispatchClinicalRecord(args: DispatchArgs): Promise<DispatchResult & { phiBlocked?: boolean }> {
+async function dispatchClinicalRecord(
+  args: DispatchArgs,
+): Promise<DispatchResult & { phiBlocked?: boolean }> {
   // Look up the per-org policy. If allow_phi is false → refuse with phi_blocked.
   // (Defense in depth: the resident_summary / med_orders RPCs ALSO enforce
   // _ai_tool_phi_allowed inside their SECURITY DEFINER body. Both layers
@@ -899,7 +1076,8 @@ async function dispatchClinicalRecord(args: DispatchArgs): Promise<DispatchResul
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const systemPrompt = `You are Haven, a clinical operations assistant for assisted living staff.
+  const systemPrompt =
+    `You are Haven, a clinical operations assistant for assisted living staff.
 
 CURRENT DATE: ${today}
 
@@ -917,7 +1095,10 @@ PHI rules:
 
   const loop = await runToolLoop({
     admin: args.admin,
-    systemPrompt,
+    systemPrompt: prependConversationHistory(
+      systemPrompt,
+      args.conversationContext,
+    ),
     userQuestion: args.question,
     caller,
     allowedToolNames: ["resident_summary", "med_orders", "incident_summary"],
@@ -970,8 +1151,8 @@ async function dispatchMixed(args: DispatchArgs): Promise<DispatchResult> {
   let facts: FacilityFact[] = [];
   try {
     const [b, d] = await Promise.all([
-      loadKpiBundle(args.admin, args.organizationId),
-      loadDirectoryBlock(args.admin, args.organizationId),
+      loadKpiBundle(args.admin, args.organizationId, facilityScopeForLoader(args)),
+      loadDirectoryBlock(args.admin, args.organizationId, facilityScopeForLoader(args)),
     ]);
     bundle = b;
     dirBlock = d.block;
@@ -980,18 +1161,28 @@ async function dispatchMixed(args: DispatchArgs): Promise<DispatchResult> {
     logError("mixed_load_failed", err);
     return emptyResult(
       "I couldn't load operational data right now. Please try again in a moment.",
-      { refusal: true, refusalReason: "data_load_failed", toolsUsed: ["mixed"] },
+      {
+        refusal: true,
+        refusalReason: "data_load_failed",
+        toolsUsed: ["mixed"],
+      },
     );
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const kpiBlock = buildKpiBlock(bundle.facilities, bundle.perFacility, bundle.portfolio, bundle.alerts);
+  const kpiBlock = buildKpiBlock(
+    bundle.facilities,
+    bundle.perFacility,
+    bundle.portfolio,
+    bundle.alerts,
+  );
   const caller = makeCallerContext(args);
 
   // KB-NEXT-02 augmentation: when facility scope is available we add the
   // tool loop so the model can deep-dive past the static directory/KPI text.
   if (caller) {
-    const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida. This question may need directory facts, KPI aggregates, AND facility-scoped detail.
+    const systemPrompt =
+      `You are Haven, an operations assistant for assisted living facility operators in Florida. This question may need directory facts, KPI aggregates, AND facility-scoped detail.
 
 CURRENT DATE: ${today}
 
@@ -1009,7 +1200,10 @@ INSTRUCTIONS:
 
     const loop = await runToolLoop({
       admin: args.admin,
-      systemPrompt,
+      systemPrompt: prependConversationHistory(
+        systemPrompt,
+        args.conversationContext,
+      ),
       userQuestion: `<user_question>\n${args.question}\n</user_question>`,
       caller,
       allowedToolNames: [
@@ -1021,7 +1215,11 @@ INSTRUCTIONS:
     });
 
     if (loopDeliveredAnswer(loop)) {
-      const merged = toolLoopToDispatchResult(loop, ["exec_kpi", "exec_alerts", "facility_facts"]);
+      const merged = toolLoopToDispatchResult(loop, [
+        "exec_kpi",
+        "exec_alerts",
+        "facility_facts",
+      ]);
       merged.citations = [
         ...bundle.facilities.map<Citation>((f) => ({
           kind: "data_table",
@@ -1034,10 +1232,13 @@ INSTRUCTIONS:
       ];
       return merged;
     }
-    logEvent("mixed_tool_loop_fallback", { reason: loop.refusalReason ?? "empty_answer" });
+    logEvent("mixed_tool_loop_fallback", {
+      reason: loop.refusalReason ?? "empty_answer",
+    });
   }
 
-  const systemPrompt = `You are Haven, an operations assistant for assisted living facility operators in Florida. This question may need BOTH structured operational data AND directory facts.
+  const systemPrompt =
+    `You are Haven, an operations assistant for assisted living facility operators in Florida. This question may need BOTH structured operational data AND directory facts.
 
 CURRENT DATE: ${today}
 
@@ -1053,13 +1254,18 @@ INSTRUCTIONS:
 
   const result = await callAnthropic({
     systemPrompt,
+    conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
   });
 
   if (!result.ok) {
     return emptyResult(
       "I couldn't reach the AI service right now. Please try again in a moment.",
-      { refusal: true, refusalReason: "model_unavailable", toolsUsed: ["mixed"] },
+      {
+        refusal: true,
+        refusalReason: "model_unavailable",
+        toolsUsed: ["mixed"],
+      },
     );
   }
 

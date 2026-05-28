@@ -1,26 +1,44 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Activity,
+  AlertTriangle,
+  Building2,
   CheckCircle2,
-  Clock3,
+  Eye,
   Loader2,
   PauseCircle,
   PlayCircle,
+  RefreshCw,
   Shield,
-  ShieldAlert,
   StopCircle,
+  X,
   XCircle,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { V2Card } from "@/components/ui/v2-card";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { MetricCard } from "@/components/ui/metric-card";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
 type WatchStatus = "pending_approval" | "active" | "paused" | "ended" | "cancelled";
 
@@ -82,33 +100,31 @@ type WatchTaskSummary = {
   missed: number;
 };
 
-const STATUS_STYLES: Record<
-  WatchStatus,
-  {
-    label: string;
-    className: string;
-  }
-> = {
-  pending_approval: {
-    label: "Pending approval",
-    className: "border-warning/30 bg-warning/10 text-warning",
-  },
-  active: {
-    label: "Active",
-    className: "border-success/30 bg-success/10 text-success",
-  },
-  paused: {
-    label: "Paused",
-    className: "border-border bg-muted text-muted-foreground",
-  },
-  ended: {
-    label: "Ended",
-    className: "border-info/30 bg-info/10 text-info",
-  },
-  cancelled: {
-    label: "Cancelled",
-    className: "border-destructive/30 bg-destructive/10 text-destructive",
-  },
+type LoadState = "idle" | "loading" | "ready" | "error";
+
+type BoardState = "no_facility" | "loading" | "error" | "populated";
+
+type Tone = "default" | "warning" | "danger";
+type WatchFilter = "all" | "pending" | "active" | "closed_today" | "paused";
+
+/* -------------------------------------------------------------------------- */
+/*  Constants + helpers                                                       */
+/* -------------------------------------------------------------------------- */
+
+const STATUS_TONE: Record<WatchStatus, Tone> = {
+  pending_approval: "warning",
+  active: "default",
+  paused: "default",
+  ended: "default",
+  cancelled: "danger",
+};
+
+const STATUS_LABEL: Record<WatchStatus, string> = {
+  pending_approval: "Pending approval",
+  active: "Active",
+  paused: "Paused",
+  ended: "Ended",
+  cancelled: "Cancelled",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -153,9 +169,7 @@ function formatRelativeWindow(ts: string) {
 }
 
 function getDurationLabel(protocol: WatchProtocolRow) {
-  if (protocol.duration_rule?.trim()) {
-    return protocol.duration_rule;
-  }
+  if (protocol.duration_rule?.trim()) return protocol.duration_rule;
   const steps = protocol.rule_definition_json?.steps ?? [];
   const totalMinutes = steps.reduce((sum, step) => sum + (step.duration_minutes ?? 0), 0);
   if (!totalMinutes) return "Duration not defined";
@@ -165,46 +179,87 @@ function getDurationLabel(protocol: WatchProtocolRow) {
   return `${totalMinutes} minutes`;
 }
 
-export default function ResidentAssuranceWatchCenterPage() {
+function resolvePendingTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 2) return "warning";
+  return "danger";
+}
+
+function resolveOverdueTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 3) return "warning";
+  return "danger";
+}
+
+function toStatusPillTone(tone: Tone) {
+  if (tone === "danger") return "danger" as const;
+  if (tone === "warning") return "warning" as const;
+  return "muted" as const;
+}
+
+function deriveBoardState(args: {
+  loadState: LoadState;
+  hasFacility: boolean;
+}): BoardState {
+  if (!args.hasFacility) return "no_facility";
+  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
+  if (args.loadState === "error") return "error";
+  return "populated";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
+export default function SmartRoundingWatchesPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const [protocols, setProtocols] = useState<WatchProtocolRow[]>([]);
   const [instances, setInstances] = useState<WatchInstanceRow[]>([]);
   const [events, setEvents] = useState<WatchEventRow[]>([]);
-  const [taskSummaryByWatch, setTaskSummaryByWatch] = useState<Record<string, WatchTaskSummary>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [taskSummaryByWatch, setTaskSummaryByWatch] = useState<Record<string, WatchTaskSummary>>(
+    {},
+  );
+  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [reasonDrafts, setReasonDrafts] = useState<Record<string, string>>({});
+  const [filter, setFilter] = useState<WatchFilter>("all");
+  const [pendingApproval, setPendingApproval] = useState<WatchInstanceRow | null>(null);
 
   const load = useCallback(async () => {
+    setLoadState("loading");
+    setErrorMessage(null);
+    setActionError(null);
+
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
       setProtocols([]);
       setInstances([]);
       setEvents([]);
       setTaskSummaryByWatch({});
-      setLoading(false);
+      setLoadState("ready");
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    setActionError(null);
 
     try {
       const [protocolsRes, instancesRes, eventsRes] = await Promise.all([
         supabase
           .from("resident_watch_protocols")
-          .select("id, name, trigger_type, duration_rule, approval_required, active, rule_definition_json")
+          .select(
+            "id, name, trigger_type, duration_rule, approval_required, active, rule_definition_json",
+          )
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .order("active", { ascending: false })
           .order("name", { ascending: true }),
         supabase
           .from("resident_watch_instances")
-          .select(`
+          .select(
+            `
             id,
             resident_id,
             protocol_id,
@@ -215,21 +270,24 @@ export default function ResidentAssuranceWatchCenterPage() {
             end_reason,
             resident_watch_protocols(name, trigger_type, approval_required),
             residents(first_name, last_name, preferred_name, room_number)
-          `)
+          `,
+          )
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .order("starts_at", { ascending: false })
           .limit(60),
         supabase
           .from("resident_watch_events")
-          .select(`
+          .select(
+            `
             id,
             watch_instance_id,
             event_type,
             occurred_at,
             note,
             residents(first_name, last_name, preferred_name, room_number)
-          `)
+          `,
+          )
           .eq("facility_id", selectedFacilityId)
           .order("occurred_at", { ascending: false })
           .limit(20),
@@ -256,12 +314,21 @@ export default function ResidentAssuranceWatchCenterPage() {
 
         if (taskError) throw taskError;
 
-        const byWatch = ((taskRows ?? []) as unknown as TaskAggregateRow[]).reduce<Record<string, WatchTaskSummary>>((acc, row) => {
+        const byWatch = ((taskRows ?? []) as unknown as TaskAggregateRow[]).reduce<
+          Record<string, WatchTaskSummary>
+        >((acc, row) => {
           if (!row.watch_instance_id) return acc;
-          const existing = acc[row.watch_instance_id] ?? { total: 0, open: 0, overdue: 0, missed: 0 };
+          const existing = acc[row.watch_instance_id] ?? {
+            total: 0,
+            open: 0,
+            overdue: 0,
+            missed: 0,
+          };
           existing.total += 1;
           if (OPEN_TASK_STATUSES.has(row.status)) existing.open += 1;
-          if (row.status === "overdue" || row.status === "critically_overdue") existing.overdue += 1;
+          if (row.status === "overdue" || row.status === "critically_overdue") {
+            existing.overdue += 1;
+          }
           if (row.status === "missed") existing.missed += 1;
           acc[row.watch_instance_id] = existing;
           return acc;
@@ -269,10 +336,11 @@ export default function ResidentAssuranceWatchCenterPage() {
 
         setTaskSummaryByWatch(byWatch);
       }
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load watch center");
-    } finally {
-      setLoading(false);
+
+      setLoadState("ready");
+    } catch {
+      setErrorMessage("Could not load watches. Confirm facility scope and retry.");
+      setLoadState("error");
     }
   }, [selectedFacilityId, supabase]);
 
@@ -284,7 +352,10 @@ export default function ResidentAssuranceWatchCenterPage() {
     const pending = instances.filter((row) => row.status === "pending_approval").length;
     const active = instances.filter((row) => row.status === "active").length;
     const paused = instances.filter((row) => row.status === "paused").length;
-    const overdueTasks = Object.values(taskSummaryByWatch).reduce((sum, row) => sum + row.overdue + row.missed, 0);
+    const overdueTasks = Object.values(taskSummaryByWatch).reduce(
+      (sum, row) => sum + row.overdue + row.missed,
+      0,
+    );
     return {
       activeProtocols: protocols.filter((row) => row.active).length,
       pendingApprovals: pending,
@@ -294,368 +365,581 @@ export default function ResidentAssuranceWatchCenterPage() {
     };
   }, [instances, protocols, taskSummaryByWatch]);
 
-  const actionableInstances = useMemo(
-    () => instances.filter((row) => row.status === "pending_approval" || row.status === "active" || row.status === "paused"),
-    [instances],
+  const runAction = useCallback(
+    async (
+      watchId: string,
+      action: "approve" | "pause" | "resume" | "end" | "cancel",
+    ) => {
+      setActionLoading(`${watchId}:${action}`);
+      setActionError(null);
+      setActionMessage(null);
+
+      try {
+        const response = await fetch(`/api/rounding/watch-instances/${watchId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action,
+            reason: reasonDrafts[watchId]?.trim() || undefined,
+          }),
+        });
+
+        const json = (await response.json()) as {
+          error?: string;
+          excusedTaskCount?: number;
+        };
+        if (!response.ok) {
+          throw new Error(json.error ?? "Could not update watch instance");
+        }
+
+        const verb =
+          action === "approve"
+            ? "Approved"
+            : action === "pause"
+              ? "Paused"
+              : action === "resume"
+                ? "Resumed"
+                : action === "end"
+                  ? "Ended"
+                  : "Cancelled";
+        const suffix =
+          json.excusedTaskCount && json.excusedTaskCount > 0
+            ? ` ${json.excusedTaskCount} future task${json.excusedTaskCount === 1 ? "" : "s"} excused.`
+            : "";
+        setActionMessage(`${verb}.${suffix}`);
+        setReasonDrafts((current) => ({ ...current, [watchId]: "" }));
+        await load();
+      } catch {
+        setActionError("Could not update watch. Confirm the watch is still actionable and retry.");
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [load, reasonDrafts],
   );
 
-  const runAction = useCallback(async (watchId: string, action: "approve" | "pause" | "resume" | "end" | "cancel") => {
-    setActionLoading(`${watchId}:${action}`);
-    setActionError(null);
-    setActionMessage(null);
+  const watchCounts = useMemo(() => {
+    const today = new Date().toDateString();
+    return {
+      all: instances.length,
+      pending: instances.filter((row) => row.status === "pending_approval").length,
+      active: instances.filter((row) => row.status === "active").length,
+      closed_today: instances.filter((row) => (row.status === "ended" || row.status === "cancelled") && row.ends_at && new Date(row.ends_at).toDateString() === today).length,
+      paused: instances.filter((row) => row.status === "paused").length,
+    };
+  }, [instances]);
 
-    try {
-      const response = await fetch(`/api/rounding/watch-instances/${watchId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action,
-          reason: reasonDrafts[watchId]?.trim() || undefined,
-        }),
-      });
+  const filteredInstances = useMemo(() => {
+    if (filter === "all") return instances;
+    if (filter === "pending") return instances.filter((row) => row.status === "pending_approval");
+    if (filter === "active") return instances.filter((row) => row.status === "active");
+    if (filter === "paused") return instances.filter((row) => row.status === "paused");
+    const today = new Date().toDateString();
+    return instances.filter((row) => (row.status === "ended" || row.status === "cancelled") && row.ends_at && new Date(row.ends_at).toDateString() === today);
+  }, [filter, instances]);
 
-      const json = (await response.json()) as { error?: string; excusedTaskCount?: number };
-      if (!response.ok) {
-        throw new Error(json.error ?? "Could not update watch instance");
-      }
-
-      const suffix =
-        json.excusedTaskCount && json.excusedTaskCount > 0
-          ? ` ${json.excusedTaskCount} future task${json.excusedTaskCount === 1 ? "" : "s"} excused.`
-          : "";
-      setActionMessage(`${ACTION_LABELS[`watch_${action === "cancel" ? "cancelled" : action === "end" ? "ended" : action === "resume" ? "resumed" : action === "pause" ? "paused" : "approved"}`] ?? "Watch updated"}.${suffix}`);
-      setReasonDrafts((current) => ({ ...current, [watchId]: "" }));
-      await load();
-    } catch (runError) {
-      setActionError(runError instanceof Error ? runError.message : "Could not update watch instance");
-    } finally {
-      setActionLoading(null);
-    }
-  }, [load, reasonDrafts]);
+  const boardState = deriveBoardState({
+    loadState,
+    hasFacility: Boolean(selectedFacilityId),
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
+      <PageHeader
+        title="Watches"
+        subtitle={`Review active watches, approve auto-triggered monitoring, and close the loop on resident-specific safety protocols at ${facilityName}.`}
+        actions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => void load()}
+            aria-label="Refresh watch center"
+            title="Refresh"
+            disabled={loadState === "loading"}
+          >
+            <RefreshCw
+              className={cn("size-4", loadState === "loading" && "animate-spin")}
+              aria-hidden
+            />
+          </Button>
+        }
+      />
 
-      <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
-          <div className="space-y-2">
-            
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-              Watch Protocols
-              {summary.pendingApprovals > 0 || summary.overdueTasks > 0 ? <ShieldAlert className="h-8 w-8 text-warning" /> : null}
-            </h1>
-            <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-3xl">
-              Review active watch protocols, approve auto-triggered monitoring, and close the loop on resident-specific safety watches.
-            </p>
-          </div>
-          <div>
-            <RoundingHubNav />
-          </div>
-        </div>
+      <RoundingHubNav />
 
-        {!selectedFacilityId ? (
-          <div className="rounded-[var(--radius)] border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            Select a facility in the admin header to open the watch center.
-          </div>
-        ) : null}
+      {boardState === "no_facility" ? (
+        <AllFacilitiesInterstitial />
+      ) : boardState === "error" ? (
+        <LoadErrorNotice
+          message={errorMessage ?? "Could not load watch center."}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <>
+          {actionMessage ? (
+            <InfoBanner
+              tone="success"
+              message={actionMessage}
+              onDismiss={() => setActionMessage(null)}
+            />
+          ) : null}
+          {actionError ? (
+            <InfoBanner
+              tone="error"
+              message={actionError}
+              onDismiss={() => setActionError(null)}
+            />
+          ) : null}
 
-        {actionMessage ? (
-          <div className="rounded-[var(--radius)] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
-            {actionMessage}
-          </div>
-        ) : null}
-        {actionError ? (
-          <div className="rounded-[var(--radius)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {actionError}
-          </div>
-        ) : null}
-        {error ? (
-          <div className="rounded-[var(--radius)] border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        ) : null}
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <WatchMetricCard label="Active Protocols" value={String(summary.activeProtocols)} accent="text-info" icon={<Shield className="h-5 w-5" />} />
-          <WatchMetricCard label="Pending Approval" value={String(summary.pendingApprovals)} accent="text-warning" icon={<Clock3 className="h-5 w-5" />} pulse={summary.pendingApprovals > 0} />
-          <WatchMetricCard label="Active Watches" value={String(summary.activeWatches)} accent="text-success" icon={<Activity className="h-5 w-5" />} />
-          <WatchMetricCard label="Paused Watches" value={String(summary.pausedWatches)} accent="text-muted-foreground" icon={<PauseCircle className="h-5 w-5" />} />
-          <WatchMetricCard label="Overdue Tasks" value={String(summary.overdueTasks)} accent="text-destructive" icon={<ShieldAlert className="h-5 w-5" />} pulse={summary.overdueTasks > 0} />
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-          <V2Card hoverColor="cyan" className="p-6 border-cyan-500/10">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Actionable watch instances</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Pending, active, and paused watches tied to live resident monitoring.
-                </p>
-              </div>
-              <Link href="/admin/rounding/live" className="text-xs font-bold uppercase tracking-wider text-info">
-                Open live board
-              </Link>
+          {/* KPI strip */}
+          <section aria-label="Watch summary">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              <KpiCard
+                label="Active protocols"
+                value={summary.activeProtocols}
+                tone="default"
+                hint="Facility-level watch definitions"
+              />
+              <KpiCard
+                label="Pending approval"
+                value={summary.pendingApprovals}
+                tone={resolvePendingTone(summary.pendingApprovals)}
+                hint="Awaiting supervisor sign-off"
+              />
+              <KpiCard
+                label="Active watches"
+                value={summary.activeWatches}
+                tone="default"
+                hint="Currently monitoring residents"
+              />
+              <KpiCard
+                label="Paused watches"
+                value={summary.pausedWatches}
+                tone="default"
+                hint="Temporarily paused"
+              />
+              <KpiCard
+                label="Overdue tasks"
+                value={summary.overdueTasks}
+                tone={resolveOverdueTone(summary.overdueTasks)}
+                hint="Across active watches"
+              />
             </div>
+          </section>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin text-info" />
-              </div>
-            ) : actionableInstances.length === 0 ? (
-              <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-                No actionable watch instances in this facility.
-              </div>
-            ) : (
-              <div className="mt-5 space-y-4">
-                {actionableInstances.map((row) => {
-                  const residentName = row.residents ? formatResidentName(row.residents) : row.resident_id.slice(0, 8);
-                  const taskSummary = taskSummaryByWatch[row.id] ?? { total: 0, open: 0, overdue: 0, missed: 0 };
-                  const statusStyle = STATUS_STYLES[row.status];
-                  const actionKey = (action: string) => `${row.id}:${action}`;
+          <section aria-label="Filter watches">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <FilterPill label="All" count={watchCounts.all} active={filter === "all"} onClick={() => setFilter("all")} />
+              <FilterPill label="Pending approval" count={watchCounts.pending} tone="warning" active={filter === "pending"} onClick={() => setFilter(filter === "pending" ? "all" : "pending")} />
+              <FilterPill label="Active" count={watchCounts.active} active={filter === "active"} onClick={() => setFilter(filter === "active" ? "all" : "active")} />
+              <FilterPill label="Closed today" count={watchCounts.closed_today} active={filter === "closed_today"} onClick={() => setFilter(filter === "closed_today" ? "all" : "closed_today")} />
+              <FilterPill label="Paused" count={watchCounts.paused} active={filter === "paused"} onClick={() => setFilter(filter === "paused" ? "all" : "paused")} />
+            </div>
+          </section>
 
-                  return (
-                    <div key={row.id} className="min-h-[36px] px-[13px] py-4 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", statusStyle.className)}>
-                              {statusStyle.label}
-                            </span>
-                            <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                              {row.triggered_by_type.replace(/_/g, " ")}
-                            </span>
-                            {row.resident_watch_protocols?.approval_required ? (
-                              <span className="rounded-full border border-warning/20 bg-warning/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-warning">
-                                Approval required
-                              </span>
-                            ) : null}
-                          </div>
-                          <div>
-                            <h3 className="text-xl tracking-tight text-foreground">{residentName}</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              {row.residents?.room_number ? `Room ${row.residents.room_number} · ` : ""}
-                              {row.resident_watch_protocols?.name ?? "Watch protocol"}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap gap-5 text-sm text-muted-foreground">
-                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Started</p>
-                              <p>{new Date(row.starts_at).toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ends</p>
-                              <p>{row.ends_at ? `${new Date(row.ends_at).toLocaleString()} (${formatRelativeWindow(row.ends_at)})` : "Open-ended"}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid min-w-[220px] grid-cols-2 gap-3 rounded-[var(--radius)] border border-border bg-card p-4 text-sm">
-                          <WatchStat label="Open tasks" value={String(taskSummary.open)} />
-                          <WatchStat label="Overdue" value={String(taskSummary.overdue)} danger={taskSummary.overdue > 0} />
-                          <WatchStat label="Missed" value={String(taskSummary.missed)} danger={taskSummary.missed > 0} />
-                          <WatchStat label="Total tasks" value={String(taskSummary.total)} />
-                        </div>
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        <textarea
-                          value={reasonDrafts[row.id] ?? ""}
-                          onChange={(event) =>
-                            setReasonDrafts((current) => ({
-                              ...current,
-                              [row.id]: event.target.value,
-                            }))
-                          }
-                          rows={2}
-                          placeholder="Optional note for this watch action..."
-                          className="w-full rounded-[var(--radius)] border border-border bg-card px-3.5 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
-                        />
-
-                        <div className="flex flex-wrap gap-2">
-                          {row.status === "pending_approval" ? (
-                            <>
-                              <Button
-                                type="button"
-                                onClick={() => void runAction(row.id, "approve")}
-                                disabled={actionLoading === actionKey("approve")}
-                                className="rounded-[var(--radius)] bg-success text-primary-foreground hover:bg-success/90"
-                              >
-                                {actionLoading === actionKey("approve") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Approve watch
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "cancel")}
-                                disabled={actionLoading === actionKey("cancel")}
-                                className="rounded-[var(--radius)]"
-                              >
-                                {actionLoading === actionKey("cancel") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                                Cancel
-                              </Button>
-                            </>
-                          ) : null}
-
-                          {row.status === "active" ? (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "pause")}
-                                disabled={actionLoading === actionKey("pause")}
-                                className="rounded-[var(--radius)]"
-                              >
-                                {actionLoading === actionKey("pause") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PauseCircle className="mr-2 h-4 w-4" />}
-                                Pause
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "end")}
-                                disabled={actionLoading === actionKey("end")}
-                                className="rounded-[var(--radius)]"
-                              >
-                                {actionLoading === actionKey("end") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <StopCircle className="mr-2 h-4 w-4" />}
-                                End watch
-                              </Button>
-                            </>
-                          ) : null}
-
-                          {row.status === "paused" ? (
-                            <>
-                              <Button
-                                type="button"
-                                onClick={() => void runAction(row.id, "resume")}
-                                disabled={actionLoading === actionKey("resume")}
-                                className="rounded-[var(--radius)] bg-info text-primary-foreground hover:bg-info/90"
-                              >
-                                {actionLoading === actionKey("resume") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                                Resume watch
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "end")}
-                                disabled={actionLoading === actionKey("end")}
-                                className="rounded-[var(--radius)]"
-                              >
-                                {actionLoading === actionKey("end") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <StopCircle className="mr-2 h-4 w-4" />}
-                                End watch
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </V2Card>
-
-          <div className="space-y-6">
-            <V2Card hoverColor="amber" className="p-6 border-amber-500/10">
-              <div className="flex items-center justify-between gap-3">
+          <div className="grid gap-4 lg:grid-cols-[1.35fr_0.95fr]">
+            {/* Actionable watch instances */}
+            <section
+              aria-label="Actionable watch instances"
+              className="rounded-lg border border-border bg-card"
+            >
+              <header className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Protocol catalog</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Facility-level watch definitions used for auto-triggered and manual monitoring.
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Actionable watch instances
+                  </h2>
+                  <p className="text-[12px] text-muted-foreground">
+                    Pending, active, and paused watches tied to live resident monitoring.
                   </p>
                 </div>
-              </div>
+                <Link
+                  href="/admin/rounding/live"
+                  className="inline-flex items-center gap-1 text-[12px] font-medium text-foreground hover:underline"
+                >
+                  <Eye className="size-3.5" aria-hidden />
+                  Open live board
+                </Link>
+              </header>
 
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-warning" />
-                </div>
-              ) : protocols.length === 0 ? (
-                <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                  No watch protocols found for this facility.
-                </div>
-              ) : (
-                <div className="mt-5 space-y-3">
-                  {protocols.map((protocol) => (
-                    <div key={protocol.id} className="rounded-[var(--radius)] border border-border bg-card p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-base font-semibold text-foreground">{protocol.name}</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {protocol.trigger_type.replace(/_/g, " ")} · {getDurationLabel(protocol)}
-                          </p>
-                        </div>
-                        <span
-                          className={cn(
-                            "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-                            protocol.active
-                              ? "border-success/30 bg-success/10 text-success"
-                              : "border-border bg-muted text-muted-foreground",
-                          )}
-                        >
-                          {protocol.active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        <span>{protocol.approval_required ? "Requires approval" : "Auto-activates"}</span>
-                        <span>•</span>
-                        <span>{protocol.rule_definition_json?.steps?.length ?? 0} step{(protocol.rule_definition_json?.steps?.length ?? 0) === 1 ? "" : "s"}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </V2Card>
-
-            <V2Card hoverColor="rose" className="p-6 border-rose-500/10">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Recent watch events</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Recent approvals, auto-triggers, pauses, resumptions, and watch closures.
+              {filteredInstances.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <Shield className="mx-auto size-7 text-muted-foreground" aria-hidden />
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    No watches at {facilityName}
+                  </p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    Watches are created automatically when clinical triggers fire, or manually from a resident profile.
                   </p>
                 </div>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-destructive" />
-                </div>
-              ) : events.length === 0 ? (
-                <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                  No watch events have been recorded yet.
-                </div>
               ) : (
-                <div className="mt-5 space-y-3">
-                  {events.map((event) => {
-                    const residentName = event.residents ? formatResidentName(event.residents) : event.watch_instance_id.slice(0, 8);
+                <ul className="divide-y divide-border">
+                  {filteredInstances.map((row) => {
+                    const residentName = row.residents
+                      ? formatResidentName(row.residents)
+                      : row.resident_id.slice(0, 8);
+                    const taskSummary = taskSummaryByWatch[row.id] ?? {
+                      total: 0,
+                      open: 0,
+                      overdue: 0,
+                      missed: 0,
+                    };
+
                     return (
-                      <div key={event.id} className="rounded-[var(--radius)] border border-border bg-card p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">
-                              {ACTION_LABELS[event.event_type] ?? event.event_type.replace(/_/g, " ")}
-                            </p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              {residentName}
-                              {event.residents?.room_number ? ` · Room ${event.residents.room_number}` : ""}
-                            </p>
-                          </div>
-                          <div className="text-right text-xs text-muted-foreground">
-                            <div>{new Date(event.occurred_at).toLocaleString()}</div>
-                            <div>{formatRelativeWindow(event.occurred_at)}</div>
-                          </div>
-                        </div>
-                        {event.note ? (
-                          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{event.note}</p>
-                        ) : null}
-                      </div>
+                      <li key={row.id} className="p-4">
+                        <WatchInstanceRowCard
+                          row={row}
+                          residentName={residentName}
+                          taskSummary={taskSummary}
+                          reasonDraft={reasonDrafts[row.id] ?? ""}
+                          onReasonChange={(value) =>
+                            setReasonDrafts((current) => ({ ...current, [row.id]: value }))
+                          }
+                          actionLoading={actionLoading}
+                          onRequestApprove={() => setPendingApproval(row)}
+                          onAction={(action) => void runAction(row.id, action)}
+                        />
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               )}
-            </V2Card>
+            </section>
+
+            {/* Right column: protocol catalog + events */}
+            <div className="space-y-4">
+              <section
+                aria-label="Protocol catalog"
+                className="rounded-lg border border-border bg-card"
+              >
+                <header className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">Protocol catalog</h2>
+                    <p className="text-[12px] text-muted-foreground">
+                      Facility-level watch definitions.
+                    </p>
+                  </div>
+                </header>
+
+                {loadState === "loading" ? (
+                  <div className="flex items-center justify-center px-4 py-8">
+                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : protocols.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-[13px] text-muted-foreground">
+                    No watch protocols configured for this facility.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {protocols.map((protocol) => (
+                      <li key={protocol.id} className="px-4 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                              {protocol.name}
+                            </p>
+                            <p className="mt-0.5 text-[12px] text-muted-foreground capitalize">
+                              {protocol.trigger_type.replace(/_/g, " ")} ·{" "}
+                              {getDurationLabel(protocol)}
+                            </p>
+                          </div>
+                          <StatusPill value={protocol.active ? "Active" : "Inactive"} defaultValue="Active" tone={protocol.active ? "muted" : "warning"} />
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          {protocol.approval_required ? "Requires approval" : "Auto-activates"}
+                          <span aria-hidden className="px-1.5 text-border">
+                            ·
+                          </span>
+                          {protocol.rule_definition_json?.steps?.length ?? 0} step
+                          {(protocol.rule_definition_json?.steps?.length ?? 0) === 1 ? "" : "s"}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section
+                aria-label="Recent watch events"
+                className="rounded-lg border border-border bg-card"
+              >
+                <header className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">Recent watch events</h2>
+                    <p className="text-[12px] text-muted-foreground">
+                      Approvals, auto-triggers, pauses, resumptions, closures.
+                    </p>
+                  </div>
+                </header>
+
+                {loadState === "loading" ? (
+                  <div className="flex items-center justify-center px-4 py-8">
+                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : events.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-[13px] text-muted-foreground">
+                    No watch events recorded yet.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {events.map((event) => {
+                      const residentName = event.residents
+                        ? formatResidentName(event.residents)
+                        : event.watch_instance_id.slice(0, 8);
+                      return (
+                        <li key={event.id} className="px-4 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground">
+                                {ACTION_LABELS[event.event_type] ??
+                                  event.event_type.replace(/_/g, " ")}
+                              </p>
+                              <p className="mt-0.5 text-[12px] text-muted-foreground">
+                                {residentName}
+                                {event.residents?.room_number
+                                  ? ` · Room ${event.residents.room_number}`
+                                  : ""}
+                              </p>
+                            </div>
+                            <div className="text-right text-[12px] text-muted-foreground">
+                              <div>{new Date(event.occurred_at).toLocaleString()}</div>
+                              <div>{formatRelativeWindow(event.occurred_at)}</div>
+                            </div>
+                          </div>
+                          {event.note ? (
+                            <p className="mt-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-[12px] text-foreground">
+                              {event.note}
+                            </p>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+            </div>
+          </div>
+          <Dialog open={Boolean(pendingApproval)} onOpenChange={(open) => !open && setPendingApproval(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Approve watch?</DialogTitle>
+                <DialogDescription>
+                  {pendingApproval
+                    ? `Approve watch on ${pendingApproval.residents ? formatResidentName(pendingApproval.residents) : "resident"} for ${pendingApproval.resident_watch_protocols?.name ?? pendingApproval.triggered_by_type.replace(/_/g, " ")}? This will activate monitoring per the watch protocol.`
+                    : "This will activate monitoring per the watch protocol."}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPendingApproval(null)}>Cancel</Button>
+                <Button
+                  onClick={() => {
+                    if (!pendingApproval) return;
+                    const watchId = pendingApproval.id;
+                    setPendingApproval(null);
+                    void runAction(watchId, "approve");
+                  }}
+                >
+                  Approve watch
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Watch instance row                                                        */
+/* -------------------------------------------------------------------------- */
+
+function WatchInstanceRowCard({
+  row,
+  residentName,
+  taskSummary,
+  reasonDraft,
+  onReasonChange,
+  actionLoading,
+  onRequestApprove,
+  onAction,
+}: {
+  row: WatchInstanceRow;
+  residentName: string;
+  taskSummary: WatchTaskSummary;
+  reasonDraft: string;
+  onReasonChange: (value: string) => void;
+  actionLoading: string | null;
+  onRequestApprove: () => void;
+  onAction: (action: "approve" | "pause" | "resume" | "end" | "cancel") => void;
+}) {
+  const actionKey = (action: string) => `${row.id}:${action}`;
+
+  return (
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="min-w-0 flex-1 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusPill tone={toStatusPillTone(STATUS_TONE[row.status])}>
+            {STATUS_LABEL[row.status]}
+          </StatusPill>
+          <Chip className="border-border bg-muted text-muted-foreground">
+            {row.triggered_by_type.replace(/_/g, " ")}
+          </Chip>
+          {row.resident_watch_protocols?.approval_required ? (
+            <Chip className="border-warning/30 bg-warning/10 text-warning">
+              Approval required
+            </Chip>
+          ) : null}
+        </div>
+
+        <div>
+          <h3 className="text-base font-semibold text-foreground">{residentName}</h3>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
+            {row.residents?.room_number ? `Room ${row.residents.room_number} · ` : ""}
+            {row.resident_watch_protocols?.name ?? "Watch protocol"}
+          </p>
+        </div>
+
+        <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
+          <DataPair label="Started" value={new Date(row.starts_at).toLocaleString()} />
+          <DataPair
+            label="Ends"
+            value={
+              row.ends_at
+                ? `${new Date(row.ends_at).toLocaleString()} (${formatRelativeWindow(row.ends_at)})`
+                : "Open-ended"
+            }
+          />
+        </dl>
+
+        <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-muted/30 p-3 sm:grid-cols-4">
+          <StatPair label="Open tasks" value={taskSummary.open} />
+          <StatPair label="Overdue" value={taskSummary.overdue} danger />
+          <StatPair label="Missed" value={taskSummary.missed} danger />
+          <StatPair label="Total tasks" value={taskSummary.total} />
+        </div>
+      </div>
+
+      <div className="min-w-0 lg:w-[260px] lg:shrink-0">
+        <div className="space-y-3">
+          <label htmlFor={`reason-${row.id}`} className="sr-only">
+            Watch action note
+          </label>
+          <textarea
+            id={`reason-${row.id}`}
+            value={reasonDraft}
+            onChange={(event) => onReasonChange(event.target.value)}
+            rows={2}
+            placeholder="Optional note for this action…"
+            className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
+          />
+
+          <div className="flex flex-wrap gap-2">
+            {row.status === "pending_approval" && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={onRequestApprove}
+                  disabled={actionLoading === actionKey("approve")}
+                >
+                  {actionLoading === actionKey("approve") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <CheckCircle2 className="size-3.5" aria-hidden />
+                  )}
+                  Approve
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onAction("cancel")}
+                  disabled={actionLoading === actionKey("cancel")}
+                >
+                  {actionLoading === actionKey("cancel") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <XCircle className="size-3.5" aria-hidden />
+                  )}
+                  Cancel
+                </Button>
+              </>
+            )}
+
+            {row.status === "active" && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAction("pause")}
+                  disabled={actionLoading === actionKey("pause")}
+                >
+                  {actionLoading === actionKey("pause") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <PauseCircle className="size-3.5" aria-hidden />
+                  )}
+                  Pause
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onAction("end")}
+                  disabled={actionLoading === actionKey("end")}
+                >
+                  {actionLoading === actionKey("end") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <StopCircle className="size-3.5" aria-hidden />
+                  )}
+                  End watch
+                </Button>
+              </>
+            )}
+
+            <Link
+              href={`/admin/residents/${row.resident_id}`}
+              className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              View detail
+            </Link>
+
+            {row.status === "paused" && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => onAction("resume")}
+                  disabled={actionLoading === actionKey("resume")}
+                >
+                  {actionLoading === actionKey("resume") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <PlayCircle className="size-3.5" aria-hidden />
+                  )}
+                  Resume
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onAction("end")}
+                  disabled={actionLoading === actionKey("end")}
+                >
+                  {actionLoading === actionKey("end") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <StopCircle className="size-3.5" aria-hidden />
+                  )}
+                  End watch
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -663,46 +947,160 @@ export default function ResidentAssuranceWatchCenterPage() {
   );
 }
 
-function WatchMetricCard({
-  label,
-  value,
-  accent,
-  icon,
-  pulse = false,
-}: {
-  label: string;
-  value: string;
-  accent: string;
-  icon: React.ReactNode;
-  pulse?: boolean;
-}) {
+/* -------------------------------------------------------------------------- */
+/*  Primitives                                                                */
+/* -------------------------------------------------------------------------- */
+
+function Chip({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <V2Card hoverColor="cyan" className="p-5 border-border">
-      <div className="flex h-full flex-col justify-between gap-4">
-        <div className={cn("flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider", accent)}>
-          {icon}
-          {label}
-          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-destructive" /> : null}
-        </div>
-        <div className={cn("text-4xl tracking-tight", accent)}>{value}</div>
-      </div>
-    </V2Card>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize",
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
-function WatchStat({
+function DataPair({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+      <dd className="text-[13px] text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function StatPair({
   label,
   value,
-  danger = false,
+  danger,
 }: {
   label: string;
-  value: string;
+  value: number;
   danger?: boolean;
 }) {
+  const flagged = Boolean(danger) && value > 0;
   return (
-    <div>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-xl tracking-tight text-foreground", danger && "text-destructive")}>{value}</p>
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p
+        className={cn(
+          "mt-0.5 text-base font-semibold tabular-nums",
+          flagged ? "text-danger" : "text-foreground",
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: Tone;
+  hint: string;
+}) {
+  const thresholds =
+    label === "Pending approval" || label === "Overdue tasks"
+      ? ({ type: label === "Overdue tasks" ? "overdue-count" : "critical-count" } as const)
+      : ({ type: "informational" } as const);
+  return <MetricCard label={label} value={value} numericValue={value} thresholds={thresholds} tone={tone === "default" ? undefined : tone} hint={hint} />;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Notices + empty states                                                    */
+/* -------------------------------------------------------------------------- */
+
+function InfoBanner({
+  tone,
+  message,
+  onDismiss,
+}: {
+  tone: "success" | "error";
+  message: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-[13px] text-foreground",
+        tone === "success" && "border-success/30 bg-success/10",
+        tone === "error" && "border-destructive/30 bg-destructive/10",
+      )}
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="text-muted-foreground hover:text-foreground"
+        aria-label="Dismiss"
+      >
+        <X className="size-3.5" aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function AllFacilitiesInterstitial() {
+  return (
+    <section
+      aria-label="Facility scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <div className="flex items-start gap-3">
+        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Watch center operates per facility
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            Watch protocols and instances are facility-scoped. Select a facility from the top
+            bar to continue.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-destructive"
+          aria-hidden
+        />
+        <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="h-8 shrink-0 text-[12px]"
+      >
+        Retry
+      </Button>
     </div>
   );
 }

@@ -5,7 +5,7 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
-import { redactString, redactValue } from "../_shared/redact-pii.ts";
+import { pickRedacted, redactString, redactValue } from "../_shared/redact-pii.ts";
 import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
 import { rerankWithCohere } from "../_shared/cohere-rerank.ts";
 import {
@@ -2518,7 +2518,17 @@ async function executeTool(
       const reranked = await rerankWithCohere(query, filteredRows, {
         topN: matchCount,
         onWarn: (msg, meta) => {
-          console.warn(JSON.stringify({ event: "kb_rerank_warn", reason: msg, ...(meta ?? {}) }));
+          // Whitelist + deep-redact meta before it lands in the log line.
+          // `body` is a truncated upstream error blob, so it must be redacted.
+          const safeMeta = pickRedacted(meta, [
+            "status",
+            "body",
+            "error_message",
+            "error_code",
+          ]);
+          console.warn(
+            JSON.stringify({ event: "kb_rerank_warn", reason: msg, ...safeMeta }),
+          );
         },
       });
 

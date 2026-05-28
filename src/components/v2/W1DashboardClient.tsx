@@ -7,6 +7,11 @@ import { ScopeSelector, type ScopeOption } from "@/design-system/components/Scop
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import type { V2DashboardRowsSource } from "@/lib/v2-dashboard-loader";
+import {
+  isV2PaginationOutOfRange,
+  type V2PaginationMeta,
+} from "@/lib/v2-pagination";
+import { V2PaginationControls } from "./V2PaginationControls";
 import type {
   V2DashboardId,
   V2DashboardPayload,
@@ -78,6 +83,7 @@ export type W1DashboardClientProps = {
   orgFacilityCount?: number;
   auditUpdatedAt: string;
   rowsSource: V2DashboardRowsSource;
+  tablePagination: V2PaginationMeta;
   /** Optional `now` override for deterministic relative-time rendering in tests. */
   now?: Date;
 };
@@ -88,6 +94,7 @@ export function W1DashboardClient({
   orgFacilityCount,
   auditUpdatedAt,
   rowsSource,
+  tablePagination,
   now,
 }: W1DashboardClientProps) {
   const rows: DataTableRow<V2DashboardTableRow>[] = payload.tableRows.map((row) => ({
@@ -115,11 +122,17 @@ export function W1DashboardClient({
       : rowsSource === "unavailable"
         ? "Live facility rollup unavailable; no fallback rows shown"
         : null;
+  const isOutOfRange = isV2PaginationOutOfRange(tablePagination);
+  const tableEmptyState = isOutOfRange
+    ? <span>No rows on this page.</span>
+    : sourceNote
+      ? <span>{sourceNote}.</span>
+      : undefined;
 
   // "Empty install" — the underlying jobs haven't run yet, so every KPI is
   // the seeded "—" placeholder, the alerts/action-queue/table arrays are
-  // empty, and the panels carry the "Live source pending; no fixture value
-  // is shown" subtitle. Render an onboarding card instead of the empty
+  // empty, and the panels carry neutral "live source pending" subtitles.
+  // Render an onboarding card instead of the empty
   // dashboard chrome so the page tells the operator what to do next.
   const shellAvailableFacilities = useFacilityStore((s) => s.availableFacilities);
   const allKpisEmpty = payload.kpis.every((k) => k.value === "—" || k.value == null || k.value === "");
@@ -128,7 +141,7 @@ export function W1DashboardClient({
   const allActionsEmpty = payload.actionQueue.length === 0;
   const isOrgEmpty = allKpisEmpty && allTableRowsEmpty && allAlertsEmpty && allActionsEmpty;
 
-  if (isOrgEmpty) {
+  if (isOrgEmpty && tablePagination.totalCount === 0) {
     // Onboarding copy needs the *org* facility count, not the rollup-derived
     // `facilities` (which is 0 on empty installs because the view returns
     // nothing yet). Source of truth: `orgFacilityCount` from the server
@@ -181,12 +194,13 @@ export function W1DashboardClient({
       }}
       kpis={payload.kpis}
       panels={payload.panels}
+      actions={<V2PaginationControls pagination={tablePagination} showCurrentPageExportNote />}
       table={{
         columns: COLUMNS,
         rows,
         thresholds: payload.thresholds,
         userPreferencesKey: `/admin/v2/${payload.id}`,
-        emptyState: sourceNote ? <span>{sourceNote}.</span> : undefined,
+        emptyState: tableEmptyState,
       }}
       alerts={payload.alerts}
       actionQueue={payload.actionQueue}

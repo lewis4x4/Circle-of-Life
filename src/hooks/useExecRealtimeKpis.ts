@@ -98,7 +98,10 @@ export function useExecRealtimeKpis(
     channelRef.current = channel;
 
     return () => {
-      channel.unsubscribe();
+      // unsubscribe returns a Promise that may reject with "Connection closed."
+      // if the WebSocket already closed (e.g., during signOut → /login navigation).
+      // Catch it so it doesn't surface as an unhandled rejection in Sentry.
+      channel.unsubscribe().catch(() => {});
       channelRef.current = null;
     };
   }, [channelKey, organizationId, supabase]);

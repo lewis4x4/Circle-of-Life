@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useId } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchExecutiveKpiSnapshot,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/exec-kpi-snapshot";
 import { fetchExecutiveAlerts, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { createReloadDebouncer } from "@/hooks/exec-metric-reload-debounce";
 
 export type ExecRole = "ceo" | "cfo" | "coo";
 
@@ -42,6 +43,7 @@ export function useExecRoleKpis(
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const realtimeChannelKey = `exec-kpi-realtime-${useId().replace(/:/g, "")}`;
+  const metricInsertReloadDebouncerRef = useRef<ReturnType<typeof createReloadDebouncer> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,15 +99,24 @@ export function useExecRoleKpis(
 
   // ── Realtime: auto-refetch when new snapshots or alerts arrive ──
   useEffect(() => {
+    metricInsertReloadDebouncerRef.current?.cancel();
+    metricInsertReloadDebouncerRef.current = createReloadDebouncer(() => {
+      void load();
+    }, 200);
+
     if (!enabled || !organizationId || isDemo) {
       return;
     }
 
+    const metricInsertReloadDebouncer = metricInsertReloadDebouncerRef.current;
+    if (!metricInsertReloadDebouncer) {
+      return;
+    }
     const supabase = createClient();
     const channel = supabase
       .channel(realtimeChannelKey)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_metric_snapshots", filter: `organization_id=eq.${organizationId}` }, () => {
-        void load(); // Refetch when new KPI snapshot arrives
+        metricInsertReloadDebouncer.trigger();
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "exec_alerts", filter: `organization_id=eq.${organizationId}` }, () => {
         void load(); // Refetch when new alert arrives
@@ -116,7 +127,11 @@ export function useExecRoleKpis(
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      metricInsertReloadDebouncer.cancel();
+      // unsubscribe returns a Promise that may reject with "Connection closed."
+      // if the WebSocket already closed (e.g., during signOut → /login navigation).
+      // Catch it so it doesn't surface as an unhandled rejection in Sentry.
+      channel.unsubscribe().catch(() => {});
     };
   }, [enabled, isDemo, load, organizationId, realtimeChannelKey]);
 

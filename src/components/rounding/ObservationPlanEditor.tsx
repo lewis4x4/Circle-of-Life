@@ -3,19 +3,67 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 
+import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FormLabel } from "@/components/ui/form-label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  buildPlanSchedulePreview,
+  formatPreviewTimestamp,
+  formatTimeLabel,
+  getObservationPlanSaveBlockers,
+  hasRuleErrors,
+  MIN_RATIONALE_CHARACTERS,
+  validateEffectiveWindow,
+  validatePlanRule,
+  validateRationale,
+} from "@/lib/rounding/observation-plan-validation";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import type { ObservationPlanInput, PlanRuleInput } from "@/lib/rounding/types";
 import type { Database } from "@/types/database";
 
+type PlanStatus = NonNullable<ObservationPlanInput["status"]>;
+type SourceType = NonNullable<ObservationPlanInput["sourceType"]>;
+
 type ResidentOption = Pick<
   Database["public"]["Tables"]["residents"]["Row"],
-  "id" | "first_name" | "last_name" | "preferred_name" | "status"
->;
+  | "id"
+  | "first_name"
+  | "last_name"
+  | "preferred_name"
+  | "status"
+  | "bed_id"
+  | "acuity_level"
+  | "acuity_score"
+> & {
+  beds?: {
+    bed_label: string | null;
+    rooms?: { room_number: string | null } | null;
+  } | null;
+};
 
 type ExistingPlan = {
   id: string;
@@ -34,13 +82,45 @@ type ExistingPlan = {
     daypart_end: string | null;
     days_of_week: number[] | null;
     grace_minutes: number;
+    required_fields_schema: Record<string, unknown> | null;
     escalation_policy_key: string | null;
     active: boolean;
     sort_order: number;
   }>;
 };
 
-function blankRule(): PlanRuleInput {
+const STATUS_OPTIONS: Array<{ value: PlanStatus; label: string }> = [
+  { value: "draft", label: "Draft" },
+  { value: "active", label: "Active" },
+  { value: "paused", label: "Suspended" },
+  { value: "ended", label: "Ended" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+const SOURCE_TYPE_OPTIONS: Array<{ value: SourceType; label: string }> = [
+  { value: "manual", label: "Manual" },
+  { value: "care_plan", label: "Template / care plan" },
+  { value: "order", label: "EHR / clinical order" },
+  { value: "policy", label: "Policy" },
+  { value: "triggered", label: "Triggered" },
+];
+
+const INTERVAL_TYPE_OPTIONS: Array<{ value: PlanRuleInput["intervalType"]; label: string }> = [
+  { value: "fixed_minutes", label: "Fixed minutes" },
+  { value: "per_shift", label: "Per shift" },
+  { value: "daypart", label: "Daypart" },
+  { value: "continuous", label: "Continuous" },
+];
+
+const SHIFT_OPTIONS: Array<{ value: "all" | NonNullable<PlanRuleInput["shift"]>; label: string }> = [
+  { value: "all", label: "All shifts" },
+  { value: "day", label: "Day" },
+  { value: "evening", label: "Evening" },
+  { value: "night", label: "Night" },
+  { value: "custom", label: "Custom" },
+];
+
+function blankRule(sortOrder = 0): PlanRuleInput {
   return {
     intervalType: "fixed_minutes",
     intervalMinutes: 60,
@@ -49,32 +129,55 @@ function blankRule(): PlanRuleInput {
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
     graceMinutes: 15,
     active: true,
-    sortOrder: 0,
+    sortOrder,
   };
 }
 
-function residentName(resident: ResidentOption) {
+function residentName(resident: Pick<ResidentOption, "first_name" | "last_name" | "preferred_name">) {
   return [resident.preferred_name ?? resident.first_name, resident.last_name].filter(Boolean).join(" ");
+}
+
+function residentRoom(resident: ResidentOption) {
+  return resident.beds?.rooms?.room_number ?? resident.beds?.bed_label ?? "Unassigned";
+}
+
+function residentAcuity(resident: ResidentOption) {
+  if (resident.acuity_score != null) return Number(resident.acuity_score).toLocaleString("en-US");
+  if (resident.acuity_level) return resident.acuity_level.replace("level_", "");
+  return "—";
+}
+
+function residentComboboxLabel(resident: ResidentOption) {
+  const name = residentName(resident) || "Unnamed resident";
+  return `${name} · Room ${residentRoom(resident)} · Acuity ${residentAcuity(resident)}`;
 }
 
 export function ObservationPlanEditor({
   planId,
+  duplicatePlanId,
   title,
 }: {
   planId?: string;
+  duplicatePlanId?: string;
   title: string;
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveAttempted, setSaveAttempted] = useState(false);
+  const [draggedRuleIndex, setDraggedRuleIndex] = useState<number | null>(null);
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
+  const [touchedRuleFields, setTouchedRuleFields] = useState<Record<string, true>>({});
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [residentId, setResidentId] = useState("");
-  const [status, setStatus] = useState<ObservationPlanInput["status"]>("active");
-  const [sourceType, setSourceType] = useState<ObservationPlanInput["sourceType"]>("manual");
+  const [status, setStatus] = useState<PlanStatus>("draft");
+  const [sourceType, setSourceType] = useState<SourceType>("manual");
   const [effectiveFrom, setEffectiveFrom] = useState("");
   const [effectiveTo, setEffectiveTo] = useState("");
   const [rationale, setRationale] = useState("");
@@ -84,6 +187,7 @@ export function ObservationPlanEditor({
     setLoading(true);
     setError(null);
     setStatusMessage(null);
+    setSaveAttempted(false);
 
     if (!selectedFacilityId) {
       setLoading(false);
@@ -93,18 +197,21 @@ export function ObservationPlanEditor({
     try {
       const { data: residentRows, error: residentError } = await supabase
         .from("residents")
-        .select("id, first_name, last_name, preferred_name, status")
+        .select(
+          "id, first_name, last_name, preferred_name, status, bed_id, acuity_level, acuity_score, beds ( bed_label, rooms ( room_number ) )",
+        )
         .eq("facility_id", selectedFacilityId)
         .eq("status", "active")
         .is("deleted_at", null)
         .order("last_name");
 
       if (residentError) throw residentError;
-      setResidents((residentRows ?? []) as ResidentOption[]);
+      setResidents((residentRows ?? []) as unknown as ResidentOption[]);
 
-      if (planId) {
+      const sourcePlanId = planId ?? duplicatePlanId;
+      if (sourcePlanId) {
         const response = await fetch(
-          `/api/rounding/plans?planId=${encodeURIComponent(planId)}&facilityId=${encodeURIComponent(selectedFacilityId)}`,
+          `/api/rounding/plans?planId=${encodeURIComponent(sourcePlanId)}&facilityId=${encodeURIComponent(selectedFacilityId)}`,
           { cache: "no-store" },
         );
         const json = (await response.json()) as { error?: string; plans?: ExistingPlan[] };
@@ -116,16 +223,16 @@ export function ObservationPlanEditor({
           throw new Error("Observation plan not found");
         }
         setResidentId(plan.resident_id);
-        setStatus(plan.status ?? "active");
+        setStatus(duplicatePlanId ? "draft" : (plan.status ?? "draft"));
         setSourceType(plan.source_type ?? "manual");
-        setEffectiveFrom(plan.effective_from.slice(0, 16));
-        setEffectiveTo(plan.effective_to ? plan.effective_to.slice(0, 16) : "");
+        setEffectiveFrom(duplicatePlanId ? "" : plan.effective_from.slice(0, 16));
+        setEffectiveTo(duplicatePlanId ? "" : plan.effective_to ? plan.effective_to.slice(0, 16) : "");
         setRationale(plan.rationale ?? "");
         setRules(
           (plan.resident_observation_plan_rules ?? [])
             .sort((a, b) => a.sort_order - b.sort_order)
             .map((rule, index) => ({
-              id: rule.id,
+              id: duplicatePlanId ? undefined : rule.id,
               intervalType: rule.interval_type,
               intervalMinutes: rule.interval_minutes,
               shift: rule.shift,
@@ -133,28 +240,74 @@ export function ObservationPlanEditor({
               daypartEnd: rule.daypart_end,
               daysOfWeek: rule.days_of_week ?? [0, 1, 2, 3, 4, 5, 6],
               graceMinutes: rule.grace_minutes,
+              requiredFieldsSchema: rule.required_fields_schema ?? {},
               escalationPolicyKey: rule.escalation_policy_key,
               active: rule.active,
               sortOrder: index,
             })),
         );
       } else {
-        setEffectiveFrom(new Date().toISOString().slice(0, 16));
+        setResidentId("");
+        setStatus("draft");
+        setSourceType("manual");
+        setEffectiveFrom("");
+        setEffectiveTo("");
+        setRationale("");
+        setRules([blankRule()]);
       }
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load observation plan form.");
+    } catch {
+      setError("Could not load observation plan form. Confirm facility scope and retry.");
     } finally {
       setLoading(false);
     }
-  }, [planId, selectedFacilityId, supabase]);
+  }, [duplicatePlanId, planId, selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  const residentOptions = useMemo<EntityComboboxOption[]>(
+    () =>
+      residents.map((resident) => {
+        const label = residentComboboxLabel(resident);
+        return {
+          id: resident.id,
+          label,
+          keywords: `${label} ${residentName(resident)} ${residentRoom(resident)} ${residentAcuity(resident)}`,
+        };
+      }),
+    [residents],
+  );
+
+  const selectedResident = residents.find((resident) => resident.id === residentId) ?? null;
+  const effectiveWindowError = validateEffectiveWindow(effectiveFrom, effectiveTo);
+  const rationaleError = validateRationale(rationale);
+  const ruleErrors = useMemo(() => rules.map((rule) => validatePlanRule(rule)), [rules]);
+  const preview = useMemo(() => buildPlanSchedulePreview(rules), [rules]);
+  const saveBlockers = useMemo(
+    () =>
+      getObservationPlanSaveBlockers({
+        residentId,
+        status,
+        sourceType,
+        effectiveFrom,
+        effectiveTo,
+        rationale,
+        rules,
+      }),
+    [effectiveFrom, effectiveTo, rationale, residentId, rules, sourceType, status],
+  );
+  const canSave = saveBlockers.length === 0;
+  const saveTooltip = saveBlockers.join(" · ");
+
   async function savePlan() {
-    if (!selectedFacilityId || !residentId) {
-      setError("Select a facility and resident first.");
+    setSaveAttempted(true);
+    if (!selectedFacilityId) {
+      setError("Select a facility first.");
+      return;
+    }
+    if (!canSave) {
+      setError(`Complete required fields: ${saveTooltip}.`);
       return;
     }
 
@@ -170,7 +323,7 @@ export function ObservationPlanEditor({
         sourceType,
         effectiveFrom: new Date(effectiveFrom).toISOString(),
         effectiveTo: effectiveTo ? new Date(effectiveTo).toISOString() : null,
-        rationale: rationale.trim() || null,
+        rationale: rationale.trim(),
         rules: rules.map((rule, index) => ({
           ...rule,
           sortOrder: index,
@@ -190,8 +343,8 @@ export function ObservationPlanEditor({
 
       setStatusMessage("Observation plan saved.");
       router.replace(`/admin/rounding/plans/${json.planId ?? planId ?? ""}`);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save observation plan.");
+    } catch {
+      setError("Could not save observation plan. Confirm required fields and retry.");
     } finally {
       setSaving(false);
     }
@@ -209,7 +362,7 @@ export function ObservationPlanEditor({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-slate-500 dark:text-slate-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading plan editor…
       </div>
@@ -217,153 +370,483 @@ export function ObservationPlanEditor({
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>Set resident cadence, daypart windows, and grace times for facility-scoped rounding tasks.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : null}
-          {statusMessage ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{statusMessage}</p> : null}
+    <TooltipProvider delay={250}>
+      <div className="space-y-6">
+        <Card className="border-border bg-card shadow-soft">
+          <CardHeader>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>
+              Set resident cadence, daypart windows, and grace times for facility-scoped rounding tasks.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {statusMessage ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{statusMessage}</p> : null}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Resident">
-              <select value={residentId} onChange={(event) => setResidentId(event.target.value)} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-                <option value="">Select resident</option>
-                {residents.map((resident) => (
-                  <option key={resident.id} value={resident.id}>
-                    {residentName(resident)}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <FormSection title="Identity">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="md:col-span-1">
+                  <EntityCombobox
+                    id="resident"
+                    label="Resident"
+                    placeholder="Select resident"
+                    searchPlaceholder="Search active residents…"
+                    options={residentOptions}
+                    value={residentId}
+                    onChange={setResidentId}
+                    required
+                    data-testid="observation-plan-resident"
+                  />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {residents.length} active residents at {facilityName} available.
+                  </p>
+                </div>
 
-            <Field label="Status">
-              <select value={status} onChange={(event) => setStatus(event.target.value as ObservationPlanInput["status"])} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="ended">Ended</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </Field>
+                <FormField id="status" label="Status" required>
+                  <Select value={status} onValueChange={(value) => setStatus(value as PlanStatus)} required>
+                    <SelectTrigger id="status" className="h-9">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
 
-            <Field label="Source type">
-              <select value={sourceType} onChange={(event) => setSourceType(event.target.value as ObservationPlanInput["sourceType"])} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-                <option value="manual">Manual</option>
-                <option value="care_plan">Care plan</option>
-                <option value="policy">Policy</option>
-                <option value="order">Order</option>
-                <option value="triggered">Triggered</option>
-              </select>
-            </Field>
+                <FormField
+                  id="source-type"
+                  label="Source type"
+                  required
+                  helper="Manual: created by hand. Template: derived from a care plan template. EHR: imported from external system."
+                >
+                  <Select value={sourceType} onValueChange={(value) => setSourceType(value as SourceType)} required>
+                    <SelectTrigger id="source-type" className="h-9">
+                      <SelectValue placeholder="Select source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOURCE_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              </div>
+            </FormSection>
 
-            <Field label="Effective from">
-              <input type="datetime-local" value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950" />
-            </Field>
+            <FormSection title="Effective window">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField id="effective-from" label="Effective from" required>
+                  <DateTimePicker
+                    id="effective-from"
+                    value={effectiveFrom}
+                    onValueChange={setEffectiveFrom}
+                    required
+                  />
+                </FormField>
 
-            <Field label="Effective to">
-              <input type="datetime-local" value={effectiveTo} onChange={(event) => setEffectiveTo(event.target.value)} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950" />
-            </Field>
+                <FormField
+                  id="effective-to"
+                  label="Effective to"
+                  helper="Leave empty for open-ended plan."
+                  error={effectiveWindowError ?? undefined}
+                >
+                  <DateTimePicker
+                    id="effective-to"
+                    value={effectiveTo}
+                    onValueChange={setEffectiveTo}
+                    placeholder="Open-ended"
+                    aria-invalid={Boolean(effectiveWindowError)}
+                  />
+                </FormField>
+              </div>
+            </FormSection>
+
+            <FormSection title="Rationale">
+              <FormField
+                id="rationale"
+                label="Rationale"
+                required
+                helper={`Required for audit trail. Surveyors review rationale on cadence changes. Minimum ${MIN_RATIONALE_CHARACTERS} characters.`}
+                error={(saveAttempted || rationale.trim().length > 0) && rationaleError ? rationaleError : undefined}
+              >
+                <Textarea
+                  id="rationale"
+                  value={rationale}
+                  onChange={(event) => setRationale(event.target.value)}
+                  rows={4}
+                  required
+                  aria-invalid={Boolean((saveAttempted || rationale.trim().length > 0) && rationaleError)}
+                  placeholder="Explain the clinical reason for this cadence change."
+                />
+              </FormField>
+            </FormSection>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Rules</h2>
+              <p className="text-sm text-muted-foreground">Configure interval, daypart, and grace.</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRules((current) => [...current, blankRule(current.length)])}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Add rule
+            </Button>
           </div>
 
-          <Field label="Rationale">
-            <textarea value={rationale} onChange={(event) => setRationale(event.target.value)} rows={3} className="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950" placeholder="Why does this resident need this cadence?" />
-          </Field>
-        </CardContent>
-      </Card>
+          {rules.map((rule, index) => {
+            const currentRuleErrors = ruleErrors[index] ?? {};
+            const ruleHasErrors = hasRuleErrors(currentRuleErrors);
+            const ruleKey = rule.id ?? `rule-${index}`;
+            const showIntervalError = Boolean(
+              currentRuleErrors.intervalMinutes && (saveAttempted || touchedRuleFields[`${ruleKey}:intervalMinutes`]),
+            );
+            const showGraceError = Boolean(
+              currentRuleErrors.graceMinutes && (saveAttempted || touchedRuleFields[`${ruleKey}:graceMinutes`]),
+            );
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">Plan rules</h2>
-          <Button variant="outline" size="sm" onClick={() => setRules((current) => [...current, { ...blankRule(), sortOrder: current.length }])}>
-            <Plus className="mr-1 h-4 w-4" />
-            Add rule
-          </Button>
+            return (
+              <Card
+                key={ruleKey}
+                className={cn(
+                  "border-border bg-card shadow-soft",
+                  draggedRuleIndex === index && "opacity-70",
+                  ruleHasErrors && saveAttempted && "border-destructive/50",
+                )}
+                onDragOver={(event) => {
+                  if (rules.length > 1) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (draggedRuleIndex != null) reorderRule(draggedRuleIndex, index);
+                  setDraggedRuleIndex(null);
+                }}
+              >
+                <CardHeader className="flex flex-row items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    {rules.length > 1 ? (
+                      <button
+                        type="button"
+                        draggable
+                        aria-label={`Drag Rule ${index + 1}`}
+                        className="mt-0.5 rounded-md p-1 text-muted-foreground cursor-grab hover:bg-muted/40 hover:text-foreground active:cursor-grabbing"
+                        onDragStart={() => setDraggedRuleIndex(index)}
+                        onDragEnd={() => setDraggedRuleIndex(null)}
+                      >
+                        <GripVertical className="size-4" aria-hidden />
+                      </button>
+                    ) : null}
+                    <div className="min-w-0">
+                      {rules.length > 1 ? <CardTitle className="text-base">Rule {index + 1}</CardTitle> : null}
+                      <CardDescription>Configure interval, daypart, and grace.</CardDescription>
+                    </div>
+                  </div>
+                  {rules.length > 1 ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Delete Rule ${index + 1}`}
+                      onClick={() => setPendingDeleteIndex(index)}
+                    >
+                      <Trash2 aria-hidden className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  <FormField id={`interval-type-${index}`} label="Interval type">
+                    <Select
+                      value={rule.intervalType}
+                      onValueChange={(value) => updateRule(index, { intervalType: value as PlanRuleInput["intervalType"] })}
+                    >
+                      <SelectTrigger id={`interval-type-${index}`} className="h-9">
+                        <SelectValue placeholder="Select interval" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INTERVAL_TYPE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+
+                  <FormField
+                    id={`interval-minutes-${index}`}
+                    label="Interval minutes"
+                    error={showIntervalError ? currentRuleErrors.intervalMinutes : undefined}
+                  >
+                    <Input
+                      id={`interval-minutes-${index}`}
+                      type="number"
+                      min={5}
+                      max={1440}
+                      step={5}
+                      value={rule.intervalMinutes ?? 60}
+                      aria-invalid={showIntervalError}
+                      onBlur={() => markRuleTouched(ruleKey, "intervalMinutes")}
+                      onChange={(event) => updateRule(index, { intervalMinutes: Number(event.target.value) })}
+                    />
+                  </FormField>
+
+                  <FormField id={`daypart-start-${index}`} label="Daypart start">
+                    <Input
+                      id={`daypart-start-${index}`}
+                      type="time"
+                      value={rule.daypartStart ?? "07:00"}
+                      onChange={(event) => updateRule(index, { daypartStart: event.target.value })}
+                    />
+                  </FormField>
+
+                  <FormField id={`daypart-end-${index}`} label="Daypart end">
+                    <Input
+                      id={`daypart-end-${index}`}
+                      type="time"
+                      value={rule.daypartEnd ?? "19:00"}
+                      onChange={(event) => updateRule(index, { daypartEnd: event.target.value })}
+                    />
+                  </FormField>
+
+                  <FormField
+                    id={`grace-minutes-${index}`}
+                    label="Grace minutes"
+                    error={showGraceError ? currentRuleErrors.graceMinutes : undefined}
+                  >
+                    <Input
+                      id={`grace-minutes-${index}`}
+                      type="number"
+                      min={0}
+                      step={5}
+                      value={rule.graceMinutes ?? 15}
+                      aria-invalid={showGraceError}
+                      onBlur={() => markRuleTouched(ruleKey, "graceMinutes")}
+                      onChange={(event) => updateRule(index, { graceMinutes: Number(event.target.value) })}
+                    />
+                  </FormField>
+
+                  <FormField
+                    id={`shift-lock-${index}`}
+                    label="Shift lock (optional)"
+                    helper="Restrict this rule to a specific shift (Day, Evening, Night). Leave on All shifts to apply throughout the day."
+                  >
+                    <Select
+                      value={rule.shift ?? "all"}
+                      onValueChange={(value) =>
+                        updateRule(index, {
+                          shift: value === "all" ? null : (value as PlanRuleInput["shift"]),
+                        })
+                      }
+                    >
+                      <SelectTrigger id={`shift-lock-${index}`} className="h-9">
+                        <SelectValue placeholder="All shifts" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SHIFT_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
-        {rules.map((rule, index) => (
-          <Card key={rule.id ?? `rule-${index}`} className="border-slate-200/80 shadow-soft dark:border-slate-800">
-            <CardHeader className="flex flex-row items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-base">Rule {index + 1}</CardTitle>
-                <CardDescription>Configure interval, daypart, and grace.</CardDescription>
-              </div>
-              {rules.length > 1 ? (
-                <Button variant="ghost" size="icon-sm" aria-label={`Delete rule ${index + 1}`} onClick={() => setRules((current) => current.filter((_, currentIndex) => currentIndex !== index))}>
-                  <Trash2 aria-hidden className="h-4 w-4" />
-                </Button>
-              ) : null}
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <Field label="Interval type">
-                <select value={rule.intervalType} onChange={(event) => updateRule(index, { intervalType: event.target.value as PlanRuleInput["intervalType"] })} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-                  <option value="fixed_minutes">Fixed minutes</option>
-                  <option value="per_shift">Per shift</option>
-                  <option value="daypart">Daypart</option>
-                  <option value="continuous">Continuous</option>
-                </select>
-              </Field>
+        <PlanPreviewCard preview={preview} residentName={selectedResident ? residentName(selectedResident) : null} status={status} />
 
-              <Field label="Interval minutes">
-                <input type="number" min={15} step={15} value={rule.intervalMinutes ?? 60} onChange={(event) => updateRule(index, { intervalMinutes: Number(event.target.value) })} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950" />
-              </Field>
+        <div className="flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
+          <Button variant="outline" size="lg" className="min-h-11" onClick={() => router.push("/admin/rounding/plans")}>
+            Back to plans
+          </Button>
+          {canSave ? (
+            <Button size="lg" className="min-h-11" disabled={saving} onClick={() => void savePlan()}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save plan
+            </Button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="inline-flex" tabIndex={0} aria-label={`Save disabled: ${saveTooltip}`}>
+                    <Button size="lg" className="min-h-11" disabled>
+                      Save plan
+                    </Button>
+                  </span>
+                }
+              />
+              <TooltipContent className="max-w-sm text-left" side="top" align="end">
+                {saveTooltip}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
 
-              <Field label="Daypart start">
-                <input type="time" value={rule.daypartStart ?? "07:00"} onChange={(event) => updateRule(index, { daypartStart: event.target.value })} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950" />
-              </Field>
-
-              <Field label="Daypart end">
-                <input type="time" value={rule.daypartEnd ?? "19:00"} onChange={(event) => updateRule(index, { daypartEnd: event.target.value })} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950" />
-              </Field>
-
-              <Field label="Grace minutes">
-                <input type="number" min={0} step={5} value={rule.graceMinutes ?? 15} onChange={(event) => updateRule(index, { graceMinutes: Number(event.target.value) })} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950" />
-              </Field>
-
-              <Field label="Shift lock (optional)">
-                <select value={rule.shift ?? ""} onChange={(event) => updateRule(index, { shift: (event.target.value || null) as PlanRuleInput["shift"] })} className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-                  <option value="">None</option>
-                  <option value="day">Day</option>
-                  <option value="evening">Evening</option>
-                  <option value="night">Night</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </Field>
-            </CardContent>
-          </Card>
-        ))}
+        <Dialog open={pendingDeleteIndex != null} onOpenChange={(open) => !open && setPendingDeleteIndex(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Rule {(pendingDeleteIndex ?? 0) + 1}?</DialogTitle>
+              <DialogDescription>This cannot be undone.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPendingDeleteIndex(null)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteRule}>
+                Delete rule
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <div className="flex items-center gap-3">
-        <Button size="lg" className="min-h-11" disabled={saving} onClick={() => void savePlan()}>
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Save plan
-        </Button>
-        <Button variant="outline" size="lg" className="min-h-11" onClick={() => router.push("/admin/rounding/plans")}>
-          Back to plans
-        </Button>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 
   function updateRule(index: number, updates: Partial<PlanRuleInput>) {
-    setRules((current) => current.map((rule, ruleIndex) => (ruleIndex === index ? { ...rule, ...updates } : rule)));
+    setRules((current) =>
+      current.map((rule, ruleIndex) =>
+        ruleIndex === index ? { ...rule, ...updates, sortOrder: ruleIndex } : rule,
+      ),
+    );
+  }
+
+  function markRuleTouched(ruleKey: string, field: "intervalMinutes" | "graceMinutes") {
+    setTouchedRuleFields((current) => ({ ...current, [`${ruleKey}:${field}`]: true }));
+  }
+
+  function reorderRule(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return;
+    setRules((current) => {
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      if (!moved) return current;
+      next.splice(toIndex, 0, moved);
+      return next.map((rule, index) => ({ ...rule, sortOrder: index }));
+    });
+  }
+
+  function confirmDeleteRule() {
+    if (pendingDeleteIndex == null) return;
+    setRules((current) => current.filter((_, currentIndex) => currentIndex !== pendingDeleteIndex));
+    setPendingDeleteIndex(null);
   }
 }
 
-function Field({
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h3 className="text-xs font-semibold text-muted-foreground">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function FormField({
+  id,
   label,
+  required,
+  helper,
+  error,
   children,
 }: {
+  id: string;
   label: string;
+  required?: boolean;
+  helper?: ReactNode;
+  error?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <label className="space-y-1 text-sm">
-      <span className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
+    <div className="space-y-2">
+      <FormLabel htmlFor={id} required={required}>
+        {label}
+      </FormLabel>
       {children}
-    </label>
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : helper ? (
+        <p className="text-sm text-muted-foreground">{helper}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function PlanPreviewCard({
+  preview,
+  residentName,
+  status,
+}: {
+  preview: ReturnType<typeof buildPlanSchedulePreview>;
+  residentName: string | null;
+  status: PlanStatus;
+}) {
+  const residentClause = residentName ? ` for ${residentName}` : "";
+  const nextChecks = preview.nextChecks.map(formatPreviewTimestamp).join(", ");
+
+  return (
+    <Card className="border-border bg-card shadow-soft">
+      <CardHeader>
+        <CardTitle className="text-base">Preview</CardTitle>
+        <CardDescription>Review the schedule impact before saving.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm text-foreground">
+        <p>
+          <span className="font-semibold">Preview:</span> This plan will create {preview.checksPerDay} scheduled checks per day
+          {residentClause}, between {formatTimeLabel(preview.windowStart)} and {formatTimeLabel(preview.windowEnd)}. Each check becomes overdue {preview.graceMinutes} minutes after its scheduled time.
+        </p>
+        <p>
+          <span className="font-semibold">Next 24 hours:</span> {nextChecks || "No scheduled checks in the next 24 hours."}
+        </p>
+        <ActivationNotice status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActivationNotice({ status }: { status: PlanStatus }) {
+  if (status === "active") {
+    return (
+      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+        ⚠ This plan will activate immediately on save. Switch to Draft to review before activating.
+      </p>
+    );
+  }
+
+  if (status === "draft") {
+    return (
+      <p className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
+        <CheckCircle2 className="size-4" aria-hidden />
+        Saving as Draft. Activate from the Plans tab when ready.
+      </p>
+    );
+  }
+
+  if (status === "paused") {
+    return (
+      <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+        ○ Saving as Suspended. This plan will not generate checks until reactivated.
+      </p>
+    );
+  }
+
+  return (
+    <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+      ○ This plan will not generate checks while saved as {STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status}.
+    </p>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Pill, ShieldAlert, Stethoscope } from "lucide-react";
+import { ArrowRight, ClipboardList, FileCheck2, Pill, ShieldAlert, Stethoscope } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,12 @@ const LINKS = [
     title: "Controlled substances",
     description: "Shift counts, discrepancies, and signatures.",
     icon: Pill,
+  },
+  {
+    href: "/admin/discharge",
+    title: "Medication reconciliation",
+    description: "Discharge med-rec workflow — pharmacist review and sign-off.",
+    icon: FileCheck2,
   },
 ] as const;
 

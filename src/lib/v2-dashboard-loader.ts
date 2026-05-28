@@ -6,6 +6,12 @@ import {
   type V2DashboardPayload,
   type V2DashboardTableRow,
 } from "./v2-dashboards";
+import {
+  buildV2PaginationMeta,
+  resolveV2Pagination,
+  type V2PaginationInput,
+  type V2PaginationMeta,
+} from "./v2-pagination";
 
 export type V2DashboardScopeOption = { id: string; label: string };
 
@@ -22,6 +28,7 @@ export type V2DashboardLoad = {
    */
   orgFacilityCount: number;
   generatedAt: string;
+  tablePagination: V2PaginationMeta;
   /**
    * "live" → table rows came from haven.vw_v2_facility_rollup.
    * "empty" → live view succeeded but returned no rows in scope.
@@ -38,7 +45,11 @@ type RollupRow = {
   survey_readiness_pct: number | null;
 };
 
-type ViewResult = { data: RollupRow[] | null; error: { message: string } | null };
+type ViewResult = {
+  data: RollupRow[] | null;
+  count?: number | null;
+  error: { message: string } | null;
+};
 
 /**
  * Server-side dashboard loader.
@@ -53,28 +64,42 @@ type ViewResult = { data: RollupRow[] | null; error: { message: string } | null 
  */
 export async function loadV2Dashboard(
   id: V2DashboardId,
+  options?: V2PaginationInput,
 ): Promise<V2DashboardLoad | null> {
   const payload = getV2DashboardPayload(id);
   if (!payload) return null;
 
   const supabase = await createClient();
 
-  const result = (await supabase
+  const facilityOptionsResult = (await supabase
+    .schema("haven" as never)
+    .from("vw_v2_facility_rollup" as never)
+    .select("facility_id, facility_name")
+    .order("facility_name" as never, { ascending: true })
+    .order("facility_id" as never, { ascending: true })) as unknown as ViewResult;
+
+  const range = resolveV2Pagination(options);
+  const tableResult = (await supabase
     .schema("haven" as never)
     .from("vw_v2_facility_rollup" as never)
     .select(
       "facility_id, facility_name, occupancy_pct, open_incidents_count, survey_readiness_pct",
+      { count: "exact" },
     )
-    .order("facility_name" as never, { ascending: true })) as unknown as ViewResult;
+    .order("facility_name" as never, { ascending: true })
+    .order("facility_id" as never, { ascending: true })
+    .range(range.from, range.to)) as unknown as ViewResult;
 
   let tableRows: V2DashboardTableRow[] = [];
   let rowsSource: V2DashboardRowsSource = "empty";
 
-  if (result.error) {
+  const tablePagination = buildV2PaginationMeta(range, tableResult.count);
+
+  if (tableResult.error) {
     rowsSource = "unavailable";
-  } else if (Array.isArray(result.data) && result.data.length > 0) {
+  } else if (Array.isArray(tableResult.data) && tableResult.data.length > 0) {
     rowsSource = "live";
-    tableRows = result.data.map((row) => ({
+    tableRows = tableResult.data.map((row) => ({
       id: row.facility_id,
       name: (row.facility_name ?? "").trim() || "Unnamed facility",
       occupancyPct: normalizePercent(row.occupancy_pct),
@@ -82,15 +107,20 @@ export async function loadV2Dashboard(
       openIncidents: row.open_incidents_count,
       surveyReadinessPct: normalizePercent(row.survey_readiness_pct),
     }));
+  } else if (tablePagination.totalCount > 0) {
+    rowsSource = "live";
   }
 
   // Caller-visible facility filters should only list facilities actually
   // returned by the live rollup view. Empty/unavailable means no hidden fallback
   // facility scope is presented.
-  const facilities: V2DashboardScopeOption[] = tableRows.map((row) => ({
-    id: row.id,
-    label: row.name,
-  }));
+  const facilities: V2DashboardScopeOption[] =
+    rowsSource !== "unavailable" && Array.isArray(facilityOptionsResult.data)
+      ? facilityOptionsResult.data.map((row) => ({
+          id: row.facility_id,
+          label: (row.facility_name ?? "").trim() || "Unnamed facility",
+        }))
+      : [];
 
   // Org-wide facility count for the empty-install onboarding copy. Counts
   // non-deleted facilities the caller can see via RLS. We `count: "exact"`
@@ -111,6 +141,7 @@ export async function loadV2Dashboard(
     facilities,
     orgFacilityCount: orgFacilityCount ?? 0,
     generatedAt,
+    tablePagination,
     rowsSource,
   };
 }

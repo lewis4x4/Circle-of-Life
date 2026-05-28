@@ -76,6 +76,7 @@ export function KPITile({
 }: KPITileProps) {
   const [infoOpen, setInfoOpen] = useState(false);
   const infoId = useId();
+  const validSparkline = sparkline?.filter(Number.isFinite);
   const Tag = onClick ? "button" : "article";
   const tagProps = onClick
     ? {
@@ -100,7 +101,7 @@ export function KPITile({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-caps text-text-muted">
+        <span className="text-sm font-medium text-text-muted">
           {label}
         </span>
         {info && (
@@ -159,9 +160,9 @@ export function KPITile({
           ) : (
             <span />
           )}
-          {sparkline && sparkline.length >= 2 && (
+          {validSparkline && validSparkline.length >= 2 && (
             <Sparkline
-              data={sparkline}
+              data={validSparkline}
               tone={TONE_TO_SPARKLINE[tone]}
               ariaLabel={`${label} sparkline trend`}
             />

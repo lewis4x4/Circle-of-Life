@@ -1,10 +1,19 @@
 "use client";
 
 import React from "react";
-import { SurveyVisitSearchOverlay } from "@/components/compliance/SurveyVisitSearchOverlay";
+import dynamic from "next/dynamic";
+import type { SurveyVisitSearchOverlayProps } from "@/components/compliance/SurveyVisitSearchOverlay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SurveyVisitSessionApi } from "@/hooks/useSurveyVisitSession";
+
+const SurveyVisitSearchOverlay = dynamic<SurveyVisitSearchOverlayProps>(
+  () =>
+    import("@/components/compliance/SurveyVisitSearchOverlay").then((m) => ({
+      default: m.SurveyVisitSearchOverlay,
+    })),
+  { ssr: false, loading: () => null },
+);
 
 /** Expanded survey tooling (record search + free-text log) when a session is active. */
 export function SurveyVisitSessionDock({ survey }: { survey: SurveyVisitSessionApi }) {

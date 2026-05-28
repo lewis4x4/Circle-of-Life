@@ -364,7 +364,7 @@ export default function AdminReferralsNewPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 pb-12">
+    <div className="w-full space-y-8 pb-12">
       <Link
         href="/admin/referrals"
         className="inline-flex items-center gap-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -673,7 +673,7 @@ export default function AdminReferralsNewPage() {
             </p>
           ) : null}
 
-          <div className="flex max-w-3xl justify-end gap-4 border-t border-border pt-6">
+          <div className="flex justify-end gap-4 border-t border-border pt-6">
             <Link
               href="/admin/referrals"
               className="inline-flex h-9 items-center text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"

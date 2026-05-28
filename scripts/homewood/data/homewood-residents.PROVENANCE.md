@@ -32,9 +32,9 @@ The schema's `payer_type` enum (`private_pay`, `medicaid_oss`, `ltc_insurance`, 
 
 This is the only field in the CSV that involves judgment. If you want zero inference, the entire `payer_type` column can be re-derived later from billing records.
 
-## Row removed (incomplete source)
+## One-row addendum
 
-- **Coone, Karen (Room 16B, admit 2026-05-04)** — face sheet `GENDER` cell is **empty**. Schema requires gender. Rather than guess from name, the row was excluded. Other data captured for reinsertion when staff fills gender:
+- **Coone, Karen (Room 16B, admit 2026-05-04)** — originally excluded because the face sheet `GENDER` cell is **empty** and gender was not inferred from name. Brian confirmed on 2026-05-18 that Karen Coone is active in **16B**. Added `homewood-residents-karen-coone.csv` as a one-row addendum using `prefer_not_to_say` for the required gender enum while preserving source uncertainty.
   - DOB: 03/08/1953
   - Medical History: "Hypothyroid, Glaucoma and Osteopenia"
   - Emergency 1: Karen Coone, 386-389-1462, Daughter

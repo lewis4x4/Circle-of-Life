@@ -3,14 +3,31 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Loader2, ShieldAlert, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  Loader2,
+  RefreshCw,
+  X,
+  XCircle,
+} from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
-import { V2Card } from "@/components/ui/v2-card";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { MetricCard } from "@/components/ui/metric-card";
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
 type FollowUpStatus = "open" | "in_progress" | "resolved" | "dismissed";
 
@@ -24,9 +41,22 @@ type EscalationRow = {
   acknowledged_at: string | null;
   resolved_at: string | null;
   resolution_note: string | null;
+  resolution_rationale?: string | null;
   status: FollowUpStatus;
-  residents?: { first_name: string; last_name: string; preferred_name: string | null } | null;
-  resident_observation_tasks?: { status: string; due_at: string; grace_ends_at: string; notes: string | null; watch_instance_id: string | null } | null;
+  residents?: {
+    first_name: string;
+    last_name: string;
+    preferred_name: string | null;
+    acuity_level?: string | null;
+    acuity_score?: number | null;
+  } | null;
+  resident_observation_tasks?: {
+    status: string;
+    due_at: string;
+    grace_ends_at: string;
+    notes: string | null;
+    watch_instance_id: string | null;
+  } | null;
   watchSummary?: {
     protocolName: string | null;
     watchStatus: string;
@@ -37,12 +67,23 @@ type EscalationRow = {
   };
 };
 
-const STATUS_STYLES: Record<FollowUpStatus, string> = {
-  open: "border-destructive/30 bg-destructive/10 text-destructive",
-  in_progress: "border-warning/30 bg-warning/10 text-warning",
-  resolved: "border-success/30 bg-success/10 text-success",
-  dismissed: "border-border bg-muted text-muted-foreground",
-};
+type LoadState = "idle" | "loading" | "ready" | "error";
+
+type BoardState =
+  | "no_facility"
+  | "loading"
+  | "error"
+  | "empty"
+  | "empty_filtered"
+  | "populated";
+
+type Tone = "default" | "warning" | "danger";
+
+type StatusFilter = "all" | "open" | "resolved_today" | "dismissed" | "resolved_7d";
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
 
 function residentName(row: EscalationRow["residents"], fallback: string) {
   if (!row) return fallback;
@@ -51,39 +92,104 @@ function residentName(row: EscalationRow["residents"], fallback: string) {
 
 function relTime(ts: string) {
   const deltaMinutes = Math.round((new Date(ts).getTime() - Date.now()) / 60000);
-  if (Math.abs(deltaMinutes) < 60) return `${Math.abs(deltaMinutes)} min ${deltaMinutes >= 0 ? "from now" : "ago"}`;
+  if (Math.abs(deltaMinutes) < 60)
+    return `${Math.abs(deltaMinutes)} min ${deltaMinutes >= 0 ? "from now" : "ago"}`;
   const deltaHours = Math.round(deltaMinutes / 60);
-  if (Math.abs(deltaHours) < 48) return `${Math.abs(deltaHours)} hr ${deltaHours >= 0 ? "from now" : "ago"}`;
+  if (Math.abs(deltaHours) < 48)
+    return `${Math.abs(deltaHours)} hr ${deltaHours >= 0 ? "from now" : "ago"}`;
   const deltaDays = Math.round(deltaHours / 24);
   return `${Math.abs(deltaDays)} day${Math.abs(deltaDays) === 1 ? "" : "s"} ${deltaDays >= 0 ? "from now" : "ago"}`;
 }
 
+function statusTone(status: FollowUpStatus): Tone {
+  if (status === "open") return "danger";
+  if (status === "in_progress") return "warning";
+  return "default";
+}
+
+function statusLabel(status: FollowUpStatus): string {
+  if (status === "in_progress") return "In progress";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function statusPillTone(status: FollowUpStatus): StatusPillTone {
+  const tone = statusTone(status);
+  if (tone === "danger") return "danger";
+  if (tone === "warning") return "warning";
+  return "muted";
+}
+
+function hasHighAcuityResident(row: EscalationRow) {
+  const score = Number(row.residents?.acuity_score ?? 0);
+  const level = row.residents?.acuity_level?.toLowerCase() ?? "";
+  return score >= 3 || level.includes("high") || level.includes("critical") || level.includes("3");
+}
+
+function escalationSeverity(row: EscalationRow): { label: string; tone: StatusPillTone } {
+  if (row.escalation_level >= 5 && hasHighAcuityResident(row)) return { label: "Critical", tone: "danger" };
+  if (row.escalation_level >= 5) return { label: "High", tone: "danger" };
+  if (row.escalation_level >= 3) return { label: "Medium", tone: "warning" };
+  return { label: "Low", tone: "muted" };
+}
+
+function hoursOverdue(row: EscalationRow, nowMs: number) {
+  const anchor = row.resident_observation_tasks?.grace_ends_at ?? row.triggered_at;
+  const elapsedMs = Math.max(0, nowMs - new Date(anchor).getTime());
+  return `${(elapsedMs / (60 * 60 * 1000)).toFixed(1)} hr`;
+}
+
+function resolveOpenTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 2) return "warning";
+  return "danger";
+}
+
+function deriveBoardState(args: {
+  loadState: LoadState;
+  hasFacility: boolean;
+  rowCount: number;
+  filterApplied: boolean;
+}): BoardState {
+  if (!args.hasFacility) return "no_facility";
+  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
+  if (args.loadState === "error") return "error";
+  if (args.rowCount === 0) return args.filterApplied ? "empty_filtered" : "empty";
+  return "populated";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export default function RoundingEscalationsPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
+  const facilityName = selectedFacility?.name ?? "selected facility";
   const [rows, setRows] = useState<EscalationRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadState, setLoadState] = useState<LoadState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [filter, setFilter] = useState<"all" | FollowUpStatus>("all");
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const load = useCallback(async () => {
+    setLoadState("loading");
+    setErrorMessage(null);
+
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
       setRows([]);
-      setLoading(false);
+      setLoadState("ready");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     try {
-      let query = supabase
+      const query = supabase
         .from("resident_observation_escalations")
-        .select(`
+        .select(
+          `
           id,
           resident_id,
           task_id,
@@ -93,18 +199,16 @@ export default function RoundingEscalationsPage() {
           acknowledged_at,
           resolved_at,
           resolution_note,
+          resolution_rationale,
           status,
-          residents(first_name, last_name, preferred_name),
+          residents(first_name, last_name, preferred_name, acuity_level, acuity_score),
           resident_observation_tasks(status, due_at, grace_ends_at, notes, watch_instance_id)
-        `)
+        `,
+        )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("triggered_at", { ascending: false })
         .limit(100);
-
-      if (filter !== "all") {
-        query = query.eq("status", filter);
-      }
 
       const { data, error: queryError } = await query;
       if (queryError) throw queryError;
@@ -114,18 +218,21 @@ export default function RoundingEscalationsPage() {
         new Set(
           escalationRows
             .map((row) => row.resident_observation_tasks?.watch_instance_id)
-            .filter((value): value is string => typeof value === "string" && value.length > 0),
+            .filter((v): v is string => typeof v === "string" && v.length > 0),
         ),
       );
 
       if (watchIds.length === 0) {
         setRows(escalationRows);
+        setLoadState("ready");
         return;
       }
 
       const { data: watchRows, error: watchError } = await supabase
         .from("resident_watch_instances")
-        .select("id, status, triggered_by_type, triggered_by_id, resident_watch_protocols(name)")
+        .select(
+          "id, status, triggered_by_type, triggered_by_id, resident_watch_protocols(name)",
+        )
         .in("id", watchIds)
         .is("deleted_at", null);
 
@@ -157,7 +264,11 @@ export default function RoundingEscalationsPage() {
           .in("id", incidentIds)
           .is("deleted_at", null);
         if (incidentError) throw incidentError;
-        for (const incident of (incidents ?? []) as Array<{ id: string; incident_number: string; category: string }>) {
+        for (const incident of (incidents ?? []) as Array<{
+          id: string;
+          incident_number: string;
+          category: string;
+        }>) {
           incidentMap.set(incident.id, {
             incident_number: incident.incident_number,
             category: incident.category,
@@ -170,14 +281,18 @@ export default function RoundingEscalationsPage() {
         if (!watchId) return row;
         const watch = watchMap.get(watchId);
         if (!watch) return row;
-        const incident = watch.triggered_by_id ? incidentMap.get(watch.triggered_by_id) : undefined;
+        const incident = watch.triggered_by_id
+          ? incidentMap.get(watch.triggered_by_id)
+          : undefined;
         return {
           ...row,
           watchSummary: {
             protocolName: watch.resident_watch_protocols?.name ?? null,
             watchStatus: watch.status,
             triggeredByType: watch.triggered_by_type,
-            incidentId: watch.triggered_by_type.startsWith("incident_") ? watch.triggered_by_id : null,
+            incidentId: watch.triggered_by_type.startsWith("incident_")
+              ? watch.triggered_by_id
+              : null,
             incidentNumber: incident?.incident_number ?? null,
             incidentCategory: incident?.category ?? null,
           },
@@ -185,333 +300,609 @@ export default function RoundingEscalationsPage() {
       });
 
       setRows(enriched);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not load escalations");
-    } finally {
-      setLoading(false);
+      setLoadState("ready");
+    } catch {
+      setErrorMessage("Could not load escalations. Confirm facility scope and retry.");
+      setRows([]);
+      setLoadState("error");
     }
-  }, [filter, selectedFacilityId, supabase]);
+  }, [selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const counts = useMemo(() => ({
-    open: rows.filter((row) => row.status === "open").length,
-    in_progress: rows.filter((row) => row.status === "in_progress").length,
-    resolved: rows.filter((row) => row.status === "resolved").length,
-    dismissed: rows.filter((row) => row.status === "dismissed").length,
-  }), [rows]);
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    const onFocus = () => setNowMs(Date.now());
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
-  const runAction = useCallback(async (id: string, action: "start_review" | "resolve" | "dismiss") => {
-    setActionLoading(`${id}:${action}`);
-    setActionError(null);
-    setActionMessage(null);
+  const counts = useMemo(() => {
+    const today = new Date().toDateString();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return {
+      all: rows.length,
+      open: rows.filter((row) => row.status === "open" || row.status === "in_progress").length,
+      resolved_today: rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).toDateString() === today).length,
+      dismissed: rows.filter((row) => row.status === "dismissed").length,
+      resolved_7d: rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).getTime() >= sevenDaysAgo).length,
+    };
+  }, [rows]);
 
-    try {
-      const response = await fetch(`/api/rounding/escalations/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          action,
-          note: notes[id]?.trim() || undefined,
-        }),
-      });
+  const visibleRows = useMemo(() => {
+    if (filter === "all") return rows;
+    if (filter === "open") return rows.filter((row) => row.status === "open" || row.status === "in_progress");
+    if (filter === "dismissed") return rows.filter((row) => row.status === "dismissed");
+    const today = new Date().toDateString();
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    if (filter === "resolved_today") return rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).toDateString() === today);
+    return rows.filter((row) => row.status === "resolved" && row.resolved_at && new Date(row.resolved_at).getTime() >= sevenDaysAgo);
+  }, [filter, rows]);
 
-      const json = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        throw new Error(json.error ?? "Could not update escalation");
+  const runAction = useCallback(
+    async (id: string, action: "start_review" | "resolve" | "dismiss") => {
+      setActionLoading(`${id}:${action}`);
+      setErrorMessage(null);
+      setActionMessage(null);
+
+      try {
+        const note = notes[id]?.trim() ?? "";
+        if (action === "resolve" && note.length < 30) {
+          setErrorMessage("Add a resolution rationale of at least 30 characters before resolving.");
+          return;
+        }
+
+        const response = await fetch(`/api/rounding/escalations/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action,
+            note: note || undefined,
+          }),
+        });
+
+        const json = (await response.json()) as { error?: string };
+        if (!response.ok) throw new Error(json.error ?? "Could not update escalation");
+
+        setActionMessage(
+          action === "start_review"
+            ? "Escalation moved into review."
+            : action === "resolve"
+              ? "Escalation resolved."
+              : "Escalation dismissed.",
+        );
+        setNotes((current) => ({ ...current, [id]: "" }));
+        await load();
+      } catch {
+        setErrorMessage("Could not update escalation. Confirm it is still actionable and retry.");
+      } finally {
+        setActionLoading(null);
       }
+    },
+    [load, notes],
+  );
 
-      setActionMessage(
-        action === "start_review"
-          ? "Escalation moved into review."
-          : action === "resolve"
-            ? "Escalation resolved."
-            : "Escalation dismissed.",
-      );
-      setNotes((current) => ({ ...current, [id]: "" }));
-      await load();
-    } catch (runError) {
-      setActionError(runError instanceof Error ? runError.message : "Could not update escalation");
-    } finally {
-      setActionLoading(null);
-    }
-  }, [load, notes]);
+  const boardState = deriveBoardState({
+    loadState,
+    hasFacility: Boolean(selectedFacilityId),
+    rowCount: visibleRows.length,
+    filterApplied: filter !== "all",
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <></>
+      <PageHeader
+        title="Observation escalations"
+        subtitle={`Missed or overdue checks requiring operator review and survey-ready resolution at ${facilityName}.`}
+        actions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => void load()}
+            aria-label="Refresh escalations"
+            title="Refresh"
+            disabled={loadState === "loading"}
+          >
+            <RefreshCw
+              className={cn("size-4", loadState === "loading" && "animate-spin")}
+              aria-hidden
+            />
+          </Button>
+        }
+      />
 
-      <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-[var(--radius)] border border-border shadow-sm mt-4">
-          <div className="space-y-2">
-            
-            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-              Observation Escalations
-              {counts.open > 0 ? <ShieldAlert className="h-8 w-8 text-destructive" /> : null}
-            </h1>
-            <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-3xl">
-              Review critically overdue and missed observation work before it becomes a resident-safety blind spot.
-            </p>
-          </div>
-          <div>
-            <RoundingHubNav />
-          </div>
-        </div>
+      <RoundingHubNav />
 
-        {!selectedFacilityId ? (
-          <div className="rounded-[var(--radius)] border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            Select a facility in the admin header to open the escalation queue.
-          </div>
-        ) : null}
+      {boardState === "no_facility" ? (
+        <AllFacilitiesInterstitial />
+      ) : boardState === "error" ? (
+        <LoadErrorNotice
+          message={errorMessage ?? "Could not load escalations."}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <>
+          {actionMessage ? (
+            <InfoBanner
+              tone="success"
+              message={actionMessage}
+              onDismiss={() => setActionMessage(null)}
+            />
+          ) : null}
 
-        {actionMessage ? <Banner tone="success">{actionMessage}</Banner> : null}
-        {actionError ? <Banner tone="error">{actionError}</Banner> : null}
-        {error ? <Banner tone="error">{error}</Banner> : null}
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Open" value={String(counts.open)} accent="text-destructive" icon={<AlertTriangle className="h-5 w-5" />} pulse={counts.open > 0} />
-          <MetricCard label="In Progress" value={String(counts.in_progress)} accent="text-warning" icon={<Clock3 className="h-5 w-5" />} />
-          <MetricCard label="Resolved" value={String(counts.resolved)} accent="text-success" icon={<CheckCircle2 className="h-5 w-5" />} />
-          <MetricCard label="Dismissed" value={String(counts.dismissed)} accent="text-muted-foreground" icon={<XCircle className="h-5 w-5" />} />
-        </div>
-
-        <V2Card hoverColor="rose" className="p-6 border-rose-500/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Supervisor escalation lane</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Open, triage, and close resident-observation escalations with preserved task evidence.
-              </p>
+          {/* KPI strip */}
+          <section aria-label="Escalation summary">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <KpiCard
+                label="Open"
+                value={counts.open}
+                tone={resolveOpenTone(counts.open)}
+                hint="Awaiting review"
+              />
+              <KpiCard
+                label="Resolved today"
+                value={counts.resolved_today}
+                tone="default"
+                hint="Closed with rationale today"
+              />
+              <KpiCard
+                label="Resolved (7 days)"
+                value={counts.resolved_7d}
+                tone="default"
+                hint="Closed with rationale in the last 7 days"
+              />
+              <KpiCard
+                label="Dismissed"
+                value={counts.dismissed}
+                tone="default"
+                hint="Reviewed and dismissed"
+              />
             </div>
+          </section>
 
-            <div className="flex flex-wrap gap-2">
-              {(["all", "open", "in_progress", "resolved", "dismissed"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFilter(value)}
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
-                    filter === value
-                      ? "border-destructive/30 bg-destructive/10 text-destructive"
-                      : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted/40",
-                  )}
-                >
-                  {value === "all" ? "All" : value.replace("_", " ")}
-                </button>
-              ))}
+          {/* Filter pills */}
+          <section aria-label="Filter escalations">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <span className="shrink-0 text-[12px] font-medium text-muted-foreground">
+                Filter
+              </span>
+              <div className="-mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
+                <FilterPill
+                  label="All"
+                  count={counts.all}
+                  tone="default"
+                  active={filter === "all"}
+                  onClick={() => setFilter("all")}
+                />
+                <FilterPill
+                  label="Open"
+                  count={counts.open}
+                  tone={resolveOpenTone(counts.open)}
+                  active={filter === "open"}
+                  onClick={() => setFilter(filter === "open" ? "all" : "open")}
+                />
+                <FilterPill
+                  label="Resolved today"
+                  count={counts.resolved_today}
+                  tone="default"
+                  active={filter === "resolved_today"}
+                  onClick={() => setFilter(filter === "resolved_today" ? "all" : "resolved_today")}
+                />
+                <FilterPill
+                  label="Resolved (7 days)"
+                  count={counts.resolved_7d}
+                  tone="default"
+                  active={filter === "resolved_7d"}
+                  onClick={() => setFilter(filter === "resolved_7d" ? "all" : "resolved_7d")}
+                />
+                <FilterPill
+                  label="Dismissed"
+                  count={counts.dismissed}
+                  tone="default"
+                  active={filter === "dismissed"}
+                  onClick={() => setFilter(filter === "dismissed" ? "all" : "dismissed")}
+                />
+                {filter !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setFilter("all")}
+                    className="ml-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <X className="size-3" aria-hidden />
+                    Clear filter
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          </section>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-destructive" />
-            </div>
-          ) : rows.length === 0 ? (
-              <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-              No observation escalations match this filter.
-            </div>
+          {boardState === "empty" ? (
+            <NoEscalationsEmptyState facilityName={facilityName} />
+          ) : boardState === "empty_filtered" ? (
+            <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
-            <div className="mt-5 space-y-4">
-              {rows.map((row) => {
-                const key = (action: string) => `${row.id}:${action}`;
-                const task = row.resident_observation_tasks;
-                return (
-                  <div key={row.id} className="min-h-[36px] px-[13px] py-4 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={cn("rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider", STATUS_STYLES[row.status])}>
-                            {row.status.replace("_", " ")}
-                          </span>
-                            <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Level {row.escalation_level}
-                          </span>
-                          <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            {row.escalation_type.replace(/_/g, " ")}
-                          </span>
-                          {row.watchSummary?.protocolName ? (
-                            <span className="rounded-full border border-info/20 bg-info/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-info">
-                              {row.watchSummary.protocolName}
-                            </span>
-                          ) : null}
-                        </div>
-
-                        <div>
-                          <h3 className="text-xl tracking-tight text-foreground">
-                            {residentName(row.residents, row.resident_id.slice(0, 8))}
-                          </h3>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            Triggered {new Date(row.triggered_at).toLocaleString()} · {relTime(row.triggered_at)}
-                          </p>
-                        </div>
-
-                        <div className="grid gap-3 md:grid-cols-2 text-sm text-muted-foreground">
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Task status</p>
-                            <p>{task?.status?.replace(/_/g, " ") ?? "Unavailable"}</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Due window</p>
-                            <p>
-                              {task ? `${new Date(task.due_at).toLocaleString()} -> ${new Date(task.grace_ends_at).toLocaleString()}` : "Unavailable"}
-                            </p>
-                          </div>
-                          {row.watchSummary ? (
-                            <>
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Watch source</p>
-                                <p>{row.watchSummary.triggeredByType.replace(/_/g, " ")}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Watch status</p>
-                                <p>{row.watchSummary.watchStatus.replace(/_/g, " ")}</p>
-                              </div>
-                            </>
-                          ) : null}
-                        </div>
-
-                        {row.watchSummary?.incidentId ? (
-                          <div className="rounded-[var(--radius)] border border-destructive/20 bg-destructive/10 px-3.5 py-3 text-sm text-foreground">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <div>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Related incident</p>
-                                <p>
-                                  {row.watchSummary.incidentNumber ?? row.watchSummary.incidentId}
-                                  {row.watchSummary.incidentCategory ? ` · ${row.watchSummary.incidentCategory.replace(/_/g, " ")}` : ""}
-                                </p>
-                              </div>
-                              <Link
-                                href={`/admin/incidents/${row.watchSummary.incidentId}`}
-                                className="text-xs font-bold uppercase tracking-wider text-destructive hover:underline"
-                              >
-                                Open incident
-                              </Link>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {task?.notes ? (
-                          <div className="rounded-[var(--radius)] border border-border bg-card px-3.5 py-3 text-sm text-muted-foreground">
-                            {task.notes}
-                          </div>
-                        ) : null}
-
-                        {row.resolution_note ? (
-                          <div className="rounded-[var(--radius)] border border-border bg-card px-3.5 py-3 text-sm text-muted-foreground">
-                            {row.resolution_note}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="min-w-[260px] space-y-3">
-                        <textarea
-                          value={notes[row.id] ?? ""}
-                          onChange={(event) => setNotes((current) => ({ ...current, [row.id]: event.target.value }))}
-                          rows={3}
-                          placeholder="Review note or resolution context..."
-                          className="w-full rounded-[var(--radius)] border border-border bg-card px-3.5 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
-                        />
-
-                        <div className="flex flex-wrap gap-2">
-                          {row.status === "open" ? (
-                            <Button
-                              type="button"
-                              onClick={() => void runAction(row.id, "start_review")}
-                              disabled={actionLoading === key("start_review")}
-                              className="rounded-full bg-warning text-primary-foreground hover:bg-warning/90"
-                            >
-                              {actionLoading === key("start_review") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
-                              Start review
-                            </Button>
-                          ) : null}
-
-                          {row.status === "open" || row.status === "in_progress" ? (
-                            <>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "resolve")}
-                                disabled={actionLoading === key("resolve")}
-                                className="rounded-full"
-                              >
-                                {actionLoading === key("resolve") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Resolve
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => void runAction(row.id, "dismiss")}
-                                disabled={actionLoading === key("dismiss")}
-                                className="rounded-full"
-                              >
-                                {actionLoading === key("dismiss") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                                Dismiss
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <ul className="flex flex-col gap-3" aria-label="Escalations">
+              {visibleRows.map((row) => (
+                <li key={row.id}>
+                  <EscalationCard
+                    row={row}
+                    note={notes[row.id] ?? ""}
+                    onNoteChange={(value) =>
+                      setNotes((current) => ({ ...current, [row.id]: value }))
+                    }
+                    actionLoading={actionLoading}
+                    nowMs={nowMs}
+                    onAction={(action) => void runAction(row.id, action)}
+                  />
+                </li>
+              ))}
+            </ul>
           )}
-        </V2Card>
-      </div>
+        </>
+      )}
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  accent,
-  icon,
-  pulse = false,
+/* -------------------------------------------------------------------------- */
+/*  Escalation card                                                            */
+/* -------------------------------------------------------------------------- */
+
+function EscalationCard({
+  row,
+  note,
+  onNoteChange,
+  actionLoading,
+  nowMs,
+  onAction,
 }: {
-  label: string;
-  value: string;
-  accent: string;
-  icon: ReactNode;
-  pulse?: boolean;
+  row: EscalationRow;
+  note: string;
+  onNoteChange: (value: string) => void;
+  actionLoading: string | null;
+  nowMs: number;
+  onAction: (action: "start_review" | "resolve" | "dismiss") => void;
 }) {
+  const task = row.resident_observation_tasks;
+  const actionKey = (action: string) => `${row.id}:${action}`;
+  const severity = escalationSeverity(row);
+  const resolutionText = row.resolution_rationale ?? row.resolution_note;
+
   return (
-    <V2Card hoverColor="rose" className="p-5 border-border">
-      <div className="flex h-full flex-col justify-between gap-4">
-        <div className={cn("flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider", accent)}>
-          {icon}
-          {label}
-          {pulse ? <span className="ml-auto h-2 w-2 rounded-full bg-destructive" /> : null}
+    <article className="rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone={statusPillTone(row.status)}>{statusLabel(row.status)}</StatusPill>
+            <StatusPill tone={severity.tone}>{severity.label}</StatusPill>
+            <Chip className="border-border bg-muted text-muted-foreground">
+              {row.escalation_type.replace(/_/g, " ")}
+            </Chip>
+            {row.watchSummary?.protocolName ? (
+              <Chip className="border-info/30 bg-info/10 text-info">
+                {row.watchSummary.protocolName}
+              </Chip>
+            ) : null}
+          </div>
+
+          <div>
+            <h3 className="text-base font-semibold text-foreground">
+              {residentName(row.residents, row.resident_id.slice(0, 8))}
+            </h3>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Triggered {new Date(row.triggered_at).toLocaleString()} ·{" "}
+              {relTime(row.triggered_at)}
+            </p>
+          </div>
+
+          <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
+            <DataPair
+              label="Missed check"
+              value={task?.status?.replace(/_/g, " ") ?? row.escalation_type.replace(/_/g, " ")}
+            />
+            <DataPair
+              label="Originally due"
+              value={task ? new Date(task.due_at).toLocaleString() : new Date(row.triggered_at).toLocaleString()}
+            />
+            <DataPair label="Hours overdue" value={hoursOverdue(row, nowMs)} />
+            {row.watchSummary ? (
+              <>
+                <DataPair
+                  label="Watch source"
+                  value={row.watchSummary.triggeredByType.replace(/_/g, " ")}
+                />
+                <DataPair
+                  label="Watch status"
+                  value={row.watchSummary.watchStatus.replace(/_/g, " ")}
+                />
+              </>
+            ) : null}
+          </dl>
+
+          {row.watchSummary?.incidentId ? (
+            <div className="flex flex-col gap-2 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Related incident
+                </p>
+                <p className="text-[13px] text-foreground">
+                  {row.watchSummary.incidentNumber ?? row.watchSummary.incidentId}
+                  {row.watchSummary.incidentCategory
+                    ? ` · ${row.watchSummary.incidentCategory.replace(/_/g, " ")}`
+                    : ""}
+                </p>
+              </div>
+              <Link
+                href={`/admin/incidents/${row.watchSummary.incidentId}`}
+                className="text-[12px] font-medium text-danger hover:underline"
+              >
+                Open incident
+              </Link>
+            </div>
+          ) : null}
+
+          {task?.notes ? (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px] text-muted-foreground">
+              <p className="text-[11px] font-medium text-muted-foreground">Task notes</p>
+              <p className="mt-0.5 text-foreground">{task.notes}</p>
+            </div>
+          ) : null}
+
+          {resolutionText ? (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[13px]">
+              <p className="text-[11px] font-medium text-muted-foreground">Resolution rationale</p>
+              <p className="mt-0.5 text-foreground">{resolutionText}</p>
+            </div>
+          ) : null}
         </div>
-        <div className={cn("text-4xl tracking-tight", accent)}>{value}</div>
+
+        <div className="min-w-0 lg:w-[280px] lg:shrink-0">
+          <div className="space-y-2">
+            <label htmlFor={`note-${row.id}`} className="sr-only">
+              Resolution rationale
+            </label>
+            <textarea
+              id={`note-${row.id}`}
+              value={note}
+              onChange={(event) => onNoteChange(event.target.value)}
+              rows={3}
+              placeholder="Required resolution rationale for resolved escalations (30+ characters)…"
+              className="w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground shadow-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
+            />
+
+            <div className="flex flex-wrap gap-2">
+              {row.status === "open" ? (
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => onAction("start_review")}
+                  disabled={actionLoading === actionKey("start_review")}
+                >
+                  {actionLoading === actionKey("start_review") ? (
+                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <ArrowRight className="size-3.5" aria-hidden />
+                  )}
+                  Start review
+                </Button>
+              ) : null}
+
+              {(row.status === "open" || row.status === "in_progress") && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onAction("resolve")}
+                    disabled={actionLoading === actionKey("resolve") || note.trim().length < 30}
+                  >
+                    {actionLoading === actionKey("resolve") ? (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      <CheckCircle2 className="size-3.5" aria-hidden />
+                    )}
+                    Resolve
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onAction("dismiss")}
+                    disabled={actionLoading === actionKey("dismiss")}
+                  >
+                    {actionLoading === actionKey("dismiss") ? (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      <XCircle className="size-3.5" aria-hidden />
+                    )}
+                    Dismiss as duplicate
+                  </Button>
+                </>
+              )}
+              <Link
+                href={`/admin/rounding/escalations/${row.id}/review`}
+                className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Escalate further
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
-    </V2Card>
+    </article>
   );
 }
 
-function Banner({
-  tone,
-  children,
-}: {
-  tone: "success" | "error";
-  children: ReactNode;
-}) {
+/* -------------------------------------------------------------------------- */
+/*  Primitives                                                                */
+/* -------------------------------------------------------------------------- */
+
+function Chip({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div
+    <span
       className={cn(
-        "rounded-[var(--radius)] border px-4 py-3 text-sm",
-        tone === "success"
-          ? "border-success/20 bg-success/10 text-success"
-          : "border-destructive/20 bg-destructive/10 text-destructive",
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize",
+        className,
       )}
     >
       {children}
+    </span>
+  );
+}
+
+function DataPair({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-medium text-muted-foreground">{label}</dt>
+      <dd className="text-[13px] text-foreground capitalize">{value}</dd>
     </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: Tone;
+  hint: string;
+}) {
+  const thresholds = label === "Open" ? ({ type: "overdue-count" } as const) : ({ type: "informational" } as const);
+  return <MetricCard label={label} value={value} numericValue={value} thresholds={thresholds} tone={tone === "default" ? undefined : tone} hint={hint} />;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Notices + empty states                                                    */
+/* -------------------------------------------------------------------------- */
+
+function InfoBanner({
+  tone,
+  message,
+  onDismiss,
+}: {
+  tone: "success" | "info";
+  message: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-[13px] text-foreground",
+        tone === "success" && "border-success/30 bg-success/10",
+        tone === "info" && "border-info/30 bg-info/10",
+      )}
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="text-muted-foreground hover:text-foreground"
+        aria-label="Dismiss"
+      >
+        <X className="size-3.5" aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+function AllFacilitiesInterstitial() {
+  return (
+    <section
+      aria-label="Facility scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <div className="flex items-start gap-3">
+        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Escalations operate per facility
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            Escalations are facility-scoped. Select a facility from the top bar to continue.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-destructive"
+          aria-hidden
+        />
+        <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="h-8 shrink-0 text-[12px]"
+      >
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+function NoEscalationsEmptyState({ facilityName }: { facilityName: string }) {
+  return (
+    <section
+      aria-label="No open escalations"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <CheckCircle2 className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">No open escalations at {facilityName}</p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Missed and overdue checks will appear here for review.
+      </p>
+    </section>
+  );
+}
+
+function FilterEmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <section
+      aria-label="No escalations match filter"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <ClipboardList className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        No escalations match the current filter
+      </p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Adjust the filter to see other escalations.
+      </p>
+      <div className="mt-4">
+        <Button type="button" variant="outline" size="sm" onClick={onClear}>
+          <X className="size-4" aria-hidden />
+          Clear filter
+        </Button>
+      </div>
+    </section>
   );
 }

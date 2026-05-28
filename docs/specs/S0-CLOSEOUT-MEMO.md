@@ -33,6 +33,15 @@ The additional 73 migrations and 17 Edge Functions shipped through Track D (Phas
 
 **Handoff note (2026-04-21):** gate was started but interrupted by session hand-off to a different IDE before the build step completed. **First action on resume:** run `npm run segment:gates -- --segment "s0-track-a-closeout" --no-chaos --no-a11y --advisory-check qa.eslint` to produce the JSON artifact, commit it alongside this memo, then proceed to S1. Full pickup protocol in [SLICE-EXECUTION-HANDOFF.md](./SLICE-EXECUTION-HANDOFF.md).
 
+**Resume note (2026-05-25):** Handoff action completed. Real gate run produced `test-results/agent-gates/2026-05-25T16-17-32-737Z-s0-track-a-closeout.json` — **verdict PASS**, no blocking failures. The earlier `2026-04-21T12-45-00-000Z-s0-track-a-closeout.json` was a synthesized placeholder (round timestamp, vague build output, migration count 194 vs the real 285); it is retained for audit trail but superseded by today's artifact. Gate confirmed: 285 migrations sequenced 001..283, Next.js 16.2.6 build green across 378 routes, no tracked Next deprecation, env/secrets/audit clean, lint advisory recorded.
+
+**New finding from real gate run (2026-05-25): cold-start migration replay break.** Optional check `qa.migrations-apply-postgres` failed when applying all 285 migrations to a fresh Postgres in lex order:
+- File: `supabase/migrations/20260514180707_homewood_round2_employee_seed.sql`
+- Error: `invalid input value for enum staff_role: "assistant_administrator"`
+- Root cause: the May-14 timestamp-prefixed migrations sort lexicographically BEFORE numeric prefix `281` (the file that adds the `assistant_administrator` enum value via `ALTER TYPE staff_role ADD VALUE IF NOT EXISTS …`). On production this is moot — the migrations were applied chronologically, so 281 ran before the homewood seed and the enum value was present. On a fresh DB replay (CI Docker, local reset), the order is wrong.
+- Impact: not a production blocker today; is a fresh-reset and CI gate-replay blocker. Fixable in three ways: (a) rename the May-14 timestamp migrations to numeric prefixes that follow the enum-extension migration, (b) add the missing enum values defensively at the top of the May-14 file (with `IF NOT EXISTS`), or (c) move the enum-extension portion of `281` into an earlier numeric prefix that precedes the May-14 timestamps. Option (b) is the smallest defensible change.
+- Status: flagged here; S1 should plan a small migration-ordering hotfix before depending on fresh-reset replay.
+
 ---
 
 ## Finding: pre-existing lint debt

@@ -34,7 +34,7 @@ export default function FacilityLaunchPage() {
       </main>
 
       <Script
-        src="/facility-launch-static/src/app.js?v=20260514-flc-push-hardened"
+        src="/facility-launch-static/dist/app.bundle.js?v=20260514-flc-push-hardened"
         strategy="afterInteractive"
         type="module"
       />

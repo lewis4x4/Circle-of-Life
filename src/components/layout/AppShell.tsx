@@ -24,6 +24,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -33,15 +34,12 @@ import {
   Check,
   ChevronDown,
   LineChart,
-  Loader2,
-  LogOut,
+  Menu as MenuIcon,
   MessageSquare,
   Moon,
   Search,
-  Settings,
   ShieldAlert,
   Sun,
-  UserCircle2,
 } from "lucide-react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FACILITY_LIST_TTL_MS, useFacilityStore } from "@/hooks/useFacilityStore";
@@ -66,25 +64,15 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
+import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
+import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { SurveyVisitWorkspaceDock } from "@/components/compliance/SurveyVisitWorkspaceChrome";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
-import { HavenInsightShell } from "@/components/haven-insight/HavenInsightShell";
-import { GraceShell } from "@/lib/grace/GraceShell";
+import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
-  AUXILIARY_ROUTES,
   PILLARS,
   REPORT_INCIDENT_HREF,
   findActivePillar,
@@ -104,6 +92,14 @@ const WORKSPACE_ICON_LG =
 const WORKSPACE_ICON_SM =
   "inline-flex size-8 items-center justify-center rounded-[8px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+const AppShellCommandPalette = dynamic(
+  () =>
+    import("@/components/layout/AppShellCommandPalette").then((m) => ({
+      default: m.AppShellCommandPalette,
+    })),
+  { ssr: false, loading: () => null },
+);
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -116,7 +112,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
   const clearFacilityCache = useFacilityStore((s) => s.clearFacilityCache);
 
-  const { email: sessionEmail, appRole, user, loading: authLoading } = useHavenAuth();
+  const {
+    email: sessionEmail,
+    appRole,
+    user,
+    organizationId,
+    orgName,
+    fullName,
+    avatarUrl,
+    loading: authLoading,
+  } = useHavenAuth();
   const currentUserId = user?.id ?? null;
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
 
@@ -141,6 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const currentUserIdRef = useRef<string | null>(currentUserId);
   const [signingOut, setSigningOut] = useState(false);
   const [pillarSheetOpen, setPillarSheetOpen] = useState(false);
+  const [sheetPillarId, setSheetPillarId] = useState<Pillar["id"] | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -148,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activePillar = useMemo(() => findActivePillar(pathname), [pathname]);
   const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
 
-  // ── ⌘K global hotkey ─────────────────────────────────────────────
+  // ── ⌘K / ⌘, global hotkeys ──────────────────────────────────────
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -162,10 +168,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         event.preventDefault();
         setPaletteOpen((v) => !v);
       }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === ",") {
+        event.preventDefault();
+        if (!pathname.startsWith("/admin/settings")) {
+          router.push("/admin/settings");
+        }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [pathname, router]);
 
   // Close transient surfaces on route change.
   useEffect(() => {
@@ -283,8 +296,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (authLoading) return;
-    syncSelectedFacilityCookie(currentUserId == null ? null : safeSelectedFacilityId);
-  }, [authLoading, currentUserId, safeSelectedFacilityId]);
+    if (currentUserId == null) {
+      syncSelectedFacilityCookie(null);
+      return;
+    }
+    if (facilitiesLoading || facilitiesLoadFailed) return;
+    syncSelectedFacilityCookie(safeSelectedFacilityId);
+  }, [
+    authLoading,
+    currentUserId,
+    facilitiesLoadFailed,
+    facilitiesLoading,
+    safeSelectedFacilityId,
+  ]);
 
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
@@ -310,22 +334,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [pathname],
   );
 
-  const handlePillarTabClick = useCallback(
-    (pillar: Pillar) => {
-      const isActive = activePillar?.id === pillar.id;
-      if (isActive) {
-        // On mobile, re-tapping the active pillar opens its items in a sheet.
-        // On desktop the rail already shows them, so this is a no-op.
-        if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
-          setPillarSheetOpen(true);
-        }
-        return;
-      }
-      const first = pillar.items[0];
-      if (first) router.push(first.href);
-    },
-    [activePillar, router],
-  );
+  const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
+    // On mobile, tapping any pillar opens its sub-routes in a sheet instead
+    // of jumping straight to the first item. Desktop keeps default navigation
+    // — the dropdown handles sub-route discovery there.
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      setSheetPillarId(pillarId);
+      setPillarSheetOpen(true);
+      return true;
+    }
+    return false;
+  }, []);
 
   const handlePaletteSelect = useCallback(
     (href: string) => {
@@ -418,39 +437,63 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </DropdownMenu>
   );
 
-  const renderPillarTab = (pillar: Pillar) => {
-    const active = activePillar?.id === pillar.id;
-    return (
-      <button
-        key={pillar.id}
-        type="button"
-        onClick={() => handlePillarTabClick(pillar)}
-        aria-current={active ? "page" : undefined}
+  const renderAllSectionsMenu = (pillarsForMenu: Pillar[]) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Open all sections menu"
         className={cn(
-          // 36px hit target, generous horizontal padding so the 2px accent
-          // underline reads as a strong active signal without crowding.
-          // Active: foreground + medium + primary underline. Inactive: muted hover lift.
-          "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
-          "transition-colors duration-[var(--motion-duration-micro)]",
+          WORKSPACE_ICON_LG,
+          "transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          active
-            ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground",
         )}
       >
-        {/* No truncate — constitution rule 8 forbids ellipsis. Pillar labels
-            are intentionally short (≤ 9 chars) so they fit; if a future label
-            doesn't, rename it rather than ellipsize. */}
-        <span className="whitespace-nowrap">{pillar.label}</span>
-        {active && (
-          // 2px brand underline aligned to the tab's text baseline (rule 4:
-          // never rely on color alone — paired with aria-current + font-medium).
-          <span
-            aria-hidden
-            className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
-          />
-        )}
-      </button>
+        <MenuIcon className="size-4" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={6}
+        className="w-[min(22rem,calc(100vw-1rem))] sm:w-72"
+      >
+        {pillarsForMenu.map((pillar, pillarIdx) => (
+          <React.Fragment key={pillar.id}>
+            {pillarIdx > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuLabel className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {React.createElement(pillar.icon, { className: "size-3.5", "aria-hidden": true })}
+              {pillar.label}
+            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {pillar.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <DropdownMenuItem
+                    key={item.key}
+                    onClick={() => router.push(item.href)}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px]"
+                  >
+                    <Icon className="size-3.5 text-muted-foreground" aria-hidden />
+                    <span>{item.label}</span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
+          </React.Fragment>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const renderPillarTab = (pillar: Pillar) => {
+    const first = pillar.items[0];
+    if (!first) return null;
+    return (
+      <PillarTabWithDropdown
+        key={pillar.id}
+        pillar={pillar}
+        active={activePillar?.id === pillar.id}
+        firstHref={first.href}
+        isItemActive={isItemActive}
+        onActivePillarTap={openPillarSheetIfMobile}
+      />
     );
   };
 
@@ -600,60 +643,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const renderProfileMenu = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Account menu"
-        className={cn(
-          WORKSPACE_ICON_LG,
-          "outline-none",
-          "transition-colors",
-          "focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-      >
-        <UserCircle2 className="size-5" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60 p-1">
-        <DropdownMenuLabel className="flex flex-col gap-0.5 px-2 py-1.5">
-          <span className="truncate text-[12px] font-medium text-foreground">
-            {sessionEmail ?? "Signed in"}
-          </span>
-          <span className="truncate text-[11px] font-normal text-muted-foreground">
-            {roleConfig.roleLabel}
-          </span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="my-1" />
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-            onClick={() => router.push("/admin/settings/notifications")}
-          >
-            <Settings className="size-3.5 text-muted-foreground" /> Account settings
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="my-1" />
-        <DropdownMenuItem
-          variant="destructive"
-          className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-          disabled={signingOut}
-          onClick={() => void handleSignOut()}
-        >
-          {signingOut ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" />
-              Signing out…
-            </>
-          ) : (
-            <>
-              <LogOut className="size-3.5" />
-              Sign out
-            </>
-          )}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
   const renderRailItem = (item: PillarItem) => {
     const Icon = item.icon;
     const active = isItemActive(item.href);
@@ -703,15 +692,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground antialiased">
-      {/* ── Top bar (always visible) ────────────────────────────── */}
+      {/* ── Top bar (always visible) — popping grey so the chrome reads
+          distinctly above the canvas. */}
       <header
         className={cn(
-          "bg-background text-foreground sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border",
+          "sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2",
+          "bg-stone-300 text-foreground border-b border-stone-400 shadow-md",
+          "dark:bg-stone-900 dark:border-stone-700",
           "px-3 lg:px-4",
         )}
       >
         {renderBrand()}
         {renderFacilityScope()}
+        {renderAllSectionsMenu(visiblePillars)}
 
         {/* Pillar tabs — desktop. Mobile uses the scroll strip below. */}
         <nav
@@ -730,33 +723,64 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {suppressSurveyVisitChrome ? null : <SurveyVisitShellToggle survey={surveyVisit} />}
           {renderNotificationsButton()}
           {renderThemeToggle()}
-          {renderProfileMenu()}
+          <div className="hidden md:block">
+            <UserMenu
+              fullName={fullName}
+              email={sessionEmail}
+              roleLabel={roleConfig.roleLabel}
+              organizationId={organizationId}
+              orgName={orgName}
+              avatarUrl={avatarUrl}
+              userId={currentUserId}
+              signingOut={signingOut}
+              onSignOut={handleSignOut}
+              triggerClassName={WORKSPACE_ICON_LG}
+            />
+          </div>
+          <div className="md:hidden">
+            <UserMenuSheet
+              fullName={fullName}
+              email={sessionEmail}
+              roleLabel={roleConfig.roleLabel}
+              organizationId={organizationId}
+              orgName={orgName}
+              avatarUrl={avatarUrl}
+              userId={currentUserId}
+              signingOut={signingOut}
+              onSignOut={handleSignOut}
+              triggerClassName={WORKSPACE_ICON_LG}
+            />
+          </div>
         </div>
       </header>
 
       {suppressSurveyVisitChrome ? null : <SurveyVisitWorkspaceDock survey={surveyVisit} />}
 
       {/* ── Mobile pillar scroll strip ──────────────────────────── */}
-      <div
+      <nav
         className={cn(
           "lg:hidden sticky top-14 z-20 flex shrink-0 items-stretch gap-0.5 overflow-x-auto",
           "bg-background text-foreground border-b border-border px-2",
           "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         )}
         aria-label="Primary"
-        role="tablist"
       >
         {visiblePillars.map((pillar) => {
           const active = activePillar?.id === pillar.id;
           const Icon = pillar.icon;
+          const first = pillar.items[0];
+          if (!first) return null;
           return (
-            <button
+            <Link
               key={pillar.id}
-              type="button"
-              role="tab"
+              href={first.href}
               aria-current={active ? "page" : undefined}
-              aria-selected={active}
-              onClick={() => handlePillarTabClick(pillar)}
+              aria-haspopup="menu"
+              onClick={(event) => {
+                if (openPillarSheetIfMobile(pillar.id)) {
+                  event.preventDefault();
+                }
+              }}
               className={cn(
                 "relative flex h-9 shrink-0 items-center gap-1.5 px-3 text-[12px]",
                 "transition-colors duration-[var(--motion-duration-micro)]",
@@ -774,10 +798,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
                 />
               )}
-            </button>
+            </Link>
           );
         })}
-      </div>
+      </nav>
 
       {/* ── Layout row: contextual rail + main ─────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden border-t border-border">
@@ -801,7 +825,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Full-bleed: pages that need a narrow column for long-form
               content (settings forms, etc.) apply max-w on an inner block,
               not on this wrapper. */}
-          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8">{children}</div>
+          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8 [--haven-page-chrome-y:40px] lg:[--haven-page-chrome-y:48px] 2xl:[--haven-page-chrome-y:64px]">{children}</div>
         </main>
       </div>
 
@@ -812,95 +836,184 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="rounded-t-[14px] border-t border-border haven-chrome-sidebar p-0 max-h-[80dvh]"
           showCloseButton
         >
-          <SheetHeader className="px-4 pb-2 pt-4 text-left">
-            <SheetTitle className="text-[14px] font-semibold tracking-tight">
-              {activePillar?.label ?? "Navigation"}
-            </SheetTitle>
-          </SheetHeader>
-          <nav
-            aria-label={`${activePillar?.label ?? "Pillar"} items`}
-            className="flex flex-col gap-px px-2 pb-4"
-          >
-            {activePillar?.items.map(renderRailItem)}
-          </nav>
+          {(() => {
+            const sheetPillar =
+              visiblePillars.find((p) => p.id === sheetPillarId) ?? activePillar;
+            return (
+              <>
+                <SheetHeader className="px-4 pb-2 pt-4 text-left">
+                  <SheetTitle className="text-[14px] font-semibold tracking-tight">
+                    {sheetPillar?.label ?? "Navigation"}
+                  </SheetTitle>
+                </SheetHeader>
+                <nav
+                  aria-label={`${sheetPillar?.label ?? "Pillar"} items`}
+                  className="flex flex-col gap-px px-2 pb-4"
+                  onClick={(event) => {
+                    if ((event.target as HTMLElement).closest("a")) {
+                      setPillarSheetOpen(false);
+                    }
+                  }}
+                >
+                  {sheetPillar?.items.map(renderRailItem)}
+                </nav>
+              </>
+            );
+          })()}
         </SheetContent>
       </Sheet>
 
       {/* ── ⌘K command palette ──────────────────────────────────── */}
-      <AppShellCommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        onSelect={handlePaletteSelect}
-      />
-      <GraceShell />
-      <HavenInsightShell />
+      {paletteOpen ? (
+        <AppShellCommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          onSelect={handlePaletteSelect}
+        />
+      ) : null}
+      <LazyOverlayShells />
     </div>
   );
 }
 
-// ────────────────────────────────────────────────────────────────
-// Command palette — indexes every pillar item + auxiliary route.
-// Dynamic search for residents / staff / incident numbers can layer
-// on later via a debounced Supabase query; for now the palette covers
-// 100% of static routes which is the most common power-user need.
-// ────────────────────────────────────────────────────────────────
-
-function AppShellCommandPalette({
-  open,
-  onOpenChange,
-  onSelect,
+/**
+ * Pillar tab with its sub-route dropdown.
+ *
+ * Stateful so it works on touch as well as mouse:
+ *  - mouseenter / mouseleave: open/close (desktop hover)
+ *  - focus / blur (within the wrapper): open while focused (keyboard)
+ *  - touch tap on the trigger: open the menu instead of navigating
+ *  - click outside / Escape: close
+ *
+ * Previously the dropdown was pure CSS `group-hover` and `hidden lg:block`,
+ * which meant tablets in landscape with touch input — and any user who
+ * tapped a tab — saw nothing.
+ */
+function PillarTabWithDropdown({
+  pillar,
+  active,
+  firstHref,
+  isItemActive,
+  onActivePillarTap,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (href: string) => void;
+  pillar: Pillar;
+  active: boolean;
+  firstHref: string;
+  isItemActive: (href: string) => boolean;
+  onActivePillarTap: (pillarId: Pillar["id"]) => boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Close on outside click / tap and Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const node = wrapperRef.current;
+      if (node && e.target instanceof Node && !node.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Command palette"
-      description="Jump to any page, resident, staff member, or incident."
-      className="sm:max-w-[560px]"
+    <div
+      ref={wrapperRef}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(e) => {
+        // Only close if focus is leaving the whole wrapper.
+        if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
     >
-      <Command shouldFilter loop>
-        <CommandInput placeholder="Search residents, staff, incidents, routes…" autoFocus />
-        <CommandList>
-          <CommandEmpty>No matches.</CommandEmpty>
-          {PILLARS.map((pillar) => (
-            <CommandGroup key={pillar.id} heading={pillar.label}>
-              {pillar.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <CommandItem
-                    key={`${pillar.id}-${item.key}`}
-                    value={`${pillar.label} ${item.label} ${item.href}`}
-                    onSelect={() => onSelect(item.href)}
-                  >
-                    <Icon className="text-muted-foreground" aria-hidden />
-                    <span>{item.label}</span>
-                    <CommandShortcut>{pillar.label}</CommandShortcut>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          ))}
-          <CommandGroup heading="Finance & Settings">
-            {AUXILIARY_ROUTES.map((item) => {
-              const Icon = item.icon;
-              return (
-                <CommandItem
-                  key={`aux-${item.key}`}
-                  value={`${item.label} ${item.href}`}
-                  onSelect={() => onSelect(item.href)}
-                >
-                  <Icon className="text-muted-foreground" aria-hidden />
-                  <span>{item.label}</span>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </CommandDialog>
+      <Link
+        href={firstHref}
+        aria-current={active ? "page" : undefined}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onPointerDown={(event) => {
+          // Touch / pen users tap the tab to reveal the dropdown instead of
+          // navigating immediately. Mouse users keep the original behavior:
+          // hover reveals the menu, click navigates.
+          if (event.pointerType === "touch" || event.pointerType === "pen") {
+            if (!open) {
+              event.preventDefault();
+              setOpen(true);
+            }
+          }
+        }}
+        onClick={(event) => {
+          if (!active) return;
+          if (onActivePillarTap(pillar.id)) {
+            event.preventDefault();
+          }
+        }}
+        className={cn(
+          "relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-[13px]",
+          "transition-colors duration-[var(--motion-duration-micro)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          active
+            ? "font-medium text-foreground"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        <span className="whitespace-nowrap">{pillar.label}</span>
+        {active && (
+          <span
+            aria-hidden
+            className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
+          />
+        )}
+      </Link>
+      <div
+        role="menu"
+        aria-label={`${pillar.label} sections`}
+        className={cn(
+          "absolute left-0 top-full z-40 min-w-[208px] pt-2",
+          "transition-opacity duration-100",
+          open ? "visible opacity-100" : "invisible opacity-0 pointer-events-none",
+        )}
+      >
+        <div className="rounded-md border border-border bg-popover p-1.5 shadow-lg ring-1 ring-foreground/10">
+          {pillar.items.map((item) => {
+            const Icon = item.icon;
+            const itemActive = isItemActive(item.href);
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                role="menuitem"
+                aria-current={itemActive ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex h-8 items-center gap-2 rounded px-2 text-[13px] outline-none",
+                  "transition-colors",
+                  "focus-visible:ring-2 focus-visible:ring-ring",
+                  itemActive
+                    ? "bg-primary/10 font-medium text-foreground"
+                    : "text-foreground/85 hover:bg-secondary/60 hover:text-foreground",
+                )}
+              >
+                <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="whitespace-nowrap">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }

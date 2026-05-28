@@ -8,6 +8,7 @@ import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-au
 import { createRateSchema, listRatesQuerySchema } from "@/lib/validation/facility-admin";
 
 import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
+import { logError } from "@/lib/observability/logger";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -174,7 +175,10 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ data: newRate }, { status: 201 });
   } catch (err) {
-    console.error("[rate-create] Error:", err);
+    logError("admin.facilities.rates.create", err, {
+      facilityId,
+      rateType: rate_type,
+    });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

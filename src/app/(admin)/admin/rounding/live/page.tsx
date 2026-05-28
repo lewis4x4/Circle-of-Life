@@ -1,58 +1,127 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
+  Building2,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Clock3,
   Eye,
+  LayoutDashboard,
   Play,
   RefreshCw,
   UserRound,
-  Filter,
   X,
 } from "lucide-react";
 
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { QuickCheckDrawer, type QuickCheckTask } from "@/components/rounding/QuickCheckDrawer";
-import { V2Card } from "@/components/ui/v2-card";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
+
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
 type LiveTaskRow = {
   id: string;
   due_at: string;
   status: string;
-  residents?: { first_name: string | null; last_name: string | null; preferred_name: string | null; room_number?: string | null } | null;
+  residents?: {
+    first_name: string | null;
+    last_name: string | null;
+    preferred_name: string | null;
+    room_number?: string | null;
+  } | null;
   staff?: { first_name: string | null; last_name: string | null; preferred_name: string | null } | null;
   shift_assignments?: { shift_type: string | null } | null;
 };
 
 type StatusFilter = "all" | "critical" | "overdue" | "pending" | "completed" | "late";
 
-function displayName(person?: { first_name: string | null; last_name: string | null; preferred_name: string | null } | null) {
-  return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null].filter(Boolean).join(" ");
+type LoadState = "idle" | "loading" | "ready" | "error";
+
+type BoardState =
+  | "no_facility"
+  | "loading"
+  | "error"
+  | "empty_no_cycle"
+  | "empty_filtered"
+  | "populated";
+
+type Tone = "default" | "warning" | "danger";
+
+/* -------------------------------------------------------------------------- */
+/*  Constants                                                                 */
+/* -------------------------------------------------------------------------- */
+
+const AUTO_REFRESH_INTERVAL_MS = 30_000; // 30s — balances signal vs load on med carts
+const STATUS_TICK_INTERVAL_MS = 1_000;
+const TASK_LOOKBACK_MS = 12 * 60 * 60 * 1000;
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function displayName(person?: {
+  first_name: string | null;
+  last_name: string | null;
+  preferred_name: string | null;
+} | null) {
+  return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function statusConfig(status: string) {
   if (status === "critically_overdue" || status === "missed")
-    return { label: "Critical", icon: AlertTriangle, color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/30", badgeVariant: "destructive" as const, pulse: true, filterGroup: "critical" as StatusFilter };
+    return {
+      label: "Critical",
+      icon: AlertTriangle,
+      tone: "danger" as Tone,
+      filterGroup: "critical" as StatusFilter,
+    };
   if (status === "overdue")
-    return { label: "Overdue", icon: Clock3, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/30", badgeVariant: "outline" as const, pulse: true, filterGroup: "overdue" as StatusFilter };
+    return {
+      label: "Overdue",
+      icon: Clock3,
+      tone: "warning" as Tone,
+      filterGroup: "overdue" as StatusFilter,
+    };
   if (status === "completed_on_time")
-    return { label: "On time", icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "completed" as StatusFilter };
+    return {
+      label: "On time",
+      icon: CheckCircle2,
+      tone: "default" as Tone,
+      filterGroup: "completed" as StatusFilter,
+    };
   if (status === "completed_late")
-    return { label: "Late", icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "late" as StatusFilter };
+    return {
+      label: "Late",
+      icon: Clock,
+      tone: "warning" as Tone,
+      filterGroup: "late" as StatusFilter,
+    };
   if (status === "excused")
-    return { label: "Excused", icon: UserRound, color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "all" as StatusFilter };
-  return { label: "Pending", icon: Eye, color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/30", badgeVariant: "outline" as const, pulse: false, filterGroup: "pending" as StatusFilter };
+    return {
+      label: "Excused",
+      icon: UserRound,
+      tone: "default" as Tone,
+      filterGroup: "all" as StatusFilter,
+    };
+  return {
+    label: "Pending",
+    icon: Eye,
+    tone: "default" as Tone,
+    filterGroup: "pending" as StatusFilter,
+  };
 }
 
 function formatDueLabel(value: string) {
@@ -65,29 +134,89 @@ function formatDueLabel(value: string) {
   return `${mins}m ago`;
 }
 
+function formatRelativeAgo(ts: number | null, now: number): string {
+  if (ts == null) return "just now";
+  const seconds = Math.max(0, Math.floor((now - ts) / 1000));
+  if (seconds < 5) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
 function isActionable(status: string) {
   return !status.startsWith("completed") && status !== "excused";
 }
 
 function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
+  const room = (task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number;
   return {
     id: task.id,
     residentName: displayName(task.residents) || "Resident",
-    roomLabel: (task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number
-      ? `RM ${(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number}`
-      : null,
+    roomLabel: room ? `RM ${room}` : null,
     dueAt: task.due_at,
     status: task.status,
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Value-derived tone resolvers — color derives from value, never style      */
+/* -------------------------------------------------------------------------- */
+
+function resolveCriticalTone(count: number): Tone {
+  return count > 0 ? "danger" : "default";
+}
+
+function resolveOverdueTone(count: number): Tone {
+  if (count === 0) return "default";
+  if (count <= 3) return "warning";
+  return "danger";
+}
+
+// Pending and Completed counts are informational — they stay neutral regardless
+// of value. Keeping these as functions so future tuning (e.g. tinted-green at
+// 100% on-time rate) follows the same pattern as Critical/Overdue.
+function resolvePendingTone(): Tone {
+  return "default";
+}
+
+function resolveCompletedTone(): Tone {
+  return "default";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Board state derivation                                                     */
+/* -------------------------------------------------------------------------- */
+
+function deriveBoardState(args: {
+  loadState: LoadState;
+  hasFacility: boolean;
+  totalTasks: number;
+  filteredTasks: number;
+  filterApplied: boolean;
+}): BoardState {
+  if (!args.hasFacility) return "no_facility";
+  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
+  if (args.loadState === "error") return "error";
+  if (args.totalTasks === 0) return "empty_no_cycle";
+  if (args.filterApplied && args.filteredTasks === 0) return "empty_filtered";
+  return "populated";
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export default function AdminRoundingLivePage() {
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
-  const [, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<LoadState>("idle");
   const [tasks, setTasks] = useState<LiveTaskRow[]>([]);
-  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
 
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -95,69 +224,95 @@ export default function AdminRoundingLivePage() {
   const [sequentialMode, setSequentialMode] = useState(false);
   const [sequentialIndex, setSequentialIndex] = useState(0);
 
+  const loadingRef = useRef(false);
+
   const load = useCallback(async () => {
-    setLoading(true);
+    // Prevent overlap from auto-refresh ticks colliding with manual refresh.
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setLoadState((prev) => (prev === "idle" ? "loading" : prev));
+    setErrorMessage(null);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
-      setSourceNotice("Select a facility and connect the live rounding task source to show the live board.");
       setTasks([]);
-      setLoading(false);
+      setLoadState("ready");
+      loadingRef.current = false;
       return;
     }
-
-    setSourceNotice(null);
 
     try {
       const { data, error } = await supabase
         .from("resident_observation_tasks")
-        .select("id, due_at, status, residents ( first_name, last_name, preferred_name, room_number ), staff:assigned_staff_id ( first_name, last_name, preferred_name ), shift_assignments ( shift_type )")
+        .select(
+          "id, due_at, status, residents ( first_name, last_name, preferred_name, room_number ), staff:assigned_staff_id ( first_name, last_name, preferred_name ), shift_assignments ( shift_type )",
+        )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
-        .gte("due_at", new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString())
+        .gte("due_at", new Date(Date.now() - TASK_LOOKBACK_MS).toISOString())
         .order("due_at", { ascending: true })
         .limit(200);
 
       if (error) throw error;
       const rows = (data ?? []) as unknown as LiveTaskRow[];
-      if (rows.length === 0) {
-        setSourceNotice("No live rounding tasks were returned for the current facility scope.");
-      }
       setTasks(rows);
+      setLoadState("ready");
+      setLastUpdatedAt(Date.now());
     } catch {
-      setSourceNotice("Unable to load live rounding tasks. No fallback tasks are shown.");
-      setTasks([]);
+      setErrorMessage(
+        "Could not load live rounding tasks. Confirm facility scope and retry.",
+      );
+      setLoadState("error");
     } finally {
-      setLoading(false);
+      loadingRef.current = false;
     }
   }, [selectedFacilityId, supabase]);
 
+  // Initial load + reload on facility change.
   useEffect(() => {
+    setLoadState("loading");
     void load();
   }, [load]);
+
+  // Auto-refresh every 30s while facility selected and tab is visible.
+  useEffect(() => {
+    if (!selectedFacilityId) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void load();
+      }
+    }, AUTO_REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [load, selectedFacilityId]);
+
+  // 1s tick to keep "Live · last update Xs ago" timestamp fresh.
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), STATUS_TICK_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
+
+  /* ------------------------------- Derived ------------------------------- */
 
   const sorted = useMemo(
     () => [...tasks].sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime()),
     [tasks],
   );
 
-  // Apply status filter
   const filteredTasks = useMemo(() => {
     if (statusFilter === "all") return sorted;
-    if (statusFilter === "critical") {
+    if (statusFilter === "critical")
       return sorted.filter((t) => t.status === "critically_overdue" || t.status === "missed");
-    }
-    if (statusFilter === "overdue") {
-      return sorted.filter((t) => t.status === "overdue");
-    }
-    if (statusFilter === "pending") {
-      return sorted.filter((t) => isActionable(t.status) && t.status !== "overdue" && t.status !== "critically_overdue" && t.status !== "missed");
-    }
-    if (statusFilter === "completed") {
+    if (statusFilter === "overdue") return sorted.filter((t) => t.status === "overdue");
+    if (statusFilter === "pending")
+      return sorted.filter(
+        (t) =>
+          isActionable(t.status) &&
+          t.status !== "overdue" &&
+          t.status !== "critically_overdue" &&
+          t.status !== "missed",
+      );
+    if (statusFilter === "completed")
       return sorted.filter((t) => t.status === "completed_on_time");
-    }
-    if (statusFilter === "late") {
-      return sorted.filter((t) => t.status === "completed_late");
-    }
+    if (statusFilter === "late") return sorted.filter((t) => t.status === "completed_late");
     return sorted;
   }, [sorted, statusFilter]);
 
@@ -166,12 +321,30 @@ export default function AdminRoundingLivePage() {
     [sorted],
   );
 
-  const criticalCount = sorted.filter((t) => t.status === "critically_overdue" || t.status === "missed").length;
+  const criticalCount = sorted.filter(
+    (t) => t.status === "critically_overdue" || t.status === "missed",
+  ).length;
   const overdueCount = sorted.filter((t) => t.status === "overdue").length;
-  const pendingCount = sorted.filter((t) => isActionable(t.status) && t.status !== "overdue" && t.status !== "critically_overdue" && t.status !== "missed").length;
+  const pendingCount = sorted.filter(
+    (t) =>
+      isActionable(t.status) &&
+      t.status !== "overdue" &&
+      t.status !== "critically_overdue" &&
+      t.status !== "missed",
+  ).length;
   const completedCount = sorted.filter((t) => t.status.startsWith("completed")).length;
   const lateCount = sorted.filter((t) => t.status === "completed_late").length;
-  const hasCriticals = criticalCount > 0;
+  const onTimeCount = completedCount - lateCount;
+
+  const boardState = deriveBoardState({
+    loadState,
+    hasFacility: Boolean(selectedFacilityId),
+    totalTasks: sorted.length,
+    filteredTasks: filteredTasks.length,
+    filterApplied: statusFilter !== "all",
+  });
+
+  /* ------------------------------- Drawer ------------------------------- */
 
   function openSingleCheck(task: LiveTaskRow) {
     setSequentialMode(false);
@@ -211,306 +384,570 @@ export default function AdminRoundingLivePage() {
     if (drawerTask) void load();
   }
 
+  const showSequentialCta = boardState === "populated" && actionableQueue.length > 0;
+
+  /* ------------------------------- Render ------------------------------- */
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
-      <div className="relative z-10 space-y-6">
-        <header className="mb-6 mt-2">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6 mb-4">
-            <div>
-              
-              <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                Live Rounding Board
-              </h2>
-              <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
-                Tap any resident to record a check, or start sequential rounds
-              </p>
-            </div>
-            <div className="hidden md:block">
-              <RoundingHubNav />
-            </div>
-          </div>
-        </header>
-
-        {sourceNotice ? (
-          <AdminLiveDataFallbackNotice
-            message={sourceNotice}
-            onRetry={() => void load()}
-          />
-        ) : null}
-
-        {/* Clickable stat cards */}
-        <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-          <StatCard
-            label="Critical"
-            value={String(criticalCount)}
-            color={hasCriticals ? "rose" : "emerald"}
-            active={statusFilter === "critical"}
-            onClick={() => setStatusFilter(statusFilter === "critical" ? "all" : "critical")}
-          />
-          <StatCard
-            label="Overdue"
-            value={String(overdueCount)}
-            color={overdueCount > 0 ? "amber" : "emerald"}
-            active={statusFilter === "overdue"}
-            onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
-          />
-          <StatCard
-            label="Pending"
-            value={String(pendingCount)}
-            color="cyan"
-            active={statusFilter === "pending"}
-            onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
-          />
-          <StatCard
-            label="Completed"
-            value={String(completedCount)}
-            color="emerald"
-            active={statusFilter === "completed" || statusFilter === "late"}
-            onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
-          />
-        </KineticGrid>
-
-        {/* Status filter pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">Filter:</span>
-          <StatusFilterChip
-            label="Critical"
-            count={criticalCount}
-            active={statusFilter === "critical"}
-            onClick={() => setStatusFilter(statusFilter === "critical" ? "all" : "critical")}
-            color="rose"
-          />
-          <StatusFilterChip
-            label="Overdue"
-            count={overdueCount}
-            active={statusFilter === "overdue"}
-            onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
-            color="amber"
-          />
-          <StatusFilterChip
-            label="Pending"
-            count={pendingCount}
-            active={statusFilter === "pending"}
-            onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
-            color="cyan"
-          />
-          <StatusFilterChip
-            label="On Time"
-            count={completedCount - lateCount}
-            active={statusFilter === "completed"}
-            onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
-            color="emerald"
-          />
-          <StatusFilterChip
-            label="Late"
-            count={lateCount}
-            active={statusFilter === "late"}
-            onClick={() => setStatusFilter(statusFilter === "late" ? "all" : "late")}
-            color="orange"
-          />
-          {statusFilter !== "all" && (
-            <button
-              onClick={() => setStatusFilter("all")}
-              className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 transition-colors ml-auto"
+      <PageHeader
+        title="Live rounding board"
+        subtitle="Select a resident to record a check."
+        actions={
+          <>
+            {showSequentialCta ? (
+              <Button
+                type="button"
+                variant="default"
+                size="default"
+                onClick={startSequentialRounds}
+              >
+                <Play className="size-4" aria-hidden />
+                Start sequential rounds
+                <span className="ml-1 rounded-sm bg-primary-foreground/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums">
+                  {actionableQueue.length}
+                </span>
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => void load()}
+              aria-label="Refresh live rounding tasks"
+              title="Refresh now"
+              disabled={loadState === "loading"}
             >
-              <X className="h-3 w-3" />
-              Clear filter
-            </button>
-          )}
-        </div>
+              <RefreshCw
+                className={cn("size-4", loadState === "loading" && "animate-spin")}
+                aria-hidden
+              />
+            </Button>
+          </>
+        }
+      />
 
-        {/* Primary actions */}
-        <div className="flex flex-wrap items-center gap-3">
-          {actionableQueue.length > 0 && (
-            <button
-              onClick={startSequentialRounds}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
-                "text-white",
-                "hover:bg-success",
-                "shadow-lg shadow-emerald-900/30",
-              )}
-            >
-              <Play className="h-4 w-4" />
-              Start Rounds ({actionableQueue.length} due)
-            </button>
-          )}
-          <Button
-            onClick={() => void load()}
-            variant="outline"
-            className="border-slate-700 bg-slate-900/40 text-slate-200 hover:bg-slate-800"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
+      <RoundingHubNav />
 
-        {/* Task list */}
-        <MotionList className="grid grid-cols-1 gap-4">
-          {filteredTasks.map((task) => {
-            const cfg = statusConfig(task.status);
-            const Icon = cfg.icon;
-            const canCheck = isActionable(task.status);
+      {/*
+       * State machine — exactly one branch renders below.
+       * Order matters: facility scope dominates, then loading, then error, then empties, then content.
+       */}
+      {boardState === "no_facility" ? (
+        <AllFacilitiesInterstitial />
+      ) : boardState === "error" ? (
+        <LoadErrorNotice
+          message={errorMessage ?? "Could not load live rounding tasks."}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <>
+          <LiveIndicator loadState={loadState} lastUpdatedAt={lastUpdatedAt} now={now} />
 
-            return (
-              <MotionItem key={task.id}>
-                  <div
-                    className={cn(
-                      "group relative overflow-hidden flex items-center gap-3 rounded-lg border border-border min-h-[36px] px-[13px] py-2 bg-card hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-                      "bg-card",
-                      cfg.bg,
-                      canCheck && "cursor-pointer hover:-translate-y-0.5 hover:bg-muted/40",
-                    )}
-                  onClick={canCheck ? () => openSingleCheck(task) : undefined}
-                  role={canCheck ? "button" : undefined}
-                  tabIndex={canCheck ? 0 : undefined}
-                  onKeyDown={canCheck ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSingleCheck(task); } } : undefined}
-                  aria-label={canCheck ? `Check in ${displayName(task.residents) || "Resident"}` : undefined}
-                >
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                      <div className={cn("flex items-center gap-2 shrink-0 md:mb-0 mb-2 w-full md:w-auto border-b md:border-b-0 border-white/10 pb-2 md:pb-0", cfg.color)}>
-                        <Icon aria-hidden className="h-6 w-6" />
-                      </div>
+          {/* KPI strip — summary counts; value-derived tone */}
+          <section aria-label="Live rounding key counts">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <KpiCard
+                label="Critical"
+                value={criticalCount}
+                tone={resolveCriticalTone(criticalCount)}
+                hint="Critically overdue or missed checks."
+              />
+              <KpiCard
+                label="Overdue"
+                value={overdueCount}
+                tone={resolveOverdueTone(overdueCount)}
+                hint="Checks past their scheduled window."
+              />
+              <KpiCard
+                label="Pending"
+                value={pendingCount}
+                tone={resolvePendingTone()}
+                hint="Checks due within the current window."
+              />
+              <KpiCard
+                label="Completed today"
+                value={completedCount}
+                tone={resolveCompletedTone()}
+                hint={`On time: ${onTimeCount} · Late: ${lateCount}`}
+              />
+            </div>
+          </section>
 
-                    <div className="flex-1 min-w-0 w-full">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="font-semibold text-lg md:text-xl text-slate-900 dark:text-slate-100 truncate tracking-tight">
-                          {displayName(task.residents) || "Resident"}
-                        </span>
-                        {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number && (
-                          <span className="text-[10px] font-mono tracking-wider text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded border border-slate-200/50 dark:border-white/5">
-                            RM {(task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number}
-                          </span>
+          {/* Filter pills — drill-down; mute at default state */}
+          <section aria-label="Filter live tasks">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <span className="shrink-0 text-[12px] font-medium text-muted-foreground">
+                Filter
+              </span>
+              <div className="-mx-1 flex flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-1 md:overflow-visible md:pb-0">
+                <FilterPill
+                  label="All"
+                  count={sorted.length}
+                  tone="default"
+                  active={statusFilter === "all"}
+                  onClick={() => setStatusFilter("all")}
+                />
+                <FilterPill
+                  label="Critical"
+                  count={criticalCount}
+                  tone={resolveCriticalTone(criticalCount)}
+                  active={statusFilter === "critical"}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === "critical" ? "all" : "critical")
+                  }
+                />
+                <FilterPill
+                  label="Overdue"
+                  count={overdueCount}
+                  tone={resolveOverdueTone(overdueCount)}
+                  active={statusFilter === "overdue"}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")
+                  }
+                />
+                <FilterPill
+                  label="Pending"
+                  count={pendingCount}
+                  tone={resolvePendingTone()}
+                  active={statusFilter === "pending"}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === "pending" ? "all" : "pending")
+                  }
+                />
+                <FilterPill
+                  label="Completed"
+                  count={completedCount}
+                  tone="default"
+                  active={statusFilter === "completed" || statusFilter === "late"}
+                  onClick={() =>
+                    setStatusFilter(statusFilter === "completed" ? "all" : "completed")
+                  }
+                />
+                {(statusFilter === "completed" || statusFilter === "late") && (
+                  <>
+                    <span aria-hidden className="mx-1 h-4 w-px bg-border" />
+                    <FilterPill
+                      label="On time"
+                      count={onTimeCount}
+                      tone="default"
+                      active={statusFilter === "completed"}
+                      onClick={() => setStatusFilter("completed")}
+                      compact
+                    />
+                    <FilterPill
+                      label="Late"
+                      count={lateCount}
+                      tone="default"
+                      active={statusFilter === "late"}
+                      onClick={() => setStatusFilter("late")}
+                      compact
+                    />
+                  </>
+                )}
+                {statusFilter !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter("all")}
+                    className="ml-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <X className="size-3" aria-hidden />
+                    Clear filter
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Content — task list, no-cycle empty, or filter-empty */}
+          {boardState === "empty_no_cycle" ? (
+            <NoCycleEmptyState />
+          ) : boardState === "empty_filtered" ? (
+            <FilterEmptyState onClear={() => setStatusFilter("all")} />
+          ) : (
+            <ul className="flex flex-col gap-2" aria-label="Live rounding tasks">
+              {filteredTasks.map((task) => {
+                const cfg = statusConfig(task.status);
+                const canCheck = isActionable(task.status);
+                const Icon = cfg.icon;
+                const room = (task.residents as LiveTaskRow["residents"] & {
+                  room_number?: string | null;
+                })?.room_number;
+
+                return (
+                  <li key={task.id}>
+                    <div
+                      className={cn(
+                        "group flex min-h-[64px] flex-col gap-3 rounded-lg border bg-card px-4 py-3 transition-colors md:flex-row md:items-center md:gap-4",
+                        canCheck
+                          ? "cursor-pointer border-border hover:border-border-strong hover:bg-muted/40"
+                          : "border-border",
+                      )}
+                      onClick={canCheck ? () => openSingleCheck(task) : undefined}
+                      role={canCheck ? "button" : undefined}
+                      tabIndex={canCheck ? 0 : undefined}
+                      onKeyDown={
+                        canCheck
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                openSingleCheck(task);
+                              }
+                            }
+                          : undefined
+                      }
+                      aria-label={
+                        canCheck
+                          ? `Check in ${displayName(task.residents) || "Resident"}`
+                          : undefined
+                      }
+                    >
+                      <div
+                        className={cn(
+                          "flex size-9 shrink-0 items-center justify-center rounded-md border",
+                          cfg.tone === "danger" && "border-danger/40 bg-danger/10 text-danger",
+                          cfg.tone === "warning" &&
+                            "border-warning/40 bg-warning/10 text-warning",
+                          cfg.tone === "default" && "border-border bg-muted text-muted-foreground",
                         )}
+                        aria-hidden
+                      >
+                        <Icon className="size-4" />
                       </div>
-                      <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-zinc-500 mt-1 uppercase tracking-wider">
-                        <span>{displayName(task.staff) || "Unassigned"}</span>
-                        <span className="text-slate-300 dark:text-slate-700">|</span>
-                        <span>{task.shift_assignments?.shift_type ?? "—"} shift</span>
-                      </div>
-                    </div>
 
-                    <div className="text-left md:text-right shrink-0 flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-4 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-white/5">
-                      <div>
-                        <span className={cn("text-xs font-mono font-bold tracking-wider", cfg.color)}>{formatDueLabel(task.due_at)}</span>
-                        <div className="mt-1.5 md:mt-1">
-                          <Badge variant={cfg.badgeVariant} className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 shadow-sm">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                          <span className="truncate text-[15px] font-semibold text-foreground">
+                            {displayName(task.residents) || "Resident"}
+                          </span>
+                          {room ? (
+                            <span className="rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                              Room {room}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-0.5 text-[12px] text-muted-foreground">
+                          {displayName(task.staff) || "Unassigned"}
+                          <span aria-hidden className="px-1.5 text-border">·</span>
+                          {task.shift_assignments?.shift_type ?? "—"} shift
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 md:justify-end">
+                        <div className="text-left md:text-right">
+                          <p
+                            className={cn(
+                              "text-[12px] font-semibold tabular-nums",
+                              cfg.tone === "danger" && "text-danger",
+                              cfg.tone === "warning" && "text-warning",
+                              cfg.tone === "default" && "text-foreground",
+                            )}
+                          >
+                            {formatDueLabel(task.due_at)}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "mt-0.5 text-[11px] font-medium",
+                              cfg.tone === "danger" && "border-danger/40 text-danger",
+                              cfg.tone === "warning" && "border-warning/40 text-warning",
+                            )}
+                          >
                             {cfg.label}
                           </Badge>
                         </div>
+                        {canCheck && (
+                          <span
+                            className={cn(
+                              buttonVariants({ variant: "outline", size: "sm" }),
+                              "pointer-events-none shrink-0 group-hover:bg-muted",
+                            )}
+                            aria-hidden
+                          >
+                            Check in
+                          </span>
+                        )}
                       </div>
-                      {canCheck && (
-                        <div className={cn(
-                          "rounded-lg border px-4 py-2 text-[10px] uppercase tracking-wider font-bold transition-all",
-                          "border-emerald-500/50 bg-emerald-600 text-white",
-                          "group-hover:bg-emerald-500 group-hover:border-emerald-400 hover:-translate-y-0.5",
-                        )}>
-                          Check In
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </div>
-              </MotionItem>
-            );
-          })}
-
-          {filteredTasks.length === 0 && (
-            <div className="rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 p-16 text-center shadow-sm">
-              <Eye aria-hidden className="mx-auto h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
-              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                {sourceNotice ? "No live tasks shown" : "All Clear"}
-              </p>
-              <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 mt-1">
-                {sourceNotice
-                  ? "No live rounding tasks are shown until the source returns rows."
-                  : statusFilter === "all"
-                    ? "No rounding tasks found for the current scope."
-                    : `No tasks match the ${statusFilter} filter.`}
-              </p>
-              {statusFilter !== "all" && (
-                <button
-                  onClick={() => setStatusFilter("all")}
-                  className="text-sm text-primary-600 dark:text-primary-400 hover:underline mt-2"
-                >
-                  Clear filter
-                </button>
-              )}
-            </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </MotionList>
+        </>
+      )}
 
-        <div className="block md:hidden pt-2">
-          <RoundingHubNav />
-        </div>
-      </div>
-
-      {/* The QuickCheck slide-up drawer */}
       <QuickCheckDrawer
         task={drawerTask}
         open={drawerOpen}
         onClose={handleDrawerClose}
         onCompleted={handleCompleted}
-        queuePosition={sequentialMode ? { current: sequentialIndex + 1, total: actionableQueue.length } : null}
+        queuePosition={
+          sequentialMode
+            ? { current: sequentialIndex + 1, total: actionableQueue.length }
+            : null
+        }
         onNextTask={sequentialMode ? advanceSequential : undefined}
       />
     </div>
   );
 }
 
-function StatCard({ label, value, color, active, onClick }: { label: string; value: string; color: string; active?: boolean; onClick: () => void }) {
-  const colorClasses = {
-    rose: { border: "border-rose-500/20", text: "text-rose-400", ring: "ring-rose-500" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400", ring: "ring-amber-500" },
-    cyan: { border: "border-cyan-500/20", text: "text-cyan-400", ring: "ring-cyan-500" },
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", ring: "ring-emerald-500" },
-    orange: { border: "border-orange-500/20", text: "text-orange-400", ring: "ring-orange-500" },
-  }[color] ?? { border: "", text: "text-slate-400", ring: "ring-slate-500" };
+/* -------------------------------------------------------------------------- */
+/*  KPI card — value-derived tone, sentence case label                        */
+/* -------------------------------------------------------------------------- */
+
+function KpiCard({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: Tone;
+  hint: string;
+}) {
+  return (
+    <article
+      aria-label={`${label}: ${value}`}
+      className={cn(
+        "flex min-w-0 flex-col gap-1 rounded-md border bg-card px-4 py-3",
+        tone === "danger" && "border-danger/40",
+        tone === "warning" && "border-warning/40",
+        tone === "default" && "border-border",
+      )}
+      data-tone={tone}
+    >
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "text-2xl font-semibold tabular-nums tracking-tight",
+          tone === "danger" && "text-danger",
+          tone === "warning" && "text-warning",
+          tone === "default" && "text-foreground",
+        )}
+      >
+        {value}
+      </span>
+      <span className="text-[11px] text-muted-foreground">{hint}</span>
+    </article>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Filter pill — three states: muted, subtle-tinted, active                  */
+/* -------------------------------------------------------------------------- */
+
+function FilterPill({
+  label,
+  count,
+  tone,
+  active,
+  onClick,
+  compact,
+}: {
+  label: string;
+  count: number;
+  tone: Tone;
+  active: boolean;
+  onClick: () => void;
+  compact?: boolean;
+}) {
+  // Color is reserved for non-default states. A zero count + inactive renders muted.
+  const showSemanticTint = tone !== "default" && count > 0;
 
   return (
-    <div className="h-[100px]">
-      <button
-        onClick={onClick}
-        className="w-full h-full text-left transition-transform active:scale-[0.98]"
-      >
-        <V2Card hoverColor={color} className={cn(
-          colorClasses.border,
-          "transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
-          active && `ring-2 ${colorClasses.ring} ring-offset-2 ring-offset-background`
-        )}>
-          <div className="relative z-10 flex flex-col h-full justify-between">
-            <h3 className={cn("text-[10px] font-mono tracking-wider uppercase flex items-center gap-2", colorClasses.text)}>
-              {label}
-              <Filter className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-            </h3>
-            <p className={cn("text-2xl font-mono tracking-tighter pb-1", colorClasses.text)}>{value}</p>
-          </div>
-        </V2Card>
-      </button>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        compact ? "px-2 py-1" : "px-2.5 py-1.5",
+        active && tone === "danger" && "border-danger bg-danger/10 text-danger",
+        active && tone === "warning" && "border-warning bg-warning/10 text-warning",
+        active && tone === "default" && "border-border-strong bg-muted text-foreground",
+        !active &&
+          showSemanticTint &&
+          tone === "danger" &&
+          "border-danger/30 bg-card text-danger hover:bg-danger/5",
+        !active &&
+          showSemanticTint &&
+          tone === "warning" &&
+          "border-warning/30 bg-card text-warning hover:bg-warning/5",
+        !active &&
+          !showSemanticTint &&
+          "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground",
+      )}
+    >
+      <span>{label}</span>
+      <span className={cn("tabular-nums opacity-80", active && "opacity-100")}>({count})</span>
+    </button>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Live indicator — auto-refresh visualization                                */
+/* -------------------------------------------------------------------------- */
+
+function LiveIndicator({
+  loadState,
+  lastUpdatedAt,
+  now,
+}: {
+  loadState: LoadState;
+  lastUpdatedAt: number | null;
+  now: number;
+}) {
+  const isLoading = loadState === "loading";
+  const ago = formatRelativeAgo(lastUpdatedAt, now);
+
+  return (
+    <div
+      className="flex items-center gap-2 text-[12px] text-muted-foreground"
+      role="status"
+      aria-live="polite"
+    >
+      <LivePulseDot active={!isLoading} />
+      <span className="font-medium text-foreground">Live</span>
+      <span aria-hidden className="text-border">·</span>
+      <span>
+        {isLoading && lastUpdatedAt == null ? "Loading…" : `Last updated ${ago}`}
+      </span>
     </div>
   );
 }
 
-function StatusFilterChip({ label, count, active, onClick, color }: { label: string; count: number; active: boolean; onClick: () => void; color: "rose" | "amber" | "cyan" | "emerald" | "orange" }) {
-  const colorClasses: Record<typeof color, string> = {
-    rose: "border-rose-500/30 text-rose-400 hover:bg-rose-500/10",
-    amber: "border-amber-500/30 text-amber-400 hover:bg-amber-500/10",
-    cyan: "border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10",
-    emerald: "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10",
-    orange: "border-orange-500/30 text-orange-400 hover:bg-orange-500/10",
-  };
-
+function LivePulseDot({ active }: { active: boolean }) {
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-2",
-        active
-          ? "bg-slate-800 text-white border-slate-600"
-          : `bg-slate-800/30 text-slate-400 hover:text-slate-200 ${colorClasses[color]}`
-      )}
+    <span
+      aria-hidden
+      className="relative inline-flex size-2 shrink-0 items-center justify-center"
     >
-      {label} <span className="opacity-70">({count})</span>
-    </button>
+      {active && (
+        <span className="absolute inline-flex size-2 animate-ping rounded-full bg-success/60" />
+      )}
+      <span
+        className={cn(
+          "relative inline-flex size-2 rounded-full",
+          active ? "bg-success" : "bg-muted-foreground/50",
+        )}
+      />
+    </span>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Empty states + interstitials                                              */
+/* -------------------------------------------------------------------------- */
+
+function AllFacilitiesInterstitial() {
+  return (
+    <section
+      aria-label="Facility scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <div className="flex items-start gap-3">
+        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            Live board operates per facility
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            Live rounding tasks are facility-scoped. Select a facility from the top bar to continue.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadErrorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <AlertTriangle
+          className="mt-0.5 size-4 shrink-0 text-destructive"
+          aria-hidden
+        />
+        <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="h-8 shrink-0 text-[12px]"
+      >
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+function NoCycleEmptyState() {
+  return (
+    <section
+      aria-label="No active rounding cycle"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <Eye className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        No active rounding cycle
+      </p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Start a cycle from the Smart Rounding overview to begin tracking checks, or create an
+        observation plan to define rounding cadence.
+      </p>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <Link
+          href="/admin/rounding"
+          className={cn(buttonVariants({ variant: "default", size: "sm" }))}
+        >
+          <LayoutDashboard className="size-4" aria-hidden />
+          Go to overview
+        </Link>
+        <Link
+          href="/admin/rounding/plans/new"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          <ClipboardList className="size-4" aria-hidden />
+          Create plan
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function FilterEmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <section
+      aria-label="No tasks match filter"
+      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+    >
+      <Clock className="mx-auto size-8 text-muted-foreground" aria-hidden />
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        No checks match the current filter
+      </p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
+        Adjust the filter, or wait for the next scheduled window.
+      </p>
+      <div className="mt-4">
+        <Button type="button" variant="outline" size="sm" onClick={onClear}>
+          <X className="size-4" aria-hidden />
+          Clear filters
+        </Button>
+      </div>
+    </section>
   );
 }

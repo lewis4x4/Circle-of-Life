@@ -9,12 +9,20 @@ import { UserDataTable } from "./UserDataTable";
 import { UserFilterBar } from "./UserFilterBar";
 
 interface UserListViewProps {
+  showDeactivated: boolean;
+  onShowDeactivatedChange: (v: boolean) => void;
   onSelectUser: (id: string) => void;
   onDeactivate: (id: string) => void;
   onReactivate: (id: string) => void;
 }
 
-export function UserListView({ onSelectUser, onDeactivate, onReactivate }: UserListViewProps) {
+export function UserListView({
+  showDeactivated,
+  onShowDeactivatedChange,
+  onSelectUser,
+  onDeactivate,
+  onReactivate,
+}: UserListViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
@@ -41,15 +49,35 @@ export function UserListView({ onSelectUser, onDeactivate, onReactivate }: UserL
       const res = await fetch(`/api/admin/users?${params}`);
       if (!res.ok) throw new Error("Failed to fetch users");
       const json = await res.json();
-      setUsers(json.data ?? []);
-      setPagination(json.pagination ?? { total: 0, page: 1, page_size: 20, total_pages: 0, has_next: false });
+      let data = json.data ?? [];
+      let paginationData = json.pagination ?? { total: 0, page: 1, page_size: 20, total_pages: 0, has_next: false };
+
+      if (showDeactivated) {
+        const deactivatedParams = new URLSearchParams(params);
+        deactivatedParams.set("status", "deleted");
+        const deactivatedRes = await fetch(`/api/admin/users?${deactivatedParams}`);
+        if (deactivatedRes.ok) {
+          const deactivatedJson = await deactivatedRes.json();
+          data = [...data, ...(deactivatedJson.data ?? [])];
+          const total = paginationData.total + (deactivatedJson.pagination?.total ?? 0);
+          paginationData = {
+            ...paginationData,
+            total,
+            total_pages: Math.ceil(total / paginationData.page_size),
+            has_next: page * paginationData.page_size < total,
+          };
+        }
+      }
+
+      setUsers(data);
+      setPagination(paginationData);
     } catch (err) {
       console.error("[user-list] fetch error:", err);
       setUsers([]);
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, role, facilityId, status]);
+  }, [page, search, role, facilityId, status, showDeactivated]);
 
   useEffect(() => {
     fetchUsers();
@@ -58,7 +86,7 @@ export function UserListView({ onSelectUser, onDeactivate, onReactivate }: UserL
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [search, role, facilityId, status]);
+  }, [search, role, facilityId, status, showDeactivated]);
 
   return (
     <div className="space-y-4">
@@ -67,10 +95,12 @@ export function UserListView({ onSelectUser, onDeactivate, onReactivate }: UserL
         role={role}
         facilityId={facilityId}
         status={status}
+        showDeactivated={showDeactivated}
         onSearchChange={setSearch}
         onRoleChange={setRole}
         onFacilityChange={setFacilityId}
         onStatusChange={setStatus}
+        onShowDeactivatedChange={onShowDeactivatedChange}
       />
 
       <UserDataTable

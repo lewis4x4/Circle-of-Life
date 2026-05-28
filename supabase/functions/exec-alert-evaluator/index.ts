@@ -142,7 +142,9 @@ Deno.serve(async (req) => {
     .select("*")
     .eq("organization_id", organizationId)
     .eq("is_active", true)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (rulesErr) {
     t.log({ event: "rules_load_failed", outcome: "error", error_message: rulesErr.message });

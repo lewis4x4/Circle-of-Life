@@ -259,7 +259,7 @@ export default function ReportTemplatesPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
-      <div className="relative z-10 mx-auto max-w-7xl space-y-6 px-4 sm:px-6 xl:px-0">
+      <div className="relative z-10 w-full space-y-6">
         <div className="mt-4">
           <ReportsHubNav />
         </div>

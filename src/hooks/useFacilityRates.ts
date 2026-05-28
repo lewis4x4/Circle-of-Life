@@ -42,7 +42,11 @@ interface UseFacilityRatesReturn {
   isConfirming: boolean;
 }
 
-export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
+export function useFacilityRates(
+  facilityId: string,
+  options?: { enabled?: boolean },
+): UseFacilityRatesReturn {
+  const enabled = options?.enabled ?? true;
   const [rates, setRates] = useState<RateEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -133,8 +137,14 @@ export function useFacilityRates(facilityId: string): UseFacilityRatesReturn {
   );
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    if (!enabled) {
+      setRates([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+    void refetch();
+  }, [enabled, refetch]);
 
   return {
     rates,

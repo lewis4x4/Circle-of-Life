@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { DocumentVaultCategoryKey } from "@/lib/admin/facilities/document-vault-taxonomy";
+import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 export interface FacilityDocumentHookRow {
   id: string;
@@ -61,18 +62,31 @@ interface UseFacilityDocumentsReturn {
   setArchivedScope: (next: boolean) => void;
 }
 
+// In-memory cache keyed by facility + scope so tab switches don't refetch.
+// LRU-bounded so navigating many facilities doesn't grow memory unbounded.
+type DocsCacheEntry = { documents: FacilityDocumentHookRow[]; fetchedAt: number };
+const docsCache = new Map<string, DocsCacheEntry>();
+const DOCS_CACHE_TTL_MS = 60_000;
+const DOCS_CACHE_MAX = 16;
+
 export function useFacilityDocuments(
   facilityId: string,
   _options?: { archived?: boolean },
 ): UseFacilityDocumentsReturn {
-  const [documents, setDocuments] = useState<FacilityDocumentHookRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [archivedScope, setArchivedScope] = useState(_options?.archived ?? false);
+  const cacheKey = `${facilityId}|${archivedScope ? "archived" : "active"}`;
+  const cached = lruGet(docsCache, cacheKey);
+  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < DOCS_CACHE_TTL_MS;
+
+  const [documents, setDocuments] = useState<FacilityDocumentHookRow[]>(cached?.documents ?? []);
+  const [isLoading, setIsLoading] = useState(cached == null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [archivedScope, setArchivedScope] = useState(_options?.archived ?? false);
 
   const refetch = useCallback(async () => {
-    setIsLoading(true);
+    const key = `${facilityId}|${archivedScope ? "archived" : "active"}`;
+    const hasCached = docsCache.has(key);
+    if (!hasCached) setIsLoading(true);
     setError(null);
     try {
       const qs = archivedScope ? "?archived=1" : "";
@@ -81,12 +95,14 @@ export function useFacilityDocuments(
         throw new Error("Failed to fetch documents");
       }
       const json = (await res.json()) as DocumentsResponse;
-      setDocuments((json.data ?? []).map(normalize));
+      const normalized = (json.data ?? []).map(normalize);
+      setDocuments(normalized);
+      lruSet(docsCache, key, { documents: normalized, fetchedAt: Date.now() }, DOCS_CACHE_MAX);
     } catch (err) {
       console.error("[useFacilityDocuments] fetch error:", err);
       const message = err instanceof Error ? err.message : "Failed to fetch documents";
       setError(message);
-      setDocuments([]);
+      if (!hasCached) setDocuments([]);
     } finally {
       setIsLoading(false);
     }
@@ -122,6 +138,9 @@ export function useFacilityDocuments(
           throw new Error("Failed to upload document");
         }
         const json = (await res.json()) as { data: FacilityDocumentHookRow };
+        // Invalidate both scopes so an upload immediately reflects on next view.
+        docsCache.delete(`${facilityId}|active`);
+        docsCache.delete(`${facilityId}|archived`);
         await refetch();
         if (!json.data) return null;
         return normalize(json.data);
@@ -151,6 +170,8 @@ export function useFacilityDocuments(
           method: "DELETE",
         });
         if (!res.ok) throw new Error("Archive failed");
+        docsCache.delete(`${facilityId}|active`);
+        docsCache.delete(`${facilityId}|archived`);
         await refetch();
         return true;
       } catch (e) {
@@ -177,7 +198,11 @@ export function useFacilityDocuments(
   );
 
   useEffect(() => {
+    if (cacheIsFresh) return;
     void refetch();
+    // cacheIsFresh is read once on the initial render decision; subsequent
+    // changes to refetch (deps) re-run normally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refetch]);
 
   return {

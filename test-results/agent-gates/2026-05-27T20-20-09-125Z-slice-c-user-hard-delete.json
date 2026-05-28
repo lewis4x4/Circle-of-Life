@@ -1,0 +1,128 @@
+{
+  "segment": "slice-c-user-hard-delete",
+  "timestamp": "2026-05-27T20:20:09.125Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 51,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 140,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 1130,
+      "stdout": "# npm audit report\n\npostcss  <8.5.10\nSeverity: moderate\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nfix available via `npm audit fix --force`\nWill install next@9.3.3, which is a breaking change\nnode_modules/next/node_modules/postcss\n  next  9.3.4-canary.0 - 16.3.0-canary.5\n  Depends on vulnerable versions of postcss\n  node_modules/next\n\nqs  6.11.1 - 6.15.1\nSeverity: moderate\nqs has a remotely triggerable DoS: qs.stringify crashes with TypeError on null/undefined entries in comma-format arrays when encodeValuesOnly is set - https://github.com/advisories/GHSA-q8mj-m7cp-5q26\nfix available via `npm audit fix`\nnode_modules/qs\n\nuuid  <11.1.1\nSeverity: moderate\nuuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq\nfix available via `npm audit fix`\nnode_modules/uuid\n  @sentry/webpack-plugin  2.0.0-alpha.1 - 5.1.1\n  Depends on vulnerable versions of uuid\n  node_modules/@sentry/webpack-plugin\n\n5 moderate severity vulnerabilities\n\nTo address issues that do not require attention, run:\n  npm audit fix\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 4120,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m8:20PM\u001b[0m \u001b[32mINF\u001b[0m 1168 commits scanned.\n\u001b[90m8:20PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 3.16s\n\u001b[90m8:20PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "failed",
+      "duration_ms": 196,
+      "stdout": "",
+      "stderr": "\nOops! Something went wrong! :(\n\nESLint: 9.39.4\n\nError: Cannot find module '/Users/brianlewis/Documents/CIRCLE OF LIFE/Circle-of-Life-repo/node_modules/@eslint/eslintrc/dist/eslintrc-universal.cjs'\n    at createEsmNotFoundErr (node:internal/modules/cjs/loader:1512:15)\n    at finalizeEsmResolution (node:internal/modules/cjs/loader:1501:9)\n    at resolveExports (node:internal/modules/cjs/loader:684:14)\n    at Module._findPath (node:internal/modules/cjs/loader:751:31)\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1460:27)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1048:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1072:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1093:12)\n    at Module._load (node:internal/modules/cjs/loader:1261:25)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 174,
+      "stdout": "[migrations:check] PASS: 288 migration(s) in /Users/brianlewis/Documents/CIRCLE OF LIFE/Circle-of-Life-repo/supabase/migrations — sequence 001..286\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 16958,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 20260514180707_homewood_round2_employee_seed.sql\n ERROR:  invalid input value for enum staff_role: \"assistant_administrator\"\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default \"max_connections\" ... 100\nselecting default \"shared_buffers\" ... 128MB\nselecting default time zone ... Etc/UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-05-27 20:20:15.775 UTC [54] LOG:  starting PostgreSQL 17.10 (Debian 17.10-1.pgdg12+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit\n2026-05-27 20:20:15.776 UTC [54] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-05-27 20:20:15.778 UTC [57] LOG:  database system was shut down at 2026-05-27 20:20:15 UTC\n2026-05-27 20:20:15.781 UTC [54] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\n2026-05-27 20:20:15.885 UTC [54] LOG:  received fast shutdown request\nwaiting for server to shut down....2026-05-27 20:20:15.886 UTC [54] LOG:  aborting any active transactions\n2026-05-27 20:20:15.887 UTC [54] LOG:  background worker \"logical replication launcher\" (PID 60) exited with exit code 1\n2026-05-27 20:20:15.887 UTC [55] LOG:  shutting down\n2026-05-27 20:20:15.888 UTC [55] LOG:  checkpoint starting: shutdown immediate\n2026-05-27 20:20:15.891 UTC [55] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.004 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14E4F18, redo lsn=0/14E4F18\n2026-05-27 20:20:15.893 UTC [54] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 1136,
+      "stdout": "[migrations:check] PASS: 288 migration(s) in /Users/brianlewis/Documents/CIRCLE OF LIFE/Circle-of-Life-repo/supabase/migrations — sequence 001..286\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n",
+      "stderr": "⨯ Failed to load next.config.ts, see more info here https://nextjs.org/docs/messages/next-config-error\n\n> Build error occurred\nError: Cannot find module '/Users/brianlewis/Documents/CIRCLE OF LIFE/Circle-of-Life-repo/node_modules/@opentelemetry/instrumentation/build/src/index.js'. Please verify that the package.json has a valid \"main\" entry\n    at ignore-listed frames {\n  code: 'MODULE_NOT_FOUND',\n  path: '/Users/brianlewis/Documents/CIRCLE OF LIFE/Circle-of-Life-repo/node_modules/@opentelemetry/instrumentation/package.json',\n  requestPath: '@opentelemetry/instrumentation'\n}\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 370,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 3,
+    "skipped": 3,
+    "blocking_failures": [
+      "qa.eslint",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Documents/CIRCLE OF LIFE/Circle-of-Life-repo/test-results/agent-gates/2026-05-27T20-20-09-125Z-slice-c-user-hard-delete.json"
+  ]
+}

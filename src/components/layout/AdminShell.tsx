@@ -34,8 +34,6 @@ import {
   Landmark,
   LayoutDashboard,
   LineChart,
-  Loader2,
-  LogOut,
   Menu,
   MessageCircle,
   MessageSquare,
@@ -45,7 +43,6 @@ import {
   Radar,
   Scale,
   Search,
-  Settings,
   ShieldAlert,
   ShieldCheck,
   Smartphone,
@@ -53,7 +50,6 @@ import {
   Sun,
   Truck,
   Umbrella,
-  UserCircle2,
   UserCog,
   UserPlus,
   Users,
@@ -70,7 +66,6 @@ import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-c
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -85,6 +80,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
+import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
+import { IdentityBlock } from "@/components/ui/identity-block";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
@@ -138,7 +135,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const setAvailableFacilities = useFacilityStore((s) => s.setAvailableFacilities);
   const clearFacilityCache = useFacilityStore((s) => s.clearFacilityCache);
 
-  const { email: sessionEmail, appRole, user, loading: authLoading } = useHavenAuth();
+  const {
+    email: sessionEmail,
+    appRole,
+    user,
+    organizationId,
+    orgName,
+    fullName,
+    avatarUrl,
+    loading: authLoading,
+  } = useHavenAuth();
   const currentUserId = user?.id ?? null;
   const hasFreshOwnedFacilityCache =
     currentUserId != null &&
@@ -274,8 +280,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (authLoading) return;
-    syncSelectedFacilityCookie(currentUserId == null ? null : safeSelectedFacilityId);
-  }, [authLoading, currentUserId, safeSelectedFacilityId]);
+    if (currentUserId == null) {
+      syncSelectedFacilityCookie(null);
+      return;
+    }
+    if (facilitiesLoading || facilitiesLoadFailed) return;
+    syncSelectedFacilityCookie(safeSelectedFacilityId);
+  }, [
+    authLoading,
+    currentUserId,
+    facilitiesLoadFailed,
+    facilitiesLoading,
+    safeSelectedFacilityId,
+  ]);
 
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
@@ -628,58 +645,40 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   const renderSidebarFooter = () => (
     <div className="shrink-0 border-t border-border p-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className={cn(
-            "flex h-10 w-full items-center gap-2 rounded-md px-2 text-left",
-            "transition-colors hover:bg-[hsl(var(--chrome-foreground)/0.08)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          )}
-          aria-label="Account menu"
-        >
-          <span className="haven-chrome-primary-surface grid size-7 place-items-center rounded-full ring-1 ring-[hsl(var(--chrome-foreground)/0.15)]">
-            <UserCircle2 className="size-4" />
-          </span>
-          <span className="flex flex-1 flex-col leading-tight min-w-0">
-            <span className="haven-chrome-fg truncate text-[12px] font-medium">
-              {sessionEmail ?? "Signed in"}
-            </span>
-            <span className="haven-chrome-fg-muted truncate text-[11px]">
-              {roleConfig.roleLabel}
-            </span>
-          </span>
-          <ChevronsRight className="haven-chrome-fg-muted size-3.5 shrink-0" aria-hidden />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" side="top" className="w-56 p-1">
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-              onClick={() => router.push("/admin/settings/notifications")}
-            >
-              <Settings className="size-3.5 text-muted-foreground" /> Account settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="my-1" />
-            <DropdownMenuItem
-              variant="destructive"
-              className="flex h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-              disabled={signingOut}
-              onClick={() => void handleSignOut()}
-            >
-              {signingOut ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  Signing out…
-                </>
-              ) : (
-                <>
-                  <LogOut className="size-3.5" />
-                  Sign out
-                </>
-              )}
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <UserMenu
+        fullName={fullName}
+        email={sessionEmail}
+        roleLabel={roleConfig.roleLabel}
+        organizationId={organizationId}
+        orgName={orgName}
+        avatarUrl={avatarUrl}
+        userId={currentUserId}
+        signingOut={signingOut}
+        onSignOut={handleSignOut}
+        contentSide="top"
+        contentAlign="start"
+        contentSideOffset={8}
+        triggerClassName={cn(
+          "flex h-12 w-full items-center gap-2 rounded-md px-2 text-left",
+          "transition-colors hover:bg-[hsl(var(--chrome-foreground)/0.08)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        )}
+        triggerChildren={(orgName) => (
+          <>
+            <IdentityBlock
+              fullName={fullName}
+              email={sessionEmail}
+              roleLabel={roleConfig.roleLabel}
+              orgName={orgName}
+              avatarUrl={avatarUrl}
+              userId={currentUserId}
+              size="sm"
+              className="min-w-0 flex-1 [&_[data-slot=avatar]]:ring-1 [&_[data-slot=avatar]]:ring-[hsl(var(--chrome-foreground)/0.15)] [&_p]:text-[hsl(var(--chrome-foreground-muted))] [&_p:first-of-type]:text-[hsl(var(--chrome-foreground))] [&_svg]:text-[hsl(var(--chrome-foreground-muted))]"
+            />
+            <ChevronsRight className="haven-chrome-fg-muted size-3.5 shrink-0" aria-hidden />
+          </>
+        )}
+      />
     </div>
   );
 

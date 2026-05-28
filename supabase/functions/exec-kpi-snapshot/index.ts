@@ -12,6 +12,11 @@ import {
   loadFacilitiesForOrganization,
 } from "../_shared/exec-kpi-metrics.ts";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+  normalizedRowsForScope,
+  type NormalizedMetricRow,
+} from "./normalized-metrics.ts";
+import { parseSnapshotRequestBody } from "./request-validation.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 
 const UUID_RE =
@@ -20,6 +25,7 @@ const UUID_RE =
 function utcTodayDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
 
 Deno.serve(async (req) => {
   const t = withTiming("exec-kpi-snapshot");
@@ -34,7 +40,11 @@ Deno.serve(async (req) => {
   const cronSecret = Deno.env.get("EXEC_KPI_SNAPSHOT_SECRET");
   const headerSecret = req.headers.get("x-cron-secret");
   if (!cronSecret || headerSecret !== cronSecret) {
-    t.log({ event: "auth_failed", outcome: "error", error_message: "secret mismatch" });
+    t.log({
+      event: "auth_failed",
+      outcome: "error",
+      error_message: "secret mismatch",
+    });
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -44,26 +54,24 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Server configuration error" }, 503);
   }
 
-  let body: { organization_id?: string; snapshot_date?: string };
+  let parsedBody: unknown;
   try {
-    body = (await req.json()) as typeof body;
+    parsedBody = await req.json();
   } catch {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
-  const organizationId = body.organization_id?.trim();
-  if (!organizationId || !UUID_RE.test(organizationId)) {
+  const bodyResult = parseSnapshotRequestBody(parsedBody);
+  if (!bodyResult.ok) {
+    return jsonResponse({ error: bodyResult.error }, 400);
+  }
+
+  const { organizationId } = bodyResult.body;
+  if (!UUID_RE.test(organizationId)) {
     return jsonResponse({ error: "organization_id (uuid) is required" }, 400);
   }
 
-  let snapshotDate = body.snapshot_date?.trim();
-  if (snapshotDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(snapshotDate)) {
-      return jsonResponse({ error: "snapshot_date must be YYYY-MM-DD" }, 400);
-    }
-  } else {
-    snapshotDate = utcTodayDate();
-  }
+  const snapshotDate = bodyResult.body.snapshotDate ?? utcTodayDate();
 
   const supabase = createClient(url, serviceKey);
 
@@ -75,29 +83,33 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (orgErr) {
-    t.log({ event: "error", outcome: "error", error_message: "org lookup failed", error_code: orgErr.code });
+    t.log({
+      event: "error",
+      outcome: "error",
+      error_message: "org lookup failed",
+      error_code: orgErr.code,
+    });
     return jsonResponse({ error: "Database error" }, 500);
   }
   if (!orgRow) {
     return jsonResponse({ error: "Organization not found" }, 404);
   }
 
-  t.log({ event: "start", organization_id: organizationId, snapshot_date: snapshotDate });
+  t.log({
+    event: "start",
+    organization_id: organizationId,
+    snapshot_date: snapshotDate,
+  });
 
   try {
-    const { error: delErr } = await supabase
-      .from("exec_kpi_snapshots")
-      .delete()
-      .eq("organization_id", organizationId)
-      .eq("snapshot_date", snapshotDate);
-
-    if (delErr) {
-      t.log({ event: "error", outcome: "error", error_message: "delete failed", error_code: delErr.code });
-      return jsonResponse({ error: "Database error" }, 500);
-    }
-
-    const allFacs = await loadFacilitiesForOrganization(supabase, organizationId);
-    const entities = await loadEntitiesForOrganization(supabase, organizationId);
+    const allFacs = await loadFacilitiesForOrganization(
+      supabase,
+      organizationId,
+    );
+    const entities = await loadEntitiesForOrganization(
+      supabase,
+      organizationId,
+    );
 
     type InsertRow = {
       organization_id: string;
@@ -111,8 +123,14 @@ Deno.serve(async (req) => {
     };
 
     const rows: InsertRow[] = [];
+    const normalizedRows: NormalizedMetricRow[] = [];
 
-    const orgMetrics = await computeKpiForFacilityIds(supabase, organizationId, allFacs);
+    const orgMetrics = await computeKpiForFacilityIds(
+      supabase,
+      organizationId,
+      allFacs,
+      { snapshotDate },
+    );
     rows.push({
       organization_id: organizationId,
       scope_type: "organization",
@@ -123,10 +141,25 @@ Deno.serve(async (req) => {
       lineage: [{ table: "organizations", id: organizationId }],
       computed_by: "edge:exec-kpi-snapshot",
     });
+    normalizedRows.push(
+      ...normalizedRowsForScope({
+        organizationId,
+        snapshotDate,
+        sourceVersion: orgMetrics.version,
+        entityId: null,
+        facilityId: null,
+        metrics: orgMetrics.dashboardMetrics,
+      }),
+    );
 
     for (const ent of entities) {
       const facsForEntity = allFacs.filter((f) => f.entity_id === ent.id);
-      const entMetrics = await computeKpiForFacilityIds(supabase, organizationId, facsForEntity);
+      const entMetrics = await computeKpiForFacilityIds(
+        supabase,
+        organizationId,
+        facsForEntity,
+        { snapshotDate },
+      );
       rows.push({
         organization_id: organizationId,
         scope_type: "entity",
@@ -140,10 +173,25 @@ Deno.serve(async (req) => {
         ],
         computed_by: "edge:exec-kpi-snapshot",
       });
+      normalizedRows.push(
+        ...normalizedRowsForScope({
+          organizationId,
+          snapshotDate,
+          sourceVersion: entMetrics.version,
+          entityId: ent.id,
+          facilityId: null,
+          metrics: entMetrics.dashboardMetrics,
+        }),
+      );
     }
 
     for (const fac of allFacs) {
-      const facMetrics = await computeKpiForFacilityIds(supabase, organizationId, [fac]);
+      const facMetrics = await computeKpiForFacilityIds(
+        supabase,
+        organizationId,
+        [fac],
+        { snapshotDate },
+      );
       rows.push({
         organization_id: organizationId,
         scope_type: "facility",
@@ -157,21 +205,63 @@ Deno.serve(async (req) => {
         ],
         computed_by: "edge:exec-kpi-snapshot",
       });
+      normalizedRows.push(
+        ...normalizedRowsForScope({
+          organizationId,
+          snapshotDate,
+          sourceVersion: facMetrics.version,
+          entityId: fac.entity_id,
+          facilityId: fac.id,
+          metrics: facMetrics.dashboardMetrics,
+        }),
+      );
     }
 
-    const { error: insErr } = await supabase.from("exec_kpi_snapshots").insert(rows);
-    if (insErr) {
-      t.log({ event: "error", outcome: "error", error_message: "insert failed", error_code: insErr.code });
+    const { data: replaceResult, error: replaceErr } = await supabase
+      .rpc("replace_exec_kpi_snapshot_run", {
+        p_organization_id: organizationId,
+        p_snapshot_date: snapshotDate,
+        p_kpi_rows: rows,
+        p_metric_rows: normalizedRows,
+      })
+      .single();
+
+    if (replaceErr) {
+      t.log({
+        event: "error",
+        outcome: "error",
+        error_message: "snapshot replace rpc failed",
+        error_code: replaceErr.code,
+      });
       return jsonResponse({ error: "Database error" }, 500);
     }
 
-    t.log({ event: "complete", outcome: "success", inserted: rows.length, entities: entities.length, facilities: allFacs.length });
+    const replaceCounts = (replaceResult ?? {}) as {
+      kpi_inserted_count?: number;
+      kpi_soft_deleted_count?: number;
+      metric_inserted_count?: number;
+      metric_soft_deleted_count?: number;
+    };
+
+    t.log({
+      event: "complete",
+      outcome: "success",
+      inserted: replaceCounts.kpi_inserted_count ?? rows.length,
+      snapshot_soft_deleted: replaceCounts.kpi_soft_deleted_count ?? 0,
+      normalized_inserted: replaceCounts.metric_inserted_count ?? normalizedRows.length,
+      normalized_soft_deleted: replaceCounts.metric_soft_deleted_count ?? 0,
+      entities: entities.length,
+      facilities: allFacs.length,
+    });
 
     return jsonResponse({
       ok: true,
       organization_id: organizationId,
       snapshot_date: snapshotDate,
-      inserted: rows.length,
+      inserted: replaceCounts.kpi_inserted_count ?? rows.length,
+      snapshot_soft_deleted: replaceCounts.kpi_soft_deleted_count ?? 0,
+      normalized_inserted: replaceCounts.metric_inserted_count ?? normalizedRows.length,
+      normalized_soft_deleted: replaceCounts.metric_soft_deleted_count ?? 0,
       scopes: {
         organization: 1,
         entity: entities.length,
@@ -179,7 +269,11 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    t.log({ event: "error", outcome: "error", error_message: e instanceof Error ? e.message : String(e) });
+    t.log({
+      event: "error",
+      outcome: "error",
+      error_message: e instanceof Error ? e.message : String(e),
+    });
     return jsonResponse({ error: "Internal error" }, 500);
   }
 });

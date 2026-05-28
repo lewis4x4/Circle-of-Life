@@ -17,7 +17,12 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
-type InvRow = Database["public"]["Tables"]["vendor_invoices"]["Row"];
+type InvRow = Pick<
+  Database["public"]["Tables"]["vendor_invoices"]["Row"],
+  "id" | "invoice_number" | "status" | "invoice_date" | "total_cents"
+>;
+
+const VENDOR_INVOICE_LIST_LIMIT = 150;
 
 type InvoiceTone = "muted" | "warning" | "danger";
 
@@ -45,10 +50,11 @@ export default function VendorInvoicesPage() {
     }
     const { data, error } = await supabase
       .from("vendor_invoices")
-      .select("*")
+      .select("id, invoice_number, status, invoice_date, total_cents")
       .eq("organization_id", c.ctx.organizationId)
       .is("deleted_at", null)
-      .order("invoice_date", { ascending: false });
+      .order("invoice_date", { ascending: false })
+      .limit(VENDOR_INVOICE_LIST_LIMIT);
     if (error) {
       setLoadError(error.message);
       setRows([]);
@@ -70,7 +76,7 @@ export default function VendorInvoicesPage() {
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Vendor invoices</h1>
-            <p className="text-sm text-muted-foreground">Three-way match and AP intake.</p>
+            <p className="text-sm text-muted-foreground">Latest invoices for three-way match and AP intake.</p>
           </div>
         </header>
 

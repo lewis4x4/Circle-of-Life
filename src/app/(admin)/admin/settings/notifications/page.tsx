@@ -10,20 +10,23 @@ import {
   invokeDispatchPushTest,
   subscribePushAndSave,
 } from "@/lib/push-notifications";
-import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
+
+type IncidentSeverity = Database["public"]["Enums"]["incident_severity"];
+type StaffRole = Database["public"]["Enums"]["staff_role"];
 
 type RouteRow = {
   id: string;
   organization_id: string;
   facility_id: string | null;
   name: string;
-  severity_min: "level_1" | "level_2" | "level_3" | "level_4";
+  severity_min: IncidentSeverity;
   channels: string[] | null;
-  staff_role_targets: string[] | null;
+  staff_role_targets: StaffRole[] | null;
   is_active: boolean;
   facilities: { name: string } | null;
 };
@@ -45,7 +48,7 @@ const CHANNEL_OPTIONS = [
   { value: "call", label: "Phone call" },
 ];
 
-const ROLE_OPTIONS = [
+const ROLE_OPTIONS: Array<{ value: StaffRole; label: string }> = [
   { value: "owner", label: "Owner" },
   { value: "ceo", label: "CEO" },
   { value: "coo", label: "COO" },
@@ -73,7 +76,7 @@ const ROLE_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
-function toggleValue(values: string[], value: string): string[] {
+function toggleValue<T extends string>(values: T[], value: T): T[] {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
 
@@ -88,7 +91,6 @@ export default function AdminNotificationsSettingsPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const [homeHref, setHomeHref] = useState<string | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
   const [vapidConfigured, setVapidConfigured] = useState(false);
@@ -101,7 +103,7 @@ export default function AdminNotificationsSettingsPage() {
   const [routeFacilityId, setRouteFacilityId] = useState("");
   const [routeSeverity, setRouteSeverity] = useState<RouteRow["severity_min"]>("level_2");
   const [routeChannels, setRouteChannels] = useState<string[]>(["email", "push"]);
-  const [routeRoles, setRouteRoles] = useState<string[]>(["administrator", "assistant_administrator"]);
+  const [routeRoles, setRouteRoles] = useState<StaffRole[]>(["administrator", "assistant_administrator"]);
   const [routeActive, setRouteActive] = useState(true);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -124,7 +126,6 @@ export default function AdminNotificationsSettingsPage() {
     if (!ctx.ok) {
       setErr(ctx.error);
       setRole(null);
-      setHomeHref("/admin");
       setOrganizationId(null);
       setRoutes([]);
       setFacilities([]);
@@ -133,12 +134,11 @@ export default function AdminNotificationsSettingsPage() {
     }
 
     setRole(ctx.ctx.appRole);
-    setHomeHref(getDashboardRouteForRole(ctx.ctx.appRole));
     setOrganizationId(ctx.ctx.organizationId);
 
     const [routeRes, facilityRes] = await Promise.all([
       supabase
-        .from("notification_routes" as never)
+        .from("notification_routes")
         .select(
           "id, organization_id, facility_id, name, severity_min, channels, staff_role_targets, is_active, facilities(name)",
         )
@@ -256,9 +256,9 @@ export default function AdminNotificationsSettingsPage() {
         setErr(result.message);
         return;
       }
-      setMsg(`Dispatch sent — ${JSON.stringify(result.json)}`);
+      setMsg("Test notification sent to saved subscriptions.");
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Dispatch failed.");
+      setErr(e instanceof Error ? e.message : "Test notification failed.");
     } finally {
       setBusy(false);
     }
@@ -295,7 +295,7 @@ export default function AdminNotificationsSettingsPage() {
     try {
       if (editingId) {
         const { error: updateError } = await supabase
-          .from("notification_routes" as never)
+          .from("notification_routes")
           .update({
             name: routeName.trim(),
             facility_id: routeFacilityId || null,
@@ -303,14 +303,14 @@ export default function AdminNotificationsSettingsPage() {
             channels,
             staff_role_targets: roles.length > 0 ? roles : null,
             is_active: routeActive,
-          } as never)
+          })
           .eq("id", editingId)
           .eq("organization_id", organizationId)
           .is("deleted_at", null);
         if (updateError) throw updateError;
         setMsg("Notification route updated.");
       } else {
-        const { error: insertError } = await supabase.from("notification_routes" as never).insert({
+        const { error: insertError } = await supabase.from("notification_routes").insert({
           organization_id: organizationId,
           facility_id: routeFacilityId || null,
           name: routeName.trim(),
@@ -318,7 +318,7 @@ export default function AdminNotificationsSettingsPage() {
           channels,
           staff_role_targets: roles.length > 0 ? roles : null,
           is_active: routeActive,
-        } as never);
+        });
         if (insertError) throw insertError;
         setMsg("Notification route created.");
       }
@@ -365,20 +365,13 @@ export default function AdminNotificationsSettingsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       <div>
-        {homeHref ? (
-          <Link
-            href={homeHref}
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1")}
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Dashboard
-          </Link>
-        ) : (
-          <span className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1 pointer-events-none text-slate-400")}>
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Resolving home…
-          </span>
-        )}
+        <Link
+          href="/admin/settings"
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2 gap-1")}
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Settings
+        </Link>
         <h1 className="flex items-center gap-2 text-2xl font-semibold text-slate-900 dark:text-white">
           <BellRing className="h-7 w-7 text-slate-600 dark:text-slate-300" aria-hidden />
           Notifications
@@ -389,12 +382,19 @@ export default function AdminNotificationsSettingsPage() {
       </div>
 
       {err && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {err}
         </p>
       )}
       {msg && (
-        <p className="rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200"
+        >
           {msg}
         </p>
       )}
@@ -403,8 +403,7 @@ export default function AdminNotificationsSettingsPage() {
         <CardHeader>
           <CardTitle>Notification routes</CardTitle>
           <CardDescription>
-            Uses existing <span className="font-mono">notification_routes</span>. Configure where alerts go,
-            what severity starts a route, and which roles receive it.
+            Configure where alerts go, what severity starts a route, and which roles receive it.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -570,8 +569,7 @@ export default function AdminNotificationsSettingsPage() {
         <CardHeader>
           <CardTitle>Web Push</CardTitle>
           <CardDescription>
-            Requires HTTPS (or localhost), user gesture, and VAPID keys configured for the project. Edge Function
-            secrets: VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY.
+            Requires a supported browser and secure connection. Ask an administrator to complete web push setup.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -582,7 +580,7 @@ export default function AdminNotificationsSettingsPage() {
           )}
           {!vapidConfigured && (
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              Set NEXT_PUBLIC_VAPID_PUBLIC_KEY in the app environment (public key only; matches server VAPID).
+              Ask an administrator to complete web push setup before enabling notifications on this device.
             </p>
           )}
           <Button
@@ -601,8 +599,7 @@ export default function AdminNotificationsSettingsPage() {
         <CardHeader>
           <CardTitle className="text-lg">Test dispatch</CardTitle>
           <CardDescription>
-            Sends a notification through the `dispatch-push` Edge Function to your saved subscriptions (owner / org
-            admin only).
+            Sends a test notification to your saved subscriptions (owner / org admin only).
           </CardDescription>
         </CardHeader>
         <CardContent>

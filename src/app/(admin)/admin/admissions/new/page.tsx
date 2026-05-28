@@ -333,6 +333,14 @@ function AdmissionsNewInner() {
   const supabase = createClient();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
+  const refsContextRef = useRef({ selectedFacilityId });
+  useEffect(() => {
+    refsContextRef.current = { selectedFacilityId };
+  }, [selectedFacilityId]);
+  const isCurrentRefsContext = useCallback(
+    (facilityId: string | null) => refsContextRef.current.selectedFacilityId === facilityId,
+    [],
+  );
 
   const preselectedLeadId = searchParams.get("lead")?.trim() ?? "";
 
@@ -447,6 +455,8 @@ function AdmissionsNewInner() {
   }, [directFirstName, directLastName, directDob]);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (origin !== "direct") {
       setDuplicateCandidate(null);
       setDuplicateLookupLoading(false);
@@ -484,6 +494,7 @@ function AdmissionsNewInner() {
             .or(`date_of_birth.eq.${dobTrim},date_of_birth.is.null`)
             .limit(5);
 
+          if (cancelled) return;
           if (error) {
             setDuplicateCandidate(null);
             return;
@@ -491,12 +502,13 @@ function AdmissionsNewInner() {
           const rows = (data ?? []) as DuplicateResidentMatch[];
           setDuplicateCandidate(rows[0] ?? null);
         } finally {
-          setDuplicateLookupLoading(false);
+          if (!cancelled) setDuplicateLookupLoading(false);
         }
       })();
     }, 400);
 
     return () => {
+      cancelled = true;
       if (duplicateTimerRef.current) clearTimeout(duplicateTimerRef.current);
     };
   }, [
@@ -539,8 +551,10 @@ function AdmissionsNewInner() {
     if (lead?.notes) setNotes((n) => n || lead.notes || "");
   }, [leads, preselectedLeadId]);
 
-  const loadRefs = useCallback(async () => {
+  const loadRefs = useCallback(async (isCurrent: () => boolean = () => true) => {
+    if (!isCurrent()) return;
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      if (!isCurrent()) return;
       setResidents([]);
       setLeads([]);
       setBeds([]);
@@ -556,6 +570,8 @@ function AdmissionsNewInner() {
       .select("organization_id, name, total_licensed_beds, timezone")
       .eq("id", selectedFacilityId)
       .single();
+
+    if (!isCurrent()) return;
 
     const orgId = fac?.organization_id ?? null;
     if (fac?.name) {
@@ -651,6 +667,8 @@ function AdmissionsNewInner() {
       };
     });
 
+    if (!isCurrent()) return;
+
     setResidents((res.data ?? []) as ResidentOption[]);
     setLeads((ld.data ?? []) as LeadOption[]);
     setBeds(mappedBeds);
@@ -659,10 +677,16 @@ function AdmissionsNewInner() {
   }, [supabase, selectedFacilityId]);
 
   useEffect(() => {
-    void loadRefs();
+    let cancelled = false;
+    void loadRefs(() => !cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [loadRefs]);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function checkLeadLinkedCase() {
       if (
         !selectedFacilityId ||
@@ -681,12 +705,17 @@ function AdmissionsNewInner() {
         .is("deleted_at", null)
         .not("status", "in", "(cancelled,draft)")
         .maybeSingle();
-      setExistingAdmissionCaseId(data?.id ?? null);
+      if (!cancelled) setExistingAdmissionCaseId(data?.id ?? null);
     }
     void checkLeadLinkedCase();
+    return () => {
+      cancelled = true;
+    };
   }, [origin, referralLeadId, selectedFacilityId, supabase]);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function checkResidentCase() {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || origin !== "inquiry" || !residentId) {
         setExistingResidentAdmissionCaseId(null);
@@ -700,9 +729,12 @@ function AdmissionsNewInner() {
         .is("deleted_at", null)
         .not("status", "in", "(cancelled,draft)")
         .maybeSingle();
-      setExistingResidentAdmissionCaseId(data?.id ?? null);
+      if (!cancelled) setExistingResidentAdmissionCaseId(data?.id ?? null);
     }
     void checkResidentCase();
+    return () => {
+      cancelled = true;
+    };
   }, [origin, residentId, selectedFacilityId, supabase]);
 
   const duplicateBlocked = Boolean(existingAdmissionCaseId || existingResidentAdmissionCaseId);
@@ -863,6 +895,8 @@ function AdmissionsNewInner() {
       (origin === "direct" && directParsed.success));
 
   async function handleCreateResidentModal() {
+    const actionFacilityId = selectedFacilityId;
+
     setModalError(null);
     const fn = modalFirstName.trim();
     const ln = modalLastName.trim();
@@ -870,16 +904,17 @@ function AdmissionsNewInner() {
       setModalError("First and last name are required.");
       return;
     }
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+    if (!actionFacilityId || !isValidFacilityIdForQuery(actionFacilityId)) {
       setModalError("Choose a facility in the header.");
       return;
     }
     const { data: fac, error: facErr } = await supabase
       .from("facilities")
       .select("organization_id")
-      .eq("id", selectedFacilityId)
+      .eq("id", actionFacilityId)
       .is("deleted_at", null)
       .maybeSingle();
+    if (!isCurrentRefsContext(actionFacilityId)) return;
     if (facErr || !fac?.organization_id) {
       setModalError("Could not resolve organization for this facility.");
       return;
@@ -887,6 +922,7 @@ function AdmissionsNewInner() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    if (!isCurrentRefsContext(actionFacilityId)) return;
     if (!user?.id) {
       setModalError("You must be signed in.");
       return;
@@ -897,7 +933,7 @@ function AdmissionsNewInner() {
       const { data: newRes, error: insErr } = await supabase
         .from("residents")
         .insert({
-          facility_id: selectedFacilityId,
+          facility_id: actionFacilityId,
           organization_id: fac.organization_id,
           first_name: fn,
           last_name: ln,
@@ -909,11 +945,13 @@ function AdmissionsNewInner() {
         })
         .select("id")
         .single();
+      if (!isCurrentRefsContext(actionFacilityId)) return;
       if (insErr || !newRes?.id) {
         setModalError(insErr?.message ?? "Could not create resident.");
         return;
       }
-      await loadRefs();
+      await loadRefs(() => isCurrentRefsContext(actionFacilityId));
+      if (!isCurrentRefsContext(actionFacilityId)) return;
       setResidentId(newRes.id);
       setModalFirstName("");
       setModalLastName("");
@@ -1227,7 +1265,7 @@ function AdmissionsNewInner() {
 
   return (
     <TooltipProvider delay={300}>
-      <div className="mx-auto max-w-[1040px] space-y-8 px-4 pb-14">
+      <div className="w-full space-y-8 px-4 pb-14">
       <Link
         href="/pipeline/recent-admissions"
         className="inline-flex items-center gap-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"

@@ -58,6 +58,24 @@ export async function adminInviteUser(
     throw new Error(`Auth invite error: ${error.message}`);
   }
 
+  // inviteUserByEmail only writes user_metadata. Mirror the role + org into
+  // app_metadata so `getAppRoleFromClaims` (which only trusts app_metadata)
+  // can route the user correctly on first sign-in.
+  if (data.user?.id) {
+    const { error: metaError } = await supabase.auth.admin.updateUserById(data.user.id, {
+      app_metadata: {
+        app_role: options.app_role,
+        organization_id: options.organization_id,
+      },
+    });
+
+    if (metaError) {
+      // The invite already went out. If the metadata write fails, we'd produce
+      // the same bug we're fixing — surface clearly so the admin can react.
+      throw new Error(`Invite sent but app_metadata write failed: ${metaError.message}`);
+    }
+  }
+
   return {
     id: data.user.id,
     email: data.user.email ?? email,
@@ -226,5 +244,19 @@ export async function adminEnableUser(userId: string): Promise<void> {
 
   if (error) {
     throw new Error(`Auth enable error: ${error.message}`);
+  }
+}
+
+/**
+ * Permanently remove a user from Supabase Auth.
+ * Caller must complete all product-level role/history gates first.
+ */
+export async function adminHardDeleteUser(userId: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+
+  if (error) {
+    throw new Error(`Auth hard delete error: ${error.message}`);
   }
 }

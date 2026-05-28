@@ -14,6 +14,7 @@
  * fact list — fact-pack failure must never break the Haven Insight surface.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { pickRedacted } from "./redact-pii.ts";
 
 export type FacilityFact = {
   id: string;
@@ -54,14 +55,28 @@ type MedicaidProviderRow = {
   facility_id: string;
 };
 
+/**
+ * Known-safe keys for facility-facts logging. Whitelisting prevents accidental
+ * PHI leakage when callers hand the logger a Supabase error or query payload.
+ * Values are deep-redacted via `pickRedacted`.
+ */
+const FACTS_LOG_WHITELIST = [
+  "organization_id",
+  "facility_id",
+  "status",
+  "count",
+  "error_code",
+] as const;
+
 function logError(event: string, error: unknown, extra: Record<string, unknown> = {}): void {
+  const safe = pickRedacted(extra, FACTS_LOG_WHITELIST);
   console.error(
     JSON.stringify({
       fn: "facility-facts",
       event,
       outcome: "error",
       error_message: error instanceof Error ? error.message : String(error),
-      ...extra,
+      ...safe,
     }),
   );
 }
@@ -100,18 +115,24 @@ function extractEntityName(entities: FacilityRow["entities"]): string | null {
 export async function loadFacilityFacts(
   admin: SupabaseClient,
   organizationId: string,
+  facilityIds?: string[],
 ): Promise<FacilityFact[]> {
   if (!organizationId) return [];
+  if (facilityIds && facilityIds.length === 0) return [];
 
   let facilityRows: FacilityRow[] = [];
   try {
-    const { data, error } = await admin
+    let q = admin
       .from("facilities")
       .select(
         "id, name, total_licensed_beds, address_line_1, city, state, zip, phone, email, administrator_name, entity_id, entities ( name )",
       )
       .eq("organization_id", organizationId)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (facilityIds) q = q.in("id", facilityIds);
+    const { data, error } = await q;
     if (error) {
       logError("facilities_query_failed", error, { organization_id: organizationId });
       return [];
@@ -124,7 +145,7 @@ export async function loadFacilityFacts(
 
   if (facilityRows.length === 0) return [];
 
-  const facilityIds = facilityRows.map((f) => f.id);
+  const loadedFacilityIds = facilityRows.map((f) => f.id);
 
   const staffByFacility = new Map<string, { admin?: string; assistant?: string }>();
   try {
@@ -132,7 +153,7 @@ export async function loadFacilityFacts(
       .from("staff")
       .select("facility_id, first_name, last_name, staff_role")
       .eq("organization_id", organizationId)
-      .in("facility_id", facilityIds)
+      .in("facility_id", loadedFacilityIds)
       .in("staff_role", ["administrator", "assistant_administrator"])
       .is("deleted_at", null);
     if (error) {
@@ -160,7 +181,7 @@ export async function loadFacilityFacts(
       .from("facility_medicaid_providers")
       .select("facility_id")
       .eq("organization_id", organizationId)
-      .in("facility_id", facilityIds)
+      .in("facility_id", loadedFacilityIds)
       .is("deleted_at", null);
     if (error) {
       logError("medicaid_query_failed", error, { organization_id: organizationId });

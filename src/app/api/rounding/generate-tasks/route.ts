@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 import { generateObservationTasks } from "@/lib/rounding/generate-observation-tasks";
 import type { GeneratedTaskInput, PlanRuleInput } from "@/lib/rounding/types";
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
     : await basePlanQuery.eq("facility_id", requestedFacilityId!);
 
   if (plansError) {
-    console.error("[rounding/generate-tasks] plans", plansError);
+    logError("rounding.generate-tasks", plansError, { action: "load_plans", planId: body.planId, facilityId: requestedFacilityId });
     return NextResponse.json({ error: "Could not load observation plans" }, { status: 500 });
   }
 
@@ -151,7 +152,7 @@ export async function POST(request: Request) {
     .in("status", ["assigned", "confirmed"]);
 
   if (assignmentsError) {
-    console.error("[rounding/generate-tasks] assignments", assignmentsError);
+    logError("rounding.generate-tasks", assignmentsError, { action: "load_assignments", facilityId, shiftDate });
     return NextResponse.json({ error: "Could not load shift assignments" }, { status: 500 });
   }
 
@@ -180,7 +181,7 @@ export async function POST(request: Request) {
     .order("sort_order", { ascending: true });
 
   if (rulesError) {
-    console.error("[rounding/generate-tasks] rules", rulesError);
+    logError("rounding.generate-tasks", rulesError, { action: "load_rules", planCount: planIds.length });
     return NextResponse.json({ error: "Could not load observation plan rules" }, { status: 500 });
   }
 
@@ -194,7 +195,7 @@ export async function POST(request: Request) {
     .is("deleted_at", null);
 
   if (watchesError) {
-    console.error("[rounding/generate-tasks] watches", watchesError);
+    logError("rounding.generate-tasks", watchesError, { action: "load_watches", facilityId });
     return NextResponse.json({ error: "Could not load resident watch instances" }, { status: 500 });
   }
 
@@ -277,7 +278,7 @@ export async function POST(request: Request) {
     .select("id");
 
   if (insertError) {
-    console.error("[rounding/generate-tasks] insert", insertError);
+    logError("rounding.generate-tasks", insertError, { action: "insert_tasks", facilityId, rowCount: rows.length });
     return NextResponse.json({ error: "Could not create observation tasks" }, { status: 500 });
   }
 

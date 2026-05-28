@@ -1,3 +1,4 @@
+import { AppRuntimeProviders } from "@/components/layout/AppRuntimeProviders";
 import { FamilyShell } from "@/components/layout/FamilyShell";
 
 /**
@@ -16,8 +17,10 @@ export default function FamilyRouteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="light">
-      <FamilyShell>{children}</FamilyShell>
-    </div>
+    <AppRuntimeProviders>
+      <div className="light">
+        <FamilyShell>{children}</FamilyShell>
+      </div>
+    </AppRuntimeProviders>
   );
 }

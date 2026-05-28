@@ -3,8 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Phone, Mail, CircleCheck } from "lucide-react";
 
-import { useFacility } from "@/hooks/useFacility";
 import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
+import type { FacilityDetailRow } from "@/types/facility";
 import { OccupancyGauge } from "../shared/OccupancyGauge";
 import { formatColLabel } from "@/lib/col-labels";
 import { surveyResultDisplayLabel } from "@/lib/admin/facilities/facility-constants";
@@ -14,6 +14,8 @@ import { RecordDetailSection } from "@/design-system/components/record-detail";
 
 interface OverviewTabProps {
   facilityId: string;
+  facility: FacilityDetailRow;
+  enableBedAvailability?: boolean;
 }
 
 const STANDUP_CLASS_LABELS: Record<"private" | "sp_female" | "sp_male" | "sp_flexible", string> = {
@@ -30,14 +32,44 @@ function getBedStatusLabel(bed: { current_resident_id: string | null; is_tempora
   return formatColLabel(bed.status, { fallback: "sentence" });
 }
 
-export function OverviewTab({ facilityId }: OverviewTabProps) {
-  const { facility, isLoading, error } = useFacility(facilityId);
+export function OverviewTab({
+  facilityId,
+  facility,
+  enableBedAvailability = true,
+}: OverviewTabProps) {
+  const [shouldLoadBedAvailability, setShouldLoadBedAvailability] = useState(false);
+  const bedAvailabilitySectionRef = useRef<HTMLDivElement | null>(null);
   const { rows: beds, isLoading: bedsLoading, error: bedsError, isSaving: bedsSaving, canEdit, updateBed } =
-    useFacilityBedAvailability(facilityId);
+    useFacilityBedAvailability(facilityId, { enabled: shouldLoadBedAvailability });
   const [blockedReasonDrafts, setBlockedReasonDrafts] = useState<Record<string, string>>({});
   const [bedFilter, setBedFilter] = useState<"all" | "open" | "blocked" | "unclassified">("all");
 
   const bedsRef = useRef(beds);
+
+  useEffect(() => {
+    if (!enableBedAvailability || shouldLoadBedAvailability) return;
+
+    const section = bedAvailabilitySectionRef.current;
+    if (!section || typeof IntersectionObserver === "undefined") {
+      const timeoutId = window.setTimeout(() => {
+        setShouldLoadBedAvailability(true);
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadBedAvailability(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [enableBedAvailability, shouldLoadBedAvailability]);
 
   useEffect(() => {
     bedsRef.current = beds;
@@ -94,22 +126,6 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
     }
     return () => timers.forEach((t) => clearTimeout(t));
   }, [blockedReasonDrafts, canEdit, updateBed]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error || !facility) {
-    return (
-      <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3">
-        <p className="text-sm text-destructive">{error ?? "Failed to load facility details"}</p>
-      </div>
-    );
-  }
 
   const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
   const licensedBeds =
@@ -248,15 +264,21 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
         </div>
       </RecordDetailSection>
 
-      <RecordDetailSection
-        title="Standup bed availability"
+      <div ref={bedAvailabilitySectionRef}>
+        <RecordDetailSection
+          title="Standup bed availability"
         description={
           canEdit
             ? "Keeps vacant-bed buckets accurate for census and admissions standups. Owner-editable."
             : "Keeps vacant-bed buckets accurate for census and admissions standups."
         }
       >
-        {bedsLoading ? (
+        {!shouldLoadBedAvailability ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading bed inventory when this section is in view…
+          </div>
+        ) : bedsLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading bed inventory…
@@ -378,6 +400,7 @@ export function OverviewTab({ facilityId }: OverviewTabProps) {
           </div>
         )}
       </RecordDetailSection>
+      </div>
     </div>
   );
 }

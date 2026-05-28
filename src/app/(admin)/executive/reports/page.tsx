@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { FileSpreadsheet, MessageSquare } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
@@ -177,7 +177,7 @@ function isStandupBoardPacketReport(report: ReportRow): boolean {
 }
 
 export default function ExecutiveSavedReportsPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<ReportRow[]>([]);
@@ -513,11 +513,11 @@ export default function ExecutiveSavedReportsPage() {
       </div>
 
       <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-200">
-        Reporting has moved to the dedicated module. Use{" "}
-        <Link href="/admin/reports" className="underline underline-offset-2">
-          /admin/reports
+        Reporting has moved to the dedicated module. Open{" "}
+        <Link href="/admin/reports/saved" className="font-medium underline underline-offset-2">
+          saved reports in Reports hub
         </Link>{" "}
-        for template library, scheduling, packs, and audit history.
+        for reusable report definitions, or use Reports hub for templates, schedules, packs, and audit history.
       </p>
 
       <SourceReadinessCallout copy={EXECUTIVE_REPORTING_SOURCE_READINESS} />

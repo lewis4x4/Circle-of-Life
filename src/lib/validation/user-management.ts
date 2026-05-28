@@ -115,6 +115,22 @@ export const reactivateUserSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
+// ── Hard Delete User (DELETE body) ────────────────────────────────
+
+export const hardDeleteUserSchema = z
+  .object({
+    confirm_email: z.string().email("Type the target user's email to confirm"),
+  })
+  .strict();
+
+// ── Reset User Password (POST body) ───────────────────────────────
+
+export const resetUserPasswordSchema = z
+  .object({
+    mode: z.enum(["email", "temp"]),
+  })
+  .strict();
+
 // ── Audit Log (GET query params) ──────────────────────────────────
 
 export const auditLogQuerySchema = z.object({
@@ -129,6 +145,7 @@ export const auditLogQuerySchema = z.object({
       "revoke_access",
       "soft_delete",
       "reactivate",
+      "password_reset",
     ])
     .optional(),
   start_date: z.string().datetime().optional(),
@@ -143,4 +160,6 @@ export type UpdateUserBody = z.infer<typeof updateUserSchema>;
 export type GrantFacilityAccessBody = z.infer<typeof grantFacilityAccessSchema>;
 export type DeleteUserBody = z.infer<typeof deleteUserSchema>;
 export type ReactivateUserBody = z.infer<typeof reactivateUserSchema>;
+export type HardDeleteUserBody = z.infer<typeof hardDeleteUserSchema>;
+export type ResetUserPasswordBody = z.infer<typeof resetUserPasswordSchema>;
 export type AuditLogQuery = z.infer<typeof auditLogQuerySchema>;

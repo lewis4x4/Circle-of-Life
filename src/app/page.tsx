@@ -1,16 +1,12 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import dynamic from "next/dynamic";
-
-const LandingHome = dynamic(() => import("@/components/landing/landing-home"), {
-  loading: () => (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
-    </div>
-  ),
-  ssr: false,
-});
-
+/**
+ * The apex URL routes straight to the operator sign-in.
+ *
+ * The marketing landing (`src/components/landing/landing-home.tsx`) is kept
+ * in the tree intentionally so it can be re-mounted at a marketing path
+ * later, but the root URL is the staff entry point for now.
+ */
 export default function Home() {
-  return <LandingHome />;
+  redirect("/login");
 }

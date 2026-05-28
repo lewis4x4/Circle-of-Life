@@ -47,7 +47,7 @@ function freshnessDays(iso: string | null): number | null {
   return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
 }
 
-function CoveragePlaceholderGrid({ configured }: { configured: boolean }) {
+function CoveragePreviewGrid({ configured }: { configured: boolean }) {
   const shifts = ["Day", "Evening", "Night"];
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -62,8 +62,7 @@ function CoveragePlaceholderGrid({ configured }: { configured: boolean }) {
         </p>
       ) : (
         <p className="text-[13px] text-muted-foreground">
-          Coverage engine — launching sprint. Grid below is a scaffold (7 days × 3 shifts) for ratio compliance
-          shading.
+          Ratio rules are configured. Coverage cells stay neutral until schedule coverage data is available for this view.
         </p>
       )}
       <div className="overflow-x-auto rounded-[8px] border border-border">
@@ -88,7 +87,7 @@ function CoveragePlaceholderGrid({ configured }: { configured: boolean }) {
                       className={`h-10 rounded-[6px] border border-border ${
                         configured ? "bg-muted/40" : "bg-muted/20 opacity-70"
                       }`}
-                      title={configured ? "Coverage % scaffold" : "Awaiting ratio rule set"}
+                      title={configured ? "Coverage pending schedule data" : "Awaiting ratio rule set"}
                     />
                   </td>
                 ))}
@@ -115,14 +114,6 @@ function CoveragePlaceholderGrid({ configured }: { configured: boolean }) {
     </div>
   );
 }
-
-const ACTIVITY_SCAFFOLD = [
-  { name: "Workforce activity feed", role: "—", kind: "Planned", when: "Sprint backlog" },
-  { name: "Hires / departures / expirations", role: "—", kind: "Event stream", when: "Coming soon" },
-  { name: "—", role: "—", kind: "—", when: "—" },
-  { name: "—", role: "—", kind: "—", when: "—" },
-  { name: "—", role: "—", kind: "—", when: "—" },
-] as const;
 
 export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProps) {
   const [staffRows, setStaffRows] = useState<StaffSummaryRow[]>([]);
@@ -289,7 +280,7 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
         {rosterLine ? <p className="text-[12px] text-muted-foreground">{rosterLine}</p> : null}
         {staffKpis.error ? (
           <p className="text-[12px] text-destructive" role="alert">
-            KPI block: {staffKpis.error}
+            Staffing metrics could not load: {staffKpis.error}
           </p>
         ) : null}
       </section>
@@ -297,7 +288,7 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
       <section className="space-y-4" aria-labelledby="staffing-coverage-heading">
         <SectionLabel id="staffing-coverage-heading">Coverage next 7 days</SectionLabel>
         <div className="h-px w-full bg-border" />
-        <CoveragePlaceholderGrid configured={ratioConfigured} />
+        <CoveragePreviewGrid configured={ratioConfigured} />
       </section>
 
       <section className="space-y-4" aria-labelledby="staffing-activity-heading">
@@ -309,19 +300,11 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
         </div>
         <div className="h-px w-full bg-border" />
         <p className="text-[13px] text-muted-foreground">
-          Workforce event stream + 30-day rollup — tracked in{" "}
-          <span className="font-medium text-foreground">Workforce data layer hardening</span> sprint (issue backlog).
+          Use the staff roster for current staff records and staffing alerts for ratio exceptions.
         </p>
-        <ul className="divide-y divide-border rounded-[8px] border border-border">
-          {ACTIVITY_SCAFFOLD.map((row, idx) => (
-            <li key={idx} className="flex flex-col gap-0.5 px-3 py-2 text-[13px] sm:flex-row sm:items-center sm:justify-between">
-              <span className="font-medium text-foreground">{row.name}</span>
-              <span className="text-muted-foreground">
-                {row.role} · {row.kind} · {row.when}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="rounded-[8px] border border-dashed border-border bg-muted/10 px-3 py-4 text-[13px] text-muted-foreground">
+          Recent staffing events appear in the staff roster when recorded for this facility.
+        </div>
       </section>
 
       <section className="space-y-4" aria-labelledby="staffing-views-heading">
