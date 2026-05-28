@@ -289,7 +289,7 @@ SELECT
   END                                               AS review_overdue
 FROM public.documents d
 WHERE d.deleted_at IS NULL
-  AND d.workspace_id = haven.organization_id()::text;
+  AND d.workspace_id = haven.organization_id();
 
 GRANT SELECT ON public.vw_kb_freshness TO authenticated;
 
@@ -330,7 +330,7 @@ gaps AS (
     COUNT(*) FILTER (WHERE resolved = false AND signal = 'router_no_grounded_source')   AS open_gaps_router_no_source,
     COUNT(*) FILTER (WHERE resolved = true  AND resolved_at >= now() - interval '30 days') AS resolved_last_30d
   FROM public.knowledge_gaps
-  WHERE workspace_id = haven.organization_id()::text
+  WHERE workspace_id = haven.organization_id()
 ),
 freshness AS (
   SELECT

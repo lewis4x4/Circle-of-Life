@@ -20,6 +20,9 @@
 -- diet_orders — family read (Module 21 / spec 14)
 -- =============================================================================
 
+ALTER TABLE public.diet_orders
+  ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+
 DROP POLICY IF EXISTS diet_orders_select_family ON public.diet_orders;
 
 CREATE POLICY diet_orders_select_family ON public.diet_orders

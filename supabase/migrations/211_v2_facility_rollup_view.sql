@@ -38,12 +38,26 @@ incident_counts AS (
     ) AS open_incidents_count
   FROM public.incidents i
   GROUP BY i.facility_id
+),
+resident_counts AS (
+  SELECT
+    r.facility_id,
+    COUNT(*) FILTER (
+      WHERE r.deleted_at IS NULL
+        AND r.status IN ('active', 'hospital_hold', 'loa')
+    ) AS occupied_residents
+  FROM public.residents r
+  GROUP BY r.facility_id
 )
 SELECT
   f.id AS facility_id,
   f.name AS facility_name,
   f.organization_id,
-  f.occupancy_pct,
+  CASE
+    WHEN f.total_licensed_beds > 0
+      THEN ROUND((COALESCE(rc.occupied_residents, 0)::numeric / f.total_licensed_beds::numeric) * 100, 2)
+    ELSE NULL
+  END AS occupancy_pct,
   f.target_occupancy_pct,
   f.last_survey_date,
   f.ahca_license_expiration,
@@ -60,6 +74,7 @@ SELECT
   NULL::numeric AS labor_cost_pct
 FROM public.facilities f
 LEFT JOIN incident_counts ic ON ic.facility_id = f.id
+LEFT JOIN resident_counts rc ON rc.facility_id = f.id
 LEFT JOIN latest_risk lr ON lr.facility_id = f.id
 WHERE f.deleted_at IS NULL;
 

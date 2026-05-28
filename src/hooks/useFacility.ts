@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
+import { invalidateFacilitiesCache } from "@/hooks/useFacilities";
 
 function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
   const f = raw as unknown as FacilityDetailRow & { license_number?: string | null };
@@ -115,11 +116,13 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         if (!res.ok) {
           throw new Error("Failed to update facility");
         }
-        // Bust both caches so the next reads — detail and facility-list
-        // dropdowns — pick up the rename / status change without waiting
-        // out the 60s / 5min TTLs.
+        // Core fields shown across facility surfaces changed — bust every
+        // facility cache so the next reads (detail, facility-list dropdowns,
+        // and the /admin/facilities portfolio list) reflect the rename /
+        // status change instead of waiting out the TTLs.
         facilityCache.delete(facilityId);
         clearFacilityListCache();
+        invalidateFacilitiesCache();
         return await loadDetail(false);
       } catch (err) {
         console.error("[useFacility] update error:", err);

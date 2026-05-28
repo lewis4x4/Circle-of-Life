@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { billingNyTodayIso, daysPastDueAsOf } from "@/lib/billing/ar-aging-as-of";
 import { ninetyPlusRiskShareClass } from "@/lib/billing/billing-ar-semantics";
+import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
@@ -135,6 +136,7 @@ function AdminArAgingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bucketParam = searchParams.get("bucket");
+  const requestedFacilityId = searchParams.get("facilityId");
   const bucketFilter = (
     ["current", "31-60", "61-90", "91-plus"].includes(bucketParam ?? "") ? bucketParam : null
   ) as ArBucketUrlKey | null;
@@ -148,9 +150,21 @@ function AdminArAgingPageContent() {
   const [asOfDate, setAsOfDate] = useState(initialAsOf);
   const [rollupMode, setRollupMode] = useState<"resident" | "invoice">("resident");
   /** Org-wide only; empty = all facilities */
-  const [facilitySelection, setFacilitySelection] = useState<string[]>([]);
+  const [facilitySelection, setFacilitySelection] = useState<string[]>(() =>
+    isValidFacilityIdForQuery(requestedFacilityId) ? [requestedFacilityId] : [],
+  );
   /** Empty set = all payer types */
   const [payerSelection, setPayerSelection] = useState<PayerDb[]>([]);
+
+  useEffect(() => {
+    if (selectedFacilityId != null || !isValidFacilityIdForQuery(requestedFacilityId)) return;
+    // Keep the same array reference when the selection already matches so we
+    // don't re-derive `load` and re-fire the whole fetch sequence — the
+    // useState initializer above already seeds this on first mount.
+    setFacilitySelection((prev) =>
+      prev.length === 1 && prev[0] === requestedFacilityId ? prev : [requestedFacilityId],
+    );
+  }, [requestedFacilityId, selectedFacilityId]);
 
   const [rawInvoices, setRawInvoices] = useState<RawInv[]>([]);
   const [residentCount, setResidentCount] = useState<number | null>(null);
@@ -897,10 +911,16 @@ function AdminArAgingPageContent() {
                                 View resident billing
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem disabled>Send reminder</DropdownMenuItem>
-                              <DropdownMenuItem disabled>Mark paid</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(collectionActivityHref(r.residentId))}>
+                                Log reminder/contact
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(paymentHref(r.residentId))}>
+                                Record payment
+                              </DropdownMenuItem>
                               <DropdownMenuItem disabled>Apply credit</DropdownMenuItem>
-                              <DropdownMenuItem disabled>View payment history</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/admin/residents/${r.residentId}/billing`)}>
+                                View payment history
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -969,8 +989,12 @@ function AdminArAgingPageContent() {
                           <DropdownMenuItem onClick={() => router.push(`/admin/residents/${inv.resident_id}/billing`)}>
                             View resident
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled>Send reminder</DropdownMenuItem>
-                          <DropdownMenuItem disabled>Mark paid</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(collectionActivityHref(inv.resident_id, inv.id))}>
+                            Log reminder/contact
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(paymentHref(inv.resident_id, inv.id, inv.balance_due))}>
+                            Record payment
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

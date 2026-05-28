@@ -26,6 +26,12 @@ type RateRow = {
   effectiveDate: string;
   endDate: string | null;
   basePrivateCents: number;
+  baseSemiPrivateCents: number | null;
+  careSurchargeLevel1Cents: number;
+  careSurchargeLevel2Cents: number;
+  careSurchargeLevel3Cents: number;
+  communityFeeCents: number | null;
+  notes: string | null;
   current: boolean;
 };
 
@@ -35,11 +41,26 @@ type SupabaseRateRow = {
   effective_date: string;
   end_date: string | null;
   base_rate_private: number;
+  base_rate_semi_private: number | null;
+  care_surcharge_level_1: number | null;
+  care_surcharge_level_2: number | null;
+  care_surcharge_level_3: number | null;
+  community_fee: number | null;
+  notes: string | null;
   deleted_at: string | null;
 };
 
 type QueryError = { message: string };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
+
+/** Surcharge cells rendered per rate row — defined once, not re-allocated per render. */
+const RATE_SURCHARGE_FIELDS: ReadonlyArray<[label: string, get: (row: RateRow) => number | null]> = [
+  ["Base semi-private", (row) => row.baseSemiPrivateCents],
+  ["Care surcharge L1", (row) => row.careSurchargeLevel1Cents],
+  ["Care surcharge L2", (row) => row.careSurchargeLevel2Cents],
+  ["Care surcharge L3", (row) => row.careSurchargeLevel3Cents],
+  ["Community fee", (row) => row.communityFeeCents],
+];
 
 function formatDate(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00`);
@@ -60,7 +81,9 @@ export default function AdminBillingRatesPage() {
       const supabase = createClient();
       let q = supabase
         .from("rate_schedules" as never)
-        .select("id, name, effective_date, end_date, base_rate_private, deleted_at")
+        .select(
+          "id, name, effective_date, end_date, base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3, community_fee, notes, deleted_at",
+        )
         .is("deleted_at", null)
         .order("effective_date", { ascending: false })
         .limit(100);
@@ -77,6 +100,12 @@ export default function AdminBillingRatesPage() {
           effectiveDate: r.effective_date,
           endDate: r.end_date,
           basePrivateCents: r.base_rate_private,
+          baseSemiPrivateCents: r.base_rate_semi_private,
+          careSurchargeLevel1Cents: r.care_surcharge_level_1 ?? 0,
+          careSurchargeLevel2Cents: r.care_surcharge_level_2 ?? 0,
+          careSurchargeLevel3Cents: r.care_surcharge_level_3 ?? 0,
+          communityFeeCents: r.community_fee,
+          notes: r.notes,
           current: r.end_date == null,
         })),
       );
@@ -104,7 +133,10 @@ export default function AdminBillingRatesPage() {
               Rate Schedules
             </h1>
             <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
-              Private base rates and surcharges mapped by effective dates. Edit individual lines from the core form.
+              Private base rates and surcharges mapped by effective dates. Current versions are retained as read-only history until a replacement schedule is created.
+            </p>
+            <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+              Version history is read-only and reflects stored schedule fields.
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-3">
@@ -141,7 +173,8 @@ export default function AdminBillingRatesPage() {
                <MotionList className="space-y-3">
                   {rows.map((row) => (
                     <MotionItem key={row.id}>
-                      <div className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-5 rounded-lg border border-border bg-card shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-md">
+                      <div className="group flex flex-col gap-5 p-5 rounded-lg border border-border bg-card shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-md">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                          <div className="min-w-0 flex flex-col gap-2">
                            <div className="flex items-center gap-3">
                               {row.current ? (
@@ -153,6 +186,9 @@ export default function AdminBillingRatesPage() {
                                   Historical
                                 </Badge>
                               )}
+                              <Badge className="bg-muted/60 text-muted-foreground border-border uppercase tracking-wider font-mono text-[9px] font-bold shadow-none px-2.5 py-1 rounded-full border">
+                                Read only
+                              </Badge>
                               <span className="font-semibold text-foreground tracking-tight text-lg">
                                  {row.name}
                               </span>
@@ -167,6 +203,28 @@ export default function AdminBillingRatesPage() {
                                {billingCurrency.format(row.basePrivateCents / 100)}
                             </span>
                          </div>
+                        </div>
+                        <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-5">
+                          {RATE_SURCHARGE_FIELDS.map(([label, get]) => {
+                            const cents = get(row);
+                            return (
+                              <div key={label} className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                  {label}
+                                </p>
+                                <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                                  {typeof cents === "number" ? billingCurrency.format(cents / 100) : "—"}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {row.notes ? (
+                          <div className="rounded-md bg-muted/30 px-3 py-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Notes</p>
+                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{row.notes}</p>
+                          </div>
+                        ) : null}
                       </div>
                     </MotionItem>
                   ))}

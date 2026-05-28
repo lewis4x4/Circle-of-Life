@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { FacilityRow } from "@/types/facility";
 import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
@@ -94,12 +94,26 @@ const facilitiesCache = new Map<string, CacheEntry>();
 const FACILITIES_CACHE_TTL_MS = 60_000;
 const FACILITIES_CACHE_MAX = 16;
 
+/**
+ * Clear the module-level facilities cache. Call after any facility mutation
+ * (create / edit / archive) so the next list read reflects the change instead
+ * of serving a stale entry for up to the TTL.
+ */
+export function invalidateFacilitiesCache(): void {
+  facilitiesCache.clear();
+}
+
 export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilitiesReturn {
   const { status, search, page = 1, pageSize = 20 } = options;
 
   const cacheKey = `${page}|${pageSize}|${status ?? ""}|${search ?? ""}`;
   const cached = lruGet(facilitiesCache, cacheKey);
   const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS;
+
+  // Track the age of the data we currently hold so the visibility-refetch
+  // throttle behaves the same for cache-seeded instances as for ones that
+  // fetched over the network.
+  const lastFetchAtRef = useRef(cached?.fetchedAt ?? 0);
 
   const [facilities, setFacilities] = useState<FacilityRow[]>(cached?.facilities ?? []);
   // Only show the full-page spinner when we have nothing to paint.
@@ -140,14 +154,16 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
         total_pages: Math.ceil((json.total ?? 0) / pageSize),
         has_next: json.has_next ?? false,
       };
+      const now = Date.now();
       setFacilities(normalized);
       setPagination(nextPagination);
       lruSet(
         facilitiesCache,
         cacheKey,
-        { facilities: normalized, pagination: nextPagination, fetchedAt: Date.now() },
+        { facilities: normalized, pagination: nextPagination, fetchedAt: now },
         FACILITIES_CACHE_MAX,
       );
+      lastFetchAtRef.current = now;
     } catch (err) {
       console.error("[useFacilities] error:", err);
       const message = err instanceof Error ? err.message : "Failed to fetch facilities";
@@ -164,6 +180,19 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
     void refetch();
     // refetch is stable for this query shape; cacheIsFresh is read once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refetch]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (
+        document.visibilityState === "visible" &&
+        Date.now() - lastFetchAtRef.current > FACILITIES_CACHE_TTL_MS
+      ) {
+        void refetch();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
   }, [refetch]);
 
   return {

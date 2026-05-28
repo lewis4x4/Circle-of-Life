@@ -46,7 +46,6 @@ import {
   ShieldAlert,
   ShieldCheck,
   Smartphone,
-  Star,
   Stethoscope,
   Sun,
   Truck,
@@ -367,7 +366,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "infection", href: "/admin/infection-control", label: "Infection Control", enabled: true, icon: Biohazard },
           { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", enabled: true, icon: Scale },
           { key: "quality", href: "/admin/quality", label: "Quality metrics", enabled: true, icon: LineChart },
-          { key: "reputation", href: "/admin/reputation", label: "Reputation", enabled: true, icon: Star },
         ],
       },
       {

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Phone } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -43,6 +44,18 @@ type InvoiceOption = {
 
 type QueryError = { message: string };
 
+type ResidentRowMini = { id: string; first_name: string | null; last_name: string | null };
+
+/** Billing cohort: residents that can carry an open balance. */
+const BILLING_RESIDENT_STATUSES = ["active", "hospital_hold", "loa"] as const;
+
+function toResidentOption(r: ResidentRowMini): ResidentOption {
+  return {
+    id: r.id,
+    name: `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(/^, |, $/, ""),
+  };
+}
+
 function formatDate(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
@@ -55,15 +68,18 @@ function formatDate(iso: string): string {
 
 export default function AdminNewCollectionActivityPage() {
   const supabase = useMemo(() => createClient(), []);
+  const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
+  const requestedResidentId = searchParams.get("residentId") ?? "";
+  const requestedInvoiceId = searchParams.get("invoiceId") ?? "";
 
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [residentsLoading, setResidentsLoading] = useState(true);
   const [invoices, setInvoices] = useState<InvoiceOption[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
 
-  const [residentId, setResidentId] = useState("");
-  const [invoiceId, setInvoiceId] = useState("");
+  const [residentId, setResidentId] = useState(() => requestedResidentId);
+  const [invoiceId, setInvoiceId] = useState(() => requestedInvoiceId);
   const [activityType, setActivityType] = useState<string>("phone_call");
   const [activityDate, setActivityDate] = useState(
     () => new Date().toISOString().slice(0, 10),
@@ -84,90 +100,99 @@ export default function AdminNewCollectionActivityPage() {
         .from("residents" as never)
         .select("id, first_name, last_name")
         .is("deleted_at", null)
-        .eq("status", "active")
+        .in("status", [...BILLING_RESIDENT_STATUSES])
         .order("last_name", { ascending: true })
         .limit(300);
       if (isValidFacilityIdForQuery(selectedFacilityId)) {
         q = q.eq("facility_id", selectedFacilityId);
       }
       const { data, error: err } = (await q) as {
-        data: {
-          id: string;
-          first_name: string | null;
-          last_name: string | null;
-        }[] | null;
+        data: ResidentRowMini[] | null;
         error: QueryError | null;
       };
       if (err) throw err;
-      const opts =
-        data?.map((r) => ({
-          id: r.id,
-          name: `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(
-            /^, |, $/,
-            "",
-          ),
-        })) ?? [];
+      const opts = (data ?? []).map(toResidentOption);
+
+      // A deep-linked resident may fall outside the billing cohort or pinned
+      // facility (e.g. discharged with an open invoice). Keep them selectable.
+      if (requestedResidentId && !opts.some((o) => o.id === requestedResidentId)) {
+        const { data: prefill } = (await supabase
+          .from("residents" as never)
+          .select("id, first_name, last_name")
+          .eq("id", requestedResidentId)
+          .is("deleted_at", null)
+          .maybeSingle()) as { data: ResidentRowMini | null; error: QueryError | null };
+        if (prefill) opts.unshift(toResidentOption(prefill));
+      }
       setResidents(opts);
     } catch {
       setResidents([]);
     } finally {
       setResidentsLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, requestedResidentId]);
 
   useEffect(() => {
     void loadResidents();
   }, [loadResidents]);
 
   const loadInvoices = useCallback(
-    async (rid: string) => {
+    async (rid: string): Promise<InvoiceOption[]> => {
       if (!rid) {
         setInvoices([]);
-        return;
+        return [];
       }
       setInvoicesLoading(true);
       try {
-        let q = supabase
+        // Scope to the resident only — the resident already determines the
+        // facility, and an extra facility filter would hide a cross-facility
+        // resident's invoices from the prefill.
+        const { data, error: err } = (await supabase
           .from("invoices" as never)
           .select("id, invoice_number, balance_due, status, period_start, period_end")
           .eq("resident_id", rid)
           .is("deleted_at", null)
           .in("status", ["draft", "sent", "partial", "overdue"])
           .order("invoice_date", { ascending: false })
-          .limit(50);
-        if (isValidFacilityIdForQuery(selectedFacilityId)) {
-          q = q.eq("facility_id", selectedFacilityId);
-        }
-        const { data, error: err } = (await q) as {
+          .limit(50)) as {
           data: InvoiceOption[] | null;
           error: QueryError | null;
         };
         if (err) throw err;
-        setInvoices(data ?? []);
+        const rows = data ?? [];
+        setInvoices(rows);
+        return rows;
       } catch {
         setInvoices([]);
+        return [];
       } finally {
         setInvoicesLoading(false);
       }
     },
-    [supabase, selectedFacilityId],
+    [supabase],
   );
 
+  // Reset the invoice selection on resident change, then drop a prefilled
+  // invoiceId that isn't among the resident's loaded open invoices.
   useEffect(() => {
-    setInvoiceId("");
+    let cancelled = false;
+    const prefillInvoiceId = residentId === requestedResidentId ? requestedInvoiceId : "";
+    setInvoiceId(prefillInvoiceId);
     if (residentId) {
-      void loadInvoices(residentId);
+      void loadInvoices(residentId).then((rows) => {
+        if (cancelled || !prefillInvoiceId) return;
+        if (!rows.some((i) => i.id === prefillInvoiceId)) setInvoiceId("");
+      });
     } else {
       setInvoices([]);
     }
-  }, [residentId, loadInvoices]);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadInvoices, requestedInvoiceId, requestedResidentId, residentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility first.");
-      return;
-    }
     if (!residentId.trim()) {
       setError("Choose a resident.");
       return;
@@ -179,9 +204,24 @@ export default function AdminNewCollectionActivityPage() {
     setSubmitting(true);
     setError(null);
     try {
+      // Derive the facility from the resident so a deep-linked resident from
+      // another facility logs against their own facility — the API rejects a
+      // resident/facility mismatch.
+      const { data: resRow, error: resErr } = (await supabase
+        .from("residents" as never)
+        .select("facility_id")
+        .eq("id", residentId)
+        .is("deleted_at", null)
+        .maybeSingle()) as {
+        data: { facility_id: string } | null;
+        error: QueryError | null;
+      };
+      if (resErr) throw resErr;
+      if (!resRow) throw new Error("Resident not found.");
+
       const payload: Record<string, unknown> = {
         resident_id: residentId,
-        facility_id: selectedFacilityId,
+        facility_id: resRow.facility_id,
         activity_type: activityType,
         activity_date: activityDate,
         description: description.trim(),
@@ -189,7 +229,7 @@ export default function AdminNewCollectionActivityPage() {
         follow_up_date: followUpDate.trim() || null,
         follow_up_notes: followUpNotes.trim() || null,
       };
-      if (invoiceId.trim()) {
+      if (invoiceId.trim() && invoices.some((i) => i.id === invoiceId.trim())) {
         payload.invoice_id = invoiceId.trim();
       }
 

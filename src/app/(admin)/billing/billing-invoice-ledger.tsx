@@ -72,6 +72,7 @@ import {
   type InvoiceStatusUi,
   type PayerTypeUi,
 } from "@/lib/billing/load-invoices";
+import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 
 import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
 
@@ -1594,17 +1595,14 @@ function BillingInvoiceLedgerInner({
                                   <DropdownMenuContent align="end" className="w-52 text-[13px]">
                                     <DropdownMenuItem onClick={() => router.push(`/admin/billing/invoices/${row.id}`)}>View invoice</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Send workflows are not wired yet.")}>Send</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Reminder queue lands with messaging.")}>
-                                      Send reminder
+                                    <DropdownMenuItem onClick={() => router.push(collectionActivityHref(row.residentId, row.id))}>
+                                      Log reminder/contact
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Record payment uses the cashiering engine.")}>
+                                    <DropdownMenuItem onClick={() => router.push(paymentHref(row.residentId, row.id, row.amountDueCents))}>
                                       Record payment
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Posting still routes through cashiering.")}>
-                                      Mark paid
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Inline edit remains on invoice detail.")}>
+                                    <DropdownMenuItem onClick={() => router.push(`/admin/billing/invoices/${row.id}`)}>
                                       Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem variant="destructive" onClick={() => scaffoldInvoiceAction("Void must post an audit-safe reversal.")}>
@@ -1614,7 +1612,7 @@ function BillingInvoiceLedgerInner({
                                     <DropdownMenuItem onClick={() => scaffoldInvoiceAction("PDF rendering is queued for billing hardening.")}>
                                       Download PDF
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Payment history rollup will hydrate from cashiering.")}>
+                                    <DropdownMenuItem onClick={() => router.push(`/admin/residents/${row.residentId}/billing`)}>
                                       View payment history
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -1623,25 +1621,25 @@ function BillingInvoiceLedgerInner({
                             </TableRow>
                             {expandedHubRowId === row.id ? (
                               <TableRow className="hover:bg-transparent bg-muted/20">
-                                <TableCell colSpan={hubLedgerColSpan} className="align-top">
-                                  <div className="grid gap-6 py-2 text-[13px] sm:grid-cols-3">
-                                    <div>
+                                <TableCell colSpan={hubLedgerColSpan} className="align-top whitespace-normal">
+                                  <div className="grid min-w-0 gap-4 py-2 text-[13px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,auto)]">
+                                    <div className="min-w-0 rounded-md border border-border/70 bg-background/70 p-3">
                                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Line items</p>
-                                      <p className="mt-2 text-muted-foreground">
+                                      <p className="mt-2 max-w-prose break-words leading-relaxed text-muted-foreground">
                                         Charges and service periods publish from the cashiering rollup — nothing to show until line-level posting
                                         syncs here.
                                       </p>
                                     </div>
-                                    <div>
+                                    <div className="min-w-0 rounded-md border border-border/70 bg-background/70 p-3">
                                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                         Payments & timeline
                                       </p>
-                                      <p className="mt-2 text-muted-foreground">
+                                      <p className="mt-2 max-w-prose break-words leading-relaxed text-muted-foreground">
                                         Applied tenders, timestamps, actors, memo, and linked documents hydrate after the ledger engine exposes
                                         remittance bundles.
                                       </p>
                                     </div>
-                                    <div>
+                                    <div className="min-w-0 rounded-md border border-border/70 bg-background/70 p-3">
                                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Row actions</p>
                                       <div className="mt-3 flex flex-wrap gap-2">
                                         <Button
@@ -1652,10 +1650,10 @@ function BillingInvoiceLedgerInner({
                                           onPointerDown={(e) => e.stopPropagation()}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            scaffoldInvoiceAction("Reminder queue connects here.");
+                                            router.push(collectionActivityHref(row.residentId, row.id));
                                           }}
                                         >
-                                          Send
+                                          Reminder
                                         </Button>
                                         <Button
                                           type="button"
@@ -1678,10 +1676,10 @@ function BillingInvoiceLedgerInner({
                                           onPointerDown={(e) => e.stopPropagation()}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            scaffoldInvoiceAction("Posting still routes through cashiering.");
+                                            router.push(paymentHref(row.residentId, row.id, row.amountDueCents));
                                           }}
                                         >
-                                          Mark paid
+                                          Record payment
                                         </Button>
                                         <Button
                                           type="button"

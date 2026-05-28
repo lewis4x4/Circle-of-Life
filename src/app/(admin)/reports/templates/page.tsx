@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 
+import { SourceReadinessCallout } from "@/components/common/source-readiness-callout";
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { TemplateCard } from "@/components/reports/template-card";
 import { Input } from "@/components/ui/input";
+import { REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import {
   Select,
   SelectContent,
@@ -268,6 +270,8 @@ export default function ReportTemplatesPage() {
             {totalCatalog} templates available. Search by name or filter by category.
           </p>
         </header>
+
+        <SourceReadinessCallout copy={REPORTING_SOURCE_READINESS} />
 
         {error ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

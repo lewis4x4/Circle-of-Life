@@ -43,7 +43,6 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
-  Star,
   Stethoscope,
   Truck,
   Umbrella,
@@ -135,7 +134,6 @@ export const PILLARS: Pillar[] = [
       { key: "infection", href: "/admin/infection-control", label: "Infection Control", icon: Biohazard },
       { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", icon: Scale },
       { key: "quality", href: "/admin/quality", label: "Quality metrics", icon: LineChart },
-      { key: "reputation", href: "/admin/reputation", label: "Reputation", icon: Star },
     ],
   },
   {

@@ -56,29 +56,11 @@ ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'dietary_aide';
 BEGIN;
 
 -- ============================================================
--- SAFETY GUARD: diet_orders must be empty before drop
--- ============================================================
-DO $$
-BEGIN
-  IF (SELECT count(*) FROM public.diet_orders) > 0 THEN
-    RAISE EXCEPTION 'diet_orders has rows — refusing to DROP. Manual intervention required.';
-  END IF;
-END $$;
-
-
--- ============================================================
--- DROP existing diet_orders (089 shape) — CASCADE removes its
--- dependent policies, indexes, and triggers in one motion.
--- ============================================================
-DROP TABLE IF EXISTS public.diet_orders CASCADE;
-
-
--- ============================================================
 -- 1. DIET ORDERS (174 schema)
 -- One active row per resident (enforced by partial unique index).
 -- Supersedes the enum-based `diet_orders` from 089_dietary_nutrition.sql.
 -- ============================================================
-CREATE TABLE diet_orders (
+CREATE TABLE IF NOT EXISTS diet_orders (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id  uuid NOT NULL REFERENCES organizations(id),
   facility_id      uuid NOT NULL REFERENCES facilities(id),
@@ -101,6 +83,19 @@ CREATE TABLE diet_orders (
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.diet_orders
+  ADD COLUMN IF NOT EXISTS diet_type text NOT NULL DEFAULT 'regular',
+  ADD COLUMN IF NOT EXISTS iddsi_food_level int,
+  ADD COLUMN IF NOT EXISTS iddsi_liquid_level int,
+  ADD COLUMN IF NOT EXISTS allergies text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS dislikes text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS preferences text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS notes text,
+  ADD COLUMN IF NOT EXISTS effective_from timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS effective_to timestamptz,
+  ADD COLUMN IF NOT EXISTS ordered_by uuid REFERENCES auth.users(id),
+  ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_diet_orders_resident_active
   ON diet_orders(resident_id) WHERE active = true;

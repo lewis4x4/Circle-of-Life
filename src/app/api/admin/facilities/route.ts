@@ -158,6 +158,11 @@ export async function GET(request: NextRequest) {
         .eq("staff_role", "administrator")
         .eq("employment_status", "active")
         .is("deleted_at", null),
+      // No global LIMIT: rows are ordered by computed_at across ALL facilities,
+      // then deduped to the latest row per facility below. A global cap could be
+      // consumed entirely by one high-frequency facility, starving others of
+      // their survey_readiness_pct. Scope is already bounded to this page's
+      // facilityIds + org + non-deleted rows.
       untypedAdmin
         .from("risk_score_snapshots")
         .select("facility_id, computed_at, summary_json")
