@@ -46,6 +46,18 @@ type InvoiceOption = {
 
 type QueryError = { message: string };
 
+type ResidentRowMini = { id: string; first_name: string | null; last_name: string | null };
+
+/** Billing cohort: residents that can carry an open balance. */
+const BILLING_RESIDENT_STATUSES = ["active", "hospital_hold", "loa"] as const;
+
+function toResidentOption(r: ResidentRowMini): ResidentOption {
+  return {
+    id: r.id,
+    name: `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(/^, |, $/, ""),
+  };
+}
+
 function formatDate(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
@@ -91,7 +103,7 @@ export default function AdminNewPaymentPage() {
         .from("residents" as never)
         .select("id, first_name, last_name, facility_id")
         .is("deleted_at", null)
-        .eq("status", "active")
+        .in("status", [...BILLING_RESIDENT_STATUSES])
         .order("last_name", { ascending: true })
         .limit(200);
 
@@ -100,36 +112,39 @@ export default function AdminNewPaymentPage() {
       }
 
       const { data, error: err } = (await q) as {
-        data: {
-          id: string;
-          first_name: string | null;
-          last_name: string | null;
-        }[] | null;
+        data: ResidentRowMini[] | null;
         error: QueryError | null;
       };
 
       if (err) throw err;
-      setResidents(
-        (data ?? []).map((r) => ({
-          id: r.id,
-          name: `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(
-            /^, |, $/,
-            "",
-          ),
-        })),
-      );
+      const opts = (data ?? []).map(toResidentOption);
+
+      // A deep-linked resident may fall outside the billing cohort or the pinned
+      // facility (e.g. discharged with an open invoice). Ensure they are still a
+      // selectable option so the prefill isn't silently dropped.
+      if (requestedResidentId && !opts.some((o) => o.id === requestedResidentId)) {
+        const { data: prefill } = (await supabase
+          .from("residents" as never)
+          .select("id, first_name, last_name, facility_id")
+          .eq("id", requestedResidentId)
+          .is("deleted_at", null)
+          .maybeSingle()) as { data: ResidentRowMini | null; error: QueryError | null };
+        if (prefill) opts.unshift(toResidentOption(prefill));
+      }
+
+      setResidents(opts);
     } catch {
       setResidents([]);
     } finally {
       setResidentsLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, requestedResidentId]);
 
   const loadInvoices = useCallback(
-    async (rid: string) => {
+    async (rid: string): Promise<InvoiceOption[]> => {
       if (!rid) {
         setInvoices([]);
-        return;
+        return [];
       }
       setInvoicesLoading(true);
       try {
@@ -148,9 +163,12 @@ export default function AdminNewPaymentPage() {
         };
 
         if (err) throw err;
-        setInvoices(data ?? []);
+        const rows = data ?? [];
+        setInvoices(rows);
+        return rows;
       } catch {
         setInvoices([]);
+        return [];
       } finally {
         setInvoicesLoading(false);
       }
@@ -162,21 +180,27 @@ export default function AdminNewPaymentPage() {
     void loadResidents();
   }, [loadResidents]);
 
+  // Reset the invoice selection when the resident changes, then reconcile the
+  // prefilled invoice against the actually-loaded open invoices: a deep-linked
+  // invoice that is paid/closed/voided is not in the list, so drop it rather
+  // than submitting a payment against an invoice the operator never saw.
+  // The amount field is owned by its useState initializer and stays editable.
   useEffect(() => {
-    const prefillsMatchResident = residentId === requestedResidentId;
-    setInvoiceId(prefillsMatchResident ? requestedInvoiceId : "");
-    setAmountDollars((current) => {
-      if (prefillsMatchResident) {
-        return current || requestedAmount;
-      }
-      return current === requestedAmount ? "" : current;
-    });
+    let cancelled = false;
+    const prefillInvoiceId = residentId === requestedResidentId ? requestedInvoiceId : "";
+    setInvoiceId(prefillInvoiceId);
     if (residentId) {
-      void loadInvoices(residentId);
+      void loadInvoices(residentId).then((rows) => {
+        if (cancelled || !prefillInvoiceId) return;
+        if (!rows.some((i) => i.id === prefillInvoiceId)) setInvoiceId("");
+      });
     } else {
       setInvoices([]);
     }
-  }, [loadInvoices, requestedAmount, requestedInvoiceId, requestedResidentId, residentId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadInvoices, requestedInvoiceId, requestedResidentId, residentId]);
 
   const selectedInvoice = invoices.find((i) => i.id === invoiceId);
   const amountCents = Math.round(parseFloat(amountDollars || "0") * 100);
@@ -224,7 +248,7 @@ export default function AdminNewPaymentPage() {
           facility_id: resRow.data.facility_id,
           organization_id: resRow.data.organization_id,
           entity_id: entityRow.data.entity_id,
-          invoice_id: invoiceId || null,
+          invoice_id: selectedInvoice ? invoiceId : null,
           payment_date: paymentDate,
           amount: amountCents,
           payment_method: paymentMethod,
@@ -239,19 +263,12 @@ export default function AdminNewPaymentPage() {
         if (insErr) throw insErr;
 
         if (invoiceId && selectedInvoice) {
-          const appliedCents = Math.min(amountCents, Math.max(0, selectedInvoice.balance_due));
-          const newBalance = selectedInvoice.balance_due - appliedCents;
-          const newStatus =
-            newBalance <= 0 ? "paid" : "partial";
-
-          await supabase
-            .from("invoices" as never)
-            .update({
-              amount_paid: Math.max(0, selectedInvoice.amount_paid ?? 0) + appliedCents,
-              balance_due: Math.max(0, newBalance),
-              status: newStatus,
-            } as never)
-            .eq("id", invoiceId);
+          // Apply atomically server-side (row lock + live balance) so concurrent
+          // payments can't lose an update. RLS still applies (SECURITY INVOKER).
+          await supabase.rpc("apply_invoice_payment" as never, {
+            p_invoice_id: invoiceId,
+            p_amount_cents: amountCents,
+          } as never);
         }
 
         setSuccess(true);

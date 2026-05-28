@@ -300,10 +300,13 @@ export function AdminStaffingConsolePageClient({
     selectedFacilityId != null && staffOptions.length === 0
         ? "No active staff came back from the ADP-linked directory for this facility. Attendance logging is blocked until the feed syncs."
         : null;
+  // Single pass over the snapshots (this runs after an early return, so it
+  // can't be a hook); derive both counts from one filter instead of two.
+  const compliantCount = windowScopedSnapshots.filter((s) => s.isCompliant).length;
   const complianceOptions: Array<{ value: ComplianceFilter; label: string }> = [
     { value: "all", label: `All (${windowScopedSnapshots.length})` },
-    { value: "non_compliant", label: `Non-compliant (${windowScopedSnapshots.filter((s) => !s.isCompliant).length})` },
-    { value: "compliant", label: `Compliant (${windowScopedSnapshots.filter((s) => s.isCompliant).length})` },
+    { value: "non_compliant", label: `Non-compliant (${windowScopedSnapshots.length - compliantCount})` },
+    { value: "compliant", label: `Compliant (${compliantCount})` },
   ];
 
   const attendanceLocked = scopeBlockerMessage != null || adpStaffBlocker != null;

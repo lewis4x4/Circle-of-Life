@@ -53,6 +53,15 @@ type SupabaseRateRow = {
 type QueryError = { message: string };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
+/** Surcharge cells rendered per rate row — defined once, not re-allocated per render. */
+const RATE_SURCHARGE_FIELDS: ReadonlyArray<[label: string, get: (row: RateRow) => number | null]> = [
+  ["Base semi-private", (row) => row.baseSemiPrivateCents],
+  ["Care surcharge L1", (row) => row.careSurchargeLevel1Cents],
+  ["Care surcharge L2", (row) => row.careSurchargeLevel2Cents],
+  ["Care surcharge L3", (row) => row.careSurchargeLevel3Cents],
+  ["Community fee", (row) => row.communityFeeCents],
+];
+
 function formatDate(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(d.getTime())) return isoDate;
@@ -196,22 +205,19 @@ export default function AdminBillingRatesPage() {
                          </div>
                         </div>
                         <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-5">
-                          {[
-                            ["Base semi-private", row.baseSemiPrivateCents],
-                            ["Care surcharge L1", row.careSurchargeLevel1Cents],
-                            ["Care surcharge L2", row.careSurchargeLevel2Cents],
-                            ["Care surcharge L3", row.careSurchargeLevel3Cents],
-                            ["Community fee", row.communityFeeCents],
-                          ].map(([label, cents]) => (
-                            <div key={label} className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                {label}
-                              </p>
-                              <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                                {typeof cents === "number" ? billingCurrency.format(cents / 100) : "—"}
-                              </p>
-                            </div>
-                          ))}
+                          {RATE_SURCHARGE_FIELDS.map(([label, get]) => {
+                            const cents = get(row);
+                            return (
+                              <div key={label} className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                  {label}
+                                </p>
+                                <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                                  {typeof cents === "number" ? billingCurrency.format(cents / 100) : "—"}
+                                </p>
+                              </div>
+                            );
+                          })}
                         </div>
                         {row.notes ? (
                           <div className="rounded-md bg-muted/30 px-3 py-2">

@@ -157,7 +157,6 @@ function buildResidentsCsv(rows: ResidentRow[]): string {
     "acuity",
     "adl",
     "residency_status",
-    "care_note",
     "profile_updated_at",
   ];
   const lines = rows.map((r) =>
@@ -169,7 +168,6 @@ function buildResidentsCsv(rows: ResidentRow[]): string {
       String(r.acuity),
       r.adlStatus,
       r.status,
-      r.careSummary,
       r.updatedAtIso ?? "",
     ].map((c) => escapeCsvField(c)),
   );
@@ -349,7 +347,6 @@ export function AdminResidentsPageClient({
           loweredSearch.length === 0 ||
           row.name.toLowerCase().includes(loweredSearch) ||
           row.room.toLowerCase().includes(loweredSearch) ||
-          row.careSummary.toLowerCase().includes(loweredSearch) ||
           row.unit.toLowerCase().includes(loweredSearch);
         const matchesAcuity =
           effectiveAcuity === "all" ||
@@ -713,7 +710,7 @@ export function AdminResidentsPageClient({
 
       <AdminFilterBar
         searchValue={search}
-        searchPlaceholder="Search resident, room, unit, or care note…"
+        searchPlaceholder="Search resident, room, or unit…"
         suppressResetUnlessDirty
         onSearchChange={setSearch}
         trailingSlot={

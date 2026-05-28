@@ -12,6 +12,15 @@ type FacilitiesCacheEntry = {
 
 const facilitiesCache = new Map<string, FacilitiesCacheEntry>();
 
+/**
+ * Clear the module-level facilities cache. Call after any facility mutation
+ * (create / edit / archive) so the next list read reflects the change instead
+ * of serving a stale entry for up to the TTL.
+ */
+export function invalidateFacilitiesCache(): void {
+  facilitiesCache.clear();
+}
+
 function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
   type ListApi = FacilityRow & {
     occupancy_count?: number;
@@ -116,6 +125,9 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
     const cached = facilitiesCache.get(cacheKey);
     if (cached && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS) {
       const json = cached.data;
+      // Track the data's age so the visibility-refetch throttle behaves the same
+      // for cache-served instances as for ones that fetched over the network.
+      lastFetchAtRef.current = cached.fetchedAt;
       setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
       setPagination({
         total: json.total ?? 0,
@@ -137,8 +149,14 @@ export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilities
         throw new Error("Failed to fetch facilities");
       }
       const json = (await res.json()) as FacilitiesResponse;
-      facilitiesCache.set(cacheKey, { fetchedAt: Date.now(), data: json });
-      lastFetchAtRef.current = Date.now();
+      const now = Date.now();
+      // Drop expired entries so the cache can't grow unbounded over a long
+      // session of varied search/filter/page combinations.
+      for (const [key, entry] of facilitiesCache) {
+        if (now - entry.fetchedAt >= FACILITIES_CACHE_TTL_MS) facilitiesCache.delete(key);
+      }
+      facilitiesCache.set(cacheKey, { fetchedAt: now, data: json });
+      lastFetchAtRef.current = now;
       setFacilities((json.facilities ?? []).map((row) => normalizeListRow(row)));
       setPagination({
         total: json.total ?? 0,

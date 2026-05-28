@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { billingNyTodayIso, daysPastDueAsOf } from "@/lib/billing/ar-aging-as-of";
 import { ninetyPlusRiskShareClass } from "@/lib/billing/billing-ar-semantics";
+import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
@@ -121,19 +122,6 @@ function csvEscape(s: string): string {
   return s;
 }
 
-function collectionActivityHref(residentId: string, invoiceId?: string): string {
-  const params = new URLSearchParams({ residentId });
-  if (invoiceId) params.set("invoiceId", invoiceId);
-  return `/admin/billing/collections/new?${params.toString()}`;
-}
-
-function paymentHref(residentId: string, invoiceId?: string, amountCents?: number): string {
-  const params = new URLSearchParams({ residentId });
-  if (invoiceId) params.set("invoiceId", invoiceId);
-  if (amountCents != null && amountCents > 0) params.set("amount", (amountCents / 100).toFixed(2));
-  return `/admin/billing/payments/new?${params.toString()}`;
-}
-
 /** When org-wide hub scope (no pinned facility), empty array means “all facilities”. */
 function effectiveFacilityFilterIds(
   scopeFacilityId: string | null,
@@ -170,7 +158,12 @@ function AdminArAgingPageContent() {
 
   useEffect(() => {
     if (selectedFacilityId != null || !isValidFacilityIdForQuery(requestedFacilityId)) return;
-    setFacilitySelection([requestedFacilityId]);
+    // Keep the same array reference when the selection already matches so we
+    // don't re-derive `load` and re-fire the whole fetch sequence — the
+    // useState initializer above already seeds this on first mount.
+    setFacilitySelection((prev) =>
+      prev.length === 1 && prev[0] === requestedFacilityId ? prev : [requestedFacilityId],
+    );
   }, [requestedFacilityId, selectedFacilityId]);
 
   const [rawInvoices, setRawInvoices] = useState<RawInv[]>([]);

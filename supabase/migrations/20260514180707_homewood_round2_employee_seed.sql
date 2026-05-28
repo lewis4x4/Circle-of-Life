@@ -7,21 +7,11 @@
 --   Administrative Assistant -> assistant_administrator
 --   Universal                -> resident_aide
 -- Applied to remote 2026-05-14 via Supabase MCP apply_migration.
-
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'owner';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'ceo';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'coo';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'cfo';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'assistant_administrator';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'admin_support_coordinator';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'marketing_consultant';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'maintenance_director';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'maintenance_standby';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'medication_tech';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'resident_aide';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'dietary_aide';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'activity_aide';
-ALTER TYPE public.staff_role ADD VALUE IF NOT EXISTS 'resident_services_coordinator';
+--
+-- NOTE: the `staff_role` ADD VALUE statements were moved to the earlier
+-- migration 20260514180000_staff_role_enum_values.sql so the new enum values
+-- commit before this migration's transaction uses them — Postgres forbids using
+-- a freshly-added enum value in the same transaction. See that file for why.
 
 INSERT INTO public.staff
   (facility_id, organization_id, first_name, last_name, email, staff_role, employment_status, hire_date, created_by)

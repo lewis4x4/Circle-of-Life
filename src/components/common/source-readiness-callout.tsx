@@ -19,19 +19,19 @@ export function SourceReadinessCallout({
   return (
     <section
       className={cn(
-        "rounded-lg border border-amber-300/70 bg-amber-50/80 p-4 text-amber-950 shadow-sm dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-100",
+        "rounded-lg border border-warning/30 bg-warning/10 p-4 shadow-sm",
         className,
       )}
       aria-label={copy.title}
     >
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/70 bg-background/70 dark:border-amber-800/80 dark:bg-amber-950/40">
-          <DatabaseZap className="h-4 w-4" aria-hidden />
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-warning/40 bg-background/70">
+          <DatabaseZap className="h-4 w-4 text-warning" aria-hidden />
         </div>
         <div className="min-w-0 flex-1 space-y-3">
           <div className="space-y-1">
             <h2 className="text-sm font-semibold tracking-tight">{copy.title}</h2>
-            <p className="max-w-3xl text-sm leading-relaxed text-amber-900/85 dark:text-amber-100/85">
+            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {copy.description}
             </p>
           </div>
@@ -40,7 +40,7 @@ export function SourceReadinessCallout({
             {copy.actions.map((action) => (
               <div
                 key={action.href}
-                className="rounded-md border border-amber-300/60 bg-background/80 p-3 dark:border-amber-900/70 dark:bg-background/40"
+                className="rounded-md border border-warning/30 bg-background/80 p-3"
               >
                 <p className="text-sm font-medium text-foreground">{action.title}</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -50,7 +50,7 @@ export function SourceReadinessCallout({
                   href={action.href}
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
-                    "mt-3 h-8 px-0 text-xs font-medium text-amber-900 hover:bg-transparent hover:text-amber-950 dark:text-amber-200 dark:hover:text-amber-100",
+                    "mt-3 h-8 px-0 text-xs font-medium text-warning hover:bg-transparent hover:text-warning",
                   )}
                 >
                   {action.ctaLabel}

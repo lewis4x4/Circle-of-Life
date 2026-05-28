@@ -72,6 +72,7 @@ import {
   type InvoiceStatusUi,
   type PayerTypeUi,
 } from "@/lib/billing/load-invoices";
+import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 
 import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
 
@@ -173,17 +174,6 @@ function csvEscape(cell: string) {
 
 function triggerBillingArRefresh() {
   window.dispatchEvent(new CustomEvent(BILLING_AR_OVERVIEW_REFRESH));
-}
-
-function collectionActivityHref(row: BillingRow): string {
-  const params = new URLSearchParams({ residentId: row.residentId, invoiceId: row.id });
-  return `/admin/billing/collections/new?${params.toString()}`;
-}
-
-function paymentHref(row: BillingRow): string {
-  const params = new URLSearchParams({ residentId: row.residentId, invoiceId: row.id });
-  if (row.amountDueCents > 0) params.set("amount", (row.amountDueCents / 100).toFixed(2));
-  return `/admin/billing/payments/new?${params.toString()}`;
 }
 
 function slugifyPart(s: string): string {
@@ -1605,15 +1595,12 @@ function BillingInvoiceLedgerInner({
                                   <DropdownMenuContent align="end" className="w-52 text-[13px]">
                                     <DropdownMenuItem onClick={() => router.push(`/admin/billing/invoices/${row.id}`)}>View invoice</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => scaffoldInvoiceAction("Send workflows are not wired yet.")}>Send</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => router.push(collectionActivityHref(row))}>
+                                    <DropdownMenuItem onClick={() => router.push(collectionActivityHref(row.residentId, row.id))}>
                                       Log reminder/contact
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => router.push(paymentHref(row))}>
+                                    <DropdownMenuItem onClick={() => router.push(paymentHref(row.residentId, row.id, row.amountDueCents))}>
                                       Record payment
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => router.push(paymentHref(row))}>
-                                      Mark paid
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => router.push(`/admin/billing/invoices/${row.id}`)}>
                                       Edit
@@ -1663,7 +1650,7 @@ function BillingInvoiceLedgerInner({
                                           onPointerDown={(e) => e.stopPropagation()}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            router.push(collectionActivityHref(row));
+                                            router.push(collectionActivityHref(row.residentId, row.id));
                                           }}
                                         >
                                           Reminder
@@ -1689,10 +1676,10 @@ function BillingInvoiceLedgerInner({
                                           onPointerDown={(e) => e.stopPropagation()}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            router.push(paymentHref(row));
+                                            router.push(paymentHref(row.residentId, row.id, row.amountDueCents));
                                           }}
                                         >
-                                          Mark paid
+                                          Record payment
                                         </Button>
                                         <Button
                                           type="button"

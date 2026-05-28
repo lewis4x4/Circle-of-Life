@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { FacilityDetailRow, FacilityRow } from "@/types/facility";
+import { invalidateFacilitiesCache } from "@/hooks/useFacilities";
 
 function normalizeFacilityDetail(raw: Record<string, unknown>): FacilityDetailRow {
   const f = raw as unknown as FacilityDetailRow & { license_number?: string | null };
@@ -98,6 +99,9 @@ export function useFacility(facilityId: string): UseFacilityReturn {
         if (!res.ok) {
           throw new Error("Failed to update facility");
         }
+        // Core fields shown in the portfolio list changed — drop the list cache
+        // so /admin/facilities reflects the edit instead of serving stale rows.
+        invalidateFacilitiesCache();
         return await loadDetail(false);
       } catch (err) {
         console.error("[useFacility] update error:", err);

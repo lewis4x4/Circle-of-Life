@@ -1,7 +1,7 @@
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useFacilities } from "./useFacilities";
+import { useFacilities, invalidateFacilitiesCache } from "./useFacilities";
 
 const facilityResponse = {
   facilities: [
@@ -70,5 +70,19 @@ describe("useFacilities", () => {
     document.dispatchEvent(new Event("visibilitychange"));
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+  });
+
+  it("invalidateFacilitiesCache forces a fresh fetch on the next mount within the ttl", async () => {
+    const first = renderHook(() => useFacilities({ search: "oakridge-invalidate" }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    first.unmount();
+
+    // Without invalidation a remount inside the TTL would be served from cache.
+    invalidateFacilitiesCache();
+
+    const second = renderHook(() => useFacilities({ search: "oakridge-invalidate" }));
+    await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(second.result.current.facilities[0]?.name).toBe("Oakridge ALF");
   });
 });
