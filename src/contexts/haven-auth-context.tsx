@@ -43,14 +43,14 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [userRes, sessionRes] = await Promise.all([
-        withSupabaseAuthLockRetry(() => supabase.auth.getUser()),
-        withSupabaseAuthLockRetry(() => supabase.auth.getSession()),
-      ]);
-      const user = userRes.data.user;
+      // Derive identity from the locally cached session instead of paying a
+      // network round-trip to the auth server (getUser). The auth-lock retry
+      // wrapper is preserved for the getSession call.
+      const sessionRes = await withSupabaseAuthLockRetry(() => supabase.auth.getSession());
       const session = sessionRes.data.session;
+      const user = session?.user ?? null;
 
-      setUser(user ?? null);
+      setUser(user);
       setSession(session ?? null);
 
       if (!user) {
@@ -62,9 +62,12 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Single joined select collapses the previous two serial round-trips
+      // (user_profiles -> organizations) into one request; org name is read
+      // from the embedded `organizations` relation.
       const { data: profile, error: profileError } = await supabase
         .from("user_profiles")
-        .select("app_role, organization_id, full_name, avatar_url")
+        .select("app_role, organization_id, full_name, avatar_url, organizations(name)")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -79,27 +82,14 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const organizationIdFromProfile = (profile?.organization_id as string | null | undefined) ?? null;
-      let organizationName: string | null = null;
-
-      if (organizationIdFromProfile) {
-        const { data: organization, error: organizationError } = await supabase
-          .from("organizations")
-          .select("name")
-          .eq("id", organizationIdFromProfile)
-          .maybeSingle();
-
-        if (organizationError) {
-          const errObj = organizationError as unknown as Record<string, unknown>;
-          console.error("[HavenAuth] organizations query failed", {
-            message: organizationError.message,
-            code: errObj.code,
-            hint: errObj.hint,
-            organizationId: organizationIdFromProfile,
-          });
-        } else {
-          organizationName = (organization?.name as string | null | undefined) ?? null;
-        }
-      }
+      // PostgREST returns the embedded relation as an object or array depending
+      // on cardinality inference; normalize both shapes before reading `name`.
+      const embeddedOrg = (profile as { organizations?: unknown } | null)?.organizations;
+      const organizationRecord = (Array.isArray(embeddedOrg) ? embeddedOrg[0] : embeddedOrg) as
+        | { name?: string | null }
+        | null
+        | undefined;
+      const organizationName: string | null = organizationRecord?.name ?? null;
 
       const roleFromMeta = user.app_metadata?.app_role as string | undefined;
       setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");

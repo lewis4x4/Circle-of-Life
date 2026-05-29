@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { VendorHubNav } from "../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -21,39 +21,37 @@ const PURCHASE_ORDER_LIST_LIMIT = 150;
 
 export default function PurchaseOrdersListPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<PoRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    if (!c.ok) {
-      setRows([]);
-      setLoadError(c.error);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("purchase_orders")
-      .select("id, po_number, status, order_date, total_cents")
-      .eq("organization_id", c.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("order_date", { ascending: false })
-      .limit(PURCHASE_ORDER_LIST_LIMIT);
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-    } else {
-      setRows((data ?? []) as PoRow[]);
-    }
-    setLoading(false);
-  }, [supabase]);
+  const {
+    data: rows = [],
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["vendors", "purchase-orders", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<PoRow[]> => {
+      const { data, error } = await supabase
+        .from("purchase_orders")
+        .select("id, po_number, status, order_date, total_cents")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("order_date", { ascending: false })
+        .limit(PURCHASE_ORDER_LIST_LIMIT);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PoRow[];
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   return (
     <div className="space-y-6">

@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { FinanceHubNav } from "../finance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { ArrowRight, BookOpenText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -18,24 +19,25 @@ type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
 
 export default function JournalEntriesListPage() {
   const supabase = createClient();
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
-  const [rows, setRows] = useState<JournalRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
-        return;
-      }
+  const {
+    data: rows = [],
+    isPending,
+    error,
+  } = useQuery({
+    // Key includes the org + the selected facility so the cache stays correct
+    // when the facility filter switches; only runs once the org is known.
+    queryKey: ["finance", "journal-entries", organizationId, selectedFacilityId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<JournalRow[]> => {
       let q = supabase
         .from("journal_entries")
         .select("*")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
         .order("entry_date", { ascending: false })
         .limit(100);
@@ -43,16 +45,19 @@ export default function JournalEntriesListPage() {
         q = q.or(`facility_id.eq.${selectedFacilityId},facility_id.is.null`);
       }
       const { data, error: qErr } = await q;
-      if (qErr) setError(qErr.message);
-      else setRows((data ?? []) as JournalRow[]);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, selectedFacilityId]);
+      if (qErr) throw new Error(qErr.message);
+      return (data ?? []) as JournalRow[];
+    },
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Single loading state: auth resolving or the (enabled) query in flight.
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   const facilityNote = useMemo(
     () =>
@@ -85,9 +90,9 @@ export default function JournalEntriesListPage() {
           </div>
         </header>
 
-        {error ? (
+        {loadError ? (
           <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium" role="alert">
-            {error}
+            {loadError}
           </p>
         ) : null}
 

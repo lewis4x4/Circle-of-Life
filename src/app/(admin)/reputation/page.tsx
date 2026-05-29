@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Star } from "lucide-react";
 
@@ -12,6 +13,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
 import { YELP_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/yelp-fusion";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -104,11 +106,9 @@ function buildReputationRepliesCsv(rows: ReplyRow[]): string {
 
 export default function AdminReputationHubPage() {
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
-  const [accounts, setAccounts] = useState<AccountRow[]>([]);
-  const [replies, setReplies] = useState<ReplyRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [postingGoogleId, setPostingGoogleId] = useState<string | null>(null);
   const [postingYelpId, setPostingYelpId] = useState<string | null>(null);
@@ -118,48 +118,59 @@ export default function AdminReputationHubPage() {
     "all" | ReputationReplyStatus
   >("all");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setAccounts([]);
-      setReplies([]);
-      setLoading(false);
-      return;
-    }
-    try {
+  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+
+  // React Query replaces the per-page useEffect+useState read. The query is
+  // scoped (and keyed) by the selected facility and only runs once it is valid,
+  // matching the old early-return that cleared rows for an invalid scope.
+  const {
+    data,
+    isPending,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ["reputation", "accounts-replies", selectedFacilityId],
+    enabled: facilityReady,
+    queryFn: async (): Promise<{ accounts: AccountRow[]; replies: ReplyRow[] }> => {
       const [aRes, rRes] = await Promise.all([
         supabase
           .from("reputation_accounts")
           .select("*")
-          .eq("facility_id", selectedFacilityId)
+          .eq("facility_id", selectedFacilityId as string)
           .is("deleted_at", null)
           .order("label", { ascending: true })
           .limit(50),
         supabase
           .from("reputation_replies")
           .select("*, reputation_accounts(label, platform)")
-          .eq("facility_id", selectedFacilityId)
+          .eq("facility_id", selectedFacilityId as string)
           .is("deleted_at", null)
           .order("created_at", { ascending: false })
           .limit(40),
       ]);
       if (aRes.error) throw aRes.error;
       if (rRes.error) throw rRes.error;
-      setAccounts(aRes.data ?? []);
-      setReplies((rRes.data ?? []) as ReplyRow[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load reputation data.");
-      setAccounts([]);
-      setReplies([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, selectedFacilityId]);
+      return { accounts: aRes.data ?? [], replies: (rRes.data ?? []) as ReplyRow[] };
+    },
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const accounts = useMemo<AccountRow[]>(() => data?.accounts ?? [], [data]);
+  const replies = useMemo<ReplyRow[]>(() => data?.replies ?? [], [data]);
+  // Only "loading" while a valid facility scope is actually fetching (mirrors
+  // the old code, which set loading=false immediately for an invalid scope).
+  const loading = facilityReady && isPending;
+  // Single error surface: query load errors plus mutation/export errors.
+  const error =
+    actionError ??
+    (facilityReady && queryError
+      ? queryError instanceof Error
+        ? queryError.message
+        : "Failed to load reputation data."
+      : null);
+  // Post-mutation refresh re-runs the query (was a manual load()).
+  const load = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const draftReplies = useMemo(() => replies.filter((r) => r.status === "draft"), [replies]);
   const postedReplies = useMemo(() => replies.filter((r) => r.status === "posted"), [replies]);
@@ -167,7 +178,7 @@ export default function AdminReputationHubPage() {
   async function exportRepliesCsv() {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
     setExportingCsv(true);
-    setError(null);
+    setActionError(null);
     try {
       let q = supabase
         .from("reputation_replies")
@@ -190,7 +201,7 @@ export default function AdminReputationHubPage() {
         csv,
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "CSV export failed.");
+      setActionError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingCsv(false);
     }
@@ -199,7 +210,7 @@ export default function AdminReputationHubPage() {
   async function exportAccountsCsv() {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
     setExportingAccountsCsv(true);
-    setError(null);
+    setActionError(null);
     try {
       const { data, error: qErr } = await supabase
         .from("reputation_accounts")
@@ -213,18 +224,16 @@ export default function AdminReputationHubPage() {
       const csv = buildReputationAccountsCsv(rows);
       triggerCsvDownload(`reputation-accounts_${format(new Date(), "yyyy-MM-dd")}.csv`, csv);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "CSV export failed.");
+      setActionError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingAccountsCsv(false);
     }
   }
 
   async function saveDraftReplyBody(id: string, reply_body: string) {
-    setError(null);
+    setActionError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Identity from the app-wide auth provider (no per-call getUser round-trip).
       if (!user) throw new Error("Sign in required.");
       const { error: uErr } = await supabase
         .from("reputation_replies")
@@ -234,13 +243,13 @@ export default function AdminReputationHubPage() {
       if (uErr) throw uErr;
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save draft.");
+      setActionError(e instanceof Error ? e.message : "Could not save draft.");
     }
   }
 
   async function postReplyToGoogle(id: string) {
     setPostingGoogleId(id);
-    setError(null);
+    setActionError(null);
     try {
       const res = await fetch(`/api/reputation/replies/${id}/post-google`, { method: "POST" });
       const j = (await res.json()) as { error?: string };
@@ -249,7 +258,7 @@ export default function AdminReputationHubPage() {
       }
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Google post failed.");
+      setActionError(e instanceof Error ? e.message : "Google post failed.");
     } finally {
       setPostingGoogleId(null);
     }
@@ -257,7 +266,7 @@ export default function AdminReputationHubPage() {
 
   async function postReplyToYelp(id: string) {
     setPostingYelpId(id);
-    setError(null);
+    setActionError(null);
     try {
       const res = await fetch(`/api/reputation/replies/${id}/post-yelp`, { method: "POST" });
       const j = (await res.json()) as { error?: string };
@@ -266,7 +275,7 @@ export default function AdminReputationHubPage() {
       }
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Yelp post failed.");
+      setActionError(e instanceof Error ? e.message : "Yelp post failed.");
     } finally {
       setPostingYelpId(null);
     }
@@ -274,11 +283,9 @@ export default function AdminReputationHubPage() {
 
   async function markPosted(id: string) {
     setUpdatingId(id);
-    setError(null);
+    setActionError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Identity from the app-wide auth provider (no per-call getUser round-trip).
       if (!user) throw new Error("Sign in required.");
       const { error: uErr } = await supabase
         .from("reputation_replies")
@@ -292,13 +299,11 @@ export default function AdminReputationHubPage() {
       if (uErr) throw uErr;
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed.");
+      setActionError(e instanceof Error ? e.message : "Update failed.");
     } finally {
       setUpdatingId(null);
     }
   }
-
-  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

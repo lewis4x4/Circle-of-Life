@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Award, Download } from "lucide-react";
 
@@ -124,31 +125,34 @@ export default function AdminCertificationsPage() {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
-  const [rows, setRows] = useState<CertRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [timeline, setTimeline] = useState(DEFAULT_FILTERS.timeline);
   const [dbStatus, setDbStatus] = useState(DEFAULT_FILTERS.dbStatus);
   const [windowFilter, setWindowFilter] = useState(DEFAULT_FILTERS.window);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const live = await fetchCertificationsFromSupabase(selectedFacilityId);
-      setRows(live);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedFacilityId]);
+  // React Query replaces the per-page useEffect+useState read. The facility
+  // scope is part of the key so cache entries stay correct across switches.
+  const {
+    data: rows = [],
+    isPending,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ["certifications", "staff-certifications", selectedFacilityId],
+    queryFn: () => fetchCertificationsFromSupabase(selectedFacilityId),
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const isLoading = isPending;
+  // Preserve the single error surface: query load errors, or a CSV export error.
+  const error =
+    exportError ??
+    (queryError ? (queryError instanceof Error ? queryError.message : "Failed to load data") : null);
+  // Retry button re-runs the query (was a manual load()).
+  const load = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   useEffect(() => {
     const requestedSearch = searchParams.get("search") ?? DEFAULT_FILTERS.search;
@@ -206,7 +210,7 @@ export default function AdminCertificationsPage() {
 
   const exportCertificationsCsv = useCallback(async () => {
     setExportingCsv(true);
-    setError(null);
+    setExportError(null);
     try {
       const ids = filteredRows.map((r) => r.id);
       const hubFiltersDefault =
@@ -264,7 +268,7 @@ export default function AdminCertificationsPage() {
       const csv = buildCertificationsCsv(exportRows);
       triggerCsvDownload(`staff-certifications-${stamp}${scope}.csv`, csv);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to export certifications.");
+      setExportError(e instanceof Error ? e.message : "Failed to export certifications.");
     } finally {
       setExportingCsv(false);
     }

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { GraduationCap } from "lucide-react";
 
@@ -196,23 +197,9 @@ function buildInserviceSessionsCsv(rows: InserviceRow[]): string {
 export default function AdminTrainingHubPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
-  const [rows, setRows] = useState<DemoRow[]>([]);
-  const [completionRows, setCompletionRows] = useState<CompletionRow[]>([]);
-  const [inserviceRows, setInserviceRows] = useState<InserviceRow[]>([]);
-  const [attestationRows, setAttestationRows] = useState<StaffAttestationRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingCompletions, setLoadingCompletions] = useState(true);
-  const [loadingInservice, setLoadingInservice] = useState(true);
-  const [loadingAttestations, setLoadingAttestations] = useState(true);
-  const [loadingAttestationStaff, setLoadingAttestationStaff] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [completionError, setCompletionError] = useState<string | null>(null);
-  const [inserviceError, setInserviceError] = useState<string | null>(null);
-  const [attestationError, setAttestationError] = useState<string | null>(null);
   const [attestationFormError, setAttestationFormError] = useState<string | null>(null);
   const [attestationFormSuccess, setAttestationFormSuccess] = useState<string | null>(null);
   const [attestationSubmitting, setAttestationSubmitting] = useState(false);
-  const [attestationStaffOptions, setAttestationStaffOptions] = useState<ActiveStaffOption[]>([]);
   const [attestationStaffId, setAttestationStaffId] = useState("");
   const [attestationType, setAttestationType] = useState("med_tech_self");
   const [attestationText, setAttestationText] = useState("");
@@ -224,6 +211,12 @@ export default function AdminTrainingHubPage() {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingCompletionsCsv, setExportingCompletionsCsv] = useState(false);
   const [exportingInserviceCsv, setExportingInserviceCsv] = useState(false);
+  // CSV export failures previously reused the section error state; with the read
+  // path on React Query those section errors are derived, so exports keep their
+  // own error state and are merged into the same surfaces below.
+  const [demoExportError, setDemoExportError] = useState<string | null>(null);
+  const [completionExportError, setCompletionExportError] = useState<string | null>(null);
+  const [inserviceExportError, setInserviceExportError] = useState<string | null>(null);
 
   /** `null` = All facilities (RLS scopes rows to accessible facilities). */
   const orgWideMode = selectedFacilityId === null;
@@ -231,150 +224,156 @@ export default function AdminTrainingHubPage() {
     Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
   const facilityReady = orgWideMode || singleFacilityMode;
 
+  // React Query replaces the per-page useEffect+useState read. All five hub
+  // datasets load together (as before) under one facility-scoped key; per-section
+  // errors are carried in the result so a single failed query does not blank the
+  // other sections (matching the original partial-success behavior).
+  type TrainingHubData = {
+    rows: DemoRow[];
+    completionRows: CompletionRow[];
+    inserviceRows: InserviceRow[];
+    attestationRows: StaffAttestationRow[];
+    attestationStaffOptions: ActiveStaffOption[];
+    demoError: string | null;
+    completionError: string | null;
+    inserviceError: string | null;
+    attestationError: string | null;
+    staffError: string | null;
+  };
+
+  const {
+    data,
+    isPending,
+    refetch,
+  } = useQuery({
+    queryKey: ["training", "hub", selectedFacilityId],
+    enabled: facilityReady,
+    queryFn: async (): Promise<TrainingHubData> => {
+      let q = supabase
+        .from("competency_demonstrations")
+        .select("*, staff(first_name, last_name), facilities(name)")
+        .is("deleted_at", null)
+        .order("demonstrated_at", { ascending: false })
+        .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        q = q.eq("facility_id", selectedFacilityId);
+      }
+
+      let cq = supabase
+        .from("staff_training_completions")
+        .select(
+          "*, staff(first_name, last_name), facilities(name), training_programs(code, name)",
+        )
+        .is("deleted_at", null)
+        .order("completed_at", { ascending: false })
+        .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        cq = cq.eq("facility_id", selectedFacilityId);
+      }
+
+      let iq = supabase
+        .from("inservice_log_sessions")
+        .select(
+          "*, facilities(name), training_programs(code, name), inservice_log_attendees(id)",
+        )
+        .is("deleted_at", null)
+        .order("session_date", { ascending: false })
+        .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        iq = iq.eq("facility_id", selectedFacilityId);
+      }
+
+      let aq = supabase
+        .from("staff_attestations" as never)
+        .select(
+          "id, organization_id, facility_id, staff_id, attestation_type, attestation_text, effective_date, expires_at, signed_at, signer_name, staff(first_name, last_name), facilities(name)",
+        )
+        .is("deleted_at", null)
+        .order("signed_at", { ascending: false })
+        .limit(50);
+      if (singleFacilityMode && selectedFacilityId) {
+        aq = aq.eq("facility_id", selectedFacilityId);
+      }
+
+      let sq = supabase
+        .from("staff")
+        .select("id, facility_id, organization_id, first_name, last_name, facilities(name)")
+        .eq("employment_status", "active")
+        .is("deleted_at", null)
+        .order("last_name", { ascending: true })
+        .limit(400);
+      if (singleFacilityMode && selectedFacilityId) {
+        sq = sq.eq("facility_id", selectedFacilityId);
+      }
+
+      const [demoRes, compRes, insRes, attRes, staffRes] = await Promise.all([q, cq, iq, aq, sq]);
+
+      return {
+        rows: demoRes.error ? [] : ((demoRes.data ?? []) as DemoRow[]),
+        completionRows: compRes.error ? [] : ((compRes.data ?? []) as CompletionRow[]),
+        inserviceRows: insRes.error ? [] : ((insRes.data ?? []) as InserviceRow[]),
+        attestationRows: attRes.error ? [] : ((attRes.data ?? []) as StaffAttestationRow[]),
+        attestationStaffOptions: staffRes.error
+          ? []
+          : ((staffRes.data ?? []) as {
+              id: string;
+              facility_id: string;
+              organization_id: string;
+              first_name: string;
+              last_name: string;
+              facilities: { name: string } | null;
+            }[]).map((s) => ({
+              id: s.id,
+              facility_id: s.facility_id,
+              organization_id: s.organization_id,
+              facility_name: s.facilities?.name ?? "Facility",
+              name: `${s.first_name} ${s.last_name}`.trim(),
+            })),
+        demoError: demoRes.error ? demoRes.error.message || "Failed to load competency demonstrations." : null,
+        completionError: compRes.error
+          ? compRes.error.message || "Failed to load staff training completions."
+          : null,
+        inserviceError: insRes.error ? insRes.error.message || "Failed to load in-service sessions." : null,
+        attestationError: attRes.error ? attRes.error.message || "Failed to load staff attestations." : null,
+        staffError: staffRes.error ? staffRes.error.message || "Failed to load active staff." : null,
+      };
+    },
+  });
+
+  // Post-mutation refresh re-runs the query (was a manual load()).
   const load = useCallback(async () => {
-    setLoading(true);
-    setLoadingCompletions(true);
-    setLoadingInservice(true);
-    setLoadingAttestations(true);
-    setLoadingAttestationStaff(true);
-    setError(null);
-    setCompletionError(null);
-    setInserviceError(null);
-    setAttestationError(null);
-    setAttestationFormError(null);
-    if (!facilityReady) {
-      setRows([]);
-      setCompletionRows([]);
-      setInserviceRows([]);
-      setLoading(false);
-      setLoadingCompletions(false);
-      setLoadingInservice(false);
-      setLoadingAttestations(false);
-      setLoadingAttestationStaff(false);
-      setAttestationStaffOptions([]);
-      return;
-    }
+    await refetch();
+  }, [refetch]);
 
-    let q = supabase
-      .from("competency_demonstrations")
-      .select("*, staff(first_name, last_name), facilities(name)")
-      .is("deleted_at", null)
-      .order("demonstrated_at", { ascending: false })
-      .limit(50);
-    if (singleFacilityMode && selectedFacilityId) {
-      q = q.eq("facility_id", selectedFacilityId);
-    }
-
-    let cq = supabase
-      .from("staff_training_completions")
-      .select(
-        "*, staff(first_name, last_name), facilities(name), training_programs(code, name)",
-      )
-      .is("deleted_at", null)
-      .order("completed_at", { ascending: false })
-      .limit(50);
-    if (singleFacilityMode && selectedFacilityId) {
-      cq = cq.eq("facility_id", selectedFacilityId);
-    }
-
-    let iq = supabase
-      .from("inservice_log_sessions")
-      .select(
-        "*, facilities(name), training_programs(code, name), inservice_log_attendees(id)",
-      )
-      .is("deleted_at", null)
-      .order("session_date", { ascending: false })
-      .limit(50);
-    if (singleFacilityMode && selectedFacilityId) {
-      iq = iq.eq("facility_id", selectedFacilityId);
-    }
-
-    let aq = supabase
-      .from("staff_attestations" as never)
-      .select(
-        "id, organization_id, facility_id, staff_id, attestation_type, attestation_text, effective_date, expires_at, signed_at, signer_name, staff(first_name, last_name), facilities(name)",
-      )
-      .is("deleted_at", null)
-      .order("signed_at", { ascending: false })
-      .limit(50);
-    if (singleFacilityMode && selectedFacilityId) {
-      aq = aq.eq("facility_id", selectedFacilityId);
-    }
-
-    let sq = supabase
-      .from("staff")
-      .select("id, facility_id, organization_id, first_name, last_name, facilities(name)")
-      .eq("employment_status", "active")
-      .is("deleted_at", null)
-      .order("last_name", { ascending: true })
-      .limit(400);
-    if (singleFacilityMode && selectedFacilityId) {
-      sq = sq.eq("facility_id", selectedFacilityId);
-    }
-
-    const [demoRes, compRes, insRes, attRes, staffRes] = await Promise.all([q, cq, iq, aq, sq]);
-
-    if (demoRes.error) {
-      setError(demoRes.error.message || "Failed to load competency demonstrations.");
-      setRows([]);
-    } else {
-      setRows((demoRes.data ?? []) as DemoRow[]);
-    }
-    setLoading(false);
-
-    if (compRes.error) {
-      setCompletionError(
-        compRes.error.message || "Failed to load staff training completions.",
-      );
-      setCompletionRows([]);
-    } else {
-      setCompletionRows((compRes.data ?? []) as CompletionRow[]);
-    }
-    setLoadingCompletions(false);
-
-    if (insRes.error) {
-      setInserviceError(insRes.error.message || "Failed to load in-service sessions.");
-      setInserviceRows([]);
-    } else {
-      setInserviceRows((insRes.data ?? []) as InserviceRow[]);
-    }
-    setLoadingInservice(false);
-
-    if (attRes.error) {
-      setAttestationError(attRes.error.message || "Failed to load staff attestations.");
-      setAttestationRows([]);
-    } else {
-      setAttestationRows((attRes.data ?? []) as StaffAttestationRow[]);
-    }
-    setLoadingAttestations(false);
-
-    if (staffRes.error) {
-      setAttestationFormError(staffRes.error.message || "Failed to load active staff.");
-      setAttestationStaffOptions([]);
-    } else {
-      setAttestationStaffOptions(
-        ((staffRes.data ?? []) as {
-          id: string;
-          facility_id: string;
-          organization_id: string;
-          first_name: string;
-          last_name: string;
-          facilities: { name: string } | null;
-        }[]).map((s) => ({
-          id: s.id,
-          facility_id: s.facility_id,
-          organization_id: s.organization_id,
-          facility_name: s.facilities?.name ?? "Facility",
-          name: `${s.first_name} ${s.last_name}`.trim(),
-        })),
-      );
-    }
-    setLoadingAttestationStaff(false);
-  }, [supabase, selectedFacilityId, facilityReady, singleFacilityMode]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Derived read state mirrors the previous individual useState values. When the
+  // facility scope is invalid the query is disabled, so everything reads empty
+  // and non-loading exactly like the old early-return path.
+  // `rows` and `attestationStaffOptions` feed useMemo hooks below, so they are
+  // memoized for stable identity; the render-only lists stay plain.
+  const rows = useMemo<DemoRow[]>(() => data?.rows ?? [], [data]);
+  const completionRows = data?.completionRows ?? [];
+  const inserviceRows = data?.inserviceRows ?? [];
+  const attestationRows = data?.attestationRows ?? [];
+  const attestationStaffOptions = useMemo<ActiveStaffOption[]>(
+    () => data?.attestationStaffOptions ?? [],
+    [data],
+  );
+  const sectionLoading = facilityReady && isPending;
+  const loading = sectionLoading;
+  const loadingCompletions = sectionLoading;
+  const loadingInservice = sectionLoading;
+  const loadingAttestations = sectionLoading;
+  const loadingAttestationStaff = sectionLoading;
+  const error = demoExportError ?? (facilityReady ? data?.demoError ?? null : null);
+  const completionError =
+    completionExportError ?? (facilityReady ? data?.completionError ?? null : null);
+  const inserviceError =
+    inserviceExportError ?? (facilityReady ? data?.inserviceError ?? null : null);
+  const attestationError = facilityReady ? data?.attestationError ?? null : null;
+  // Staff-options load failure surfaced through the attestation form error in the
+  // original; preserve that by merging the query's staffError with form errors.
+  const staffLoadError = facilityReady ? data?.staffError ?? null : null;
+  const displayedAttestationFormError = attestationFormError ?? staffLoadError;
 
   const selectedAttestationStaff = useMemo(
     () => attestationStaffOptions.find((s) => s.id === attestationStaffId) ?? null,
@@ -488,7 +487,7 @@ export default function AdminTrainingHubPage() {
   const exportDemonstrationsCsv = useCallback(async () => {
     if (!facilityReady) return;
     setExportingCsv(true);
-    setError(null);
+    setDemoExportError(null);
     try {
       let q = supabase
         .from("competency_demonstrations")
@@ -509,7 +508,7 @@ export default function AdminTrainingHubPage() {
         csv,
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "CSV export failed.");
+      setDemoExportError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingCsv(false);
     }
@@ -524,7 +523,7 @@ export default function AdminTrainingHubPage() {
   const exportCompletionsCsv = useCallback(async () => {
     if (!facilityReady) return;
     setExportingCompletionsCsv(true);
-    setCompletionError(null);
+    setCompletionExportError(null);
     try {
       let q = supabase
         .from("staff_training_completions")
@@ -547,7 +546,7 @@ export default function AdminTrainingHubPage() {
         csv,
       );
     } catch (e) {
-      setCompletionError(e instanceof Error ? e.message : "CSV export failed.");
+      setCompletionExportError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingCompletionsCsv(false);
     }
@@ -562,7 +561,7 @@ export default function AdminTrainingHubPage() {
   const exportInserviceCsv = useCallback(async () => {
     if (!facilityReady) return;
     setExportingInserviceCsv(true);
-    setInserviceError(null);
+    setInserviceExportError(null);
     try {
       let q = supabase
         .from("inservice_log_sessions")
@@ -585,7 +584,7 @@ export default function AdminTrainingHubPage() {
         csv,
       );
     } catch (e) {
-      setInserviceError(e instanceof Error ? e.message : "CSV export failed.");
+      setInserviceExportError(e instanceof Error ? e.message : "CSV export failed.");
     } finally {
       setExportingInserviceCsv(false);
     }
@@ -893,9 +892,9 @@ export default function AdminTrainingHubPage() {
                   />
                 </label>
               </div>
-              {attestationFormError ? (
+              {displayedAttestationFormError ? (
                 <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-                  {attestationFormError}
+                  {displayedAttestationFormError}
                 </p>
               ) : null}
               {attestationFormSuccess ? (

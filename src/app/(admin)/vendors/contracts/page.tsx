@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { VendorHubNav } from "../vendor-hub-nav";
 import {
@@ -9,8 +9,8 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
@@ -20,42 +20,41 @@ type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
 
 export default function VendorContractsListPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<(ContractRow & { vendor_name?: string })[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    if (!c.ok) {
-      setRows([]);
-      setLoadError(c.error);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("contracts")
-      .select("*")
-      .eq("organization_id", c.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("expiration_date", { ascending: true, nullsFirst: false });
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-    } else {
+  const {
+    data: rows = [],
+    isPending,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["vendors", "contracts", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<(ContractRow & { vendor_name?: string })[]> => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("*")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("expiration_date", { ascending: true, nullsFirst: false });
+      if (error) throw new Error(error.message);
       const list = (data ?? []) as ContractRow[];
       const vids = [...new Set(list.map((r) => r.vendor_id))];
       const { data: vrows } = await supabase.from("vendors").select("id, name").in("id", vids);
       const vmap = new Map((vrows ?? []).map((v) => [v.id as string, v.name as string]));
-      setRows(list.map((r) => ({ ...r, vendor_name: vmap.get(r.vendor_id) })));
-    }
-    setLoading(false);
-  }, [supabase]);
+      return list.map((r) => ({ ...r, vendor_name: vmap.get(r.vendor_id) }));
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -70,7 +69,7 @@ export default function VendorContractsListPage() {
         </header>
 
         {loadError && (
-          <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} />
+          <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void refetch()} />
         )}
 
         {loading ? (

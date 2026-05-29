@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -17,39 +17,34 @@ type Row = Database["public"]["Tables"]["insurance_renewals"]["Row"];
 
 export default function InsuranceRenewalsPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok) {
-      setRows([]);
-      setLoadError(ctx.error);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("insurance_renewals")
-      .select("*")
-      .eq("organization_id", ctx.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("target_effective_date", { ascending: true });
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    setRows((data ?? []) as Row[]);
-    setLoading(false);
-  }, [supabase]);
+  const {
+    data: rows = [],
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["insurance", "renewals", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<Row[]> => {
+      const { data, error } = await supabase
+        .from("insurance_renewals")
+        .select("*")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("target_effective_date", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

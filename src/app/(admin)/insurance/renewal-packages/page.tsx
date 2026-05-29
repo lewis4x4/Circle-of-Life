@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
@@ -16,12 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { assembleRenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
-import {
-  canMutateFinance,
-  loadFinanceRoleContext,
-} from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 
 type PolicyMini = { id: string; policy_number: string; carrier_name: string; entity_id: string };
@@ -29,6 +28,12 @@ type EntityMini = { id: string; name: string };
 
 type PackageRow = Database["public"]["Tables"]["renewal_data_packages"]["Row"] & {
   insurance_policies: { policy_number: string; carrier_name: string } | null;
+};
+
+type PackagesData = {
+  entities: EntityMini[];
+  policies: PolicyMini[];
+  rows: PackageRow[];
 };
 
 function firstOfPriorMonth(): string {
@@ -45,96 +50,96 @@ function lastOfPriorMonth(): string {
 
 export default function InsuranceRenewalPackagesPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<PackageRow[]>([]);
-  const [entities, setEntities] = useState<EntityMini[]>([]);
-  const [policies, setPolicies] = useState<PolicyMini[]>([]);
+  const queryClient = useQueryClient();
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   const [entityId, setEntityId] = useState("");
   const [policyId, setPolicyId] = useState("");
   const [periodStart, setPeriodStart] = useState(firstOfPriorMonth);
   const [periodEnd, setPeriodEnd] = useState(lastOfPriorMonth);
-  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [canMutate, setCanMutate] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok) {
-      setRows([]);
-      setLoadError(ctx.error);
-      setLoading(false);
-      return;
-    }
-    setCanMutate(canMutateFinance(ctx.ctx.appRole));
-    setOrgId(ctx.ctx.organizationId);
+  const packagesQueryKey = ["insurance", "renewal-packages", organizationId] as const;
 
-    const [{ data: ent }, { data: pol }, { data: pkgs, error }] = await Promise.all([
-      supabase
-        .from("entities")
-        .select("id, name")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("deleted_at", null)
-        .order("name"),
-      supabase
-        .from("insurance_policies")
-        .select("id, policy_number, carrier_name, entity_id")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("deleted_at", null)
-        .order("policy_number"),
-      supabase
-        .from("renewal_data_packages")
-        .select("*, insurance_policies(policy_number, carrier_name)")
-        .eq("organization_id", ctx.ctx.organizationId)
-        .is("deleted_at", null)
-        .order("generated_at", { ascending: false })
-        .limit(100),
-    ]);
+  const {
+    data,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: packagesQueryKey,
+    enabled: !!organizationId,
+    queryFn: async (): Promise<PackagesData> => {
+      const [{ data: ent }, { data: pol }, { data: pkgs, error: pkgErr }] = await Promise.all([
+        supabase
+          .from("entities")
+          .select("id, name")
+          .eq("organization_id", organizationId as string)
+          .is("deleted_at", null)
+          .order("name"),
+        supabase
+          .from("insurance_policies")
+          .select("id, policy_number, carrier_name, entity_id")
+          .eq("organization_id", organizationId as string)
+          .is("deleted_at", null)
+          .order("policy_number"),
+        supabase
+          .from("renewal_data_packages")
+          .select("*, insurance_policies(policy_number, carrier_name)")
+          .eq("organization_id", organizationId as string)
+          .is("deleted_at", null)
+          .order("generated_at", { ascending: false })
+          .limit(100),
+      ]);
 
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
+      if (pkgErr) throw new Error(pkgErr.message);
 
-    const el = (ent ?? []) as EntityMini[];
-    setEntities(el);
-    setPolicies((pol ?? []) as PolicyMini[]);
-    setRows((pkgs ?? []) as unknown as PackageRow[]);
-    setEntityId((prev) => prev || el[0]?.id || "");
-    setLoading(false);
-  }, [supabase]);
+      return {
+        entities: (ent ?? []) as EntityMini[],
+        policies: (pol ?? []) as PolicyMini[],
+        rows: (pkgs ?? []) as unknown as PackageRow[],
+      };
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const entities = data?.entities ?? [];
+  const policies = data?.policies ?? [];
+  const rows = data?.rows ?? [];
 
-  const filteredPolicies = policies.filter((p) => p.entity_id === entityId);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : mutationError
+        ? mutationError
+        : error
+          ? error.message
+          : null;
+
+  const canMutate = canMutateFinance(appRole as Database["public"]["Enums"]["app_role"]);
+
+  // Default to the first entity (matches the previous post-load behavior) while
+  // still letting the user override the selection.
+  const effectiveEntityId = entityId || entities[0]?.id || "";
+  const filteredPolicies = policies.filter((p) => p.entity_id === effectiveEntityId);
 
   async function generatePackage() {
-    if (!orgId || !entityId || !policyId) return;
+    if (!organizationId || !effectiveEntityId || !policyId) return;
     setGenerating(true);
-    setLoadError(null);
+    setMutationError(null);
     try {
       const assembled = await assembleRenewalPackagePayload(supabase, {
-        organizationId: orgId,
-        entityId,
+        organizationId,
+        entityId: effectiveEntityId,
         periodStart,
         periodEnd,
       });
       if (!assembled.ok) {
-        setLoadError(assembled.error);
+        setMutationError(assembled.error);
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       const { error: insErr } = await supabase.from("renewal_data_packages").insert({
-        organization_id: orgId,
-        entity_id: entityId,
+        organization_id: organizationId,
+        entity_id: effectiveEntityId,
         insurance_policy_id: policyId,
         period_start: periodStart,
         period_end: periodEnd,
@@ -142,10 +147,10 @@ export default function InsuranceRenewalPackagesPage() {
         created_by: user?.id ?? null,
       });
       if (insErr) {
-        setLoadError(insErr.message);
+        setMutationError(insErr.message);
         return;
       }
-      await load();
+      await queryClient.invalidateQueries({ queryKey: packagesQueryKey });
     } finally {
       setGenerating(false);
     }
@@ -162,7 +167,12 @@ export default function InsuranceRenewalPackagesPage() {
         </p>
       </div>
 
-      {loadError ? <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} /> : null}
+      {loadError ? (
+        <AdminLiveDataFallbackNotice
+          message={loadError}
+          onRetry={() => void queryClient.invalidateQueries({ queryKey: packagesQueryKey })}
+        />
+      ) : null}
 
       {canMutate ? (
         <Card>
@@ -178,7 +188,7 @@ export default function InsuranceRenewalPackagesPage() {
               <select
                 id="ent"
                 className="h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
-                value={entityId}
+                value={effectiveEntityId}
                 onChange={(e) => {
                   setEntityId(e.target.value);
                   setPolicyId("");
@@ -231,7 +241,7 @@ export default function InsuranceRenewalPackagesPage() {
               type="button"
               size="sm"
               onClick={() => void generatePackage()}
-              disabled={generating || !policyId || !entityId}
+              disabled={generating || !policyId || !effectiveEntityId}
             >
               {generating ? "Generating…" : "Generate package"}
             </Button>

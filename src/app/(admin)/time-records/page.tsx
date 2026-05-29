@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Clock, Download } from "lucide-react";
 
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -129,35 +131,39 @@ const DEFAULT_FILTERS = { search: "", approved: "all" };
 
 export default function AdminTimeRecordsPage() {
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
-  const [rows, setRows] = useState<TimeRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [approvingBulk, setApprovingBulk] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [approved, setApproved] = useState(DEFAULT_FILTERS.approved);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const live = await fetchTimeRecordsFromSupabase(selectedFacilityId);
-      setRows(live);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedFacilityId]);
+  // React Query replaces the per-page useEffect+useState read. Facility scope
+  // is part of the key so cache entries stay correct across switches.
+  const {
+    data: rows = [],
+    isPending,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ["time-records", "punches", selectedFacilityId],
+    queryFn: () => fetchTimeRecordsFromSupabase(selectedFacilityId),
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const isLoading = isPending;
+  // Single error surface: query load errors, plus export/bulk-approve errors.
+  const error =
+    actionError ??
+    (queryError ? (queryError instanceof Error ? queryError.message : "Failed to load data") : null);
+  // Retry / post-mutation refresh re-runs the query (was a manual load()).
+  const load = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const exportTimeRecordsCsv = useCallback(async () => {
     setExportingCsv(true);
-    setError(null);
+    setActionError(null);
     try {
       let q = supabase
         .from("time_records" as never)
@@ -210,7 +216,7 @@ export default function AdminTimeRecordsPage() {
       const csv = buildTimeRecordsCsv(exportRows);
       triggerCsvDownload(`time-records-${stamp}${scope}.csv`, csv);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to export time records.");
+      setActionError(e instanceof Error ? e.message : "Failed to export time records.");
     } finally {
       setExportingCsv(false);
     }
@@ -250,18 +256,17 @@ export default function AdminTimeRecordsPage() {
 
   const bulkApprovePending = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility to approve punches.");
+      setActionError("Select a facility to approve punches.");
       return;
     }
     const pending = rows.filter((r) => !r.approved && r.clockOut);
     if (pending.length === 0) return;
 
     setApprovingBulk(true);
-    setError(null);
+    setActionError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // Identity comes from the app-wide auth provider instead of a per-call
+      // supabase.auth.getUser() round-trip.
       if (!user) throw new Error("Sign in required.");
 
       const now = new Date().toISOString();
@@ -285,11 +290,11 @@ export default function AdminTimeRecordsPage() {
 
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bulk approve failed.");
+      setActionError(err instanceof Error ? err.message : "Bulk approve failed.");
     } finally {
       setApprovingBulk(false);
     }
-  }, [load, rows, selectedFacilityId, supabase]);
+  }, [load, rows, selectedFacilityId, supabase, user]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
