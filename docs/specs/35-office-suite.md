@@ -341,6 +341,58 @@ Admin-built forms with a jsonb field schema and a per-facility status-tracked qu
 
 ---
 
+## F2-3 — E-signature + read-acknowledgment (`/admin/acknowledgments`)
+
+**Segment:** `F2-3-esignature-read-acknowledgment` · **Shipped:** 2026-06-12
+
+### Problem
+
+No proof staff read updated policies/SOPs/handbook sections — a direct AHCA survey gap.
+
+### Scope (this segment)
+
+Per-role acknowledgment requirements layered on **published KB documents only** (F0-4: the
+draft → review → publish flow is the sole path to staff-facing policy; this segment reads
+`documents` where `status = 'published'` and never bypasses review):
+
+- `src/lib/office/acknowledgments.ts` — role list (staff app_roles, excludes family/broker),
+  outstanding-staff computation.
+- `/admin/acknowledgments` — admin dashboard: create requirement (published-doc picker, role
+  chips, e-signature vs mark-as-read, due date, note), per-requirement signed/outstanding
+  counts with expandable name lists, deep link to the KB document.
+- `/admin/acknowledgments/my` — staff view: "waiting on you" with read-document link and
+  typed-name signature flow (attestation copy states the record is permanent), plus completed
+  history.
+
+### DDL — `supabase/migrations/292_office_document_acknowledgments.sql`
+
+- `document_acknowledgment_requirements` — `document_id` → `public.documents`, title
+  snapshot, `required_roles text[]`, `require_signature`, due date, active flag.
+- `document_acknowledgments` — immutable signature log: typed `signature_name` verbatim,
+  `signer_role` at signature time, `UNIQUE (requirement_id, user_id)`. **No UPDATE or DELETE
+  policies at all** — signatures cannot be altered or soft-deleted even by admins;
+  corrections happen by issuing a new requirement.
+- RLS: staff read requirements and insert acknowledgments **for themselves only**
+  (`user_id = auth.uid()`); admin/office roles read the dashboard. Audit triggers on both.
+
+### Deliberately deferred
+
+- Auto-requirement on KB publish/update events — manual issuance first; an Edge Function or
+  trigger can create requirements on `documents.status` transitions later.
+- Facility-precise eligibility (`user_facility_access` join) — outstanding lists count active
+  org staff in required roles; accurate for the single-facility pilot, revisit at facility 2.
+- In-service roster signatures — in-service sessions already capture attendees (D41–D43);
+  pulling those rosters into this signature log is a follow-up.
+- Push/notification chasing — can reuse `dispatch-push` later.
+
+### Acceptance
+
+- Requirement on a published doc shows correct signed/outstanding split; staff member signs
+  once (unique constraint blocks repeats); signature row is immutable under RLS.
+- Gate: `npm run segment:gates -- --segment "F2-3-esignature-read-acknowledgment" --ui` PASS.
+
+---
+
 ## Later F1/F2/F4 sections
 
 Added per segment as they are built (
