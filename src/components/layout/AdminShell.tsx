@@ -334,6 +334,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "meetings", href: "/admin/meetings", label: "Meeting hub", enabled: true, icon: NotebookPen },
           { key: "master-calendar", href: "/admin/calendar", label: "Master calendar", enabled: true, icon: CalendarDays },
           { key: "letters", href: "/admin/letters", label: "Letters & documents", enabled: true, icon: FileSignature },
+          { key: "internal-forms", href: "/admin/forms", label: "Internal forms", enabled: true, icon: ClipboardList },
           { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
           { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
           { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },

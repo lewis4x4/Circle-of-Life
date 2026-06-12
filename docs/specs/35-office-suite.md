@@ -290,6 +290,57 @@ Mail-merge templates rendered on facility letterhead with an immutable generated
 
 ---
 
+## F2-2 — Internal forms builder (`/admin/forms`)
+
+**Segment:** `F2-2-internal-forms-builder` · **Shipped:** 2026-06-12
+
+### Problem
+
+Maintenance requests, supply requests, grievances, and refund requests arrive as paper slips,
+texts, and hallway conversations — no queue, no status, no evidence trail.
+
+### Scope (this segment)
+
+Admin-built forms with a jsonb field schema and a per-facility status-tracked queue:
+
+- `src/lib/office/internal-forms.ts` — field/category types, defensive `parseFields`,
+  label→key slugging, status tones.
+- `/admin/forms` — inline form builder (label/type/required per field; dropdown options;
+  types: short text, long text, number, date, dropdown), forms list with "Fill out" links,
+  and the submission queue: status filter chips, expandable rows showing submitted values,
+  start work / resolve / reject with resolution notes.
+- `/admin/forms/submit?template=<id>` — staff-facing fill-out page rendered from the field
+  schema with required-field validation.
+
+### DDL — `supabase/migrations/291_office_internal_forms.sql`
+
+- `internal_form_templates` — name, description, category (`maintenance` | `supply` |
+  `grievance` | `refund` | `general`), `fields` jsonb (ordered field definitions), `is_active`.
+- `internal_form_submissions` — template snapshot (`template_name`, `category`), `values`
+  jsonb stored verbatim, status workflow `submitted → in_progress → resolved | rejected`,
+  resolution notes + `resolved_at`/`resolved_by`, `submitted_by`/`submitted_at`.
+- RLS: all facility staff read active templates and **submit**; submitters see their own
+  submissions; office/admin roles (`owner`/`org_admin`/`facility_admin`/`manager`/
+  `coordinator`) see and work the whole queue. Audit triggers on both tables (grievance
+  intake is survey evidence), `updated_at` triggers, soft deletes only.
+
+### Deliberately deferred
+
+- Routing rules (e.g. maintenance → maintenance_role assignee) — single facility queue first;
+  assignment/notification can reuse OCE or `dispatch-push` in a later segment.
+- Template editing/versioning UI — submissions snapshot `template_name` + verbatim values, so
+  templates can be superseded by creating a new one and deactivating the old.
+- File attachments on submissions — needs Storage RLS design; not required for the four
+  named form types' v1.
+
+### Acceptance
+
+- Build a form with mixed field types; staff submission lands in the queue with status
+  `submitted`; admin can start work, resolve, or reject with notes; status filter works.
+- Gate: `npm run segment:gates -- --segment "F2-2-internal-forms-builder" --ui` PASS artifact.
+
+---
+
 ## Later F1/F2/F4 sections
 
 Added per segment as they are built (
