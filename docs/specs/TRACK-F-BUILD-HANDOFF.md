@@ -91,4 +91,4 @@ PASS JSON must exist under `test-results/agent-gates/` before the segment is "do
 
 | Segment | Date | Gate artifact | Commit | Mission |
 |---------|------|---------------|--------|---------|
-| _none yet — F1-1 is next_ | | | | |
+| F1-1-unified-approvals-inbox | 2026-06-12 | `test-results/agent-gates/2026-06-12T20-53-16-681Z-F1-1-unified-approvals-inbox.json` (PASS, `--ui`) | _see commit_ | pass — one "waiting on me" queue over existing RLS-governed approval tables (swaps, punches, mileage, KB reviews); no new data surfaces |

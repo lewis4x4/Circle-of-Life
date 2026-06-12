@@ -34,6 +34,7 @@ import {
   Landmark,
   LayoutDashboard,
   LineChart,
+  ListChecks,
   Menu,
   MessageCircle,
   MessageSquare,
@@ -325,6 +326,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         icon: Zap,
         items: [
           { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
+          { key: "approvals", href: "/admin/approvals", label: "Approvals inbox", enabled: true, icon: ListChecks },
           { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
           { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
           { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },
