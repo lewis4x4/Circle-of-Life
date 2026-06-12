@@ -131,9 +131,69 @@ day shift needs to know at 8am.
 
 ---
 
+## F1-3 — Meeting hub (`/admin/meetings`)
+
+**Segment:** `F1-3-meeting-hub` · **Shipped:** 2026-06-12
+
+### Problem
+
+Standups, QA committee, and safety committee meetings run from `2026 Standup Call Log.xlsx` and
+paper notes. Minutes are survey evidence and action items die without follow-through.
+
+### DDL — migration `289_office_meetings.sql`
+
+| Table | Purpose | Notes |
+|-------|---------|-------|
+| `meeting_templates` | Recurring meeting definitions (standup, QA, safety committee) | `cadence` check (`daily`…`ad_hoc`); `default_agenda jsonb` string array |
+| `meetings` | Meeting instances | `status` check (`scheduled`/`in_progress`/`completed`/`cancelled`); `agenda`/`attendees` jsonb string arrays; `minutes text`; `chaired_by` |
+| `meeting_action_items` | Action items captured in a meeting | `status` (`open`/`completed`/`cancelled`); `oce_task_instance_id` FK → `operation_task_instances` |
+
+All three: RLS enabled before data (org → `haven.accessible_facility_ids()`), audit triggers
+(`haven_capture_audit_log` — minutes are survey evidence per F0-2 spirit), soft deletes
+(`deleted_at`, **no DELETE policies**), `haven_set_updated_at` triggers, UUID PKs, denormalized
+`organization_id` + `facility_id`, UTC. Create/update limited to
+`owner/org_admin/facility_admin/manager/coordinator/nurse`; action-item assignees may update
+their own items.
+
+### OCE coupling (reuse mandate)
+
+Adding an action item **creates an `operation_task_instances` row**
+(`template_category='meeting_action'`, `template_cadence_type='event_driven'`,
+`assigned_shift_date = due_date`, `status='pending'`) and stores its id on the action item —
+the existing escalation machinery chases it. Completing the action item completes the linked
+OCE instance. No parallel task system.
+
+### UI
+
+- `/admin/meetings` — hub: KPIs (upcoming, completed this month, open action items), template
+  list + inline create (name, cadence, default agenda), meetings list.
+- `/admin/meetings/new` — create from template (prefills title + agenda) or blank; agenda and
+  attendees entered one per line.
+- `/admin/meetings/[id]` — status transitions (start / complete / cancel), agenda, attendees,
+  minutes editor (audit-logged on save), action items add/complete with assignee picker
+  (`user_profiles` active users) and due date.
+- Nav: "Meeting hub" in AdminShell **Command** group.
+- Shared helpers in `src/lib/office/meetings.ts`.
+
+### Deliberately deferred
+
+- Automatic recurrence spawning (template → scheduled instances) — manual create-from-template
+  covers v1; revisit with the F1-4 calendar.
+- `grace-transcribe` → draft minutes (roadmap optional).
+- Publishing minutes to the KB (F0-4 review flow) — F3-3 territory.
+
+### Acceptance
+
+- Template create → meeting create from template prefills agenda; minutes save and persist;
+  action item add creates a linked OCE task instance; completing the item completes the task.
+- Gate: `npm run segment:gates -- --segment "F1-3-meeting-hub" --ui` PASS artifact;
+  `migrations:verify:pg` replay (Docker locally unavailable → CI `REQUIRE_PG_VERIFY=1` replays).
+
+---
+
 ## Later F1/F2/F4 sections
 
-Added per segment as they are built (F1-3 meeting hub, F1-4 master calendar,
+Added per segment as they are built (F1-4 master calendar,
 F2-1 letter generator, F2-2 forms builder, F2-3 e-signature/read-ack, F2-4 contact directory,
 F4-2 front desk kit, F4-3 petty cash + trust ledger, F4-4 survey binder, F4-1 eFax — blocked on
 owner vendor pick).
