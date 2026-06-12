@@ -1,0 +1,94 @@
+# Track F — Build Handoff (loop operating prompt)
+
+**Status:** ACTIVE — hand this file to a fresh agent session to build Track F autonomously
+**Created:** 2026-06-12
+**Scope authority:** `docs/specs/UNIFIED-ROADMAP.md` §2 (Track F — Employee Workspace & Office Suite)
+
+> **How to drive this:** in a fresh session run a loop where **each iteration = one bounded Track F segment**, e.g.
+>
+> ```
+> /loop /ultracode Build the next unbuilt Track F segment per docs/specs/TRACK-F-BUILD-HANDOFF.md. One segment per iteration. Stop the loop if blocked on an owner decision.
+> ```
+>
+> Dynamic pacing (no fixed interval): finish a segment → record → next iteration. `/ultracode` is the implementation pass inside each iteration; everything around it (BOOT, gates, RECORD, commit) follows this file.
+
+---
+
+## BOOT — read at the start of every session (not every iteration)
+
+1. `docs/specs/UNIFIED-ROADMAP.md` §2 — Track F scope, segment tables, reuse mandate
+2. `AGENTS.md` + `CODEX.md` — build rules, gate contract, commit discipline
+3. `docs/Autonomous.md` — latest RECORD entry (where the last session stopped)
+4. `git log -10` — recent merges
+5. `ls supabase/migrations | tail -3` — confirm next free migration number (UNIFIED-ROADMAP §1 says `289`; trust the folder)
+
+## FIND — pick the next segment
+
+Work the Track F order from UNIFIED-ROADMAP §2:
+
+**F1-1 → F1-2 → F1-3 → F1-4 → F2-1 → F2-2 → F2-3 → F2-4 → (F4-2, F4-3) → F3-* → F4-1 → F4-4 → F5-***
+
+A segment is "built" when its row in the **Track F build log** (bottom of this file) shows a PASS gate artifact and commit hash. The first unbuilt row is next.
+
+### F0 gating — **F0 RATIFIED 2026-06-12** (see UNIFIED-ROADMAP §2 F0 table for the binding positions)
+
+All F0-gated segments (F3, F5, F2-3 publish coupling) are **unblocked**. The ratified positions are implementation requirements, not suggestions:
+
+- **F0-1:** break-glass access (owner/org_admin, typed reason, fully audited) must ship **in the same segment** as the first private-content table — never a follow-up.
+- **F0-2:** audit trigger + soft deletes + retention on all private-content tables from their first migration.
+- **F0-3:** offboarding transfer/legal-hold is part of F3 scope, not optional.
+- **F0-4:** publish flow is draft → submit → facility_admin/DON review → publish. No one-click share to group.
+- **F0-5:** Google Drive cutover **2026-07-01** — F5 must be production-ready before that date; sequence accordingly.
+
+**Remaining block:** F4-1 (eFax) still needs an owner vendor pick. If the next segment in order is blocked, skip to the next unblocked one; if everything remaining is blocked, stop the loop and report what's needed.
+
+## SPEC-FIRST rule
+
+- Before the first F1/F2/F4 segment: create **`docs/specs/35-office-suite.md`** (DDL, RLS, API, UI screens for that segment's slice; grow the spec per segment — PARTIAL status is fine).
+- Before the first F3/F5 segment: create **`docs/specs/36-employee-workspace.md`** likewise.
+- Each segment implements only what its spec section defines. Spec edits land in the same commit as the segment.
+
+## BUILD — per iteration
+
+1. **Mission gate:** state `pass` | `risk` | `fail` + one sentence before writing code.
+2. **Spec:** write/extend the relevant `35-`/`36-` spec section first.
+3. **DDL (if any):** next free `NNN_*.sql`; RLS enabled before data (helpers: `haven.organization_id()`, `haven.app_role()`, `haven.has_facility_access()`, `haven.accessible_facility_ids()`); audit trigger on mutable clinical/financial tables; soft deletes; money in cents; UTC; UUID PKs; denormalized `organization_id` + `facility_id`. Run `npm run migrations:verify:pg` when migrations touched.
+4. **Implementation pass:** run `/ultracode` (or equivalent deep-implementation flow) scoped to this segment only. Reuse mandate from UNIFIED-ROADMAP §2 is binding — KB for published docs, OCE for tasks, Storage RLS for files, `dispatch-push` for notifications. No parallel systems, no `as any`, design-system tokens for UI, admin routes under `src/app/(admin)/admin/...`.
+5. **Scope discipline:** no architecture resets, no pulling forward later segments, no F3 semantics smuggled into F1/F2 surfaces.
+
+## GATES — per iteration (required)
+
+```bash
+npm run segment:gates -- --segment "F<n>-<m>-<slug>"   # add --ui when routes/layouts/visuals changed
+```
+
+PASS JSON must exist under `test-results/agent-gates/` before the segment is "done". No artifact → not done, regardless of how it looks.
+
+## RECORD — per iteration
+
+1. Append a row to the **Track F build log** below (segment, date, gate artifact, commit, mission alignment).
+2. Update the segment's row/status in `docs/specs/UNIFIED-ROADMAP.md` §2 if scope shifted.
+3. Update `docs/Autonomous.md` RECORD when the session ends (not every iteration).
+4. **Commit:** one atomic conventional commit per segment (`feat(office): ...` / `feat(workspace): ...`), staged to segment files only, then push. Production publishes from `main` only.
+
+## STOP conditions (end the loop and report)
+
+- All remaining segments blocked on F0 / owner decisions
+- A gate fails twice on the same root cause
+- A segment genuinely requires breaking the reuse mandate or repo invariants
+- Migration parity ambiguity with the remote DB that an agent should not resolve alone
+
+---
+
+## Owner inputs outstanding (loop must not guess these)
+
+| Input | Blocks |
+|-------|--------|
+| ~~F0-1..F0-5~~ | **Ratified 2026-06-12** — positions in UNIFIED-ROADMAP §2 |
+| eFax vendor selection | F4-1 |
+
+## Track F build log
+
+| Segment | Date | Gate artifact | Commit | Mission |
+|---------|------|---------------|--------|---------|
+| _none yet — F1-1 is next_ | | | | |

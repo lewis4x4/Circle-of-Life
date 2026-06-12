@@ -2,6 +2,8 @@
 
 **This folder is the single source of truth for building Haven.** When spec content conflicts with the roadmap overview, trust these specs.
 
+**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**, approved 2026-06-12. Note: the "Current state" section below was reconciled 2026-04-22 (migrations through `206`); the repo has since advanced (see UNIFIED-ROADMAP §1 for the live migration position).
+
 ## Supabase Project
 
 - **URL:** https://manfqmasfqppukpobpld.supabase.co
