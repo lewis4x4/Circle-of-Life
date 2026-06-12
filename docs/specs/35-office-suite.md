@@ -238,6 +238,58 @@ from the transportation calendar export — TZID for timed events, `VALUE=DATE` 
 
 ---
 
+## F2-1 — Letter & document generator (`/admin/letters`)
+
+**Segment:** `F2-1-letter-document-generator` · **Shipped:** 2026-06-12
+
+### Problem
+
+Rate-increase notices, family letters, DCF/payee correspondence, and employment verifications
+are typed by hand in Word with no copy of record in the resident or employee file.
+
+### Scope (this segment)
+
+Mail-merge templates rendered on facility letterhead with an immutable generated-letter log:
+
+- `src/lib/office/letters.ts` — merge-field map (`{{resident.*}}`, `{{staff.*}}`,
+  `{{facility.*}}`, `{{today}}`), `renderLetterBody` (unknown fields stay visible),
+  letterhead print HTML (browser print-to-PDF — repo convention, no PDF dependency).
+- `/admin/letters` — template list + inline template editor (category, merge subject, plain-text
+  body with field reference) and the generated-letters log with per-row reprint.
+- `/admin/letters/generate` — template + subject pickers, live merge preview, "Generate, log &
+  print" inserts the `generated_letters` row then opens the print view.
+
+### DDL — `supabase/migrations/290_office_letters.sql`
+
+- `letter_templates` — name, category (`rate_increase` | `family` | `dcf_payee` |
+  `employment_verification` | `general`), `subject_kind` (`resident` | `staff` | `none`), body.
+- `generated_letters` — template snapshot (`template_name`, `category`), single-subject check
+  (`resident_id` XOR `staff_user_id`, both nullable), `rendered_body` stored **verbatim** at
+  generation time (legal copy of record; later template edits never change what was sent),
+  `merge_values` jsonb for traceability.
+- Both: RLS office/admin roles only (`owner`/`org_admin`/`facility_admin`/`manager`/
+  `coordinator`), audit triggers, `updated_at` triggers, soft deletes. `generated_letters` has
+  no general UPDATE policy — only owner/org_admin soft delete; the rendered body is immutable
+  in practice and audit-logged.
+
+### Deliberately deferred
+
+- Rich text / DOCX letterhead upload — plain text on a structured letterhead covers the four
+  named letter types; revisit if owners need styled bodies.
+- Surfacing the letter log on resident/staff profile pages — the rows carry `resident_id` /
+  `staff_user_id` so a profile tab is a later read-only join.
+- Bulk merge (e.g. rate increase to all private-pay residents) — one-at-a-time first; bulk is
+  a follow-up segment if the office asks.
+
+### Acceptance
+
+- Template with merge fields renders correct preview for a selected resident/staff member;
+  generation inserts a `generated_letters` row and opens the letterhead print view; hub log
+  reprints the stored body verbatim.
+- Gate: `npm run segment:gates -- --segment "F2-1-letter-document-generator" --ui` PASS artifact.
+
+---
+
 ## Later F1/F2/F4 sections
 
 Added per segment as they are built (
