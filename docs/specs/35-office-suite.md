@@ -81,9 +81,59 @@ mileage role gate hides the buttons client-side, same as the source page).
 
 ---
 
+## F1-2 — Morning huddle / daily briefing (`/admin/briefing`)
+
+**Segment:** `F1-2-morning-huddle-briefing` · **Shipped:** 2026-06-12
+
+### Problem
+
+Stand-up meetings run off scattered hub pages and a paper notebook. The facility-level sibling of
+the executive standup packet: one per-facility page, printable as a one-pager, covering what the
+day shift needs to know at 8am.
+
+### Scope (this segment)
+
+- `src/app/(admin)/admin/briefing/page.tsx` — per-facility daily briefing (facility selection
+  required; America/New_York calendar day).
+- `src/lib/office/morning-huddle.ts` — aggregation over existing tables via the session client
+  (RLS governs); `src/lib/office/morning-huddle-print.ts` — standalone print HTML (same pattern
+  as the executive standup board print document); Print button opens it in a new window and
+  invokes the browser print dialog.
+- Nav: "Morning huddle" in the AdminShell **Command** group.
+
+### DDL
+
+**None.** Read-only aggregation; no writes.
+
+### Sections / sources
+
+| Section | Source | Predicate |
+|---------|--------|-----------|
+| Overnight incidents | `incidents` | `occurred_at >=` now − 24h, facility-scoped; AHCA-reportable flagged |
+| Current census | `residents` | count where `deleted_at IS NULL AND discharge_date IS NULL` |
+| Census moves | `residents` | `admission_date = today` (move-in), `discharge_date = today` (move-out), `discharge_target_date = today` (planned) |
+| Today's shift roster | `shift_assignments` + `staff` | `shift_date = today`, grouped by `shift_type`; `called_out` / `no_show` highlighted |
+| Open ops tasks | `operation_task_instances` (OCE — reuse mandate) | `assigned_shift_date <= today AND status IN (pending, in_progress, missed)` |
+| Med flags | `emar_records` + `residents` | last 24h with `status IN (refused, held, not_available)`; plus count of `scheduled` doses past due |
+
+### Deliberately deferred
+
+- Stored PDF snapshots in Storage (executive standup pattern) — print HTML covers the daily
+  one-pager; revisit if huddle history needs to be retained as documents.
+- Editable huddle notes / action items — F1-3 (meeting hub) owns minutes and action items.
+
+### Acceptance
+
+- With a facility selected, all six sections render live counts; print button produces a
+  self-contained one-pager with the same data.
+- No facility selected → explicit prompt, no queries.
+- Gate: `npm run segment:gates -- --segment "F1-2-morning-huddle-briefing" --ui` PASS artifact.
+
+---
+
 ## Later F1/F2/F4 sections
 
-Added per segment as they are built (F1-2 morning huddle, F1-3 meeting hub, F1-4 master calendar,
+Added per segment as they are built (F1-3 meeting hub, F1-4 master calendar,
 F2-1 letter generator, F2-2 forms builder, F2-3 e-signature/read-ack, F2-4 contact directory,
 F4-2 front desk kit, F4-3 petty cash + trust ledger, F4-4 survey binder, F4-1 eFax — blocked on
 owner vendor pick).

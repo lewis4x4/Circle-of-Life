@@ -92,3 +92,4 @@ PASS JSON must exist under `test-results/agent-gates/` before the segment is "do
 | Segment | Date | Gate artifact | Commit | Mission |
 |---------|------|---------------|--------|---------|
 | F1-1-unified-approvals-inbox | 2026-06-12 | `test-results/agent-gates/2026-06-12T20-53-16-681Z-F1-1-unified-approvals-inbox.json` (PASS, `--ui`) | `369528ea` | pass — one "waiting on me" queue over existing RLS-governed approval tables (swaps, punches, mileage, KB reviews); no new data surfaces |
+| F1-2-morning-huddle-briefing | 2026-06-12 | `test-results/agent-gates/2026-06-12T21-02-06-774Z-F1-2-morning-huddle-briefing.json` (PASS, `--ui`) | _next commit_ | pass — per-facility printable daily briefing (incidents, census, roster, OCE tasks, med flags) from existing RLS-scoped tables; read-only, no DDL |

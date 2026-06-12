@@ -49,6 +49,7 @@ import {
   Smartphone,
   Stethoscope,
   Sun,
+  Sunrise,
   Truck,
   Umbrella,
   UserCog,
@@ -327,6 +328,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         items: [
           { key: "dashboard", href: "/admin", label: "Triage Inbox", enabled: true, icon: LayoutDashboard },
           { key: "approvals", href: "/admin/approvals", label: "Approvals inbox", enabled: true, icon: ListChecks },
+          { key: "briefing", href: "/admin/briefing", label: "Morning huddle", enabled: true, icon: Sunrise },
           { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
           { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
           { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },
