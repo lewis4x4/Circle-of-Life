@@ -49,3 +49,8 @@ a8f62351936c752c9383622dff0a0e21bd71511f:src/lib/reports/executors/index.ts:gene
 c81112dcac0b0de496789129d10eb17e9ad97013:src/components/executive/ceo-risk-index-chart.tsx:generic-api-key:16
 a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic-api-key:797
 a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic-api-key:808
+
+# False positive: intake catalog checklist literal "HIPAA/privacy consent" (generic-api-key rule)
+# in facility launch center catalog files (2026-05-05 history).
+97bde70ebcae59ec2d53024e565e4400871b2955:facility-launch-center/src/intakeCatalog.js:generic-api-key:210
+8e11ba9605045104cc0fc915c0880f5bc31778f9:public/facility-launch-static/src/intakeCatalog.js:generic-api-key:210
