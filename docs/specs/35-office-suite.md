@@ -191,9 +191,56 @@ OCE instance. No parallel task system.
 
 ---
 
+## F1-4 — Facility master calendar (`/admin/calendar`)
+
+**Segment:** `F1-4-facility-master-calendar` · **Shipped:** 2026-06-12
+
+### Problem
+
+Dated obligations live on six different hubs; nothing shows "what is happening at this facility
+this month" in one place.
+
+### Scope (this segment)
+
+Read-only month calendar at `src/app/(admin)/admin/calendar/page.tsx` with toggleable layers,
+day drill-down list (rows deep-link to source hubs where a detail page exists), and `.ics`
+export of the loaded window (`src/lib/office/master-calendar.ts`, RFC 5545 conventions copied
+from the transportation calendar export — TZID for timed events, `VALUE=DATE` for all-day).
+
+### DDL
+
+**None.** Read-only aggregation through the session client; existing RLS on every source.
+
+### Layers / sources
+
+| Layer | Source | Date field |
+|-------|--------|-----------|
+| Transportation | `resident_transport_requests` (+ resident name) | `appointment_date` / `appointment_time` |
+| Meetings | `meetings` (F1-3) | `scheduled_at` (ET day + time) |
+| In-services | `inservice_log_sessions` | `session_date` |
+| Drills & emergency checks | `emergency_checklist_items` (fire/evacuation/generator) | `next_due_date` |
+| Document expirations | `facility_documents` (license/insurance vault — same source the `facility-expiration-scanner` Edge Function reads) | `expiration_date` |
+| Survey history | `facility_survey_history` | `survey_date` |
+
+### Deliberately deferred
+
+- Vendor visits and family conferences — no dated tables exist yet; add as layers with their
+  modules (F2-4 / Module 19, Module 21).
+- Forward survey-window projection (predicted next-survey range) — survey history is shown;
+  projection belongs to compliance analytics.
+- Event creation from the calendar — sources own their create flows.
+
+### Acceptance
+
+- Month grid renders all six layers for the selected facility; layer toggles filter both grid
+  and `.ics` export; day click lists events with deep links.
+- Gate: `npm run segment:gates -- --segment "F1-4-facility-master-calendar" --ui` PASS artifact.
+
+---
+
 ## Later F1/F2/F4 sections
 
-Added per segment as they are built (F1-4 master calendar,
+Added per segment as they are built (
 F2-1 letter generator, F2-2 forms builder, F2-3 e-signature/read-ack, F2-4 contact directory,
 F4-2 front desk kit, F4-3 petty cash + trust ledger, F4-4 survey binder, F4-1 eFax — blocked on
 owner vendor pick).

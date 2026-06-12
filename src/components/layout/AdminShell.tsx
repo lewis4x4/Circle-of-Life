@@ -331,6 +331,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "approvals", href: "/admin/approvals", label: "Approvals inbox", enabled: true, icon: ListChecks },
           { key: "briefing", href: "/admin/briefing", label: "Morning huddle", enabled: true, icon: Sunrise },
           { key: "meetings", href: "/admin/meetings", label: "Meeting hub", enabled: true, icon: NotebookPen },
+          { key: "master-calendar", href: "/admin/calendar", label: "Master calendar", enabled: true, icon: CalendarDays },
           { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
           { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
           { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },
