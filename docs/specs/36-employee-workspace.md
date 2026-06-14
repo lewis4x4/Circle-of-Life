@@ -269,3 +269,47 @@ A facility-shared board scoped to a shift date + shift:
 - Post a note on the current shift; switch shift/date to scope the board; another user
   acknowledges; the open count drops.
 - Gate: `npm run segment:gates -- --segment "F3-6-shift-handoff-board" --ui` PASS.
+
+---
+
+## F3-7 — Comments + @mentions (`/admin/mentions`)
+
+**Segment:** `F3-7-comments-mentions` · **Shipped:** 2026-06-13
+
+### Problem
+
+Workspace items (pages, cards, handoff notes, spaces) had no way to discuss in context or loop
+a colleague in.
+
+### Scope (this segment)
+
+A generic comment thread + mentions:
+
+- `src/lib/office/comments.ts` — types + label/subject maps.
+- `src/components/office/comments-thread.tsx` — reusable thread (load, post, "Notify" people
+  picker for `@mentions`), embedded in `/admin/workspace/[id]`.
+- `/admin/mentions` — "My mentions" inbox (`mentioned_user_ids` contains me), deep-linked to
+  the subject.
+
+### DDL — `supabase/migrations/302_workspace_comments.sql`
+
+- `workspace_comments` — polymorphic `subject_type`/`subject_id`, author, body,
+  `mentioned_user_ids uuid[]` (GIN-indexed for mentions).
+- **RLS inherits subject visibility:** a comment is readable only if the reader is the author,
+  is `@mentioned`, or can `SELECT` the subject row — and RLS subqueries are themselves
+  RLS-filtered, so a private page's comments stay private automatically. Insert requires the
+  author can see the subject. Audit trigger, `updated_at`, soft deletes.
+
+### Deliberately deferred
+
+- Inline `@token` parsing in the body — explicit "Notify" people-picker in v1 for reliable,
+  unambiguous mention targeting.
+- Threaded replies / reactions — flat chronological thread first.
+- Real-time push on mention — surfaced via the `/admin/mentions` inbox; notification fan-out
+  is a later wire-up using the denormalized `mentioned_user_ids`.
+
+### Acceptance
+
+- Comment on a page; notify a colleague; they see it under My mentions; a user who cannot see
+  the page cannot see its comments (RLS inheritance).
+- Gate: `npm run segment:gates -- --segment "F3-7-comments-mentions" --ui` PASS.

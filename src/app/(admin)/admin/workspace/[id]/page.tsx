@@ -24,6 +24,7 @@ import {
   type PublishRequestRow,
 } from "@/lib/office/publish";
 import { createClient } from "@/lib/supabase/client";
+import { CommentsThread } from "@/components/office/comments-thread";
 
 const ET_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -481,6 +482,10 @@ export default function AdminWorkspacePageDetail() {
                 )}
               </section>
             ) : null}
+
+            <div className="border-t border-border pt-4">
+              <CommentsThread subjectType="workspace_page" subjectId={page.id} />
+            </div>
           </>
         ) : null}
       </div>
