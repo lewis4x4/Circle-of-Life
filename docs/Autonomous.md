@@ -75,6 +75,21 @@ From `npm run segment:gates` (see `CODEX.md`): hygiene, security scan, ESLint, m
 
 ---
 
+## RECORD — round 2026-06-14 (loop: Track F finished end-to-end — LOOP EXIT)
+
+| Field | Value |
+|-------|--------|
+| **BOOT** | `TRACK-F-BUILD-HANDOFF.md`, `UNIFIED-ROADMAP.md` §2, specs `35-office-suite.md` / `36-employee-workspace.md`, `git log`/`git status`. |
+| **FIND** | Remaining unbuilt Track F segments: F3-8, F4-4, F5-1, F5-2 (built this loop); F4-1 eFax still owner-blocked. |
+| **BUILD** | F3-8 workspace search (`f9a66472`); F4-4 survey binder, migration `303` (`14d6efad`); F5-1 Drive import, migration `304` (`eb10ca21`); F5-2 cutover, migration `305` (`4b4ffe85`). One atomic commit + recorded hash per segment, each `--ui` gated PASS. |
+| **Mission alignment** | **pass** — completes the in-platform office/workspace suite + Drive→Haven migration path so COL retires Google Drive (F0-5 2026-07-01) onto one role-governed, audited data layer. |
+| **Gate artifacts** | `2026-06-14T02-32-31…F3-8`, `…02-38-34…F4-4`, `…02-47-01…F5-1`, `…02-52-20…F5-2` under `test-results/agent-gates/`. |
+| **LOOP EXIT** | **All agent-buildable Track F segments complete.** Only **F4-1 (eFax)** remains — **blocked on owner eFax-vendor selection** (`TRACK-F-BUILD-HANDOFF.md` → Owner inputs outstanding). Per STOP condition "all remaining segments blocked on owner decisions," loop halts and reports. |
+| **Owner inputs needed** | (1) eFax vendor pick to unblock F4-1. (2) Google Drive OAuth client/scope to enable F5-1 live binary byte-transfer. (3) `supabase db push` through `305` on the target project. |
+| **Deferred** | Module 25 (Resident Assurance Engine) per owner priority. |
+
+---
+
 ## RECORD — round 2026-04-10 (doc parity)
 
 | Field | Value |
