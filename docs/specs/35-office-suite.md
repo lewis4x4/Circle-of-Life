@@ -483,6 +483,52 @@ Tabbed front-desk surface with three logs (visitors / packages & mail / family c
 
 ---
 
+## F4-3 — Petty cash + resident trust ledger (`/admin/cash`)
+
+**Segment:** `F4-3-petty-cash-resident-trust` · **Shipped:** 2026-06-13
+
+### Problem
+
+Petty cash and resident personal-needs/trust funds (Representative Payee / SSA-787) are tracked
+on paper — no audited ledger, a real survey and fiduciary risk.
+
+### Scope (this segment)
+
+Two cents-based ledgers behind a tab switch at `/admin/cash`:
+
+- `src/lib/office/ledgers.ts` — category maps, signed-delta helpers; reuses
+  `src/lib/finance/format-cents.ts` (`formatCents`, `parseDollarsToCents`).
+- Petty cash tab — open a drawer, post credit/debit with category + optional resident, running
+  balance shown per entry.
+- Resident trust tab — open a per-resident account (Rep Payee / SSA-787 flags), post
+  deposit/withdrawal (withdrawals blocked below zero), per-account ledger with running balance.
+
+### DDL — `supabase/migrations/295_office_cash_trust_ledgers.sql`
+
+- `petty_cash_accounts` + `petty_cash_transactions`; `resident_trust_accounts` (UNIQUE per
+  resident) + `resident_trust_transactions`. **Money in integer cents** (`amount_cents > 0`,
+  `balance_after_cents` for an auditable running total). Ledger tables are **insert-only — no
+  UPDATE/DELETE policies** (immutable financial record). `receipt_path` column reserved for a
+  Storage object (capture UI deferred).
+- RLS: finance/office roles only (`owner`/`org_admin`/`facility_admin`/`manager`/
+  `admin_assistant`). Audit triggers on all four tables; `updated_at` on the account tables.
+
+### Deliberately deferred
+
+- Receipt photo capture — column exists; upload needs Storage RLS (shared design with F4-2).
+- Transactional post via RPC — current flow inserts the immutable ledger row then updates the
+  denormalized account balance; a single `rpc` wrapping both is a hardening follow-up.
+- Statement/period export PDF — ledger is on screen; export joins the F4-4 binder / Module 26.
+
+### Acceptance
+
+- Open a drawer, post a disbursement and replenishment; balance + running totals correct.
+- Open a resident trust account, deposit then withdraw; withdrawal beyond balance blocked;
+  ledger immutable under RLS.
+- Gate: `npm run segment:gates -- --segment "F4-3-petty-cash-resident-trust" --ui` PASS.
+
+---
+
 ## Later F1/F2/F4 sections
 
 Added per segment as they are built (
