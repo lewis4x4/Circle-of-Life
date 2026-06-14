@@ -355,6 +355,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "kanban", href: "/admin/kanban", label: "My board", enabled: true, icon: KanbanSquare },
           { key: "handoff", href: "/admin/handoff", label: "Shift handoff", enabled: true, icon: ClipboardCheck },
           { key: "mentions", href: "/admin/mentions", label: "My mentions", enabled: true, icon: AtSign },
+          { key: "workspace-search", href: "/admin/workspace/search", label: "Search workspace", enabled: true, icon: Search },
           { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
           { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
           { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },

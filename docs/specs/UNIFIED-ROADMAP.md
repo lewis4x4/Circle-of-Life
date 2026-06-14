@@ -14,7 +14,7 @@
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`302` (`302_workspace_comments.sql`) — **next free migration: `303`** |
+| Repo migrations | `001`–`302` (`302_workspace_comments.sql`) — **next free migration: `303`** (F3-8 added no DDL) |
 | README "current state" drift | `docs/specs/README.md` was last reconciled 2026-04-22 at migration `206`; treat **this file + the migrations folder** as current until README is re-reconciled |
 | Pilot | Oakridge ALF live pilot; Homewood Lodge launch workstream in repo (`docs/homewood/`) |
 | Production | Netlify auto-publish from `main` only |

@@ -313,3 +313,47 @@ A generic comment thread + mentions:
 - Comment on a page; notify a colleague; they see it under My mentions; a user who cannot see
   the page cannot see its comments (RLS inheritance).
 - Gate: `npm run segment:gates -- --segment "F3-7-comments-mentions" --ui` PASS.
+
+---
+
+## F3-8 — Workspace search + ask-Grace-about-my-notes (`/admin/workspace/search`)
+
+**Segment:** `F3-8-workspace-search` · **Shipped:** 2026-06-13
+
+### Problem
+
+As workspace content grows, staff need to find their own notes/files/cards fast — and ask a
+plain-language question against their notes.
+
+### Scope (this segment)
+
+Keyword search + local retrieval Q&A, all over RLS-scoped data:
+
+- `src/lib/office/workspace-search.ts` — `tokenize`, `rankPages` (title-weighted term overlap),
+  `buildSnippet`; covered by `workspace-search.test.ts` (Vitest).
+- `/admin/workspace/search` — instant keyword search across pages/files/cards, plus an "Ask
+  Grace about my notes" box that ranks the user's own pages and returns the top snippets.
+
+### DDL
+
+None — reads existing F3-1/F3-2/F3-5 tables under their owner/visibility RLS.
+
+### Why local retrieval (not the KB Grace stream)
+
+The KB Grace assistant answers from the org Knowledge Base (`documents`). Private notes are
+intentionally **not** in the KB, so this segment answers with **local, client-side retrieval
+over the user's RLS-scoped pages** — no external data egress, no new secrets, AI strictly
+subordinate. A future enhancement may index opted-in/published notes into the KB stream.
+
+### Deliberately deferred
+
+- Embedding/semantic ranking — deterministic term-overlap scoring in v1 (tested, offline).
+- Searching comments/handoff text — pages/files/cards first.
+- Streaming LLM synthesis over notes — would require backend indexing of private content
+  (governance review); retrieval-only for now.
+
+### Acceptance
+
+- Type a query → matching pages/files/cards appear; ask a question → top matching notes return
+  with snippets; ranking unit tests pass.
+- Gate: `npm run segment:gates -- --segment "F3-8-workspace-search" --ui` PASS.
