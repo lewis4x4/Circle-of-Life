@@ -14,7 +14,7 @@
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`303` (`303_survey_binder_items.sql`) — **next free migration: `304`** |
+| Repo migrations | `001`–`304` (`304_drive_import.sql`) — **next free migration: `305`** |
 | README "current state" drift | `docs/specs/README.md` was last reconciled 2026-04-22 at migration `206`; treat **this file + the migrations folder** as current until README is re-reconciled |
 | Pilot | Oakridge ALF live pilot; Homewood Lodge launch workstream in repo (`docs/homewood/`) |
 | Production | Netlify auto-publish from `main` only |
@@ -34,7 +34,7 @@
 
 1. **Track A blocks PHI production.** New Track F surfaces can be built and demoed, but no production PHI until A5 (Pro/BAA/PITR) and remaining UAT rows close.
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
-3. New DDL takes the next free migration number (currently `304`) and updates this file.
+3. New DDL takes the next free migration number (currently `305`) and updates this file.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
 
 ---

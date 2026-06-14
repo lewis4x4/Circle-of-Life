@@ -357,3 +357,58 @@ subordinate. A future enhancement may index opted-in/published notes into the KB
 - Type a query → matching pages/files/cards appear; ask a question → top matching notes return
   with snippets; ranking unit tests pass.
 - Gate: `npm run segment:gates -- --segment "F3-8-workspace-search" --ui` PASS.
+
+---
+
+## F5-1 — Google Drive import (`/admin/drive-import`)
+
+**Segment:** `F5-1-google-drive-import` · **Shipped:** 2026-06-14
+
+### Problem
+
+F0-5 sets a **hard Drive cutoff of 2026-07-01** (Drive becomes read-only; Haven is system of
+record). The migration's hard part is **ownership**: thousands of Drive files must land with the
+right employee / team and the right destination, with an auditable record of what moved where.
+
+### Scope (this segment)
+
+A facility-scoped cutover workspace that maps a Drive manifest to Haven destinations and records
+each import:
+
+- `src/lib/office/drive-import.ts` — `parseManifest` (Drive API `files.list` JSON **or** CSV with
+  a header; tolerant of quoted commas / malformed input), destination + status maps,
+  `importBookmarkBody`, `isMappable`; covered by `drive-import.test.ts` (Vitest, 10 cases).
+- `/admin/drive-import` — create/list import batches.
+- `/admin/drive-import/[id]` — paste a manifest → bulk-load file rows; per-row map to
+  **private page (owner)**, **team space page**, **Knowledge Base**, or **skip**; run the import
+  executor, which creates the target rows and stamps each file `imported` / `failed` with a ref.
+  - KB → `documents` (`source='drive_import'`, published) reusing the F3-3 publish target.
+  - private/team → `workspace_pages` bookmark (reuses F3-1/F3-4 visibility + team_space_id).
+
+### DDL — `supabase/migrations/304_drive_import.sql`
+
+- `drive_import_batches` (name, status `mapping`→`importing`→`complete`→`archived`).
+- `drive_import_files` (Drive metadata, `destination`, `owner_user_id`/`team_space_id`,
+  `status`, `imported_ref_type`/`imported_ref_id`, `error`). Soft deletes; audit + `updated_at`.
+- RLS: admin/office roles only in accessible facilities; SELECT/INSERT/UPDATE — **no DELETE**.
+
+### Reuse mandate (binding)
+
+KB for published docs, workspace pages for private/team content, no parallel file system. The
+import ledger is the only new surface; everything it produces lands in existing tables.
+
+### Deliberately deferred / owner-gated
+
+- **Live Drive-API byte transfer** for binary files runs behind **owner-provided OAuth
+  credentials** (Drive scope + client). This segment records mappings and creates linking
+  bookmarks; the binary pull executor is wired once the owner provisions Drive OAuth (an ops
+  input, not an agent guess). The existing Google OAuth token store (D44) is the reuse seam.
+- Folder-tree auto-mapping heuristics — manual per-row mapping in v1.
+
+### Acceptance
+
+- Create a batch; paste a JSON or CSV manifest → file rows load.
+- Map rows to owner/team/KB; run import → KB documents + workspace bookmarks created, statuses
+  update, failures captured per row; `drive-import` unit tests pass.
+- RLS limits the tool to admin/office roles; no hard delete possible.
+- Gate: `npm run segment:gates -- --segment "F5-1-google-drive-import" --ui` PASS.
