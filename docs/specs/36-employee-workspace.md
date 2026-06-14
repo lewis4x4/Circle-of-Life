@@ -192,3 +192,40 @@ Spaces with membership + page sharing:
 - Create a space; add a member; share a page to it; the member can read it; removing membership
   revokes read.
 - Gate: `npm run segment:gates -- --segment "F3-4-team-spaces" --ui` PASS.
+
+---
+
+## F3-5 — Personal kanban (`/admin/kanban`)
+
+**Segment:** `F3-5-personal-kanban` · **Shipped:** 2026-06-13
+
+### Problem
+
+Staff juggle their own to-dos plus assigned operational (OCE) tasks across separate screens.
+
+### Scope (this segment)
+
+A private three-column board that also reflects the user's live OCE workload:
+
+- `src/lib/office/kanban.ts` — columns, status mapping, move helpers, priority tones.
+- `/admin/kanban` — add personal cards to "To do", move left/right between columns, delete; the
+  user's open OCE task instances appear **read-only** in their mapped columns (badged "OCE").
+
+### DDL — `supabase/migrations/300_workspace_cards.sql`
+
+- `workspace_cards` — owner, title/details, status (`todo`/`in_progress`/`done`), position,
+  due date, optional `source_oce_instance_id` (context link, not ownership).
+- RLS: owner-private (select/insert/update own only); audit trigger, `updated_at`, soft deletes.
+
+### Deliberately deferred
+
+- Drag-and-drop — left/right move buttons in v1 (keyboard-accessible, no DnD dependency).
+- Acting on OCE tasks from the board — OCE remains the system of record; completion (with its
+  dual-sign/evidence rules) stays in the Operations queue. The board only mirrors them.
+- Cross-user/shared boards — personal only here.
+
+### Acceptance
+
+- Add a card; move it To do → In progress → Done; delete it; assigned OCE tasks show read-only
+  in the correct columns.
+- Gate: `npm run segment:gates -- --segment "F3-5-personal-kanban" --ui` PASS.
