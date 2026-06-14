@@ -229,3 +229,43 @@ A private three-column board that also reflects the user's live OCE workload:
 - Add a card; move it To do → In progress → Done; delete it; assigned OCE tasks show read-only
   in the correct columns.
 - Gate: `npm run segment:gates -- --segment "F3-5-personal-kanban" --ui` PASS.
+
+---
+
+## F3-6 — Shift handoff board (`/admin/handoff`)
+
+**Segment:** `F3-6-shift-handoff-board` · **Shipped:** 2026-06-13
+
+### Problem
+
+Shift-to-shift handoff happens verbally or on a whiteboard — nothing durable, nothing the
+incoming shift can confirm they received.
+
+### Scope (this segment)
+
+A facility-shared board scoped to a shift date + shift:
+
+- `src/lib/office/handoff.ts` — shift/category maps, ET `currentShift`/`todayEtIso` defaults,
+  priority tones.
+- `/admin/handoff` — date + shift selector (defaults to now in ET), post a note (category,
+  priority, optional resident), incoming staff **acknowledge** each note; unacknowledged count
+  in the header; critical/high sorted first.
+
+### DDL — `supabase/migrations/301_shift_handoff_notes.sql`
+
+- `shift_handoff_notes` — shift_date, shift (`day`/`evening`/`night`), category, optional
+  `resident_id`, note, priority, `acknowledged_by`/`acknowledged_at`.
+- RLS: all facility staff read/post/acknowledge in accessible facilities (shared operational
+  board). Audit trigger (resident-linkable), `updated_at`, soft deletes.
+
+### Deliberately deferred
+
+- Auto-rollover of unacknowledged notes to the next shift — manual date/shift navigation in v1.
+- Per-note threaded replies — F3-7 comments will generalize discussion.
+- Push/notification on critical handoff — surfaced in-board for now.
+
+### Acceptance
+
+- Post a note on the current shift; switch shift/date to scope the board; another user
+  acknowledges; the open count drops.
+- Gate: `npm run segment:gates -- --segment "F3-6-shift-handoff-board" --ui` PASS.
