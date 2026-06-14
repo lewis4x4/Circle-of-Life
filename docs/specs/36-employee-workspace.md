@@ -63,3 +63,45 @@ break-glass path:
 - Create a page from a template; edit + save creates a version; history lists versions; a
   non-owner owner/org_admin must enter a reason to break-glass read.
 - Gate: `npm run segment:gates -- --segment "F3-1-personal-notes-pages" --ui` PASS.
+
+---
+
+## F3-2 — Private file drive (`/admin/files`)
+
+**Segment:** `F3-2-private-file-drive` · **Shipped:** 2026-06-13
+
+### Problem
+
+Staff store license scans, training certs, and working documents on personal drives — invisible
+to the org and lost at offboarding.
+
+### Scope (this segment)
+
+Owner-private file drive with folders, upload, signed-URL download, and soft delete:
+
+- `src/lib/office/workspace-files.ts` — bucket constant, path builder
+  (`{owner}/{file_id}/{filename}`), filename sanitizer, byte formatter.
+- `/admin/files` — upload (client → Storage), folder chips, open (120s signed URL), delete.
+
+### DDL — `supabase/migrations/297_workspace_files.sql`
+
+- `workspace_files` metadata (owner, name, `storage_path`, mime, size, folder, visibility).
+- Storage bucket `workspace-files` (private, 50MB, office mime allow-list).
+- **Reuses** `workspace_breakglass_grants` (`resource_type='workspace_file'`). The object path
+  embeds the `file_id` as the 2nd folder so a single storage RLS policy enforces typed-reason
+  break-glass (`foldername[2]` = a live grant's `resource_id`). Owner-only otherwise.
+- RLS on metadata mirrors pages (owner manage + break-glass read + admin ownership transfer);
+  audit trigger, `updated_at`, soft deletes (F0-2).
+
+### Deliberately deferred
+
+- Admin "browse another employee's drive" UI — break-glass is enforced at the data/storage
+  layer here; the picker composes into the offboarding/admin segment.
+- In-app preview / thumbnails — open via signed URL in a new tab for v1.
+- Versioned re-upload — new file per upload; document versioning lives in the KB.
+
+### Acceptance
+
+- Upload a file into a folder; it lists; open returns a working signed URL; delete soft-deletes
+  metadata and removes the object; storage RLS blocks cross-user reads without a grant.
+- Gate: `npm run segment:gates -- --segment "F3-2-private-file-drive" --ui` PASS.
