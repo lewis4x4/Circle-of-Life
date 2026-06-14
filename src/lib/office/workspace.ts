@@ -49,6 +49,7 @@ export type WorkspacePageRow = {
   body: string;
   template_kind: TemplateKind;
   visibility: PageVisibility;
+  team_space_id: string | null;
   version: number;
   updated_at: string;
   created_at: string;

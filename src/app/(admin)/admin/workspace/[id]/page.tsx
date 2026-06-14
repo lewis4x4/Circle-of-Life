@@ -61,6 +61,9 @@ export default function AdminWorkspacePageDetail() {
   const [pubRationale, setPubRationale] = useState("");
   const [publishing, setPublishing] = useState(false);
 
+  const [mySpaces, setMySpaces] = useState<{ id: string; name: string }[]>([]);
+  const [sharing, setSharing] = useState(false);
+
   const load = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
@@ -78,7 +81,7 @@ export default function AdminWorkspacePageDetail() {
 
       const res = (await supabase
         .from("workspace_pages" as never)
-        .select("id, owner_user_id, title, body, template_kind, visibility, version, updated_at, created_at")
+        .select("id, owner_user_id, title, body, template_kind, visibility, team_space_id, version, updated_at, created_at")
         .eq("id", pageId)
         .is("deleted_at", null)
         .limit(1)) as unknown as QueryResult<WorkspacePageRow>;
@@ -106,6 +109,15 @@ export default function AdminWorkspacePageDetail() {
           .order("created_at", { ascending: false })
           .limit(1)) as unknown as QueryResult<PublishRequestRow>;
         if (!prRes.error) setPublishRequest((prRes.data ?? [])[0] ?? null);
+
+        if (found.owner_user_id === actor.userId) {
+          const spacesRes = (await supabase
+            .from("team_spaces" as never)
+            .select("id, name")
+            .is("deleted_at", null)
+            .order("name")) as unknown as QueryResult<{ id: string; name: string }>;
+          if (!spacesRes.error) setMySpaces(spacesRes.data ?? []);
+        }
       }
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load the page.");
@@ -187,6 +199,34 @@ export default function AdminWorkspacePageDetail() {
       setPublishing(false);
     }
   }, [supabase, page, isOwner, title, body, pubAudience, pubRationale, load]);
+
+  const shareToSpace = useCallback(
+    async (teamSpaceId: string) => {
+      if (!page || !isOwner) return;
+      setSharing(true);
+      setNotice(null);
+      try {
+        const actor = await fetchActorContext(supabase);
+        const isUnshare = teamSpaceId === "";
+        const { error } = await supabase
+          .from("workspace_pages" as never)
+          .update({
+            visibility: isUnshare ? "private" : "team",
+            team_space_id: isUnshare ? null : teamSpaceId,
+            updated_by: actor?.userId,
+          } as never)
+          .eq("id", page.id);
+        if (error) throw new Error(error.message);
+        setNotice(isUnshare ? "Page is private again." : "Shared to the team space.");
+        await load();
+      } catch (err) {
+        setNotice(err instanceof Error ? err.message : "Failed to update sharing.");
+      } finally {
+        setSharing(false);
+      }
+    },
+    [supabase, page, isOwner, load],
+  );
 
   const submitBreakGlass = useCallback(async () => {
     if (breakGlassReason.trim().length < 5) {
@@ -331,6 +371,29 @@ export default function AdminWorkspacePageDetail() {
                     Publish to group
                   </Button>
                 ) : null}
+              </div>
+            ) : null}
+
+            {isOwner && mySpaces.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-[9px] border border-border bg-muted/30 px-[13px] py-2">
+                <label htmlFor="share-space" className="text-sm text-muted-foreground">
+                  Team space:
+                </label>
+                <select
+                  id="share-space"
+                  value={page.team_space_id ?? ""}
+                  disabled={sharing}
+                  onChange={(e) => void shareToSpace(e.target.value)}
+                  className="rounded-[9px] border border-border bg-background px-3 py-1.5 text-sm text-foreground"
+                >
+                  <option value="">Private (not shared)</option>
+                  {mySpaces.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {sharing ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden /> : null}
               </div>
             ) : null}
 

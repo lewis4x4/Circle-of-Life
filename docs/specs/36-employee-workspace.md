@@ -150,3 +150,45 @@ Good staff write-ups stay trapped as private notes. Promoting them org-wide must
 - Owner submits a page; a reviewer sees it, approves; a `documents` row is created and the
   request shows `published`; reject path records a note and lets the author re-submit.
 - Gate: `npm run segment:gates -- --segment "F3-3-publish-to-group" --ui` PASS.
+
+---
+
+## F3-4 — Team spaces (`/admin/teams`)
+
+**Segment:** `F3-4-team-spaces` · **Shipped:** 2026-06-13
+
+### Problem
+
+Some notes should be shared with a department or project group — broader than private, narrower
+than the org-wide KB.
+
+### Scope (this segment)
+
+Spaces with membership + page sharing:
+
+- `src/lib/office/teams.ts` — types + user-label resolver.
+- `/admin/teams` — list my spaces + create (creator auto-added as `lead`).
+- `/admin/teams/[id]` — manage members (add org users, remove), view pages shared into the space.
+- `/admin/workspace/[id]` — owner "Team space" selector shares a page (`visibility='team'` +
+  `team_space_id`) or returns it to private.
+
+### DDL — `supabase/migrations/299_workspace_team_spaces.sql`
+
+- `team_spaces`, `team_space_members` (UNIQUE per space+user, `member`/`lead` role), and
+  `workspace_pages.team_space_id` column.
+- RLS: members + admins see their spaces/rosters; any staff create a space; creator/lead/admin
+  manage membership; **team members read pages** where `visibility='team'` and they belong to
+  the page's space — the author still owns/edits (single-editor model). Audit triggers,
+  `updated_at`, soft deletes.
+
+### Deliberately deferred
+
+- Team-shared files (vs pages) — pages first; file sharing reuses the same membership join later.
+- Co-editing within a space — read-shared in v1, consistent with F3-1 single-editor lock.
+- Nested/sub-spaces — flat spaces only.
+
+### Acceptance
+
+- Create a space; add a member; share a page to it; the member can read it; removing membership
+  revokes read.
+- Gate: `npm run segment:gates -- --segment "F3-4-team-spaces" --ui` PASS.
