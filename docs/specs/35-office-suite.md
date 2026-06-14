@@ -529,9 +529,55 @@ Two cents-based ledgers behind a tab switch at `/admin/cash`:
 
 ---
 
-## Later F1/F2/F4 sections
+## F4-4 — Survey-readiness binder (`/admin/survey-binder`)
 
-Added per segment as they are built (
-F2-1 letter generator, F2-2 forms builder, F2-3 e-signature/read-ack, F2-4 contact directory,
-F4-2 front desk kit, F4-3 petty cash + trust ledger, F4-4 survey binder, F4-1 eFax — blocked on
-owner vendor pick).
+**Segment:** `F4-4-survey-readiness-binder` · **Shipped:** 2026-06-14
+
+### Problem
+
+AHCA / FAC 59A-36 surveyors ask for the same evidence every visit (admin records, staff files,
+resident records, medication, food service, physical plant, emergency prep, policies). COL
+assembles it from scratch each survey. There is no single place that shows what is ready, what is
+expiring, and what is missing.
+
+### Scope (this segment)
+
+A facility-scoped binder at `/admin/survey-binder` that layers a curated checklist over **live
+evidence already in Haven**:
+
+- `src/lib/office/survey-binder.ts` — category/status maps, status tones, and
+  `fetchBinderEvidence()` which counts facility documents, documents expiring ≤60d, in-services
+  YTD, and emergency-checklist drills due ≤60d, plus the latest `facility_survey_history` row.
+  All evidence reads are defensive (per-source failure → 0, never throws).
+- KPI strip — the four live counts + last survey on record.
+- Curated checklist — add a line item under one of nine survey categories with an optional
+  internal link, set each to `ready` / `in_progress` / `missing` / `not_applicable`. Grouped by
+  category; ready/missing counts in the header.
+
+### DDL — `supabase/migrations/303_survey_binder_items.sql`
+
+- `survey_binder_items` — `category` (CHECK over nine survey areas), `title`, `status` (CHECK),
+  `note`, `source_url`, `sort_order`. Soft deletes; audit + `updated_at` triggers.
+- RLS: admin/office roles only (`owner`/`org_admin`/`facility_admin`/`manager`/`admin_assistant`)
+  in accessible facilities. SELECT/INSERT/UPDATE only — **no DELETE** (soft deletes).
+
+### Deliberately deferred
+
+- Binder PDF/export pack — joins the Module 26 reporting work; checklist + evidence are on screen.
+- Auto-seeding the checklist from a 59A-36 template — manual entry this segment; a default
+  template insert is a fast follow once the owner confirms the row set.
+- Deep links from KPIs into filtered document/in-service lists — counts only this segment.
+
+### Acceptance
+
+- Select a facility; KPI strip shows live document/in-service/drill counts and last survey.
+- Add a binder item under a category, flip its status; grouping + header counts update.
+- RLS limits the binder to admin/office roles; no hard delete possible.
+- Gate: `npm run segment:gates -- --segment "F4-4-survey-readiness-binder" --ui` PASS.
+
+---
+
+## Later F4/F5 sections
+
+Added per segment as they are built (F5-1 Google Drive import, F5-2 cutover; F4-1 eFax — blocked
+on owner vendor pick).
