@@ -352,6 +352,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "cash-trust", href: "/admin/cash", label: "Cash & resident trust", enabled: true, icon: Wallet },
           { key: "survey-binder", href: "/admin/survey-binder", label: "Survey binder", enabled: true, icon: BookCheck },
           { key: "drive-import", href: "/admin/drive-import", label: "Drive import", enabled: true, icon: CloudUpload },
+          { key: "drive-cutover", href: "/admin/drive-cutover", label: "Drive cutover", enabled: true, icon: ShieldCheck },
           { key: "workspace", href: "/admin/workspace", label: "My workspace", enabled: true, icon: NotebookText },
           { key: "files", href: "/admin/files", label: "My files", enabled: true, icon: HardDrive },
           { key: "publish-queue", href: "/admin/workspace/publish-queue", label: "Publish queue", enabled: true, icon: Inbox },

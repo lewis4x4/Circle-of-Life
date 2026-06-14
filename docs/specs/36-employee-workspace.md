@@ -412,3 +412,55 @@ import ledger is the only new surface; everything it produces lands in existing 
   update, failures captured per row; `drive-import` unit tests pass.
 - RLS limits the tool to admin/office roles; no hard delete possible.
 - Gate: `npm run segment:gates -- --segment "F5-1-google-drive-import" --ui` PASS.
+
+---
+
+## F5-2 — Cutover (`/admin/drive-cutover`)
+
+**Segment:** `F5-2-cutover` · **Shipped:** 2026-06-14 · **Track F final segment**
+
+### Problem
+
+F0-5 fixes a hard cutoff (**2026-07-01**) when Google Drive becomes a read-only archive and Haven
+is the system of record. The owner needs a go/no-go view — is the migration complete? — and an
+**auditable sign-off** that Drive was actually set read-only per facility.
+
+### Scope (this segment)
+
+A per-facility cutover dashboard + immutable sign-off:
+
+- `src/lib/office/drive-cutover.ts` — `DRIVE_CUTOFF_DATE`, `daysUntilCutoff`, `rollupFromStatuses`,
+  `migrationComplete`, `canAttest`; covered by `drive-cutover.test.ts` (Vitest).
+- `/admin/drive-cutover` — countdown to cutoff, migration readiness rollup derived from the F5-1
+  import ledger (batches / imported / pending / mapped / failed / skipped), Drive-read-only status,
+  a senior-admin sign-off form, and attestation history.
+
+### DDL — `supabase/migrations/305_drive_cutover.sql`
+
+- `drive_cutover_attestations` — `cutoff_date`, `drive_set_readonly`, `notes`, `attested_by`,
+  `attested_at`. **Insert-only — no UPDATE/DELETE** (immutable attestation); audited; soft-delete
+  column reserved.
+- RLS: admin/office roles read; **owner/org_admin/facility_admin** insert with `attested_by =
+  auth.uid()`.
+
+### Boundary (what Haven does not do)
+
+Flipping Drive to read-only is a **Google Workspace admin action** the owner performs outside
+Haven. This segment records the go/no-go evidence and the immutable attestation that it happened —
+it does not call the Google Admin API.
+
+### Acceptance
+
+- Countdown + rollup reflect the F5-1 ledger; migration shows complete only when nothing is
+  pending/mapped/failed.
+- A senior admin records a read-only sign-off; it appears immutably in history; helper unit tests
+  pass.
+- Gate: `npm run segment:gates -- --segment "F5-2-cutover" --ui` PASS.
+
+---
+
+## Track F status
+
+All Track F workspace/office segments are shipped **except F4-1 (eFax)**, which remains **blocked
+on an owner eFax-vendor selection** (see `TRACK-F-BUILD-HANDOFF.md` → Owner inputs outstanding).
+No agent-buildable Track F segments remain.
