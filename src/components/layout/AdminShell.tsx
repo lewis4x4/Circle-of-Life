@@ -339,6 +339,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "internal-forms", href: "/admin/forms", label: "Internal forms", enabled: true, icon: ClipboardList },
           { key: "acknowledgments", href: "/admin/acknowledgments", label: "Policy acknowledgments", enabled: true, icon: FileCheck2 },
           { key: "contacts", href: "/admin/contacts", label: "Contacts & on-call", enabled: true, icon: Contact },
+          { key: "front-desk", href: "/admin/front-desk", label: "Front desk", enabled: true, icon: Users },
           { key: "executive", href: "/admin/executive", label: "Executive summary", enabled: true, icon: LineChart },
           { key: "reports", href: "/admin/reports", label: "Reports hub", enabled: true, icon: FileText },
           { key: "facilities", href: "/admin/facilities", label: "Facilities", enabled: true, icon: Hotel },

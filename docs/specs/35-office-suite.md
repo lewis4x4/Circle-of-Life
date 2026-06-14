@@ -438,6 +438,51 @@ Per-facility rolodex + after-hours on-call schedule, both readable by all facili
 
 ---
 
+## F4-2 — Front desk kit (`/admin/front-desk`)
+
+**Segment:** `F4-2-front-desk-kit` · **Shipped:** 2026-06-13
+
+### Problem
+
+Visitor sign-in sheets, package slips, and family-call notes are paper at the front desk — no
+screening trail for infection control, no package custody record, no resident-linked call log.
+
+### Scope (this segment)
+
+Tabbed front-desk surface with three logs (visitors / packages & mail / family calls):
+
+- `src/lib/office/front-desk.ts` — type/label maps, resident-name resolver.
+- `/admin/front-desk` — visitor check-in with health screening + check-out, package logging
+  with mark-delivered, and resident-linked family-call logging with follow-up flag. On-site
+  visitor count + pending-package count in the header.
+
+### DDL — `supabase/migrations/294_office_front_desk_kit.sql`
+
+- `visitor_log_entries` — name, type, optional `resident_id`, purpose, check-in/out, and
+  **infection-control screening** (`screening_passed`, `temperature_f`, `symptoms_reported`,
+  notes) — the surveillance input the roadmap calls for.
+- `package_log_entries` — recipient (optional `resident_id`), carrier, type, received/delivered
+  custody timestamps + names.
+- `family_call_log_entries` — required `resident_id`, caller + relationship, direction,
+  summary, follow-up flag.
+- RLS: any facility staff record + read (front desk is shared); audit triggers on all three
+  (resident-linked + IC data), `updated_at` triggers, soft deletes only.
+
+### Deliberately deferred
+
+- Writing visitor screening into the infection-control surveillance tables — screening is
+  captured on the entry; an IC rollup/Edge sync is a later linkage.
+- Badge printing / kiosk self-sign-in — staff-operated check-in first.
+- Package photo capture — needs Storage RLS (shared with F4-3 receipt capture design).
+
+### Acceptance
+
+- Check a visitor in and out; flag symptoms → screening flag shows; log + mark a package
+  delivered; log a resident family call with follow-up.
+- Gate: `npm run segment:gates -- --segment "F4-2-front-desk-kit" --ui` PASS.
+
+---
+
 ## Later F1/F2/F4 sections
 
 Added per segment as they are built (
