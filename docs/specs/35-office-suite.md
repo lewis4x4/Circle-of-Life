@@ -393,6 +393,51 @@ draft → review → publish flow is the sole path to staff-facing policy; this 
 
 ---
 
+## F2-4 — Contact directory + on-call (`/admin/contacts`)
+
+**Segment:** `F2-4-contact-directory-on-call` · **Shipped:** 2026-06-13
+
+### Problem
+
+Pharmacy, hospice, physician, AHCA field office, and MCO case-manager numbers live on sticky
+notes and in individual phones; after-hours coverage is unclear during an incident.
+
+### Scope (this segment)
+
+Per-facility rolodex + after-hours on-call schedule, both readable by all facility staff:
+
+- `src/lib/office/contacts.ts` — category list, `activeOnCall` window helper.
+- `/admin/contacts` — "On-call now" panel (active shifts highlighted, click-to-call,
+  upcoming list, add shift) and the directory (category filter chips, click-to-call, inline
+  add contact).
+
+### DDL — `supabase/migrations/293_office_contact_directory.sql`
+
+- `facility_contacts` — name, category (`pharmacy` | `hospice` | `physician` | `hospital` |
+  `ahca` | `mco_case_manager` | `dcf` | `emergency_service` | `vendor` | `other`),
+  org name, phone, after-hours phone, fax, email, address, notes, active flag.
+- `on_call_shifts` — role label, covering user (nullable FK) + verbatim name, phone,
+  `starts_at`/`ends_at` (CHECK end > start), notes.
+- RLS: all facility staff **read** both (operational phone book); admin/office roles
+  (`owner`/`org_admin`/`facility_admin`/`manager`/`coordinator`/`admin_assistant`) manage.
+  Audit triggers, `updated_at` triggers, soft deletes only.
+
+### Deliberately deferred
+
+- Recurring on-call rotation generation — single shifts first; a rotation builder is a later
+  enhancement.
+- Overlap with Module 19 vendor contracts — this is the lighter operational layer by design;
+  no attempt to unify the two in this segment.
+- Editing/soft-deleting existing rows in the UI — create-first; row management is a follow-up.
+
+### Acceptance
+
+- Add a contact and an on-call shift; "On-call now" reflects the active window; category
+  filter narrows the directory; click-to-call links render.
+- Gate: `npm run segment:gates -- --segment "F2-4-contact-directory-on-call" --ui` PASS.
+
+---
+
 ## Later F1/F2/F4 sections
 
 Added per segment as they are built (
