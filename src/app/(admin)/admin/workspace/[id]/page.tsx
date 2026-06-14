@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, History, Loader2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, History, Loader2, Send, ShieldAlert } from "lucide-react";
 
 import {
   AdminLiveDataFallbackNotice,
@@ -18,6 +18,11 @@ import {
   type WorkspacePageRow,
   type WorkspacePageVersionRow,
 } from "@/lib/office/workspace";
+import {
+  PUBLISH_AUDIENCES,
+  publishStatusTone,
+  type PublishRequestRow,
+} from "@/lib/office/publish";
 import { createClient } from "@/lib/supabase/client";
 
 const ET_FMT = new Intl.DateTimeFormat("en-US", {
@@ -49,6 +54,12 @@ export default function AdminWorkspacePageDetail() {
 
   const [breakGlassReason, setBreakGlassReason] = useState("");
   const [breakGlassBusy, setBreakGlassBusy] = useState(false);
+
+  const [publishRequest, setPublishRequest] = useState<PublishRequestRow | null>(null);
+  const [showPublish, setShowPublish] = useState(false);
+  const [pubAudience, setPubAudience] = useState("company_wide");
+  const [pubRationale, setPubRationale] = useState("");
+  const [publishing, setPublishing] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -84,6 +95,17 @@ export default function AdminWorkspacePageDetail() {
           .order("version", { ascending: false })
           .limit(50)) as unknown as QueryResult<WorkspacePageVersionRow>;
         if (!vRes.error) setVersions(vRes.data ?? []);
+
+        const prRes = (await supabase
+          .from("workspace_publish_requests" as never)
+          .select(
+            "id, page_id, requested_by, title, body, target_audience, rationale, status, reviewer_id, review_notes, reviewed_at, published_document_id, created_at",
+          )
+          .eq("page_id", pageId)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1)) as unknown as QueryResult<PublishRequestRow>;
+        if (!prRes.error) setPublishRequest((prRes.data ?? [])[0] ?? null);
       }
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load the page.");
@@ -135,6 +157,36 @@ export default function AdminWorkspacePageDetail() {
       setSaving(false);
     }
   }, [supabase, page, isOwner, title, body, load]);
+
+  const submitPublish = useCallback(async () => {
+    if (!page || !isOwner) return;
+    setPublishing(true);
+    setNotice(null);
+    try {
+      const actor = await fetchActorContext(supabase);
+      if (!actor) throw new Error("Could not resolve your profile.");
+      const { error } = await supabase.from("workspace_publish_requests" as never).insert({
+        organization_id: actor.organizationId,
+        page_id: page.id,
+        requested_by: actor.userId,
+        title: title.trim() || "Untitled",
+        body,
+        target_audience: pubAudience,
+        rationale: pubRationale.trim() || null,
+        created_by: actor.userId,
+        updated_by: actor.userId,
+      } as never);
+      if (error) throw new Error(error.message);
+      setShowPublish(false);
+      setPubRationale("");
+      setNotice("Submitted for review.");
+      await load();
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Failed to submit for review.");
+    } finally {
+      setPublishing(false);
+    }
+  }, [supabase, page, isOwner, title, body, pubAudience, pubRationale, load]);
 
   const submitBreakGlass = useCallback(async () => {
     if (breakGlassReason.trim().length < 5) {
@@ -263,10 +315,74 @@ export default function AdminWorkspacePageDetail() {
               className="w-full rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground font-mono leading-relaxed"
             />
             {isOwner ? (
-              <Button type="button" disabled={saving} onClick={() => void save()} className="gap-2">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-                Save
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" disabled={saving} onClick={() => void save()} className="gap-2">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                  Save
+                </Button>
+                {!publishRequest || publishRequest.status === "rejected" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowPublish((v) => !v)}
+                    className="gap-2"
+                  >
+                    <Send className="h-4 w-4" aria-hidden />
+                    Publish to group
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+
+            {publishRequest ? (
+              <div className="rounded-[9px] border border-border bg-muted/30 px-[13px] py-2 text-sm">
+                <span className="text-muted-foreground">Publish status: </span>
+                <StatusPill tone={publishStatusTone(publishRequest.status)}>
+                  {publishRequest.status}
+                </StatusPill>
+                {publishRequest.review_notes ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Reviewer note: {publishRequest.review_notes}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {isOwner && showPublish ? (
+              <div className="space-y-2 rounded-[var(--radius)] border border-border bg-card p-4">
+                <p className="text-sm text-muted-foreground">
+                  Submit this page for facility_admin / DON review. On approval it publishes into
+                  the Knowledge Base for the selected audience.
+                </p>
+                <select
+                  value={pubAudience}
+                  onChange={(e) => setPubAudience(e.target.value)}
+                  aria-label="Target audience"
+                  className="w-full rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground"
+                >
+                  {PUBLISH_AUDIENCES.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+                <textarea
+                  value={pubRationale}
+                  onChange={(e) => setPubRationale(e.target.value)}
+                  rows={2}
+                  placeholder="Why should this be published? (optional)"
+                  className="w-full rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground"
+                />
+                <Button
+                  type="button"
+                  disabled={publishing}
+                  onClick={() => void submitPublish()}
+                  className="gap-2"
+                >
+                  {publishing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
+                  Submit for review
+                </Button>
+              </div>
             ) : null}
 
             {showHistory ? (

@@ -105,3 +105,48 @@ Owner-private file drive with folders, upload, signed-URL download, and soft del
 - Upload a file into a folder; it lists; open returns a working signed URL; delete soft-deletes
   metadata and removes the object; storage RLS blocks cross-user reads without a grant.
 - Gate: `npm run segment:gates -- --segment "F3-2-private-file-drive" --ui` PASS.
+
+---
+
+## F3-3 — Publish-to-group workflow (F0-4) (`/admin/workspace/publish-queue`)
+
+**Segment:** `F3-3-publish-to-group` · **Shipped:** 2026-06-13
+
+### Problem
+
+Good staff write-ups stay trapped as private notes. Promoting them org-wide must be **governed**
+(F0-4) — not a one-click broadcast — so the KB stays authoritative.
+
+### Scope (this segment)
+
+`draft → submit → facility_admin/DON review → publish into KB`:
+
+- `src/lib/office/publish.ts` — status tones, audience list, reviewer-role check, word count.
+- `/admin/workspace/[id]` — owner "Publish to group" panel (audience + rationale → submit);
+  shows current publish status; re-submit allowed after rejection.
+- `/admin/workspace/publish-queue` — reviewer queue: expand to read the snapshot, approve
+  (creates a `public.documents` KB row, `source='workspace_publish'`, `status='published'`,
+  links `published_document_id`) or reject with a note.
+
+### DDL — `supabase/migrations/298_workspace_publish_requests.sql`
+
+- `workspace_publish_requests` — page FK, requester, **immutable title/body snapshot**, target
+  audience, rationale, status (`submitted`/`approved`/`rejected`/`published`), reviewer + notes
+  + `reviewed_at`, `published_document_id` FK → `documents`.
+- RLS: requester sees own; reviewers (`owner`/`org_admin`/`facility_admin`/`manager` = DON tier)
+  see the queue + transition status; authors may only submit for a page they own. Audit
+  trigger, `updated_at`, soft deletes.
+
+### Deliberately deferred
+
+- Editing the page from the queue — reviewers approve/reject the snapshot; edits go back to the
+  author (re-submit after rejection).
+- Auto-embedding wait/status surfacing — the KB ingest pipeline picks up the new document; the
+  queue marks it published without polling chunk status.
+- Team-scoped publish (vs org KB) — composes with F3-4 team spaces.
+
+### Acceptance
+
+- Owner submits a page; a reviewer sees it, approves; a `documents` row is created and the
+  request shows `published`; reject path records a note and lets the author re-submit.
+- Gate: `npm run segment:gates -- --segment "F3-3-publish-to-group" --ui` PASS.
