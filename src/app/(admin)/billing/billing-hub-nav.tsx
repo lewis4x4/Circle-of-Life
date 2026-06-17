@@ -11,6 +11,7 @@ const DEST_LINKS = [
   { href: "/admin/billing/invoices", label: "Invoices" },
   { href: "/admin/billing/ar-aging", label: "AR aging" },
   { href: "/admin/billing/rates", label: "Rate library" },
+  { href: "/admin/billing/concessions", label: "Concessions" },
   { href: "/admin/billing/revenue", label: "Revenue" },
   { href: "/admin/billing/org-ar-aging", label: "Per-facility AR" },
 ] as const;

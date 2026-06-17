@@ -95,41 +95,21 @@ export default function AdminNewRateSchedulePage() {
         setError("Could not resolve organization for this facility.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id) {
-        setError("You must be signed in.");
-        return;
-      }
+      const published = (await supabase.rpc("haven_publish_rate_schedule" as never, {
+        p_facility_id: selectedFacilityId,
+        p_organization_id: orgId,
+        p_name: label,
+        p_effective_date: effectiveDate,
+        p_base_rate_private: basePriv,
+        p_base_rate_semi_private: semi,
+        p_care_surcharge_level_1: l1,
+        p_care_surcharge_level_2: l2,
+        p_care_surcharge_level_3: l3,
+        p_community_fee: comm,
+        p_notes: notes.trim() || null,
+      } as never)) as { data: string | null; error: QueryError | null };
 
-      const payload = {
-        facility_id: selectedFacilityId,
-        organization_id: orgId,
-        name: label,
-        effective_date: effectiveDate,
-        end_date: null as string | null,
-        base_rate_private: basePriv,
-        base_rate_semi_private: semi,
-        care_surcharge_level_1: l1,
-        care_surcharge_level_2: l2,
-        care_surcharge_level_3: l3,
-        community_fee: comm,
-        notes: notes.trim() || null,
-        created_by: user.id,
-        updated_by: user.id,
-      };
-
-      const ins = (await supabase
-        .from("rate_schedules" as never)
-        .insert(payload as never)
-        .select("id")
-        .single()) as {
-        data: { id: string } | null;
-        error: QueryError | null;
-      };
-
-      if (ins.error) throw new Error(ins.error.message);
+      if (published.error) throw new Error(published.error.message);
       router.push("/admin/billing/rates");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create rate schedule.");
@@ -159,8 +139,8 @@ export default function AdminNewRateSchedulePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New rate schedule</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Amounts are in US dollars; stored as cents. New rows are open-ended (no end date) until you close them in a
-            future edit flow.
+            Amounts are in US dollars; stored as cents. Publishing a new future-dated schedule automatically supersedes
+            the prior open posted-rate card.
           </p>
         </div>
       </div>

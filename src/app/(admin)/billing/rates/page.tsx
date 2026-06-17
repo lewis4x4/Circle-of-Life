@@ -133,7 +133,7 @@ export default function AdminBillingRatesPage() {
               Rate Schedules
             </h1>
             <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
-              Private base rates and surcharges mapped by effective dates. Current versions are retained as read-only history until a replacement schedule is created.
+              Posted standard facility rates mapped by effective date. Resident-specific negotiated rent is managed from each resident billing profile and rolled up in Concessions.
             </p>
             <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
               Version history is read-only and reflects stored schedule fields.

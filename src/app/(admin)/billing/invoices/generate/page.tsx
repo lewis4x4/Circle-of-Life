@@ -111,6 +111,8 @@ export default function AdminInvoiceGeneratePage() {
   }, [buildPreview]);
 
   const grandTotal = preview.reduce((sum, l) => sum + l.total, 0);
+  const standardTotal = preview.reduce((sum, l) => sum + l.standardTotal, 0);
+  const concessionTotal = preview.reduce((sum, l) => sum + l.concessionAmount, 0);
 
   const handleGenerate = useCallback(async () => {
     if (preview.length === 0 || generating || !isValidFacilityIdForQuery(selectedFacilityId)) return;
@@ -283,12 +285,12 @@ export default function AdminInvoiceGeneratePage() {
                   <TableRow>
                     <TableHead>Resident</TableHead>
                     <TableHead>Payer</TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      Acuity
-                    </TableHead>
-                    <TableHead className="text-right">Base</TableHead>
-                    <TableHead className="text-right">Surcharge</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="hidden lg:table-cell">Source</TableHead>
+                    <TableHead className="hidden sm:table-cell">Acuity</TableHead>
+                    <TableHead className="text-right">Standard</TableHead>
+                    <TableHead className="text-right">Actual</TableHead>
+                    <TableHead className="text-right">Concession</TableHead>
+                    <TableHead className="text-right">Invoice</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -310,15 +312,23 @@ export default function AdminInvoiceGeneratePage() {
                           {line.payerType.replace(/_/g, " ")}
                         </span>
                       </TableCell>
+                      <TableCell className="hidden text-xs text-slate-600 dark:text-slate-400 lg:table-cell">
+                        <Badge variant="outline" className="text-[10px] capitalize">
+                          {line.billingSource.replace(/_/g, " ")}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="hidden text-sm text-slate-600 dark:text-slate-400 sm:table-cell">
                         {line.acuity}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {billingCurrency.format(line.baseRate / 100)}
+                        {billingCurrency.format(line.standardTotal / 100)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {line.careSurcharge > 0
-                          ? billingCurrency.format(line.careSurcharge / 100)
+                        {billingCurrency.format(line.total / 100)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {line.concessionAmount !== 0
+                          ? billingCurrency.format(line.concessionAmount / 100)
                           : "—"}
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
@@ -333,9 +343,15 @@ export default function AdminInvoiceGeneratePage() {
                 <div className="text-sm text-slate-600 dark:text-slate-400">
                   {preview.length} resident{preview.length !== 1 ? "s" : ""} ·{" "}
                   {days} days in {billingLabel}
+                  <span className="ml-2 block text-xs sm:inline">
+                    Standard {billingCurrency.format(standardTotal / 100)} · Concessions {billingCurrency.format(concessionTotal / 100)}
+                  </span>
                 </div>
-                <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
-                  {billingCurrency.format(grandTotal / 100)}
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-widest text-slate-500">Net invoice run</div>
+                  <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                    {billingCurrency.format(grandTotal / 100)}
+                  </div>
                 </div>
               </div>
 

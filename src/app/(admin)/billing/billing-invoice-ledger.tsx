@@ -1574,7 +1574,14 @@ function BillingInvoiceLedgerInner({
                                 {billingCurrency.format(row.totalCents / 100)}
                               </TableCell>
                               <TableCell className="text-right tabular-nums text-[13px] text-foreground">
-                                {billingCurrency.format(row.amountDueCents / 100)}
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <span>{billingCurrency.format(row.amountDueCents / 100)}</span>
+                                  {row.adjustmentsCents < 0 ? (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                                      Concession {billingCurrency.format(Math.abs(row.adjustmentsCents) / 100)}
+                                    </span>
+                                  ) : null}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <InvoiceStatusBadge status={row.status} />
@@ -1792,7 +1799,14 @@ function BillingInvoiceLedgerInner({
                             <PayerTypeBadge payerType={row.payerType} />
                           </TableCell>
                           <TableCell className="text-right tabular-nums text-[13px] text-foreground">
-                            {billingCurrency.format(row.amountDueCents / 100)}
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span>{billingCurrency.format(row.amountDueCents / 100)}</span>
+                              {row.adjustmentsCents < 0 ? (
+                                <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                                  Concession {billingCurrency.format(Math.abs(row.adjustmentsCents) / 100)}
+                                </span>
+                              ) : null}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <InvoiceStatusBadge status={row.status} />
