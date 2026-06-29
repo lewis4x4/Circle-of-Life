@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { throwIfQueryError } from "@/lib/supabase/query-error";
@@ -5,6 +7,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import {
   carePlanAnnualReviewDeltaDays,
 } from "@/lib/residents/care-plan-annual-review-window";
+import type { Database } from "@/types/database";
 
 export type Acuity = 1 | 2 | 3;
 export type ResidencyStatus = "active" | "hospital" | "loa";
@@ -173,11 +176,28 @@ type SupabaseResidentRow = {
   allergy_list_reviewed_by: string | null;
   primary_diagnosis_reviewed_at: string | null;
   primary_diagnosis_reviewed_by: string | null;
+  bed_by_id: SupabaseBedJoin | null;
+  beds: SupabaseBedJoin[] | null;
 };
 
-type SupabaseBedRow = { id: string; room_id: string | null; bed_label: string | null };
-type SupabaseRoomRow = { id: string; room_number: string | null; unit_id: string | null };
-type SupabaseUnitRow = { id: string; name: string | null };
+type SupabaseUnitJoin = {
+  id: string;
+  name: string | null;
+};
+
+type SupabaseRoomJoin = {
+  id: string;
+  room_number: string | null;
+  unit_id: string | null;
+  units: SupabaseUnitJoin | null;
+};
+
+type SupabaseBedJoin = {
+  id: string;
+  bed_label: string | null;
+  room_id: string | null;
+  rooms: SupabaseRoomJoin | null;
+};
 
 function mapAcuity(value: string | null): Acuity {
   if (value === "level_3") return 3;
@@ -265,8 +285,8 @@ function conditionChangeTypeLabel(value: string): string {
 export async function loadResidentOverviewDetail(
   residentId: string,
   selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
 ): Promise<ResidentOverviewDetail | null> {
-  const supabase = createClient();
   if (!UUID_STRING_RE.test(residentId)) return null;
 
   const residentCols = [
@@ -311,6 +331,8 @@ export async function loadResidentOverviewDetail(
     "allergy_list_reviewed_by",
     "primary_diagnosis_reviewed_at",
     "primary_diagnosis_reviewed_by",
+    "bed_by_id: beds!residents_bed_id_fkey ( id, bed_label, room_id, rooms ( id, room_number, unit_id, units ( id, name ) ) )",
+    "beds!fk_beds_resident ( id, bed_label, room_id, rooms ( id, room_number, unit_id, units ( id, name ) ) )",
   ].join(",");
 
   const residentResult = (await supabase
@@ -328,47 +350,9 @@ export async function loadResidentOverviewDetail(
     return null;
   }
 
-  let bed: SupabaseBedRow | null = null;
-  if (resident.bed_id) {
-    const byId = (await supabase
-      .from("beds" as never)
-      .select("id, room_id, bed_label")
-      .eq("id", resident.bed_id)
-      .maybeSingle()) as unknown as QueryResult<SupabaseBedRow>;
-    throwIfQueryError(byId.error, "beds by id");
-    bed = byId.data;
-  }
-  if (!bed) {
-    const byRes = (await supabase
-      .from("beds" as never)
-      .select("id, room_id, bed_label")
-      .eq("current_resident_id", residentId)
-      .maybeSingle()) as unknown as QueryResult<SupabaseBedRow>;
-    throwIfQueryError(byRes.error, "beds by resident");
-    bed = byRes.data;
-  }
-
-  let room: SupabaseRoomRow | null = null;
-  if (bed?.room_id) {
-    const roomResult = (await supabase
-      .from("rooms" as never)
-      .select("id, room_number, unit_id")
-      .eq("id", bed.room_id)
-      .maybeSingle()) as unknown as QueryResult<SupabaseRoomRow>;
-    throwIfQueryError(roomResult.error, "rooms");
-    room = roomResult.data;
-  }
-
-  let unit: SupabaseUnitRow | null = null;
-  if (room?.unit_id) {
-    const unitResult = (await supabase
-      .from("units" as never)
-      .select("id, name")
-      .eq("id", room.unit_id)
-      .maybeSingle()) as unknown as QueryResult<SupabaseUnitRow>;
-    throwIfQueryError(unitResult.error, "units");
-    unit = unitResult.data;
-  }
+  const bed = resident.bed_by_id ?? resident.beds?.[0] ?? null;
+  const room = bed?.rooms ?? null;
+  const unit = room?.units ?? null;
 
   const firstName = resident.first_name ?? "";
   const lastName = resident.last_name ?? "";
@@ -510,34 +494,22 @@ export async function loadResidentOverviewDetail(
   const specialistConsultActiveCount =
     specialistCountResult.error ? 0 : specialistCountResult.count ?? 0;
 
-  const verificationUserIds = [
-    resident.code_status_verified_by,
-    resident.allergy_list_reviewed_by,
-    resident.primary_diagnosis_reviewed_by,
-  ].filter((x): x is string => typeof x === "string" && UUID_STRING_RE.test(x));
-
-  const nameById = new Map<string, string>();
-  if (verificationUserIds.length > 0) {
-    const profResult = await supabase.from("user_profiles").select("id, full_name").in("id", verificationUserIds);
-    throwIfQueryError(profResult.error, "user_profiles verification");
-    for (const p of profResult.data ?? []) {
-      nameById.set(p.id, p.full_name);
-    }
-  }
-
-  const userIds = [
+  const profileUserIds = [
     ...new Set([
+      resident.code_status_verified_by,
+      resident.allergy_list_reviewed_by,
+      resident.primary_diagnosis_reviewed_by,
       ...dailyRows.map((r) => r.logged_by),
       ...adlRows.map((r) => r.logged_by),
       ...behaviorRows.map((r) => r.logged_by),
       ...conditionRows.map((r) => r.reported_by),
     ]),
-  ];
-  const extraIds = userIds.filter((id) => !nameById.has(id));
+  ].filter((x): x is string => typeof x === "string" && UUID_STRING_RE.test(x));
 
-  if (extraIds.length > 0) {
-    const profResult = await supabase.from("user_profiles").select("id, full_name").in("id", extraIds);
-    throwIfQueryError(profResult.error, "user_profiles log authors");
+  const nameById = new Map<string, string>();
+  if (profileUserIds.length > 0) {
+    const profResult = await supabase.from("user_profiles").select("id, full_name").in("id", profileUserIds);
+    throwIfQueryError(profResult.error, "user_profiles");
     for (const p of profResult.data ?? []) {
       nameById.set(p.id, p.full_name);
     }

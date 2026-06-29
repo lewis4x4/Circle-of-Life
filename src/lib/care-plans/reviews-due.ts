@@ -1,5 +1,8 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 export type CarePlanReviewDueRow = {
   id: string;
@@ -57,9 +60,11 @@ export function formatCarePlanReviewDate(iso: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(t));
 }
 
-export async function fetchCarePlanReviewsDue(selectedFacilityId: string | null): Promise<CarePlanReviewDueRow[]> {
+export async function fetchCarePlanReviewsDue(
+  selectedFacilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
+): Promise<CarePlanReviewDueRow[]> {
   const today = easternDateString();
-  const supabase = createClient();
   let q = supabase
     .from("care_plans" as never)
     .select("id, resident_id, facility_id, version, status, effective_date, review_due_date")

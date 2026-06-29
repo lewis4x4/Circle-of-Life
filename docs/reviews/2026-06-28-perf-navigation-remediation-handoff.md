@@ -392,6 +392,32 @@ BASE_URL=http://localhost:3000 RUNS=3 \
 
 ### Next segment
 
-**perf-nav-06** — RSC bootstrap for rounding, med errors, care-plans reviews-due, assessments overdue, discharge hub.
+**perf-auth-09** — identity SSOT (remove duplicate `getUser()` calls).
+
+---
+
+## Segment completion: perf-nav-06 (2026-06-29)
+
+**Routes:** medications/errors, care-plans/reviews-due, assessments/overdue, rounding, discharge  
+**Gate:** `test-results/agent-gates/2026-06-29T03-11-22-984Z-perf-nav-06.json` (segment checks PASS; verdict FAIL = pre-existing npm audit)
+
+**New libs:** `load-medication-errors`, `load-rounding-overview`, `load-overdue-assessments`, `load-discharge-hub-bootstrap`; extended `fetchCarePlanReviewsDue` for server client.
+
+---
+
+## Segment completion: perf-nav-07 (2026-06-29)
+
+**Routes:** residents/[id], admissions, referrals  
+**Gate:** `test-results/agent-gates/2026-06-29T03-14-32-239Z-perf-nav-07.json` (segment checks PASS; verdict FAIL = pre-existing npm audit)
+
+**Resident detail:** `loadResidentDetailBootstrap` + nested bed/room/unit PostgREST select (~5 fewer RTTs). First paint includes header on cold nav.
+
+**New libs:** `resident-detail-bootstrap`, `admissions-hub-bootstrap`, `referrals-hub-bootstrap`
+
+---
+
+## Segment completion: perf-cache-08 (partial, 2026-06-29)
+
+**Billing invoice ledger** migrated to `useQuery` with SSR `initialData` + `QueryClientLayout` wrapper.
 
 ---

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -221,16 +221,32 @@ function buildTaskItems(detail: ResidentOverviewDetail): Array<{ id: string; tit
   return items;
 }
 
-export function ResidentDetailOverviewClient({ workspace }: { workspace: ResidentOverviewWorkspace }) {
+export type ResidentDetailOverviewClientProps = {
+  workspace: ResidentOverviewWorkspace;
+  initialDetail?: ResidentOverviewDetail | null;
+  initialError?: string | null;
+  initialFacilityId?: string | null;
+};
+
+export function ResidentDetailOverviewClient({
+  workspace,
+  initialDetail = null,
+  initialError = null,
+  initialFacilityId,
+}: ResidentDetailOverviewClientProps) {
   const params = useParams();
   const rawId = params?.id;
   const residentId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
 
   const { selectedFacilityId } = useFacilityStore();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [detail, setDetail] = useState<ResidentOverviewDetail | null>(null);
+  const bootstrapped = initialFacilityId !== undefined;
+
+  const skipNextLoadRef = useRef(bootstrapped && initialError == null);
+
+  const [loading, setLoading] = useState(!bootstrapped);
+  const [error, setError] = useState<string | null>(initialError);
+  const [notFound, setNotFound] = useState(bootstrapped && !initialDetail && !initialError);
+  const [detail, setDetail] = useState<ResidentOverviewDetail | null>(initialDetail);
   const [behaviorModalOpen, setBehaviorModalOpen] = useState(false);
   const [conditionModalOpen, setConditionModalOpen] = useState(false);
   const [generalNoteModalOpen, setGeneralNoteModalOpen] = useState(false);
@@ -239,6 +255,12 @@ export function ResidentDetailOverviewClient({ workspace }: { workspace: Residen
   const hrefs = useMemo(() => residentHrefSet(residentId, workspace), [residentId, workspace]);
 
   const load = useCallback(async () => {
+    if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
+      skipNextLoadRef.current = false;
+      return;
+    }
+    skipNextLoadRef.current = false;
+
     setLoading(true);
     setError(null);
     setNotFound(false);
@@ -265,7 +287,7 @@ export function ResidentDetailOverviewClient({ workspace }: { workspace: Residen
     } finally {
       setLoading(false);
     }
-  }, [residentId, selectedFacilityId]);
+  }, [residentId, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

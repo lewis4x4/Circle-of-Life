@@ -10,9 +10,13 @@ const admissionsSource = readSource("src/app/(admin)/admin/admissions/page.tsx")
 const newAdmissionSource = readSource("src/app/(admin)/admin/admissions/new/page.tsx");
 const invoiceSource = readSource("src/app/(admin)/vendors/invoices/page.tsx");
 const purchaseOrderSource = readSource("src/app/(admin)/vendors/purchase-orders/page.tsx");
-const referralsSource = readSource("src/app/(admin)/admin/referrals/page.tsx");
-const dischargeMedRecHubSource = readSource(
-  "src/components/admin/discharge/discharge-med-rec-hub.tsx",
+const referralsBootstrapSource = readSource("src/lib/referrals/referrals-hub-bootstrap.ts");
+const referralsClientSource = readSource("src/components/referrals/AdminReferralsPageClient.tsx");
+const dischargeMedRecHubBootstrapSource = readSource(
+  "src/lib/discharge/load-discharge-hub-bootstrap.ts",
+);
+const dischargeMedRecHubClientSource = readSource(
+  "src/components/admin/discharge/discharge-med-rec-hub-client.tsx",
 );
 const facilityDetailSource = readSource("src/app/(admin)/admin/facilities/[facilityId]/page.tsx");
 const facilityRatesHookSource = readSource("src/hooks/useFacilityRates.ts");
@@ -62,23 +66,23 @@ describe("admin list query bounds", () => {
   });
 
   it("caps discharge med-rec hub list loading with honest capped-cohort copy", () => {
-    expect(dischargeMedRecHubSource).toContain(
+    expect(dischargeMedRecHubBootstrapSource).toContain(
       "const DISCHARGE_MED_REC_HUB_LIST_LIMIT = 150;",
     );
-    expect(dischargeMedRecHubSource).toContain("api.limit(");
-    expect(dischargeMedRecHubSource).toContain(
+    expect(dischargeMedRecHubBootstrapSource).toContain(".limit(");
+    expect(dischargeMedRecHubBootstrapSource).toContain(
       "DISCHARGE_MED_REC_HUB_LIST_LIMIT + 1",
     );
-    expect(dischargeMedRecHubSource).toContain(
+    expect(dischargeMedRecHubClientSource).toContain(
       "Showing the newest {DISCHARGE_MED_REC_HUB_LIST_LIMIT} reconciliations for this time scope",
     );
-    expect(dischargeMedRecHubSource).toContain(
+    expect(dischargeMedRecHubClientSource).toContain(
       "No loaded newest rows match this filter yet.",
     );
-    expect(dischargeMedRecHubSource).not.toContain(
+    expect(dischargeMedRecHubClientSource).not.toContain(
       "missing meds, missing prescriber, or expected discharge date in the past",
     );
-    expect(dischargeMedRecHubSource).toContain(
+    expect(dischargeMedRecHubClientSource).toContain(
       "missing discharge target date, pending hospice planning, or nurse reconciliation notes",
     );
   });
@@ -131,20 +135,20 @@ describe("admin list query bounds", () => {
   });
 
   it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {
-    expect(referralsSource).toContain("const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;");
-    expect(referralsSource).toContain("const REFERRAL_UPCOMING_TOUR_LIMIT = 6;");
-    expect(referralsSource).toContain(".slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT)");
-    expect(referralsSource).toContain(".gte(\"tour_scheduled_for\", nowIso)");
-    expect(referralsSource).toContain(".limit(REFERRAL_UPCOMING_TOUR_LIMIT)");
-    expect(referralsSource).toContain("Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours");
+    expect(referralsClientSource).toContain("const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;");
+    expect(referralsBootstrapSource).toContain("export const REFERRAL_UPCOMING_TOUR_LIMIT = 6;");
+    expect(referralsClientSource).toContain(".slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT)");
+    expect(referralsBootstrapSource).toContain('.gte("tour_scheduled_for", nowIso)');
+    expect(referralsBootstrapSource).toContain(".limit(REFERRAL_UPCOMING_TOUR_LIMIT)");
+    expect(referralsClientSource).toContain("Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours");
 
-    expect(referralsSource).not.toContain("tour_completed_at");
-    expect(referralsSource).not.toContain("const leadIds = leadRows.map");
-    expect(referralsSource).not.toContain('.in("referral_lead_id", leadIds)');
+    expect(referralsBootstrapSource).not.toContain("tour_completed_at");
+    expect(referralsBootstrapSource).not.toContain("const leadIds = leadRows.map");
+    expect(referralsBootstrapSource).not.toContain('.in("referral_lead_id", leadIds)');
 
-    expect(referralsSource).toContain('.from("admission_cases")');
-    expect(referralsSource).toContain('.eq("facility_id", selectedFacilityId)');
-    expect(referralsSource).toContain('.is("deleted_at", null)');
-    expect(referralsSource).toContain('.not("status", "eq", "cancelled")');
+    expect(referralsBootstrapSource).toContain('.from("admission_cases")');
+    expect(referralsBootstrapSource).toContain('.eq("facility_id", selectedFacilityId)');
+    expect(referralsBootstrapSource).toContain('.is("deleted_at", null)');
+    expect(referralsBootstrapSource).toContain('.not("status", "eq", "cancelled")');
   });
 });

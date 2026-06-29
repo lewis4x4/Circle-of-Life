@@ -1,19 +1,58 @@
-"use client";
+import { cookies } from "next/headers";
 
-import { Suspense } from "react";
+import { DischargeMedRecHubClient } from "@/components/admin/discharge/discharge-med-rec-hub-client";
+import { dischargeHubScopeFromSearchParam } from "@/lib/admin/discharge/hub-scope";
+import {
+  SELECTED_FACILITY_COOKIE,
+  parseSelectedFacilityCookieValue,
+} from "@/lib/facilities/selected-facility-cookie";
+import {
+  loadDischargeHubBootstrap,
+  type DischargeMedRecHubRow,
+} from "@/lib/discharge/load-discharge-hub-bootstrap";
+import { createClient } from "@/lib/supabase/server";
 
-import { DischargeMedRecHub } from "@/components/admin/discharge/discharge-med-rec-hub";
+type AdminDischargeHubPageProps = {
+  searchParams: Promise<{ scope?: string; phase?: string }>;
+};
 
-export default function AdminDischargeHubPage() {
+export default async function AdminDischargeHubPage({
+  searchParams,
+}: AdminDischargeHubPageProps) {
+  const params = await searchParams;
+  const initialScope = dischargeHubScopeFromSearchParam(params.scope ?? null);
+
+  const cookieStore = await cookies();
+  const initialFacilityId = parseSelectedFacilityCookieValue(
+    cookieStore.get(SELECTED_FACILITY_COOKIE)?.value,
+  );
+
+  let initialRows: DischargeMedRecHubRow[] = [];
+  let initialLoadFailed = false;
+  let initialIsRowsCapped = false;
+
+  try {
+    const supabase = await createClient();
+    const bootstrap = await loadDischargeHubBootstrap(
+      initialFacilityId,
+      initialScope,
+      supabase,
+    );
+    initialRows = bootstrap.rows;
+    initialIsRowsCapped = bootstrap.isRowsCapped;
+  } catch {
+    initialLoadFailed = true;
+  }
+
   return (
-    <Suspense
-      fallback={
-        <div className="mx-auto max-w-5xl px-2 py-10 text-[13px] text-muted-foreground" role="status">
-          Loading discharge pipeline…
-        </div>
-      }
-    >
-      <DischargeMedRecHub hubBasePath="/admin/discharge" />
-    </Suspense>
+    <DischargeMedRecHubClient
+      hubBasePath="/admin/discharge"
+      initialRows={initialRows}
+      initialLoadFailed={initialLoadFailed}
+      initialIsRowsCapped={initialIsRowsCapped}
+      initialFacilityId={initialFacilityId}
+      initialScope={initialScope}
+      serverBootstrapped
+    />
   );
 }

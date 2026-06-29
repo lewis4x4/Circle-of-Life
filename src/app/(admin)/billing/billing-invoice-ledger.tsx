@@ -1,6 +1,7 @@
 "use client";
 
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Check, ChevronRight, Download, Filter, HelpCircle, MoreHorizontal } from "lucide-react";
@@ -78,6 +79,7 @@ import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
 
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { QueryClientLayout } from "@/components/layout/query-client-layout";
 import { cn } from "@/lib/utils";
 
 export {
@@ -333,7 +335,6 @@ function BillingInvoiceLedgerInner({
   const isOverviewChrome = layout === "overview" && !residentIdFilter;
   const isInvoicesHub = layout === "standard" && !residentIdFilter;
   const searchParams = useSearchParams();
-  const urlStatusAppliedRef = useRef(false);
 
   const hasInitialLoad =
     initialRows !== undefined || initialError !== undefined || initialFacilityId !== undefined;
@@ -348,17 +349,43 @@ function BillingInvoiceLedgerInner({
     return m;
   }, [availableFacilities]);
 
-  const [rows, setRows] = useState<BillingRow[]>(initialRows ?? []);
-  const [isLoading, setIsLoading] = useState(!hasInitialLoad);
-  const [error, setError] = useState<string | null>(initialError ?? null);
-  const loadedFacilityIdRef = useRef<string | null>(initialLoadSucceeded ? (initialFacilityId ?? null) : null);
-  const hasLoadedFacilityScopeRef = useRef(initialLoadSucceeded);
-  const forceNextFetchRef = useRef(false);
+  const facilityReady =
+    selectedFacilityId == null || isValidFacilityIdForQuery(selectedFacilityId);
+
+  const ssrScopeMatches =
+    initialLoadSucceeded &&
+    initialRows !== undefined &&
+    selectedFacilityId === (initialFacilityId ?? null) &&
+    (residentIdFilter ?? null) === null;
+
+  const {
+    data: rows = [],
+    isPending,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ["billing", "invoices", selectedFacilityId, residentIdFilter ?? null],
+    enabled: facilityReady,
+    queryFn: () => fetchInvoicesFromSupabase(selectedFacilityId, residentIdFilter),
+    initialData: ssrScopeMatches ? initialRows : undefined,
+    staleTime: ssrScopeMatches ? 60_000 : 0,
+  });
+
+  const isLoading = facilityReady && isPending && rows.length === 0;
+  const error =
+    facilityReady && queryError
+      ? queryError instanceof Error
+        ? queryError.message
+        : "Failed to load data"
+      : null;
 
   const [cohortCount, setCohortCount] = useState<number>(initialCohortResidentCount);
 
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
-  const [status, setStatus] = useState(DEFAULT_FILTERS.status);
+  const [status, setStatus] = useState(() => {
+    const st = searchParams.get("status");
+    return st === "overdue" ? "overdue" : DEFAULT_FILTERS.status;
+  });
   const [payerType, setPayerType] = useState(DEFAULT_FILTERS.payerType);
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("this_month");
   const [ledgerFacilityIds, setLedgerFacilityIds] = useState<string[] | null>(null);
@@ -385,65 +412,12 @@ function BillingInvoiceLedgerInner({
   }, [selectedFacilityId]);
 
   useEffect(() => {
-    if (urlStatusAppliedRef.current) return;
-    const st = searchParams.get("status");
-    if (st === "overdue") {
-      setStatus("overdue");
-      urlStatusAppliedRef.current = true;
-    }
-  }, [searchParams]);
-
-  const fetchBilling = useCallback(
-    async (opts?: { force?: boolean }) => {
-      const force = Boolean(opts?.force) || forceNextFetchRef.current;
-      forceNextFetchRef.current = false;
-
-      const facilityMatchesSsr =
-        initialLoadSucceeded &&
-        initialRows !== undefined &&
-        selectedFacilityId === (initialFacilityId ?? null);
-
-      if (facilityMatchesSsr && !force) {
-        setRows(initialRows);
-        setError(initialError ?? null);
-        loadedFacilityIdRef.current = initialFacilityId ?? null;
-        hasLoadedFacilityScopeRef.current = true;
-        setIsLoading(false);
-        return;
-      }
-
-      if (!force && hasLoadedFacilityScopeRef.current && selectedFacilityId === loadedFacilityIdRef.current) {
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-      try {
-        const liveRows = await fetchInvoicesFromSupabase(selectedFacilityId, residentIdFilter);
-        setRows(liveRows);
-        loadedFacilityIdRef.current = selectedFacilityId;
-        hasLoadedFacilityScopeRef.current = true;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load data");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [initialError, initialFacilityId, initialLoadSucceeded, initialRows, residentIdFilter, selectedFacilityId],
-  );
-
-  useEffect(() => {
-    void fetchBilling();
-  }, [fetchBilling]);
-
-  useEffect(() => {
     const onRefresh = () => {
-      forceNextFetchRef.current = true;
-      void fetchBilling({ force: true });
+      void refetch();
     };
     window.addEventListener(BILLING_AR_OVERVIEW_REFRESH, onRefresh);
     return () => window.removeEventListener(BILLING_AR_OVERVIEW_REFRESH, onRefresh);
-  }, [fetchBilling]);
+  }, [refetch]);
 
   const period = useMemo(() => {
     if (periodPreset === "custom") {
@@ -511,37 +485,45 @@ function BillingInvoiceLedgerInner({
     return sortedTableRows.slice(start, start + hubPageSize);
   }, [hubPageSize, invoiceHubPage, isInvoicesHub, sortedTableRows]);
 
+  const hubScopeFingerprint = useMemo(
+    () =>
+      [
+        hubPageSize,
+        balanceDueOnly,
+        customPeriodFrom,
+        customPeriodTo,
+        ledgerFacilityIds?.join(",") ?? "",
+        payerType,
+        periodPreset,
+        residentIdFilter,
+        search,
+        selectedFacilityId,
+        status,
+      ].join("|"),
+    [
+      hubPageSize,
+      balanceDueOnly,
+      customPeriodFrom,
+      customPeriodTo,
+      ledgerFacilityIds,
+      payerType,
+      periodPreset,
+      residentIdFilter,
+      search,
+      selectedFacilityId,
+      status,
+    ],
+  );
+  const hubScopeFingerprintRef = useRef(hubScopeFingerprint);
   useEffect(() => {
-    setInvoiceHubPage(1);
-  }, [
-    hubPageSize,
-    balanceDueOnly,
-    customPeriodFrom,
-    customPeriodTo,
-    ledgerFacilityIds,
-    payerType,
-    periodPreset,
-    residentIdFilter,
-    search,
-    selectedFacilityId,
-    status,
-  ]);
-
-  useEffect(() => {
-    setExpandedHubRowId(null);
-    setHubSelectedIds(new Set());
-  }, [
-    balanceDueOnly,
-    customPeriodFrom,
-    customPeriodTo,
-    ledgerFacilityIds,
-    payerType,
-    periodPreset,
-    residentIdFilter,
-    search,
-    selectedFacilityId,
-    status,
-  ]);
+    if (hubScopeFingerprintRef.current === hubScopeFingerprint) return;
+    hubScopeFingerprintRef.current = hubScopeFingerprint;
+    queueMicrotask(() => {
+      setInvoiceHubPage(1);
+      setExpandedHubRowId(null);
+      setHubSelectedIds(new Set());
+    });
+  }, [hubScopeFingerprint]);
 
   const hubSelectedRows = useMemo(
     () => sortedTableRows.filter((r) => hubSelectedIds.has(r.id)),
@@ -1270,8 +1252,7 @@ function BillingInvoiceLedgerInner({
         <AdminLiveDataFallbackNotice
           message={error}
           onRetry={() => {
-            forceNextFetchRef.current = true;
-            void fetchBilling({ force: true });
+            void refetch();
           }}
         />
       ) : null}
@@ -2095,15 +2076,17 @@ function BillingInvoiceLedgerInner({
 
 export function BillingInvoiceLedger(props: BillingInvoiceLedgerProps) {
   return (
-    <Suspense
-      fallback={
-        <div className="rounded-xl border border-border bg-card p-6 text-[13px] text-muted-foreground shadow-[var(--shadow-card)] ring-1 ring-border/60">
-          Loading billing ledger…
-        </div>
-      }
-    >
-      <BillingInvoiceLedgerInner {...props} />
-    </Suspense>
+    <QueryClientLayout>
+      <Suspense
+        fallback={
+          <div className="rounded-xl border border-border bg-card p-6 text-[13px] text-muted-foreground shadow-[var(--shadow-card)] ring-1 ring-border/60">
+            Loading billing ledger…
+          </div>
+        }
+      >
+        <BillingInvoiceLedgerInner {...props} />
+      </Suspense>
+    </QueryClientLayout>
   );
 }
 
