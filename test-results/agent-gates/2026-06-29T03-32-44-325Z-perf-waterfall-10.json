@@ -1,0 +1,135 @@
+{
+  "segment": "perf-waterfall-10",
+  "timestamp": "2026-06-29T03:32:44.325Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 25,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 133,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "failed",
+      "duration_ms": 1691,
+      "stdout": "# npm audit report\n\n@babel/core  <=7.29.0\n@babel/core: Arbitrary File Read via sourceMappingURL Comment - https://github.com/advisories/GHSA-4x5r-pxfx-6jf8\nfix available via `npm audit fix`\nnode_modules/@babel/core\n\n@opentelemetry/core  <2.8.0\nSeverity: moderate\nOpenTelemetry Core: Unbounded memory allocation in W3C Baggage propagation - https://github.com/advisories/GHSA-8988-4f7v-96qf\nfix available via `npm audit fix --force`\nWill install @sentry/nextjs@6.3.5, which is a breaking change\nnode_modules/@opentelemetry/core\n  @opentelemetry/instrumentation-http  <=0.16.0 || 0.19.1-alpha.7 - 0.218.0\n  Depends on vulnerable versions of @opentelemetry/core\n  node_modules/@opentelemetry/instrumentation-http\n    @sentry/node  8.0.0-alpha.1 - 10.53.1\n    Depends on vulnerable versions of @opentelemetry/instrumentation-http\n    node_modules/@sentry/node\n      @sentry/nextjs  >=6.3.6\n      Depends on vulnerable versions of @sentry/node\n      Depends on vulnerable versions of next\n      node_modules/@sentry/nextjs\n  @opentelemetry/resources  0.8.0 - 2.7.1\n  Depends on vulnerable versions of @opentelemetry/core\n  node_modules/@opentelemetry/resources\n  @opentelemetry/sdk-trace-base  <=2.7.1\n  Depends on vulnerable versions of @opentelemetry/core\n  Depends on vulnerable versions of @opentelemetry/resources\n  node_modules/@opentelemetry/sdk-trace-base\n\njs-yaml  <=4.1.1\nSeverity: moderate\nJS-YAML: Quadratic-complexity DoS in merge key handling via repeated aliases - https://github.com/advisories/GHSA-h67p-54hq-rp68\nfix available via `npm audit fix`\nnode_modules/js-yaml\n\npostcss  <8.5.10\nSeverity: moderate\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nfix available via `npm audit fix --force`\nWill install next@9.3.3, which is a breaking change\nnode_modules/next/node_modules/postcss\n  next  9.3.4-canary.0 - 16.3.0-canary.5\n  Depends on vulnerable versions of postcss\n  node_modules/next\n\nvite  8.0.0 - 8.0.15\nSeverity: high\nlaunch-editor: NTLMv2 hash disclosure via UNC path handling on Windows - https://github.com/advisories/GHSA-v6wh-96g9-6wx3\nvite: `server.fs.deny` bypass on Windows alternate paths - https://github.com/advisories/GHSA-fx2h-pf6j-xcff\nfix available via `npm audit fix`\nnode_modules/vite\n\nws  7.0.0 - 7.5.10 || 8.0.0 - 8.20.1\nSeverity: high\nws: Memory exhaustion DoS from tiny fragments and data chunks - https://github.com/advisories/GHSA-96hv-2xvq-fx4p\nws: Memory exhaustion DoS from tiny fragments and data chunks - https://github.com/advisories/GHSA-96hv-2xvq-fx4p\nfix available via `npm audit fix`\nnode_modules/webpack-bundle-analyzer/node_modules/ws\nnode_modules/ws\n\n12 vulnerabilities (1 low, 9 moderate, 2 high)\n\nTo address issues that do not require attention, run:\n  npm audit fix\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 5358,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m3:32AM\u001b[0m \u001b[32mINF\u001b[0m 1233 commits scanned.\n\u001b[90m3:32AM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 4.57s\n\u001b[90m3:32AM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 23730,
+      "stdout": "Constitution lint passed for smart-rounding scope (23 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 166,
+      "stdout": "[migrations:check] PASS: 309 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..306\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 23480,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 281_phase1_staff_seed.sql\n NOTICE:  enum label \"owner\" already exists, skipping\nNOTICE:  enum label \"ceo\" already exists, skipping\nNOTICE:  enum label \"coo\" already exists, skipping\nNOTICE:  enum label \"cfo\" already exists, skipping\nNOTICE:  enum label \"assistant_administrator\" already exists, skipping\nNOTICE:  enum label \"admin_support_coordinator\" already exists, skipping\nNOTICE:  enum label \"marketing_consultant\" already exists, skipping\nNOTICE:  enum label \"maintenance_director\" already exists, skipping\nNOTICE:  enum label \"maintenance_standby\" already exists, skipping\nNOTICE:  enum label \"medication_tech\" already exists, skipping\nNOTICE:  enum label \"resident_aide\" already exists, skipping\nNOTICE:  enum label \"dietary_aide\" already exists, skipping\nNOTICE:  enum label \"activity_aide\" already exists, skipping\nNOTICE:  enum label \"resident_services_coordinator\" already exists, skipping\nERROR:  insert or update on table \"staff\" violates foreign key constraint \"staff_created_by_fkey\"\nDETAIL:  Key (created_by)=(062c3cfb-53a5-4482-814a-cbef2b028760) is not present in table \"users\".\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default \"max_connections\" ... 100\nselecting default \"shared_buffers\" ... 128MB\nselecting default time zone ... Etc/UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-06-29 03:33:16.237 UTC [55] LOG:  starting PostgreSQL 17.10 (Debian 17.10-1.pgdg12+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit\n2026-06-29 03:33:16.238 UTC [55] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-06-29 03:33:16.240 UTC [58] LOG:  database system was shut down at 2026-06-29 03:33:16 UTC\n2026-06-29 03:33:16.242 UTC [55] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\nwaiting for server to shut down....2026-06-29 03:33:16.347 UTC [55] LOG:  received fast shutdown request\n2026-06-29 03:33:16.347 UTC [55] LOG:  aborting any active transactions\n2026-06-29 03:33:16.348 UTC [55] LOG:  background worker \"logical replication launcher\" (PID 61) exited with exit code 1\n2026-06-29 03:33:16.348 UTC [56] LOG:  shutting down\n2026-06-29 03:33:16.349 UTC [56] LOG:  checkpoint starting: shutdown immediate\n2026-06-29 03:33:16.351 UTC [56] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14E4F18, redo lsn=0/14E4F18\n2026-06-29 03:33:16.353 UTC [55] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 2277,
+      "stdout": "[migrations:check] PASS: 309 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..306\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n  Suggestion: Wait for the build to complete.\n",
+      "stderr": "⨯ Another next build process is already running.\n\n  This could be:\n  - A next build still in progress\n  - A previous build that didn't exit cleanly\n\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 361,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "command": "npm run design:review",
+      "status": "passed",
+      "duration_ms": 2529,
+      "stdout": "[no-schema-leak] PASS: no schema leaks flagged in TSX/JSX under src/\n[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "command": "npm run a11y:routes",
+      "status": "passed",
+      "duration_ms": 1707,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 3,
+    "skipped": 1,
+    "blocking_failures": [
+      "hygiene.npm-audit",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-06-29T03-32-44-325Z-perf-waterfall-10.json"
+  ]
+}
