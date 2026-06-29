@@ -6,7 +6,8 @@ const repoRoot = process.cwd();
 const readSource = (relativePath: string) =>
   readFileSync(path.join(repoRoot, relativePath), "utf8");
 
-const admissionsSource = readSource("src/app/(admin)/admin/admissions/page.tsx");
+const admissionsBootstrapSource = readSource("src/lib/admissions/admissions-hub-bootstrap.ts");
+const admissionsClientSource = readSource("src/components/admissions/AdminAdmissionsPageClient.tsx");
 const newAdmissionSource = readSource("src/app/(admin)/admin/admissions/new/page.tsx");
 const invoiceSource = readSource("src/app/(admin)/vendors/invoices/page.tsx");
 const purchaseOrderSource = readSource("src/app/(admin)/vendors/purchase-orders/page.tsx");
@@ -23,24 +24,29 @@ const facilityRatesHookSource = readSource("src/hooks/useFacilityRates.ts");
 const facilityBuildingProfileHookSource = readSource("src/hooks/useFacilityBuildingProfile.ts");
 const facilityOverviewTabSource = readSource("src/components/admin/facilities/tabs/OverviewTab.tsx");
 const operationsTodaySource = readSource("src/app/(admin)/admin/operations/page.tsx");
+const incidentDetailLoaderSource = readSource("src/lib/incidents/load-incident-detail.ts");
+const incidentDetailPageSource = readSource("src/app/(admin)/incidents/[id]/page.tsx");
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
-    expect(admissionsSource).toContain("const ADMISSIONS_HUB_PREVIEW_LIMIT = 100;");
+    expect(admissionsBootstrapSource).toContain("export const ADMISSIONS_HUB_PREVIEW_LIMIT = 100;");
 
-    const limitMatches = admissionsSource.match(/\.limit\(ADMISSIONS_HUB_PREVIEW_LIMIT\)/g) ?? [];
+    const limitMatches =
+      admissionsBootstrapSource.match(/\.limit\(ADMISSIONS_HUB_PREVIEW_LIMIT\)/g) ?? [];
     expect(limitMatches).toHaveLength(5);
 
-    expect(admissionsSource).toContain('.select("id", { count: "exact", head: true })');
+    expect(admissionsBootstrapSource).toContain('.select("id", { count: "exact", head: true })');
   });
 
   it("guards admissions async loaders from stale state writes", () => {
-    expect(admissionsSource).toContain("void load(() => !cancelled);");
-    expect(admissionsSource).toContain("if (!isCurrent()) return;");
-    expect(admissionsSource).toContain("if (isCurrent()) setLoading(false);");
-    expect(admissionsSource).toContain("if (cancelled) return;");
-    expect(admissionsSource).toContain("const isCurrentLoadContext = useCallback(");
-    expect(admissionsSource).toContain("await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));");
+    expect(admissionsClientSource).toContain("void load(() => !cancelled);");
+    expect(admissionsClientSource).toContain("if (!isCurrent()) return;");
+    expect(admissionsClientSource).toContain("if (isCurrent()) setLoading(false);");
+    expect(admissionsClientSource).toContain("cancelled = true;");
+    expect(admissionsClientSource).toContain("const isCurrentLoadContext = useCallback(");
+    expect(admissionsClientSource).toContain(
+      "await load(() => isCurrentLoadContext(actionFacilityId, actionHubScope));",
+    );
 
     expect(newAdmissionSource).toContain("void loadRefs(() => !cancelled);");
     expect(newAdmissionSource).toContain("if (cancelled) return;");
@@ -150,5 +156,12 @@ describe("admin list query bounds", () => {
     expect(referralsBootstrapSource).toContain('.eq("facility_id", selectedFacilityId)');
     expect(referralsBootstrapSource).toContain('.is("deleted_at", null)');
     expect(referralsBootstrapSource).toContain('.not("status", "eq", "cancelled")');
+  });
+
+  it("server-bootstraps incident detail and parallelizes detail loader queries", () => {
+    expect(incidentDetailPageSource).toContain("loadIncidentDetailBootstrap");
+    expect(incidentDetailPageSource).toContain("AdminIncidentDetailPageClient");
+    expect(incidentDetailLoaderSource).toContain("await Promise.all([");
+    expect(incidentDetailLoaderSource.match(/await Promise\.all\(\[/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
 });
