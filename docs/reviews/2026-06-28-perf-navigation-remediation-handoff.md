@@ -363,4 +363,35 @@ BASE_URL=http://localhost:3000 RUNS=3 \
 
 ---
 
-*Synthesized from parallel codebase audits (route inventory, pattern audit, segment planning) on 2026-06-28.*
+## Segment completion: perf-nav-02 (2026-06-29)
+
+**Status:** Implemented — gate artifact `test-results/agent-gates/2026-06-29T02-57-53-820Z-perf-nav-02.json`
+
+| Check | Result |
+|-------|--------|
+| ESLint + constitution | PASS |
+| Build | PASS |
+| Design review (`--ui`) | PASS |
+| Gitleaks / secrets | PASS |
+| npm audit | FAIL (pre-existing hono/vite/ws — not introduced by this segment) |
+
+### Shipped
+
+- `src/components/layout/navigation-pending.tsx` — `NavigationPendingProvider`, `NavPendingIndicator`, `HavenNavLink` (transition-based pending)
+- `src/components/layout/admin-route-loading.tsx` — shared route skeleton
+- `src/components/layout/AppShell.tsx` — provider wrapper, pending bar in `<main>`, all shell nav uses `HavenNavLink` / `navigate()`
+- `src/components/layout/HavenShellBrandLink.tsx` — uses `HavenNavLink`
+- Segment `loading.tsx`: `residents/`, `incidents/`, `billing/`, `staff/`, `admin/admissions/`
+- `@keyframes haven-nav-pending` in `globals.css`
+
+### Manual verify
+
+1. `npm run dev` → log in → click sidebar links (Residents, Incidents, Billing)
+2. Expect: thin primary progress bar at top of main + slight opacity dip immediately on click
+3. RSC routes (residents list, incidents list) should show skeleton in main during transition
+
+### Next segment
+
+**perf-nav-06** — RSC bootstrap for rounding, med errors, care-plans reviews-due, assessments overdue, discharge hub.
+
+---
