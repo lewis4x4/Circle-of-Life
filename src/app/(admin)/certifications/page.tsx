@@ -19,6 +19,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -148,7 +149,7 @@ export default function AdminCertificationsPage() {
   // Preserve the single error surface: query load errors, or a CSV export error.
   const error =
     exportError ??
-    (queryError ? (queryError instanceof Error ? queryError.message : "Failed to load data") : null);
+    (queryError ? formatLiveDataLoadError(queryError, "Failed to load data") : null);
   // Retry button re-runs the query (was a manual load()).
   const load = useCallback(() => {
     void refetch();

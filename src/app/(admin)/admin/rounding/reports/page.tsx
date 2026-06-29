@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -253,8 +254,10 @@ export default function AdminRoundingReportsPage() {
         setBreakdowns(EMPTY_BREAKDOWNS);
       }
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load completion report. Confirm the range and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load completion report. Confirm the range and retry."),
+      );
       setSummary(EMPTY_SUMMARY);
       setBreakdowns(EMPTY_BREAKDOWNS);
       setLoadState("error");

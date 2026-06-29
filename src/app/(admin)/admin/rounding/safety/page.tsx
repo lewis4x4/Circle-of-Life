@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
@@ -115,8 +116,10 @@ export default function SafetyScoresPage() {
       if (error) throw error;
       setRows((data ?? []) as ScoreRow[]);
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load safety scores. Confirm facility scope and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load safety scores. Confirm facility scope and retry."),
+      );
       setRows([]);
       setLoadState("error");
     }

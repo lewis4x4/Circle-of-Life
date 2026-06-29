@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -157,8 +158,8 @@ export default function AdminInvoiceDetailPage() {
           setGlResult({ journalEntryId: existingJe.data.id, alreadyPosted: true });
         }
       }
-    } catch {
-      setError("Could not load this invoice.");
+    } catch (err) {
+      setError(formatLiveDataLoadError(err, "Could not load this invoice."));
       setInvoice(null);
       setLines([]);
     } finally {

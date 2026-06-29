@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
@@ -107,7 +108,7 @@ export function AdminSchedulesPageClient({
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
       setRows(live);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
+      setError(formatLiveDataLoadError(err, "Failed to load data"));
     } finally {
       setIsLoading(false);
     }

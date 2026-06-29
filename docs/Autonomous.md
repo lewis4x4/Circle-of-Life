@@ -4,6 +4,20 @@
 
 ---
 
+## RECORD — production schema drift repair (2026-06-28)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `schema-drift-250-288-repair` |
+| **Mission alignment** | `risk` — clinical resident profile and intake workflows were blocked by remote DDL drift; repair restores operator visibility; migration tracking process still needs `migrations:verify:remote` in ops cadence. |
+| **Root cause** | Migrations **250–288** were recorded in `supabase_migrations.schema_migrations` on `manfqmasfqppukpobpld` but most DDL never executed (same class as migration **174** / `237_restore_dietary_command_deck.sql`). |
+| **Symptom** | Clinical resident detail: “Live resident profile is unavailable right now.” Postgres `42703` — e.g. `residents.code_status_verified_at does not exist`. |
+| **Repair** | Re-applied migration SQL via `npx supabase db query --linked -f supabase/migrations/NNN_*.sql` for **250–288** (257/259 repaired earlier). Benign skips: **274** (`exec_nlq_messages` exists), **282** (seed dup), **283** (enum exists). |
+| **Prevention** | Added `npm run migrations:verify:remote` (`scripts/verify-remote-schema.mjs`) — probes 35 critical columns/tables. Added `src/lib/supabase/query-error.ts` + `src/lib/live-data-fallback.ts` for dev-visible load errors. |
+| **Gates** | Run `npm run migrations:verify:remote` after any remote migration push; `migrations:verify:pg` alone does not catch remote drift. |
+
+---
+
 ## Source-of-truth files (BOOT — read every session)
 
 | # | Path | Role |

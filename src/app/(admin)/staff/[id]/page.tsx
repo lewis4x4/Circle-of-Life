@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
@@ -188,8 +189,13 @@ export default function AdminStaffDetailPage() {
       const shiftRes = (await shiftQ) as unknown as QueryListResult<SupabaseShiftRow>;
       if (shiftRes.error) throw shiftRes.error;
       setShifts(shiftRes.data ?? []);
-    } catch {
-      setError("Staff profile could not be loaded. Try again or return to the roster.");
+    } catch (err) {
+      setError(
+        formatLiveDataLoadError(
+          err,
+          "Staff profile could not be loaded. Try again or return to the roster.",
+        ),
+      );
     } finally {
       setLoading(false);
     }

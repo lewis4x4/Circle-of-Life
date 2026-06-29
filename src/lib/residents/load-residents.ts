@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { throwIfQueryError } from "@/lib/supabase/query-error";
 import type { Database } from "@/types/database";
 
 export type Acuity = 1 | 2 | 3;
@@ -85,10 +86,7 @@ export async function fetchResidentsFromSupabase(
 
   const residentsResult = (await residentsQuery) as unknown as QueryResult<SupabaseResidentJoined>;
   const residents = residentsResult.data ?? [];
-  const residentsError = residentsResult.error;
-  if (residentsError) {
-    throw residentsError;
-  }
+  throwIfQueryError(residentsResult.error, "residents roster");
 
   if (residents.length === 0) {
     return [];

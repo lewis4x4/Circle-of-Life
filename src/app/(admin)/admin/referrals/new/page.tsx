@@ -38,6 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -146,27 +147,29 @@ export default function AdminReferralsNewPage() {
       return;
     }
     setLoadingSources(true);
-    const { data: fac } = await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).single();
-    const orgId = fac?.organization_id;
-    if (!orgId) {
-      setSources([]);
-      setLoadingSources(false);
-      return;
-    }
-    const { data, error: qErr } = await supabase
-      .from("referral_sources")
-      .select("id, name")
-      .eq("organization_id", orgId)
-      .is("deleted_at", null)
-      .eq("is_active", true)
-      .or(`facility_id.is.null,facility_id.eq.${selectedFacilityId}`)
-      .order("name");
-    if (qErr) {
-      setSources([]);
-    } else {
+    try {
+      const { data: fac } = await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).single();
+      const orgId = fac?.organization_id;
+      if (!orgId) {
+        setSources([]);
+        return;
+      }
+      const { data, error: qErr } = await supabase
+        .from("referral_sources")
+        .select("id, name")
+        .eq("organization_id", orgId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .or(`facility_id.is.null,facility_id.eq.${selectedFacilityId}`)
+        .order("name");
+      if (qErr) throw qErr;
       setSources((data ?? []) as { id: string; name: string }[]);
+    } catch (err) {
+      setSources([]);
+      setFormError(formatLiveDataLoadError(err, "Referral sources are unavailable right now."));
+    } finally {
+      setLoadingSources(false);
     }
-    setLoadingSources(false);
   }, [supabase, selectedFacilityId]);
 
   useEffect(() => {

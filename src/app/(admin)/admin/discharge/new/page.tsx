@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -125,6 +126,7 @@ export default function AdminDischargeNewPage() {
   const [draftRows, setDraftRows] = useState<DraftCardRow[]>([]);
   const [loadingDrafts, setLoadingDrafts] = useState(true);
   const [draftPanelFetchFailed, setDraftPanelFetchFailed] = useState(false);
+  const [draftPanelLoadError, setDraftPanelLoadError] = useState<string | null>(null);
 
   const today = useMemo(() => new Date(), []);
   const minMax = useMemo(
@@ -160,11 +162,13 @@ export default function AdminDischargeNewPage() {
       setLoadingRefs(false);
       setLoadingDrafts(false);
       setDraftPanelFetchFailed(false);
+      setDraftPanelLoadError(null);
       return;
     }
     setLoadingRefs(true);
     setLoadingDrafts(true);
     setDraftPanelFetchFailed(false);
+    setDraftPanelLoadError(null);
 
     const { data: draftData, error: draftErr } = await supabase
       .from("discharge_med_reconciliation")
@@ -178,6 +182,7 @@ export default function AdminDischargeNewPage() {
     if (draftErr) {
       logSupabasePostgrestError("discharge-new.drafts", draftErr, { facilityId: scopedFacilityId });
       setDraftPanelFetchFailed(true);
+      setDraftPanelLoadError(formatLiveDataLoadError(draftErr, DRAFTS_PANEL_GENERIC_ERROR));
       setDraftRows([]);
     } else {
       const rows = (draftData ?? []) as unknown as DraftCardRow[];
@@ -347,7 +352,7 @@ export default function AdminDischargeNewPage() {
           facilityId: fid,
           residentId,
         });
-        setError(CREATE_DRAFT_GENERIC_ERROR);
+        setError(formatLiveDataLoadError(insErr, CREATE_DRAFT_GENERIC_ERROR));
         return;
       }
       if (inserted?.id) {
@@ -610,7 +615,9 @@ export default function AdminDischargeNewPage() {
             <div className="mt-4 space-y-3">
               {draftPanelFetchFailed ? (
                 <div className="space-y-2" role="alert">
-                  <p className="text-left text-[13px] font-medium text-destructive">{DRAFTS_PANEL_GENERIC_ERROR}</p>
+                  <p className="text-left text-[13px] font-medium text-destructive">
+                    {draftPanelLoadError ?? DRAFTS_PANEL_GENERIC_ERROR}
+                  </p>
                   <Button
                     type="button"
                     variant="outline"

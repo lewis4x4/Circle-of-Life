@@ -2,8 +2,9 @@
 /**
  * Homewood Lodge ALF — live resident import.
  *
- * Source:
- *   /Users/brianlewis/Circle of Life/Circle-of-Life/scripts/homewood/data/homewood-residents.csv
+ * Sources:
+ *   scripts/homewood/data/homewood-residents.csv
+ *   scripts/homewood/data/homewood-residents-karen-coone.csv
  *
  * Target live tables:
  *   residents
@@ -28,8 +29,8 @@ import process from "node:process";
 import { createClient } from "@supabase/supabase-js";
 
 const ROOT = process.cwd();
-const DEFAULT_CSV =
-  "/Users/brianlewis/Circle of Life/Circle-of-Life/scripts/homewood/data/homewood-residents.csv";
+const DEFAULT_CSV = path.join(ROOT, "scripts", "homewood", "data", "homewood-residents.csv");
+const DEFAULT_ADDENDUM_CSV = path.join(ROOT, "scripts", "homewood", "data", "homewood-residents-karen-coone.csv");
 const DEFAULT_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001";
 const LOG_PATH = path.join(ROOT, "docs", "homewood", "RESIDENT_IMPORT_LOG.md");
@@ -67,6 +68,8 @@ function usage() {
     "",
     "Options:",
     `  --csv <path>             Source CSV (default: ${DEFAULT_CSV})`,
+    `  --addendum-csv <path>    Addendum CSV (default: ${DEFAULT_ADDENDUM_CSV})`,
+    "  --skip-addendum         Do not load the default Karen Coone addendum",
     "  --dry-run                Validate/plan only; no writes",
     "  --purge-demo             Soft-delete deterministic migration-120 demo Homewood residents before import",
     `  --facility-id <uuid>     Homewood facility id (default: ${DEFAULT_FACILITY_ID})`,
@@ -79,6 +82,8 @@ function usage() {
 function parseArgs(argv) {
   const args = {
     csv: DEFAULT_CSV,
+    addendumCsv: DEFAULT_ADDENDUM_CSV,
+    skipAddendum: false,
     dryRun: false,
     purgeDemo: false,
     facilityId: DEFAULT_FACILITY_ID,
@@ -90,6 +95,8 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--csv") args.csv = path.resolve(process.cwd(), argv[++i]);
+    else if (a === "--addendum-csv") args.addendumCsv = path.resolve(process.cwd(), argv[++i]);
+    else if (a === "--skip-addendum") args.skipAddendum = true;
     else if (a === "--dry-run") args.dryRun = true;
     else if (a === "--purge-demo") args.purgeDemo = true;
     else if (a === "--facility-id") args.facilityId = argv[++i];
@@ -214,26 +221,90 @@ function nameKey(row) {
   ].join("|");
 }
 
+function residentIdentityKey(row) {
+  const first = String(row.first_name || "").trim().toLowerCase();
+  const last = String(row.last_name || "").trim().toLowerCase();
+  const dob = String(row.date_of_birth || "").trim();
+  if (!first || !last || !dob) return null;
+  return `${first}|${last}|${dob}`;
+}
+
+function sourceLabel(filePath) {
+  return path.isAbsolute(filePath) ? path.relative(ROOT, filePath) : filePath;
+}
+
+function loadCsvSource(source) {
+  const csv = readFileSync(source.filePath, "utf8").replace(/^\uFEFF/, "");
+  const { header, records } = rowsToObjects(parseCsv(csv));
+  const label = sourceLabel(source.filePath);
+  return {
+    ...source,
+    label,
+    header,
+    records: records.map((record, index) => ({
+      ...record,
+      __sourceLabel: label,
+      __sourceRole: source.role,
+      __sourceRow: index + 2,
+    })),
+  };
+}
+
+function loadResidentSources(args) {
+  const sourcePaths = [{ role: "main roster", filePath: args.csv }];
+  if (!args.skipAddendum && path.resolve(args.addendumCsv) !== path.resolve(args.csv)) {
+    sourcePaths.push({ role: "Karen Coone addendum", filePath: args.addendumCsv });
+  }
+
+  for (const source of sourcePaths) {
+    if (!existsSync(source.filePath)) throw new Error(`${source.role} CSV not found: ${source.filePath}`);
+  }
+
+  const sources = sourcePaths.map(loadCsvSource);
+  const headerErrors = sources.flatMap((source) => {
+    const missingColumns = REQUIRED_COLUMNS.filter((c) => !source.header.includes(c));
+    return missingColumns.length
+      ? [`${source.label}: Missing required columns: ${missingColumns.join(", ")}`]
+      : [];
+  });
+
+  const records = [];
+  const seen = new Set();
+  const sourceWarnings = [];
+  for (const source of sources) {
+    for (const row of source.records) {
+      const key = residentIdentityKey(row);
+      if (key && seen.has(key)) {
+        sourceWarnings.push(
+          `Skipped duplicate resident identity from ${row.__sourceLabel} row ${row.__sourceRow}; first source retained.`,
+        );
+        continue;
+      }
+      if (key) seen.add(key);
+      records.push(row);
+    }
+  }
+
+  return { sources, records, headerErrors, sourceWarnings };
+}
+
 function splitDiagnosis(value) {
   const raw = String(value || "").trim();
   if (!raw) return [];
   return raw.split(",").map((part) => part.trim()).filter(Boolean).slice(0, 25);
 }
 
-function validateRows(header, records) {
+function validateRows(records) {
   const errors = [];
   const warnings = [];
-  const missingColumns = REQUIRED_COLUMNS.filter((c) => !header.includes(c));
-  if (missingColumns.length) {
-    errors.push(`Missing required columns: ${missingColumns.join(", ")}`);
-  }
 
   const seenKeys = new Set();
   const seenBeds = new Map();
   const valid = [];
 
   records.forEach((row, index) => {
-    const sourceRow = index + 2;
+    const sourceRow = row.__sourceRow ?? index + 2;
+    const sourceRef = `${row.__sourceLabel ?? "merged sources"} row ${sourceRow}`;
     const rowErrors = [];
     for (const column of REQUIRED_COLUMNS) {
       if (!String(row[column] || "").trim()) rowErrors.push(`missing ${column}`);
@@ -253,13 +324,15 @@ function validateRows(header, records) {
 
     const bedConflict = seenBeds.get(roomBed.display);
     if (bedConflict) {
-      rowErrors.push(`duplicate bed assignment ${roomBed.display} also used by row ${bedConflict}`);
+      rowErrors.push(`duplicate bed assignment ${roomBed.display} also used by ${bedConflict}`);
     }
-    seenBeds.set(roomBed.display, sourceRow);
+    seenBeds.set(roomBed.display, sourceRef);
 
     const normalized = {
       ...row,
       sourceRow,
+      source: row.__sourceLabel ?? "merged sources",
+      sourceRole: row.__sourceRole ?? "source",
       roomNumber: roomBed.roomNumber,
       bedLabel: roomBed.bedLabel,
       roomBed: roomBed.display,
@@ -271,13 +344,13 @@ function validateRows(header, records) {
     };
 
     if (rowErrors.length) {
-      errors.push(`Row ${sourceRow} (${row.first_name} ${row.last_name}): ${rowErrors.join("; ")}`);
+      errors.push(`${sourceRef} (${row.first_name} ${row.last_name}): ${rowErrors.join("; ")}`);
     } else {
       valid.push(normalized);
     }
 
     if (!normalized.emergency_contact_relationship) {
-      warnings.push(`Row ${sourceRow} (${row.first_name} ${row.last_name}): emergency contact relationship is blank.`);
+      warnings.push(`${sourceRef} (${row.first_name} ${row.last_name}): emergency contact relationship is blank.`);
     }
   });
 
@@ -481,13 +554,18 @@ function summarize(results) {
   }, {});
 }
 
-function writeLog(args, facility, results, counters, warnings) {
+function writeLog(args, facility, results, counters, warnings, sources) {
   const lines = [];
   lines.push("# Homewood — Live Resident Import Log");
   lines.push("");
   lines.push(`_Generated: \`${new Date().toISOString()}\` — mode: **${args.dryRun ? "DRY-RUN" : "WRITE"}**_`);
   lines.push("");
-  lines.push(`- Source CSV: \`${args.csv}\``);
+  lines.push("- Source CSVs:");
+  for (const source of sources) {
+    lines.push(
+      `  - \`${source.label}\` (${source.role}; ${source.records.length} row${source.records.length === 1 ? "" : "s"} loaded)`,
+    );
+  }
   lines.push(`- Facility: \`${facility?.name ?? "Homewood Lodge ALF"}\` (${args.facilityId})`);
   lines.push(`- Organization: \`${args.organizationId}\``);
   lines.push(`- Purge deterministic demo residents: \`${args.purgeDemo ? "yes" : "no"}\``);
@@ -508,11 +586,11 @@ function writeLog(args, facility, results, counters, warnings) {
   }
   lines.push("## Per-row detail");
   lines.push("");
-  lines.push("| Row | Resident | Room/Bed | Status | Detail |");
-  lines.push("|---:|---|---|---|---|");
+  lines.push("| Source | Row | Resident | Room/Bed | Status | Detail |");
+  lines.push("|---|---:|---|---|---|---|");
   for (const result of results) {
     lines.push(
-      `| ${result.sourceRow} | ${result.name.replace(/\|/g, "\\|")} | ${result.roomBed} | ${result.status} | ${result.detail.replace(/\|/g, "\\|")} |`,
+      `| ${result.source ?? "unknown"} | ${result.sourceRow} | ${result.name.replace(/\|/g, "\\|")} | ${result.roomBed} | ${result.status} | ${result.detail.replace(/\|/g, "\\|")} |`,
     );
   }
   lines.push("");
@@ -525,13 +603,12 @@ function writeLog(args, facility, results, counters, warnings) {
 
 async function run() {
   const args = parseArgs(process.argv.slice(2));
-  if (!existsSync(args.csv)) throw new Error(`CSV not found: ${args.csv}`);
-
-  const csv = readFileSync(args.csv, "utf8").replace(/^\uFEFF/, "");
-  const { header, records } = rowsToObjects(parseCsv(csv));
-  const { valid, errors, warnings } = validateRows(header, records);
-  if (errors.length) {
+  const { sources, records, headerErrors, sourceWarnings } = loadResidentSources(args);
+  const { valid, errors, warnings } = validateRows(records);
+  const allWarnings = [...sourceWarnings, ...warnings];
+  if (headerErrors.length || errors.length) {
     console.error("[homewood:residents] CSV validation failed:");
+    for (const error of headerErrors) console.error(`  - ${error}`);
     for (const error of errors) console.error(`  - ${error}`);
     process.exit(1);
   }
@@ -539,7 +616,17 @@ async function run() {
   const supa = await getSupabase(args);
   if (!supa) {
     console.log(`[homewood:residents] parse-only dry-run: ${valid.length} residents are structurally valid.`);
-    if (warnings.length) warnings.forEach((w) => console.warn(`[homewood:residents] WARN ${w}`));
+    if (allWarnings.length) allWarnings.forEach((w) => console.warn(`[homewood:residents] WARN ${w}`));
+    const parseResults = valid.map((row) => ({
+      source: row.source,
+      sourceRow: row.sourceRow,
+      name: `${row.first_name} ${row.last_name}`,
+      roomBed: row.roomBed,
+      status: "parse_ok",
+      detail: `payer=${row.payer_type}; contact=${row.emergency_contact_name}`,
+    }));
+    writeLog(args, null, parseResults, { demoResidentsPurged: 0 }, allWarnings, sources);
+    console.log(`[homewood:residents] log: ${path.relative(ROOT, LOG_PATH)}`);
     return;
   }
 
@@ -554,6 +641,7 @@ async function run() {
 
   for (const row of valid) {
     const result = {
+      source: row.source,
       sourceRow: row.sourceRow,
       name: `${row.first_name} ${row.last_name}`,
       roomBed: row.roomBed,
@@ -619,12 +707,12 @@ async function run() {
   if (args.verbose || args.dryRun) {
     for (const result of results) {
       console.log(
-        `[homewood:residents] row=${result.sourceRow} ${result.status} ${result.name} ${result.roomBed} — ${result.detail}`,
+        `[homewood:residents] source=${result.source} row=${result.sourceRow} ${result.status} ${result.name} ${result.roomBed} — ${result.detail}`,
       );
     }
   }
 
-  writeLog(args, facility, results, counters, warnings);
+  writeLog(args, facility, results, counters, allWarnings, sources);
   const tally = summarize(results);
   console.log(`[homewood:residents] ${args.dryRun ? "dry-run" : "write"} tally: ${JSON.stringify(tally)}`);
   console.log(`[homewood:residents] demo residents soft-deleted/planned: ${counters.demoResidentsPurged}`);

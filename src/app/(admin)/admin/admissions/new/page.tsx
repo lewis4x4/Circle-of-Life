@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { QuietDatePicker, formatQuietIsoForDisplay } from "@/components/ui/quiet-date-picker";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -565,6 +566,7 @@ function AdmissionsNewInner() {
     }
     setLoadingRefs(true);
 
+    try {
     const { data: fac } = await supabase
       .from("facilities")
       .select("organization_id, name, total_licensed_beds, timezone")
@@ -673,7 +675,18 @@ function AdmissionsNewInner() {
     setLeads((ld.data ?? []) as LeadOption[]);
     setBeds(mappedBeds);
     setReferralSources(sources);
+    } catch (err) {
+      toast.error(
+        formatLiveDataLoadError(err, "Admission intake reference data could not be loaded."),
+      );
+      setResidents([]);
+      setLeads([]);
+      setBeds([]);
+      setReferralSources([]);
+      setFacilityPanel(null);
+    } finally {
     setLoadingRefs(false);
+    }
   }, [supabase, selectedFacilityId]);
 
   useEffect(() => {

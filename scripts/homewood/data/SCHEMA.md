@@ -1,8 +1,8 @@
 # Homewood Resident Import — CSV Schema
 
-The resident-import script (`scripts/homewood/import-residents.mjs`) reads `scripts/homewood/data/homewood-residents.csv` and creates one resident plus related rows per CSV row.
+The resident-import script (`scripts/homewood/import-residents.mjs`) reads `scripts/homewood/data/homewood-residents.csv` plus the restored one-row Karen Coone addendum at `scripts/homewood/data/homewood-residents-karen-coone.csv`, then creates one resident plus related rows per effective CSV row.
 
-The real CSV is **gitignored**. Only the `.example` file is committed. Real resident data must never be committed.
+The real main CSV is **gitignored**. Only the `.example` file and the Karen Coone addendum are committed. Real resident data must never be committed unless the owner explicitly approves that specific source artifact.
 
 ## Columns
 
@@ -36,7 +36,7 @@ All columns are required in the header (the file must have all 12 column names).
 
 - `facility_id` is fixed to `00000000-0000-0000-0002-000000000003` (override with `HOMEWOOD_FACILITY_ID` env var).
 - `organization_id` is fetched from `facilities` for the Homewood row.
-- `room_id` is looked up by `rooms.room_number` filtered to Homewood. If a CSV row references a `room_number` that doesn't exist at Homewood, the row is reported as `FAILED` and no rows are written.
+- `room_id` is looked up by `rooms.room_number` filtered to Homewood. Bed-suffixed values such as `16B` also validate against room `16`; the legacy `scripts/homewood/import-residents.mjs` does not assign the specific bed.
 
 ## What is *not* imported
 
@@ -70,4 +70,4 @@ Both commands write `docs/homewood/IMPORT_LOG.md` summarizing per-row outcome. T
 
 ## Re-runs
 
-Re-running the script is safe. Existing residents (matched by the idempotency key) are updated in place; new rows are inserted; orphans are not deleted. If a roster correction is needed, edit the CSV and re-run; rows that match an existing resident will UPDATE, not duplicate.
+Re-running the script is safe. Existing residents (matched by the idempotency key) are updated in place; new rows are inserted; orphans are not deleted. If a resident identity appears in both the main roster and the addendum, the main roster row is retained and the addendum duplicate is skipped with a source warning. If a roster correction is needed, edit the CSV and re-run; rows that match an existing resident will UPDATE, not duplicate.

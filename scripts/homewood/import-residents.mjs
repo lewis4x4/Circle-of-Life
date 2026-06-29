@@ -2,9 +2,10 @@
 /**
  * Homewood Lodge ALF — resident import.
  *
- * Reads a CSV at `scripts/homewood/data/homewood-residents.csv` and creates
- * `residents`, `resident_payers`, `resident_contacts`, and an initial
- * `resident_status_history` row for each row.
+ * Reads the main CSV at `scripts/homewood/data/homewood-residents.csv`, plus
+ * the restored Karen Coone one-row addendum, and creates `residents`,
+ * `resident_payers`, `resident_contacts`, and an initial
+ * `resident_status_history` row for each imported resident.
  *
  * Idempotent on (facility_id, first_name, last_name, date_of_birth).
  *
@@ -24,6 +25,8 @@
  * Optional env:
  *   HOMEWOOD_FACILITY_ID (default: 00000000-0000-0000-0002-000000000003)
  *   HOMEWOOD_CSV_PATH    (default: scripts/homewood/data/homewood-residents.csv)
+ *   HOMEWOOD_ADDENDUM_CSV_PATH
+ *     (default: scripts/homewood/data/homewood-residents-karen-coone.csv)
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -34,6 +37,7 @@ import { createClient } from "@supabase/supabase-js";
 const ROOT = process.cwd();
 const DEFAULT_HOMEWOOD_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const DEFAULT_CSV_PATH = "scripts/homewood/data/homewood-residents.csv";
+const DEFAULT_ADDENDUM_CSV_PATH = "scripts/homewood/data/homewood-residents-karen-coone.csv";
 const LOG_PATH = path.join(ROOT, "docs", "homewood", "IMPORT_LOG.md");
 
 const REQUIRED_COLUMNS = [
@@ -141,6 +145,70 @@ function rowsToObjects(rows) {
   return { header, records };
 }
 
+function resolveInputPath(inputPath) {
+  return path.isAbsolute(inputPath) ? inputPath : path.join(ROOT, inputPath);
+}
+
+function sourceLabel(filePath) {
+  return path.isAbsolute(filePath) ? path.relative(ROOT, filePath) : filePath;
+}
+
+function residentIdentityKey(row) {
+  const first = String(row.first_name || "").trim().toLowerCase();
+  const last = String(row.last_name || "").trim().toLowerCase();
+  const dob = String(row.date_of_birth || "").trim();
+  if (!first || !last || !dob) return null;
+  return `${first}|${last}|${dob}`;
+}
+
+function normalizeRoomBed(value) {
+  const raw = String(value ?? "").trim().toUpperCase().replace(/\s+/g, "");
+  const match = raw.match(/^(\d+)([A-Z])?$/);
+  if (!match) return { roomNumber: raw, bedLabel: null, display: raw };
+  const roomNumber = String(Number.parseInt(match[1], 10));
+  const bedLabel = match[2] || null;
+  return { roomNumber, bedLabel, display: bedLabel ? `${roomNumber}${bedLabel}` : roomNumber };
+}
+
+function loadCsvSource(source) {
+  const csv = readFileSync(source.filePath, "utf8").replace(/^\uFEFF/, "");
+  const { header, records } = rowsToObjects(parseCsv(csv));
+  const label = sourceLabel(source.filePath);
+  return {
+    ...source,
+    label,
+    header,
+    records: records.map((record, index) => ({
+      ...record,
+      __sourceLabel: label,
+      __sourceRole: source.role,
+      __sourceRow: index + 2,
+    })),
+  };
+}
+
+function mergeSourceRecords(sources) {
+  const records = [];
+  const seen = new Set();
+  const warnings = [];
+
+  for (const source of sources) {
+    for (const row of source.records) {
+      const key = residentIdentityKey(row);
+      if (key && seen.has(key)) {
+        warnings.push(
+          `Skipped duplicate resident identity from ${row.__sourceLabel} row ${row.__sourceRow}; first source retained.`,
+        );
+        continue;
+      }
+      if (key) seen.add(key);
+      records.push(row);
+    }
+  }
+
+  return { records, warnings };
+}
+
 function safeMessage(err) {
   if (!err) return "";
   if (typeof err === "string") return err;
@@ -153,7 +221,16 @@ async function main() {
   const dryRun = args.includes("--dry-run");
   const csvOverride = args.find((a) => a.startsWith("--csv="));
   const csvArg = csvOverride ? csvOverride.slice("--csv=".length) : process.env.HOMEWOOD_CSV_PATH ?? DEFAULT_CSV_PATH;
-  const csvPath = path.isAbsolute(csvArg) ? csvArg : path.join(ROOT, csvArg);
+  const csvPath = resolveInputPath(csvArg);
+  const addendumOverride = args.find((a) => a.startsWith("--addendum="));
+  const addendumArg = addendumOverride
+    ? addendumOverride.slice("--addendum=".length)
+    : process.env.HOMEWOOD_ADDENDUM_CSV_PATH ?? DEFAULT_ADDENDUM_CSV_PATH;
+  const addendumPath = resolveInputPath(addendumArg);
+  const sourcePaths = [{ role: "main roster", filePath: csvPath }];
+  if (path.resolve(addendumPath) !== path.resolve(csvPath)) {
+    sourcePaths.push({ role: "Karen Coone addendum", filePath: addendumPath });
+  }
 
   const url = requireEnv("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
   const serviceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -161,27 +238,38 @@ async function main() {
 
   const supa = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-  console.log(`[homewood:import-residents] mode: ${dryRun ? "DRY-RUN" : "WRITE"}  csv: ${path.relative(ROOT, csvPath)}`);
-  if (!existsSync(csvPath)) {
-    console.error(`[homewood:import-residents] FAIL: CSV not found at ${csvPath}.`);
-    if (csvPath.endsWith("homewood-residents.csv")) {
-      console.error("  Hint: copy homewood-residents.csv.example to homewood-residents.csv and fill in the real roster.");
-      console.error("  The real CSV is gitignored — it must never be committed.");
+  console.log(
+    `[homewood:import-residents] mode: ${dryRun ? "DRY-RUN" : "WRITE"}  sources: ${sourcePaths
+      .map((s) => sourceLabel(s.filePath))
+      .join(", ")}`,
+  );
+  for (const source of sourcePaths) {
+    if (!existsSync(source.filePath)) {
+      console.error(`[homewood:import-residents] FAIL: ${source.role} CSV not found at ${source.filePath}.`);
+      if (source.filePath.endsWith("homewood-residents.csv")) {
+        console.error("  Hint: copy homewood-residents.csv.example to homewood-residents.csv and fill in the real roster.");
+        console.error("  The real CSV is gitignored — it must never be committed.");
+      }
+      process.exit(2);
     }
-    process.exit(2);
   }
 
-  // 1) Parse + validate header. Strip UTF-8 BOM if Excel/Numbers added one.
-  const csv = readFileSync(csvPath, "utf8").replace(/^﻿/, "");
-  const { header, records } = rowsToObjects(parseCsv(csv));
-  const missingCols = REQUIRED_COLUMNS.filter((c) => !header.includes(c));
-  if (missingCols.length > 0) {
-    console.error(`[homewood:import-residents] FAIL: missing required columns: ${missingCols.join(", ")}`);
-    console.error(`  Got: ${header.join(", ")}`);
+  // 1) Parse + validate source headers. Strip UTF-8 BOM if Excel/Numbers added one.
+  const sources = sourcePaths.map(loadCsvSource);
+  const headerErrors = sources.flatMap((source) => {
+    const missingCols = REQUIRED_COLUMNS.filter((c) => !source.header.includes(c));
+    return missingCols.length
+      ? [`${source.label}: missing required columns: ${missingCols.join(", ")} (got: ${source.header.join(", ")})`]
+      : [];
+  });
+  if (headerErrors.length > 0) {
+    console.error("[homewood:import-residents] FAIL: CSV header validation failed:");
+    for (const error of headerErrors) console.error(`  - ${error}`);
     process.exit(1);
   }
+  const { records, warnings: mergeWarnings } = mergeSourceRecords(sources);
   if (records.length === 0) {
-    console.error("[homewood:import-residents] FAIL: CSV has no data rows.");
+    console.error("[homewood:import-residents] FAIL: CSV sources have no data rows.");
     process.exit(1);
   }
 
@@ -217,9 +305,8 @@ async function main() {
   const results = [];
   for (let i = 0; i < records.length; i++) {
     const row = records[i];
-    const rowNum = i + 2; // +1 for header, +1 for 1-indexing
-    const label = `row ${rowNum} (${row.first_name} ${row.last_name})`;
-    const result = { rowNum, name: `${row.first_name} ${row.last_name}`, status: "PENDING", reason: "" };
+    const rowNum = row.__sourceRow;
+    const result = { source: row.__sourceLabel, rowNum, name: `${row.first_name} ${row.last_name}`, status: "PENDING", reason: "" };
 
     // Validate enums + required fields per row
     const missing = REQUIRED_COLUMNS.filter((c) => !row[c] || row[c] === "");
@@ -243,7 +330,8 @@ async function main() {
       results.push(result);
       continue;
     }
-    const roomId = roomByNumber.get(row.room_number);
+    const roomBed = normalizeRoomBed(row.room_number);
+    const roomId = roomByNumber.get(String(row.room_number).trim()) ?? roomByNumber.get(roomBed.roomNumber);
     if (!roomId) {
       result.status = "FAILED";
       result.reason = `room_number '${row.room_number}' not found at Homewood (available: ${[...roomByNumber.keys()].slice(0, 5).join(", ")}${roomByNumber.size > 5 ? "…" : ""})`;
@@ -253,7 +341,9 @@ async function main() {
 
     if (dryRun) {
       result.status = "DRY-OK";
-      result.reason = `would create resident in room ${row.room_number}; payer=${row.payer_type}; emergency=${row.emergency_contact_name}`;
+      result.reason = `would create resident in room ${roomBed.roomNumber}${
+        roomBed.bedLabel ? ` bed ${roomBed.bedLabel}` : ""
+      }; payer=${row.payer_type}; emergency=${row.emergency_contact_name}`;
       results.push(result);
       continue;
     }
@@ -417,10 +507,21 @@ async function main() {
   lines.push("");
   lines.push(`_Generated: \`${new Date().toISOString()}\` — mode: **${dryRun ? "DRY-RUN" : "WRITE"}**_`);
   lines.push("");
-  lines.push(`- Source CSV: \`${path.relative(ROOT, csvPath)}\``);
+  lines.push("- Source CSVs:");
+  for (const source of sources) {
+    lines.push(
+      `  - \`${source.label}\` (${source.role}; ${source.records.length} row${source.records.length === 1 ? "" : "s"} loaded)`,
+    );
+  }
   lines.push(`- Facility: \`${facility.name}\` (${facilityId})`);
   lines.push(`- Organization: \`${organizationId}\``);
   lines.push("");
+  if (mergeWarnings.length) {
+    lines.push("## Source Warnings");
+    lines.push("");
+    for (const warning of mergeWarnings) lines.push(`- ${warning}`);
+    lines.push("");
+  }
   lines.push(`## Tally`);
   lines.push("");
   lines.push("| Outcome | Count |");
@@ -429,10 +530,10 @@ async function main() {
   lines.push("");
   lines.push(`## Per-row detail`);
   lines.push("");
-  lines.push("| Row | Name | Status | Detail |");
-  lines.push("|---:|---|---|---|");
+  lines.push("| Source | Row | Name | Status | Detail |");
+  lines.push("|---|---:|---|---|---|");
   for (const r of results) {
-    lines.push(`| ${r.rowNum} | ${r.name} | ${r.status} | ${(r.reason ?? "").replace(/\|/g, "\\|")} |`);
+    lines.push(`| ${r.source} | ${r.rowNum} | ${r.name} | ${r.status} | ${(r.reason ?? "").replace(/\|/g, "\\|")} |`);
   }
   lines.push("");
   lines.push(`_Names appear in this log because the user runs the import locally and reviews the result. The log is committed only when no real PII has been imported — i.e. when the source CSV is \`homewood-residents.csv.example\`. Real-import logs stay local._`);

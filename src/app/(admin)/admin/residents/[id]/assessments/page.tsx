@@ -7,6 +7,7 @@ import { ClipboardCheck, Plus } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
@@ -112,7 +113,7 @@ export default function ResidentAssessmentHistoryPage() {
         })),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load assessments");
+      setError(formatLiveDataLoadError(err, "Failed to load assessments"));
     } finally {
       setIsLoading(false);
     }

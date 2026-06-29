@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -109,9 +110,9 @@ export default function AdminBillingRatesPage() {
           current: r.end_date == null,
         })),
       );
-    } catch {
+    } catch (err) {
       setRows([]);
-      setError("Live rate schedules are unavailable.");
+      setError(formatLiveDataLoadError(err, "Live rate schedules are unavailable."));
     } finally {
       setIsLoading(false);
     }

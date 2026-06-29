@@ -12,6 +12,8 @@ import {
   SELECTED_FACILITY_COOKIE,
   parseSelectedFacilityCookieValue,
 } from "@/lib/facilities/selected-facility-cookie";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { queryErrorMessage } from "@/lib/supabase/query-error";
 import { createClient } from "@/lib/supabase/server";
 
 export type ResidentsRosterBootstrap = {
@@ -34,7 +36,7 @@ export async function loadResidentsRosterBootstrap(): Promise<ResidentsRosterBoo
   try {
     initialRows = await fetchResidentsFromSupabase(initialFacilityId, supabase);
   } catch (error) {
-    initialError = error instanceof Error ? error.message : "Failed to load data";
+    initialError = formatLiveDataLoadError(error, "Failed to load resident roster.");
     initialRows = [];
   }
 
@@ -44,7 +46,8 @@ export async function loadResidentsRosterBootstrap(): Promise<ResidentsRosterBoo
     if (initialError == null) {
       initialMetrics = await fetchResidentRosterMetrics(initialFacilityId, initialRows.length, supabase);
     }
-  } catch {
+  } catch (error) {
+    console.error("[Haven] resident roster metrics failed:", queryErrorMessage(error), error);
     initialMetrics = null;
   }
 

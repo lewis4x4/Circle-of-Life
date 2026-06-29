@@ -17,6 +17,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -155,7 +156,7 @@ export default function AdminTimeRecordsPage() {
   // Single error surface: query load errors, plus export/bulk-approve errors.
   const error =
     actionError ??
-    (queryError ? (queryError instanceof Error ? queryError.message : "Failed to load data") : null);
+    (queryError ? formatLiveDataLoadError(queryError, "Failed to load data") : null);
   // Retry / post-mutation refresh re-runs the query (was a manual load()).
   const load = useCallback(async () => {
     await refetch();

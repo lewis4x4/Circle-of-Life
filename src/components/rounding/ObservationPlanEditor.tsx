@@ -40,6 +40,7 @@ import {
   validatePlanRule,
   validateRationale,
 } from "@/lib/rounding/observation-plan-validation";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { ObservationPlanInput, PlanRuleInput } from "@/lib/rounding/types";
@@ -255,8 +256,10 @@ export function ObservationPlanEditor({
         setRationale("");
         setRules([blankRule()]);
       }
-    } catch {
-      setError("Could not load observation plan form. Confirm facility scope and retry.");
+    } catch (err) {
+      setError(
+        formatLiveDataLoadError(err, "Could not load observation plan form. Confirm facility scope and retry."),
+      );
     } finally {
       setLoading(false);
     }
@@ -343,8 +346,10 @@ export function ObservationPlanEditor({
 
       setStatusMessage("Observation plan saved.");
       router.replace(`/admin/rounding/plans/${json.planId ?? planId ?? ""}`);
-    } catch {
-      setError("Could not save observation plan. Confirm required fields and retry.");
+    } catch (err) {
+      setError(
+        formatLiveDataLoadError(err, "Could not save observation plan. Confirm required fields and retry."),
+      );
     } finally {
       setSaving(false);
     }

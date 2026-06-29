@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ThresholdInput } from "@/lib/validation/facility-admin";
 import type { OrgDefaultRow } from "@/lib/admin/facilities/operational-threshold-preview";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 
 export interface ThresholdRow {
   id: string;
@@ -84,8 +85,8 @@ export function useFacilityThresholds(facilityId: string, options?: { enabled?: 
       const json = (await res.json()) as ThresholdsApiEnvelope;
       setThresholds((json.data ?? []).map(mapRow));
       setOrgDefaults((json.org_defaults ?? []).map(mapOrg));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+    } catch (err) {
+      setError(formatLiveDataLoadError(err, "Facility thresholds are unavailable right now."));
       setThresholds([]);
       setOrgDefaults([]);
     } finally {

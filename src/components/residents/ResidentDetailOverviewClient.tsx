@@ -48,6 +48,7 @@ import {
   groupDiagnosesByCategory,
 } from "@/lib/residents/clinical-text-format";
 import { rosterAvatarAccentFromId } from "@/lib/residents/roster-format";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -257,8 +258,10 @@ export function ResidentDetailOverviewClient({ workspace }: { workspace: Residen
       } else {
         setDetail(row);
       }
-    } catch {
-      setError("Live resident profile is unavailable right now.");
+    } catch (err) {
+      setError(
+        formatLiveDataLoadError(err, "Live resident profile is unavailable right now."),
+      );
     } finally {
       setLoading(false);
     }

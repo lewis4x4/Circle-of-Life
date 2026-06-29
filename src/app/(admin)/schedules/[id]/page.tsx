@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -188,7 +189,7 @@ export default function AdminScheduleWeekDetailPage() {
         })),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load schedule.");
+      setError(formatLiveDataLoadError(err, "Failed to load schedule."));
       setSchedule(null);
       setRows([]);
       setRawAssignments([]);
