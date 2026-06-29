@@ -88,6 +88,8 @@ export function emptyReferralsHubBootstrap(): ReferralsHubBootstrap {
   };
 }
 
+type ReferralsQueryResult<T> = { data: T | null; error: { message: string } | null };
+
 export async function loadReferralsHubBootstrap(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -98,45 +100,51 @@ export async function loadReferralsHubBootstrap(
 
   const nowIso = new Date().toISOString();
 
+  const listQ = supabase
+    .from("referral_leads" as never)
+    .select(
+      "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, referral_sources(name)",
+    )
+    .eq("facility_id", selectedFacilityId)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false });
+
+  const outreachQ = supabase
+    .from("referral_outreach_activities" as never)
+    .select("id, activity_type, status, scheduled_for, performed_for_week, external_partner_name, notes")
+    .eq("facility_id", selectedFacilityId)
+    .is("deleted_at", null)
+    .order("scheduled_for", { ascending: false })
+    .limit(48);
+
+  const upcomingToursQ = supabase
+    .from("referral_leads" as never)
+    .select("id, first_name, last_name, status, tour_scheduled_for")
+    .eq("facility_id", selectedFacilityId)
+    .is("deleted_at", null)
+    .not("status", "in", "(lost,merged)")
+    .not("tour_scheduled_for", "is", null)
+    .gte("tour_scheduled_for", nowIso)
+    .order("tour_scheduled_for", { ascending: true })
+    .limit(REFERRAL_UPCOMING_TOUR_LIMIT);
+
   const [
     { data: list, error: listErr },
     { data: outreachList, error: outreachErr },
     { data: upcomingTourList, error: upcomingToursErr },
   ] = await Promise.all([
-    supabase
-      .from("referral_leads")
-      .select(
-        "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, referral_sources(name)",
-      )
-      .eq("facility_id", selectedFacilityId)
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false }),
-    supabase
-      .from("referral_outreach_activities")
-      .select("id, activity_type, status, scheduled_for, performed_for_week, external_partner_name, notes")
-      .eq("facility_id", selectedFacilityId)
-      .is("deleted_at", null)
-      .order("scheduled_for", { ascending: false })
-      .limit(48),
-    supabase
-      .from("referral_leads")
-      .select("id, first_name, last_name, status, tour_scheduled_for")
-      .eq("facility_id", selectedFacilityId)
-      .is("deleted_at", null)
-      .not("status", "in", "(lost,merged)")
-      .not("tour_scheduled_for", "is", null)
-      .gte("tour_scheduled_for", nowIso)
-      .order("tour_scheduled_for", { ascending: true })
-      .limit(REFERRAL_UPCOMING_TOUR_LIMIT),
+    listQ as unknown as Promise<ReferralsQueryResult<ReferralsHubLeadRow[]>>,
+    outreachQ as unknown as Promise<ReferralsQueryResult<ReferralsOutreachRow[]>>,
+    upcomingToursQ as unknown as Promise<ReferralsQueryResult<ReferralsHubUpcomingTourRow[]>>,
   ]);
 
   if (listErr) throw listErr;
   if (outreachErr) throw outreachErr;
   if (upcomingToursErr) throw upcomingToursErr;
 
-  const leadRows = (list ?? []) as ReferralsHubLeadRow[];
-  const outreachRows = (outreachList ?? []) as ReferralsOutreachRow[];
-  const upcomingTours = (upcomingTourList ?? []) as ReferralsHubUpcomingTourRow[];
+  const leadRows = list ?? [];
+  const outreachRows = outreachList ?? [];
+  const upcomingTours = upcomingTourList ?? [];
 
   let handoffBlocked = 0;
   let handoffReady = 0;
