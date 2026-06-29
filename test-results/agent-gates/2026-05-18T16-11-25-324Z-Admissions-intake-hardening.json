@@ -1,0 +1,127 @@
+{
+  "segment": "Admissions intake hardening",
+  "timestamp": "2026-05-18T16:11:25.324Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 25,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 337,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 1123,
+      "stdout": "# npm audit report\n\npostcss  <8.5.10\nSeverity: moderate\nPostCSS has XSS via Unescaped </style> in its CSS Stringify Output - https://github.com/advisories/GHSA-qx2v-qp2m-jg93\nfix available via `npm audit fix --force`\nWill install next@9.3.3, which is a breaking change\nnode_modules/next/node_modules/postcss\n  next  9.3.4-canary.0 - 16.3.0-canary.5\n  Depends on vulnerable versions of postcss\n  node_modules/next\n    @sentry/nextjs  >=6.3.6\n    Depends on vulnerable versions of next\n    node_modules/@sentry/nextjs\n\n3 moderate severity vulnerabilities\n\nTo address all issues (including breaking changes), run:\n  npm audit fix --force\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": false,
+      "command": "npm run secrets:gitleaks",
+      "status": "skipped",
+      "duration_ms": 105,
+      "stdout": "[gitleaks] SKIP: SKIP_GITLEAKS=1\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 17215,
+      "stdout": "",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 106,
+      "stdout": "[migrations:check] PASS: 260 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..258\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 14117,
+      "stdout": "",
+      "stderr": "[migrations:verify:pg] FAIL at 159_col_licensure_survey_data.sql\n ERROR:  column \"ahca_license_number\" of relation \"facilities\" does not exist\nLINE 3:   ahca_license_number = '9863',\n          ^\n\n[migrations:verify:pg] container logs:\n The files belonging to this database system will be owned by user \"postgres\".\nThis user must also own the server process.\n\nThe database cluster will be initialized with locale \"en_US.utf8\".\nThe default database encoding has accordingly been set to \"UTF8\".\nThe default text search configuration will be set to \"english\".\n\nData page checksums are disabled.\n\nfixing permissions on existing directory /var/lib/postgresql/data ... ok\ncreating subdirectories ... ok\nselecting dynamic shared memory implementation ... posix\nselecting default \"max_connections\" ... 100\nselecting default \"shared_buffers\" ... 128MB\nselecting default time zone ... Etc/UTC\ncreating configuration files ... ok\nrunning bootstrap script ... ok\nperforming post-bootstrap initialization ... ok\nsyncing data to disk ... ok\n\n\nSuccess. You can now start the database server using:\n\n    pg_ctl -D /var/lib/postgresql/data -l logfile start\n\nwaiting for server to start....2026-05-18 16:11:45.208 UTC [55] LOG:  starting PostgreSQL 17.10 (Debian 17.10-1.pgdg12+1) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit\n2026-05-18 16:11:45.209 UTC [55] LOG:  listening on Unix socket \"/var/run/postgresql/.s.PGSQL.5432\"\n2026-05-18 16:11:45.210 UTC [58] LOG:  database system was shut down at 2026-05-18 16:11:45 UTC\n2026-05-18 16:11:45.212 UTC [55] LOG:  database system is ready to accept connections\n done\nserver started\n\n/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*\n\nwaiting for server to shut down...2026-05-18 16:11:45.317 UTC [55] LOG:  received fast shutdown request\n.2026-05-18 16:11:45.318 UTC [55] LOG:  aborting any active transactions\n2026-05-18 16:11:45.319 UTC [55] LOG:  background worker \"logical replication launcher\" (PID 61) exited with exit code 1\n2026-05-18 16:11:45.319 UTC [56] LOG:  shutting down\n2026-05-18 16:11:45.320 UTC [56] LOG:  checkpoint starting: shutdown immediate\n2026-05-18 16:11:45.323 UTC [56] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.004 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14E4F18, redo lsn=0/14E4F18\n2026-05-18 16:11:45.325 UTC [55] LOG:  database system is shut down\n done\nserver stopped\n\nPostgreSQL init process complete; ready for start up.\n\n\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 38933,
+      "stdout": "[migrations:check] PASS: 260 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..258\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.6 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 13.2s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 522ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/app/(admin)/admin/admissions/new/page.tsx:331:64\nType error: Cannot find name 'DuplicateResidentMatch'.\n\n  \u001b[90m329 |\u001b[0m ...Errors, setDirectFieldErrors] = useState<\u001b[33mRecord\u001b[0m<string, string>>({});\n  \u001b[90m330 |\u001b[0m ...rningDismissed, setDuplicateWarningDismissed] = useState(\u001b[36mfalse\u001b[0m);\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m331 |\u001b[0m ...ndidate, setDuplicateCandidate] = useState<\u001b[33mDuplicateResidentMatch\u001b[0m | \u001b[36mnull\u001b[0m>(\u001b[36mnull\u001b[0m);\n  \u001b[90m    |\u001b[0m                                               \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m332 |\u001b[0m ...okupLoading, setDuplicateLookupLoading] = useState(\u001b[36mfalse\u001b[0m);\n  \u001b[90m333 |\u001b[0m ...ewOpen, setDirectPreviewOpen] = useState(\u001b[36mfalse\u001b[0m);\n  \u001b[90m334 |\u001b[0m ...\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 228,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run design:review",
+      "stdout": "skipped (pass --ui to enable)"
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run a11y:routes",
+      "stdout": "skipped (pass --ui to enable; omit --no-a11y)"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 2,
+    "skipped": 4,
+    "blocking_failures": [
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-05-18T16-11-25-324Z-Admissions-intake-hardening.json"
+  ]
+}
