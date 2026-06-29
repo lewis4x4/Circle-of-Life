@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { VendorHubNav } from "../vendor-hub-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { canManageVendorMaster } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
 
@@ -17,54 +18,55 @@ type VendorRow = Database["public"]["Tables"]["vendors"]["Row"];
 
 export default function VendorDirectoryPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<VendorRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
-      setRows([]);
-      setLoadError(c.error);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("vendors")
-      .select("*")
-      .eq("organization_id", c.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("name");
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-    } else {
-      setRows((data ?? []) as VendorRow[]);
-    }
-    setLoading(false);
-  }, [supabase]);
+  const {
+    data: rows = [],
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["vendors", "directory", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<VendorRow[]> => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as VendorRow[];
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : createError
+        ? createError
+        : error
+          ? error.message
+          : null;
 
-  const canWrite = ctx?.ok && canManageVendorMaster(ctx.ctx.appRole);
+  const canWrite =
+    !!organizationId && canManageVendorMaster(appRole as Database["public"]["Enums"]["app_role"]);
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!ctx?.ok || !canWrite || !name.trim()) return;
+    if (!organizationId || !canWrite || !name.trim()) return;
     setSaving(true);
-    setLoadError(null);
+    setCreateError(null);
     const { data, error } = await supabase
       .from("vendors")
       .insert({
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         name: name.trim(),
         category: "other",
         status: "active",
@@ -73,11 +75,11 @@ export default function VendorDirectoryPage() {
       .single();
     setSaving(false);
     if (error) {
-      setLoadError(error.message);
+      setCreateError(error.message);
       return;
     }
     setName("");
-    await load();
+    await queryClient.invalidateQueries({ queryKey: ["vendors", "directory", organizationId] });
     if (data?.id) {
       window.location.href = `/admin/vendors/${data.id}`;
     }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSpreadsheet, MessageSquare } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 
@@ -28,8 +29,9 @@ import {
   fetchPreviousPublishedStandupSnapshotDetail,
   fetchStandupSnapshotDetail,
 } from "@/lib/executive/standup";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { EXECUTIVE_REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Database, Json } from "@/types/database";
 
@@ -178,73 +180,73 @@ function isStandupBoardPacketReport(report: ReportRow): boolean {
 
 export default function ExecutiveSavedReportsPage() {
   const supabase = useMemo(() => createClient(), []);
-  const [loading, setLoading] = useState(true);
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId: orgId, appRole, loading: authLoading } = useHavenAuth();
+  const queryClient = useQueryClient();
+  const canManage = canMutateFinance(appRole as Database["public"]["Enums"]["app_role"]);
   const [error, setError] = useState<string | null>(null);
-  const [rows, setRows] = useState<ReportRow[]>([]);
-  const [canManage, setCanManage] = useState(false);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [facilities, setFacilities] = useState<{ id: string; name: string }[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newTemplate, setNewTemplate] = useState<ExecTemplate>("custom");
   const [newFacilityId, setNewFacilityId] = useState<string>("");
-  const standupPacketRows = rows.filter(isStandupBoardPacketReport);
-  const otherRows = rows.filter((row) => !isStandupBoardPacketReport(row));
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
-        setRows([]);
-        setCanManage(false);
-        setOrgId(null);
-        return;
-      }
-      setOrgId(ctx.ctx.organizationId);
-      const manage = canMutateFinance(ctx.ctx.appRole);
-      setCanManage(manage);
-
-      if (!manage) {
-        setRows([]);
-        setFacilities([]);
-        return;
-      }
-
+  const {
+    data,
+    isPending,
+    error: queryError,
+  } = useQuery({
+    // Key scoped to the org; the read only runs for managers (matching the
+    // previous load() which short-circuited to empty for non-managers).
+    queryKey: ["executive", "saved-reports", orgId],
+    enabled: !!orgId && canManage,
+    queryFn: async (): Promise<{ rows: ReportRow[]; facilities: { id: string; name: string }[] }> => {
       const [{ data: reports, error: rErr }, { data: facs, error: fErr }] = await Promise.all([
         supabase
           .from("exec_saved_reports")
           .select("*")
-          .eq("organization_id", ctx.ctx.organizationId)
+          .eq("organization_id", orgId as string)
           .is("deleted_at", null)
           .order("updated_at", { ascending: false }),
         supabase
           .from("facilities")
           .select("id, name")
-          .eq("organization_id", ctx.ctx.organizationId)
+          .eq("organization_id", orgId as string)
           .is("deleted_at", null)
           .order("name"),
       ]);
 
       if (rErr) throw new Error(rErr.message);
       if (fErr) throw new Error(fErr.message);
-      setRows((reports ?? []) as ReportRow[]);
-      setFacilities((facs ?? []).map((f) => ({ id: f.id, name: f.name })));
-    } catch (e) {
-      setRows([]);
-      setError(e instanceof Error ? e.message : "Unable to load saved reports.");
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+      return {
+        rows: (reports ?? []) as ReportRow[],
+        facilities: (facs ?? []).map((f) => ({ id: f.id, name: f.name })),
+      };
+    },
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const rows = data?.rows ?? [];
+  const facilities = data?.facilities ?? [];
+  const standupPacketRows = rows.filter(isStandupBoardPacketReport);
+  const otherRows = rows.filter((row) => !isStandupBoardPacketReport(row));
+
+  // Spinner while auth resolves or the (enabled) query is in flight, matching
+  // the page's previous single loading state.
+  const loading = authLoading || (canManage && isPending);
+  const loadError =
+    !authLoading && !orgId
+      ? "Organization missing on profile."
+      : error
+        ? error
+        : queryError
+          ? queryError.message
+          : null;
+
+  function invalidateReports() {
+    void queryClient.invalidateQueries({ queryKey: ["executive", "saved-reports", orgId] });
+  }
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -278,7 +280,7 @@ export default function ExecutiveSavedReportsPage() {
       setNewTemplate("custom");
       setNewFacilityId("");
       setCreateOpen(false);
-      await load();
+      invalidateReports();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Create failed.");
     } finally {
@@ -294,7 +296,7 @@ export default function ExecutiveSavedReportsPage() {
       .eq("id", reportId)
       .eq("organization_id", orgId);
     if (upErr) throw new Error(upErr.message);
-    await load();
+    invalidateReports();
   }
 
   function scopeLabelFor(report: ReportRow): string {
@@ -483,7 +485,7 @@ export default function ExecutiveSavedReportsPage() {
         .eq("id", report.id)
         .eq("organization_id", orgId);
       if (delErr) throw new Error(delErr.message);
-      await load();
+      invalidateReports();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Remove failed.");
     } finally {
@@ -522,9 +524,9 @@ export default function ExecutiveSavedReportsPage() {
 
       <SourceReadinessCallout copy={EXECUTIVE_REPORTING_SOURCE_READINESS} />
 
-      {error && (
+      {loadError && (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
+          {loadError}
         </p>
       )}
 

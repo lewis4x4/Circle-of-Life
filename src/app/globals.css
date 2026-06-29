@@ -702,6 +702,15 @@
   50% { opacity: 1; transform: scaleY(1.5); }
 }
 
+@keyframes haven-nav-pending {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 /* =============================================================================
    Scrollbars — neutral, thin, OS-native feel.
    ========================================================================= */

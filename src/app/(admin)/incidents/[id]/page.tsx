@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -219,8 +220,13 @@ export default function AdminIncidentDetailPage() {
       } catch {
         setAssigneeOptions([]);
       }
-    } catch {
-      setError("Incident record could not be loaded. Try again or return to the queue.");
+    } catch (err) {
+      setError(
+        formatLiveDataLoadError(
+          err,
+          "Incident record could not be loaded. Try again or return to the queue.",
+        ),
+      );
     } finally {
       setLoading(false);
     }

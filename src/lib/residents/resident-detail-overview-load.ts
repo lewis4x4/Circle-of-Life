@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { throwIfQueryError } from "@/lib/supabase/query-error";
 import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
 import {
   carePlanAnnualReviewDeltaDays,
@@ -319,9 +320,7 @@ export async function loadResidentOverviewDetail(
     .is("deleted_at", null)
     .maybeSingle()) as unknown as QueryResult<SupabaseResidentRow>;
 
-  if (residentResult.error) {
-    throw residentResult.error;
-  }
+  throwIfQueryError(residentResult.error, "residents profile");
   const resident = residentResult.data;
   if (!resident) return null;
 
@@ -336,7 +335,7 @@ export async function loadResidentOverviewDetail(
       .select("id, room_id, bed_label")
       .eq("id", resident.bed_id)
       .maybeSingle()) as unknown as QueryResult<SupabaseBedRow>;
-    if (byId.error) throw byId.error;
+    throwIfQueryError(byId.error, "beds by id");
     bed = byId.data;
   }
   if (!bed) {
@@ -345,7 +344,7 @@ export async function loadResidentOverviewDetail(
       .select("id, room_id, bed_label")
       .eq("current_resident_id", residentId)
       .maybeSingle()) as unknown as QueryResult<SupabaseBedRow>;
-    if (byRes.error) throw byRes.error;
+    throwIfQueryError(byRes.error, "beds by resident");
     bed = byRes.data;
   }
 
@@ -356,7 +355,7 @@ export async function loadResidentOverviewDetail(
       .select("id, room_number, unit_id")
       .eq("id", bed.room_id)
       .maybeSingle()) as unknown as QueryResult<SupabaseRoomRow>;
-    if (roomResult.error) throw roomResult.error;
+    throwIfQueryError(roomResult.error, "rooms");
     room = roomResult.data;
   }
 
@@ -367,7 +366,7 @@ export async function loadResidentOverviewDetail(
       .select("id, name")
       .eq("id", room.unit_id)
       .maybeSingle()) as unknown as QueryResult<SupabaseUnitRow>;
-    if (unitResult.error) throw unitResult.error;
+    throwIfQueryError(unitResult.error, "units");
     unit = unitResult.data;
   }
 
@@ -520,7 +519,7 @@ export async function loadResidentOverviewDetail(
   const nameById = new Map<string, string>();
   if (verificationUserIds.length > 0) {
     const profResult = await supabase.from("user_profiles").select("id, full_name").in("id", verificationUserIds);
-    if (profResult.error) throw profResult.error;
+    throwIfQueryError(profResult.error, "user_profiles verification");
     for (const p of profResult.data ?? []) {
       nameById.set(p.id, p.full_name);
     }
@@ -538,7 +537,7 @@ export async function loadResidentOverviewDetail(
 
   if (extraIds.length > 0) {
     const profResult = await supabase.from("user_profiles").select("id, full_name").in("id", extraIds);
-    if (profResult.error) throw profResult.error;
+    throwIfQueryError(profResult.error, "user_profiles log authors");
     for (const p of profResult.data ?? []) {
       nameById.set(p.id, p.full_name);
     }

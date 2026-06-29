@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -133,8 +134,9 @@ export default function AdminNewPaymentPage() {
       }
 
       setResidents(opts);
-    } catch {
+    } catch (err) {
       setResidents([]);
+      setError(formatLiveDataLoadError(err, "Residents list is unavailable right now."));
     } finally {
       setResidentsLoading(false);
     }
@@ -166,8 +168,9 @@ export default function AdminNewPaymentPage() {
         const rows = data ?? [];
         setInvoices(rows);
         return rows;
-      } catch {
+      } catch (err) {
         setInvoices([]);
+        setError(formatLiveDataLoadError(err, "Open invoices are unavailable right now."));
         return [];
       } finally {
         setInvoicesLoading(false);
@@ -273,9 +276,7 @@ export default function AdminNewPaymentPage() {
 
         setSuccess(true);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to record payment.",
-        );
+        setError(formatLiveDataLoadError(err, "Failed to record payment."));
       } finally {
         setSubmitting(false);
       }

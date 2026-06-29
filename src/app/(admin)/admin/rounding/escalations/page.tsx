@@ -22,6 +22,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { MetricCard } from "@/components/ui/metric-card";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -301,8 +302,10 @@ export default function RoundingEscalationsPage() {
 
       setRows(enriched);
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load escalations. Confirm facility scope and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load escalations. Confirm facility scope and retry."),
+      );
       setRows([]);
       setLoadState("error");
     }
@@ -378,8 +381,10 @@ export default function RoundingEscalationsPage() {
         );
         setNotes((current) => ({ ...current, [id]: "" }));
         await load();
-      } catch {
-        setErrorMessage("Could not update escalation. Confirm it is still actionable and retry.");
+      } catch (err) {
+        setErrorMessage(
+          formatLiveDataLoadError(err, "Could not update escalation. Confirm it is still actionable and retry."),
+        );
       } finally {
         setActionLoading(null);
       }

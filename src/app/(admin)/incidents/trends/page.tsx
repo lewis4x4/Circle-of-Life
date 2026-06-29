@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BarChart3, TrendingUp } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -61,8 +62,8 @@ export default function AdminIncidentTrendsPage() {
       const res = (await q) as unknown as QueryListResult<Row>;
       if (res.error) throw res.error;
       setRows(res.data ?? []);
-    } catch {
-      setError("Incident analytics could not be loaded.");
+    } catch (err) {
+      setError(formatLiveDataLoadError(err, "Incident analytics could not be loaded."));
       setRows([]);
     } finally {
       setLoading(false);

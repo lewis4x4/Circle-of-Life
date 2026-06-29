@@ -18,6 +18,7 @@ Duplicated in `docs/mission-statement.md`, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`,
 | `npm run secrets:gitleaks` | Gitleaks (local binary or Docker) |
 | `npm run migrations:check` | Validates `supabase/migrations/*.sql` naming and `001..N` sequence |
 | `npm run migrations:verify:pg` | Replays migrations on throwaway Postgres 16 (Docker + auth stub) |
+| `npm run migrations:verify:remote` | Probes linked Supabase for critical columns/tables (migrations 250–288); requires `.env.local` service role |
 | `npm run lint` | ESLint on `src/` |
 | `npm run a11y:routes` | Playwright + axe (`BASE_URL` / `AXE_ROUTES`; app must be up) |
 | `npm run build` | Migrations check + `next build` |
@@ -82,6 +83,24 @@ DESIGN_REVIEW_ROUTES="/,/login" npm run design:review
 ## Migrations directory
 
 Default: `supabase/migrations`. Override with `MIGRATIONS_DIR=/abs/path`.
+
+### Remote schema drift (production)
+
+`migrations:verify:pg` replays on a **fresh** Docker Postgres — it does **not** detect when `schema_migrations` rows exist on the linked project but DDL never ran.
+
+After pushing migrations to the linked Supabase project, run:
+
+```bash
+npm run migrations:verify:remote
+```
+
+Requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. On failure, re-apply the cited migration file:
+
+```bash
+npx supabase db query --linked -f supabase/migrations/NNN_<name>.sql
+```
+
+See `docs/Autonomous.md` RECORD **schema-drift-250-288-repair** (2026-06-28).
 
 ## Artifacts
 

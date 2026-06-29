@@ -14,6 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatColLabel } from "@/lib/col-labels";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -93,7 +94,7 @@ export default function AdminMoveInReadyPage() {
       setRows(((data ?? []) as CaseRow[]).filter(admissionReady));
     } catch (loadError) {
       setRows([]);
-      setError(loadError instanceof Error ? loadError.message : "Could not load move-in ready cases.");
+      setError(formatLiveDataLoadError(loadError, "Could not load move-in ready cases."));
     } finally {
       setLoading(false);
     }

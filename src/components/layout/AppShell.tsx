@@ -25,7 +25,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -65,6 +64,12 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
+import {
+  HavenNavLink,
+  NavPendingIndicator,
+  NavigationPendingProvider,
+  useNavigationPending,
+} from "@/components/layout/navigation-pending";
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
@@ -101,8 +106,17 @@ const AppShellCommandPalette = dynamic(
 );
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <NavigationPendingProvider>
+      <AppShellInner>{children}</AppShellInner>
+    </NavigationPendingProvider>
+  );
+}
+
+function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { navigate, isNavigating } = useNavigationPending();
   const { setTheme, theme } = useTheme();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
@@ -172,13 +186,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       if ((event.metaKey || event.ctrlKey) && event.key === ",") {
         event.preventDefault();
         if (!pathname.startsWith("/admin/settings")) {
-          router.push("/admin/settings");
+          navigate("/admin/settings");
         }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [pathname, router]);
+  }, [navigate, pathname]);
 
   // Close transient surfaces on route change.
   useEffect(() => {
@@ -349,9 +363,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const handlePaletteSelect = useCallback(
     (href: string) => {
       setPaletteOpen(false);
-      router.push(href);
+      navigate(href);
     },
-    [router],
+    [navigate],
   );
 
   // ── render helpers ───────────────────────────────────────────────
@@ -467,7 +481,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 return (
                   <DropdownMenuItem
                     key={item.key}
-                    onClick={() => router.push(item.href)}
+                    onClick={() => navigate(item.href)}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px]"
                   >
                     <Icon className="size-3.5 text-muted-foreground" aria-hidden />
@@ -576,7 +590,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // mobile). No Tooltip wrapper: base-ui's useRender cannot disambiguate
     // when both the wrapping <TooltipTrigger> and the render-prop element
     // carry children (see Base UI render-prop contract).
-    <Link
+    <HavenNavLink
       href={REPORT_INCIDENT_HREF}
       className={cn(
         // Semantic danger, but lower-temperature than `variant="destructive"`:
@@ -590,7 +604,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     >
       <ShieldAlert className="size-3.5" aria-hidden />
       <span className="hidden sm:inline">Report incident</span>
-    </Link>
+    </HavenNavLink>
   );
 
   const renderNotificationsButton = () => (
@@ -647,7 +661,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const Icon = item.icon;
     const active = isItemActive(item.href);
     return (
-      <Link
+      <HavenNavLink
         key={item.key}
         href={item.href}
         aria-current={active ? "page" : undefined}
@@ -669,7 +683,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* No truncate — rail is 224px wide and every label is intentionally
             short. If a label ever overflows, rename the route, don't ellipsize. */}
         <span className="leading-tight">{item.label}</span>
-      </Link>
+      </HavenNavLink>
     );
   };
 
@@ -771,7 +785,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           const first = pillar.items[0];
           if (!first) return null;
           return (
-            <Link
+            <HavenNavLink
               key={pillar.id}
               href={first.href}
               aria-current={active ? "page" : undefined}
@@ -798,7 +812,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
                 />
               )}
-            </Link>
+            </HavenNavLink>
           );
         })}
       </nav>
@@ -821,11 +835,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
         )}
 
-        <main className={cn("flex-1 overflow-y-auto bg-background text-foreground", activePillar && "border-l border-border")}>
+        <main
+          aria-busy={isNavigating}
+          className={cn(
+            "relative flex-1 overflow-y-auto bg-background text-foreground transition-opacity duration-150",
+            activePillar && "border-l border-border",
+            isNavigating && "opacity-95",
+          )}
+        >
+          <NavPendingIndicator />
           {/* Full-bleed: pages that need a narrow column for long-form
               content (settings forms, etc.) apply max-w on an inner block,
               not on this wrapper. */}
-          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8 [--haven-page-chrome-y:40px] lg:[--haven-page-chrome-y:48px] 2xl:[--haven-page-chrome-y:64px]">{children}</div>
+          <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8 [--haven-page-chrome-y:40px] lg:[--haven-page-chrome-y:48px] 2xl:[--haven-page-chrome-y:64px]">
+            {children}
+          </div>
         </main>
       </div>
 
@@ -939,7 +963,7 @@ function PillarTabWithDropdown({
         }
       }}
     >
-      <Link
+      <HavenNavLink
         href={firstHref}
         aria-current={active ? "page" : undefined}
         aria-haspopup="menu"
@@ -977,7 +1001,7 @@ function PillarTabWithDropdown({
             className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
           />
         )}
-      </Link>
+      </HavenNavLink>
       <div
         role="menu"
         aria-label={`${pillar.label} sections`}
@@ -992,7 +1016,7 @@ function PillarTabWithDropdown({
             const Icon = item.icon;
             const itemActive = isItemActive(item.href);
             return (
-              <Link
+              <HavenNavLink
                 key={item.key}
                 href={item.href}
                 role="menuitem"
@@ -1009,7 +1033,7 @@ function PillarTabWithDropdown({
               >
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                 <span className="whitespace-nowrap">{item.label}</span>
-              </Link>
+              </HavenNavLink>
             );
           })}
         </div>

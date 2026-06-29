@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -13,39 +13,40 @@ type Row = Database["public"]["Tables"]["certificates_of_insurance"]["Row"];
 
 export default function InsuranceCoiPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok) {
-      setRows([]);
-      setLoadError(ctx.error);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("certificates_of_insurance")
-      .select("*")
-      .eq("organization_id", ctx.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("expiration_date", { ascending: true });
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    setRows((data ?? []) as Row[]);
-    setLoading(false);
-  }, [supabase]);
+  const {
+    data: rows = [],
+    isPending,
+    error,
+  } = useQuery({
+    // Stable key: [feature, scope, ...scoping ids]. The organizationId keeps
+    // the cache correct across org switches; the query only runs once it's known.
+    queryKey: ["insurance", "coi", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<Row[]> => {
+      const { data, error } = await supabase
+        .from("certificates_of_insurance")
+        .select("*")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("expiration_date", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Row[];
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  // Spinner while either auth resolves or the (enabled) query is in flight,
+  // matching the page's previous single loading state.
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   return (
     <div className="space-y-6">

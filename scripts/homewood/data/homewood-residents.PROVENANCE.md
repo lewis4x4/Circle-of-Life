@@ -34,7 +34,7 @@ This is the only field in the CSV that involves judgment. If you want zero infer
 
 ## One-row addendum
 
-- **Coone, Karen (Room 16B, admit 2026-05-04)** — originally excluded because the face sheet `GENDER` cell is **empty** and gender was not inferred from name. Brian confirmed on 2026-05-18 that Karen Coone is active in **16B**. Added `homewood-residents-karen-coone.csv` as a one-row addendum using `prefer_not_to_say` for the required gender enum while preserving source uncertainty.
+- **Coone, Karen (Room 16B, admit 2026-05-04)** — originally excluded because the face sheet `GENDER` cell is **empty** and gender was not inferred from name. Brian confirmed on 2026-05-18 that Karen Coone is active in **16B**. Added `homewood-residents-karen-coone.csv` as a one-row addendum using `prefer_not_to_say` for the required gender enum while preserving source uncertainty. Both resident import entrypoints now load this addendum automatically after the main roster and retain the first row if the same `(first_name, last_name, date_of_birth)` later appears in both sources.
   - DOB: 03/08/1953
   - Medical History: "Hypothyroid, Glaucoma and Osteopenia"
   - Emergency 1: Karen Coone, 386-389-1462, Daughter

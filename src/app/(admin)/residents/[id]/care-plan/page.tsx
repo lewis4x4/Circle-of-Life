@@ -12,6 +12,7 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants, Button } from "@/components/ui/button";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -166,8 +167,10 @@ export default function AdminResidentCarePlanPage() {
       const items = itemsResult.data ?? [];
 
       setLoaded({ residentName, plan, items });
-    } catch {
-      setError("Care plan data is unavailable. Check your connection and try again.");
+    } catch (err) {
+      setError(
+        formatLiveDataLoadError(err, "Care plan data is unavailable. Check your connection and try again."),
+      );
     } finally {
       setLoading(false);
     }

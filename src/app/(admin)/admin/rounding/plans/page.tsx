@@ -23,6 +23,7 @@ import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -186,8 +187,10 @@ export default function AdminRoundingPlansPage() {
       if (error) throw error;
       setPlans((data ?? []) as unknown as PlanRow[]);
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load observation plans. Confirm facility scope and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load observation plans. Confirm facility scope and retry."),
+      );
       setPlans([]);
       setLoadState("error");
     }

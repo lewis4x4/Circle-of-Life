@@ -20,6 +20,7 @@ import { PageHeader } from "@/design-system/components/PageHeader";
 import { KPITile, type KPITileTone } from "@/design-system/components/KPITile";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -272,9 +273,12 @@ export default function AdminRoundingHubPage() {
       });
       setTaskRows(taskData);
       setLoadState("ready");
-    } catch {
+    } catch (err) {
       setErrorMessage(
-        "Could not load Smart Rounding metrics. Confirm the facility scope is set and retry.",
+        formatLiveDataLoadError(
+          err,
+          "Could not load Smart Rounding metrics. Confirm the facility scope is set and retry.",
+        ),
       );
       setSummary(EMPTY_SUMMARY);
       setTaskRows([]);

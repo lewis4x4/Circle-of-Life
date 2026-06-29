@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import {
   fetchIncidentFollowupAssignees,
@@ -276,8 +277,10 @@ export default function RoundingIntegrityPage() {
       }
 
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load integrity flags. Confirm facility scope and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load integrity flags. Confirm facility scope and retry."),
+      );
       setRows([]);
       setLoadState("error");
     }
@@ -347,8 +350,10 @@ export default function RoundingIntegrityPage() {
         );
         setNotes((current) => ({ ...current, [id]: "" }));
         await load();
-      } catch {
-        setErrorMessage("Could not update integrity flag. Confirm it is still actionable and retry.");
+      } catch (err) {
+        setErrorMessage(
+          formatLiveDataLoadError(err, "Could not update integrity flag. Confirm it is still actionable and retry."),
+        );
       } finally {
         setActionLoading(null);
       }

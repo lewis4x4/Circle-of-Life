@@ -27,6 +27,7 @@ import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   fetchResidentsFromSupabase,
   type Acuity,
@@ -294,7 +295,7 @@ export function AdminResidentsPageClient({
     } catch (err) {
       setRows([]);
       setMetrics(null);
-      setError(err instanceof Error ? err.message : "Failed to load data");
+      setError(formatLiveDataLoadError(err, "Resident roster is unavailable right now."));
     } finally {
       setIsLoading(false);
     }

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import {
   RecordDetailHeader,
@@ -68,7 +69,7 @@ export default function AdminResidentMedicationsPage() {
       if (res.error) throw res.error;
       setRows((res.data ?? []) as Med[]);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load medications");
+      setError(formatLiveDataLoadError(e, "Failed to load medications"));
       setRows([]);
     } finally {
       setLoading(false);

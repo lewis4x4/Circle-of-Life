@@ -30,6 +30,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { MetricCard } from "@/components/ui/metric-card";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
@@ -171,8 +172,10 @@ export default function InsightsPage() {
       if (error) throw error;
       setRows((data ?? []) as InsightRow[]);
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load Smart rounding insights. Confirm facility scope and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load Smart rounding insights. Confirm facility scope and retry."),
+      );
       setRows([]);
       setLoadState("error");
     }
@@ -203,8 +206,10 @@ export default function InsightsPage() {
         `Analyzed ${json.residentsAnalyzed ?? 0} residents · ${json.insightsGenerated ?? 0} insight${json.insightsGenerated === 1 ? "" : "s"} generated · ${json.alertsCreated ?? 0} alert${json.alertsCreated === 1 ? "" : "s"} created.`,
       );
       await load();
-    } catch {
-      setErrorMessage("Could not run Smart rounding insights analysis.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not run Smart rounding insights analysis."),
+      );
     } finally {
       setRunning(false);
     }

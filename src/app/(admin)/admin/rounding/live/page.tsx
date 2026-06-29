@@ -23,6 +23,7 @@ import { PageHeader } from "@/design-system/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -257,9 +258,12 @@ export default function AdminRoundingLivePage() {
       setTasks(rows);
       setLoadState("ready");
       setLastUpdatedAt(Date.now());
-    } catch {
+    } catch (err) {
       setErrorMessage(
-        "Could not load live rounding tasks. Confirm facility scope and retry.",
+        formatLiveDataLoadError(
+          err,
+          "Could not load live rounding tasks. Confirm facility scope and retry.",
+        ),
       );
       setLoadState("error");
     } finally {

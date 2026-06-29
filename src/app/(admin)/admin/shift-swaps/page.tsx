@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -130,7 +131,7 @@ export default function AdminShiftSwapsPage() {
       const ui = await fetchShiftSwapsFromSupabase(supabase, selectedFacilityId);
       setRows(ui);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load shift swap requests");
+      setLoadError(formatLiveDataLoadError(err, "Failed to load shift swap requests"));
       setRows([]);
     } finally {
       setIsLoading(false);

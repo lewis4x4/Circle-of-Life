@@ -13,6 +13,7 @@ import {
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
@@ -179,7 +180,7 @@ export function AdminStaffPageClient({
       loadedFacilityIdRef.current = selectedFacilityId;
       hasLoadedFacilityScopeRef.current = true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
+      setError(formatLiveDataLoadError(err, "Failed to load data"));
     } finally {
       setIsLoading(false);
     }

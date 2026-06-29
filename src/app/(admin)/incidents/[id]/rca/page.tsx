@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle2, RotateCcw, Save } from "lucide-react";
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -255,8 +256,8 @@ export default function AdminIncidentRcaPage() {
         setCompleterName(null);
       }
       setCompletionErrors([]);
-    } catch {
-      setError("Could not load this incident for RCA.");
+    } catch (err) {
+      setError(formatLiveDataLoadError(err, "Could not load this incident for RCA."));
     } finally {
       setLoading(false);
     }

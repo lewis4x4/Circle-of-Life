@@ -1,62 +1,62 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { VendorHubNav } from "../vendor-hub-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 
 type Agg = { vendor_id: string; name: string; cents: number };
 
 export default function VendorSpendPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<Agg[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    if (!c.ok) {
-      setRows([]);
-      setLoadError(c.error);
-      setLoading(false);
-      return;
-    }
-    const { data: payments, error } = await supabase
-      .from("vendor_payments")
-      .select("vendor_id, amount_cents")
-      .eq("organization_id", c.ctx.organizationId)
-      .is("deleted_at", null);
-    if (error) {
-      setLoadError(error.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    const map = new Map<string, Agg>();
-    const ids = [...new Set((payments ?? []).map((p) => (p as { vendor_id: string }).vendor_id))];
-    const { data: vrows } = await supabase.from("vendors").select("id, name").in("id", ids);
-    const vmap = new Map((vrows ?? []).map((v) => [v.id as string, v.name as string]));
-    for (const p of payments ?? []) {
-      const row = p as { vendor_id: string; amount_cents: number };
-      const name = vmap.get(row.vendor_id) ?? row.vendor_id;
-      const cur = map.get(row.vendor_id) ?? { vendor_id: row.vendor_id, name, cents: 0 };
-      cur.cents += row.amount_cents;
-      cur.name = name;
-      map.set(row.vendor_id, cur);
-    }
-    setRows([...map.values()].sort((a, b) => b.cents - a.cents));
-    setLoading(false);
-  }, [supabase]);
+  const {
+    data: rows = [],
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["vendors", "spend", organizationId],
+    enabled: !!organizationId,
+    // Client-side aggregation is preserved here (caches across navigation); a
+    // SQL-aggregate rewrite is tracked as a separate later task.
+    queryFn: async (): Promise<Agg[]> => {
+      const { data: payments, error } = await supabase
+        .from("vendor_payments")
+        .select("vendor_id, amount_cents")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null);
+      if (error) throw new Error(error.message);
+      const map = new Map<string, Agg>();
+      const ids = [...new Set((payments ?? []).map((p) => (p as { vendor_id: string }).vendor_id))];
+      const { data: vrows } = await supabase.from("vendors").select("id, name").in("id", ids);
+      const vmap = new Map((vrows ?? []).map((v) => [v.id as string, v.name as string]));
+      for (const p of payments ?? []) {
+        const row = p as { vendor_id: string; amount_cents: number };
+        const name = vmap.get(row.vendor_id) ?? row.vendor_id;
+        const cur = map.get(row.vendor_id) ?? { vendor_id: row.vendor_id, name, cents: 0 };
+        cur.cents += row.amount_cents;
+        cur.name = name;
+        map.set(row.vendor_id, cur);
+      }
+      return [...map.values()].sort((a, b) => b.cents - a.cents);
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   const csv = useMemo(() => {
     const header = "vendor_id,vendor_name,amount_cents\n";

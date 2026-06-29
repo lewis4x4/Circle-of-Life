@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { queryErrorMessage } from "@/lib/supabase/query-error";
 import type { Database } from "@/types/database";
 
 export type ResidentRosterMetrics = {
@@ -57,7 +58,12 @@ export async function fetchResidentRosterMetrics(
     const payload = fac.data as { total_licensed_beds: number | null } | null;
     const n = payload?.total_licensed_beds;
     licensedBeds = typeof n === "number" && Number.isFinite(n) ? n : null;
-  } catch {
+    if (fac.error) {
+      console.error("[Haven] licensed beds lookup failed:", queryErrorMessage(fac.error), fac.error);
+      licensedBeds = null;
+    }
+  } catch (error) {
+    console.error("[Haven] licensed beds lookup failed:", queryErrorMessage(error), error);
     licensedBeds = null;
   }
 
@@ -79,13 +85,15 @@ export async function fetchResidentRosterMetrics(
       .lte("review_due_date", horizon);
 
     if (plans.error) {
+      console.error("[Haven] care plan review KPI failed:", queryErrorMessage(plans.error), plans.error);
       carePlanReviewsDueWeek = null;
     } else {
       const rowsPlans = plans.data as { resident_id: string }[] | null;
       const ids = new Set((rowsPlans ?? []).map((r) => r.resident_id));
       carePlanReviewsDueWeek = ids.size;
     }
-  } catch {
+  } catch (error) {
+    console.error("[Haven] care plan review KPI failed:", queryErrorMessage(error), error);
     carePlanReviewsDueWeek = null;
   }
 

@@ -33,6 +33,7 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { MetricCard } from "@/components/ui/metric-card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -338,8 +339,10 @@ export default function SmartRoundingWatchesPage() {
       }
 
       setLoadState("ready");
-    } catch {
-      setErrorMessage("Could not load watches. Confirm facility scope and retry.");
+    } catch (err) {
+      setErrorMessage(
+        formatLiveDataLoadError(err, "Could not load watches. Confirm facility scope and retry."),
+      );
       setLoadState("error");
     }
   }, [selectedFacilityId, supabase]);

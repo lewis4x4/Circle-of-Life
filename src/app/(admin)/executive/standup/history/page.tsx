@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, History, Loader2, MessageSquare, Upload } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
@@ -10,10 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
-import { useAuth } from "@/hooks/useAuth";
-import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canCreateDraftFinance } from "@/lib/finance/load-finance-context";
+import type { Database } from "@/types/database";
 import {
   buildStandupImportCommand,
   buildStandupPdfUrl,
@@ -37,62 +39,83 @@ function badgeClass(status: string): string {
 export default function ExecutiveStandupHistoryPage() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  // Identity comes from the app-wide auth provider instead of a per-page
+  // getUser() + user_profiles lookup (loadFinanceRoleContext) plus useAuth.
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
+  const queryClient = useQueryClient();
+  const canCreateDraft = canCreateDraftFinance(appRole as Database["public"]["Enums"]["app_role"]);
   const [error, setError] = useState<string | null>(null);
-  const [rows, setRows] = useState<StandupHistoryItem[]>([]);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [canCreateDraft, setCanCreateDraft] = useState(false);
   const [creatingDraft, setCreatingDraft] = useState(false);
-  const [importJobs, setImportJobs] = useState<StandupImportJob[]>([]);
-  const [importJobsError, setImportJobsError] = useState<string | null>(null);
+  const [clipboardError, setClipboardError] = useState<string | null>(null);
   const [workbookPath, setWorkbookPath] = useState("/Users/brianlewis/Downloads/2026 Standup Call Log.xlsx");
   const [copiedImport, setCopiedImport] = useState(false);
   const [downloadingPdfWeek, setDownloadingPdfWeek] = useState<string | null>(null);
   const [compareFromWeek, setCompareFromWeek] = useState("");
   const [compareToWeek, setCompareToWeek] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setImportJobsError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      setOrganizationId(ctx.ctx.organizationId);
-      setCanCreateDraft(canCreateDraftFinance(ctx.ctx.appRole));
+  const {
+    data,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    // Org-scoped key; only runs once the org is known.
+    queryKey: ["executive", "standup-history", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<{
+      rows: StandupHistoryItem[];
+      importJobs: StandupImportJob[];
+      importJobsError: string | null;
+    }> => {
       const [historyRows, recentImports] = await Promise.allSettled([
-        fetchStandupHistory(supabase, ctx.ctx.organizationId, 52),
-        fetchStandupImportJobs(supabase, ctx.ctx.organizationId, 8),
+        fetchStandupHistory(supabase, organizationId as string, 52),
+        fetchStandupImportJobs(supabase, organizationId as string, 8),
       ]);
 
+      // History failure is fatal for this view (matches the previous throw).
       if (historyRows.status === "rejected") {
         throw historyRows.reason;
       }
 
-      setRows(historyRows.value);
+      // Import jobs are best-effort; surface a soft error but keep history.
       if (recentImports.status === "fulfilled") {
-        setImportJobs(recentImports.value);
-      } else {
-        setImportJobs([]);
-        setImportJobsError(recentImports.reason instanceof Error ? recentImports.reason.message : "Could not load import jobs.");
+        return { rows: historyRows.value, importJobs: recentImports.value, importJobsError: null };
       }
-    } catch (loadError) {
-      setRows([]);
-      setImportJobs([]);
-      setError(loadError instanceof Error ? loadError.message : "Could not load standup history.");
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+      return {
+        rows: historyRows.value,
+        importJobs: [],
+        importJobsError:
+          recentImports.reason instanceof Error ? recentImports.reason.message : "Could not load import jobs.",
+      };
+    },
+  });
+
+  const rows = useMemo(() => data?.rows ?? [], [data]);
+  const importJobs = data?.importJobs ?? [];
+  // Single loading state: auth resolving or the (enabled) query in flight
+  // (covers initial load and explicit Refresh, matching the old load()).
+  const loading = authLoading || (!!organizationId && isFetching);
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error
+        : queryError
+          ? queryError instanceof Error
+            ? queryError.message
+            : "Could not load standup history."
+          : null;
+  // Clipboard failures and the query's soft import-jobs error share one slot.
+  const importJobsError = clipboardError ?? data?.importJobsError ?? null;
 
   async function onCopyImportCommand() {
     try {
       await navigator.clipboard.writeText(buildStandupImportCommand(workbookPath, organizationId));
       setCopiedImport(true);
+      setClipboardError(null);
       window.setTimeout(() => setCopiedImport(false), 1800);
     } catch {
-      setImportJobsError("Clipboard write failed. Copy the import command manually.");
+      setClipboardError("Clipboard write failed. Copy the import command manually.");
     }
   }
 
@@ -105,7 +128,7 @@ export default function ExecutiveStandupHistoryPage() {
     setError(null);
     try {
       await generateExecutiveStandupDraft(supabase, organizationId, user.id, null);
-      await load();
+      await queryClient.invalidateQueries({ queryKey: ["executive", "standup-history", organizationId] });
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Could not create standup draft.");
     } finally {
@@ -124,10 +147,6 @@ export default function ExecutiveStandupHistoryPage() {
       setDownloadingPdfWeek(null);
     }
   }
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   useEffect(() => {
     if (rows.length === 0) return;
@@ -157,7 +176,7 @@ export default function ExecutiveStandupHistoryPage() {
                 Weekly standup packs remain immutable after publication so the owner can compare weeks without spreadsheet drift.
               </p>
             </div>
-            <Button type="button" variant="outline" onClick={() => void load()} disabled={loading}>
+            <Button type="button" variant="outline" onClick={() => void refetch()} disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Refresh
             </Button>
@@ -170,9 +189,9 @@ export default function ExecutiveStandupHistoryPage() {
           </div>
         </header>
 
-        {error ? (
+        {loadError ? (
           <Card className="border-rose-200 bg-rose-50/70 dark:border-rose-500/20 dark:bg-rose-500/10">
-            <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{error}</CardContent>
+            <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{loadError}</CardContent>
           </Card>
         ) : null}
 

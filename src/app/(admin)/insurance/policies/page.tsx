@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -10,8 +11,9 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { Constants, type Database } from "@/types/database";
 import { format, parseISO } from "date-fns";
@@ -21,68 +23,62 @@ type EntityMini = { id: string; name: string };
 
 export default function InsurancePoliciesPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<PolicyRow[]>([]);
-  const [entities, setEntities] = useState<EntityMini[]>([]);
+  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
   const [entityFilter, setEntityFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
-      setRows([]);
-      setLoadError(c.error);
-      setLoading(false);
-      return;
-    }
-    const { data: ent, error: entErr } = await supabase
-      .from("entities")
-      .select("id, name")
-      .eq("organization_id", c.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("name");
-    if (entErr) {
-      setLoadError(entErr.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    setEntities((ent ?? []) as EntityMini[]);
+  const { data: entities = [] } = useQuery({
+    queryKey: ["insurance", "policy-entities", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<EntityMini[]> => {
+      const { data, error } = await supabase
+        .from("entities")
+        .select("id, name")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as EntityMini[];
+    },
+  });
 
-    let q = supabase
-      .from("insurance_policies")
-      .select("*")
-      .eq("organization_id", c.ctx.organizationId)
-      .is("deleted_at", null)
-      .order("expiration_date", { ascending: true });
-    if (entityFilter) q = q.eq("entity_id", entityFilter);
-    if (statusFilter) q = q.eq("status", statusFilter as PolicyRow["status"]);
-    const { data, error: polErr } = await q;
-    if (polErr) {
-      setLoadError(polErr.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    setRows((data ?? []) as PolicyRow[]);
-    setLoading(false);
-  }, [supabase, entityFilter, statusFilter]);
+  const {
+    data: rows = [],
+    isPending,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["insurance", "policies", organizationId, entityFilter, statusFilter],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<PolicyRow[]> => {
+      let q = supabase
+        .from("insurance_policies")
+        .select("*")
+        .eq("organization_id", organizationId as string)
+        .is("deleted_at", null)
+        .order("expiration_date", { ascending: true });
+      if (entityFilter) q = q.eq("entity_id", entityFilter);
+      if (statusFilter) q = q.eq("status", statusFilter as PolicyRow["status"]);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PolicyRow[];
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
 
   const entityName = useMemo(() => {
     const m = new Map(entities.map((e) => [e.id, e.name]));
     return (id: string) => m.get(id) ?? id;
   }, [entities]);
 
-  const canWrite = ctx?.ok && canMutateFinance(ctx.ctx.appRole);
+  const canWrite = !!organizationId && canMutateFinance(appRole as Database["public"]["Enums"]["app_role"]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -147,7 +143,7 @@ export default function InsurancePoliciesPage() {
               </select>
             </div>
             <div className="flex items-end">
-              <Button type="button" variant="outline" className="h-10 rounded-lg px-6 border-border" onClick={() => void load()}>
+              <Button type="button" variant="outline" className="h-10 rounded-lg px-6 border-border" onClick={() => void refetch()}>
                 Apply Filters
               </Button>
             </div>
