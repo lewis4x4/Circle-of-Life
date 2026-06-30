@@ -16,10 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
+
+import type { Database } from "@/types/database";
 
 type EntityMini = { id: string; name: string };
 type GlMini = { id: string; code: string; name: string; account_type: string };
@@ -48,7 +51,9 @@ function lastOfMonth(): string {
 
 export default function BudgetPage() {
   const supabase = createClient();
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [entityId, setEntityId] = useState("");
   const [accounts, setAccounts] = useState<GlMini[]>([]);
@@ -64,23 +69,18 @@ export default function BudgetPage() {
   const [saving, setSaving] = useState(false);
 
   const init = useCallback(async () => {
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
-      setError(c.error);
-      return;
-    }
+    if (!organizationId) return;
     const { data: ent } = await supabase
       .from("entities")
       .select("id, name")
-      .eq("organization_id", c.ctx.organizationId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .order("name");
     const list = (ent ?? []) as EntityMini[];
     setEntities(list);
     if (list[0]) setEntityId((prev) => prev || list[0].id);
     setReady(true);
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     void init();
@@ -172,7 +172,7 @@ export default function BudgetPage() {
   }
 
   async function addBudgetLine() {
-    if (!ctx?.ok || !entityId || !addAccountId) return;
+    if (!organizationId || !entityId || !addAccountId) return;
     const cents = parseDollarsToCents(addAmount);
     if (cents == null) {
       setError("Enter a valid dollar amount.");
@@ -182,7 +182,7 @@ export default function BudgetPage() {
     setError(null);
     try {
       const { error: iErr } = await supabase.from("gl_budget_lines").insert({
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         entity_id: entityId,
         gl_account_id: addAccountId,
         period_start: period,
@@ -216,7 +216,7 @@ export default function BudgetPage() {
     URL.revokeObjectURL(url);
   }
 
-  const canWrite = ctx?.ok && canMutateFinance(ctx.ctx.appRole);
+  const canWrite = Boolean(organizationId && canMutateFinance(role));
   const selectClass = cn(
     "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
   );

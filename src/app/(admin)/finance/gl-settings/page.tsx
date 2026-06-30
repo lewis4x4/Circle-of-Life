@@ -6,9 +6,10 @@ import { FinanceHubNav } from "../finance-hub-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 
 type EntityGlSettingsInsert = Database["public"]["Tables"]["entity_gl_settings"]["Insert"];
@@ -26,7 +27,9 @@ type SettingsRow = {
 
 export default function GlSettingsPage() {
   const supabase = createClient();
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [entityId, setEntityId] = useState("");
   const [accounts, setAccounts] = useState<GlMini[]>([]);
@@ -43,13 +46,11 @@ export default function GlSettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const c = await loadFinanceRoleContext(supabase);
-      setCtx(c);
-      if (!c.ok) return;
+      if (!organizationId) return;
       const { data: ent } = await supabase
         .from("entities")
         .select("id, name")
-        .eq("organization_id", c.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name");
       const list = (ent ?? []) as EntityMini[];
@@ -58,7 +59,7 @@ export default function GlSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     void load();
@@ -92,13 +93,13 @@ export default function GlSettingsPage() {
   }, [loadSettings]);
 
   async function save() {
-    if (!ctx?.ok || !entityId) return;
+    if (!organizationId || !entityId) return;
     setSaving(true);
     setError(null);
     setSuccess(null);
     try {
       const base: Omit<EntityGlSettingsInsert, "id"> = {
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         entity_id: entityId,
         accounts_receivable_id: arId || null,
         cash_id: cashId || null,
@@ -128,7 +129,7 @@ export default function GlSettingsPage() {
     }
   }
 
-  const canWrite = ctx?.ok && canMutateFinance(ctx.ctx.appRole);
+  const canWrite = Boolean(organizationId && canMutateFinance(role));
   const selectClass = cn(
     "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
   );

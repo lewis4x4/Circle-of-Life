@@ -15,9 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 
 type GlAccountRow = Database["public"]["Tables"]["gl_accounts"]["Row"];
@@ -26,7 +27,9 @@ type AccountType = Database["public"]["Enums"]["gl_account_type"];
 
 export default function ChartOfAccountsPage() {
   const supabase = createClient();
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [entityId, setEntityId] = useState<string>("");
   const [rows, setRows] = useState<GlAccountRow[]>([]);
@@ -41,16 +44,11 @@ export default function ChartOfAccountsPage() {
     setLoading(true);
     setError(null);
     try {
-      const c = await loadFinanceRoleContext(supabase);
-      setCtx(c);
-      if (!c.ok) {
-        setError(c.error);
-        return;
-      }
+      if (!organizationId) return;
       const { data: ent, error: eErr } = await supabase
         .from("entities")
         .select("id, name")
-        .eq("organization_id", c.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name");
       if (eErr) {
@@ -63,7 +61,7 @@ export default function ChartOfAccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     void load();
@@ -87,13 +85,13 @@ export default function ChartOfAccountsPage() {
 
   async function addAccount(e: React.FormEvent) {
     e.preventDefault();
-    if (!ctx?.ok || !entityId) return;
-    if (!canMutateFinance(ctx.ctx.appRole)) return;
+    if (!organizationId || !entityId) return;
+    if (!canMutateFinance(role)) return;
     setSaving(true);
     setError(null);
     try {
       const ins: Database["public"]["Tables"]["gl_accounts"]["Insert"] = {
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         entity_id: entityId,
         code: code.trim(),
         name: name.trim(),
@@ -112,7 +110,7 @@ export default function ChartOfAccountsPage() {
     }
   }
 
-  const canWrite = ctx?.ok && canMutateFinance(ctx.ctx.appRole);
+  const canWrite = Boolean(organizationId && canMutateFinance(role));
 
   return (
     <div className="space-y-6">

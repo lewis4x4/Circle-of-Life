@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { FinanceHubNav } from "../finance-hub-nav";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { ArrowRight, CircleDollarSign } from "lucide-react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
@@ -16,24 +16,26 @@ type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
 
 export default function LedgerPage() {
   const supabase = createClient();
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const [rows, setRows] = useState<JournalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!organizationId) {
+      setRows([]);
+      setLoading(authLoading);
+      if (!authLoading) setError("Organization missing on profile.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
-        return;
-      }
       let q = supabase
         .from("journal_entries")
         .select("*")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .eq("status", "posted")
         .is("deleted_at", null)
         .order("entry_date", { ascending: false })
@@ -47,11 +49,13 @@ export default function LedgerPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, organizationId, selectedFacilityId, authLoading]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const showLoading = authLoading || loading;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -80,11 +84,11 @@ export default function LedgerPage() {
             <span className="flex-1 min-w-0">Memo</span>
             <span className="w-[140px] shrink-0">Entry date</span>
             <span className="w-[160px] shrink-0 text-right">
-              {loading ? "Loading…" : `${rows.length} rows`}
+              {showLoading ? "Loading…" : `${rows.length} rows`}
             </span>
           </TableRowHeader>
           
-          {rows.length === 0 && !loading ? (
+          {rows.length === 0 && !showLoading ? (
             <div className="p-16 text-center rounded-lg border-0">
               <p className="font-semibold text-lg text-foreground">No entries yet</p>
               <p className="text-sm text-muted-foreground mt-1">Period close processes or active journals will populate here.</p>
