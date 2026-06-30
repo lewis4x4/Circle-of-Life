@@ -72,9 +72,6 @@ import {
 } from "@/components/layout/navigation-pending";
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
-import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
-import { SurveyVisitWorkspaceDock } from "@/components/compliance/SurveyVisitWorkspaceChrome";
-import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
@@ -101,6 +98,30 @@ const AppShellCommandPalette = dynamic(
   () =>
     import("@/components/layout/AppShellCommandPalette").then((m) => ({
       default: m.AppShellCommandPalette,
+    })),
+  { ssr: false, loading: () => null },
+);
+
+const PilotFeedbackLauncher = dynamic(
+  () =>
+    import("@/components/feedback/PilotFeedbackLauncher").then((m) => ({
+      default: m.PilotFeedbackLauncher,
+    })),
+  { ssr: false, loading: () => null },
+);
+
+const SurveyVisitShellToggle = dynamic(
+  () =>
+    import("@/components/compliance/SurveyVisitShellToggle").then((m) => ({
+      default: m.SurveyVisitShellToggle,
+    })),
+  { ssr: false, loading: () => null },
+);
+
+const SurveyVisitWorkspaceDock = dynamic(
+  () =>
+    import("@/components/compliance/SurveyVisitWorkspaceChrome").then((m) => ({
+      default: m.SurveyVisitWorkspaceDock,
     })),
   { ssr: false, loading: () => null },
 );
