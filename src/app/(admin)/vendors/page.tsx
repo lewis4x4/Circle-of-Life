@@ -1,44 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
 
 import { VendorHubNav } from "./vendor-hub-nav";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { ArrowRight } from "lucide-react";
+
+type VendorHubSnapshot = {
+  vendorCount: number;
+  openAlerts: number;
+  mtdSpend: number;
+};
 
 export default function AdminVendorsHubPage() {
   const supabase = createClient();
-  const [vendorCount, setVendorCount] = useState<number | null>(null);
-  const [openAlerts, setOpenAlerts] = useState<number | null>(null);
-  const [mtdSpend, setMtdSpend] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
   const monthStart = useMemo(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setVendorCount(null);
-        setOpenAlerts(null);
-        setMtdSpend(null);
-        setLoadError(ctx.error);
-        return;
-      }
-      const orgId = ctx.ctx.organizationId;
+  const {
+    data,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["vendors", "hub-overview", organizationId, monthStart],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<VendorHubSnapshot> => {
+      const orgId = organizationId as string;
       const [{ count: vCount, error: e1 }, { count: aCount, error: e2 }, paymentsRes] = await Promise.all([
         supabase
           .from("vendors")
@@ -59,25 +58,26 @@ export default function AdminVendorsHubPage() {
           .is("deleted_at", null),
       ]);
       const err = e1 ?? e2 ?? paymentsRes.error;
-      if (err) {
-        setLoadError(err.message);
-        setVendorCount(null);
-        setOpenAlerts(null);
-        setMtdSpend(null);
-        return;
-      }
-      setVendorCount(vCount ?? 0);
-      setOpenAlerts(aCount ?? 0);
+      if (err) throw new Error(err.message);
       const rows = paymentsRes.data ?? [];
-      setMtdSpend(rows.reduce((s, r) => s + (r.amount_cents ?? 0), 0));
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, monthStart]);
+      return {
+        vendorCount: vCount ?? 0,
+        openAlerts: aCount ?? 0,
+        mtdSpend: rows.reduce((s, r) => s + (r.amount_cents ?? 0), 0),
+      };
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const loading = authLoading || isPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null;
+  const vendorCount = data?.vendorCount ?? null;
+  const openAlerts = data?.openAlerts ?? null;
+  const mtdSpend = data?.mtdSpend ?? null;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

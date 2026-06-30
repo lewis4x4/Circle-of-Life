@@ -1,77 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Umbrella } from "lucide-react";
 
 import { InsuranceHubNav } from "./insurance-hub-nav";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
-import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
-import { useAuth } from "@/hooks/useAuth";
+import type { Database } from "@/types/database";
+
+type EntityMini = { id: string; name: string };
+
+type InsuranceHubSnapshot = {
+  activePolicies: number;
+  renewalsInFlight: number;
+  openClaims: number;
+  entities: EntityMini[];
+};
 
 export default function AdminInsuranceHubPage() {
   const supabase = createClient();
-  const { user } = useAuth();
-  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
-  const [activePolicies, setActivePolicies] = useState<number | null>(null);
-  const [renewalsInFlight, setRenewalsInFlight] = useState<number | null>(null);
-  const [openClaims, setOpenClaims] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [entities, setEntities] = useState<{ id: string; name: string }[]>([]);
+  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const roleConfig = getRoleDashboardConfig(appRole as AppRole);
   const [entityFilter, setEntityFilter] = useState("");
-  const [tcor, setTcor] = useState<TcorSnapshot | null>(null);
-  const [tcorError, setTcorError] = useState<string | null>(null);
-  const [tcorLoading, setTcorLoading] = useState(false);
 
-  const loadTcor = useCallback(
-    async (oid: string) => {
-      setTcorLoading(true);
-      setTcorError(null);
-      try {
-        const r = await computeTotalCostOfRisk(supabase, {
-          organizationId: oid,
-          entityId: entityFilter || null,
-        });
-        if (!r.ok) {
-          setTcor(null);
-          setTcorError(r.error);
-          return;
-        }
-        setTcor(r.snapshot);
-      } finally {
-        setTcorLoading(false);
-      }
-    },
-    [supabase, entityFilter],
-  );
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setActivePolicies(null);
-        setRenewalsInFlight(null);
-        setOpenClaims(null);
-        setOrgId(null);
-        setEntities([]);
-        setLoadError(ctx.error);
-        return;
-      }
-      const oid = ctx.ctx.organizationId;
-      setOrgId(oid);
-
+  const {
+    data: overview,
+    isPending: overviewPending,
+    error: overviewError,
+  } = useQuery({
+    queryKey: ["insurance", "hub-overview", organizationId],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<InsuranceHubSnapshot> => {
+      const oid = organizationId as string;
       const [{ data: entRows }, { count: polCount, error: e1 }, { count: renCount, error: e2 }, { count: clCount, error: e3 }] =
         await Promise.all([
           supabase
@@ -100,30 +70,46 @@ export default function AdminInsuranceHubPage() {
             .is("deleted_at", null),
         ]);
       const err = e1 ?? e2 ?? e3;
-      if (err) {
-        setLoadError(err.message);
-        setActivePolicies(null);
-        setRenewalsInFlight(null);
-        setOpenClaims(null);
-        return;
-      }
-      setEntities((entRows ?? []) as { id: string; name: string }[]);
-      setActivePolicies(polCount ?? 0);
-      setRenewalsInFlight(renCount ?? 0);
-      setOpenClaims(clCount ?? 0);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase]);
+      if (err) throw new Error(err.message);
+      return {
+        entities: (entRows ?? []) as EntityMini[],
+        activePolicies: polCount ?? 0,
+        renewalsInFlight: renCount ?? 0,
+        openClaims: clCount ?? 0,
+      };
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const {
+    data: tcor,
+    isPending: tcorPending,
+    error: tcorError,
+  } = useQuery({
+    queryKey: ["insurance", "tcor", organizationId, entityFilter],
+    enabled: !!organizationId,
+    queryFn: async (): Promise<TcorSnapshot> => {
+      const r = await computeTotalCostOfRisk(supabase, {
+        organizationId: organizationId as string,
+        entityId: entityFilter || null,
+      });
+      if (!r.ok) throw new Error(r.error);
+      return r.snapshot;
+    },
+  });
 
-  useEffect(() => {
-    if (!orgId) return;
-    void loadTcor(orgId);
-  }, [orgId, loadTcor]);
+  const loading = authLoading || overviewPending;
+  const loadError =
+    !authLoading && !organizationId
+      ? "Organization missing on profile."
+      : overviewError
+        ? overviewError.message
+        : null;
+  const entities = overview?.entities ?? [];
+  const activePolicies = overview?.activePolicies ?? null;
+  const renewalsInFlight = overview?.renewalsInFlight ?? null;
+  const openClaims = overview?.openClaims ?? null;
+  const tcorLoading = tcorPending;
+  const tcorErrorMessage = tcorError?.message ?? null;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -240,7 +226,7 @@ export default function AdminInsuranceHubPage() {
                 className="h-9 min-w-[220px] rounded-md border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
                 value={entityFilter}
                 onChange={(e) => setEntityFilter(e.target.value)}
-                disabled={loading || !orgId}
+                disabled={loading || !organizationId}
               >
                 <option value="">All entities</option>
                 {entities.map((e) => (
@@ -251,9 +237,9 @@ export default function AdminInsuranceHubPage() {
               </select>
             </div>
           </div>
-          {tcorError ? (
+          {tcorErrorMessage ? (
             <p className="text-sm text-destructive" role="alert">
-              {tcorError}
+              {tcorErrorMessage}
             </p>
           ) : null}
           {tcorLoading ? (
