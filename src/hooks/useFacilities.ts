@@ -1,72 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect } from "react";
+
+import {
+  FACILITIES_LIST_QUERY_KEY,
+  facilitiesListQueryKey,
+  fetchFacilitiesList,
+  type FetchFacilitiesListParams,
+} from "@/lib/admin/facilities/fetch-facilities-list";
 import type { FacilityRow } from "@/types/facility";
-import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
-
-function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
-  type ListApi = FacilityRow & {
-    occupancy_count?: number;
-    total_beds?: number;
-    occupancy_pct?: number;
-    administrator_staff_id?: string | null;
-    survey_readiness_pct?: number | null;
-    portfolio_open_incidents_total?: number;
-    portfolio_open_incidents_level_3?: number;
-    labor_cost_mtd_pct?: number | null;
-    last_survey_date?: string | null;
-    last_survey_result?: string | null;
-    total_licensed_beds?: number;
-    administrator_name?: string | null;
-  };
-
-  const f = raw as unknown as ListApi;
-  const occ = typeof f.occupancy_count === "number" ? f.occupancy_count : 0;
-  const licensedCapacity = typeof f.total_licensed_beds === "number" ? f.total_licensed_beds : 0;
-
-  let occupancy_pct_norm: number | null = null;
-  if (typeof f.occupancy_pct === "number" && Number.isFinite(f.occupancy_pct)) {
-    occupancy_pct_norm =
-      f.occupancy_pct <= 1 ? f.occupancy_pct : Math.min(1, Math.max(0, f.occupancy_pct / 100));
-  }
-
-  return {
-    ...(f as unknown as FacilityRow),
-    current_occupancy: occ,
-    licensed_beds: licensedCapacity,
-    occupancy_pct: occupancy_pct_norm,
-    administrator_staff_id: f.administrator_staff_id ?? null,
-    survey_readiness_pct:
-      typeof f.survey_readiness_pct === "number" && Number.isFinite(f.survey_readiness_pct)
-        ? f.survey_readiness_pct
-        : null,
-    portfolio_open_incidents_total:
-      typeof f.portfolio_open_incidents_total === "number" ? f.portfolio_open_incidents_total : 0,
-    portfolio_open_incidents_level_3:
-      typeof f.portfolio_open_incidents_level_3 === "number" ? f.portfolio_open_incidents_level_3 : 0,
-    labor_cost_mtd_pct:
-      typeof f.labor_cost_mtd_pct === "number" && Number.isFinite(f.labor_cost_mtd_pct)
-        ? f.labor_cost_mtd_pct
-        : null,
-    last_survey_date: f.last_survey_date ?? null,
-    last_survey_result: f.last_survey_result ?? null,
-    administrator_name: f.administrator_name ?? null,
-  } as FacilityRow;
-}
-
-interface FacilitiesResponse {
-  facilities: Record<string, unknown>[];
-  total: number;
-  page: number;
-  has_next: boolean;
-}
-
-interface UseFacilitiesOptions {
-  status?: string;
-  search?: string;
-  page?: number;
-  pageSize?: number;
-}
 
 interface UseFacilitiesReturn {
   facilities: FacilityRow[];
@@ -82,124 +25,54 @@ interface UseFacilitiesReturn {
   refetch: () => Promise<void>;
 }
 
-// Module-level cache survives client-side navigations within a session.
-// Keyed by query params; ~60s freshness window then stale-while-revalidate.
-// LRU-bounded so unique searches/filters don't grow memory unbounded.
-type CacheEntry = {
-  facilities: FacilityRow[];
-  pagination: UseFacilitiesReturn["pagination"];
-  fetchedAt: number;
-};
-const facilitiesCache = new Map<string, CacheEntry>();
-const FACILITIES_CACHE_TTL_MS = 60_000;
-const FACILITIES_CACHE_MAX = 16;
+const FACILITIES_LIST_STALE_MS = 60_000;
+
+let facilitiesQueryClient: QueryClient | null = null;
 
 /**
- * Clear the module-level facilities cache. Call after any facility mutation
- * (create / edit / archive) so the next list read reflects the change instead
- * of serving a stale entry for up to the TTL.
+ * Clear cached facility list reads. Call after any facility mutation
+ * (create / edit / archive) so the next list read reflects the change.
  */
 export function invalidateFacilitiesCache(): void {
-  facilitiesCache.clear();
+  void facilitiesQueryClient?.invalidateQueries({ queryKey: FACILITIES_LIST_QUERY_KEY });
 }
 
-export function useFacilities(options: UseFacilitiesOptions = {}): UseFacilitiesReturn {
+export function useFacilities(options: FetchFacilitiesListParams = {}): UseFacilitiesReturn {
   const { status, search, page = 1, pageSize = 20 } = options;
+  const queryClient = useQueryClient();
 
-  const cacheKey = `${page}|${pageSize}|${status ?? ""}|${search ?? ""}`;
-  const cached = lruGet(facilitiesCache, cacheKey);
-  const cacheIsFresh = cached != null && Date.now() - cached.fetchedAt < FACILITIES_CACHE_TTL_MS;
+  useEffect(() => {
+    facilitiesQueryClient = queryClient;
+  }, [queryClient]);
 
-  // Track the age of the data we currently hold so the visibility-refetch
-  // throttle behaves the same for cache-seeded instances as for ones that
-  // fetched over the network.
-  const lastFetchAtRef = useRef(cached?.fetchedAt ?? 0);
-
-  const [facilities, setFacilities] = useState<FacilityRow[]>(cached?.facilities ?? []);
-  // Only show the full-page spinner when we have nothing to paint.
-  const [isLoading, setIsLoading] = useState(cached == null);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState(
-    cached?.pagination ?? {
-      total: 0,
-      page: 1,
-      page_size: 20,
-      total_pages: 0,
-      has_next: false,
-    },
-  );
+  const {
+    data,
+    isPending,
+    error: queryError,
+    refetch: refetchQuery,
+  } = useQuery({
+    queryKey: facilitiesListQueryKey({ status, search, page, pageSize }),
+    queryFn: () => fetchFacilitiesList({ status, search, page, pageSize }),
+    staleTime: FACILITIES_LIST_STALE_MS,
+    refetchOnWindowFocus: true,
+  });
 
   const refetch = useCallback(async () => {
-    const hasCached = facilitiesCache.has(cacheKey);
-    if (!hasCached) setIsLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        page_size: pageSize.toString(),
-      });
-      if (status) params.set("status", status);
-      if (search) params.set("search", search);
-
-      const res = await fetch(`/api/admin/facilities?${params}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch facilities");
-      }
-      const json = (await res.json()) as FacilitiesResponse;
-      const normalized = (json.facilities ?? []).map((row) => normalizeListRow(row));
-      const nextPagination = {
-        total: json.total ?? 0,
-        page: json.page ?? page,
-        page_size: pageSize,
-        total_pages: Math.ceil((json.total ?? 0) / pageSize),
-        has_next: json.has_next ?? false,
-      };
-      const now = Date.now();
-      setFacilities(normalized);
-      setPagination(nextPagination);
-      lruSet(
-        facilitiesCache,
-        cacheKey,
-        { facilities: normalized, pagination: nextPagination, fetchedAt: now },
-        FACILITIES_CACHE_MAX,
-      );
-      lastFetchAtRef.current = now;
-    } catch (err) {
-      console.error("[useFacilities] error:", err);
-      const message = err instanceof Error ? err.message : "Failed to fetch facilities";
-      setError(message);
-      if (!hasCached) setFacilities([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, status, search, cacheKey]);
-
-  useEffect(() => {
-    // If we have a fresh cache hit, skip the network round-trip entirely.
-    if (cacheIsFresh) return;
-    void refetch();
-    // refetch is stable for this query shape; cacheIsFresh is read once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refetch]);
-
-  useEffect(() => {
-    const onVis = () => {
-      if (
-        document.visibilityState === "visible" &&
-        Date.now() - lastFetchAtRef.current > FACILITIES_CACHE_TTL_MS
-      ) {
-        void refetch();
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [refetch]);
+    await refetchQuery();
+  }, [refetchQuery]);
 
   return {
-    facilities,
-    isLoading,
-    error,
-    pagination,
+    facilities: data?.facilities ?? [],
+    isLoading: isPending && !data,
+    error: queryError instanceof Error ? queryError.message : queryError ? "Failed to fetch facilities" : null,
+    pagination:
+      data?.pagination ?? {
+        total: 0,
+        page: 1,
+        page_size: pageSize,
+        total_pages: 0,
+        has_next: false,
+      },
     refetch,
   };
 }

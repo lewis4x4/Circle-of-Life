@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useFacilities, invalidateFacilitiesCache } from "./useFacilities";
@@ -17,6 +19,23 @@ const facilityResponse = {
   page: 1,
   has_next: false,
 };
+
+function createTestQueryWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: Infinity,
+      },
+    },
+  });
+
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+
+  return { queryClient, wrapper };
+}
 
 describe("useFacilities", () => {
   let nowMs = Date.parse("2026-05-26T12:00:00.000Z");
@@ -40,7 +59,8 @@ describe("useFacilities", () => {
   });
 
   it("reuses the cached facility response for the same query within the ttl", async () => {
-    const first = renderHook(() => useFacilities({ search: "oakridge-cache-hit" }));
+    const { wrapper } = createTestQueryWrapper();
+    const first = renderHook(() => useFacilities({ search: "oakridge-cache-hit" }), { wrapper });
 
     await waitFor(() => expect(first.result.current.isLoading).toBe(false));
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -54,7 +74,7 @@ describe("useFacilities", () => {
 
     first.unmount();
 
-    const second = renderHook(() => useFacilities({ search: "oakridge-cache-hit" }));
+    const second = renderHook(() => useFacilities({ search: "oakridge-cache-hit" }), { wrapper });
 
     await waitFor(() => expect(second.result.current.isLoading).toBe(false));
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -62,25 +82,27 @@ describe("useFacilities", () => {
   });
 
   it("refreshes visible facilities after the ttl expires and the tab becomes visible", async () => {
-    renderHook(() => useFacilities({ search: "oakridge-cache-stale" }));
+    const { wrapper } = createTestQueryWrapper();
+    renderHook(() => useFacilities({ search: "oakridge-cache-stale" }), { wrapper });
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
     nowMs = Date.parse("2026-05-26T12:01:01.000Z");
-    document.dispatchEvent(new Event("visibilitychange"));
+    focusManager.setFocused(false);
+    focusManager.setFocused(true);
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
   });
 
   it("invalidateFacilitiesCache forces a fresh fetch on the next mount within the ttl", async () => {
-    const first = renderHook(() => useFacilities({ search: "oakridge-invalidate" }));
+    const { wrapper } = createTestQueryWrapper();
+    const first = renderHook(() => useFacilities({ search: "oakridge-invalidate" }), { wrapper });
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
     first.unmount();
 
-    // Without invalidation a remount inside the TTL would be served from cache.
     invalidateFacilitiesCache();
 
-    const second = renderHook(() => useFacilities({ search: "oakridge-invalidate" }));
+    const second = renderHook(() => useFacilities({ search: "oakridge-invalidate" }), { wrapper });
     await waitFor(() => expect(second.result.current.isLoading).toBe(false));
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(second.result.current.facilities[0]?.name).toBe("Oakridge ALF");

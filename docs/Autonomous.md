@@ -9,10 +9,10 @@
 | Field | Value |
 |-------|--------|
 | **Initiative** | [`2026-06-28-perf-navigation-remediation-handoff.md`](./reviews/2026-06-28-perf-navigation-remediation-handoff.md) |
-| **Shipped segments** | **perf-nav-02** (pending nav + loading shells); **perf-nav-06/07** (RSC bootstrap hubs + resident detail); **perf-waterfall-10** (incident detail server loader + parallel queries); **perf-cache-08** partial (billing ledger, vendor/insurance hubs); **perf-auth-09** partial (HavenAuth on new forms + finance client pages); **fix(ci)** AppShell lazy feedback/survey chrome (450 kB gzip cap). |
+| **Shipped segments** | **perf-nav-02** (pending nav + loading shells); **perf-nav-06/07** (RSC bootstrap hubs + resident detail); **perf-waterfall-10** (incident detail server loader + parallel queries); **perf-cache-08** (billing ledger, vendor/insurance, quality, **facilities**, **transportation** hubs → `useQuery` + segment `QueryClientLayout`); **perf-auth-09** partial (HavenAuth on new forms + finance client pages); **fix(ci)** AppShell lazy feedback/survey chrome (450 kB gzip cap). |
 | **Mission alignment** | **pass** — Faster time-to-action on role-governed admin workflows; RLS/audit unchanged. |
-| **Next slice** | **perf-cache-08** — quality hub (`useQuery` + segment layout); then facilities + transportation hubs. Remaining **perf-auth-09** `getUser()` grep cleanup. |
-| **Gate artifacts** | `test-results/agent-gates/2026-06-29T03-*` (nav 06/07, waterfall-10), `2026-06-30T03-*` (auth-09, cache-08). |
+| **Next slice** | **perf-auth-09** — finish `getUser()` grep cleanup under `src/app/(admin)`. Optional: nav latency script, extend `HavenNavLink` to in-page hub links. |
+| **Gate artifacts** | `test-results/agent-gates/2026-06-29T03-*` (nav 06/07, waterfall-10), `2026-06-30T03-*` (auth-09, cache-08 vendor/insurance), `2026-06-30T04-13-*` (cache-08 quality), `2026-06-30T12-52-*` (cache-08 facilities + transportation). |
 
 ---
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   addDays,
   differenceInCalendarDays,
@@ -17,19 +18,13 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { fetchTransportationHubSnapshot } from "@/lib/transportation/load-transportation-hub";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-type FleetRow = Database["public"]["Tables"]["fleet_vehicles"]["Row"];
-type InspectionRow = Database["public"]["Tables"]["vehicle_inspection_logs"]["Row"] & {
-  fleet_vehicles: { name: string } | null;
-};
-type DriverRow = Database["public"]["Tables"]["driver_credentials"]["Row"] & {
-  staff: { first_name: string; last_name: string } | null;
-};
 
 type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requests"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -183,84 +178,37 @@ function formatAlertDeadline(daysUntil: number) {
 export default function AdminTransportationHubPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
-  const [fleet, setFleet] = useState<FleetRow[]>([]);
-  const [inspections, setInspections] = useState<InspectionRow[]>([]);
-  const [drivers, setDrivers] = useState<DriverRow[]>([]);
-  const [transportRequests, setTransportRequests] = useState<TransportRequestRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const facilityReady =
+    selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId);
+
+  const {
+    data,
+    isPending,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["transportation", "hub", selectedFacilityId],
+    enabled: facilityReady,
+    queryFn: () => fetchTransportationHubSnapshot(selectedFacilityId!),
+  });
+
+  const fleet = useMemo(() => data?.fleet ?? [], [data]);
+  const inspections = useMemo(() => data?.inspections ?? [], [data]);
+  const drivers = useMemo(() => data?.drivers ?? [], [data]);
+  const transportRequests = useMemo(() => data?.transportRequests ?? [], [data]);
+  const loading = facilityReady && isPending && !data;
   const [error, setError] = useState<string | null>(null);
+  const loadError =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? "Failed to load transportation data."
+        : null;
+  const displayError = error ?? loadError;
+
   const [exportingCsv, setExportingCsv] = useState(false);
   const [transportStatusFilter, setTransportStatusFilter] = useState<
     "all" | TransportRequestStatus
   >("all");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setFleet([]);
-      setInspections([]);
-      setDrivers([]);
-      setTransportRequests([]);
-      setLoading(false);
-      return;
-    }
-    try {
-      const today = format(startOfDay(new Date()), "yyyy-MM-dd");
-      const [fRes, iRes, dRes, tRes] = await Promise.all([
-        supabase
-          .from("fleet_vehicles")
-          .select("*")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .order("name", { ascending: true })
-          .limit(40),
-        supabase
-          .from("vehicle_inspection_logs")
-          .select("*, fleet_vehicles(name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .order("inspected_at", { ascending: false })
-          .limit(25),
-        supabase
-          .from("driver_credentials")
-          .select("*, staff(first_name, last_name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .order("updated_at", { ascending: false })
-          .limit(40),
-        supabase
-          .from("resident_transport_requests")
-          .select("id, appointment_date, appointment_time, destination_name, purpose, status, residents(first_name, last_name)")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .gte("appointment_date", today)
-          .order("appointment_date", { ascending: true })
-          .order("appointment_time", { ascending: true })
-          .limit(25),
-      ]);
-      if (fRes.error) throw fRes.error;
-      if (iRes.error) throw iRes.error;
-      if (dRes.error) throw dRes.error;
-      if (tRes.error) throw tRes.error;
-      setFleet(fRes.data ?? []);
-      setInspections((iRes.data ?? []) as InspectionRow[]);
-      setDrivers((dRes.data ?? []) as DriverRow[]);
-      setTransportRequests((tRes.data ?? []) as TransportRequestRow[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load transportation data.");
-      setFleet([]);
-      setInspections([]);
-      setDrivers([]);
-      setTransportRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, selectedFacilityId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const exportTransportRequestsCsv = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
@@ -348,8 +296,6 @@ export default function AdminTransportationHubPage() {
     }
     return out.sort((a, b) => a.daysUntil - b.daysUntil);
   }, [fleet]);
-
-  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   const filteredTransportRequests = useMemo(() => {
     if (transportStatusFilter === "all") return transportRequests;
@@ -611,9 +557,9 @@ export default function AdminTransportationHubPage() {
         </p>
       )}
 
-      {error && (
+      {displayError && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
-          {error}
+          {displayError}
         </p>
       )}
 
