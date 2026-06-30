@@ -8,8 +8,8 @@ import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -22,6 +22,7 @@ export default function InsurancePolicyDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
+  const { organizationId } = useHavenAuth();
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [entityName, setEntityName] = useState<string>("");
   const [renewals, setRenewals] = useState<Renewal[]>([]);
@@ -34,9 +35,8 @@ export default function InsurancePolicyDetailPage() {
     if (!id) return;
     setLoading(true);
     setError(null);
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok) {
-      setError(ctx.error);
+    if (!organizationId) {
+      setError("Organization missing on profile.");
       setLoading(false);
       return;
     }
@@ -87,7 +87,7 @@ export default function InsurancePolicyDetailPage() {
     setClaims((c ?? []) as Claim[]);
     setAllocs((a ?? []) as Alloc[]);
     setLoading(false);
-  }, [supabase, id]);
+  }, [supabase, id, organizationId]);
 
   useEffect(() => {
     queueMicrotask(() => void load());

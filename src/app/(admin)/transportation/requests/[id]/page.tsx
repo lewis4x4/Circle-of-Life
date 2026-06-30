@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { triggerFileDownload } from "@/lib/csv-export";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { DEFAULT_MILEAGE_RATE_CENTS } from "@/lib/transport/mileage-defaults";
 import { formatCentsPerMileUsd, getOrganizationMileageRateCents } from "@/lib/transport/org-mileage-rate";
 import {
@@ -56,6 +56,7 @@ const STATUS_OPTIONS: { value: TransportStatus; label: string }[] = [
 
 export default function EditResidentTransportRequestPage() {
   const supabase = createClient();
+  const { user, organizationId } = useHavenAuth();
   const router = useRouter();
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -215,12 +216,8 @@ export default function EditResidentTransportRequestPage() {
     setSaving(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
+      if (!organizationId) throw new Error("Organization missing on profile.");
 
       const parsed = residentTransportRequestUpdateSchema.safeParse({
         transport_type: transportType,
@@ -299,7 +296,7 @@ export default function EditResidentTransportRequestPage() {
         if (!ml.success) throw new Error(ml.error.issues.map((x) => x.message).join(" "));
         const milesNum = ml.data.miles;
         const totalMiles = ml.data.round_trip ? milesNum * 2 : milesNum;
-        const rateCents = await getOrganizationMileageRateCents(supabase, ctx.ctx.organizationId);
+        const rateCents = await getOrganizationMileageRateCents(supabase, organizationId);
         const reimbursement_amount_cents = Math.round(totalMiles * rateCents);
 
         const { data: existingMl } = await supabase
@@ -310,7 +307,7 @@ export default function EditResidentTransportRequestPage() {
           .maybeSingle();
         if (!existingMl) {
           const { error: mErr } = await supabase.from("mileage_logs").insert({
-            organization_id: ctx.ctx.organizationId,
+            organization_id: organizationId,
             facility_id: selectedFacilityId,
             staff_id: parsed.data.driver_staff_id,
             trip_date: parsed.data.appointment_date,

@@ -24,8 +24,8 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -86,6 +86,7 @@ export default function SafetyScoresPage() {
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
   const facilityName = selectedFacility?.name ?? "selected facility";
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
+  const { organizationId } = useHavenAuth();
   const [rows, setRows] = useState<ScoreRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -101,13 +102,12 @@ export default function SafetyScoresPage() {
     }
 
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
+      if (!organizationId) throw new Error("Organization missing on profile.");
 
       const { data, error } = await supabase
         .from("resident_safety_scores")
         .select("*, residents(first_name, last_name, room_number), facilities(name)")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("score", { ascending: true })
@@ -123,7 +123,7 @@ export default function SafetyScoresPage() {
       setRows([]);
       setLoadState("error");
     }
-  }, [supabase, selectedFacilityId]);
+  }, [organizationId, supabase, selectedFacilityId]);
 
   useEffect(() => {
     void load();

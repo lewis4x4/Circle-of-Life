@@ -8,8 +8,8 @@ import { ArrowRightLeft, Loader2 } from "lucide-react";
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
   buildStandupComparison,
   fetchStandupHistory,
@@ -46,6 +46,7 @@ function formatDelta(metricLeft: StandupMetricRow | undefined, metricRight: Stan
 export default function ExecutiveStandupComparePage() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
+  const { organizationId } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [historyRows, setHistoryRows] = useState<Array<{ weekOf: string; id: string }>>([]);
@@ -60,9 +61,8 @@ export default function ExecutiveStandupComparePage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const history = await fetchStandupHistory(supabase, ctx.ctx.organizationId, 52);
+      if (!organizationId) throw new Error("Organization missing on profile.");
+      const history = await fetchStandupHistory(supabase, organizationId, 52);
       setHistoryRows(history.map((row) => ({ id: row.id, weekOf: row.weekOf })));
 
       if (!fromWeek || !toWeek || fromWeek === toWeek) {
@@ -74,8 +74,8 @@ export default function ExecutiveStandupComparePage() {
       }
 
       const [fromDetail, toDetail] = await Promise.all([
-        fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, fromWeek),
-        fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, toWeek),
+        fetchStandupSnapshotDetail(supabase, organizationId, fromWeek),
+        fetchStandupSnapshotDetail(supabase, organizationId, toWeek),
       ]);
 
       if (!fromDetail || !toDetail) {
@@ -93,7 +93,7 @@ export default function ExecutiveStandupComparePage() {
     } finally {
       setLoading(false);
     }
-  }, [fromWeek, supabase, toWeek]);
+  }, [fromWeek, organizationId, supabase, toWeek]);
 
   useEffect(() => {
     void load();

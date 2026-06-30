@@ -8,16 +8,18 @@ import { Clock, MapPin, CheckCircle2 } from "lucide-react";
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchExecutiveAlerts, acknowledgeExecutiveAlert, type ExecutiveAlertRow } from "@/lib/exec-alerts";
 import { cn } from "@/lib/utils";
-import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
-import { useAuth } from "@/hooks/useAuth";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { V2Card } from "@/components/ui/v2-card";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
+
+import type { Database } from "@/types/database";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface AlertWithFacility extends ExecutiveAlertRow {
   facilities?: { name: string } | null;
@@ -25,8 +27,8 @@ interface AlertWithFacility extends ExecutiveAlertRow {
 
 export default function ExecutiveAlertsPage() {
   const supabase = createClient();
-  const { user } = useAuth();
-  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
+  const { user, organizationId, appRole } = useHavenAuth();
+  const roleConfig = getRoleDashboardConfig(appRole as AppRole);
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ExecutiveAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +39,12 @@ export default function ExecutiveAlertsPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         setRows([]);
         return;
       }
-      const data = await fetchExecutiveAlerts(supabase, ctx.ctx.organizationId, selectedFacilityId, 100);
+      const data = await fetchExecutiveAlerts(supabase, organizationId, selectedFacilityId, 100);
       setRows(data);
     } catch (e) {
       setRows([]);
@@ -51,7 +52,7 @@ export default function ExecutiveAlertsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, organizationId]);
 
   useEffect(() => {
     void load();
@@ -61,9 +62,6 @@ export default function ExecutiveAlertsPage() {
     setBusyId(alert.id);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Sign in required.");
         return;

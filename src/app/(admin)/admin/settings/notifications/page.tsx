@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, BellRing, Send } from "lucide-react";
 
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import {
   getVapidPublicKeyBytes,
   invokeDispatchPushTest,
@@ -86,12 +86,13 @@ function severityLabel(value: RouteRow["severity_min"]): string {
 
 export default function AdminNotificationsSettingsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
 
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
   const [vapidConfigured, setVapidConfigured] = useState(false);
 
@@ -122,19 +123,13 @@ export default function AdminNotificationsSettingsPage() {
     setRoutesLoading(true);
     setErr(null);
 
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok) {
-      setErr(ctx.error);
-      setRole(null);
-      setOrganizationId(null);
+    if (!organizationId) {
+      setErr("Organization scope is not ready yet.");
       setRoutes([]);
       setFacilities([]);
       setRoutesLoading(false);
       return;
     }
-
-    setRole(ctx.ctx.appRole);
-    setOrganizationId(ctx.ctx.organizationId);
 
     const [routeRes, facilityRes] = await Promise.all([
       supabase
@@ -142,14 +137,14 @@ export default function AdminNotificationsSettingsPage() {
         .select(
           "id, organization_id, facility_id, name, severity_min, channels, staff_role_targets, is_active, facilities(name)",
         )
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("is_active", { ascending: false })
         .order("name", { ascending: true }),
       supabase
         .from("facilities")
         .select("id, name")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name", { ascending: true }),
     ]);
@@ -169,7 +164,7 @@ export default function AdminNotificationsSettingsPage() {
     }
 
     setRoutesLoading(false);
-  }, [supabase]);
+  }, [organizationId, supabase]);
 
   useEffect(() => {
     void loadRoutes();
@@ -180,21 +175,17 @@ export default function AdminNotificationsSettingsPage() {
     setMsg(null);
     setBusy(true);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setErr(ctx.error);
+      if (!organizationId) {
+        setErr("Organization scope is not ready yet.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setErr("Sign in required.");
         return;
       }
       const result = await subscribePushAndSave({
         supabase,
-        organizationId: ctx.ctx.organizationId,
+        organizationId,
         userId: user.id,
       });
       if (!result.ok) {
@@ -207,19 +198,18 @@ export default function AdminNotificationsSettingsPage() {
     } finally {
       setBusy(false);
     }
-  }, [supabase]);
+  }, [organizationId, supabase, user]);
 
   const onTestDispatch = useCallback(async () => {
     setErr(null);
     setMsg(null);
     setBusy(true);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setErr(ctx.error);
+      if (!organizationId) {
+        setErr("Organization scope is not ready yet.");
         return;
       }
-      if (!["owner", "org_admin"].includes(ctx.ctx.appRole)) {
+      if (!["owner", "org_admin"].includes(role)) {
         setErr("Only owner or org admin can send a test push from this screen.");
         return;
       }
@@ -237,9 +227,6 @@ export default function AdminNotificationsSettingsPage() {
         setErr("Supabase is not configured.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setErr("Sign in required.");
         return;
@@ -262,7 +249,7 @@ export default function AdminNotificationsSettingsPage() {
     } finally {
       setBusy(false);
     }
-  }, [supabase]);
+  }, [organizationId, role, supabase, user]);
 
   const canDispatch = role === "owner" || role === "org_admin";
   const canManageRoutes = role === "owner" || role === "org_admin" || role === "facility_admin";

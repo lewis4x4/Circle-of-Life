@@ -7,8 +7,8 @@ import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 
 type DateRange = Database["public"]["Tables"]["exec_dashboard_configs"]["Row"]["default_date_range"];
@@ -23,6 +23,7 @@ const RANGE_OPTIONS: { value: DateRange; label: string }[] = [
 
 export default function ExecutiveSettingsPage() {
   const supabase = createClient();
+  const { user, organizationId } = useHavenAuth();
   const [range, setRange] = useState<DateRange>("mtd");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,14 +35,10 @@ export default function ExecutiveSettingsPage() {
     setError(null);
     setSavedOk(false);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Sign in required.");
         return;
@@ -49,7 +46,7 @@ export default function ExecutiveSettingsPage() {
       const { data, error: qErr } = await supabase
         .from("exec_dashboard_configs")
         .select("id, default_date_range, widgets")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .eq("user_id", user.id)
         .is("deleted_at", null)
         .maybeSingle();
@@ -66,7 +63,7 @@ export default function ExecutiveSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, organizationId, user]);
 
   useEffect(() => {
     void load();
@@ -77,14 +74,10 @@ export default function ExecutiveSettingsPage() {
     setError(null);
     setSavedOk(false);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Sign in required.");
         return;
@@ -93,7 +86,7 @@ export default function ExecutiveSettingsPage() {
       const { data: existing, error: findErr } = await supabase
         .from("exec_dashboard_configs")
         .select("id")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .eq("user_id", user.id)
         .is("deleted_at", null)
         .maybeSingle();
@@ -116,7 +109,7 @@ export default function ExecutiveSettingsPage() {
         }
       } else {
         const { error: insErr } = await supabase.from("exec_dashboard_configs").insert({
-          organization_id: ctx.ctx.organizationId,
+          organization_id: organizationId,
           user_id: user.id,
           default_date_range: range,
           widgets: [],

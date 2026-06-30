@@ -8,8 +8,8 @@ import { VendorHubNav } from "../vendor-hub-nav";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { canManageVendorMaster } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
 
@@ -20,13 +20,15 @@ export default function VendorDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [vendor, setVendor] = useState<VendorRow | null>(null);
   const [facilities, setFacilities] = useState<FacilityMini[]>([]);
   const [linked, setLinked] = useState<string[]>([]);
   const [counts, setCounts] = useState({ contracts: 0, pos: 0, invoices: 0 });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
   const [addFacilityId, setAddFacilityId] = useState<string>("");
   const [linking, setLinking] = useState(false);
 
@@ -34,11 +36,9 @@ export default function VendorDetailPage() {
     if (!id) return;
     setLoading(true);
     setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
+    if (!organizationId) {
       setVendor(null);
-      setLoadError(c.error);
+      setLoadError("Organization missing on profile.");
       setLoading(false);
       return;
     }
@@ -46,7 +46,7 @@ export default function VendorDetailPage() {
       .from("vendors")
       .select("*")
       .eq("id", id)
-      .eq("organization_id", c.ctx.organizationId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle();
     if (ve || !v) {
@@ -60,7 +60,7 @@ export default function VendorDetailPage() {
     const { data: fac } = await supabase
       .from("facilities")
       .select("id, name")
-      .eq("organization_id", c.ctx.organizationId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .order("name");
     setFacilities((fac ?? []) as FacilityMini[]);
@@ -95,21 +95,21 @@ export default function VendorDetailPage() {
       invoices: inv.count ?? 0,
     });
     setLoading(false);
-  }, [supabase, id]);
+  }, [supabase, id, organizationId]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
   }, [load]);
 
-  const canWrite = ctx?.ok && canManageVendorMaster(ctx.ctx.appRole);
+  const canWrite = Boolean(organizationId && canManageVendorMaster(role));
   const availableToLink = facilities.filter((f) => !linked.includes(f.id));
 
   async function linkFacility() {
-    if (!ctx?.ok || !vendor || !addFacilityId) return;
+    if (!organizationId || !vendor || !addFacilityId) return;
     setLinking(true);
     setLoadError(null);
     const { error } = await supabase.from("vendor_facilities").insert({
-      organization_id: ctx.ctx.organizationId,
+      organization_id: organizationId,
       vendor_id: vendor.id,
       facility_id: addFacilityId,
     });

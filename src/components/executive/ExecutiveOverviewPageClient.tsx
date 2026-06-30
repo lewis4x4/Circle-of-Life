@@ -17,7 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
-import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
   attachFacilityMetrics,
@@ -29,15 +29,14 @@ import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
 } from "@/lib/executive/metric-snapshot-queries";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
   fetchResidentAssuranceFacilityHeatMap,
   fetchResidentAssuranceFacilityTrendSeries,
   type ResidentAssuranceFacilityTrendRow,
   type ResidentAssuranceFacilityRollup,
 } from "@/lib/resident-assurance/command-center-brief";
+import type { Database } from "@/types/database";
 
 type ExecutiveOverviewPageClientProps = {
   initialMetrics: Record<string, number>;
@@ -57,8 +56,9 @@ export function ExecutiveOverviewPageClient({
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
-  const { user } = useAuth();
-  const roleConfig = getRoleDashboardConfig(getAppRoleFromClaims(user));
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const roleConfig = getRoleDashboardConfig(appRole as AppRole);
   const [, setLoading] = useState(!initialHasServerData);
   const [, setError] = useState<string | null>(null);
 
@@ -88,22 +88,21 @@ export function ExecutiveOverviewPageClient({
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
+      if (!organizationId) throw new Error("Organization missing on profile.");
 
       // 1. Fetch latest scoped executive snapshots. Aggregate metrics stay
       // separate from facility metrics; never smear portfolio averages into
       // facility rows.
       const { data: snapData, error: snapErr } = await buildAggregateSnapshotQuery(
         supabase,
-        ctx.ctx.organizationId,
+        organizationId,
       );
         
       if (snapErr) throw snapErr;
 
       const { data: facilityMetricData, error: facilityMetricErr } = await buildFacilitySnapshotQuery(
         supabase,
-        ctx.ctx.organizationId,
+        organizationId,
       );
 
       if (facilityMetricErr) throw facilityMetricErr;
@@ -114,7 +113,7 @@ export function ExecutiveOverviewPageClient({
       const { data: alertData, error: alertErr } = await supabase
         .from("exec_alerts")
         .select("*, facilities(name)")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .eq("status", "open")
         .is("deleted_at", null)
         .order("severity", { ascending: false })
@@ -128,7 +127,7 @@ export function ExecutiveOverviewPageClient({
       const { data: facData, error: facErr } = await supabase
         .from("facilities")
         .select("id, name")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name", { ascending: true });
         
@@ -139,8 +138,8 @@ export function ExecutiveOverviewPageClient({
       }
 
       const [assuranceRows, assuranceTrendRows] = await Promise.all([
-        fetchResidentAssuranceFacilityHeatMap(supabase, ctx.ctx.organizationId),
-        fetchResidentAssuranceFacilityTrendSeries(supabase, ctx.ctx.organizationId, 7),
+        fetchResidentAssuranceFacilityHeatMap(supabase, organizationId),
+        fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7),
       ]);
       if (assuranceRows.length > 0) {
         setAssuranceHeatMap(assuranceRows);
@@ -159,7 +158,7 @@ export function ExecutiveOverviewPageClient({
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [organizationId, supabase]);
 
   useEffect(() => {
     void load();

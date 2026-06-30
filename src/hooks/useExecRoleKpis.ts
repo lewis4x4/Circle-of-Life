@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import {
-  fetchExecutiveKpiSnapshot,
+import { fetchExecutiveKpiSnapshot,
   type ExecKpiPayload,
 } from "@/lib/exec-kpi-snapshot";
 import { fetchExecutiveAlerts, type ExecutiveAlertRow } from "@/lib/exec-alerts";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { createReloadDebouncer } from "@/hooks/exec-metric-reload-debounce";
 
 export type ExecRole = "ceo" | "cfo" | "coo";
@@ -35,10 +34,10 @@ export function useExecRoleKpis(
   facilityId?: string | null,
   enabled: boolean = true,
 ): ExecRoleKpiData {
+  const { organizationId: authOrgId, loading: authLoading } = useHavenAuth();
   const [kpis, setKpis] = useState<ExecKpiPayload | null>(null);
   const [alerts, setAlerts] = useState<ExecutiveAlertRow[]>([]);
   const [facilities, setFacilities] = useState<ExecRoleKpiData["facilities"]>([]);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
@@ -54,14 +53,10 @@ export function useExecRoleKpis(
     const facId = facilityId ?? null;
 
     try {
-      // Resolve organizationId from user profile (same pattern as finance pages)
-      const roleResult = await loadFinanceRoleContext(supabase);
-      if (!roleResult.ok) {
-        setOrganizationId(null);
-        throw new Error(roleResult.error);
+      if (!authOrgId) {
+        throw new Error("Organization missing on profile.");
       }
-      const { organizationId } = roleResult.ctx;
-      setOrganizationId(organizationId);
+      const organizationId = authOrgId;
 
       const [kpiResult, alertsResult, facilitiesResult] = await Promise.all([
         fetchExecutiveKpiSnapshot(supabase, organizationId, facId),
@@ -82,7 +77,6 @@ export function useExecRoleKpis(
       }
       setFacilities(facilitiesResult.data ?? []);
     } catch (err) {
-      setOrganizationId(null);
       setKpis(null);
       setAlerts([]);
       setFacilities([]);
@@ -90,7 +84,7 @@ export function useExecRoleKpis(
     } finally {
       setLoading(false);
     }
-  }, [facilityId]);
+  }, [facilityId, authOrgId]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -104,7 +98,7 @@ export function useExecRoleKpis(
       void load();
     }, 200);
 
-    if (!enabled || !organizationId || isDemo) {
+    if (!enabled || !authOrgId || isDemo) {
       return;
     }
 
@@ -112,6 +106,7 @@ export function useExecRoleKpis(
     if (!metricInsertReloadDebouncer) {
       return;
     }
+    const organizationId = authOrgId;
     const supabase = createClient();
     const channel = supabase
       .channel(realtimeChannelKey)
@@ -133,7 +128,15 @@ export function useExecRoleKpis(
       // Catch it so it doesn't surface as an unhandled rejection in Sentry.
       channel.unsubscribe().catch(() => {});
     };
-  }, [enabled, isDemo, load, organizationId, realtimeChannelKey]);
+  }, [enabled, isDemo, load, authOrgId, realtimeChannelKey]);
 
-  return { kpis, alerts, facilities, loading, error, isDemo, refetch: load };
+  return {
+    kpis,
+    alerts,
+    facilities,
+    loading: authLoading || loading,
+    error,
+    isDemo,
+    refetch: load,
+  };
 }

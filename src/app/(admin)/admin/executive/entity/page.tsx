@@ -7,13 +7,14 @@ import { Building2 } from "lucide-react";
 import { ExecutiveHubNav } from "../../../executive/executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function ExecutiveEntityIndexPage() {
   const supabase = createClient();
+  const { organizationId } = useHavenAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<{ id: string; name: string; status: string | null }[]>([]);
@@ -22,16 +23,15 @@ export default function ExecutiveEntityIndexPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         setRows([]);
         return;
       }
       const { data, error: qErr } = await supabase
         .from("entities")
         .select("id, name, status")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name");
       if (qErr) throw qErr;
@@ -42,7 +42,7 @@ export default function ExecutiveEntityIndexPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     void load();

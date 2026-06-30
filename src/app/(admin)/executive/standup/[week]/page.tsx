@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
-import { useAuth } from "@/hooks/useAuth";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
@@ -33,6 +33,7 @@ import {
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import type { Database } from "@/types/database";
 
 const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -61,13 +62,14 @@ function normalizeInput(metric: StandupMetricRow, raw: string): number | null {
 export default function ExecutiveStandupWeekDetailPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
-  const { user } = useAuth();
+  const { user, organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
+  const canPublish = canMutateFinance(role);
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [canPublish, setCanPublish] = useState(false);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
@@ -89,16 +91,13 @@ export default function ExecutiveStandupWeekDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      setOrganizationId(ctx.ctx.organizationId);
+      if (!organizationId) throw new Error("Organization missing on profile.");
       const [snapshot, previous] = await Promise.all([
-        fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
-        fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
+        fetchStandupSnapshotDetail(supabase, organizationId, week),
+        fetchPreviousPublishedStandupSnapshotDetail(supabase, organizationId, week),
       ]);
       setDetail(snapshot);
       setPreviousDetail(previous);
-      setCanPublish(canMutateFinance(ctx.ctx.appRole));
       setEdits({});
       setDraftNotesDraft(snapshot?.snapshot.draftNotes ?? "");
       setReviewNotesDraft(snapshot?.snapshot.reviewNotes ?? "");
@@ -109,7 +108,7 @@ export default function ExecutiveStandupWeekDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, week]);
+  }, [organizationId, supabase, week]);
 
   useEffect(() => {
     void load();

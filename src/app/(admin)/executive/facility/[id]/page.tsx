@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import {
   fetchResidentAssuranceCommandBrief,
   fetchResidentAssuranceFacilityTrendSeries,
@@ -52,6 +52,7 @@ export default function ExecutiveFacilityDetailPage() {
   const rawId = typeof params.id === "string" ? params.id : "";
   const facilityId = UUID_RE.test(rawId) ? rawId : "";
   const supabase = createClient();
+  const { organizationId } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,9 +74,8 @@ export default function ExecutiveFacilityDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         return;
       }
 
@@ -87,7 +87,7 @@ export default function ExecutiveFacilityDetailPage() {
         .maybeSingle();
 
       if (fErr) throw fErr;
-      if (!fac || fac.organization_id !== ctx.ctx.organizationId) {
+      if (!fac || fac.organization_id !== organizationId) {
         setError("Facility not found or not in your organization.");
         setFacilityName(null);
         setEntityId(null);
@@ -104,13 +104,13 @@ export default function ExecutiveFacilityDetailPage() {
       setEntityName((ent as { name: string } | null)?.name ?? null);
 
       const [kpiData, tcorResult, assuranceResult, assuranceTrendRows] = await Promise.all([
-        fetchExecutiveKpiSnapshot(supabase, ctx.ctx.organizationId, facilityId),
+        fetchExecutiveKpiSnapshot(supabase, organizationId, facilityId),
         computeTotalCostOfRisk(supabase, {
-          organizationId: ctx.ctx.organizationId,
+          organizationId,
           entityId: fac.entity_id,
         }),
         fetchResidentAssuranceCommandBrief(facilityId),
-        fetchResidentAssuranceFacilityTrendSeries(supabase, ctx.ctx.organizationId, 7),
+        fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7),
       ]);
       setKpi(kpiData);
       setTcor(tcorResult.ok ? tcorResult.snapshot : null);
@@ -126,7 +126,7 @@ export default function ExecutiveFacilityDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, facilityId]);
+  }, [supabase, facilityId, organizationId]);
 
   useEffect(() => {
     void load();

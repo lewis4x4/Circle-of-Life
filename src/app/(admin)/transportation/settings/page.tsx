@@ -11,11 +11,13 @@ import { z } from "zod";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext, canMutateFinance } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { DEFAULT_MILEAGE_RATE_CENTS } from "@/lib/transport/mileage-defaults";
 import { formatCentsPerMileUsd } from "@/lib/transport/org-mileage-rate";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
 
 const PREVIEW_MILES = [25, 100, 250];
 
@@ -43,6 +45,10 @@ function centsToDollarsInput(cents: number): string {
 
 export default function TransportationOrgSettingsPage() {
   const supabase = createClient();
+  const { user, organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
+  const canWrite = canMutateFinance(role);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savedOk, setSavedOk] = useState(false);
@@ -59,15 +65,14 @@ export default function TransportationOrgSettingsPage() {
     setError(null);
     setSavedOk(false);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         return;
       }
       const { data, error: qErr } = await supabase
         .from("organization_transport_settings")
         .select("mileage_reimbursement_rate_cents, updated_at")
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .maybeSingle();
 
       if (qErr) {
@@ -89,20 +94,11 @@ export default function TransportationOrgSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, form]);
+  }, [organizationId, supabase, form]);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  const [canWrite, setCanWrite] = useState(false);
-
-  useEffect(() => {
-    void (async () => {
-      const ctx = await loadFinanceRoleContext(supabase);
-      setCanWrite(ctx.ok && canMutateFinance(ctx.ctx.appRole));
-    })();
-  }, [supabase]);
 
   const watchedDollars = form.watch("dollarsPerMile");
   const previewCents = useMemo(() => {
@@ -114,14 +110,14 @@ export default function TransportationOrgSettingsPage() {
   async function onSubmit(values: FormValues) {
     setError(null);
     setSavedOk(false);
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok || !canMutateFinance(ctx.ctx.appRole)) {
+    if (!canWrite) {
       setError("You do not have permission to change organization reimbursement settings.");
       return;
     }
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    if (!organizationId) {
+      setError("Organization missing on profile.");
+      return;
+    }
     if (!user) {
       setError("Sign in required.");
       return;
@@ -136,14 +132,14 @@ export default function TransportationOrgSettingsPage() {
           mileage_reimbursement_rate_cents: cents,
           updated_by: user.id,
         })
-        .eq("organization_id", ctx.ctx.organizationId);
+        .eq("organization_id", organizationId);
       if (upErr) {
         setError(upErr.message);
         return;
       }
     } else {
       const { error: insErr } = await supabase.from("organization_transport_settings").insert({
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         mileage_reimbursement_rate_cents: cents,
         created_by: user.id,
         updated_by: user.id,

@@ -11,8 +11,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { Send, Loader2, MessageSquare, RotateCcw } from "lucide-react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
@@ -20,6 +20,7 @@ import { HavenInsightChart, type ChartSpec } from "@/components/haven-insight/Ha
 import { ConversationSidebar } from "@/components/haven-insight/ConversationSidebar";
 import { InsightFeedback } from "@/components/haven-insight/InsightFeedback";
 import { HavenErrorBoundary } from "@/components/common/HavenErrorBoundary";
+import type { Database } from "@/types/database";
 
 // ── Types ──
 
@@ -197,13 +198,14 @@ export default function ExecutiveNlqPage() {
   const sessionParam = searchParams.get("session");
   const activeSessionId = sessionParam;
   const supabase = useMemo(() => createClient(), []);
+  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
+  const canUse = role === "owner" || role === "org_admin";
   const [messages, setMessages] = useState<NlqMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [awaitingFirstToken, setAwaitingFirstToken] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [canUse, setCanUse] = useState(false);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteIndex, setPaletteIndex] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -223,25 +225,6 @@ export default function ExecutiveNlqPage() {
       sendAbortRef.current = null;
     };
   }, []);
-
-  // Check auth on mount
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const ctx = await loadFinanceRoleContext(supabase);
-        if (ctx.ok) {
-          const allowed = ctx.ctx.appRole === "owner" || ctx.ctx.appRole === "org_admin";
-          setOrganizationId(ctx.ctx.organizationId);
-          setCanUse(allowed);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setInitialLoading(false);
-      }
-    }
-    void checkAuth();
-  }, [supabase]);
 
   // Hydrate persisted conversation messages when the URL session changes.
   useEffect(() => {
@@ -654,7 +637,7 @@ export default function ExecutiveNlqPage() {
     }
   }, [fillSlashTemplate, paletteIndex, paletteOpen]);
 
-  if (initialLoading) {
+  if (authLoading) {
     return (
       <div className="relative min-h-dvh w-full flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-primary animate-spin" />

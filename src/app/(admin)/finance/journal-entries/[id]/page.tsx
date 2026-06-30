@@ -16,10 +16,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { checkPeriodOpenForPosting } from "@/lib/finance/gl-period-close";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
-import { canCreateDraftFinance, canPostFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canCreateDraftFinance, canPostFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -64,7 +65,9 @@ export default function JournalEntryDetailPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const router = useRouter();
   const supabase = createClient();
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [header, setHeader] = useState<JournalRow | null>(null);
   const [lines, setLines] = useState<LineRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,8 +89,6 @@ export default function JournalEntryDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const c = await loadFinanceRoleContext(supabase);
-      setCtx(c);
       const { data: h, error: hErr } = await supabase.from("journal_entries").select("*").eq("id", id).maybeSingle();
       if (hErr || !h) {
         setError(hErr?.message ?? "Not found");
@@ -126,12 +127,12 @@ export default function JournalEntryDetailPage() {
       }));
       setLines(rowsWithAccounts);
 
-      if (c.ok && canCreateDraftFinance(c.ctx.appRole) && hRow.status === "draft") {
+      if (organizationId && canCreateDraftFinance(role) && hRow.status === "draft") {
         const [{ data: fac }, { data: accs }] = await Promise.all([
           supabase
             .from("facilities")
             .select("id, name, entity_id")
-            .eq("organization_id", c.ctx.organizationId)
+            .eq("organization_id", organizationId)
             .is("deleted_at", null)
             .order("name"),
           supabase
@@ -165,7 +166,7 @@ export default function JournalEntryDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, id]);
+  }, [supabase, id, organizationId, role]);
 
   useEffect(() => {
     void load();
@@ -184,7 +185,7 @@ export default function JournalEntryDetailPage() {
   }
 
   async function saveDraft() {
-    if (!header || header.status !== "draft" || !ctx?.ok || !canCreateDraftFinance(ctx.ctx.appRole)) return;
+    if (!header || header.status !== "draft" || !organizationId || !canCreateDraftFinance(role)) return;
     const parsed = parseFormLines(formLines);
     if (parsed.length < 2) {
       setError("Add at least two lines with accounts and a debit or credit amount.");
@@ -213,7 +214,7 @@ export default function JournalEntryDetailPage() {
       }
       const inserts: Database["public"]["Tables"]["journal_entry_lines"]["Insert"][] = parsed.map((l) => ({
         journal_entry_id: header.id,
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         gl_account_id: l.gl_account_id,
         line_number: l.line_number,
         debit_cents: l.debit_cents,
@@ -232,7 +233,7 @@ export default function JournalEntryDetailPage() {
   }
 
   async function deleteDraft() {
-    if (!header || header.status !== "draft" || !ctx?.ok || !canCreateDraftFinance(ctx.ctx.appRole)) return;
+    if (!header || header.status !== "draft" || !organizationId || !canCreateDraftFinance(role)) return;
     if (!globalThis.confirm("Remove this draft journal entry? It will be hidden from lists but retained for audit.")) return;
     setDeleting(true);
     setError(null);
@@ -256,7 +257,7 @@ export default function JournalEntryDetailPage() {
   }
 
   async function postEntry() {
-    if (!header || header.status !== "draft" || !ctx?.ok || !canPostFinance(ctx.ctx.appRole)) return;
+    if (!header || header.status !== "draft" || !organizationId || !canPostFinance(role)) return;
     setPosting(true);
     setError(null);
     try {
@@ -297,8 +298,8 @@ export default function JournalEntryDetailPage() {
     }
   }
 
-  const canEditDraft = Boolean(ctx?.ok && canCreateDraftFinance(ctx.ctx.appRole) && header?.status === "draft");
-  const canPostEntry = Boolean(ctx?.ok && canPostFinance(ctx.ctx.appRole) && header?.status === "draft");
+  const canEditDraft = Boolean(organizationId && canCreateDraftFinance(role) && header?.status === "draft");
+  const canPostEntry = Boolean(organizationId && canPostFinance(role) && header?.status === "draft");
 
   let debitSum = 0;
   let creditSum = 0;

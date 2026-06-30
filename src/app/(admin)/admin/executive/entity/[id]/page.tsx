@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +40,7 @@ export default function ExecutiveEntityDetailPage() {
   const params = useParams();
   const entityId = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
+  const { organizationId } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,9 +58,8 @@ export default function ExecutiveEntityDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         return;
       }
 
@@ -71,7 +71,7 @@ export default function ExecutiveEntityDetailPage() {
         .maybeSingle();
 
       if (entErr) throw entErr;
-      if (!ent || ent.organization_id !== ctx.ctx.organizationId) {
+      if (!ent || ent.organization_id !== organizationId) {
         setError("Entity not found or not in your organization.");
         setEntityName(null);
         setFacilities([]);
@@ -85,7 +85,7 @@ export default function ExecutiveEntityDetailPage() {
         .from("facilities")
         .select("id, name")
         .eq("entity_id", entityId)
-        .eq("organization_id", ctx.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name");
 
@@ -96,7 +96,7 @@ export default function ExecutiveEntityDetailPage() {
       const kpiEntries = await Promise.all(
         list.map(async (f) => {
           try {
-            const kpi = await fetchExecutiveKpiSnapshot(supabase, ctx.ctx.organizationId, f.id);
+            const kpi = await fetchExecutiveKpiSnapshot(supabase, organizationId, f.id);
             return [f.id, kpi] as const;
           } catch {
             return [f.id, null] as const;
@@ -112,7 +112,7 @@ export default function ExecutiveEntityDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, entityId]);
+  }, [supabase, entityId, organizationId]);
 
   useEffect(() => {
     void load();

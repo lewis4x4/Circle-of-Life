@@ -7,8 +7,8 @@ import { VendorHubNav } from "../../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canFinalizeVendorInvoice } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
@@ -20,22 +20,22 @@ export default function VendorInvoiceDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
+  const { organizationId, appRole, user } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [inv, setInv] = useState<InvRow | null>(null);
   const [lines, setLines] = useState<LineRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
+    if (!organizationId) {
       setInv(null);
-      setLoadError(c.error);
+      setLoadError("Organization missing on profile.");
       setLoading(false);
       return;
     }
@@ -43,7 +43,7 @@ export default function VendorInvoiceDetailPage() {
       .from("vendor_invoices")
       .select("*")
       .eq("id", id)
-      .eq("organization_id", c.ctx.organizationId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle();
     if (error || !row) {
@@ -61,21 +61,18 @@ export default function VendorInvoiceDetailPage() {
       .order("line_number");
     setLines((li ?? []) as LineRow[]);
     setLoading(false);
-  }, [supabase, id]);
+  }, [supabase, id, organizationId]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
   }, [load]);
 
   async function patchStatus(status: InvRow["status"], withApproval?: boolean) {
-    if (!inv || !ctx?.ok) return;
+    if (!inv || !organizationId) return;
     setSaving(true);
     setLoadError(null);
     const payload: Record<string, unknown> = { status };
     if (withApproval) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       payload.approved_by = user?.id ?? null;
       payload.approved_at = new Date().toISOString();
     }
@@ -85,7 +82,7 @@ export default function VendorInvoiceDetailPage() {
     else await load();
   }
 
-  const canFinalize = ctx?.ok && canFinalizeVendorInvoice(ctx.ctx.appRole);
+  const canFinalize = Boolean(organizationId && canFinalizeVendorInvoice(role));
 
   if (!id) return null;
 

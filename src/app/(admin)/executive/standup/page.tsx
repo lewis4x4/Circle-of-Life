@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { useAuth } from "@/hooks/useAuth";
-import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canCreateDraftFinance } from "@/lib/finance/load-finance-context";
 import {
   buildStandupActionEngine,
   STANDUP_METRIC_DEFINITIONS,
@@ -27,6 +27,7 @@ import {
   type StandupMetricRow,
   type StandupSectionKey,
 } from "@/lib/executive/standup";
+import type { Database } from "@/types/database";
 
 const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -54,7 +55,10 @@ function confidenceBadgeClass(metric: StandupMetricRow): string {
 
 export default function ExecutiveStandupPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { user } = useAuth();
+  const { user, organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
+  const canCreateDraft = canCreateDraftFinance(role);
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
 
   const [loading, setLoading] = useState(true);
@@ -69,7 +73,6 @@ export default function ExecutiveStandupPage() {
     confidenceBand: string;
   } | null>(null);
   const [creatingDraft, setCreatingDraft] = useState(false);
-  const [canCreateDraft, setCanCreateDraft] = useState(false);
 
   const weekOf = currentStandupWeekOf();
 
@@ -77,15 +80,14 @@ export default function ExecutiveStandupPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        throw new Error(ctx.error);
+      if (!organizationId) {
+        throw new Error("Organization missing on profile.");
       }
 
       const [liveData, snapshot, previousPublished] = await Promise.all([
-        fetchExecutiveStandupLive(supabase, ctx.ctx.organizationId, selectedFacilityId),
-        fetchStandupSnapshotForWeek(supabase, ctx.ctx.organizationId, weekOf),
-        fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, weekOf),
+        fetchExecutiveStandupLive(supabase, organizationId, selectedFacilityId),
+        fetchStandupSnapshotForWeek(supabase, organizationId, weekOf),
+        fetchPreviousPublishedStandupSnapshotDetail(supabase, organizationId, weekOf),
       ]);
 
       setLive(liveData);
@@ -101,17 +103,15 @@ export default function ExecutiveStandupPage() {
             }
           : null,
       );
-      setCanCreateDraft(canCreateDraftFinance(ctx.ctx.appRole));
     } catch (loadError) {
       setLive(null);
       setActions([]);
       setDraftStatus(null);
-      setCanCreateDraft(false);
       setError(loadError instanceof Error ? loadError.message : "Could not load executive standup.");
     } finally {
       setLoading(false);
     }
-  }, [selectedFacilityId, supabase, weekOf]);
+  }, [organizationId, selectedFacilityId, supabase, weekOf]);
 
   useEffect(() => {
     void load();
@@ -143,9 +143,12 @@ export default function ExecutiveStandupPage() {
     setCreatingDraft(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      await generateExecutiveStandupDraft(supabase, ctx.ctx.organizationId, user.id, selectedFacilityId);
+      if (!organizationId) throw new Error("Organization missing on profile.");
+      if (!user?.id) {
+        setError("Sign in required.");
+        return;
+      }
+      await generateExecutiveStandupDraft(supabase, organizationId, user.id, selectedFacilityId);
       await load();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Could not create standup draft.");

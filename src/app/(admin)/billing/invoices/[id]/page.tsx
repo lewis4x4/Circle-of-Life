@@ -9,12 +9,14 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { postInvoiceToGl } from "@/lib/finance/post-to-gl";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import type { Database } from "@/types/database";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import {
@@ -78,6 +80,9 @@ export default function AdminInvoiceDetailPage() {
   const rawId = typeof params?.id === "string" ? params.id : "";
   const id = UUID_STRING_RE.test(rawId) ? rawId : "";
   const { selectedFacilityId } = useFacilityStore();
+  const { appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
 
   const [invoice, setInvoice] = useState<SupabaseInvoice | null>(null);
   const [lines, setLines] = useState<SupabaseLine[]>([]);
@@ -144,8 +149,7 @@ export default function AdminInvoiceDetailPage() {
       setInvoice(inv);
       setLines(lineRes.data ?? []);
 
-      const finCtx = await loadFinanceRoleContext(supabase);
-      if (finCtx.ok && canMutateFinance(finCtx.ctx.appRole)) {
+      if (canMutateFinance(role)) {
         setCanPost(true);
         const existingJe = await supabase
           .from("journal_entries")
@@ -165,7 +169,7 @@ export default function AdminInvoiceDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, selectedFacilityId]);
+  }, [id, role, selectedFacilityId]);
 
   useEffect(() => {
     void load();

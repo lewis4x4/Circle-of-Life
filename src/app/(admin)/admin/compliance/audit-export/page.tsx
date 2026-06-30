@@ -5,8 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { invokeExportAuditLog } from "@/lib/audit-export";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
 
 type JobRow = {
   id: string;
@@ -39,24 +40,22 @@ const EXPORT_ROLES = new Set(["owner", "org_admin", "facility_admin"]);
 
 export default function AuditLogExportPage() {
   const supabase = createClient();
+  const { user, organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
+  const roleOk = EXPORT_ROLES.has(role);
   const { selectedFacilityId } = useFacilityStore();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [roleOk, setRoleOk] = useState<boolean | null>(null);
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
 
   const loadJobs = useCallback(async () => {
     setJobsLoading(true);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setJobs([]);
-        return;
-      }
-      if (!EXPORT_ROLES.has(ctx.ctx.appRole)) {
+      if (!organizationId || !roleOk) {
         setJobs([]);
         return;
       }
@@ -75,14 +74,7 @@ export default function AuditLogExportPage() {
     } finally {
       setJobsLoading(false);
     }
-  }, [supabase]);
-
-  useEffect(() => {
-    void (async () => {
-      const ctx = await loadFinanceRoleContext(supabase);
-      setRoleOk(ctx.ok && EXPORT_ROLES.has(ctx.ctx.appRole));
-    })();
-  }, [supabase]);
+  }, [organizationId, roleOk, supabase]);
 
   useEffect(() => {
     void loadJobs();
@@ -92,12 +84,11 @@ export default function AuditLogExportPage() {
     setError(null);
     setLoading(true);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) {
-        setError(ctx.error);
+      if (!organizationId) {
+        setError("Organization missing on profile.");
         return;
       }
-      if (!EXPORT_ROLES.has(ctx.ctx.appRole)) {
+      if (!roleOk) {
         setError("Your role cannot export audit logs.");
         return;
       }
@@ -121,16 +112,13 @@ export default function AuditLogExportPage() {
       const facilityId =
         selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : null;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Sign in required.");
         return;
       }
 
       const insertPayload = {
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         requested_by: user.id,
         format: "csv" as const,
         status: "pending" as const,

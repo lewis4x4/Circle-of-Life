@@ -5,8 +5,8 @@ import { useParams } from "next/navigation";
 
 import { VendorHubNav } from "../../vendor-hub-nav";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -18,6 +18,7 @@ export default function VendorContractDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
+  const { organizationId } = useHavenAuth();
   const [contract, setContract] = useState<(ContractRow & { vendor_name?: string }) | null>(null);
   const [terms, setTerms] = useState<TermRow | null>(null);
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
@@ -28,10 +29,9 @@ export default function VendorContractDetailPage() {
     if (!id) return;
     setLoading(true);
     setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    if (!c.ok) {
+    if (!organizationId) {
       setContract(null);
-      setLoadError(c.error);
+      setLoadError("Organization missing on profile.");
       setLoading(false);
       return;
     }
@@ -39,7 +39,7 @@ export default function VendorContractDetailPage() {
       .from("contracts")
       .select("*")
       .eq("id", id)
-      .eq("organization_id", c.ctx.organizationId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle();
     if (error || !row) {
@@ -63,7 +63,7 @@ export default function VendorContractDetailPage() {
       .order("alert_date");
     setAlerts((a ?? []) as AlertRow[]);
     setLoading(false);
-  }, [supabase, id]);
+  }, [supabase, id, organizationId]);
 
   useEffect(() => {
     queueMicrotask(() => void load());

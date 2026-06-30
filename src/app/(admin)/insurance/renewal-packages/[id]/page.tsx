@@ -8,12 +8,10 @@ import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import {
-  canMutateFinance,
-  loadFinanceRoleContext,
-} from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { RenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
 import type { Database } from "@/types/database";
@@ -29,6 +27,9 @@ export default function RenewalPackageDetailPage() {
   const rawId = typeof params.id === "string" ? params.id : "";
   const id = UUID_RE.test(rawId) ? rawId : "";
   const supabase = createClient();
+  const { user, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [row, setRow] = useState<Pkg | null>(null);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
@@ -41,13 +42,7 @@ export default function RenewalPackageDetailPage() {
     if (!id) return;
     setLoading(true);
     setError(null);
-    const ctx = await loadFinanceRoleContext(supabase);
-    if (!ctx.ok) {
-      setError(ctx.error);
-      setLoading(false);
-      return;
-    }
-    setCanMutate(canMutateFinance(ctx.ctx.appRole));
+    setCanMutate(canMutateFinance(role));
 
     const { data, error: qErr } = await supabase
       .from("renewal_data_packages")
@@ -66,7 +61,7 @@ export default function RenewalPackageDetailPage() {
     setRow(pkg);
     setDraft(pkg.ai_narrative_draft ?? "");
     setLoading(false);
-  }, [supabase, id]);
+  }, [supabase, id, role]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
@@ -122,9 +117,6 @@ export default function RenewalPackageDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       const { error: uErr } = await supabase
         .from("renewal_data_packages")
         .update({
@@ -147,9 +139,6 @@ export default function RenewalPackageDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       const { error: uErr } = await supabase
         .from("renewal_data_packages")
         .update({

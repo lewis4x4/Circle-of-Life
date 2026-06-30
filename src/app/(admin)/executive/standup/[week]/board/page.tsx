@@ -7,9 +7,9 @@ import { Printer, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
@@ -23,12 +23,11 @@ import { RecordDetailHeader } from "@/design-system/components/record-detail";
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId } = useHavenAuth();
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
@@ -43,14 +42,10 @@ export default function ExecutiveStandupBoardPage() {
     setLoading(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      setOrganizationId(ctx.ctx.organizationId);
-      const { data: authData } = await supabase.auth.getUser();
-      setUserId(authData.user?.id ?? null);
+      if (!organizationId) throw new Error("Organization missing on profile.");
       const [snapshot, previous] = await Promise.all([
-        fetchStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
-        fetchPreviousPublishedStandupSnapshotDetail(supabase, ctx.ctx.organizationId, week),
+        fetchStandupSnapshotDetail(supabase, organizationId, week),
+        fetchPreviousPublishedStandupSnapshotDetail(supabase, organizationId, week),
       ]);
       setDetail(snapshot);
       setPreviousDetail(previous);
@@ -61,7 +56,7 @@ export default function ExecutiveStandupBoardPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, week]);
+  }, [organizationId, supabase, week]);
 
   useEffect(() => {
     void load();
@@ -76,7 +71,7 @@ export default function ExecutiveStandupBoardPage() {
   }
 
   async function onSaveBoardReport() {
-    if (!detail || !organizationId || !userId) {
+    if (!detail || !organizationId || !user?.id) {
       setError("Sign in required.");
       return;
     }
@@ -85,7 +80,7 @@ export default function ExecutiveStandupBoardPage() {
     try {
       await saveStandupBoardReport(supabase, {
         organizationId,
-        userId,
+        userId: user.id,
         weekOf: detail.snapshot.weekOf,
         status: detail.snapshot.status,
         confidenceBand: detail.snapshot.confidenceBand,
