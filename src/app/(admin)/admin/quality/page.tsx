@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, LineChart } from "lucide-react";
 
 import { QualityHubNav } from "./quality-hub-nav";
@@ -9,111 +10,53 @@ import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
-import { createClient } from "@/lib/supabase/client";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { fetchQualityHubSnapshot } from "@/lib/quality/load-quality-hub";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
-import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
-type MeasureRow = Database["public"]["Tables"]["quality_measures"]["Row"];
-type LatestRow = Database["public"]["Views"]["quality_latest_facility_measures"]["Row"] & {
-  quality_measures?: { name: string; measure_key: string } | null;
-};
-
 export default function AdminQualityHubPage() {
-  const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
-  const { appRole, user } = useHavenAuth();
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [measures, setMeasures] = useState<MeasureRow[]>([]);
-  const [latest, setLatest] = useState<LatestRow[]>([]);
-  const [pbjRows, setPbjRows] = useState<Database["public"]["Tables"]["pbj_export_batches"]["Row"][]>([]);
+  const { appRole, user, organizationId, loading: authLoading } = useHavenAuth();
+
+  const facilityReady =
+    selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId);
+
+  const {
+    data,
+    isPending,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["quality", "hub", selectedFacilityId, organizationId],
+    enabled: facilityReady && !!organizationId,
+    queryFn: () => fetchQualityHubSnapshot(selectedFacilityId!, organizationId!),
+  });
+
+  const measures = data?.measures ?? [];
+  const latest = data?.latest ?? [];
+  const pbjRows = data?.pbjRows ?? [];
+
+  const loading = authLoading || (facilityReady && isPending && !data);
+  const loadError =
+    !authLoading && facilityReady && !organizationId
+      ? "Organization missing on profile."
+      : queryError
+        ? queryError instanceof Error
+          ? queryError.message
+          : "Could not load quality data."
+        : null;
+
   const homeHref = useMemo(() => {
     const effectiveRole = getAppRoleFromClaims(user) || appRole;
     return effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/admin";
   }, [appRole, user]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setMeasures([]);
-      setLatest([]);
-      setPbjRows([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data: fac, error: facErr } = await supabase.from("facilities").select("organization_id").eq("id", selectedFacilityId).single();
-      if (facErr || !fac?.organization_id) {
-        setLoadError("Could not resolve organization for this facility.");
-        setMeasures([]);
-        setLatest([]);
-        setPbjRows([]);
-        return;
-      }
-      const [mRes, viewRes, pbjRes] = await Promise.all([
-        supabase
-          .from("quality_measures")
-          .select("*")
-          .eq("organization_id", fac.organization_id)
-          .is("deleted_at", null)
-          .eq("is_active", true)
-          .order("name"),
-        supabase.from("quality_latest_facility_measures").select("*").eq("facility_id", selectedFacilityId),
-        supabase
-          .from("pbj_export_batches")
-          .select("*")
-          .eq("facility_id", selectedFacilityId)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false })
-          .limit(15),
-      ]);
-
-      if (mRes.error) throw mRes.error;
-      setMeasures((mRes.data ?? []) as MeasureRow[]);
-
-      if (viewRes.error) throw viewRes.error;
-      const rawLatest = (viewRes.data ?? []) as LatestRow[];
-      const measureIds = [...new Set(rawLatest.map((r) => r.quality_measure_id).filter(Boolean))] as string[];
-      const nameById: Record<string, { name: string; measure_key: string }> = {};
-      if (measureIds.length > 0) {
-        const { data: mNames } = await supabase.from("quality_measures").select("id, name, measure_key").in("id", measureIds);
-        for (const row of mNames ?? []) {
-          nameById[row.id] = { name: row.name, measure_key: row.measure_key };
-        }
-      }
-      setLatest(
-        rawLatest.map((r) => ({
-          ...r,
-          quality_measures: r.quality_measure_id ? nameById[r.quality_measure_id] ?? null : null,
-        })),
-      );
-
-      if (pbjRes.error) throw pbjRes.error;
-      setPbjRows((pbjRes.data ?? []) as Database["public"]["Tables"]["pbj_export_batches"]["Row"][]);
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load quality data.");
-      setMeasures([]);
-      setLatest([]);
-      setPbjRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, selectedFacilityId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+  const noFacility = !facilityReady;
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
