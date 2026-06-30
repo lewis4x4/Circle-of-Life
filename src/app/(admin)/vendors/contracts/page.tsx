@@ -12,6 +12,10 @@ import {
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  VENDOR_CONTRACTS_LIST_SELECT,
+  VENDOR_HUB_LIST_LIMIT,
+} from "@/lib/admin/hub-list-limits";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
@@ -35,10 +39,11 @@ export default function VendorContractsListPage() {
     queryFn: async (): Promise<(ContractRow & { vendor_name?: string })[]> => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("*")
+        .select(VENDOR_CONTRACTS_LIST_SELECT)
         .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
-        .order("expiration_date", { ascending: true, nullsFirst: false });
+        .order("expiration_date", { ascending: true, nullsFirst: false })
+        .limit(VENDOR_HUB_LIST_LIMIT);
       if (error) throw new Error(error.message);
       const list = (data ?? []) as ContractRow[];
       const vids = [...new Set(list.map((r) => r.vendor_id))];

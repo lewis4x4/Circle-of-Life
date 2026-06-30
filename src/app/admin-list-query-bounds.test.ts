@@ -26,6 +26,9 @@ const facilityOverviewTabSource = readSource("src/components/admin/facilities/ta
 const operationsTodaySource = readSource("src/app/(admin)/admin/operations/page.tsx");
 const incidentDetailLoaderSource = readSource("src/lib/incidents/load-incident-detail.ts");
 const incidentDetailPageSource = readSource("src/app/(admin)/incidents/[id]/page.tsx");
+const hubListLimitsSource = readSource("src/lib/admin/hub-list-limits.ts");
+const insuranceClaimsSource = readSource("src/app/(admin)/insurance/claims/page.tsx");
+const vendorContractsSource = readSource("src/app/(admin)/vendors/contracts/page.tsx");
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
@@ -163,5 +166,14 @@ describe("admin list query bounds", () => {
     expect(incidentDetailPageSource).toContain("AdminIncidentDetailPageClient");
     expect(incidentDetailLoaderSource).toContain("await Promise.all([");
     expect(incidentDetailLoaderSource.match(/await Promise\.all\(\[/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
+  it("bounds insurance and vendor hub list queries (perf-query-04)", () => {
+    expect(hubListLimitsSource).toContain("INSURANCE_HUB_LIST_LIMIT = 150");
+    expect(hubListLimitsSource).toContain("VENDOR_HUB_LIST_LIMIT = 150");
+    expect(insuranceClaimsSource).toContain("INSURANCE_CLAIMS_LIST_SELECT");
+    expect(insuranceClaimsSource).toContain(".limit(INSURANCE_HUB_LIST_LIMIT)");
+    expect(vendorContractsSource).toContain("VENDOR_CONTRACTS_LIST_SELECT");
+    expect(vendorContractsSource).toContain(".limit(VENDOR_HUB_LIST_LIMIT)");
   });
 });

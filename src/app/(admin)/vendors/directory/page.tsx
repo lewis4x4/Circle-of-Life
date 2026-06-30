@@ -12,6 +12,10 @@ import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { canManageVendorMaster } from "@/lib/vendors/vendor-role-helpers";
+import {
+  VENDOR_DIRECTORY_LIST_SELECT,
+  VENDOR_HUB_LIST_LIMIT,
+} from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type VendorRow = Database["public"]["Tables"]["vendors"]["Row"];
@@ -36,10 +40,11 @@ export default function VendorDirectoryPage() {
     queryFn: async (): Promise<VendorRow[]> => {
       const { data, error } = await supabase
         .from("vendors")
-        .select("*")
+        .select(VENDOR_DIRECTORY_LIST_SELECT)
         .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
-        .order("name");
+        .order("name")
+        .limit(VENDOR_HUB_LIST_LIMIT);
       if (error) throw new Error(error.message);
       return (data ?? []) as VendorRow[];
     },

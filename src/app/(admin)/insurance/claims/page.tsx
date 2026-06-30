@@ -11,6 +11,10 @@ import { format, parseISO } from "date-fns";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  INSURANCE_CLAIMS_LIST_SELECT,
+  INSURANCE_HUB_LIST_LIMIT,
+} from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["insurance_claims"]["Row"];
@@ -29,10 +33,11 @@ export default function InsuranceClaimsPage() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("insurance_claims")
-        .select("*")
+        .select(INSURANCE_CLAIMS_LIST_SELECT)
         .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
-        .order("date_of_loss", { ascending: false });
+        .order("date_of_loss", { ascending: false })
+        .limit(INSURANCE_HUB_LIST_LIMIT);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },

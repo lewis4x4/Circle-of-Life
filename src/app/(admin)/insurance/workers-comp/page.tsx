@@ -7,6 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  INSURANCE_HUB_LIST_LIMIT,
+  INSURANCE_WORKERS_COMP_LIST_SELECT,
+} from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["workers_comp_claims"]["Row"];
@@ -25,10 +29,11 @@ export default function InsuranceWorkersCompPage() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("workers_comp_claims")
-        .select("*")
+        .select(INSURANCE_WORKERS_COMP_LIST_SELECT)
         .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
-        .order("injury_date", { ascending: false });
+        .order("injury_date", { ascending: false })
+        .limit(INSURANCE_HUB_LIST_LIMIT);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },

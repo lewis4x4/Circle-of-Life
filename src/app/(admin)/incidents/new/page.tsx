@@ -15,6 +15,7 @@ import {
   type CaregiverIncidentFormData,
 } from "@/lib/validation/caregiver-incident";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
@@ -70,6 +71,7 @@ function AdminIncidentFormInner() {
   const searchParams = useSearchParams();
   const queryResidentId = searchParams.get("resident") ?? searchParams.get("residentId") ?? "";
   const { selectedFacilityId } = useFacilityStore();
+  const { user, organizationId: authOrganizationId, loading: authLoading } = useHavenAuth();
 
   const supabase = useMemo(() => createClient(), []);
   const [configError, setConfigError] = useState<string | null>(null);
@@ -98,29 +100,30 @@ function AdminIncidentFormInner() {
       return;
     }
 
+    if (authLoading) {
+      return;
+    }
+
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) { setLoadError("Sign in to file an incident."); setLoadingContext(false); return; }
+      if (!user) {
+        setLoadError("Sign in to file an incident.");
+        setLoadingContext(false);
+        return;
+      }
+      if (!authOrganizationId) {
+        setLoadError("Profile missing organization.");
+        setLoadingContext(false);
+        return;
+      }
 
-      const profileResult = await supabase
-        .from("user_profiles" as never)
-        .select("organization_id, app_role")
-        .eq("id", user.id)
-        .maybeSingle();
-      const profile = profileResult.data as { organization_id: string; app_role: string } | null;
-      if (profileResult.error) throw profileResult.error;
-      if (!profile?.organization_id) { setLoadError("Profile missing organization."); setLoadingContext(false); return; }
-
-      // Use selected facility from header if available, otherwise pick first
       let resolvedFacilityId: string | null = selectedFacilityId;
-      let resolvedOrgId = profile.organization_id;
+      let resolvedOrgId = authOrganizationId;
 
       if (!resolvedFacilityId) {
         const facResult = await supabase
           .from("facilities" as never)
           .select("id, name, organization_id")
-          .eq("organization_id", profile.organization_id)
+          .eq("organization_id", resolvedOrgId)
           .is("deleted_at", null)
           .order("name")
           .limit(1)
@@ -151,7 +154,7 @@ function AdminIncidentFormInner() {
     } finally {
       setLoadingContext(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [supabase, selectedFacilityId, authLoading, user, authOrganizationId]);
 
   useEffect(() => { void loadContext(); }, [loadContext]);
 
@@ -176,7 +179,6 @@ function AdminIncidentFormInner() {
       const occurredAt = new Date(values.occurredAtLocal);
       if (Number.isNaN(occurredAt.getTime())) throw new Error("Invalid date and time.");
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Session expired.");
 
       const insertPayload = {

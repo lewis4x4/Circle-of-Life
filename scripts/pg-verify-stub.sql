@@ -127,6 +127,37 @@ VALUES (
   ''
 );
 
+-- COL org placeholder used by 281_phase1_staff_seed.sql created_by FK (Docker replay only).
+INSERT INTO auth.users (
+  id,
+  instance_id,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  aud,
+  role,
+  created_at,
+  updated_at,
+  confirmation_token
+)
+VALUES (
+  '062c3cfb-53a5-4482-814a-cbef2b028760',
+  '00000000-0000-0000-0000-000000000000',
+  'col-staff-seed@haven.seed',
+  '',
+  now(),
+  '{}',
+  '{}',
+  'authenticated',
+  'authenticated',
+  now(),
+  now(),
+  ''
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- Minimal Storage API stubs (Supabase). Lets migrations create buckets + storage.objects policies.
 CREATE SCHEMA IF NOT EXISTS storage;
 

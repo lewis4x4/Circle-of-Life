@@ -1,32 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { VendorHubNav } from "../vendor-hub-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { VENDOR_PAYMENTS_LIST_SELECT } from "@/lib/admin/hub-list-limits";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canOperateFacilityVendorWorkflow } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
 
-type PayRow = Database["public"]["Tables"]["vendor_payments"]["Row"];
+type PayRow = Pick<
+  Database["public"]["Tables"]["vendor_payments"]["Row"],
+  "id" | "payment_date" | "amount_cents" | "payment_method"
+>;
 type EntityMini = { id: string; name: string };
 type VendorMini = { id: string; name: string };
 type FacMini = { id: string; name: string };
 
+const VENDOR_PAYMENTS_LIST_LIMIT = 50;
+
 export default function VendorPaymentsPage() {
   const supabase = createClient();
-  const [rows, setRows] = useState<PayRow[]>([]);
-  const [entities, setEntities] = useState<EntityMini[]>([]);
-  const [vendors, setVendors] = useState<VendorMini[]>([]);
-  const [facilities, setFacilities] = useState<FacMini[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const queryClient = useQueryClient();
+  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
   const [entityId, setEntityId] = useState("");
   const [vendorId, setVendorId] = useState("");
   const [facilityId, setFacilityId] = useState("");
@@ -34,55 +36,85 @@ export default function VendorPaymentsPage() {
   const [method, setMethod] = useState("ach");
   const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
-      setRows([]);
-      setLoadError(c.error);
-      setLoading(false);
-      return;
-    }
-    const [{ data: p }, { data: e }, { data: v }, { data: f }] = await Promise.all([
-      supabase
-        .from("vendor_payments")
-        .select("*")
-        .eq("organization_id", c.ctx.organizationId)
-        .is("deleted_at", null)
-        .order("payment_date", { ascending: false })
-        .limit(50),
-      supabase.from("entities").select("id, name").eq("organization_id", c.ctx.organizationId).is("deleted_at", null).order("name"),
-      supabase.from("vendors").select("id, name").eq("organization_id", c.ctx.organizationId).is("deleted_at", null).order("name"),
-      supabase.from("facilities").select("id, name").eq("organization_id", c.ctx.organizationId).is("deleted_at", null).order("name"),
-    ]);
-    setRows((p ?? []) as PayRow[]);
-    setEntities((e ?? []) as EntityMini[]);
-    setVendors((v ?? []) as VendorMini[]);
-    setFacilities((f ?? []) as FacMini[]);
-    setLoading(false);
-  }, [supabase]);
+  const {
+    data: hubData,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["vendors", "payments", organizationId],
+    enabled: !!organizationId,
+    queryFn: async () => {
+      const orgId = organizationId as string;
+      const [{ data: payments, error: paymentsErr }, { data: entities }, { data: vendors }, { data: facilities }] =
+        await Promise.all([
+          supabase
+            .from("vendor_payments")
+            .select(VENDOR_PAYMENTS_LIST_SELECT)
+            .eq("organization_id", orgId)
+            .is("deleted_at", null)
+            .order("payment_date", { ascending: false })
+            .limit(VENDOR_PAYMENTS_LIST_LIMIT),
+          supabase
+            .from("entities")
+            .select("id, name")
+            .eq("organization_id", orgId)
+            .is("deleted_at", null)
+            .order("name"),
+          supabase
+            .from("vendors")
+            .select("id, name")
+            .eq("organization_id", orgId)
+            .is("deleted_at", null)
+            .order("name"),
+          supabase
+            .from("facilities")
+            .select("id, name")
+            .eq("organization_id", orgId)
+            .is("deleted_at", null)
+            .order("name"),
+        ]);
+      if (paymentsErr) throw new Error(paymentsErr.message);
+      return {
+        rows: (payments ?? []) as PayRow[],
+        entities: (entities ?? []) as EntityMini[],
+        vendors: (vendors ?? []) as VendorMini[],
+        facilities: (facilities ?? []) as FacMini[],
+      };
+    },
+  });
 
-  useEffect(() => {
-    queueMicrotask(() => void load());
-  }, [load]);
+  const rows = hubData?.rows ?? [];
+  const entities = hubData?.entities ?? [];
+  const vendors = hubData?.vendors ?? [];
+  const facilities = hubData?.facilities ?? [];
 
-  const canPay = ctx?.ok && canOperateFacilityVendorWorkflow(ctx.ctx.appRole);
+  const loading = authLoading || isPending;
+  const loadError =
+    actionError ??
+    (!authLoading && !organizationId
+      ? "Organization missing on profile."
+      : error
+        ? error.message
+        : null);
+
+  const canPay =
+    !!organizationId &&
+    canOperateFacilityVendorWorkflow(appRole as Database["public"]["Enums"]["app_role"]);
 
   async function onPay(e: React.FormEvent) {
     e.preventDefault();
-    if (!ctx?.ok || !canPay || !entityId || !vendorId || !facilityId) return;
+    if (!organizationId || !canPay || !entityId || !vendorId || !facilityId) return;
     const cents = Math.round(Number.parseFloat(amount) * 100);
     if (!Number.isFinite(cents) || cents <= 0) {
-      setLoadError("Enter a valid amount.");
+      setActionError("Enter a valid amount.");
       return;
     }
     setSaving(true);
-    setLoadError(null);
-    const { error } = await supabase.from("vendor_payments").insert({
-      organization_id: ctx.ctx.organizationId,
+    setActionError(null);
+    const { error: insertErr } = await supabase.from("vendor_payments").insert({
+      organization_id: organizationId,
       entity_id: entityId,
       vendor_id: vendorId,
       facility_id: facilityId,
@@ -91,11 +123,12 @@ export default function VendorPaymentsPage() {
       payment_method: method,
     });
     setSaving(false);
-    if (error) setLoadError(error.message);
-    else {
-      setAmount("");
-      await load();
+    if (insertErr) {
+      setActionError(insertErr.message);
+      return;
     }
+    setAmount("");
+    await queryClient.invalidateQueries({ queryKey: ["vendors", "payments", organizationId] });
   }
 
   return (

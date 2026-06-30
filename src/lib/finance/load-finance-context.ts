@@ -7,6 +7,10 @@ export type FinanceRoleContext = {
   appRole: Database["public"]["Enums"]["app_role"];
 };
 
+/**
+ * @deprecated Prefer `useHavenAuth()` in client components — the (admin) layout
+ * already loads session + profile once via HavenAuthProvider.
+ */
 export async function loadFinanceRoleContext(
   supabase: SupabaseClient<Database>,
 ): Promise<{ ok: true; ctx: FinanceRoleContext } | { ok: false; error: string }> {

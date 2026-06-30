@@ -15,6 +15,10 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  INSURANCE_HUB_LIST_LIMIT,
+  INSURANCE_POLICIES_LIST_SELECT,
+} from "@/lib/admin/hub-list-limits";
 import { Constants, type Database } from "@/types/database";
 import { format, parseISO } from "date-fns";
 
@@ -53,10 +57,11 @@ export default function InsurancePoliciesPage() {
     queryFn: async (): Promise<PolicyRow[]> => {
       let q = supabase
         .from("insurance_policies")
-        .select("*")
+        .select(INSURANCE_POLICIES_LIST_SELECT)
         .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
-        .order("expiration_date", { ascending: true });
+        .order("expiration_date", { ascending: true })
+        .limit(INSURANCE_HUB_LIST_LIMIT);
       if (entityFilter) q = q.eq("entity_id", entityFilter);
       if (statusFilter) q = q.eq("status", statusFilter as PolicyRow["status"]);
       const { data, error } = await q;

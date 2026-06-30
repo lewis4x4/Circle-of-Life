@@ -7,6 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  INSURANCE_COI_LIST_SELECT,
+  INSURANCE_HUB_LIST_LIMIT,
+} from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 
 type Row = Database["public"]["Tables"]["certificates_of_insurance"]["Row"];
@@ -29,10 +33,11 @@ export default function InsuranceCoiPage() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("certificates_of_insurance")
-        .select("*")
+        .select(INSURANCE_COI_LIST_SELECT)
         .eq("organization_id", organizationId as string)
         .is("deleted_at", null)
-        .order("expiration_date", { ascending: true });
+        .order("expiration_date", { ascending: true })
+        .limit(INSURANCE_HUB_LIST_LIMIT);
       if (error) throw new Error(error.message);
       return (data ?? []) as Row[];
     },

@@ -4,36 +4,23 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
-import { getAppRoleFromClaims, isDietaryRole } from "@/lib/auth/app-role";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { isDietaryRole } from "@/lib/auth/app-role";
 
 export default function DietaryDashboardRedirectPage() {
   const router = useRouter();
+  const { appRole, loading } = useHavenAuth();
 
   useEffect(() => {
-    let cancelled = false;
+    if (loading) return;
 
-    void (async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    if (isDietaryRole(appRole)) {
+      router.replace("/dietary");
+      return;
+    }
 
-      if (cancelled) return;
-
-      const role = getAppRoleFromClaims(user);
-      if (isDietaryRole(role)) {
-        router.replace("/dietary");
-        return;
-      }
-
-      router.replace("/admin/dietary");
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+    router.replace("/admin/dietary");
+  }, [appRole, loading, router]);
 
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
