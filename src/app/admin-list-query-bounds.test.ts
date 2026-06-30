@@ -29,6 +29,8 @@ const incidentDetailPageSource = readSource("src/app/(admin)/incidents/[id]/page
 const hubListLimitsSource = readSource("src/lib/admin/hub-list-limits.ts");
 const insuranceClaimsSource = readSource("src/app/(admin)/insurance/claims/page.tsx");
 const vendorContractsSource = readSource("src/app/(admin)/vendors/contracts/page.tsx");
+const dietaryBootstrapSource = readSource("src/lib/dietary/load-dietary-hub-bootstrap.ts");
+const dietaryPageSource = readSource("src/app/(admin)/admin/dietary/page.tsx");
 
 describe("admin list query bounds", () => {
   it("bounds admissions hub preview list queries without changing head-count patterns", () => {
@@ -175,5 +177,12 @@ describe("admin list query bounds", () => {
     expect(insuranceClaimsSource).toContain(".limit(INSURANCE_HUB_LIST_LIMIT)");
     expect(vendorContractsSource).toContain("VENDOR_CONTRACTS_LIST_SELECT");
     expect(vendorContractsSource).toContain(".limit(VENDOR_HUB_LIST_LIMIT)");
+  });
+
+  it("server-bootstraps dietary hub with parallel loader", () => {
+    expect(dietaryPageSource).toContain("loadDietaryHubBootstrap");
+    expect(dietaryPageSource).toContain("AdminDietaryPageClient");
+    expect(dietaryBootstrapSource).toContain("await Promise.all([");
+    expect(dietaryBootstrapSource).toContain(".limit(DIET_ORDERS_HUB_LIMIT)");
   });
 });

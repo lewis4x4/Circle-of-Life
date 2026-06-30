@@ -1,0 +1,791 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { format } from "date-fns";
+import { Utensils } from "lucide-react";
+
+import { Button, buttonVariants } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { createClient } from "@/lib/supabase/client";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
+import { cn } from "@/lib/utils";
+import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { V2Card } from "@/components/ui/v2-card";
+import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import {
+  loadDietaryHubBootstrap,
+  type DietaryHubBootstrap,
+  type DietaryHubDietRow as DietRow,
+  type DietaryHubMealLogRow as MealLogRow,
+  type DietaryHubResidentOption as ResidentOption,
+  type DietaryHubSnackLogRow as SnackLogRow,
+} from "@/lib/dietary/load-dietary-hub-bootstrap";
+
+type DietOrderStatus = Database["public"]["Enums"]["diet_order_status"];
+
+type MealLogStatus = MealLogRow["status"];
+type MealLogType = MealLogRow["meal_type"];
+
+const MEAL_TYPES: MealLogType[] = ["breakfast", "lunch", "dinner"];
+const MEAL_STATUSES: MealLogStatus[] = ["ate", "partial", "refused", "out_of_facility", "not_observed"];
+const MEAL_STATUS_LABELS: Record<MealLogStatus, string> = {
+  ate: "Ate most/all",
+  partial: "Ate some",
+  refused: "Refused",
+  out_of_facility: "Out of facility",
+  not_observed: "Not observed",
+};
+
+const DIET_ORDER_STATUS_FILTERS: { value: "all" | DietOrderStatus; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "draft", label: "Draft" },
+  { value: "active", label: "Active" },
+  { value: "discontinued", label: "Discontinued" },
+];
+
+function fluidIsThickened(level: string): boolean {
+  return level.includes("mildly") || level.includes("moderately") || level.includes("extremely");
+}
+
+function dietOrderNeedsAttention(row: DietRow): boolean {
+  if (row.status === "draft") return true;
+  if (row.requires_swallow_eval) return true;
+  if (row.medication_texture_review_notes?.trim()) return true;
+  return Boolean(row.aspiration_notes?.trim());
+}
+
+function attentionBadge(row: DietRow): { label: string; barClass: string; badgeClass: string } {
+  if (row.status === "draft") {
+    return {
+      label: "Draft order",
+      barClass: "bg-amber-500",
+      badgeClass: "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20",
+    };
+  }
+  if (row.requires_swallow_eval) {
+    return {
+      label: "Swallow eval",
+      barClass: "bg-rose-500",
+      badgeClass: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",
+    };
+  }
+  if (row.medication_texture_review_notes?.trim()) {
+    return {
+      label: "Med / texture review",
+      barClass: "bg-primary-500",
+      badgeClass: "text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/20",
+    };
+  }
+  return {
+    label: "Aspiration notes",
+    barClass: "bg-orange-500",
+    badgeClass: "text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20",
+  };
+}
+
+function attentionSummary(row: DietRow): string {
+  const med = row.medication_texture_review_notes?.trim();
+  if (med) return med;
+  const note = row.aspiration_notes?.trim();
+  if (note) return note;
+  if (row.status === "draft") return "Diet order is still in draft and needs activation.";
+  if (row.requires_swallow_eval) return "Marked for swallow evaluation follow-up.";
+  return "Review diet order details.";
+}
+
+function formatRelativeShort(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "—";
+  const diffMs = Date.now() - t;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 48) return `${hrs}h ago`;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
+}
+
+function buildDietOrdersCsv(rows: DietRow[]): string {
+  const header = [
+    "id",
+    "organization_id",
+    "facility_id",
+    "resident_id",
+    "resident_first_name",
+    "resident_last_name",
+    "status",
+    "iddsi_food_level",
+    "iddsi_fluid_level",
+    "requires_swallow_eval",
+    "allergy_constraints",
+    "texture_constraints",
+    "aspiration_notes",
+    "medication_texture_review_notes",
+    "effective_from",
+    "effective_to",
+    "created_at",
+    "updated_at",
+  ].join(",");
+  const body = rows.map((row) => {
+    const allergy = row.allergy_constraints?.join(" | ") ?? "";
+    const texture = row.texture_constraints?.join(" | ") ?? "";
+    return [
+      csvEscapeCell(row.id),
+      csvEscapeCell(row.organization_id),
+      csvEscapeCell(row.facility_id),
+      csvEscapeCell(row.resident_id),
+      csvEscapeCell(row.residents?.first_name ?? ""),
+      csvEscapeCell(row.residents?.last_name ?? ""),
+      csvEscapeCell(row.status),
+      csvEscapeCell(row.iddsi_food_level),
+      csvEscapeCell(row.iddsi_fluid_level),
+      csvEscapeCell(String(row.requires_swallow_eval)),
+      csvEscapeCell(allergy),
+      csvEscapeCell(texture),
+      csvEscapeCell(row.aspiration_notes ?? ""),
+      csvEscapeCell(row.medication_texture_review_notes ?? ""),
+      csvEscapeCell(row.effective_from ?? ""),
+      csvEscapeCell(row.effective_to ?? ""),
+      csvEscapeCell(row.created_at),
+      csvEscapeCell(row.updated_at),
+    ].join(",");
+  });
+  return [header, ...body].join("\r\n");
+}
+
+export type AdminDietaryPageClientProps = {
+  initialBootstrap: DietaryHubBootstrap;
+  initialLoadError: string | null;
+  initialFacilityId: string | null;
+  serverBootstrapped?: boolean;
+};
+
+export function AdminDietaryPageClient({
+  initialBootstrap,
+  initialLoadError,
+  initialFacilityId,
+  serverBootstrapped = false,
+}: AdminDietaryPageClientProps) {
+  const supabase = useMemo(() => createClient(), []);
+  const { selectedFacilityId } = useFacilityStore();
+  const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
+  const [rows, setRows] = useState<DietRow[]>(initialBootstrap.rows);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(initialLoadError);
+  const [exportingCsv, setExportingCsv] = useState(false);
+  const [dietOrderStatusFilter, setDietOrderStatusFilter] = useState<"all" | DietOrderStatus>("all");
+  const [organizationId, setOrganizationId] = useState<string | null>(initialBootstrap.organizationId);
+  const [residents, setResidents] = useState<ResidentOption[]>(initialBootstrap.residents);
+  const [mealLogs, setMealLogs] = useState<MealLogRow[]>(initialBootstrap.mealLogs);
+  const [snackLogs, setSnackLogs] = useState<SnackLogRow[]>(initialBootstrap.snackLogs);
+  const [savingMeal, setSavingMeal] = useState(false);
+  const [savingSnack, setSavingSnack] = useState(false);
+  const [mealForm, setMealForm] = useState({
+    resident_id: initialBootstrap.residents[0]?.id ?? "",
+    meal_date: new Date().toISOString().slice(0, 10),
+    meal_type: "lunch" as MealLogType,
+    status: "ate" as MealLogStatus,
+    intake_percent: "100",
+    notes: "",
+  });
+  const [snackForm, setSnackForm] = useState({
+    snack_at: new Date().toISOString().slice(0, 16),
+    snack_description: "PM snack pass",
+    residents_offered_count: "",
+    residents_accepted_count: "",
+    notes: "",
+  });
+
+  const applyBootstrap = useCallback((bootstrap: DietaryHubBootstrap) => {
+    setRows(bootstrap.rows);
+    setOrganizationId(bootstrap.organizationId);
+    setResidents(bootstrap.residents);
+    setMealLogs(bootstrap.mealLogs);
+    setSnackLogs(bootstrap.snackLogs);
+    if (bootstrap.residents.length > 0) {
+      setMealForm((prev) => (prev.resident_id ? prev : { ...prev, resident_id: bootstrap.residents[0].id }));
+    }
+  }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
+      applyBootstrap({
+        rows: [],
+        organizationId: null,
+        residents: [],
+        mealLogs: [],
+        snackLogs: [],
+      });
+      setLoading(false);
+      return;
+    }
+    try {
+      const bootstrap = await loadDietaryHubBootstrap(selectedFacilityId, supabase);
+      applyBootstrap(bootstrap);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load dietary data.");
+      applyBootstrap({
+        rows: [],
+        organizationId: null,
+        residents: [],
+        mealLogs: [],
+        snackLogs: [],
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [applyBootstrap, selectedFacilityId, supabase]);
+
+  useEffect(() => {
+    if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
+      skipNextLoadRef.current = false;
+      return;
+    }
+    skipNextLoadRef.current = false;
+    void load();
+  }, [initialFacilityId, load, selectedFacilityId]);
+
+  const exportDietOrdersCsv = useCallback(async () => {
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    setExportingCsv(true);
+    setError(null);
+    try {
+      let q = supabase
+        .from("diet_orders")
+        .select("*, residents(first_name, last_name)")
+        .eq("facility_id", selectedFacilityId)
+        .is("deleted_at", null);
+      if (dietOrderStatusFilter !== "all") {
+        q = q.eq("status", dietOrderStatusFilter);
+      }
+      const { data, error: qErr } = await q.order("updated_at", { ascending: false }).limit(500);
+      if (qErr) throw qErr;
+      const exportRows = (data ?? []) as DietRow[];
+      const csv = buildDietOrdersCsv(exportRows);
+      const scope = dietOrderStatusFilter === "all" ? "" : `_${dietOrderStatusFilter}`;
+      triggerCsvDownload(`diet-orders_${format(new Date(), "yyyy-MM-dd")}${scope}.csv`, csv);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "CSV export failed.");
+    } finally {
+      setExportingCsv(false);
+    }
+  }, [selectedFacilityId, supabase, dietOrderStatusFilter]);
+
+  const displayRows = useMemo(() => {
+    if (dietOrderStatusFilter === "all") return rows;
+    return rows.filter((r) => r.status === dietOrderStatusFilter);
+  }, [rows, dietOrderStatusFilter]);
+
+  const attentionRows = useMemo(
+    () =>
+      displayRows
+        .filter(dietOrderNeedsAttention)
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
+    [displayRows],
+  );
+
+  const attentionIds = useMemo(() => new Set(attentionRows.map((r) => r.id)), [attentionRows]);
+
+  const rosterRows = useMemo(
+    () => displayRows.filter((r) => !attentionIds.has(r.id)).slice(0, 8),
+    [displayRows, attentionIds],
+  );
+
+  const batchStats = useMemo(() => {
+    const n = displayRows.length;
+    if (n === 0) {
+      return { thickenedPct: 0, swallowPct: 0, allergyPct: 0, medTexturePct: 0 };
+    }
+    const thickened = displayRows.filter((r) => fluidIsThickened(r.iddsi_fluid_level)).length;
+    const swallow = displayRows.filter((r) => r.requires_swallow_eval).length;
+    const allergy = displayRows.filter((r) => r.allergy_constraints.length > 0).length;
+    const medTexture = displayRows.filter((r) => r.medication_texture_review_notes?.trim()).length;
+    return {
+      thickenedPct: Math.round((thickened / n) * 100),
+      swallowPct: Math.round((swallow / n) * 100),
+      allergyPct: Math.round((allergy / n) * 100),
+      medTexturePct: Math.round((medTexture / n) * 100),
+    };
+  }, [displayRows]);
+
+  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+
+  const saveMealLog = useCallback(async () => {
+    if (!facilityReady || !selectedFacilityId || !organizationId || !mealForm.resident_id) return;
+    setSavingMeal(true);
+    setError(null);
+    try {
+      const intakeValue = mealForm.intake_percent.trim();
+      const intakePercent = intakeValue === "" ? null : Number(intakeValue);
+      if (intakePercent !== null && (!Number.isFinite(intakePercent) || intakePercent < 0 || intakePercent > 100)) {
+        throw new Error("Intake percent must be between 0 and 100.");
+      }
+      const { error: insertErr } = await supabase.from("meal_logs" as never).upsert(({
+        organization_id: organizationId,
+        facility_id: selectedFacilityId,
+        resident_id: mealForm.resident_id,
+        meal_date: mealForm.meal_date,
+        meal_type: mealForm.meal_type,
+        status: mealForm.status,
+        intake_percent: intakePercent,
+        notes: mealForm.notes.trim() || null,
+        deleted_at: null,
+      }) as never, { onConflict: "resident_id,meal_date,meal_type" });
+      if (insertErr) throw insertErr;
+      setMealForm((prev) => ({ ...prev, notes: "" }));
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save meal log.");
+    } finally {
+      setSavingMeal(false);
+    }
+  }, [facilityReady, mealForm, organizationId, selectedFacilityId, supabase, load]);
+
+  const saveSnackLog = useCallback(async () => {
+    if (!facilityReady || !selectedFacilityId || !organizationId) return;
+    setSavingSnack(true);
+    setError(null);
+    try {
+      const offered = snackForm.residents_offered_count.trim();
+      const accepted = snackForm.residents_accepted_count.trim();
+      const offeredCount = offered === "" ? null : Number(offered);
+      const acceptedCount = accepted === "" ? null : Number(accepted);
+      const snackAt = new Date(snackForm.snack_at);
+      if (Number.isNaN(snackAt.getTime())) {
+        throw new Error("Snack time is required.");
+      }
+      if (offeredCount !== null && (!Number.isFinite(offeredCount) || offeredCount < 0)) {
+        throw new Error("Offered count must be zero or greater.");
+      }
+      if (acceptedCount !== null && (!Number.isFinite(acceptedCount) || acceptedCount < 0)) {
+        throw new Error("Accepted count must be zero or greater.");
+      }
+      if (offeredCount !== null && acceptedCount !== null && acceptedCount > offeredCount) {
+        throw new Error("Accepted count cannot be greater than offered count.");
+      }
+      const { error: insertErr } = await supabase.from("snack_logs" as never).insert(({
+        organization_id: organizationId,
+        facility_id: selectedFacilityId,
+        snack_at: snackAt.toISOString(),
+        snack_description: snackForm.snack_description.trim() || null,
+        residents_offered_count: offeredCount,
+        residents_accepted_count: acceptedCount,
+        notes: snackForm.notes.trim() || null,
+      }) as never);
+      if (insertErr) throw insertErr;
+      setSnackForm((prev) => ({ ...prev, notes: "" }));
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save snack log.");
+    } finally {
+      setSavingSnack(false);
+    }
+  }, [facilityReady, organizationId, selectedFacilityId, snackForm, supabase, load]);
+
+  return (
+    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      <div className="relative z-10 space-y-6">
+        
+        {/* ─── MOONSHOT HEADER ─── */}
+        <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
+           <div className="space-y-2">
+             
+             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
+                Dietary & Nutrition
+             </h1>
+             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
+               IDDSI food and fluid levels with allergy constraints. Manage therapeutic diet orders across your facility.
+               {rows.length > 0 && (
+                 <span className="block mt-1 text-xs">
+                   Showing {displayRows.length} of {rows.length} loaded order{rows.length === 1 ? "" : "s"}
+                   {dietOrderStatusFilter !== "all" ? ` (${dietOrderStatusFilter})` : ""}.
+                 </span>
+               )}
+             </p>
+           </div>
+           <div className="flex flex-wrap items-center gap-3 justify-end">
+              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="whitespace-nowrap font-bold uppercase tracking-wider">Status</span>
+                <select
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
+                  value={dietOrderStatusFilter}
+                  onChange={(e) =>
+                    setDietOrderStatusFilter(e.target.value as "all" | DietOrderStatus)
+                  }
+                  aria-label="Filter diet orders by status"
+                >
+                  {DIET_ORDER_STATUS_FILTERS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!facilityReady || exportingCsv}
+                className="h-9 rounded-lg px-4 font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10"
+                onClick={() => void exportDietOrdersCsv()}
+              >
+                {exportingCsv ? "Preparing…" : "Download diet orders CSV"}
+              </Button>
+              <Link
+                href="/admin/dietary/clinical-review"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "default" }),
+                  "h-9 px-4 rounded-lg font-bold uppercase tracking-wider text-[10px] border-slate-200 dark:border-white/10",
+                )}
+              >
+                Med / diet review
+              </Link>
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wider text-xs tap-responsive bg-primary-600 hover:bg-primary-700 text-white")} >
+                + New Diet Order
+              </Link>
+           </div>
+        </div>
+
+        <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
+          <div className="h-[160px] md:col-span-3">
+            <V2Card hoverColor="indigo" className="border-primary-500/20 dark:border-primary-500/20 shadow-[0_8px_30px_rgba(99,102,241,0.05)]">
+              <MonolithicWatermark value={displayRows.length} className="text-info/10 opacity-50" />
+              <div className="relative z-10 flex flex-col h-full justify-between p-2">
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-primary-600 dark:text-primary-400 flex items-center gap-2">
+                  <Utensils className="h-4 w-4" /> Active Diet Orders
+                </h3>
+                <p className="text-2xl tracking-tight font-medium text-primary-600 dark:text-primary-400 pb-1">{displayRows.length}</p>
+              </div>
+            </V2Card>
+          </div>
+        </KineticGrid>
+
+      {!facilityReady && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100 shadow-sm font-medium">
+          Select a facility to load diet orders.
+        </p>
+      )}
+
+      {error && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100 shadow-sm font-medium">
+          {error}
+        </p>
+      )}
+
+      {facilityReady && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* ACTION QUEUE: Dietary Risk Board */}
+          <div className="col-span-1 lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between pb-2">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+                <></> Attention Queue
+              </h3>
+            </div>
+            
+            <MotionList className="space-y-4">
+              {loading ? (
+                <p className="text-sm font-mono text-slate-500">Loading…</p>
+              ) : rows.length === 0 ? (
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                   <p className="font-semibold text-lg text-foreground">No diet orders</p>
+                  <p className="text-sm opacity-80 mt-1">No active diet orders for this facility yet.</p>
+                </div>
+              ) : displayRows.length === 0 ? (
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                  <p className="font-semibold text-lg text-foreground">No orders match this status</p>
+                  <p className="text-sm opacity-80 mt-1">Try &quot;All statuses&quot; or another filter.</p>
+                </div>
+              ) : attentionRows.length === 0 ? (
+                <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
+                  <p className="font-semibold text-lg text-foreground">All Clear</p>
+                  <p className="text-sm opacity-80 mt-1">
+                    No draft orders, swallow-evaluation flags, med/texture review notes, or aspiration notes in this batch.
+                  </p>
+                </div>
+              ) : (
+                attentionRows.map((row) => {
+                  const badge = attentionBadge(row);
+                  return (
+                    <MotionItem
+                      key={row.id}
+                      className="relative overflow-hidden flex items-center gap-3 min-h-[36px] rounded-lg border border-border bg-card px-[13px] py-2 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 group tap-responsive"
+                    >
+                      <div className={cn("absolute top-0 left-0 w-1.5 h-full", badge.barClass)} />
+                      <div className="flex justify-between items-start mb-4 gap-2 pl-2">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border",
+                            badge.badgeClass,
+                          )}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                          Updated: {formatRelativeShort(row.updated_at)}
+                        </span>
+                      </div>
+                      <div className="mb-5 pl-2">
+                        <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight mb-2">
+                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
+                        </p>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{attentionSummary(row)}</p>
+                      </div>
+                      <div className="flex justify-start pl-2 mt-2">
+                        <Link
+                          href={`/admin/dietary/clinical-review?resident=${row.resident_id}`}
+                          className={cn(
+                            buttonVariants({ variant: "default", size: "sm" }),
+                            "h-9 rounded-lg px-4 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-wider text-[10px]",
+                          )}
+                        >
+                          Clinical review
+                        </Link>
+                      </div>
+                    </MotionItem>
+                  );
+                })
+              )}
+            </MotionList>
+
+            {!loading && displayRows.length > 0 && rosterRows.length > 0 && (
+              <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
+                <div className="rounded-lg border border-border bg-card overflow-hidden">
+                  <TableRowHeader>
+                    <span className="flex-[2] min-w-0">Resident</span>
+                    <span className="flex-1 min-w-0">Food</span>
+                    <span className="flex-1 min-w-0">Fluids</span>
+                    <span className="w-[110px] shrink-0 text-right">Fluid status</span>
+                  </TableRowHeader>
+                  <MotionList className="space-y-1 p-1">
+                    {rosterRows.map((row) => (
+                      <MotionItem key={row.id}>
+                        <TableRow>
+                          <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
+                            {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
+                          </span>
+                          <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
+                            {row.iddsi_food_level.replace(/_/g, " ")}
+                          </span>
+                          <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
+                            {row.iddsi_fluid_level.replace(/_/g, " ")}
+                          </span>
+                          <span className="w-[110px] shrink-0 flex justify-end">
+                            {fluidIsThickened(row.iddsi_fluid_level) ? (
+                              <StatusPill tone="warning">Thickened</StatusPill>
+                            ) : (
+                              <StatusPill tone="muted">Standard</StatusPill>
+                            )}
+                          </span>
+                        </TableRow>
+                      </MotionItem>
+                    ))}
+                  </MotionList>
+                </div>
+              </div>
+            )}
+            
+          </div>
+
+          {/* WATCHLIST: Kitchen Operations Context */}
+          <div className="col-span-1 border-l border-transparent dark:border-transparent lg:pl-6 pt-6 lg:pt-0">
+            <div className="p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/5">
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Therapeutic Context
+                </h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Thickened Fluids</p>
+                    <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.thickenedPct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-amber-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.thickenedPct}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Swallow Flags</p>
+                    <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.swallowPct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-rose-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.swallowPct}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy Alert</p>
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.allergyPct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.allergyPct}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Texture Reviews</p>
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
+                    <div
+                      className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loading ? 0 : batchStats.medTexturePct}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 space-y-5">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Meal / snack log</h3>
+              <div className="space-y-3 text-xs">
+                <select
+                  value={mealForm.resident_id}
+                  onChange={(e) => setMealForm((prev) => ({ ...prev, resident_id: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                >
+                  {residents.map((resident) => (
+                    <option key={resident.id} value={resident.id}>
+                      {`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Resident"}
+                    </option>
+                  ))}
+                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={mealForm.meal_date}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, meal_date: e.target.value }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  />
+                  <select
+                    value={mealForm.meal_type}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, meal_type: e.target.value as MealLogType }))}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10"
+                  >
+                    {MEAL_TYPES.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={mealForm.status}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, status: e.target.value as MealLogStatus }))}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize dark:border-white/10"
+                  >
+                    {MEAL_STATUSES.map((option) => (
+                      <option key={option} value={option}>{MEAL_STATUS_LABELS[option]}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={mealForm.intake_percent}
+                    onChange={(e) => setMealForm((prev) => ({ ...prev, intake_percent: e.target.value }))}
+                    placeholder="Intake %"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  />
+                </div>
+                <textarea
+                  value={mealForm.notes}
+                  onChange={(e) => setMealForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Meal notes"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  rows={2}
+                />
+                <Button type="button" size="sm" disabled={!mealForm.resident_id || savingMeal} onClick={() => void saveMealLog()}>
+                  {savingMeal ? "Saving meal…" : "Log meal"}
+                </Button>
+              </div>
+
+              <div className="space-y-3 text-xs border-t border-slate-200/70 dark:border-white/10 pt-4">
+                <input
+                  type="datetime-local"
+                  value={snackForm.snack_at}
+                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                />
+                <input
+                  type="text"
+                  value={snackForm.snack_description}
+                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_description: e.target.value }))}
+                  placeholder="Snack description"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={snackForm.residents_offered_count}
+                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_offered_count: e.target.value }))}
+                    placeholder="Offered"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    value={snackForm.residents_accepted_count}
+                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_accepted_count: e.target.value }))}
+                    placeholder="Accepted"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  />
+                </div>
+                <textarea
+                  value={snackForm.notes}
+                  onChange={(e) => setSnackForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Snack notes"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
+                  rows={2}
+                />
+                <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>
+                  {savingSnack ? "Saving snack…" : "Log snack pass"}
+                </Button>
+              </div>
+
+              <div className="space-y-2 border-t border-slate-200/70 dark:border-white/10 pt-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Recent meal entries</p>
+                {mealLogs.slice(0, 3).map((log) => (
+                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
+                    {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
+                  </p>
+                ))}
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
+                {snackLogs.slice(0, 3).map((log) => (
+                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
+                    {format(new Date(log.snack_at), "MMM d, h:mm a")} — {log.snack_description || "Snack pass"}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      )}
+      </div>
+    </div>
+  );
+}
