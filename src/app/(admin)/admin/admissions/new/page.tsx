@@ -41,6 +41,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { QuietDatePicker, formatQuietIsoForDisplay } from "@/components/ui/quiet-date-picker";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
@@ -332,6 +333,7 @@ function AdmissionsNewInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const refsContextRef = useRef({ selectedFacilityId });
@@ -932,9 +934,6 @@ function AdmissionsNewInner() {
       setModalError("Could not resolve organization for this facility.");
       return;
     }
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!isCurrentRefsContext(actionFacilityId)) return;
     if (!user?.id) {
       setModalError("You must be signed in.");
@@ -1044,9 +1043,6 @@ function AdmissionsNewInner() {
         return;
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

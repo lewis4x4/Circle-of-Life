@@ -5,18 +5,22 @@ import { useCallback, useEffect, useState } from "react";
 
 import { VendorHubNav } from "../../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { canOperateFacilityVendorWorkflow } from "@/lib/vendors/vendor-role-helpers";
+import type { Database } from "@/types/database";
 type FacilityMini = { id: string; name: string };
 type VendorMini = { id: string; name: string };
 
 export default function NewPurchaseOrderPage() {
   const supabase = createClient();
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [facilities, setFacilities] = useState<FacilityMini[]>([]);
   const [vendors, setVendors] = useState<VendorMini[]>([]);
   const [facilityId, setFacilityId] = useState("");
@@ -25,34 +29,28 @@ export default function NewPurchaseOrderPage() {
   const [lineDesc, setLineDesc] = useState("Line 1");
   const [qty, setQty] = useState("1");
   const [unitCents, setUnitCents] = useState("1000");
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
-      setLoadError(c.error);
-      return;
-    }
+    if (!organizationId) return;
     const [{ data: fac }, { data: vend }] = await Promise.all([
-      supabase.from("facilities").select("id, name").eq("organization_id", c.ctx.organizationId).is("deleted_at", null).order("name"),
-      supabase.from("vendors").select("id, name").eq("organization_id", c.ctx.organizationId).is("deleted_at", null).order("name"),
+      supabase.from("facilities").select("id, name").eq("organization_id", organizationId).is("deleted_at", null).order("name"),
+      supabase.from("vendors").select("id, name").eq("organization_id", organizationId).is("deleted_at", null).order("name"),
     ]);
     setFacilities((fac ?? []) as FacilityMini[]);
     setVendors((vend ?? []) as VendorMini[]);
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
   }, [load]);
 
-  const canSubmit = ctx?.ok && canOperateFacilityVendorWorkflow(ctx.ctx.appRole);
+  const canSubmit = Boolean(organizationId && canOperateFacilityVendorWorkflow(role));
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!ctx?.ok || !canSubmit || !facilityId || !vendorId) return;
+    if (!organizationId || !canSubmit || !facilityId || !vendorId) return;
     setSaving(true);
     setLoadError(null);
 
@@ -70,7 +68,7 @@ export default function NewPurchaseOrderPage() {
     }
 
     const { data: poNum, error: rpcErr } = await supabase.rpc("allocate_vendor_po_number", {
-      p_organization_id: ctx.ctx.organizationId,
+      p_organization_id: organizationId,
     });
     if (rpcErr || !poNum) {
       setLoadError(rpcErr?.message ?? "Could not allocate PO number.");
@@ -85,7 +83,7 @@ export default function NewPurchaseOrderPage() {
     const { data: po, error: poErr } = await supabase
       .from("purchase_orders")
       .insert({
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         vendor_id: vendorId,
         facility_id: facilityId,
         po_number: poNum,
@@ -102,7 +100,7 @@ export default function NewPurchaseOrderPage() {
     }
 
     const { error: liErr } = await supabase.from("po_line_items").insert({
-      organization_id: ctx.ctx.organizationId,
+      organization_id: organizationId,
       purchase_order_id: po.id,
       line_number: 1,
       description: lineDesc || "Line 1",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { addDays, format } from "date-fns";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 export default function NewDeficiencyPage() {
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
@@ -44,9 +46,6 @@ export default function NewDeficiencyPage() {
     setBusy(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Not signed in.");
         return;

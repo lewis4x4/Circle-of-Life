@@ -9,9 +9,10 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { canMutateFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { dollarsToCents } from "@/lib/money/dollars-to-cents";
 import { Constants } from "@/types/database";
 import type { Database } from "@/types/database";
@@ -22,7 +23,9 @@ type EntityMini = { id: string; name: string };
 export default function NewInsurancePolicyPage() {
   const supabase = createClient();
   const router = useRouter();
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,16 +44,11 @@ export default function NewInsurancePolicyPage() {
 
   const load = useCallback(async () => {
     setLoadError(null);
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) {
-      setLoadError(c.error);
-      return;
-    }
+    if (!organizationId) return;
     const { data: ent, error: entErr } = await supabase
       .from("entities")
       .select("id, name")
-      .eq("organization_id", c.ctx.organizationId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .order("name");
     if (entErr) {
@@ -60,7 +58,7 @@ export default function NewInsurancePolicyPage() {
     const list = (ent ?? []) as EntityMini[];
     setEntities(list);
     setEntityId((prev) => (prev && list.some((e) => e.id === prev) ? prev : list[0]?.id ?? ""));
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
@@ -68,7 +66,7 @@ export default function NewInsurancePolicyPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!ctx?.ok || !entityId || !carrierName.trim() || !policyNumber.trim() || !effectiveDate || !expirationDate) {
+    if (!organizationId || !entityId || !carrierName.trim() || !policyNumber.trim() || !effectiveDate || !expirationDate) {
       setError("Entity, carrier, policy number, and dates are required.");
       return;
     }
@@ -80,7 +78,7 @@ export default function NewInsurancePolicyPage() {
     setError(null);
     const premiumCents = dollarsToCents(premiumDollars);
     const row: PolicyInsert = {
-      organization_id: ctx.ctx.organizationId,
+      organization_id: organizationId,
       entity_id: entityId,
       policy_type: policyType,
       carrier_name: carrierName.trim(),
@@ -101,12 +99,12 @@ export default function NewInsurancePolicyPage() {
     router.push(`/admin/insurance/policies/${(data as { id: string }).id}`);
   }
 
-  const canWrite = ctx?.ok && canMutateFinance(ctx.ctx.appRole);
+  const canWrite = Boolean(organizationId && canMutateFinance(role));
   const selectClass = cn(
     "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
   );
 
-  if (ctx && ctx.ok && !canWrite) {
+  if (organizationId && !canWrite) {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />

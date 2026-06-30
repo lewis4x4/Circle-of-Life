@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -31,6 +32,7 @@ const CATEGORIES = [
 
 export default function NewPolicyPage() {
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const supabase = createClient();
   const [busy, setBusy] = useState(false);
@@ -53,9 +55,6 @@ export default function NewPolicyPage() {
     setBusy(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Not signed in.");
         return;

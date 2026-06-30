@@ -10,6 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 export default function AdminQualityMeasureNewPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const [measureKey, setMeasureKey] = useState("");
@@ -56,9 +58,6 @@ export default function AdminQualityMeasureNewPage() {
         return;
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

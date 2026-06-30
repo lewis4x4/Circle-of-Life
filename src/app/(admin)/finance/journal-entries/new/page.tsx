@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 
 import { FinanceHubNav } from "../../finance-hub-nav";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { parseDollarsToCents } from "@/lib/finance/format-cents";
-import { canCreateDraftFinance, loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
+import { canCreateDraftFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -28,7 +29,9 @@ type LineForm = {
 export default function NewJournalEntryPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [ctx, setCtx] = useState<Awaited<ReturnType<typeof loadFinanceRoleContext>> | null>(null);
+  const { organizationId, appRole } = useHavenAuth();
+  type AppRole = Database["public"]["Enums"]["app_role"];
+  const role = appRole as AppRole;
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [facilities, setFacilities] = useState<FacilityMini[]>([]);
   const [accounts, setAccounts] = useState<GlMini[]>([]);
@@ -44,20 +47,18 @@ export default function NewJournalEntryPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const c = await loadFinanceRoleContext(supabase);
-    setCtx(c);
-    if (!c.ok) return;
+    if (!organizationId) return;
     const [{ data: ent }, { data: fac }] = await Promise.all([
       supabase
         .from("entities")
         .select("id, name")
-        .eq("organization_id", c.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name"),
       supabase
         .from("facilities")
         .select("id, name, entity_id")
-        .eq("organization_id", c.ctx.organizationId)
+        .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name"),
     ]);
@@ -65,7 +66,7 @@ export default function NewJournalEntryPage() {
     setFacilities((fac ?? []) as FacilityMini[]);
     const firstE = (ent ?? [])[0] as EntityMini | undefined;
     if (firstE) setEntityId((prev) => prev || firstE.id);
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   useEffect(() => {
     void load();
@@ -95,11 +96,11 @@ export default function NewJournalEntryPage() {
   }
 
   async function saveDraft() {
-    if (!ctx?.ok || !canCreateDraftFinance(ctx.ctx.appRole)) return;
+    if (!organizationId || !canCreateDraftFinance(role)) return;
     setBusy(true);
     setError(null);
     try {
-      const orgId = ctx.ctx.organizationId;
+      const orgId = organizationId;
       const parsedLines = lines
         .map((l) => {
           const dc = parseDollarsToCents(l.debit);
@@ -166,9 +167,9 @@ export default function NewJournalEntryPage() {
     }
   }
 
-  const isFacilityAdmin = ctx?.ok && ctx.ctx.appRole === "facility_admin";
+  const isFacilityAdmin = role === "facility_admin";
 
-  if (ctx && ctx.ok && !canCreateDraftFinance(ctx.ctx.appRole)) {
+  if (organizationId && !canCreateDraftFinance(role)) {
     return (
       <div className="space-y-6">
         <FinanceHubNav />

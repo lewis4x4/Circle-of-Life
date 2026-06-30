@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
@@ -78,6 +79,7 @@ function RequiredMark() {
 export default function AdminReferralsNewPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
@@ -240,9 +242,6 @@ export default function AdminReferralsNewPage() {
         return;
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setSourceError("You must be signed in.");
         return;
@@ -304,9 +303,6 @@ export default function AdminReferralsNewPage() {
         return;
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setFormError("You must be signed in.");
         return;

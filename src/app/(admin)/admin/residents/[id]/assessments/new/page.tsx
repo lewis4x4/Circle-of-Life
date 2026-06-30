@@ -16,6 +16,7 @@ import {
   didRiskWorsen,
 } from "@/lib/assessments/scoring";
 import type { AssessmentTemplate, AssessmentTemplateItem } from "@/lib/assessments/types";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -67,11 +68,11 @@ export default function AssessmentEntryPage() {
   const residentId = params?.id ?? "";
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, appRole } = useHavenAuth();
 
   const [templates, setTemplates] = useState<AssessmentTemplate[]>([]);
   const [residentName, setResidentName] = useState("");
   const [facilityId, setFacilityId] = useState<string>("");
-  const [organizationId, setOrganizationId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -117,15 +118,7 @@ export default function AssessmentEntryPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("app_role, organization_id")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (!profile) throw new Error("No user profile");
-      setOrganizationId(profile.organization_id ?? "");
+      if (!organizationId) throw new Error("No organization on profile");
 
       const { data: resident } = await supabase
         .from("residents")
@@ -142,7 +135,7 @@ export default function AssessmentEntryPage() {
         .order("assessment_type");
       if (tplErr) throw new Error(tplErr.message);
 
-      const role = profile.app_role ?? "";
+      const role = appRole ?? "";
       const privilegedRoles = new Set(["owner", "org_admin"]);
       const allowed = (tpls ?? []).filter((t) => {
         if (privilegedRoles.has(role)) return true;
@@ -155,7 +148,7 @@ export default function AssessmentEntryPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, residentId]);
+  }, [supabase, residentId, organizationId, appRole]);
 
   useEffect(() => {
     void load();
@@ -172,7 +165,6 @@ export default function AssessmentEntryPage() {
     setSaving(true);
     setError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const totalScore = computeTotalScore(data.scores);
