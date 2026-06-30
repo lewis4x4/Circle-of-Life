@@ -16,6 +16,19 @@ DECLARE
   v_org_id uuid := '00000000-0000-0000-0000-000000000001';
   v_vendor_id uuid;
 BEGIN
+  -- 236_restore_transport_vendor_seed may have already inserted these rows; skip
+  -- duplicate inserts so Docker replay stays idempotent.
+  IF EXISTS (
+    SELECT 1
+    FROM vendors
+    WHERE organization_id = v_org_id
+      AND lower(name) = lower('Alternative Transport')
+      AND deleted_at IS NULL
+  ) THEN
+    RAISE NOTICE 'Skipping 282_phase1_vendor_seed — transport vendors already present.';
+    RETURN;
+  END IF;
+
   -- Alternative Transport
   -- Source: Section 21 "Transport vendor routing"
   INSERT INTO vendors (organization_id, name, category, status, primary_contact_name, primary_contact_phone, created_by)
