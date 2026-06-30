@@ -4,6 +4,18 @@
 
 ---
 
+## RECORD — perf navigation remediation (2026-06-30)
+
+| Field | Value |
+|-------|--------|
+| **Initiative** | [`2026-06-28-perf-navigation-remediation-handoff.md`](./reviews/2026-06-28-perf-navigation-remediation-handoff.md) |
+| **Shipped segments** | **perf-nav-02** (pending nav + loading shells); **perf-nav-06/07** (RSC bootstrap hubs + resident detail); **perf-waterfall-10** (incident detail server loader + parallel queries); **perf-cache-08** partial (billing ledger, vendor/insurance hubs); **perf-auth-09** partial (HavenAuth on new forms + finance client pages); **fix(ci)** AppShell lazy feedback/survey chrome (450 kB gzip cap). |
+| **Mission alignment** | **pass** — Faster time-to-action on role-governed admin workflows; RLS/audit unchanged. |
+| **Next slice** | **perf-cache-08** — quality hub (`useQuery` + segment layout); then facilities + transportation hubs. Remaining **perf-auth-09** `getUser()` grep cleanup. |
+| **Gate artifacts** | `test-results/agent-gates/2026-06-29T03-*` (nav 06/07, waterfall-10), `2026-06-30T03-*` (auth-09, cache-08). |
+
+---
+
 ## RECORD — production schema drift repair (2026-06-28)
 
 | Field | Value |
