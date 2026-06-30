@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -110,6 +111,7 @@ function workflowStepOf5(status: string): number {
 export default function AdminDischargeNewPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
   const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
@@ -324,9 +326,6 @@ export default function AdminDischargeNewPage() {
         return;
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

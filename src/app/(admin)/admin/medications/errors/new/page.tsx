@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -49,6 +50,7 @@ const FACTORS = [
 export default function NewMedicationErrorPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [residentId, setResidentId] = useState("");
   const [errorType, setErrorType] = useState<string>("wrong_medication");
@@ -60,22 +62,6 @@ export default function NewMedicationErrorPage() {
   const [physicianNotified, setPhysicianNotified] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
-
-  useEffect(() => {
-    void (async () => {
-      const { data } = await supabase.auth.getUser();
-      setUserId(data.user?.id ?? null);
-      if (!data.user) return;
-      const p = await supabase
-        .from("user_profiles")
-        .select("organization_id")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (p.data?.organization_id) setOrgId(p.data.organization_id);
-    })();
-  }, [supabase]);
 
   const toggleFactor = (f: string) => {
     setFactors((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
@@ -87,7 +73,7 @@ export default function NewMedicationErrorPage() {
       setFormError("Select a facility in the header.");
       return;
     }
-    if (!userId || !orgId) {
+    if (!user?.id || !organizationId) {
       setFormError("Could not resolve profile.");
       return;
     }
@@ -100,11 +86,11 @@ export default function NewMedicationErrorPage() {
       const { error: insErr } = await supabase.from("medication_errors").insert({
         resident_id: residentId.trim(),
         facility_id: selectedFacilityId,
-        organization_id: orgId,
+        organization_id: organizationId,
         error_type: errorType,
         severity,
         shift: shift as "day" | "evening" | "night" | "custom",
-        discovered_by: userId,
+        discovered_by: user.id,
         description: description.trim(),
         immediate_actions: immediate.trim(),
         contributing_factors: factors.length ? factors : null,
@@ -121,8 +107,8 @@ export default function NewMedicationErrorPage() {
   }, [
     supabase,
     selectedFacilityId,
-    userId,
-    orgId,
+    user,
+    organizationId,
     residentId,
     errorType,
     severity,

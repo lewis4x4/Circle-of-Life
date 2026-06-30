@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -49,6 +50,7 @@ function deliveryLabel(d: (typeof DELIVERY)[number]) {
 export default function AdminNewTrainingCompletionPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
@@ -181,9 +183,6 @@ export default function AdminNewTrainingCompletionPage() {
         setError("Could not resolve organization for this facility.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

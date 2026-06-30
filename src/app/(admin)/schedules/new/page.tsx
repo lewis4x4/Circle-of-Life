@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -32,6 +33,7 @@ function mondayWeekStartFromPickerDate(isoDate: string): string {
 export default function AdminNewScheduleWeekPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const defaultMonday = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
@@ -85,9 +87,6 @@ export default function AdminNewScheduleWeekPage() {
         setError("Could not resolve organization for this facility.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

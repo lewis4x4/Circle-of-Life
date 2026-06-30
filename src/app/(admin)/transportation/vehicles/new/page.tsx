@@ -8,9 +8,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const STATUS_OPTIONS: Status[] = ["active", "out_of_service", "retired"];
 export default function AdminTransportationVehicleNewPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { user, organizationId } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [name, setName] = useState("");
   const [vin, setVin] = useState("");
@@ -44,16 +45,12 @@ export default function AdminTransportationVehicleNewPage() {
     setSaving(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
+      if (!organizationId) throw new Error("Organization missing on profile.");
       const cap = capacity.trim() ? Number.parseInt(capacity, 10) : null;
       const year = modelYear.trim() ? Number.parseInt(modelYear, 10) : null;
       const { error: insErr } = await supabase.from("fleet_vehicles").insert({
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         facility_id: selectedFacilityId,
         name: name.trim(),
         vin: vin.trim() || null,

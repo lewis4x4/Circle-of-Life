@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
@@ -14,6 +14,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { ResidentSelector } from "@/components/medication/ResidentSelector";
 import { createClient } from "@/lib/supabase/client";
@@ -44,6 +45,7 @@ function formatDueDate(date: Date): string {
 
 export default function NewVerbalOrderPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
 
   // Form state
@@ -64,37 +66,13 @@ export default function NewVerbalOrderPage() {
     dueDate: string;
   } | null>(null);
 
-  // Auth context
-  const [userId, setUserId] = useState<string | null>(null);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [loadingContext, setLoadingContext] = useState(true);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        setUserId(data.user?.id ?? null);
-        if (!data.user) return;
-
-        const p = await supabase
-          .from("user_profiles")
-          .select("organization_id")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        if (p.data?.organization_id) setOrgId(p.data.organization_id);
-      } finally {
-        setLoadingContext(false);
-      }
-    })();
-  }, [supabase]);
-
   const submit = useCallback(async () => {
     setError(null);
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
       setError("Please select a facility in the header first.");
       return;
     }
-    if (!userId || !orgId) {
+    if (!user?.id || !organizationId) {
       setError("Could not resolve your profile or organization.");
       return;
     }
@@ -117,17 +95,17 @@ export default function NewVerbalOrderPage() {
         .insert({
           resident_id: residentId.trim(),
           facility_id: selectedFacilityId,
-          organization_id: orgId,
+          organization_id: organizationId,
           order_type: orderType,
           order_text: orderText.trim(),
           indication: indication.trim() || null,
           prescriber_name: prescriberName.trim(),
           prescriber_phone: prescriberPhone.trim() || null,
-          received_by: userId,
+          received_by: user.id,
           received_at: receivedAt.toISOString(),
           read_back_confirmed: true,
           cosignature_due_at: due.toISOString(),
-          created_by: userId,
+          created_by: user.id,
         })
         .select("id")
         .single();
@@ -147,8 +125,8 @@ export default function NewVerbalOrderPage() {
   }, [
     supabase,
     selectedFacilityId,
-    userId,
-    orgId,
+    user,
+    organizationId,
     residentId,
     orderType,
     orderText,
@@ -176,7 +154,7 @@ export default function NewVerbalOrderPage() {
     return availableFacilities.find((f) => f.id === selectedFacilityId)?.name || "Unknown facility";
   };
 
-  if (loadingContext) {
+  if (authLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary-500" />

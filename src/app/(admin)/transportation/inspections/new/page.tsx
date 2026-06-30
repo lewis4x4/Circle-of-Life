@@ -8,9 +8,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const RESULT_OPTIONS: Result[] = ["pass", "fail", "conditional"];
 export default function AdminTransportationInspectionNewPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { user, organizationId } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [vehicles, setVehicles] = useState<{ id: string; name: string }[]>([]);
   const [vehicleId, setVehicleId] = useState("");
@@ -73,16 +74,12 @@ export default function AdminTransportationInspectionNewPage() {
     setSaving(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
+      if (!organizationId) throw new Error("Organization missing on profile.");
       const odo = odometer.trim() ? Number.parseInt(odometer, 10) : null;
       const inspectedIso = inspectedAt ? new Date(inspectedAt).toISOString() : new Date().toISOString();
       const { error: insErr } = await supabase.from("vehicle_inspection_logs").insert({
-        organization_id: ctx.ctx.organizationId,
+        organization_id: organizationId,
         facility_id: selectedFacilityId,
         fleet_vehicle_id: vehicleId,
         inspected_at: inspectedIso,

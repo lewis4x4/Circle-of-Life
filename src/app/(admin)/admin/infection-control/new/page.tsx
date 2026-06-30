@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -31,6 +32,7 @@ const INFECTION_TYPES: Database["public"]["Tables"]["infection_surveillance"]["R
 
 export default function NewInfectionSurveillancePage() {
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const supabase = createClient();
 
@@ -78,10 +80,7 @@ export default function NewInfectionSurveillancePage() {
     }
     setSubmitting(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         setError("Not signed in.");
         return;
       }

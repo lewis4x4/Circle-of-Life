@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -39,6 +40,7 @@ type QueryError = { message: string; code?: string };
 export default function AdminNewCertificationPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
@@ -133,9 +135,6 @@ export default function AdminNewCertificationPage() {
         setError("Could not resolve organization for this facility.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

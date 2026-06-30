@@ -8,8 +8,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { normalizeTimeForDb, residentTransportRequestCreateSchema } from "@/lib/transport/transport-request-schemas";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -29,6 +29,7 @@ type ResidentOption = { id: string; first_name: string; last_name: string };
 export default function NewResidentTransportRequestPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { user, organizationId } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [loadingResidents, setLoadingResidents] = useState(true);
@@ -79,12 +80,8 @@ export default function NewResidentTransportRequestPage() {
     setSaving(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
+      if (!organizationId) throw new Error("Organization missing on profile.");
 
       const parsed = residentTransportRequestCreateSchema.safeParse({
         resident_id: residentId,
@@ -106,7 +103,7 @@ export default function NewResidentTransportRequestPage() {
       const { data: inserted, error: insErr } = await supabase
         .from("resident_transport_requests")
         .insert({
-          organization_id: ctx.ctx.organizationId,
+          organization_id: organizationId,
           facility_id: selectedFacilityId,
           resident_id: parsed.data.resident_id,
           requested_by: user.id,

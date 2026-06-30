@@ -8,9 +8,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { loadFinanceRoleContext } from "@/lib/finance/load-finance-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
   COMPETENCY_CERTIFICATE_BUCKET,
@@ -25,6 +25,7 @@ type StaffOption = { id: string; name: string };
 export default function AdminTrainingNewDemonstrationPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { user, organizationId } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [staffId, setStaffId] = useState("");
@@ -75,12 +76,8 @@ export default function AdminTrainingNewDemonstrationPage() {
     setSaving(true);
     setError(null);
     try {
-      const ctx = await loadFinanceRoleContext(supabase);
-      if (!ctx.ok) throw new Error(ctx.error);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in required.");
+      if (!organizationId) throw new Error("Organization missing on profile.");
 
       if (certificatePdf) {
         if (certificatePdf.size > MAX_CERT_PDF_BYTES) {
@@ -94,7 +91,7 @@ export default function AdminTrainingNewDemonstrationPage() {
       const { data: inserted, error: insErr } = await supabase
         .from("competency_demonstrations")
         .insert({
-          organization_id: ctx.ctx.organizationId,
+          organization_id: organizationId,
           facility_id: selectedFacilityId,
           staff_id: staffId,
           evaluator_user_id: user.id,
@@ -114,7 +111,7 @@ export default function AdminTrainingNewDemonstrationPage() {
 
       if (certificatePdf) {
         const objectPath = competencyCertificateObjectPath(
-          ctx.ctx.organizationId,
+          organizationId,
           selectedFacilityId,
           demoId,
           certificatePdf.name,
