@@ -25,6 +25,12 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Install gitleaks
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz" | tar -xz
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks version
+
       - name: Full gate suite with UI + stress
         run: npm run segment:gates -- --segment "nightly-${{ github.run_id }}" --ui
         env:
