@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { loadPeriodCloseData, type PeriodRow } from "@/lib/finance/load-period-close-data";
 import type { EntityMini } from "@/lib/finance/load-trial-balance-data";
@@ -63,6 +64,7 @@ export default function FinancePeriodClosePageClient({
   initialReady,
 }: FinancePeriodClosePageClientProps) {
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const initialEntityRef = useRef(initialEntityId);
   const [entities] = useState<EntityMini[]>(initialEntities);
   const [entityId, setEntityId] = useState(initialEntityId);
@@ -126,9 +128,6 @@ export default function FinancePeriodClosePageClient({
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("Sign in required.");
         return;

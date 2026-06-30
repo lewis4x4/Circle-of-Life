@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -175,6 +176,7 @@ function buildHl7InboundCsv(rows: Row[]): string {
 
 export default function AdminReferralsHl7InboundPage() {
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -375,10 +377,7 @@ export default function AdminReferralsHl7InboundPage() {
     setCreatingLeadId(row.id);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sign in required.");
+      if (!user?.id) throw new Error("Sign in required.");
 
       const parsed = tryParsePid5Name(row.raw_message);
       const firstName = parsed?.first_name ?? "HL7";
@@ -458,10 +457,7 @@ export default function AdminReferralsHl7InboundPage() {
     setUpdatingId(id);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sign in required.");
+      if (!user?.id) throw new Error("Sign in required.");
       const { error: uErr } = await supabase
         .from("referral_hl7_inbound")
         .update({ status, updated_by: user.id })

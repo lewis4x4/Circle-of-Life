@@ -65,7 +65,7 @@ export default function JournalEntryDetailPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const router = useRouter();
   const supabase = createClient();
-  const { organizationId, appRole } = useHavenAuth();
+  const { user, organizationId, appRole } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
   const [header, setHeader] = useState<JournalRow | null>(null);
@@ -261,10 +261,7 @@ export default function JournalEntryDetailPage() {
     setPosting(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         setError("Not signed in");
         return;
       }

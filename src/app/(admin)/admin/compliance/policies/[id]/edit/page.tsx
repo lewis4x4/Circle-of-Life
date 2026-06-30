@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ export default function EditPolicyPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const router = useRouter();
+  const { user } = useHavenAuth();
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
@@ -108,9 +110,6 @@ export default function EditPolicyPage() {
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       const { error: upErr } = await supabase
         .from("policy_documents")
         .update({ title: title.trim(), content: content.trim(), updated_by: user?.id ?? null })
@@ -126,9 +125,6 @@ export default function EditPolicyPage() {
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       const now = new Date().toISOString();
       const { error: upErr } = await supabase
         .from("policy_documents")

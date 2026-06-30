@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 export default function VitalThresholdsPage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "";
+  const { user } = useHavenAuth();
   const supabase = createClient();
   const [facilityId, setFacilityId] = useState<string | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -74,10 +76,7 @@ export default function VitalThresholdsPage() {
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         setError("Not signed in");
         return;
       }

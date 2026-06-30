@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2, MessageCircle, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type {
   FamilyDeliveryMethod,
@@ -21,6 +22,7 @@ import {
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 export default function StaffFamilyMessagesPage() {
+  const { user } = useHavenAuth();
   const searchParams = useSearchParams();
   const [threads, setThreads] = useState<StaffMessageThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,9 +137,6 @@ export default function StaffFamilyMessagesPage() {
     setThreadActionMessage(null);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setThreadActionError("You must be signed in to update triage.");
         return;
@@ -163,7 +162,7 @@ export default function StaffFamilyMessagesPage() {
     } finally {
       setThreadActionLoading(null);
     }
-  }, [loadThreads, openThread, selectedResidentId]);
+  }, [loadThreads, openThread, selectedResidentId, user?.id]);
 
   if (loading) {
     return (

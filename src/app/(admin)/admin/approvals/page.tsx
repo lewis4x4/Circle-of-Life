@@ -22,6 +22,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { V2Card } from "@/components/ui/v2-card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -99,13 +100,13 @@ function formatUsd(cents: number): string {
 
 export default function AdminApprovalsInboxPage() {
   const supabase = createClient();
+  const { user, appRole } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const [swaps, setSwaps] = useState<PendingSwap[]>([]);
   const [punches, setPunches] = useState<PendingPunch[]>([]);
   const [mileage, setMileage] = useState<PendingMileage[]>([]);
   const [kbDocs, setKbDocs] = useState<PendingKbDoc[]>([]);
-  const [actorRole, setActorRole] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -114,27 +115,13 @@ export default function AdminApprovalsInboxPage() {
   const [denyTargetId, setDenyTargetId] = useState<string | null>(null);
   const [denyReason, setDenyReason] = useState("");
 
-  const canApproveMileage = actorRole !== null && MILEAGE_APPROVER_ROLES.has(actorRole);
+  const canApproveMileage = MILEAGE_APPROVER_ROLES.has(appRole);
   const facilityScoped = isValidFacilityIdForQuery(selectedFacilityId);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: prof } = await supabase
-          .from("user_profiles")
-          .select("app_role")
-          .eq("id", user.id)
-          .maybeSingle();
-        setActorRole((prof as { app_role: string } | null)?.app_role ?? null);
-      } else {
-        setActorRole(null);
-      }
-
       let swapQ = supabase
         .from("shift_swap_requests")
         .select("*")
@@ -264,9 +251,6 @@ export default function AdminApprovalsInboxPage() {
       setActionId(id);
       setNotice(null);
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (!user?.id) {
           setNotice("You must be signed in to approve.");
           return;
@@ -289,7 +273,7 @@ export default function AdminApprovalsInboxPage() {
         setActionId(null);
       }
     },
-    [supabase, load],
+    [supabase, load, user?.id],
   );
 
   const submitDenySwap = useCallback(async () => {
@@ -302,9 +286,6 @@ export default function AdminApprovalsInboxPage() {
     setActionId(denyTargetId);
     setNotice(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setNotice("You must be signed in to deny.");
         return;
@@ -328,16 +309,13 @@ export default function AdminApprovalsInboxPage() {
     } finally {
       setActionId(null);
     }
-  }, [denyTargetId, denyReason, supabase, load]);
+  }, [denyTargetId, denyReason, supabase, load, user?.id]);
 
   const approvePunch = useCallback(
     async (id: string) => {
       setActionId(id);
       setNotice(null);
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (!user?.id) {
           setNotice("You must be signed in to approve.");
           return;
@@ -362,7 +340,7 @@ export default function AdminApprovalsInboxPage() {
         setActionId(null);
       }
     },
-    [supabase, load],
+    [supabase, load, user?.id],
   );
 
   const approveMileage = useCallback(
@@ -371,9 +349,6 @@ export default function AdminApprovalsInboxPage() {
       setActionId(id);
       setNotice(null);
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (!user?.id) {
           setNotice("You must be signed in to approve.");
           return;
@@ -395,7 +370,7 @@ export default function AdminApprovalsInboxPage() {
         setActionId(null);
       }
     },
-    [supabase, canApproveMileage, load],
+    [supabase, canApproveMileage, load, user?.id],
   );
 
   const totalWaiting = swaps.length + punches.length + mileage.length + kbDocs.length;
@@ -616,9 +591,9 @@ export default function AdminApprovalsInboxPage() {
                 Open mileage approvals
               </Link>
             </div>
-            {!canApproveMileage && actorRole !== null ? (
+            {!canApproveMileage && appRole !== null ? (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
-                Your role ({actorRole.replace(/_/g, " ")}) can view mileage rows; approval is limited to
+                Your role ({appRole.replace(/_/g, " ")}) can view mileage rows; approval is limited to
                 owner, org admin, facility admin, and nurse.
               </p>
             ) : null}

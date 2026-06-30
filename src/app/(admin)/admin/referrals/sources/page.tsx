@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusPill } from "@/components/ui/status-pill";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -71,14 +72,15 @@ function similarityHint(input: string, existing: string[]): string | undefined {
 
 export default function AdminReferralSourcesPage() {
   const supabase = createClient();
+  const { user, appRole, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
 
   const [rows, setRows] = useState<SourceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
-  const [canAddSource, setCanAddSource] = useState(false);
+  const roleLoading = authLoading;
+  const canAddSource = appRole === "owner" || appRole === "org_admin";
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -92,29 +94,6 @@ export default function AdminReferralSourcesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      setRoleLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id) {
-        setCanAddSource(false);
-        setRoleLoading(false);
-        return;
-      }
-      const { data } = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
-      if (cancelled) return;
-      const r = data?.app_role as string | undefined;
-      setCanAddSource(r === "owner" || r === "org_admin");
-      setRoleLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
 
   const resolveOrganizationId = useCallback(async (): Promise<string | null> => {
     if (selectedFacilityId != null && isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -238,9 +217,6 @@ export default function AdminReferralSourcesPage() {
       facilityScoped = targetFacilityId;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user?.id) {
       setFormError("You must be signed in.");
       return;

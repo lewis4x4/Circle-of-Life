@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -118,6 +119,7 @@ export default function AdminIncidentRcaPage() {
   const params = useParams();
   const rawId = params?.id;
   const incidentId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const [loading, setLoading] = useState(true);
@@ -282,9 +284,6 @@ export default function AdminIncidentRcaPage() {
     setError(null);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in to save RCA.");
         return;
@@ -354,6 +353,7 @@ export default function AdminIncidentRcaPage() {
     correctiveActions,
     preventativeActions,
     storageKey,
+    user?.id,
   ]);
 
   const completeInvestigation = useCallback(async () => {
@@ -373,9 +373,6 @@ export default function AdminIncidentRcaPage() {
     setError(null);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in to complete the investigation.");
         return;
@@ -453,6 +450,7 @@ export default function AdminIncidentRcaPage() {
     correctiveActions,
     preventativeActions,
     storageKey,
+    user?.id,
   ]);
 
   const reopenInvestigation = useCallback(async () => {
@@ -461,9 +459,6 @@ export default function AdminIncidentRcaPage() {
     setError(null);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in to reopen the investigation.");
         return;
@@ -489,7 +484,7 @@ export default function AdminIncidentRcaPage() {
     } finally {
       setReopening(false);
     }
-  }, [incident, investigationStatus]);
+  }, [incident, investigationStatus, user?.id]);
 
   const textareaClass = cn(
     "min-h-[120px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-sm outline-none transition-colors",
@@ -514,9 +509,6 @@ export default function AdminIncidentRcaPage() {
     setFollowupActionMessage(null);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in to create follow-up tasks.");
         return;
@@ -563,7 +555,7 @@ export default function AdminIncidentRcaPage() {
     } finally {
       setFollowupActionLoading(null);
     }
-  }, [incident, locked, correctiveActions, preventativeActions]);
+  }, [incident, locked, correctiveActions, preventativeActions, user?.id]);
 
   if (loading) {
     return (

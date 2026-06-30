@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { RecordDetailHeader, RecordDetailSection } from "@/design-system/compone
 export default function DeficiencyDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
+  const { user } = useHavenAuth();
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
@@ -94,9 +96,6 @@ export default function DeficiencyDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       const { error: upErr } = await supabase
         .from("plans_of_correction")
         .update({

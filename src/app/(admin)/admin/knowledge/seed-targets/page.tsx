@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -42,6 +43,7 @@ type CoverageRollup = {
  */
 export default function SeedTargetsRoute() {
   const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId } = useHavenAuth();
   const [targets, setTargets] = useState<SeedTarget[]>([]);
   const [rollup, setRollup] = useState<CoverageRollup | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,18 +106,11 @@ export default function SeedTargetsRoute() {
       setError(null);
       try {
         // Owner-only insert — RLS enforces workspace match + role.
-        const { data: profileRow } = await supabase.auth.getUser();
-        const userId = profileRow?.user?.id;
-        if (!userId) {
+        if (!user?.id) {
           setError("Not signed in.");
           return;
         }
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("organization_id")
-          .eq("id", userId)
-          .single();
-        const orgId = (profile as { organization_id?: string } | null)?.organization_id;
+        const orgId = organizationId;
         if (!orgId) {
           setError("Profile has no organization");
           return;
@@ -145,7 +140,7 @@ export default function SeedTargetsRoute() {
         setSaving(false);
       }
     },
-    [newLabel, newPriority, newTopic, supabase, load],
+    [newLabel, newPriority, newTopic, supabase, load, user?.id, organizationId],
   );
 
   const filtered = useMemo(

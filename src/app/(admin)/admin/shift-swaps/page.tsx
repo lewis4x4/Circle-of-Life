@@ -12,6 +12,7 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -111,6 +112,7 @@ const DEFAULT_FILTERS = { search: "", status: "all" };
 
 export default function AdminShiftSwapsPage() {
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<SwapUiRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -250,9 +252,6 @@ export default function AdminShiftSwapsPage() {
       setActionId(id);
       setNotice(null);
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (!user?.id) {
           setNotice("You must be signed in to approve.");
           return;
@@ -275,7 +274,7 @@ export default function AdminShiftSwapsPage() {
         setActionId(null);
       }
     },
-    [supabase, load],
+    [supabase, load, user?.id],
   );
 
   const submitDeny = useCallback(async () => {
@@ -288,9 +287,6 @@ export default function AdminShiftSwapsPage() {
     setActionId(denyTargetId);
     setNotice(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setNotice("You must be signed in to deny.");
         return;
@@ -314,7 +310,7 @@ export default function AdminShiftSwapsPage() {
     } finally {
       setActionId(null);
     }
-  }, [denyTargetId, denyReason, supabase, load]);
+  }, [denyTargetId, denyReason, supabase, load, user?.id]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

@@ -7,6 +7,7 @@ import { format } from "date-fns";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { triggerCsvDownload } from "@/lib/csv-export";
 import {
@@ -55,6 +56,7 @@ export default function AdminPayrollBatchDetailPage() {
   const router = useRouter();
   const batchId = typeof params.id === "string" ? params.id : "";
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
 
   const [batch, setBatch] = useState<BatchRow | null>(null);
@@ -168,10 +170,7 @@ export default function AdminPayrollBatchDetailPage() {
     setError(null);
     setImportSummary(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sign in required.");
+      if (!user?.id) throw new Error("Sign in required.");
 
       let added = 0;
       let linkedOnly = 0;
@@ -252,10 +251,7 @@ export default function AdminPayrollBatchDetailPage() {
     setError(null);
     setTimeImportSummary(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sign in required.");
+      if (!user?.id) throw new Error("Sign in required.");
 
       let added = 0;
       let skippedOtherBatch = 0;

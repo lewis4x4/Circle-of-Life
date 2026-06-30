@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import type { CrossOperatorBenchmarkSettingRow, ExecutiveBenchmarksData } from "@/lib/executive/load-benchmark-data";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -74,6 +75,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
 }: ExecutiveBenchmarksPageClientProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { user } = useHavenAuth();
   const [localError, setLocalError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [crossOperatorBusy, setCrossOperatorBusy] = useState(false);
@@ -201,12 +203,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
     setCrossOperatorBusy(true);
     setLocalError(null);
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError) throw new Error(userError.message);
-      if (!user) throw new Error("Sign in required.");
+      if (!user?.id) throw new Error("Sign in required.");
 
       if (crossOperatorSetting) {
         const { error: updateError } = await supabase

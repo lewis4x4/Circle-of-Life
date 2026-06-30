@@ -12,6 +12,7 @@ import {
   Wrench,
 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -170,6 +171,7 @@ const CHECKLIST_TYPES = [
 ] as const;
 
 export default function EmergencyPreparednessPage() {
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
@@ -265,8 +267,7 @@ export default function EmergencyPreparednessPage() {
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error("Not authenticated");
       }
 
@@ -425,8 +426,7 @@ export default function EmergencyPreparednessPage() {
     setSavingCompletionLog(true);
     setError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user?.id) throw new Error("Not authenticated");
       const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
       if (!organizationId) throw new Error("Could not determine organization ID");
       await insertMaintenanceCompletion(supabase, {

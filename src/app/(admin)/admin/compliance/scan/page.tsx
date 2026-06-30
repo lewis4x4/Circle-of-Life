@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
   runComplianceScan,
@@ -17,8 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 
 export default function ComplianceScanPage() {
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
-  const supabase = createClient();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ComplianceScanSummary | null>(null);
   const [history, setHistory] = useState<ComplianceScan[] | null>(null);
@@ -53,8 +53,7 @@ export default function ComplianceScanPage() {
     setResult(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error("Not authenticated");
       }
 
@@ -68,7 +67,7 @@ export default function ComplianceScanPage() {
     } finally {
       setRunning(false);
     }
-  }, [facilityReady, selectedFacilityId, running, loadHistory, supabase]);
+  }, [facilityReady, selectedFacilityId, running, loadHistory, user?.id]);
 
   const getScoreColor = (percentage: number) => {
     if (percentage === 100) return "text-emerald-600 dark:text-emerald-400";

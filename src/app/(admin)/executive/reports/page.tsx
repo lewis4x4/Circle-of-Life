@@ -182,7 +182,7 @@ export default function ExecutiveSavedReportsPage() {
   const supabase = useMemo(() => createClient(), []);
   // Identity comes from the app-wide auth provider instead of a per-page
   // getUser() + user_profiles lookup (loadFinanceRoleContext).
-  const { organizationId: orgId, appRole, loading: authLoading } = useHavenAuth();
+  const { user, organizationId: orgId, appRole, loading: authLoading } = useHavenAuth();
   const queryClient = useQueryClient();
   const canManage = canMutateFinance(appRole as Database["public"]["Enums"]["app_role"]);
   const [error, setError] = useState<string | null>(null);
@@ -259,10 +259,7 @@ export default function ExecutiveSavedReportsPage() {
     setBusyId("__create__");
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         setError("Sign in required.");
         return;
       }

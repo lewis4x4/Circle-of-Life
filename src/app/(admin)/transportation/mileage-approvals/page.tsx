@@ -6,6 +6,7 @@ import { ArrowLeft, Bus, CheckCircle2, CircleDollarSign, Download, Undo2 } from 
 import { format, parseISO } from "date-fns";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -102,18 +103,18 @@ const MILEAGE_CSV_SCOPE_OPTIONS: { value: MileageCsvScope; label: string }[] = [
 
 export default function MileageApprovalsPage() {
   const supabase = createClient();
+  const { user, appRole } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [pending, setPending] = useState<MileageRow[]>([]);
   const [approvedRecent, setApprovedRecent] = useState<MileageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"pending" | "approved">("pending");
-  const [actorRole, setActorRole] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [mileageCsvScope, setMileageCsvScope] = useState<MileageCsvScope>("all");
 
-  const canApprove = actorRole !== null && APPROVER_ROLES.has(actorRole);
+  const canApprove = APPROVER_ROLES.has(appRole);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -125,16 +126,6 @@ export default function MileageApprovalsPage() {
       return;
     }
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: prof } = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
-        setActorRole((prof as { app_role: string } | null)?.app_role ?? null);
-      } else {
-        setActorRole(null);
-      }
-
       const sel =
         "id, trip_date, purpose, origin, destination, miles, round_trip, reimbursement_amount_cents, reimbursement_rate_cents, approved_at, approved_by, payroll_export_id, transport_request_id, staff_id, resident_id, staff(first_name, last_name), residents(first_name, last_name)";
 
@@ -211,11 +202,7 @@ export default function MileageApprovalsPage() {
   const pendingCount = pending.length;
 
   const approve = async (row: MileageRow) => {
-    if (!canApprove) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!canApprove || !user?.id) return;
     setBusyId(row.id);
     setError(null);
     try {
@@ -238,15 +225,11 @@ export default function MileageApprovalsPage() {
   };
 
   const unapprove = async (row: MileageRow) => {
-    if (!canApprove) return;
+    if (!canApprove || !user?.id) return;
     if (row.payroll_export_id) {
       setError("This log was included in a payroll export and cannot be unapproved here.");
       return;
     }
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
     setBusyId(row.id);
     setError(null);
     try {
@@ -371,9 +354,9 @@ export default function MileageApprovalsPage() {
               </button>
             </div>
 
-            {!canApprove && actorRole !== null && (
+            {!canApprove && appRole !== null && (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
-                Your role ({actorRole.replace(/_/g, " ")}) can view this list; approval is limited to owner, org admin,
+                Your role ({appRole.replace(/_/g, " ")}) can view this list; approval is limited to owner, org admin,
                 facility admin, and nurse.
               </p>
             )}

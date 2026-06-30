@@ -22,9 +22,9 @@ import {
   Legend,
 } from "recharts";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
-import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
   getDeficiencyTrendByTag,
@@ -88,13 +88,13 @@ function CustomTooltip({
 }
 
 export default function DeficienciesAnalysisPage() {
+  const { appRole } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
-  const supabase = createClient();
 
   const [selectedMonths, setSelectedMonths] = useState(12);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [homeHref, setHomeHref] = useState("/admin");
+  const homeHref = appRole ? getDashboardRouteForRole(appRole) : "/admin";
 
   const [trendData, setTrendData] = useState<DeficiencyTrendPoint[]>([]);
   const [tagCounts, setTagCounts] = useState<{ tag_number: string; tag_title: string; count: number }[]>([]);
@@ -142,24 +142,6 @@ export default function DeficienciesAnalysisPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  useEffect(() => {
-    void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setHomeHref("/admin");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("app_role")
-        .eq("id", user.id)
-        .maybeSingle();
-      setHomeHref(profile?.app_role ? getDashboardRouteForRole(profile.app_role) : "/admin");
-    })();
-  }, [supabase]);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
