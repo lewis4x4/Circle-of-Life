@@ -16,6 +16,11 @@ import {
   type ResidentAssuranceFacilityRollup,
   type ResidentAssuranceFacilityTrendRow,
 } from "@/lib/resident-assurance/command-center-brief";
+import {
+  EMPTY_PRESENCE_CENSUS,
+  fetchPresenceCensus,
+  type PresenceCensus,
+} from "@/lib/executive/presence-census";
 import type { Database } from "@/types/database";
 
 export type ExecutiveOverviewData = {
@@ -24,6 +29,7 @@ export type ExecutiveOverviewData = {
   facilities: ExecutiveOverviewFacility[];
   assuranceHeatMap: ResidentAssuranceFacilityRollup[];
   assuranceTrends: ResidentAssuranceFacilityTrendRow[];
+  presenceCensus: PresenceCensus;
 };
 
 type MetricSnapshotRow = {
@@ -61,8 +67,15 @@ export async function loadExecutiveOverview(
   // or an assurance lookup that errors) doesn't blank the entire dashboard.
   // Each query is also wrapped in a 5s timeout so the slowest call can't
   // hold up the whole page.
-  const [aggregateSnapshotsRes, facilitySnapshotsRes, alertsRes, facilitiesRes, assuranceRows, assuranceTrendRows] =
-    await Promise.allSettled([
+  const [
+    aggregateSnapshotsRes,
+    facilitySnapshotsRes,
+    alertsRes,
+    facilitiesRes,
+    assuranceRows,
+    assuranceTrendRows,
+    presenceCensusRes,
+  ] = await Promise.allSettled([
       withTimeout(buildAggregateSnapshotQuery(supabase, organizationId), "aggregate-snapshots"),
       withTimeout(buildFacilitySnapshotQuery(supabase, organizationId), "facility-snapshots"),
       withTimeout(
@@ -87,6 +100,7 @@ export async function loadExecutiveOverview(
       ),
       withTimeout(fetchResidentAssuranceFacilityHeatMap(supabase, organizationId), "assurance-heatmap"),
       withTimeout(fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7), "assurance-trends"),
+      withTimeout(fetchPresenceCensus(supabase, organizationId), "presence-census"),
     ]);
 
   const aggregateRows = aggregateSnapshotsRes.status === "fulfilled" ? aggregateSnapshotsRes.value.data ?? [] : [];
@@ -95,6 +109,7 @@ export async function loadExecutiveOverview(
   const facilityRows = facilitiesRes.status === "fulfilled" ? facilitiesRes.value.data ?? [] : [];
   const heatMap = assuranceRows.status === "fulfilled" ? assuranceRows.value : [];
   const trends = assuranceTrendRows.status === "fulfilled" ? assuranceTrendRows.value : [];
+  const presenceCensus = presenceCensusRes.status === "fulfilled" ? presenceCensusRes.value : EMPTY_PRESENCE_CENSUS;
 
   return {
     metrics: buildLatestMetricMap(aggregateRows as MetricSnapshotRow[]),
@@ -102,5 +117,6 @@ export async function loadExecutiveOverview(
     facilities: attachFacilityMetrics(facilityRows, facilitySnapshotRows as MetricSnapshotRow[]),
     assuranceHeatMap: heatMap,
     assuranceTrends: trends,
+    presenceCensus,
   };
 }

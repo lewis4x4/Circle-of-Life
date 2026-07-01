@@ -3,6 +3,7 @@ import {
   loadExecutiveOverview,
   type ExecutiveOverviewData,
 } from "@/lib/executive/load-executive-overview";
+import { EMPTY_PRESENCE_CENSUS } from "@/lib/executive/presence-census";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +13,7 @@ const EMPTY_DATA: ExecutiveOverviewData = {
   facilities: [],
   assuranceHeatMap: [],
   assuranceTrends: [],
+  presenceCensus: EMPTY_PRESENCE_CENSUS,
 };
 
 export default async function ExecutiveOverviewPage() {
@@ -25,6 +27,7 @@ export default async function ExecutiveOverviewPage() {
         initialFacilities={EMPTY_DATA.facilities}
         initialAssuranceHeatMap={EMPTY_DATA.assuranceHeatMap}
         initialAssuranceTrends={EMPTY_DATA.assuranceTrends}
+        initialPresenceCensus={EMPTY_DATA.presenceCensus}
         initialHasServerData={false}
       />
     );
@@ -57,6 +60,7 @@ export default async function ExecutiveOverviewPage() {
       initialFacilities={data.facilities}
       initialAssuranceHeatMap={data.assuranceHeatMap}
       initialAssuranceTrends={data.assuranceTrends}
+      initialPresenceCensus={data.presenceCensus}
       initialHasServerData={hasServerData}
     />
   );

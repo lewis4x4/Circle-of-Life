@@ -36,6 +36,13 @@ import {
   type ResidentAssuranceFacilityTrendRow,
   type ResidentAssuranceFacilityRollup,
 } from "@/lib/resident-assurance/command-center-brief";
+import {
+  EMPTY_PRESENCE_CENSUS,
+  fetchPresenceCensus,
+  type PresenceCensus,
+} from "@/lib/executive/presence-census";
+import { presenceLabel, presenceTone, type ResidencyStatus } from "@/lib/residents/presence";
+import type { StatusPillTone } from "@/components/ui/status-pill";
 import type { Database } from "@/types/database";
 
 type ExecutiveOverviewPageClientProps = {
@@ -44,6 +51,7 @@ type ExecutiveOverviewPageClientProps = {
   initialFacilities: ExecutiveOverviewFacility[];
   initialAssuranceHeatMap: ResidentAssuranceFacilityRollup[];
   initialAssuranceTrends: ResidentAssuranceFacilityTrendRow[];
+  initialPresenceCensus: PresenceCensus;
   initialHasServerData: boolean;
 };
 
@@ -53,6 +61,7 @@ export function ExecutiveOverviewPageClient({
   initialFacilities,
   initialAssuranceHeatMap,
   initialAssuranceTrends,
+  initialPresenceCensus,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
@@ -72,6 +81,9 @@ export function ExecutiveOverviewPageClient({
   const [facilities, setFacilities] = useState<ExecutiveOverviewFacility[]>(initialFacilities);
   const [assuranceHeatMap, setAssuranceHeatMap] = useState<ResidentAssuranceFacilityRollup[]>(initialAssuranceHeatMap);
   const [assuranceTrends, setAssuranceTrends] = useState<ResidentAssuranceFacilityTrendRow[]>(initialAssuranceTrends);
+
+  // Live resident-presence census (in-house vs on-hold) — additive to occupancy.
+  const [presenceCensus, setPresenceCensus] = useState<PresenceCensus>(initialPresenceCensus);
 
   // Skip the first client-side fetch when the server already supplied scoped
   // live data. If the server returned empty arrays, the client retries once;
@@ -151,6 +163,14 @@ export function ExecutiveOverviewPageClient({
         setAssuranceTrends(assuranceTrendRows);
       } else {
         setAssuranceTrends([]);
+      }
+
+      // Presence census is non-critical: a failure here must not blank the
+      // dashboard, so it is guarded independently of the metrics/alerts path.
+      try {
+        setPresenceCensus(await fetchPresenceCensus(supabase, organizationId));
+      } catch {
+        setPresenceCensus(EMPTY_PRESENCE_CENSUS);
       }
 
     } catch (e) {
@@ -285,6 +305,7 @@ export function ExecutiveOverviewPageClient({
           facilities={facilities}
           assuranceHeatMap={assuranceHeatMap}
           assuranceTrends={assuranceTrends}
+          presenceCensus={presenceCensus}
           ownerPriorityCards={ownerPriorityCards}
           roleConfig={roleConfig}
           KPI_TILES={KPI_TILES}
@@ -621,12 +642,65 @@ function ExecutiveEmptyOnboarding({
   );
 }
 
+const PRESENCE_TONE_DOT: Record<StatusPillTone, string> = {
+  muted: "bg-muted-foreground/60",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-destructive",
+  info: "bg-info",
+};
+
+/**
+ * Resident presence band — the in-house vs on-hold split of the occupied
+ * population. Additive only: it reuses the occupancy denominator (held beds
+ * still count as occupied) and never introduces a second occupancy number.
+ * Labels/tones come from the shared presence vocabulary so Command and the
+ * resident record read identically.
+ */
+function ResidentPresenceBand({ census }: { census: PresenceCensus }) {
+  if (census.total <= 0) return null;
+  const stats: Array<{ status: ResidencyStatus; value: number }> = [
+    { status: "active", value: census.inHouse },
+    { status: "hospital", value: census.hospital },
+    { status: "loa", value: census.onLeave },
+  ];
+  return (
+    <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Resident presence
+        </span>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {census.total} in census · {census.onHold} on hold
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        {stats.map((stat) => (
+          <div key={stat.status} className="flex items-center gap-2">
+            <span
+              className={cn("size-2 shrink-0 rounded-full", PRESENCE_TONE_DOT[presenceTone(stat.status)])}
+              aria-hidden
+            />
+            <span className="text-[13px] text-muted-foreground">{presenceLabel(stat.status)}</span>
+            <span className="text-[15px] font-semibold tabular-nums text-foreground">{stat.value}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        Held beds (hospital &amp; leave) stay counted as occupied in Occupancy above — this is the
+        in-house vs on-hold split, not a second occupancy figure.
+      </p>
+    </div>
+  );
+}
+
 type DashboardBodyProps = {
   metrics: Record<string, number>;
   alerts: AlertWithFacility[];
   facilities: ExecutiveOverviewFacility[];
   assuranceHeatMap: ResidentAssuranceFacilityRollup[];
   assuranceTrends: ResidentAssuranceFacilityTrendRow[];
+  presenceCensus: PresenceCensus;
   ownerPriorityCards: Array<{ title: string; description: string; href: string; stat: string }>;
   roleConfig: ReturnType<typeof getRoleDashboardConfig>;
   KPI_TILES: ReadonlyArray<{
@@ -647,6 +721,7 @@ function ExecutiveDashboardBody({
   facilities,
   assuranceHeatMap,
   assuranceTrends,
+  presenceCensus,
   ownerPriorityCards,
   roleConfig,
   KPI_TILES,
@@ -681,6 +756,9 @@ function ExecutiveDashboardBody({
           );
         })}
       </div>
+
+      {/* Resident presence — in-house vs on-hold split (additive to Occupancy above) */}
+      <ResidentPresenceBand census={presenceCensus} />
 
       {/* Owner priority lanes */}
       <section className="flex flex-col gap-3">
