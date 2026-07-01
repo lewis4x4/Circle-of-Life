@@ -67,20 +67,26 @@ export function summarizePresenceCensus(
 }
 
 /**
- * Fetch the presence census across the org's accessible facilities. RLS scopes
- * rows to facilities the caller can see, so portfolio totals respect access.
+ * Fetch the presence census across the org's accessible facilities, or a single
+ * facility when `facilityId` is supplied. RLS scopes rows to facilities the
+ * caller can see, so totals respect access.
  */
 export async function fetchPresenceCensus(
   supabase: SupabaseClient<Database>,
   organizationId: string,
+  facilityId?: string | null,
 ): Promise<PresenceCensus> {
-  const res = (await supabase
+  let query = supabase
     .from("residents")
     .select("status")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .in("status", ["active", "hospital_hold", "loa"])
-    .limit(5000)) as unknown as {
+    .limit(5000);
+  if (facilityId) {
+    query = query.eq("facility_id", facilityId);
+  }
+  const res = (await query) as unknown as {
     data: Array<{ status: string | null }> | null;
     error: { message: string } | null;
   };

@@ -9,6 +9,8 @@ import { OccupancyGauge } from "../shared/OccupancyGauge";
 import { formatColLabel } from "@/lib/col-labels";
 import { surveyResultDisplayLabel } from "@/lib/admin/facilities/facility-constants";
 import { portfolioOccupancyKpiTextClass } from "@/lib/admin/facilities/portfolio-metrics";
+import { createClient } from "@/lib/supabase/client";
+import { fetchPresenceCensus, presenceSummaryText, type PresenceCensus } from "@/lib/executive/presence-census";
 import { cn } from "@/lib/utils";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
 
@@ -43,6 +45,22 @@ export function OverviewTab({
     useFacilityBedAvailability(facilityId, { enabled: shouldLoadBedAvailability });
   const [blockedReasonDrafts, setBlockedReasonDrafts] = useState<Record<string, string>>({});
   const [bedFilter, setBedFilter] = useState<"all" | "open" | "blocked" | "unclassified">("all");
+
+  // Facility-scoped presence split (in-house vs on-hold) for the Census panel.
+  const [presence, setPresence] = useState<PresenceCensus | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchPresenceCensus(createClient(), facility.organization_id, facilityId)
+      .then((result) => {
+        if (!cancelled) setPresence(result);
+      })
+      .catch(() => {
+        if (!cancelled) setPresence(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [facility.organization_id, facilityId]);
 
   const bedsRef = useRef(beds);
 
@@ -176,6 +194,14 @@ export function OverviewTab({
               <span className="text-[13px] text-muted-foreground">Current residents</span>
               <span className="font-medium tabular-nums text-foreground">{occupiedBeds}</span>
             </div>
+            {presence && presence.total > 0 ? (
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-[13px] text-muted-foreground">Presence</span>
+                <span className="text-right font-medium tabular-nums text-foreground">
+                  {presenceSummaryText(presence)}
+                </span>
+              </div>
+            ) : null}
             <div className="flex justify-between text-sm">
               <span className="text-[13px] text-muted-foreground">Licensed capacity</span>
               <span className="font-medium tabular-nums text-foreground">{licensedBeds} beds</span>

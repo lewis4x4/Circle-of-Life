@@ -726,6 +726,12 @@ export function AdminDashboardPageClient({
                 }
               />
               <CapacityRow
+                href="/admin/residents?status=active"
+                icon={Users}
+                label="In-house"
+                value={String(Math.max(0, snapshot.residentCount - snapshot.awayResidentCount))}
+              />
+              <CapacityRow
                 href="/admin/admissions/blocked"
                 icon={DoorOpen}
                 label="Blocked admissions"
