@@ -35,6 +35,7 @@ import {
   type ResidencyStatus,
   type ResidentRow,
 } from "@/lib/residents/load-residents";
+import { presenceLabel, presenceTone } from "@/lib/residents/presence";
 import type { ResidentRosterMetrics } from "@/lib/residents/resident-roster-metrics";
 import {
   formatResidentRosterUpdatedAt,
@@ -93,22 +94,10 @@ function readCollapsedStorage(): string[] {
   }
 }
 
-function residencyLabel(status: ResidencyStatus): string {
-  switch (status) {
-    case "hospital":
-      return "Out at hospital";
-    case "loa":
-      return "On leave";
-    case "active":
-    default:
-      return "In facility";
-  }
-}
-
 function groupLabelForRow(mode: ResidentRosterGroupBy, row: ResidentRow): string {
   if (mode === "unit") return row.unit.trim().length > 0 ? row.unit : "No unit on file";
   if (mode === "acuity") return `Acuity ${row.acuity}`;
-  if (mode === "status") return residencyLabel(row.status);
+  if (mode === "status") return presenceLabel(row.status);
   return "";
 }
 
@@ -196,13 +185,12 @@ function AdlCell({ status }: { status: AdlStatus }) {
 }
 
 function ResidentStatusCell({ status }: { status: ResidencyStatus }) {
-  if (status === "hospital") {
-    return <StatusPill tone="warning">Out at hospital</StatusPill>;
+  // In-house is the quiet default — keep it as an em-dash so the roster only
+  // draws the eye to residents who are actually away (bed-hold states).
+  if (status === "active") {
+    return <span className="text-muted-foreground">—</span>;
   }
-  if (status === "loa") {
-    return <StatusPill tone="muted">On leave</StatusPill>;
-  }
-  return <span className="text-muted-foreground">—</span>;
+  return <StatusPill tone={presenceTone(status)}>{presenceLabel(status)}</StatusPill>;
 }
 
 export function AdminResidentsPageClient({
@@ -794,15 +782,19 @@ export function AdminResidentsPageClient({
               { value: "all", label: `All residency statuses (${applyResidentFilters(rows, { status: "all" }).length})` },
               {
                 value: "active",
-                label: `In facility (${applyResidentFilters(rows, { status: "active" }).length})`,
-                shortLabel: "In facility",
+                label: `${presenceLabel("active")} (${applyResidentFilters(rows, { status: "active" }).length})`,
+                shortLabel: presenceLabel("active"),
               },
               {
                 value: "hospital",
-                label: `Out at hospital (${applyResidentFilters(rows, { status: "hospital" }).length})`,
+                label: `${presenceLabel("hospital")} (${applyResidentFilters(rows, { status: "hospital" }).length})`,
                 shortLabel: "Hospital",
               },
-              { value: "loa", label: `On leave (${applyResidentFilters(rows, { status: "loa" }).length})`, shortLabel: "On leave" },
+              {
+                value: "loa",
+                label: `${presenceLabel("loa")} (${applyResidentFilters(rows, { status: "loa" }).length})`,
+                shortLabel: "On leave",
+              },
               {
                 value: "away",
                 label: `Hospital or leave (${applyResidentFilters(rows, { status: "away" }).length})`,

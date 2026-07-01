@@ -21,6 +21,7 @@ import {
   polstMolstFriendly,
 } from "@/components/residents/resident-clinical-overview-widgets";
 import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/components/residents/ResidentDetailTabStrip";
+import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +43,7 @@ import {
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
 import { classifyAnnualReview } from "@/lib/residents/care-plan-annual-review-window";
+import { presenceLabel, presenceTone } from "@/lib/residents/presence";
 import {
   DX_CATEGORY_RENDER_ORDER,
   diagnosisDisplayTitle,
@@ -108,16 +110,6 @@ function verificationFooter(label: string, iso: string | null, actor: string | n
 
 function severityClinicalLabel(raw: string): string {
   return diagnosisDisplayTitle(raw.replace(/_/g, " "));
-}
-
-function ResidentStatusInline({ detail }: { detail: ResidentOverviewDetail }) {
-  if (detail.status === "hospital") {
-    return <StatusPill tone="danger">Out at hospital</StatusPill>;
-  }
-  if (detail.status === "loa") {
-    return <StatusPill tone="muted">On leave</StatusPill>;
-  }
-  return <span className="text-[13px] text-muted-foreground">In facility</span>;
 }
 
 function AcuityInline({ acuity }: { acuity: number }) {
@@ -412,8 +404,8 @@ export function ResidentDetailOverviewClient({
         subtitle={subtitleLine}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
         statusChips={
-          detail.status === "hospital" ? (
-            <StatusPill tone="danger">Hospital hold</StatusPill>
+          detail.status !== "active" ? (
+            <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status)}</StatusPill>
           ) : null
         }
         actions={
@@ -468,7 +460,11 @@ export function ResidentDetailOverviewClient({
                 </Avatar>
                 <div className="mt-1 flex flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <ResidentStatusInline detail={detail} />
+                    <ResidentPresenceControl
+                      residentId={detail.id}
+                      status={detail.status}
+                      onChanged={onAfterLog}
+                    />
                     <AcuityInline acuity={detail.acuity} />
                   </div>
                   <TooltipDob dobLabel={detail.dobLabel} />

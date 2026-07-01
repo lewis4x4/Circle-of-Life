@@ -3,11 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { throwIfQueryError } from "@/lib/supabase/query-error";
+import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import type { Database } from "@/types/database";
 
 export type Acuity = 1 | 2 | 3;
 export type AdlStatus = "independent" | "assisted" | "dependent";
-export type ResidencyStatus = "active" | "hospital" | "loa";
+export type { ResidencyStatus };
 
 export type ResidentRow = {
   id: string;
@@ -126,12 +127,6 @@ function mapAcuity(value: string | null): Acuity {
   if (value === "level_3") return 3;
   if (value === "level_2") return 2;
   return 1;
-}
-
-function mapResidencyStatus(value: string | null): ResidencyStatus {
-  if (value === "hospital_hold") return "hospital";
-  if (value === "loa") return "loa";
-  return "active";
 }
 
 function mapAdlStatusFromAcuity(acuity: Acuity): AdlStatus {
