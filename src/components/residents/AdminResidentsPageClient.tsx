@@ -185,11 +185,10 @@ function AdlCell({ status }: { status: AdlStatus }) {
 }
 
 function ResidentStatusCell({ status }: { status: ResidencyStatus }) {
-  // In-house is the quiet default — keep it as an em-dash so the roster only
-  // draws the eye to residents who are actually away (bed-hold states).
-  if (status === "active") {
-    return <span className="text-muted-foreground">—</span>;
-  }
+  // Show every presence state explicitly, including In-house. A Status column
+  // full of em-dashes reads as "no data" when in fact everyone is in-house.
+  // In-house uses the muted tone so away states (hospital / leave) still draw
+  // the eye, but presence is always legible at a glance.
   return <StatusPill tone={presenceTone(status)}>{presenceLabel(status)}</StatusPill>;
 }
 
