@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -110,23 +111,27 @@ export function ResidentPresenceControl({
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[224px]">
-        <DropdownMenuLabel>Update presence</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {PRESENCE_OPTIONS.map((opt) => (
-          <DropdownMenuItem
-            key={opt.status}
-            onClick={() => void choose(opt.status)}
-            className="flex items-start gap-2"
-          >
-            <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-              {opt.status === displayed ? <Check className="size-3.5" aria-hidden /> : null}
-            </span>
-            <span className="flex flex-col">
-              <span className="text-[13px] font-medium text-foreground">{opt.label}</span>
-              <span className="text-[11px] text-muted-foreground">{opt.hint}</span>
-            </span>
-          </DropdownMenuItem>
-        ))}
+        {/* GroupLabel is a base-ui "group part" and MUST sit inside a Group,
+            or base-ui throws error #31 at runtime (dev tolerates it, prod crashes). */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Update presence</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {PRESENCE_OPTIONS.map((opt) => (
+            <DropdownMenuItem
+              key={opt.status}
+              onClick={() => void choose(opt.status)}
+              className="flex items-start gap-2"
+            >
+              <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                {opt.status === displayed ? <Check className="size-3.5" aria-hidden /> : null}
+              </span>
+              <span className="flex flex-col">
+                <span className="text-[13px] font-medium text-foreground">{opt.label}</span>
+                <span className="text-[11px] text-muted-foreground">{opt.hint}</span>
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
