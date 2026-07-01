@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { EMPTY_PRESENCE_CENSUS, summarizePresenceCensus } from "./presence-census";
+import { EMPTY_PRESENCE_CENSUS, presenceSummaryText, summarizePresenceCensus } from "./presence-census";
 
 describe("summarizePresenceCensus", () => {
   it("splits the occupied population into in-house vs on-hold using standup vocabulary", () => {
@@ -37,5 +37,20 @@ describe("summarizePresenceCensus", () => {
 
   it("returns an all-zero census for no residents", () => {
     expect(summarizePresenceCensus([])).toEqual(EMPTY_PRESENCE_CENSUS);
+  });
+});
+
+describe("presenceSummaryText", () => {
+  it("always shows all three buckets, including zeros, in-house first", () => {
+    const census = summarizePresenceCensus([
+      { status: "active" },
+      { status: "active" },
+      { status: "hospital_hold" },
+    ]);
+    expect(presenceSummaryText(census)).toBe("2 in-house · 1 hospital · 0 on leave");
+  });
+
+  it("reads cleanly when nobody is away", () => {
+    expect(presenceSummaryText(EMPTY_PRESENCE_CENSUS)).toBe("0 in-house · 0 hospital · 0 on leave");
   });
 });

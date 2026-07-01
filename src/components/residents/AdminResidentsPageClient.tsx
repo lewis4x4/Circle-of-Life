@@ -414,6 +414,14 @@ export function AdminResidentsPageClient({
   const openBedsValue = metrics?.openBeds;
   const careDueValue = metrics?.carePlanReviewsDueWeek;
 
+  // Presence breakdown of the residents in view — additive to census, computed
+  // client-side from the rows already loaded (no extra query).
+  const presenceInView = {
+    inHouse: filteredRows.filter((row) => row.status === "active").length,
+    hospital: filteredRows.filter((row) => row.status === "hospital").length,
+    onLeave: filteredRows.filter((row) => row.status === "loa").length,
+  };
+
   const grouped = useMemo(() => {
     if (groupBy === "none") {
       return [{ key: "_flat_", label: "", rows: sortedRows }];
@@ -665,11 +673,18 @@ export function AdminResidentsPageClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
         <KpiCard
           value={residentsInViewCount}
           label="Residents in view"
           tone="neutral"
+          className="flex min-h-[118px] flex-col justify-between"
+        />
+        <KpiCard
+          value={presenceInView.inHouse}
+          label="In-house"
+          tone="neutral"
+          footnote={`Hospital ${presenceInView.hospital} · On leave ${presenceInView.onLeave}`}
           className="flex min-h-[118px] flex-col justify-between"
         />
         <KpiCard

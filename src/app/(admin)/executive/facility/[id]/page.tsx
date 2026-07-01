@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { presenceSummaryText } from "@/lib/executive/presence-census";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import {
   fetchResidentAssuranceCommandBrief,
@@ -34,6 +35,7 @@ function KpiStrip(props: { kpi: ExecKpiPayload }) {
         Census: {kpi.census.occupiedResidents}/{kpi.census.licensedBeds} beds
         {kpi.census.occupancyPct != null ? ` · ${kpi.census.occupancyPct}%` : ""}
       </span>
+      {kpi.census.presence ? <span>Presence: {presenceSummaryText(kpi.census.presence)}</span> : null}
       <span>
         AR: {kpi.financial.openInvoicesCount} open · {money.format(kpi.financial.totalBalanceDueCents / 100)}
       </span>

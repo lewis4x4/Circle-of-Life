@@ -2,6 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  EMPTY_PRESENCE_CENSUS,
+  summarizePresenceCensus,
+  type PresenceCensus,
+} from "@/lib/executive/presence-census";
 
 /** Versioned payload shape for `exec_kpi_snapshots.metrics` when persisted by cron (Module 24). */
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
@@ -12,6 +17,13 @@ export type ExecKpiPayload = {
     occupiedResidents: number;
     licensedBeds: number;
     occupancyPct: number | null;
+    /**
+     * In-house vs on-hold split of the occupied population (additive — the
+     * denominator is unchanged and `presence.total === occupiedResidents`).
+     * Optional so cron-persisted snapshots written before this field still
+     * validate; the live fetch always populates it.
+     */
+    presence?: PresenceCensus;
   };
   financial: {
     openInvoicesCount: number;
@@ -82,7 +94,7 @@ export async function fetchExecutiveKpiSnapshot(
   if (facilityIds.length === 0) {
     return {
       version: EXEC_KPI_METRICS_VERSION,
-      census: { occupiedResidents: 0, licensedBeds: 0, occupancyPct: null },
+      census: { occupiedResidents: 0, licensedBeds: 0, occupancyPct: null, presence: EMPTY_PRESENCE_CENSUS },
       financial: { openInvoicesCount: 0, totalBalanceDueCents: 0 },
       clinical: { openIncidents: 0, medicationErrorsMtd: 0 },
       compliance: { openSurveyDeficiencies: 0 },
@@ -92,16 +104,19 @@ export async function fetchExecutiveKpiSnapshot(
     };
   }
 
-  let residentsCountQuery = supabase
+  // Select status rows (not a head:true count) so we can derive the in-house
+  // vs on-hold presence split from the same query — occupiedResidents is then
+  // just presence.total, keeping occupancy a single number.
+  let residentsQuery = supabase
     .from("residents")
-    .select("id", { count: "exact", head: true })
+    .select("status")
     .is("deleted_at", null)
     .in("status", ["active", "hospital_hold", "loa"]);
 
   if (facilityScoped) {
-    residentsCountQuery = residentsCountQuery.eq("facility_id", facilityId!);
+    residentsQuery = residentsQuery.eq("facility_id", facilityId!);
   } else {
-    residentsCountQuery = residentsCountQuery.in("facility_id", facilityIds);
+    residentsQuery = residentsQuery.in("facility_id", facilityIds);
   }
 
   let invoicesOpenQuery = supabase
@@ -185,7 +200,7 @@ export async function fetchExecutiveKpiSnapshot(
   }
 
   const [
-    residentsCountRes,
+    residentsRes,
     invoicesOpenRes,
     incidentsOpenRes,
     medErrorsMtdRes,
@@ -196,7 +211,7 @@ export async function fetchExecutiveKpiSnapshot(
     openExceptionsRes,
     activeWatchRes,
   ] = await Promise.all([
-    residentsCountQuery,
+    residentsQuery,
     invoicesOpenQuery,
     incidentsOpenQuery,
     medErrorsMtdQuery,
@@ -209,7 +224,7 @@ export async function fetchExecutiveKpiSnapshot(
   ]);
 
   const batchErrors = [
-    residentsCountRes.error,
+    residentsRes.error,
     invoicesOpenRes.error,
     incidentsOpenRes.error,
     medErrorsMtdRes.error,
@@ -225,7 +240,8 @@ export async function fetchExecutiveKpiSnapshot(
   }
 
   const licensedBeds = facilities.reduce((sum, f) => sum + (f.total_licensed_beds ?? 0), 0);
-  const occupiedResidents = residentsCountRes.count ?? 0;
+  const presence = summarizePresenceCensus(residentsRes.data ?? []);
+  const occupiedResidents = presence.total;
   const occupancyPct =
     licensedBeds > 0 ? Math.round((occupiedResidents / licensedBeds) * 1000) / 10 : null;
 
@@ -239,6 +255,7 @@ export async function fetchExecutiveKpiSnapshot(
       occupiedResidents,
       licensedBeds,
       occupancyPct,
+      presence,
     },
     financial: {
       openInvoicesCount,

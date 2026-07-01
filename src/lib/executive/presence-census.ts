@@ -36,6 +36,15 @@ export const EMPTY_PRESENCE_CENSUS: PresenceCensus = {
   total: 0,
 };
 
+/**
+ * Compact one-line presence summary for inline/text contexts (in-house first).
+ * Always shows all three buckets — including zeros — so it reads as "tracked,
+ * nobody away" rather than "no data" (e.g. "33 in-house · 0 hospital · 0 on leave").
+ */
+export function presenceSummaryText(census: PresenceCensus): string {
+  return `${census.inHouse} in-house · ${census.hospital} hospital · ${census.onLeave} on leave`;
+}
+
 /** Pure roll-up of resident status rows into a presence census. */
 export function summarizePresenceCensus(
   rows: ReadonlyArray<{ status: string | null }>,
