@@ -43,7 +43,7 @@ import {
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
 import { classifyAnnualReview } from "@/lib/residents/care-plan-annual-review-window";
-import { presenceLabel, presenceTone } from "@/lib/residents/presence";
+import { isPresenceStatus, lifecycleStatusLabel, presenceLabel, presenceTone } from "@/lib/residents/presence";
 import {
   DX_CATEGORY_RENDER_ORDER,
   diagnosisDisplayTitle,
@@ -404,7 +404,9 @@ export function ResidentDetailOverviewClient({
         subtitle={subtitleLine}
         backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
         statusChips={
-          detail.status !== "active" ? (
+          !isPresenceStatus(detail.rawStatus) ? (
+            <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
+          ) : detail.status !== "active" ? (
             <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status)}</StatusPill>
           ) : null
         }
@@ -460,11 +462,15 @@ export function ResidentDetailOverviewClient({
                 </Avatar>
                 <div className="mt-1 flex flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <ResidentPresenceControl
-                      residentId={detail.id}
-                      status={detail.status}
-                      onChanged={onAfterLog}
-                    />
+                    {isPresenceStatus(detail.rawStatus) ? (
+                      <ResidentPresenceControl
+                        residentId={detail.id}
+                        status={detail.status}
+                        onChanged={onAfterLog}
+                      />
+                    ) : (
+                      <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
+                    )}
                     <AcuityInline acuity={detail.acuity} />
                   </div>
                   <TooltipDob dobLabel={detail.dobLabel} />

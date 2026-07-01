@@ -55,7 +55,10 @@ export type ResidentOverviewDetail = {
   preferredName: string | null;
   photoUrl: string | null;
   acuity: Acuity;
+  /** Projected presence value (non-presence lifecycle values collapse to "active"). */
   status: ResidencyStatus;
+  /** Raw `resident_status` enum value — gates whether presence is editable. */
+  rawStatus: string | null;
   fallRiskRaw: string | null;
   roomLabel: string;
   unitName: string;
@@ -624,6 +627,7 @@ export async function loadResidentOverviewDetail(
     photoUrl: resident.photo_url,
     acuity,
     status,
+    rawStatus: resident.status,
     fallRiskRaw: resident.fall_risk_level,
     roomLabel,
     unitName: unitName.length > 0 ? unitName : "No unit linked",

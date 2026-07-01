@@ -75,6 +75,31 @@ export function mapResidencyStatus(value: string | null): ResidencyStatus {
   return "active";
 }
 
+/**
+ * True only for the three in-census presence states. Guards the editable
+ * presence control: `mapResidencyStatus` projects every non-presence lifecycle
+ * value (inquiry, pending_admission, discharged, deceased) onto `"active"`, so
+ * callers MUST gate on the raw status before treating a resident as editable —
+ * otherwise a discharged/deceased resident renders as "In-house" and a click
+ * could resurrect them into a billable presence state.
+ */
+export function isPresenceStatus(rawStatus: string | null): boolean {
+  return rawStatus === "active" || rawStatus === "hospital_hold" || rawStatus === "loa";
+}
+
+const LIFECYCLE_STATUS_LABELS: Record<string, string> = {
+  inquiry: "Inquiry",
+  pending_admission: "Pending admission",
+  discharged: "Discharged",
+  deceased: "Deceased",
+};
+
+/** Read-only label for a non-presence lifecycle status (never edited via presence). */
+export function lifecycleStatusLabel(rawStatus: string | null): string {
+  if (!rawStatus) return "Status unknown";
+  return LIFECYCLE_STATUS_LABELS[rawStatus] ?? rawStatus.replace(/_/g, " ");
+}
+
 /** UI presence value -> persisted `resident_status` enum value (for the write path). */
 export function residencyStatusToDbValue(status: ResidencyStatus): ResidentPresenceDbValue {
   return BY_STATUS[status].dbValue;
