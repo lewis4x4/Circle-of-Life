@@ -1,17 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import type { ReactNode } from "react";
-import Link from "next/link";
-import { ArrowLeft, Brain } from "lucide-react";
 
-import { TitleH1, Subtitle } from "@/components/ui/typography";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
-import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { CFO_PALETTE } from "@/lib/moonshot-theme";
-import { cn } from "@/lib/utils";
+import {
+  HavenInsightPanel,
+  OfficerAlertsPanel,
+  OfficerEmptyTab,
+  OfficerHeader,
+  OfficerKpiStrip,
+  OfficerKpiTile,
+  OfficerLanes,
+  OfficerLinkOutPanel,
+  officerAlarmTone,
+  officerCountLabel,
+  useFacilityNameMap,
+  type OfficerLane,
+} from "@/components/executive/officer-dashboard";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 
 const CFO_TABS = [
   "Overview",
@@ -24,166 +32,116 @@ const CFO_TABS = [
   "Haven Insight",
 ];
 
-const TAB_SOURCE_LABELS: Record<string, string> = {
-  Overview: "P&L waterfall and monthly trend source",
-  "Revenue Cycle": "resident billing, payer mix, and AR aging source",
-  "Labor Economics": "payroll, agency, overtime, and staffing economics source",
-  "Cash & Liquidity": "cash, collections, and payments source",
-  "Capex & Debt": "capex project and debt schedule source",
-  "Budget Variance": "budget-vs-actual ledger source",
-  Scenarios: "finance scenario model source",
+const TAB_DOMAIN: Record<string, string> = {
+  "Revenue Cycle": "resident billing, payer mix, and AR aging",
+  "Labor Economics": "payroll, agency, and overtime economics",
+  "Cash & Liquidity": "cash, collections, and payments",
+  "Capex & Debt": "capex projects and the debt schedule",
+  "Budget Variance": "budget-vs-actual ledger",
 };
 
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={cn(
-        "rounded-[var(--radius)] border border-border bg-card p-6 shadow-[var(--shadow-card)]",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SectionTitle({ children, sub }: { children: ReactNode; sub?: string }) {
-  return (
-    <div className="mb-4">
-      <h3 className="text-sm font-semibold text-card-foreground">{children}</h3>
-      {sub ? <p className="mt-1 text-xs text-muted-foreground">{sub}</p> : null}
-    </div>
-  );
-}
-
-function SourceStatusPanel({ loading, error }: { loading: boolean; error: string | null }) {
-  if (loading) {
-    return (
-      <Panel>
-        <SectionTitle sub="Waiting for the live executive KPI query to finish.">Loading live CFO data</SectionTitle>
-        <p className="text-sm text-muted-foreground">Finance values stay empty while the live source is loading.</p>
-      </Panel>
-    );
-  }
-
-  if (error) {
-    return (
-      <Panel>
-        <SectionTitle sub="The live CFO source returned an error.">Unable to load live CFO data</SectionTitle>
-        <p className="text-sm text-destructive">{error}</p>
-        <p className="mt-2 text-sm text-muted-foreground">No finance fallback is shown.</p>
-      </Panel>
-    );
-  }
-
-  return null;
-}
-
-function EmptyFinanceSourcePanel({ tab }: { tab: string }) {
-  const sourceLabel = TAB_SOURCE_LABELS[tab] ?? "finance source";
-
-  return (
-    <Panel className="flex min-h-[320px] items-center justify-center">
-      <div className="max-w-xl space-y-3 text-center">
-        <p className="text-lg font-semibold text-card-foreground">Live {sourceLabel} is not loaded</p>
-        <p className="text-sm text-muted-foreground">
-          This CFO tab stays empty until real finance data is connected. No mock facility rows, AR aging tables, charts, budget values, or scenario assumptions are shown.
-        </p>
-      </div>
-    </Panel>
-  );
-}
+const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default function CfoDashboardPage() {
   const [tab, setTab] = useState("Overview");
-  const { kpis, loading, error } = useExecRoleKpis();
+  const { selectedFacilityId } = useFacilityStore();
+  const { kpis, alerts, facilities, loading, error, refetch } = useExecRoleKpis(selectedFacilityId);
+  const facilityNameById = useFacilityNameMap(facilities);
 
-  const revenueValue = kpis
-    ? `$${(kpis.financial.totalBalanceDueCents / 100).toLocaleString()}`
-    : "—";
-  const occupancyValue =
-    kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "—";
-  const openInvoices = kpis ? `${kpis.financial.openInvoicesCount}` : "—";
-  const certsExpiring = kpis ? `${kpis.workforce.certificationsExpiring30d}` : "—";
+  const scopeLabel = selectedFacilityId
+    ? facilityNameById.get(selectedFacilityId) ?? "the selected facility"
+    : "all facilities";
+
+  const arCents = kpis?.financial.totalBalanceDueCents;
+  const occupancyPct = kpis?.census.occupancyPct;
+  const openInvoices = kpis?.financial.openInvoicesCount;
+  const certsExpiring = kpis?.workforce.certificationsExpiring30d;
+
+  const arValue = loading ? "…" : arCents == null ? "—" : money.format(arCents / 100);
+  const occValue = loading ? "…" : occupancyPct == null ? "—" : `${occupancyPct}%`;
+  const invoicesValue = loading ? "…" : openInvoices == null ? "—" : String(openInvoices);
+  const certsValue = loading ? "…" : certsExpiring == null ? "—" : String(certsExpiring);
+
+  const lanes: OfficerLane[] = [
+    {
+      stat: officerCountLabel(openInvoices, "open invoices"),
+      title: "Finance hub",
+      description: "Billed revenue, labor pressure, and monthly financials.",
+      href: "/admin/finance",
+    },
+    {
+      stat: arCents == null ? "— outstanding" : `${money.format(arCents / 100)} outstanding`,
+      title: "AR & collections",
+      description: "Aging, payer mix, and collections workflow.",
+      href: "/admin/billing/ar-aging",
+    },
+    {
+      stat: "Claims & COI",
+      title: "Insurance & risk",
+      description: "Policies, renewals, and portfolio risk posture.",
+      href: "/admin/insurance",
+    },
+    {
+      stat: "What-if model",
+      title: "Scenarios",
+      description: "Occupancy, rate, and labor projections.",
+      href: "/admin/executive/scenarios",
+    },
+  ];
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <></>
-      <div className="relative z-10">
-        <div className="border-b border-border">
-          <ExecutiveNavV2
-            showTopNav={false}
-            activeTopNav="finance"
-            activePillMenu={tab}
-            onPillMenuChange={setTab}
-            customPillTabs={CFO_TABS}
+      <div className="border-b border-border">
+        <ExecutiveNavV2
+          showTopNav={false}
+          activeTopNav="finance"
+          activePillMenu={tab}
+          onPillMenuChange={setTab}
+          customPillTabs={CFO_TABS}
+        />
+      </div>
+
+      <OfficerHeader
+        title="Chief Financial Officer"
+        subtitle={`Live finance command center — ${scopeLabel}.`}
+      />
+
+      <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
+        {error ? <AdminLiveDataFallbackNotice message={error} onRetry={refetch} /> : null}
+
+        <OfficerKpiStrip>
+          <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+          <OfficerKpiTile label="Portfolio occupancy" value={occValue} />
+          <OfficerKpiTile label="Open invoices" value={invoicesValue} />
+          <OfficerKpiTile label="Certs expiring 30d" value={certsValue} tone={officerAlarmTone(certsExpiring, "warning")} />
+        </OfficerKpiStrip>
+
+        {tab === "Overview" ? (
+          <>
+            <OfficerLanes lanes={lanes} subheading="Jump into the live finance queues." />
+            <OfficerAlertsPanel
+              heading="Finance & risk alerts"
+              emptyTitle="No open finance alerts"
+              emptyDescription="Finance and risk exceptions across your facilities will appear here as they trigger."
+              alerts={alerts}
+              facilityNameById={facilityNameById}
+              loading={loading}
+              error={error}
+              onRetry={refetch}
+            />
+          </>
+        ) : tab === "Scenarios" ? (
+          <OfficerLinkOutPanel
+            title="Scenario planner"
+            description="The full what-if forecasting engine — occupancy, rate, labor, and debt-service assumptions with revenue / NOI / cash-flow projections."
+            href="/admin/executive/scenarios"
+            cta="Open scenario planner"
           />
-        </div>
-        <header className="px-6 py-8 sm:px-12">
-          <div className="mb-4 flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <Link href="/admin/executive" className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
-                <ArrowLeft className="h-3.5 w-3.5" /> Back to Executive Overview
-              </Link>
-              
-              <TitleH1>Chief Financial Officer</TitleH1>
-              <Subtitle>Live finance command center. Empty tabs mean the real source is not connected yet.</Subtitle>
-            </div>
-          </div>
-        </header>
-
-        <div className="space-y-6 px-6 pb-12 sm:px-12">
-          <SourceStatusPanel loading={loading} error={error} />
-
-          <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-            <MetricCardMoonshot
-              label="TOTAL AR OUTSTANDING"
-              value={revenueValue}
-              color={CFO_PALETTE.positive}
-              showSparkline={false}
-            />
-            <MetricCardMoonshot
-              label="PORTFOLIO OCCUPANCY"
-              value={occupancyValue}
-              color={CFO_PALETTE.growth}
-              showSparkline={false}
-            />
-            <MetricCardMoonshot
-              label="OPEN INVOICES"
-              value={openInvoices}
-              color={CFO_PALETTE.info}
-              showSparkline={false}
-            />
-            <MetricCardMoonshot
-              label="CERTS EXPIRING 30D"
-              value={certsExpiring}
-              color="rose"
-              showSparkline={false}
-            />
-          </KineticGrid>
-
-          {tab === "Haven Insight" ? (
-            <Panel className="flex min-h-[300px] items-center justify-center">
-              <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[var(--radius)] border border-border bg-muted/40">
-                  <Brain className="h-7 w-7 text-muted-foreground" />
-                </div>
-                <p className="text-lg font-semibold text-card-foreground">Haven Insight</p>
-                <p className="mx-auto max-w-md text-sm text-muted-foreground">
-                  Ask questions about live finance data after source tables and imports are connected.
-                </p>
-                <Link
-                  href="/admin/executive/nlq"
-                  className="inline-flex items-center gap-2 rounded-[var(--radius)] bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] hover:opacity-90"
-                >
-                  <Brain className="h-4 w-4" /> Open Haven Insight
-                </Link>
-              </div>
-            </Panel>
-          ) : (
-            <EmptyFinanceSourcePanel tab={tab} />
-          )}
-        </div>
+        ) : tab === "Haven Insight" ? (
+          <HavenInsightPanel domain="finance" />
+        ) : (
+          <OfficerEmptyTab tab={tab} domain={TAB_DOMAIN[tab] ?? "finance"} />
+        )}
       </div>
     </div>
   );

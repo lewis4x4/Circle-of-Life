@@ -1,33 +1,79 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
-import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
+import {
+  AdminEmptyState,
+  AdminLiveDataFallbackNotice,
+  AdminOperationalListPanel,
+} from "@/components/common/admin-list-patterns";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
-import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { Subtitle, TitleH1 } from "@/components/ui/typography";
+import {
+  HavenInsightPanel,
+  OfficerHeader,
+  OfficerKpiStrip,
+  OfficerKpiTile,
+  OfficerLanes,
+  OfficerLinkOutPanel,
+  officerAlarmTone,
+  type OfficerLane,
+} from "@/components/executive/officer-dashboard";
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
-import { CEO_PALETTE } from "@/lib/moonshot-theme";
-
-const CeoDashboardTabs = dynamic(
-  () => import("@/components/executive/ceo/CeoDashboardTabs"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="h-[360px] animate-pulse rounded-[var(--radius)] border border-border bg-card" />
-        <div className="h-[360px] animate-pulse rounded-[var(--radius)] border border-border bg-card" />
-      </div>
-    ),
-  },
-);
 
 const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "Haven Insight"];
+
+const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+function ceoSeverityTone(severity: CeoAlertDisplay["severity"]): StatusPillTone {
+  if (severity === "critical") return "danger";
+  if (severity === "warning") return "warning";
+  return "info";
+}
+
+function CeoAlertsWatchlist({ alerts }: { alerts: CeoAlertDisplay[] }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="inline-flex items-center gap-2 text-[14px] font-semibold tracking-tight text-foreground">
+          <AlertTriangle className="size-4 text-warning" aria-hidden /> Active alerts &amp; escalations
+        </h2>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {alerts.length} {alerts.length === 1 ? "alert" : "alerts"}
+        </span>
+      </div>
+      {alerts.length === 0 ? (
+        <AdminEmptyState
+          title="No critical alerts"
+          description="Executive-level exceptions across the portfolio will appear here as they trigger."
+        />
+      ) : (
+        <AdminOperationalListPanel>
+          <div className="divide-y divide-border">
+            {alerts.map((alert) => (
+              <div key={alert.id} className="flex items-start gap-3 px-4 py-3">
+                <StatusPill tone={ceoSeverityTone(alert.severity)} className="mt-0.5 shrink-0">
+                  {alert.severity}
+                </StatusPill>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-foreground">{alert.title}</p>
+                  {alert.description ? (
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{alert.description}</p>
+                  ) : null}
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {alert.facility} · {alert.age}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </AdminOperationalListPanel>
+      )}
+    </section>
+  );
+}
 
 type CeoDashboardPageClientProps = {
   initialKpis: ExecKpiPayload | null;
@@ -44,85 +90,93 @@ export default function CeoDashboardPageClient({
   const kpis = initialKpis;
   const displayAlerts = initialAlerts;
 
-  const occupancyValue =
-    kpis?.census.occupancyPct != null ? `${kpis.census.occupancyPct}%` : "—";
-  const incidentsValue = kpis ? `${kpis.clinical.openIncidents}` : "—";
-  const arValue = kpis
-    ? `$${(kpis.financial.totalBalanceDueCents / 100).toLocaleString()}`
-    : "—";
-  const deficienciesValue = kpis
-    ? `${kpis.compliance.openSurveyDeficiencies}`
-    : "—";
+  const occupancyPct = kpis?.census.occupancyPct;
+  const deficiencies = kpis?.compliance.openSurveyDeficiencies;
+  const arCents = kpis?.financial.totalBalanceDueCents;
+  const openIncidents = kpis?.clinical.openIncidents;
+
+  const occValue = occupancyPct == null ? "—" : `${occupancyPct}%`;
+  const deficienciesValue = deficiencies == null ? "—" : String(deficiencies);
+  const arValue = arCents == null ? "—" : money.format(arCents / 100);
+  const incidentsValue = openIncidents == null ? "—" : String(openIncidents);
+
+  const lanes: OfficerLane[] = [
+    {
+      stat: arCents == null ? "Financials" : `${money.format(arCents / 100)} AR`,
+      title: "Finance hub",
+      description: "Billed revenue, labor pressure, and monthly financials.",
+      href: "/admin/finance",
+    },
+    {
+      stat: "Claims & renewals",
+      title: "Insurance & risk",
+      description: "Policies, renewals, and portfolio risk posture.",
+      href: "/admin/insurance",
+    },
+    {
+      stat: "Facility compare",
+      title: "Benchmarks",
+      description: "Facility-vs-facility performance and cohorts.",
+      href: "/admin/executive/benchmarks",
+    },
+    {
+      stat: "Board packets",
+      title: "Reports",
+      description: "Executive KPI exports and board-packet archive.",
+      href: "/admin/executive/reports",
+    },
+  ];
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <></>
-      <div className="relative z-10">
-        <div className="border-b border-border">
-          <ExecutiveNavV2
-            showTopNav={false}
-            activeTopNav="command"
-            activePillMenu={tab}
-            onPillMenuChange={setTab}
-            customPillTabs={CEO_TABS}
+      <div className="border-b border-border">
+        <ExecutiveNavV2
+          showTopNav={false}
+          activeTopNav="command"
+          activePillMenu={tab}
+          onPillMenuChange={setTab}
+          customPillTabs={CEO_TABS}
+        />
+      </div>
+
+      <OfficerHeader title="Chief Executive Officer" subtitle="Enterprise growth & risk — all facilities." />
+
+      <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
+        {initialError ? (
+          <AdminLiveDataFallbackNotice message={initialError} onRetry={() => window.location.reload()} />
+        ) : null}
+
+        <OfficerKpiStrip>
+          <OfficerKpiTile label="Portfolio occupancy" value={occValue} />
+          <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
+          <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+          <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
+        </OfficerKpiStrip>
+
+        {tab === "CEO View" ? (
+          <>
+            <OfficerLanes lanes={lanes} subheading="Leadership decisions and portfolio drill-ins." />
+            <CeoAlertsWatchlist alerts={displayAlerts} />
+          </>
+        ) : tab === "Alerts" ? (
+          <CeoAlertsWatchlist alerts={displayAlerts} />
+        ) : tab === "Reports" ? (
+          <OfficerLinkOutPanel
+            title="Executive reports"
+            description="Portfolio KPI exports (CSV / print) and the board-packet archive."
+            href="/admin/executive/reports"
+            cta="Open reports"
           />
-        </div>
-
-        <header className="px-6 py-8 sm:px-12">
-          <div className="mb-4 flex flex-col gap-4 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <Link
-                href="/admin/executive"
-                className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" /> Back to Executive Overview
-              </Link>
-              
-              <TitleH1>Chief Executive Officer</TitleH1>
-              <Subtitle>Enterprise Growth &amp; Risk Matrix</Subtitle>
-            </div>
-          </div>
-          {initialError ? (
-            <AdminLiveDataFallbackNotice
-              message={initialError}
-              onRetry={() => window.location.reload()}
-            />
-          ) : null}
-        </header>
-
-        <div className="space-y-6 px-6 pb-12 sm:px-12">
-          <KineticGrid
-            className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-            staggerMs={50}
-          >
-            <MetricCardMoonshot
-              label="PORTFOLIO OCCUPANCY"
-              value={occupancyValue}
-              color={CEO_PALETTE.positive}
-              showSparkline={false}
-            />
-            <MetricCardMoonshot
-              label="OPEN DEFICIENCIES"
-              value={deficienciesValue}
-              color={CEO_PALETTE.growth}
-              showSparkline={false}
-            />
-            <MetricCardMoonshot
-              label="TOTAL AR OUTSTANDING"
-              value={arValue}
-              color={CEO_PALETTE.info}
-              showSparkline={false}
-            />
-            <MetricCardMoonshot
-              label="OPEN INCIDENTS"
-              value={incidentsValue}
-              color={CEO_PALETTE.critical}
-              showSparkline={false}
-            />
-          </KineticGrid>
-
-          <CeoDashboardTabs tab={tab} displayAlerts={displayAlerts} />
-        </div>
+        ) : tab === "Benchmarks" ? (
+          <OfficerLinkOutPanel
+            title="Portfolio benchmarks"
+            description="Facility-vs-facility comparison across occupancy, labor, incidents, and survey readiness."
+            href="/admin/executive/benchmarks"
+            cta="Open benchmarks"
+          />
+        ) : (
+          <HavenInsightPanel domain="portfolio" />
+        )}
       </div>
     </div>
   );

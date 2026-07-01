@@ -7,7 +7,8 @@ const readSource = (relativePath: string) =>
   readFileSync(path.join(repoRoot, relativePath), "utf8");
 
 const APP_VISIBLE_NOTICE_SOURCES = [
-  "src/components/executive/ceo/CeoDashboardTabs.tsx",
+  "src/components/executive/officer-dashboard.tsx",
+  "src/components/executive/CeoDashboardPageClient.tsx",
   "src/app/(admin)/executive/cfo/page.tsx",
   "src/app/(admin)/executive/coo/page.tsx",
   "src/components/incidents/AdminIncidentsPageClient.tsx",
@@ -45,6 +46,5 @@ describe("app-visible no-seed copy notices", () => {
 
     expect(sources).toContain("No fallback");
     expect(sources).toContain("no fallback rows shown");
-    expect(sources).toContain("stay empty while the live source is loading");
   });
 });
