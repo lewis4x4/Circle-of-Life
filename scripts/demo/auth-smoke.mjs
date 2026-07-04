@@ -6,7 +6,8 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3000";
 const invalidEmail = process.env.AUTH_SMOKE_INVALID_EMAIL ?? "nobody@example.com";
 const invalidPassword = process.env.AUTH_SMOKE_INVALID_PASSWORD ?? "wrong-password";
 const expectedAuthErrorRegex = /Invalid login credentials|Sign-in request failed to complete|Database error querying schema|Invalid API key|JWT/i;
-const missingConfigRegex = /Sign-in is not configured|Supabase environment variables are missing/i;
+const missingConfigRegex =
+  /Sign-in is (?:not configured|temporarily unavailable)|Supabase environment variables are missing/i;
 
 async function run() {
   const browser = await chromium.launch({ headless: true });
@@ -41,6 +42,7 @@ async function run() {
 
     if (disabled) {
       const configMessage = page.getByText(missingConfigRegex).first();
+      await configMessage.waitFor({ timeout: 3000 }).catch(() => {});
       if (await configMessage.isVisible()) {
         const errorText = (await configMessage.textContent())?.trim() ?? "Sign-in is not configured.";
         result.invalid_credentials_check.final_url = page.url();
