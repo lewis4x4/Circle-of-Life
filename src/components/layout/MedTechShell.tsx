@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Loader2 } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
@@ -30,6 +30,7 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
   const themeSet = useRef(false);
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
+  const { appRole, loading: authLoading, user } = useHavenAuth();
 
   // Force dark theme
   useEffect(() => {
@@ -41,17 +42,13 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
 
   // Role guard
   const checkAccess = useCallback(async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    if (authLoading) return;
     if (!user) {
       router.replace("/login?next=/med-tech");
       return;
     }
 
-    const role = getAppRoleFromClaims(user);
+    const role = getAppRoleFromClaims(user) || appRole;
     // Med-tech staff use this surface day-to-day. Admins/owners also need
     // visibility here for support and oversight, so they're allowed through
     // rather than bounced back to their own dashboard.
@@ -69,7 +66,7 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     } else {
       router.replace("/login");
     }
-  }, [router]);
+  }, [appRole, authLoading, router, user]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

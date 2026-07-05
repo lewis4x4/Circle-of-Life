@@ -5,7 +5,7 @@ import { loadSurveyBundlePacket } from "@/lib/risk/load-survey-bundle";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function RiskSurveyBundlePage() {
-  const roleContext = await loadRiskRoleContextServer();
+  const roleContext = await loadRiskRoleContextServer({ authSource: "session" });
   const selectedFacilityId = await getServerSelectedFacilityId();
 
   if (!roleContext.ok) {

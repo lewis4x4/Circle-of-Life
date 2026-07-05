@@ -4,7 +4,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Activity, ChevronRight, Loader2, Pill } from "lucide-react";
 
-import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import {
   canUpdateAnyEmarRecord,
   DEFAULT_PRN_REASSESS_MINUTES,
@@ -54,6 +56,8 @@ function medFromRow(row: EmarRow): MedJoin | null {
 
 export default function CaregiverPrnFollowupPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,21 +81,22 @@ export default function CaregiverPrnFollowupPage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setLoadError("Session expired. Sign in again.");
         setLoading(false);
         return;
       }
-      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
       setUserId(user.id);
-      const prof = await supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle();
-      const role = (prof.data as { app_role: string } | null)?.app_role ?? null;
+      const role = effectiveRole || null;
 
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -152,7 +157,7 @@ export default function CaregiverPrnFollowupPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();

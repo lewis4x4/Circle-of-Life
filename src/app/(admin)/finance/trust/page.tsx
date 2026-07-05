@@ -10,7 +10,7 @@ import { loadFinanceTrustData, type ResidentTrustRow } from "@/lib/finance/load-
 import { createClient } from "@/lib/supabase/server";
 
 export default async function FinanceTrustPage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
   const selectedFacilityId = await getServerSelectedFacilityId();
 
   if (!roleContext.ok) {

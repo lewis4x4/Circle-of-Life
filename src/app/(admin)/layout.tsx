@@ -13,7 +13,7 @@ export default function AdminRouteGroupLayout({
   // /executive/*, etc. — shares a single identity context. It loads the session
   // + profile once and stays warm across navigations within the group, which is
   // what lets pages read {user, appRole, organizationId} from useHavenAuth()
-  // instead of each re-running getUser()/load*RoleContext() on mount.
+  // instead of each re-running auth/profile context loaders on mount.
   return (
     <AppRuntimeProviders>
       <HavenAuthProvider>{children}</HavenAuthProvider>

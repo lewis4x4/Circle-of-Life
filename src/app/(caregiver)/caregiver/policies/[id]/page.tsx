@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { resolveAckFacilityId } from "@/lib/pending-policies";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export default function CaregiverPolicyAckPage() {
   const id = typeof params.id === "string" ? params.id : "";
   const router = useRouter();
   const supabase = createClient();
+  const { loading: authLoading, user } = useHavenAuth();
 
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -26,10 +28,8 @@ export default function CaregiverPolicyAckPage() {
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
+    if (authLoading) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Not signed in.");
         return;
@@ -59,7 +59,7 @@ export default function CaregiverPolicyAckPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, id]);
+  }, [authLoading, supabase, id, user]);
 
   useEffect(() => {
     void load();
@@ -69,9 +69,6 @@ export default function CaregiverPolicyAckPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Not signed in.");
         return;

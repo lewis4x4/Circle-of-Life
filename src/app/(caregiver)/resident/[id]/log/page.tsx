@@ -11,6 +11,7 @@ import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -44,6 +45,8 @@ export default function CaregiverResidentLogPage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "";
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
 
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -69,15 +72,10 @@ export default function CaregiverResidentLogPage() {
   const idOk = isValidFacilityIdForQuery(residentId);
 
   useEffect(() => {
-    void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
-      }
-    })();
-  }, [supabase]);
+    if (!authLoading) {
+      setHomeHref(user && effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
+    }
+  }, [authLoading, effectiveRole, user]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,8 +92,18 @@ export default function CaregiverResidentLogPage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("Session expired. Sign in again.");
+        setLoading(false);
+        return;
+      }
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -164,7 +172,7 @@ export default function CaregiverResidentLogPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, residentId, idOk]);
+  }, [authLoading, effectiveRole, organizationId, supabase, residentId, idOk, user]);
 
   useEffect(() => {
     void load();
@@ -172,9 +180,6 @@ export default function CaregiverResidentLogPage() {
 
   async function appendShiftNote() {
     if (!ctx || !idOk || !noteDraft.trim()) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Session expired. Sign in again.");
       return;
@@ -232,9 +237,6 @@ export default function CaregiverResidentLogPage() {
 
   async function saveVitals() {
     if (!ctx || !idOk) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Session expired.");
       return;

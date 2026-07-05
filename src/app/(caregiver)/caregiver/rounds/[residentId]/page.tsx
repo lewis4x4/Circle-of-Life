@@ -9,6 +9,8 @@ import { QuickObservationForm } from "@/components/rounding/QuickObservationForm
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { queueRoundingCompletion, shouldQueueRoundingRequest } from "@/lib/pwa/rounding-sync";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -28,6 +30,8 @@ function displayName(person?: { first_name: string | null; last_name: string | n
 
 export default function CaregiverResidentRoundPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const roundingSync = useRoundingOfflineSync();
   const params = useParams<{ residentId: string }>();
   const searchParams = useSearchParams();
@@ -53,8 +57,16 @@ export default function CaregiverResidentRoundPage() {
       return;
     }
 
+    if (authLoading) return;
     try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        throw new Error("You need to sign in.");
+      }
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         throw new Error(resolved.error);
       }
@@ -87,7 +99,7 @@ export default function CaregiverResidentRoundPage() {
     } finally {
       setLoading(false);
     }
-  }, [residentId, supabase, taskIdFromQuery]);
+  }, [authLoading, effectiveRole, organizationId, residentId, supabase, taskIdFromQuery, user]);
 
   useEffect(() => {
     void load();

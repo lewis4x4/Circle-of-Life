@@ -7,7 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import {
   caregiverIncidentFormSchema,
   caregiverIncidentCategoryValues,
@@ -72,6 +75,8 @@ function CaregiverIncidentDraftPageInner() {
   const queryResidentId = searchParams.get("resident") ?? searchParams.get("residentId") ?? "";
 
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId: authOrganizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [facilityId, setFacilityId] = useState<string | null>(null);
@@ -100,87 +105,32 @@ function CaregiverIncidentDraftPageInner() {
       return;
     }
 
+    if (authLoading) return;
+
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError) throw userError;
       if (!user) {
         setLoadError("You need to sign in to file an incident.");
         setLoadingContext(false);
         return;
       }
-      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
 
-      const profileResult = await supabase
-        .from("user_profiles" as never)
-        .select("organization_id, app_role")
-        .eq("id", user.id)
-        .maybeSingle();
-      const profile = profileResult.data as { organization_id: string; app_role: string } | null;
-      if (profileResult.error) throw profileResult.error;
-      if (!profile?.organization_id) {
-        setLoadError("Your profile is missing an organization. Contact an administrator.");
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId: authOrganizationId,
+        appRole: effectiveRole,
+      });
+      if (!resolved.ok) {
+        setLoadError(resolved.error);
         setLoadingContext(false);
         return;
       }
 
-      let resolvedFacilityId: string | null = null;
-      let resolvedOrgId: string = profile.organization_id;
-      let resolvedFacilityName: string | null = null;
-
-      if (profile.app_role === "owner" || profile.app_role === "org_admin") {
-        const facResult = await supabase
-          .from("facilities" as never)
-          .select("id, name, organization_id")
-          .eq("organization_id", profile.organization_id)
-          .is("deleted_at", null)
-          .order("name")
-          .limit(1)
-          .maybeSingle();
-        const row = facResult.data as { id: string; name: string; organization_id: string } | null;
-        if (facResult.error) throw facResult.error;
-        if (row) {
-          resolvedFacilityId = row.id;
-          resolvedOrgId = row.organization_id;
-          resolvedFacilityName = row.name;
-        }
-      } else {
-        const accessResult = await supabase
-          .from("user_facility_access" as never)
-          .select("facility_id")
-          .eq("user_id", user.id)
-          .is("revoked_at", null)
-          .limit(1)
-          .maybeSingle();
-        const access = accessResult.data as { facility_id: string } | null;
-        if (accessResult.error) throw accessResult.error;
-        if (access?.facility_id) {
-          resolvedFacilityId = access.facility_id;
-        }
-        if (resolvedFacilityId) {
-          const facResult = await supabase
-            .from("facilities" as never)
-            .select("id, name, organization_id")
-            .eq("id", resolvedFacilityId)
-            .is("deleted_at", null)
-            .maybeSingle();
-          const row = facResult.data as { id: string; name: string; organization_id: string } | null;
-          if (facResult.error) throw facResult.error;
-          if (row) {
-            resolvedOrgId = row.organization_id;
-            resolvedFacilityName = row.name;
-          }
-        }
-      }
-
-      if (!resolvedFacilityId) {
-        setLoadError("No facility access is assigned to your account. Ask an administrator to grant facility access.");
-        setLoadingContext(false);
-        return;
-      }
-
+      const {
+        facilityId: resolvedFacilityId,
+        organizationId: resolvedOrgId,
+        facilityName: resolvedFacilityName,
+      } = resolved.ctx;
       setFacilityId(resolvedFacilityId);
       setOrganizationId(resolvedOrgId);
       setFacilityName(resolvedFacilityName);
@@ -212,7 +162,7 @@ function CaregiverIncidentDraftPageInner() {
     } finally {
       setLoadingContext(false);
     }
-  }, [supabase]);
+  }, [authLoading, authOrganizationId, effectiveRole, supabase, user]);
 
   useEffect(() => {
     void loadContext();
@@ -251,9 +201,6 @@ function CaregiverIncidentDraftPageInner() {
         throw new Error("Invalid date and time.");
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) throw new Error("Session expired. Sign in again.");
 
       const insertPayload = {

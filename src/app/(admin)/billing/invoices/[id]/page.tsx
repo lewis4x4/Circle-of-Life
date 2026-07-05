@@ -80,7 +80,7 @@ export default function AdminInvoiceDetailPage() {
   const rawId = typeof params?.id === "string" ? params.id : "";
   const id = UUID_STRING_RE.test(rawId) ? rawId : "";
   const { selectedFacilityId } = useFacilityStore();
-  const { appRole } = useHavenAuth();
+  const { appRole, user } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
 
@@ -218,7 +218,7 @@ export default function AdminInvoiceDetailPage() {
     setGlError(null);
     try {
       const supabase = createClient();
-      const result = await postInvoiceToGl(supabase, invoice.id);
+      const result = await postInvoiceToGl(supabase, invoice.id, user?.id ?? null);
       if (result.ok) {
         setGlResult({ journalEntryId: result.journalEntryId, alreadyPosted: result.alreadyPosted });
       } else {

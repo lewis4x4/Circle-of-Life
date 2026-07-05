@@ -14,6 +14,7 @@ import {
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { BehaviorLogModal, ConditionLogModal, GeneralNoteModal } from "@/components/admin/resident-log-modals";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import {
   ResidentCodeStatusValue,
   ResidentFallRiskPresentation,
@@ -226,6 +227,7 @@ export function ResidentDetailOverviewClient({
   initialError = null,
   initialFacilityId,
 }: ResidentDetailOverviewClientProps) {
+  const { user } = useHavenAuth();
   const params = useParams();
   const rawId = params?.id;
   const residentId = typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : "";
@@ -466,6 +468,7 @@ export function ResidentDetailOverviewClient({
                       <ResidentPresenceControl
                         residentId={detail.id}
                         status={detail.status}
+                        updatedByUserId={user?.id ?? null}
                         onChanged={onAfterLog}
                       />
                     ) : (

@@ -40,7 +40,7 @@ export default function ExecutiveStandupHistoryPage() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
   // Identity comes from the app-wide auth provider instead of a per-page
-  // getUser() + user_profiles lookup (loadFinanceRoleContext) plus useAuth.
+  // duplicate auth/profile lookup.
   const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   const queryClient = useQueryClient();
   const canCreateDraft = canCreateDraftFinance(appRole as Database["public"]["Enums"]["app_role"]);

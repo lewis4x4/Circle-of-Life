@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient } from "@/lib/supabase/client";
@@ -16,21 +17,21 @@ import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportSt
 
 export default function CaregiverPendingPoliciesPage() {
   const supabase = createClient();
+  const { appRole, loading: authLoading, user } = useHavenAuth();
+  const effectiveRole = getAppRoleFromClaims(user) || appRole;
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<PendingPolicySummary[]>([]);
   const [homeHref, setHomeHref] = useState("/caregiver");
 
   const load = useCallback(async () => {
     setLoading(true);
+    if (authLoading) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setRows([]);
         return;
       }
-      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
       const facId = await resolveAckFacilityId(supabase, user.id);
       if (!facId) {
         setRows([]);
@@ -41,7 +42,7 @@ export default function CaregiverPendingPoliciesPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, supabase, user]);
 
   useEffect(() => {
     void load();

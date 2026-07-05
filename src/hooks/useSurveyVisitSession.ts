@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -9,8 +10,8 @@ const ROLES_LOG_ACCESS = new Set(["owner", "org_admin", "facility_admin", "nurse
 
 export function useSurveyVisitSession(facilityId: string | null | undefined) {
   const supabase = createClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [appRole, setAppRole] = useState<string>("");
+  const { appRole, loading: authLoading, user } = useHavenAuth();
+  const userId = user?.id ?? null;
   const [orgId, setOrgId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,41 +29,25 @@ export function useSurveyVisitSession(facilityId: string | null | undefined) {
 
   const refresh = useCallback(async () => {
     if (!fid) {
-      setUserId(null);
-      setAppRole("");
       setOrgId(null);
       setActiveSessionId(null);
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     setLoading(true);
     setMessage(null);
     setLoadError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
-        setUserId(null);
-        setAppRole("");
         setOrgId(null);
         setActiveSessionId(null);
         return;
       }
-      setUserId(user.id);
-      const [prof, fac, sess] = await Promise.all([
-        supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle(),
+      const [fac, sess] = await Promise.all([
         supabase.from("facilities").select("organization_id").eq("id", fid).maybeSingle(),
         supabase.from("survey_visit_sessions").select("id").eq("facility_id", fid).is("deactivated_at", null).maybeSingle(),
       ]);
-      if (prof.error) {
-        setLoadError(prof.error.message);
-        setAppRole("");
-      } else if (prof.data?.app_role) {
-        setAppRole(prof.data.app_role as string);
-      } else {
-        setAppRole("");
-      }
       if (fac.error) {
         setLoadError((prev) => prev ?? fac.error.message);
         setOrgId(null);
@@ -81,7 +66,7 @@ export function useSurveyVisitSession(facilityId: string | null | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, fid]);
+  }, [authLoading, supabase, fid, user]);
 
   useEffect(() => {
     void refresh();

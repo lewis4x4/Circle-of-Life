@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw } from "lucide-react";
 
 import { RoundingTaskCard, type RoundingTaskCardData } from "@/components/rounding/RoundingTaskCard";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
@@ -32,6 +34,8 @@ function displayName(person?: { first_name: string | null; last_name: string | n
 
 export default function CaregiverRoundsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const roundingSync = useRoundingOfflineSync();
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [, setFacilityId] = useState<string | null>(null);
@@ -53,8 +57,18 @@ export default function CaregiverRoundsPage() {
       return;
     }
 
+    if (authLoading) return;
     try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("You need to sign in.");
+        setLoading(false);
+        return;
+      }
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -93,7 +107,7 @@ export default function CaregiverRoundsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();

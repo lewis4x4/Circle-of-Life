@@ -421,3 +421,30 @@ BASE_URL=http://localhost:3000 RUNS=3 \
 **Billing invoice ledger** migrated to `useQuery` with SSR `initialData` + `QueryClientLayout` wrapper.
 
 ---
+
+## Segment completion: perf-auth-09 (2026-07-05)
+
+**Status:** Implemented — gate artifact `test-results/agent-gates/2026-07-05T14-00-22-793Z-perf-auth-09.json`
+
+| Check | Result |
+|-------|--------|
+| ESLint + constitution | PASS |
+| Build | PASS |
+| Migration checks + Postgres replay | PASS |
+| Gitleaks / secrets | PASS |
+| Stress suite | PASS |
+| npm audit | PASS with existing moderate Next/PostCSS advisory reported by npm audit |
+
+### Shipped
+
+- Removed remaining per-page client `supabase.auth.getUser()` calls from admin and caregiver route surfaces.
+- Switched caregiver pages, resident drill-ins, controlled-count flows, resident modals, referrals, staffing, and insight sidebar action attribution to `useHavenAuth()` identity.
+- Added `HavenAuthProvider` to med-tech and dietary route groups so their shell guards and cockpit hooks use the shared auth context.
+- Added session-mode server role context for admin RSC pages while preserving verified auth for API callers.
+
+### Verification
+
+- Focused grep: no direct `getUser()` calls remain in `(admin)` / `(caregiver)` page surfaces or converted admin/caregiver client islands.
+- Required gate: `npm run segment:gates -- --segment "perf-auth-09"` passed after rerun outside the sandbox; the first sandboxed run failed only on IPC/port restrictions.
+
+---

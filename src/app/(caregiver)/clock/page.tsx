@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Clock3, Loader2, LogIn, LogOut } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -25,6 +26,8 @@ type OpenPunch = Pick<
 
 export default function CaregiverClockPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
@@ -41,18 +44,20 @@ export default function CaregiverClockPage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setMsg("Sign in to use time clock.");
         setLoading(false);
         return;
       }
-      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
 
-      const ctxRes = await loadCaregiverFacilityContext(supabase);
+      const ctxRes = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!ctxRes.ok) {
         setMsg(ctxRes.error);
         setLoading(false);
@@ -100,7 +105,7 @@ export default function CaregiverClockPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void refresh();
@@ -108,9 +113,6 @@ export default function CaregiverClockPage() {
 
   async function clockIn() {
     if (!staff) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setMsg("Session expired.");
       return;
@@ -139,9 +141,6 @@ export default function CaregiverClockPage() {
 
   async function clockOut() {
     if (!openPunch) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setMsg("Session expired.");
       return;

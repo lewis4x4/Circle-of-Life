@@ -53,9 +53,9 @@ async function loadActivePostingRuleAccounts(
 
 async function getCurrentUserId(supabase: SupabaseClient<Database>): Promise<string | null> {
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
 }
 
 /**
@@ -66,6 +66,7 @@ async function getCurrentUserId(supabase: SupabaseClient<Database>): Promise<str
 export async function postInvoiceToGl(
   supabase: SupabaseClient<Database>,
   invoiceId: string,
+  actorUserId?: string | null,
 ): Promise<PostResult> {
   const existing = await supabase
     .from("journal_entries")
@@ -117,7 +118,7 @@ export async function postInvoiceToGl(
     };
   }
 
-  const userId = await getCurrentUserId(supabase);
+  const userId = actorUserId ?? (await getCurrentUserId(supabase));
   if (!userId) return { ok: false, error: "Not authenticated." };
 
   const periodCheck = await checkPeriodOpenForPosting(supabase, {
@@ -200,6 +201,7 @@ export async function postInvoiceToGl(
 export async function postPaymentToGl(
   supabase: SupabaseClient<Database>,
   paymentId: string,
+  actorUserId?: string | null,
 ): Promise<PostResult> {
   const existing = await supabase
     .from("journal_entries")
@@ -252,7 +254,7 @@ export async function postPaymentToGl(
     };
   }
 
-  const userId = await getCurrentUserId(supabase);
+  const userId = actorUserId ?? (await getCurrentUserId(supabase));
   if (!userId) return { ok: false, error: "Not authenticated." };
 
   const periodCheck = await checkPeriodOpenForPosting(supabase, {

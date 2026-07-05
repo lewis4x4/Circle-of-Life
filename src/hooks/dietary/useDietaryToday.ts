@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type {
   DietaryDeckState,
@@ -134,12 +135,12 @@ function facilityDisplayName(row: QueryRow | undefined): string {
 }
 
 export function useDietaryToday(): DietaryDeckState {
+  const { loading: authLoading, user } = useHavenAuth();
   const [state, setState] = useState<DietaryDeckState>(EMPTY_STATE);
 
   const load = useCallback(async () => {
+    if (authLoading) return;
     try {
-      const sb = createClient();
-      const { data: { user } } = await sb.auth.getUser();
       if (!user) {
         setState((s) => ({ ...s, loading: false, error: "Not authenticated" }));
         return;
@@ -402,7 +403,7 @@ export function useDietaryToday(): DietaryDeckState {
         error: err instanceof Error ? err.message : "Unknown error",
       }));
     }
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => { void load(); }, [load]);
 

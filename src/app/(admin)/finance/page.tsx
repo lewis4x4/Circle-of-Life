@@ -5,7 +5,7 @@ import { loadFinanceOverviewData } from "@/lib/finance/load-finance-overview-dat
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminFinanceHubPage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
   const roleLabel = roleContext.ok
     ? getRoleDashboardConfig(roleContext.ctx.appRole).roleLabel
     : "Finance";

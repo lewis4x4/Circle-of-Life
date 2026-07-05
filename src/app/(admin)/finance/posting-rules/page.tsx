@@ -6,7 +6,7 @@ import { loadFinanceEntities, type EntityMini } from "@/lib/finance/load-trial-b
 import { createClient } from "@/lib/supabase/server";
 
 export default async function GlPostingRulesPage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
 
   if (!roleContext.ok) {
     return (

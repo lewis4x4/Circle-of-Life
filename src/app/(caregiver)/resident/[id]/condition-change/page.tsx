@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Loader2, Stethoscope } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
@@ -52,6 +53,8 @@ export default function CaregiverResidentConditionChangePage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "";
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
 
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -74,15 +77,10 @@ export default function CaregiverResidentConditionChangePage() {
   const idOk = isValidFacilityIdForQuery(residentId);
 
   useEffect(() => {
-    void (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
-      }
-    })();
-  }, [supabase]);
+    if (!authLoading) {
+      setHomeHref(user && effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
+    }
+  }, [authLoading, effectiveRole, user]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,8 +97,18 @@ export default function CaregiverResidentConditionChangePage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("Session expired. Sign in again.");
+        setLoading(false);
+        return;
+      }
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -155,7 +163,7 @@ export default function CaregiverResidentConditionChangePage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, residentId, idOk]);
+  }, [authLoading, effectiveRole, organizationId, supabase, residentId, idOk, user]);
 
   useEffect(() => {
     void load();
@@ -163,9 +171,6 @@ export default function CaregiverResidentConditionChangePage() {
 
   async function submitReport() {
     if (!ctx || !idOk || !description.trim()) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Session expired. Sign in again.");
       return;

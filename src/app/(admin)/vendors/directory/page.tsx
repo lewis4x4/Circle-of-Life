@@ -24,7 +24,7 @@ export default function VendorDirectoryPage() {
   const supabase = createClient();
   const queryClient = useQueryClient();
   // Identity comes from the app-wide auth provider instead of a per-page
-  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  // duplicate auth/profile lookup.
   const { organizationId, appRole, loading: authLoading } = useHavenAuth();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);

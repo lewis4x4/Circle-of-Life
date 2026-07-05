@@ -15,7 +15,7 @@ import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboardPage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
 
   if (!roleContext.ok) {
     return (

@@ -20,7 +20,7 @@ type JournalRow = Database["public"]["Tables"]["journal_entries"]["Row"];
 export default function JournalEntriesListPage() {
   const supabase = createClient();
   // Identity comes from the app-wide auth provider instead of a per-page
-  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  // duplicate auth/profile lookup.
   const { organizationId, loading: authLoading } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
 

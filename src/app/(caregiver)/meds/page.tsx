@@ -13,7 +13,9 @@ import {
   zonedYmd,
   type EmarQueueSlot,
 } from "@/lib/caregiver/emar-queue";
-import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
@@ -34,6 +36,8 @@ type MedRow = Database["public"]["Tables"]["resident_medications"]["Row"] & {
 
 export default function CaregiverMedsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,13 +62,20 @@ export default function CaregiverMedsPage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("Session expired. Sign in again.");
+        setLoading(false);
+        return;
+      }
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -195,7 +206,7 @@ export default function CaregiverMedsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();
@@ -209,9 +220,6 @@ export default function CaregiverMedsPage() {
 
   async function documentDose(slot: EmarQueueSlot, status: "given" | "refused") {
     if (!ctx) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Session expired. Sign in again.");
       return;

@@ -11,7 +11,7 @@ function currentYearMonth(): { y: number; m: number } {
 }
 
 export default async function FinancePeriodClosePage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
   const { y: initialPeriodYear, m: initialPeriodMonth } = currentYearMonth();
 
   if (!roleContext.ok) {

@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -185,6 +186,8 @@ export function AdminReferralsPageClient({
   serverBootstrapped = false,
 }: AdminReferralsPageClientProps) {
   const supabase = createClient();
+  const { user } = useHavenAuth();
+  const userId = user?.id ?? null;
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
   const [loading, setLoading] = useState(false);
@@ -686,6 +689,7 @@ export function AdminReferralsPageClient({
                       scheduledFor,
                       partnerName,
                       activityNotes,
+                      userId,
                       setLoadError,
                       setSavingActivity,
                       onSaved: async () => {
@@ -758,6 +762,7 @@ export function AdminReferralsPageClient({
                               supabase,
                               activityId: row.id,
                               status: outreachStatusDrafts[row.id] ?? row.status,
+                              userId,
                               setLoadError,
                               setSavingActivity,
                               onSaved: load,
@@ -1046,6 +1051,7 @@ export function AdminReferralsPageClient({
 
 async function createOutreachActivity(input: {
   supabase: ReturnType<typeof createClient>;
+  userId: string | null;
   selectedFacilityId: string | null;
   activityType: string;
   activityStatus: string;
@@ -1064,6 +1070,7 @@ async function createOutreachActivity(input: {
     scheduledFor,
     partnerName,
     activityNotes,
+    userId,
     setLoadError,
     setSavingActivity,
     onSaved,
@@ -1079,8 +1086,6 @@ async function createOutreachActivity(input: {
       .is("deleted_at", null)
       .maybeSingle() as unknown as { data: { organization_id: string } | null; error: { message: string } | null };
     if (facilityRes.error || !facilityRes.data?.organization_id) throw new Error("Could not resolve organization.");
-    const authRes = await supabase.auth.getUser();
-    const userId = authRes.data.user?.id;
     if (!userId) throw new Error("Sign in required.");
 
     const weekStart = new Date(scheduledFor || new Date().toISOString());
@@ -1115,18 +1120,17 @@ async function createOutreachActivity(input: {
 
 async function updateOutreachActivityStatus(input: {
   supabase: ReturnType<typeof createClient>;
+  userId: string | null;
   activityId: string;
   status: string;
   setLoadError: (value: string | null) => void;
   setSavingActivity: (value: boolean) => void;
   onSaved: () => Promise<void>;
 }) {
-  const { supabase, activityId, status, setLoadError, setSavingActivity, onSaved } = input;
+  const { supabase, activityId, status, userId, setLoadError, setSavingActivity, onSaved } = input;
   setSavingActivity(true);
   setLoadError(null);
   try {
-    const authRes = await supabase.auth.getUser();
-    const userId = authRes.data.user?.id;
     if (!userId) throw new Error("Sign in required.");
 
     const res = await supabase

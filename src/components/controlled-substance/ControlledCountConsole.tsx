@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2, Shield } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -33,6 +35,8 @@ export function ControlledCountConsole({
   backLabel: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,8 +94,18 @@ export function ControlledCountConsole({
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("Not signed in.");
+        setLoading(false);
+        return;
+      }
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -118,7 +132,7 @@ export function ControlledCountConsole({
     } finally {
       setLoading(false);
     }
-  }, [supabase, loadExpected]);
+  }, [authLoading, effectiveRole, loadExpected, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();
@@ -126,9 +140,6 @@ export function ControlledCountConsole({
 
   const submitCounts = async () => {
     if (!ctx) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Not signed in.");
       return;

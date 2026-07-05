@@ -3,13 +3,25 @@ import type { Database } from "@/types/database";
 
 import type { FinanceRoleContext } from "@/lib/finance/load-finance-context";
 
-export async function loadFinanceRoleContextServer():
+type FinanceRoleContextServerOptions = {
+  authSource?: "verified" | "session";
+};
+
+export async function loadFinanceRoleContextServer({
+  authSource = "verified",
+}: FinanceRoleContextServerOptions = {}):
   Promise<{ ok: true; ctx: FinanceRoleContext } | { ok: false; error: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
+  const { user, error: userErr } =
+    authSource === "session"
+      ? await supabase.auth.getSession().then(({ data, error }) => ({
+          user: data.session?.user ?? null,
+          error,
+        }))
+      : await supabase.auth.getUser().then(({ data, error }) => ({
+          user: data.user,
+          error,
+        }));
   if (userErr) return { ok: false, error: userErr.message };
   if (!user) return { ok: false, error: "Sign in required." };
 

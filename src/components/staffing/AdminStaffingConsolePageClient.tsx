@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { Users, Clock, FileWarning, CalendarPlus, Activity, Download, Loader2 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
@@ -101,6 +102,8 @@ export function AdminStaffingConsolePageClient({
 }: AdminStaffingConsolePageClientProps) {
   const searchParams = useSearchParams();
   const supabase = createClient();
+  const { user } = useHavenAuth();
+  const userId = user?.id ?? null;
   const { selectedFacilityId } = useFacilityStore();
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>(initialSnapshots);
   const [certWarnings, setCertWarnings] = useState<CertWarning[]>(initialCertWarnings);
@@ -545,6 +548,7 @@ export function AdminStaffingConsolePageClient({
               onClick={() =>
                 void createAttendanceEvent({
                   supabase,
+                  userId,
                   selectedFacilityId,
                   attendanceStaffId,
                   attendanceEventType,
@@ -670,6 +674,7 @@ export function AdminStaffingConsolePageClient({
               onClick={() =>
                 void createStaffRequisition({
                   supabase,
+                  userId,
                   selectedFacilityId,
                   requisitionTitle,
                   requisitionRoleTarget,
@@ -748,6 +753,7 @@ export function AdminStaffingConsolePageClient({
                         onClick={() =>
                           void updateStaffRequisitionStatus({
                             supabase,
+                            userId,
                             requisitionId: row.id,
                             status: requisitionStatusDrafts[row.id] ?? row.status,
                             setError,
@@ -913,6 +919,7 @@ export function AdminStaffingConsolePageClient({
 
 async function createAttendanceEvent(input: {
   supabase: ReturnType<typeof createClient>;
+  userId: string | null;
   selectedFacilityId: string | null;
   attendanceStaffId: string;
   attendanceEventType: string;
@@ -924,6 +931,7 @@ async function createAttendanceEvent(input: {
 }) {
   const {
     supabase,
+    userId,
     selectedFacilityId,
     attendanceStaffId,
     attendanceEventType,
@@ -944,8 +952,6 @@ async function createAttendanceEvent(input: {
       .is("deleted_at", null)
       .maybeSingle()) as unknown as { data: { organization_id: string } | null; error: QueryError | null };
     if (facilityRes.error || !facilityRes.data?.organization_id) throw new Error("Could not resolve organization.");
-    const authRes = await supabase.auth.getUser();
-    const userId = authRes.data.user?.id;
     if (!userId) throw new Error("Sign in required.");
 
     const insertRes = (await supabase
@@ -971,6 +977,7 @@ async function createAttendanceEvent(input: {
 
 async function createStaffRequisition(input: {
   supabase: ReturnType<typeof createClient>;
+  userId: string | null;
   selectedFacilityId: string | null;
   requisitionTitle: string;
   requisitionRoleTarget: string;
@@ -982,6 +989,7 @@ async function createStaffRequisition(input: {
 }) {
   const {
     supabase,
+    userId,
     selectedFacilityId,
     requisitionTitle,
     requisitionRoleTarget,
@@ -1002,8 +1010,6 @@ async function createStaffRequisition(input: {
       .is("deleted_at", null)
       .maybeSingle()) as unknown as { data: { organization_id: string } | null; error: QueryError | null };
     if (facilityRes.error || !facilityRes.data?.organization_id) throw new Error("Could not resolve organization.");
-    const authRes = await supabase.auth.getUser();
-    const userId = authRes.data.user?.id;
     if (!userId) throw new Error("Sign in required.");
 
     const insertRes = (await supabase
@@ -1030,18 +1036,17 @@ async function createStaffRequisition(input: {
 
 async function updateStaffRequisitionStatus(input: {
   supabase: ReturnType<typeof createClient>;
+  userId: string | null;
   requisitionId: string;
   status: RequisitionStatus;
   setError: (value: string | null) => void;
   setRequisitionUpdatingId: (value: string | null) => void;
   onSaved: () => Promise<void>;
 }) {
-  const { supabase, requisitionId, status, setError, setRequisitionUpdatingId, onSaved } = input;
+  const { supabase, requisitionId, status, userId, setError, setRequisitionUpdatingId, onSaved } = input;
   setRequisitionUpdatingId(requisitionId);
   setError(null);
   try {
-    const authRes = await supabase.auth.getUser();
-    const userId = authRes.data.user?.id;
     if (!userId) throw new Error("Sign in required.");
 
     const res = (await supabase

@@ -10,7 +10,9 @@ import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -22,6 +24,8 @@ import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 export default function CaregiverTasksPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,12 +51,19 @@ export default function CaregiverTasksPage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("Session expired. Sign in again.");
+        setLoading(false);
+        return;
+      }
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -85,7 +96,7 @@ export default function CaregiverTasksPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();
@@ -123,9 +134,6 @@ export default function CaregiverTasksPage() {
     },
   ) {
     if (!ctx) return;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Session expired. Sign in again.");
       return;

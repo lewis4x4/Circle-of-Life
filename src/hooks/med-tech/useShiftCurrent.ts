@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { MedPassItem } from "@/components/med-tech/PassCard";
 import type { ResidentItem } from "@/components/med-tech/ResidentRail";
@@ -108,6 +109,7 @@ async function q(table: string, select: string, filters: QueryFilters = {}) {
 }
 
 export function useShiftCurrent(): ShiftData {
+  const { loading: authLoading, user } = useHavenAuth();
   const [data, setData] = useState<ShiftData>({
     userId: "",
     shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: UNRESOLVED_UNIT_LABEL, assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
@@ -115,9 +117,8 @@ export function useShiftCurrent(): ShiftData {
   });
 
   const load = useCallback(async () => {
+    if (authLoading) return;
     try {
-      const sb = createClient();
-      const { data: { user } } = await sb.auth.getUser();
       if (!user) { setData(d => ({ ...d, loading: false, error: "Not authenticated" })); return; }
 
       // Active shift
@@ -239,7 +240,7 @@ export function useShiftCurrent(): ShiftData {
     } catch (err) {
       setData(d => ({ ...d, loading: false, error: err instanceof Error ? err.message : "Unknown error" }));
     }
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => { void load(); }, [load]);
 

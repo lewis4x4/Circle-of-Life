@@ -10,6 +10,8 @@ import {
   type CaregiverResidentProfile,
   type RiskBanner,
 } from "@/lib/caregiver/resident-profile";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
@@ -29,6 +31,8 @@ export default function CaregiverResidentQuickProfilePage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "unknown";
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
 
   const [profile, setProfile] = useState<CaregiverResidentProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -281,10 +285,13 @@ export default function CaregiverResidentQuickProfilePage() {
     if (!noteDraft.trim()) return;
     setNoteSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setError("Session expired."); return; }
 
-      const fcResult = await loadCaregiverFacilityContext(supabase);
+      const fcResult = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!fcResult.ok) { setError(fcResult.error); return; }
       const fc = fcResult.ctx;
 

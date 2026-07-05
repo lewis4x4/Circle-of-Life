@@ -42,11 +42,13 @@ export function ResidentPresenceControl({
   status,
   onChanged,
   disabled = false,
+  updatedByUserId = null,
 }: {
   residentId: string;
   status: ResidencyStatus;
   onChanged?: (next: ResidencyStatus) => void;
   disabled?: boolean;
+  updatedByUserId?: string | null;
 }) {
   const [saving, setSaving] = useState(false);
   // Optimistic target held only until the parent reloads with the new status.
@@ -65,17 +67,14 @@ export function ResidentPresenceControl({
     setPending(next);
     const supabase = createClient();
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      if (!updatedByUserId) {
         toast.error("Session expired. Sign in again to update presence.");
         setPending(null);
         return;
       }
       const { error } = await supabase
         .from("residents")
-        .update({ status: residencyStatusToDbValue(next), updated_by: user.id })
+        .update({ status: residencyStatusToDbValue(next), updated_by: updatedByUserId })
         .eq("id", residentId);
       if (error) throw error;
       toast.success(`Presence updated — ${presenceLabel(next)}.`);

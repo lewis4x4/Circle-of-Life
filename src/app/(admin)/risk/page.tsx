@@ -5,7 +5,7 @@ import { loadRiskRoleContextServer } from "@/lib/risk/load-risk-context.server";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function RiskCommandPage() {
-  const roleContext = await loadRiskRoleContextServer();
+  const roleContext = await loadRiskRoleContextServer({ authSource: "session" });
   const selectedFacilityId = await getServerSelectedFacilityId();
 
   if (!roleContext.ok) {

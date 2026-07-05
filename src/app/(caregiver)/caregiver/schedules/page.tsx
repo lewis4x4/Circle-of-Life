@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, Loader2 } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -18,6 +19,8 @@ type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 
 export default function CaregiverSchedulesPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<AssignmentRow[]>([]);
@@ -32,18 +35,20 @@ export default function CaregiverSchedulesPage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user) {
         setError("Sign in to view your schedule.");
         setLoading(false);
         return;
       }
-      setHomeHref(getDashboardRouteForRole(getAppRoleFromClaims(user)));
+      setHomeHref(effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/caregiver");
 
-      const ctxRes = await loadCaregiverFacilityContext(supabase);
+      const ctxRes = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!ctxRes.ok) {
         setError(ctxRes.error);
         setLoading(false);
@@ -93,7 +98,7 @@ export default function CaregiverSchedulesPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();

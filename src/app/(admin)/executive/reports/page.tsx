@@ -181,7 +181,7 @@ function isStandupBoardPacketReport(report: ReportRow): boolean {
 export default function ExecutiveSavedReportsPage() {
   const supabase = useMemo(() => createClient(), []);
   // Identity comes from the app-wide auth provider instead of a per-page
-  // getUser() + user_profiles lookup (loadFinanceRoleContext).
+  // duplicate auth/profile lookup.
   const { user, organizationId: orgId, appRole, loading: authLoading } = useHavenAuth();
   const queryClient = useQueryClient();
   const canManage = canMutateFinance(appRole as Database["public"]["Enums"]["app_role"]);

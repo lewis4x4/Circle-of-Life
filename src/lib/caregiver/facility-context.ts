@@ -125,11 +125,17 @@ export async function loadCaregiverFacilityContextForUser(
  */
 export async function loadCaregiverFacilityContext(
   supabase: SupabaseClient<Database>,
+  identity?: CaregiverFacilityContextInput,
 ): Promise<{ ok: true; ctx: CaregiverFacilityContext } | { ok: false; error: string }> {
+  if (identity?.userId) {
+    return loadCaregiverFacilityContextForUser(supabase, identity);
+  }
+
   const {
-    data: { user },
+    data: { session },
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
   if (userError) return { ok: false, error: userError.message };
   if (!user) return { ok: false, error: "You need to sign in." };
   return loadCaregiverFacilityContextForUser(supabase, { userId: user.id });

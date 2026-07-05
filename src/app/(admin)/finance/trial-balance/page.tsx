@@ -18,7 +18,7 @@ function todayIso(): string {
 }
 
 export default async function TrialBalancePage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
   const dateFrom = firstOfMonth();
   const dateTo = todayIso();
 

@@ -6,7 +6,7 @@ import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CeoDashboardPage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
 
   if (!roleContext.ok) {
     return (

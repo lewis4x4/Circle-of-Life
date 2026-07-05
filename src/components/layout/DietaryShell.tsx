@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Loader2 } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getAppRoleFromClaims, isDietaryRole, isAdminEligibleAppRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
@@ -27,6 +27,7 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
   const themeSet = useRef(false);
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
+  const { appRole, loading: authLoading, user } = useHavenAuth();
 
   useEffect(() => {
     if (!themeSet.current) {
@@ -36,17 +37,13 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
   }, [setTheme]);
 
   const checkAccess = useCallback(async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    if (authLoading) return;
     if (!user) {
       router.replace("/login?next=/dietary");
       return;
     }
 
-    const role = getAppRoleFromClaims(user);
+    const role = getAppRoleFromClaims(user) || appRole;
 
     // Dietary staff and any admin-eligible role can access
     if (isDietaryRole(role) || isAdminEligibleAppRole(role)) {
@@ -65,7 +62,7 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
     } else {
       router.replace("/login");
     }
-  }, [router]);
+  }, [appRole, authLoading, router, user]);
 
   useEffect(() => {
     queueMicrotask(() => {

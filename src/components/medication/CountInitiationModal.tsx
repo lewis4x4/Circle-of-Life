@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 
 type MedRow = {
@@ -67,6 +68,7 @@ export function CountInitiationModal({
   onSuccess,
 }: CountInitiationModalProps) {
   const supabase = useMemo(() => createClient(), []);
+  const { organizationId, user } = useHavenAuth();
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lines, setLines] = useState<LineState[]>([]);
@@ -167,7 +169,6 @@ export function CountInitiationModal({
   }, [load]);
 
   const submitCounts = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Not signed in.");
       return;
@@ -175,13 +176,7 @@ export function CountInitiationModal({
     setSaving(true);
     setLoadError(null);
     try {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("organization_id")
-        .eq("id", user.id)
-        .single();
-
-      if (!profile?.organization_id) {
+      if (!organizationId) {
         throw new Error("Could not determine organization");
       }
 
@@ -199,7 +194,7 @@ export function CountInitiationModal({
           .insert({
             resident_medication_id: line.med.id,
             facility_id: facilityId,
-            organization_id: profile.organization_id,
+            organization_id: organizationId,
             count_date: today,
             shift,
             count_type: "shift_change",

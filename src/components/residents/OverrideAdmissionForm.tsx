@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -98,6 +99,7 @@ function label(id: string, text: React.ReactNode, required?: boolean) {
 export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissionsHref = "/admin/admissions/new" }: OverrideAdmissionFormProps) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { user } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
 
@@ -223,9 +225,6 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
         setError("Could not resolve organization for this facility.");
         return;
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (!user?.id) {
         setError("You must be signed in.");
         return;

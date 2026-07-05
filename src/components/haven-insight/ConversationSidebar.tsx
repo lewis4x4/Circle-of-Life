@@ -268,10 +268,10 @@ const ThreadRow = React.memo(function ThreadRow({
 
 export function ConversationSidebar({ currentSessionId, onNewConversation }: ConversationSidebarProps) {
   const router = useRouter();
-  const { organizationId: orgId } = useHavenAuth();
+  const { organizationId: orgId, user } = useHavenAuth();
+  const userId = user?.id ?? null;
   const supabase = useMemo(() => createClient(), []);
   const [threads, setThreads] = useState<ThreadRow[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(readCollapsedState);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -306,16 +306,6 @@ export function ConversationSidebar({ currentSessionId, onNewConversation }: Con
     const timer = window.setTimeout(() => setDebouncedSearch(searchValue.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [searchValue]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) setUserId(data.user?.id ?? null);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
 
   const fetchThreadRows = useCallback(async (ids?: string[]) => {
     if (!orgId) return [];

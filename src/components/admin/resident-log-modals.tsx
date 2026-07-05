@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Brain, Stethoscope, FileText, CheckCircle2, Loader2 } from "lucide-react";
 
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
@@ -56,6 +58,8 @@ export function BehaviorLogModal({
   onSuccess?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -95,7 +99,15 @@ export function BehaviorLogModal({
   }, [supabase, residentId, ctx]);
 
   const initContext = useCallback(async () => {
-    const resolved = await loadCaregiverFacilityContext(supabase);
+    if (!user) {
+      setError("Session expired. Sign in again.");
+      return;
+    }
+    const resolved = await loadCaregiverFacilityContext(supabase, {
+      userId: user.id,
+      organizationId,
+      appRole: effectiveRole,
+    });
     if (!resolved.ok) {
       setError(resolved.error);
       return;
@@ -105,7 +117,7 @@ export function BehaviorLogModal({
       organizationId: resolved.ctx.organizationId,
       timeZone: resolved.ctx.timeZone,
     });
-  }, [supabase]);
+  }, [effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     if (open) {
@@ -123,7 +135,6 @@ export function BehaviorLogModal({
 
   async function submitBehavior() {
     if (!ctx || !behavior.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setError("Session expired. Sign in again.");
       return;
@@ -463,6 +474,8 @@ export function ConditionLogModal({
   onSuccess?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -496,7 +509,15 @@ export function ConditionLogModal({
   }, [supabase, residentId, ctx]);
 
   const initContext = useCallback(async () => {
-    const resolved = await loadCaregiverFacilityContext(supabase);
+    if (!user) {
+      setError("Session expired. Sign in again.");
+      return;
+    }
+    const resolved = await loadCaregiverFacilityContext(supabase, {
+      userId: user.id,
+      organizationId,
+      appRole: effectiveRole,
+    });
     if (!resolved.ok) {
       setError(resolved.error);
       return;
@@ -506,7 +527,7 @@ export function ConditionLogModal({
       organizationId: resolved.ctx.organizationId,
       timeZone: resolved.ctx.timeZone,
     });
-  }, [supabase]);
+  }, [effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     if (open) {
@@ -524,7 +545,6 @@ export function ConditionLogModal({
 
   async function submitReport() {
     if (!ctx || !description.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setError("Session expired. Sign in again.");
       return;
@@ -767,6 +787,8 @@ export function GeneralNoteModal({
   onSuccess?: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [savingNote, setSavingNote] = useState(false);
   const [savingVitals, setSavingVitals] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -803,7 +825,15 @@ export function GeneralNoteModal({
   }, [supabase, residentId, ctx]);
 
   const initContext = useCallback(async () => {
-    const resolved = await loadCaregiverFacilityContext(supabase);
+    if (!user) {
+      setError("Session expired. Sign in again.");
+      return;
+    }
+    const resolved = await loadCaregiverFacilityContext(supabase, {
+      userId: user.id,
+      organizationId,
+      appRole: effectiveRole,
+    });
     if (!resolved.ok) {
       setError(resolved.error);
       return;
@@ -814,7 +844,7 @@ export function GeneralNoteModal({
       facilityName: resolved.ctx.facilityName,
       timeZone: resolved.ctx.timeZone,
     });
-  }, [supabase]);
+  }, [effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     if (open) {
@@ -832,7 +862,6 @@ export function GeneralNoteModal({
 
   async function appendShiftNote() {
     if (!ctx || !noteDraft.trim()) return;
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setError("Session expired. Sign in again.");
       return;
@@ -892,7 +921,6 @@ export function GeneralNoteModal({
 
   async function saveVitals() {
     if (!ctx) return;
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setError("Session expired.");
       return;

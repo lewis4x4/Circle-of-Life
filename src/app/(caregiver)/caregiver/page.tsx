@@ -21,6 +21,8 @@ import {
 
 import { fetchCaregiverShiftBrief, type CaregiverShiftBrief } from "@/lib/caregiver/shift-brief";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -30,6 +32,8 @@ type StatTone = "muted" | "danger" | "warning" | "accent";
 
 export default function CaregiverHomePage() {
   const supabase = useMemo(() => createClient(), []);
+  const { appRole, loading: authLoading, organizationId, user } = useHavenAuth();
+  const effectiveRole = useMemo(() => getAppRoleFromClaims(user) || appRole, [appRole, user]);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,8 +54,18 @@ export default function CaregiverHomePage() {
       setLoading(false);
       return;
     }
+    if (authLoading) return;
     try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
+      if (!user) {
+        setLoadError("You need to sign in.");
+        setLoading(false);
+        return;
+      }
+      const resolved = await loadCaregiverFacilityContext(supabase, {
+        userId: user.id,
+        organizationId,
+        appRole: effectiveRole,
+      });
       if (!resolved.ok) {
         setLoadError(resolved.error);
         setLoading(false);
@@ -72,9 +86,6 @@ export default function CaregiverHomePage() {
         .maybeSingle();
       const first = ob.data as { id: string; infection_type: string } | null;
       setActiveOutbreak(first);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
       if (user && first) {
         const cnt = await supabase
           .from("outbreak_actions")
@@ -92,7 +103,7 @@ export default function CaregiverHomePage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [authLoading, effectiveRole, organizationId, supabase, user]);
 
   useEffect(() => {
     void load();

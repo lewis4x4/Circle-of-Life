@@ -17,7 +17,7 @@ const EMPTY_DATA: ExecutiveOverviewData = {
 };
 
 export default async function ExecutiveOverviewPage() {
-  const roleContext = await loadFinanceRoleContextServer();
+  const roleContext = await loadFinanceRoleContextServer({ authSource: "session" });
 
   if (!roleContext.ok) {
     return (

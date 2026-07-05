@@ -12,9 +12,10 @@ export async function loadRiskRoleContext(
   supabase: SupabaseClient<Database>,
 ): Promise<{ ok: true; ctx: RiskRoleContext } | { ok: false; error: string }> {
   const {
-    data: { user },
+    data: { session },
     error: userErr,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
   if (userErr) return { ok: false, error: userErr.message };
   if (!user) return { ok: false, error: "Sign in required." };
 

@@ -267,7 +267,7 @@ export default function AdminTimeRecordsPage() {
     setActionError(null);
     try {
       // Identity comes from the app-wide auth provider instead of a per-call
-      // supabase.auth.getUser() round-trip.
+      // auth round-trip.
       if (!user) throw new Error("Sign in required.");
 
       const now = new Date().toISOString();
