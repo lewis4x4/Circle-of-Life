@@ -140,6 +140,25 @@ type SupabaseProfileMini = {
   full_name: string | null;
 };
 
+type SupabaseObservationEscalation = {
+  id: string;
+  task_id: string;
+  escalation_level: number;
+  escalation_type: string;
+  status: string;
+  triggered_at: string;
+  resolution_note: string | null;
+  deleted_at: string | null;
+};
+
+type SupabaseObservationTask = {
+  id: string;
+  watch_instance_id: string | null;
+  status: string;
+  due_at: string;
+  resident_observation_escalations?: SupabaseObservationEscalation[] | null;
+};
+
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
@@ -328,17 +347,14 @@ export async function loadIncidentDetail(
     watchIds.length
       ? (supabase
           .from("resident_observation_tasks" as never)
-          .select("id, watch_instance_id, status, due_at")
+          .select(
+            "id, watch_instance_id, status, due_at, resident_observation_escalations(id, task_id, escalation_level, escalation_type, status, triggered_at, resolution_note, deleted_at)",
+          )
           .in("watch_instance_id", watchIds)
           .is("deleted_at", null) as unknown as Promise<
-          QueryListResult<{ id: string; watch_instance_id: string | null; status: string; due_at: string }>
+          QueryListResult<SupabaseObservationTask>
         >)
-      : Promise.resolve({ data: [], error: null } as QueryListResult<{
-          id: string;
-          watch_instance_id: string | null;
-          status: string;
-          due_at: string;
-        }>),
+      : Promise.resolve({ data: [], error: null } as QueryListResult<SupabaseObservationTask>),
     watchIds.length
       ? (supabase
           .from("resident_watch_events" as never)
@@ -407,34 +423,14 @@ export async function loadIncidentDetail(
   }
 
   const taskById = new Map((taskResult.data ?? []).map((row) => [row.id, row] as const));
-  const taskIds = Array.from(taskById.keys());
-
-  const assuranceEscalationResult = taskIds.length
-    ? ((await supabase
-        .from("resident_observation_escalations" as never)
-        .select("id, task_id, escalation_level, escalation_type, status, triggered_at, resolution_note")
-        .in("task_id", taskIds)
-        .in("status", ["open", "in_progress"])
-        .is("deleted_at", null)
-        .order("triggered_at", { ascending: false })) as unknown as QueryListResult<{
-        id: string;
-        task_id: string;
-        escalation_level: number;
-        escalation_type: string;
-        status: string;
-        triggered_at: string;
-        resolution_note: string | null;
-      }>)
-    : ({ data: [], error: null } as QueryListResult<{
-        id: string;
-        task_id: string;
-        escalation_level: number;
-        escalation_type: string;
-        status: string;
-        triggered_at: string;
-        resolution_note: string | null;
-      }>);
-  if (assuranceEscalationResult.error) throw assuranceEscalationResult.error;
+  const assuranceEscalationRows = (taskResult.data ?? [])
+    .flatMap((row) => row.resident_observation_escalations ?? [])
+    .filter(
+      (row) =>
+        row.deleted_at == null &&
+        (row.status === "open" || row.status === "in_progress"),
+    )
+    .sort((a, b) => b.triggered_at.localeCompare(a.triggered_at));
 
   const eventsByWatch = new Map<string, IncidentWatchInstance["events"]>();
   for (const row of eventResult.data ?? []) {
@@ -468,7 +464,7 @@ export async function loadIncidentDetail(
       taskSummary: taskSummaryByWatch.get(row.id) ?? { total: 0, open: 0, overdue: 0, missed: 0 },
       events: eventsByWatch.get(row.id) ?? [],
     })),
-    assuranceEscalations: (assuranceEscalationResult.data ?? []).map((row) => ({
+    assuranceEscalations: assuranceEscalationRows.map((row) => ({
       id: row.id,
       task_id: row.task_id,
       escalation_level: row.escalation_level,

@@ -12,8 +12,7 @@ type AdminResidentDetailPageProps = {
 };
 
 export default async function AdminResidentDetailPage({ params }: AdminResidentDetailPageProps) {
-  const { id } = await params;
-  const cookieStore = await cookies();
+  const [{ id }, cookieStore] = await Promise.all([params, cookies()]);
   const initialFacilityId = parseSelectedFacilityCookieValue(
     cookieStore.get(SELECTED_FACILITY_COOKIE)?.value,
   );

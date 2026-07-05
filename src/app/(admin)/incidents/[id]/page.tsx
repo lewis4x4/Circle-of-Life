@@ -12,8 +12,7 @@ type AdminIncidentDetailPageProps = {
 };
 
 export default async function AdminIncidentDetailPage({ params }: AdminIncidentDetailPageProps) {
-  const { id } = await params;
-  const cookieStore = await cookies();
+  const [{ id }, cookieStore] = await Promise.all([params, cookies()]);
   const initialFacilityId = parseSelectedFacilityCookieValue(
     cookieStore.get(SELECTED_FACILITY_COOKIE)?.value,
   );

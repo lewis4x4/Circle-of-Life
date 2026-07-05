@@ -73,13 +73,6 @@ export default function ResidentAssessmentHistoryPage() {
     try {
       const facilityFilter = isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : undefined;
 
-      const { data: resident } = await supabase
-        .from("residents")
-        .select("first_name, last_name")
-        .eq("id", residentId)
-        .maybeSingle();
-      if (resident) setResidentName(`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim());
-
       let q = supabase
         .from("assessments")
         .select("id, assessment_type, assessment_date, total_score, risk_level, assessed_by")
@@ -89,7 +82,15 @@ export default function ResidentAssessmentHistoryPage() {
 
       if (facilityFilter) q = q.eq("facility_id", facilityFilter);
 
-      const { data, error: qErr } = await q;
+      const [{ data: resident }, { data, error: qErr }] = await Promise.all([
+        supabase
+          .from("residents")
+          .select("first_name, last_name")
+          .eq("id", residentId)
+          .maybeSingle(),
+        q,
+      ]);
+      if (resident) setResidentName(`${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim());
       if (qErr) throw new Error(qErr.message);
 
       const userIds = [...new Set((data ?? []).map((a) => a.assessed_by).filter(Boolean))];

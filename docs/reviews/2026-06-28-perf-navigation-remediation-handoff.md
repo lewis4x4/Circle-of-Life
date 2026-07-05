@@ -65,6 +65,7 @@ Click Link
 | `skipNextLoadRef` client handoff | `AdminResidentsPageClient.tsx`, `AdminIncidentsPageClient.tsx` |
 | ~19 pages on `useQuery` | `finance/journal-entries`, `vendors/*`, `insurance/*`, `certifications`, `training`, `reputation`, `time-records` |
 | Group-level `loading.tsx` | `(admin)/loading.tsx`, `(caregiver)/loading.tsx`, `(family)/loading.tsx`, `admin/v2/loading.tsx` |
+| `perf-waterfall-10` detail waterfall pass | Incident detail now embeds active observation escalations in the task fetch; incident/resident detail pages resolve params + selected-facility cookies in parallel; resident assessment/medication detail loaders start independent reads together. Gate PASS: `test-results/agent-gates/2026-07-05T16-20-50-895Z-perf-waterfall-10.json`. |
 
 ---
 
@@ -174,6 +175,8 @@ One bounded segment = one atomic commit. Gate artifact required before done.
 | **Scope** | `incidents/[id]/page.tsx`: extract loader, `Promise.all` independent queries; optional split to server loader + thin client |
 | **Also** | Any remaining serial chains in `resident-detail-overview-load.ts` after perf-nav-07 |
 | **Gates** | `npm run segment:gates -- --segment "perf-waterfall-10" --ui` |
+| **Result** | **Complete 2026-07-05.** `src/lib/incidents/load-incident-detail.ts` removed the final dependent escalation query by embedding `resident_observation_escalations` under the observation task fetch, preserving active/non-deleted filtering and triggered-time ordering in-memory. `src/app/(admin)/incidents/[id]/page.tsx` and `src/app/(admin)/residents/[id]/page.tsx` now resolve `params` and `cookies()` together. Resident detail subroute loaders for assessments and medications now use `Promise.all` for independent resident-name/detail-list reads. |
+| **Verification** | PASS: `npm run test -- src/app/admin-list-query-bounds.test.ts`; PASS: `npm run typecheck`; PASS: `npm run segment:gates -- --segment "perf-waterfall-10" --ui` → `test-results/agent-gates/2026-07-05T16-20-50-895Z-perf-waterfall-10.json`. Mission alignment: `pass` — reduces clinical detail route round trips without changing RLS boundaries, audit behavior, or decision workflows. |
 
 #### perf-nav-11 — Optional bundle hygiene
 

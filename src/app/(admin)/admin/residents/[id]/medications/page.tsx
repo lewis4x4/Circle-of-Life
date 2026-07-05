@@ -46,16 +46,6 @@ export default function AdminResidentMedicationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await supabase
-        .from("residents")
-        .select("first_name, last_name")
-        .eq("id", residentId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (r.data) {
-        setResidentName([r.data.first_name, r.data.last_name].filter(Boolean).join(" ") || "Resident");
-      }
-
       const q = supabase
         .from("resident_medications")
         .select(
@@ -65,7 +55,18 @@ export default function AdminResidentMedicationsPage() {
         .is("deleted_at", null)
         .order("medication_name");
 
-      const res = await q;
+      const [r, res] = await Promise.all([
+        supabase
+          .from("residents")
+          .select("first_name, last_name")
+          .eq("id", residentId)
+          .is("deleted_at", null)
+          .maybeSingle(),
+        q,
+      ]);
+      if (r.data) {
+        setResidentName([r.data.first_name, r.data.last_name].filter(Boolean).join(" ") || "Resident");
+      }
       if (res.error) throw res.error;
       setRows((res.data ?? []) as Med[]);
     } catch (e: unknown) {
