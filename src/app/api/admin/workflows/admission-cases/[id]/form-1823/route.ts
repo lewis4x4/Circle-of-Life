@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { defaultForm1823Expiration } from "@/lib/admissions/form-1823-renewal";
 import {
   emitWorkflowEvent,
   loadAdmissionCaseWorkflowContext,
@@ -54,6 +55,10 @@ export async function POST(
     return NextResponse.json({ error: "Access denied for facility" }, { status: 403 });
   }
 
+  const examDate = body.exam_date ?? null;
+  const expirationDate =
+    body.expiration_date ?? defaultForm1823Expiration(examDate);
+
   const state = await upsertAdmissionForm1823(actor.admin, {
     organizationId: current.organization_id,
     facilityId: current.facility_id,
@@ -62,8 +67,8 @@ export async function POST(
     actorId: actor.id,
     status: body.status,
     physicianName: body.physician_name ?? null,
-    examDate: body.exam_date ?? null,
-    expirationDate: body.expiration_date ?? null,
+    examDate,
+    expirationDate,
     notes: body.notes ?? null,
   });
 

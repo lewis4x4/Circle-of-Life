@@ -1,68 +1,47 @@
-# S4 — Bed-Hold Billing (DEFERRED): scope + landmines
+# S4 — Bed-Hold Billing: scope + landmines (UNBLOCKED 2026-07)
 
-**Status:** Deferred. **Blocker:** Jessica's per-provider Medicaid bed-hold policy
-(owed to the team; tracked in `HAVEN_ENGINEER_HANDOFF_v2.md` §1 and §20 "Things Still Open").
+**Status:** **Unblocked** for implementation as track **BH-1 … BH-6** (do not reuse COL-V2-S4).  
+**Policy source:** `docs/specs/COL-RESPONSE-LOG-2026-07-michelle-bed-hold.md` (Michelle, Jul 2026).  
+**Prior blocker:** Jessica per-provider Medicaid bed-hold policy — **superseded** by Michelle’s interim rules (unlimited days; full rate pending authorization).
 
-**Interim rule (do not change until Jessica's policy lands):** treat all of
-`active` / `hospital_hold` / `loa` as billable — this is exactly what
-`public.resident_billable_status` (migration 217) already encodes. Do **not**
-build per-provider bed-hold differentiation in the interim; it would violate the
-documented deferral.
+## Interim billing rules (locked)
 
-S2 (presence write path) and S3 (Command census tile) shipped without touching
-billing. When S4 is unblocked, the following are the verified landmines to
-respect (found during the S2/S3 codebase verification pass):
+1. **No day caps** — leave `facility_medicaid_providers.bed_hold_max_days` NULL; do not enforce 7–10 day defaults.
+2. **Private-pay on hold** — bill **full monthly rent** (`room_and_board` + care as applicable) while `hospital_hold` / `loa`, until **official discharge** (belongings out → `status = discharged` + `discharge_date`).  
+   **Do not** price private-pay holds from `rate_schedules.bed_hold_daily_rate` in this wave.
+3. **Medicaid on hold** — bill at provider monthly default (or resident override) with `bed_hold_hospital_billing = full_rate` pending authorization. Adjust later when auth says otherwise.
+4. **Discharge month** — prorate by `discharge_date` (symmetric with admission proration).
+5. **Due date** — private-pay rent due by the **5th** of the month.
 
-## Landmines
+## Landmines (still valid)
 
-1. **`invoice_line_items.line_type` has NO enum/CHECK constraint.** It is bare
-   `text NOT NULL` (`supabase/migrations/027_billing_and_collections_schema.sql:149`).
-   The `'bed_hold'` value is "supported" only because any string is accepted —
-   nothing defines or validates it. If a defensive CHECK is ever added, it must
-   include `'bed_hold'` (and the existing `'negotiated_concession'` /
-   `'rate_premium'` adjustment values) or it will break invoice creation.
+1. **`invoice_line_items.line_type` has NO enum/CHECK constraint.** Bare `text NOT NULL` (`027_*.sql`). Prefer reusing `room_and_board` / `care_surcharge` for full-month hold billing. If a dedicated `'bed_hold'` line is ever added for Medicaid reduced-rate cases, fold it into `p_subtotal` as a **non-adjustment** line.
 
-2. **The invoice RPC enforces a subtotal reconciliation.**
-   `haven_create_invoice_with_line_items` (`supabase/migrations/306_resident_rate_agreements_concessions.sql`,
-   ~lines 865–877) requires that non-adjustment `line_type` totals equal
-   `p_subtotal`, and only `line_type IN ('negotiated_concession','rate_premium')`
-   count as adjustments. A new `'bed_hold'` line is a **non-adjustment** line, so
-   its amount must be folded into `p_subtotal` **and** `p_total` by the caller
-   (`persistMonthlyInvoicesFromPreview`, `src/lib/billing/generate-monthly-invoices.ts`
-   ~lines 462–483), or the RPC raises
-   `"invoice non-adjustment line total must equal subtotal"`. **No RPC signature
-   change is needed** — only caller-side math.
+2. **The invoice RPC enforces subtotal reconciliation.**  
+   `haven_create_invoice_with_line_items` (`306_*.sql`) requires non-adjustment line totals = `p_subtotal`. Only `negotiated_concession` / `rate_premium` count as adjustments.
 
-3. **There are TWO copies of the invoice generator.** The presence-aware cohort
-   change must be made in BOTH or they drift:
-   - `src/lib/billing/generate-monthly-invoices.ts` — `buildMonthlyInvoicePreview`
-     resident query filters `status = 'active'` only (~line 190).
-   - `supabase/functions/_shared/billing/generate-monthly-invoices.ts` — the edge
-     duplicate, also filters `status = 'active'` only (~line 194).
+3. **TWO copies of the invoice generator** must stay twins:
+   - `src/lib/billing/generate-monthly-invoices.ts`
+   - `supabase/functions/_shared/billing/generate-monthly-invoices.ts`
 
-## Rate sources (already in schema, wired to nothing)
+## Rate sources
 
-- **Private pay:** `rate_schedules.bed_hold_daily_rate` (integer cents,
-  `027_*.sql:19`) — never read by any application code today.
-- **Medicaid, per provider:** `facility_medicaid_providers.bed_hold_hospital_billing`
-  (`full_rate` / `reduced_rate` / `no_pay` / `unknown`),
-  `bed_hold_hospital_reduced_rate_cents`, and `bed_hold_max_days`
-  (`217_*.sql:176–179`) — never read by any billing logic today. This is the shape
-  Jessica's policy populates.
+- **Private pay:** negotiated agreement → legacy resident monthly → `rate_schedules` posted private/companion + acuity.
+- **Medicaid:** `resident_payers.medicaid_rate` override → `facility_medicaid_providers.default_rate_cents` (Michelle defaults) → fall back to private schedule only if catalog missing.
+- **`bed_hold_daily_rate` / `bed_hold_hospital_reduced_rate_cents`:** reserved for future reduced-rate auth cases — **not** used for private-pay full-rent holds.
 
-## Read/write inconsistency to reconcile in S4
+## Read/write inconsistency (BH-3 closes)
 
-`src/lib/billing/load-invoices.ts` (`fetchActiveResidentCountForBillingScope`,
-~line 114) already counts `active` + `hospital_hold` + `loa` as the billable
-cohort, while the invoice **generator** only pulls `status = 'active'`. So a
-hospital-hold resident counts toward the billing-scope KPI but generates no
-invoice line — exactly the gap S4 closes.
+`fetchActiveResidentCountForBillingScope` already counts `active` + `hospital_hold` + `loa`. Invoice generator historically filtered `status = 'active'` only — BH-3 widens the cohort to match.
 
-## Suggested seam
+## Segment map
 
-Widen the resident query in `buildMonthlyInvoicePreview` (and the edge copy) to
-include `hospital_hold` / `loa`; for held days, emit a `'bed_hold'` line item
-priced from `bed_hold_daily_rate` (private) or the per-provider
-`facility_medicaid_providers.bed_hold_*` policy (Medicaid), folding the amount
-into `p_subtotal` / `p_total`. Optional: a `presence-bed-hold-evaluator` edge
-function mirroring `ar-aging-check`.
+| Seg | Scope |
+|-----|--------|
+| BH-0 | Policy log + this unblock (docs) |
+| BH-1 | Official discharge write path |
+| BH-2 | Medicaid catalog seed/update (all COL facilities) |
+| BH-3 | Invoice engine: cohort, Medicaid rates, admit+discharge proration, due by 5th |
+| BH-4 | Hold notified_at + decline-return fields |
+| BH-5 | Opening-balance invoice entry for Michelle |
+| BH-6 | Form 1823 annual default + hospital-return renewal |

@@ -1,10 +1,13 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 /**
  * Shared monthly invoice preview + persistence for admin UI and Edge Functions.
  * Idempotent per (facility, resident, period_start) via DB unique index (migration 071).
  * Edge duplicate: `supabase/functions/_shared/billing/generate-monthly-invoices.ts`.
+ *
+ * BH-3 (Michelle 2026-07): bill active + hospital_hold + loa; Medicaid catalog rates;
+ * admission + discharge proration; due date = 5th of billing month.
+ * Private-pay holds bill full monthly rent (not reduced daily bed_hold).
  */
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type QueryError = { message: string; code?: string };
 
@@ -15,6 +18,7 @@ export type Resident = {
   acuity_level: string;
   status: string;
   admission_date: string | null;
+  discharge_date: string | null;
   facility_id: string;
   organization_id: string;
   monthly_base_rate: number | null;
@@ -36,6 +40,15 @@ export type ResidentPayer = {
   resident_id: string;
   payer_type: string;
   payer_name: string | null;
+  medicaid_rate: number | null;
+  facility_medicaid_provider_id: string | null;
+};
+
+export type FacilityMedicaidProvider = {
+  id: string;
+  default_rate_cents: number;
+  rate_unit: string;
+  provider_name: string;
 };
 
 export type ResidentRateAgreement = {
@@ -51,7 +64,15 @@ export type ResidentRateAgreement = {
   end_date: string | null;
 };
 
-export type BillingSource = "resident_rate_agreement" | "legacy_resident_rate" | "standard_rate_schedule";
+export type BillingSource =
+  | "resident_rate_agreement"
+  | "legacy_resident_rate"
+  | "standard_rate_schedule"
+  | "medicaid_provider_rate"
+  | "medicaid_resident_override";
+
+/** Presence statuses that remain billable until official discharge. */
+export const BILLABLE_RESIDENT_STATUSES = ["active", "hospital_hold", "loa"] as const;
 
 export type PreviewLine = {
   residentId: string;
@@ -73,6 +94,7 @@ export type PreviewLine = {
   concessionReason: string | null;
   agreementId: string | null;
   prorated: boolean;
+  presenceStatus: string;
 };
 
 export function daysInMonth(year: number, month: number): number {
@@ -136,20 +158,58 @@ function prorateAmount(amount: number, factor: number): number {
   return Math.round(amount * factor);
 }
 
-function prorationFactorForResident(
-  resident: Resident,
+/** Parse YYYY-MM-DD as local calendar date (avoids UTC day shift). */
+export function parseDateOnly(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Billable-day factor for the calendar month.
+ * - Admission mid-month → from admit day through month end (or discharge if earlier).
+ * - Discharge mid-month → from month start (or admit if later) through discharge day.
+ * - Full month if neither boundary falls inside the period.
+ */
+export function prorationFactorForResident(
+  resident: Pick<Resident, "admission_date" | "discharge_date">,
   billingYear: number,
   billingMonth: number,
   days: number,
 ): { factor: number; prorated: boolean } {
-  if (!resident.admission_date) return { factor: 1, prorated: false };
-  const admDate = new Date(resident.admission_date);
-  const periodStartDate = new Date(billingYear, billingMonth - 1, 1);
-  if (Number.isNaN(admDate.getTime()) || admDate <= periodStartDate) {
-    return { factor: 1, prorated: false };
+  const periodStart = new Date(billingYear, billingMonth - 1, 1);
+  const periodEnd = new Date(billingYear, billingMonth - 1, days);
+  const adm = parseDateOnly(resident.admission_date);
+  const dis = parseDateOnly(resident.discharge_date);
+
+  let startDay = 1;
+  let endDay = days;
+  let prorated = false;
+
+  if (adm && adm.getFullYear() === billingYear && adm.getMonth() === billingMonth - 1) {
+    startDay = adm.getDate();
+    prorated = true;
+  } else if (adm && adm > periodEnd) {
+    return { factor: 0, prorated: true };
   }
-  const daysPresent = days - admDate.getDate() + 1;
+
+  if (dis && dis.getFullYear() === billingYear && dis.getMonth() === billingMonth - 1) {
+    endDay = dis.getDate();
+    prorated = true;
+  } else if (dis && dis < periodStart) {
+    return { factor: 0, prorated: true };
+  }
+
+  if (endDay < startDay) return { factor: 0, prorated: true };
+  const daysPresent = endDay - startDay + 1;
+  if (!prorated) return { factor: 1, prorated: false };
   return { factor: Math.max(0, daysPresent) / days, prorated: true };
+}
+
+export function isMedicaidPayer(payerType: string | null | undefined): boolean {
+  return payerType === "medicaid_oss";
 }
 
 export type BuildPreviewResult = {
@@ -176,19 +236,20 @@ export async function buildMonthlyInvoicePreview(
   const billingMonthText = String(billingMonth).padStart(2, "0");
   const periodStart = `${billingYear}-${billingMonthText}-01`;
   const periodEnd = `${billingYear}-${billingMonthText}-${String(days).padStart(2, "0")}`;
-  const dueDate = `${billingYear}-${billingMonthText}-15`;
+  // Michelle: private-pay rent due by the 5th.
+  const dueDate = `${billingYear}-${billingMonthText}-05`;
 
   type QR<T> = { data: T | null; error: QueryError | null };
 
   const resP = supabase
     .from("residents" as never)
     .select(
-      "id, first_name, last_name, acuity_level, status, admission_date, facility_id, organization_id, monthly_base_rate, monthly_care_surcharge, monthly_total_rate, rate_effective_date",
+      "id, first_name, last_name, acuity_level, status, admission_date, discharge_date, facility_id, organization_id, monthly_base_rate, monthly_care_surcharge, monthly_total_rate, rate_effective_date",
     )
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
-    .eq("status", "active")
-    .limit(200);
+    .in("status", [...BILLABLE_RESIDENT_STATUSES])
+    .limit(500);
 
   const rateP = supabase
     .from("rate_schedules" as never)
@@ -205,11 +266,18 @@ export async function buildMonthlyInvoicePreview(
 
   const payerP = supabase
     .from("resident_payers" as never)
-    .select("resident_id, payer_type, payer_name")
+    .select("resident_id, payer_type, payer_name, medicaid_rate, facility_medicaid_provider_id")
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .or(`end_date.is.null,end_date.gte.${periodStart}`)
     .eq("is_primary", true);
+
+  const medicaidP = supabase
+    .from("facility_medicaid_providers" as never)
+    .select("id, default_rate_cents, rate_unit, provider_name")
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null)
+    .eq("active", true);
 
   const agreementP = supabase
     .from("resident_rate_agreements" as never)
@@ -231,18 +299,26 @@ export async function buildMonthlyInvoicePreview(
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .eq("period_start", periodStart)
-    .limit(200);
+    .limit(500);
 
-  const [resResult, rateResult, payerResult, agreementResult, existingResult] =
-    (await Promise.all([resP, rateP, payerP, agreementP, existingP])) as unknown as [
+  const [resResult, rateResult, payerResult, medicaidResult, agreementResult, existingResult] =
+    (await Promise.all([resP, rateP, payerP, medicaidP, agreementP, existingP])) as unknown as [
       QR<Resident[]>,
       QR<RateSchedule[]>,
       QR<ResidentPayer[]>,
+      QR<FacilityMedicaidProvider[]>,
       QR<ResidentRateAgreement[]>,
       QR<{ resident_id: string }[]>,
     ];
 
-  for (const result of [existingResult, resResult, rateResult, payerResult, agreementResult]) {
+  for (const result of [
+    existingResult,
+    resResult,
+    rateResult,
+    payerResult,
+    medicaidResult,
+    agreementResult,
+  ]) {
     if (result.error) {
       return {
         preview: [],
@@ -259,6 +335,7 @@ export async function buildMonthlyInvoicePreview(
   const residents = resResult.data ?? [];
   const rate = (rateResult.data ?? [])[0];
   const payers = payerResult.data ?? [];
+  const medicaidProviders = medicaidResult.data ?? [];
   const agreements = agreementResult.data ?? [];
   const alreadyInvoiced = new Set((existingResult.data ?? []).map((r) => r.resident_id));
 
@@ -276,6 +353,7 @@ export async function buildMonthlyInvoicePreview(
   }
 
   const payerMap = new Map(payers.map((p) => [p.resident_id, p]));
+  const medicaidById = new Map(medicaidProviders.map((p) => [p.id, p]));
   const agreementMap = new Map<string, ResidentRateAgreement>();
   for (const agreement of agreements) {
     if (!agreementMap.has(agreement.resident_id)) {
@@ -291,6 +369,7 @@ export async function buildMonthlyInvoicePreview(
         "",
       );
       const payer = payerMap.get(r.id);
+      const payerType = payer?.payer_type ?? "private_pay";
       const surcharge = surchargeForAcuity(rate, r.acuity_level);
       const { factor, prorated } = prorationFactorForResident(r, billingYear, billingMonth, days);
       const agreement = agreementMap.get(r.id);
@@ -307,7 +386,30 @@ export async function buildMonthlyInvoicePreview(
       let negotiatedCareSurcharge = standardCareSurcharge;
       let negotiatedTotal = standardTotal;
 
-      if (agreement) {
+      if (isMedicaidPayer(payerType)) {
+        const override = payer?.medicaid_rate != null && payer.medicaid_rate > 0 ? payer.medicaid_rate : null;
+        const catalog = payer?.facility_medicaid_provider_id
+          ? medicaidById.get(payer.facility_medicaid_provider_id)
+          : null;
+        const medicaidMonthly =
+          override ??
+          (catalog && catalog.rate_unit === "monthly" ? catalog.default_rate_cents : null) ??
+          (catalog && catalog.rate_unit === "daily"
+            ? catalog.default_rate_cents * days
+            : null);
+
+        if (medicaidMonthly != null && medicaidMonthly > 0) {
+          billingSource = override != null ? "medicaid_resident_override" : "medicaid_provider_rate";
+          concessionReason = null;
+          standardBaseRate = medicaidMonthly;
+          standardCareSurcharge = 0;
+          standardTotal = medicaidMonthly;
+          negotiatedBaseRate = medicaidMonthly;
+          negotiatedCareSurcharge = 0;
+          negotiatedTotal = medicaidMonthly;
+          roomClass = "other";
+        }
+      } else if (agreement) {
         roomClass = agreement.room_class;
         billingSource = "resident_rate_agreement";
         agreementId = agreement.id;
@@ -346,8 +448,8 @@ export async function buildMonthlyInvoicePreview(
       return {
         residentId: r.id,
         residentName: name,
-        payerType: payer?.payer_type ?? "private_pay",
-        payerName: payer?.payer_name ?? "Responsible party",
+        payerType,
+        payerName: payer?.payer_name ?? (isMedicaidPayer(payerType) ? "Medicaid" : "Responsible party"),
         standardBaseRate,
         standardCareSurcharge,
         standardTotal,
@@ -357,18 +459,20 @@ export async function buildMonthlyInvoicePreview(
         baseRate: standardBaseRate,
         careSurcharge: standardCareSurcharge,
         total: negotiatedTotal,
-        acuity: surcharge.label,
+        acuity: isMedicaidPayer(payerType) ? "Medicaid" : surcharge.label,
         roomClass,
         billingSource,
         concessionReason,
         agreementId,
         prorated,
+        presenceStatus: r.status,
       };
-    });
+    })
+    .filter((line) => line.total > 0 || line.standardTotal > 0);
 
   let message: string | null = null;
   if (alreadyInvoiced.size > 0 && preview.length === 0 && residents.length > 0) {
-    message = `All ${residents.length} residents already have invoices for ${billingLabel}. No new invoices to generate.`;
+    message = `All ${residents.length} billable residents already have invoices for ${billingLabel}. No new invoices to generate.`;
   }
 
   return {
@@ -410,15 +514,19 @@ export async function persistMonthlyInvoicesFromPreview(
   const ym = `${billingYear}-${String(billingMonth).padStart(2, "0")}`;
   for (let i = 0; i < preview.length; i++) {
     const line = preview[i];
-    // Stable per resident+month (not preview index) so retries/idempotent runs do not collide on idx_invoices_number.
     const invoiceNumber = `${facilityCode}-${ym}-${line.residentId}`;
+
+    const holdNote =
+      line.presenceStatus === "hospital_hold" || line.presenceStatus === "loa"
+        ? " (bed hold — full monthly per COL policy)"
+        : "";
 
     const lineItems = [
       {
         line_type: "room_and_board",
         description: line.prorated
-          ? `${roomClassLabel(line.roomClass)} — Prorated standard rate (${monthLabel(billingYear, billingMonth)})`
-          : `${roomClassLabel(line.roomClass)} — Standard monthly rate`,
+          ? `${roomClassLabel(line.roomClass)} — Prorated${holdNote} (${monthLabel(billingYear, billingMonth)})`
+          : `${roomClassLabel(line.roomClass)} — Standard monthly rate${holdNote}`,
         quantity: 1,
         unit_price: line.standardBaseRate,
         total: line.standardBaseRate,
@@ -457,7 +565,12 @@ export async function persistMonthlyInvoicesFromPreview(
         ? `Generated from resident negotiated billing agreement ${line.agreementId}.`
         : line.billingSource === "legacy_resident_rate"
           ? "Generated from imported resident monthly rate until a negotiated agreement is confirmed."
-          : null;
+          : line.billingSource === "medicaid_provider_rate" ||
+              line.billingSource === "medicaid_resident_override"
+            ? "Generated from Medicaid provider / resident override rate (Michelle COL defaults)."
+            : line.presenceStatus === "hospital_hold" || line.presenceStatus === "loa"
+              ? "Generated while resident on bed hold — full monthly rent per COL policy."
+              : null;
 
     const rpcResult = (await supabase.rpc("haven_create_invoice_with_line_items" as never, {
       p_facility_id: facilityId,

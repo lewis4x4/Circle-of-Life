@@ -12428,6 +12428,9 @@ export type Database = {
           food_preferences: string | null
           gender: Database["public"]["Enums"]["gender"]
           gender_other: string | null
+          hold_case_manager_notified_at: string | null
+          hold_decline_return_at: string | null
+          hold_decline_return_notes: string | null
           hospice_status: Database["public"]["Enums"]["hospice_status"]
           id: string
           last_name: string
@@ -12513,6 +12516,9 @@ export type Database = {
           food_preferences?: string | null
           gender: Database["public"]["Enums"]["gender"]
           gender_other?: string | null
+          hold_case_manager_notified_at?: string | null
+          hold_decline_return_at?: string | null
+          hold_decline_return_notes?: string | null
           hospice_status?: Database["public"]["Enums"]["hospice_status"]
           id?: string
           last_name: string
@@ -12598,6 +12604,9 @@ export type Database = {
           food_preferences?: string | null
           gender?: Database["public"]["Enums"]["gender"]
           gender_other?: string | null
+          hold_case_manager_notified_at?: string | null
+          hold_decline_return_at?: string | null
+          hold_decline_return_notes?: string | null
           hospice_status?: Database["public"]["Enums"]["hospice_status"]
           id?: string
           last_name?: string
@@ -15883,6 +15892,10 @@ export type Database = {
         | "non_payment"
         | "behavioral"
         | "other"
+        | "resident_voluntary"
+        | "facility_with_cause"
+        | "facility_immediate"
+        | "medicaid_relocation"
       driver_credential_status: "active" | "suspended" | "expired"
       emar_status:
         | "scheduled"

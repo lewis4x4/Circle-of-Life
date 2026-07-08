@@ -18,7 +18,14 @@ import {
 } from "@/design-system/components/record-detail";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
-  residents: { first_name: string; last_name: string; discharge_target_date: string | null; hospice_status: string } | null;
+  residents: {
+    first_name: string;
+    last_name: string;
+    status: string | null;
+    discharge_date: string | null;
+    discharge_target_date: string | null;
+    hospice_status: string;
+  } | null;
 };
 
 const HOSPICE_OPTIONS: Array<Database["public"]["Enums"]["hospice_status"]> = [
@@ -26,6 +33,21 @@ const HOSPICE_OPTIONS: Array<Database["public"]["Enums"]["hospice_status"]> = [
   "pending",
   "active",
   "ended",
+];
+
+const DISCHARGE_REASONS: Array<Database["public"]["Enums"]["discharge_reason"]> = [
+  "resident_voluntary",
+  "facility_with_cause",
+  "facility_immediate",
+  "medicaid_relocation",
+  "higher_level_of_care",
+  "hospital_permanent",
+  "another_alf",
+  "home",
+  "death",
+  "non_payment",
+  "behavioral",
+  "other",
 ];
 
 function formatStatus(s: string) {
@@ -59,6 +81,10 @@ export default function AdminDischargeDetailPage() {
   const [pharmacistNpiDraft, setPharmacistNpiDraft] = useState("");
   const [dischargeTargetDraft, setDischargeTargetDraft] = useState("");
   const [hospiceStatusDraft, setHospiceStatusDraft] = useState<Database["public"]["Enums"]["hospice_status"]>("none");
+  const [officialDischargeDate, setOfficialDischargeDate] = useState("");
+  const [officialDischargeReason, setOfficialDischargeReason] =
+    useState<Database["public"]["Enums"]["discharge_reason"]>("resident_voluntary");
+  const [officialDischargeDestination, setOfficialDischargeDestination] = useState("");
 
   const load = useCallback(async () => {
     if (!id) {
@@ -72,7 +98,7 @@ export default function AdminDischargeDetailPage() {
     const { data, error: qErr } = await supabase
       .from("discharge_med_reconciliation")
       .select(
-        "*, residents(first_name, last_name, discharge_target_date, hospice_status)",
+        "*, residents(first_name, last_name, status, discharge_date, discharge_target_date, hospice_status)",
       )
       .eq("id", id)
       .is("deleted_at", null)
@@ -90,6 +116,13 @@ export default function AdminDischargeDetailPage() {
       setPharmacistNpiDraft(loadedRow?.pharmacist_npi ?? "");
       setDischargeTargetDraft(loadedRow?.residents?.discharge_target_date ?? "");
       setHospiceStatusDraft((loadedRow?.residents?.hospice_status as Database["public"]["Enums"]["hospice_status"] | undefined) ?? "none");
+      const todayIso = new Date().toISOString().slice(0, 10);
+      setOfficialDischargeDate(
+        loadedRow?.residents?.discharge_date ??
+          loadedRow?.residents?.discharge_target_date ??
+          loadedRow?.expected_discharge_date ??
+          todayIso,
+      );
     }
     setLoading(false);
   }, [supabase, id]);
@@ -162,6 +195,48 @@ export default function AdminDischargeDetailPage() {
       setActionLoading(null);
     }
   }
+
+  /** BH-1: official discharge — belongings out; stops full monthly rent / bed hold. */
+  async function completeOfficialDischarge() {
+    if (!row?.resident_id) return;
+    if (!officialDischargeDate) {
+      setActionError("Choose the official discharge date (belongings removed).");
+      return;
+    }
+    const successMessage = "Official discharge recorded — resident is no longer billable.";
+    setActionLoading(successMessage);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const status: Database["public"]["Enums"]["resident_status"] =
+        officialDischargeReason === "death" ? "deceased" : "discharged";
+      const { error: updateError } = await supabase
+        .from("residents")
+        .update({
+          status,
+          discharge_date: officialDischargeDate,
+          discharge_reason: officialDischargeReason,
+          discharge_destination: officialDischargeDestination.trim() || null,
+          bed_id: null,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id ?? null,
+        })
+        .eq("id", row.resident_id);
+      if (updateError) throw updateError;
+      setActionMessage(successMessage);
+      await load();
+    } catch (err) {
+      logSupabasePostgrestError("discharge-detail.official-discharge", err, {
+        reconciliationId: row?.id,
+      });
+      setActionError("Couldn't complete official discharge. Retry or refresh.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  const alreadyOfficiallyDischarged =
+    row?.residents?.status === "discharged" || row?.residents?.status === "deceased";
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -406,6 +481,84 @@ export default function AdminDischargeDetailPage() {
                 {actionLoading === "Reconciliation marked complete." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mark complete"}
               </Button>
             </div>
+          </RecordDetailSection>
+
+          <RecordDetailSection
+            title="Official discharge (billing cutoff)"
+            description="Use when belongings are removed and the resident is no longer on census. Stops full monthly rent / bed-hold billing. Med rec complete is recommended first."
+          >
+            {alreadyOfficiallyDischarged ? (
+              <p className="text-sm text-muted-foreground">
+                Resident status is already{" "}
+                <span className="font-medium text-foreground">{formatStatus(row.residents?.status ?? "")}</span>
+                {row.residents?.discharge_date ? ` (discharge date ${row.residents.discharge_date})` : ""}.
+              </p>
+            ) : (
+              <div className="space-y-4 text-sm">
+                {row.status !== "complete" ? (
+                  <p className="rounded-[8px] border border-warning/20 bg-warning/10 px-4 py-3 text-warning">
+                    Medication reconciliation is not marked complete yet. You can still record official
+                    discharge if belongings are out; finish med rec when able.
+                  </p>
+                ) : null}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Official discharge date
+                    </span>
+                    <input
+                      type="date"
+                      value={officialDischargeDate}
+                      onChange={(event) => setOfficialDischargeDate(event.target.value)}
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Discharge reason
+                    </span>
+                    <select
+                      value={officialDischargeReason}
+                      onChange={(event) =>
+                        setOfficialDischargeReason(
+                          event.target.value as Database["public"]["Enums"]["discharge_reason"],
+                        )
+                      }
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      {DISCHARGE_REASONS.map((reason) => (
+                        <option key={reason} value={reason}>
+                          {formatStatus(reason)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-1.5 sm:col-span-2">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Destination (optional)
+                    </span>
+                    <input
+                      value={officialDischargeDestination}
+                      onChange={(event) => setOfficialDischargeDestination(event.target.value)}
+                      placeholder="Home, another ALF, hospital, etc."
+                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                </div>
+                <Button
+                  type="button"
+                  disabled={!!actionLoading || !officialDischargeDate}
+                  onClick={() => void completeOfficialDischarge()}
+                >
+                  {actionLoading ===
+                  "Official discharge recorded — resident is no longer billable." ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Complete official discharge"
+                  )}
+                </Button>
+              </div>
+            )}
           </RecordDetailSection>
 
           {row.resident_id ? (

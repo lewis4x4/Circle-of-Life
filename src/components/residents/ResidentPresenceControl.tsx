@@ -16,6 +16,9 @@ import {
 import { StatusPill } from "@/components/ui/status-pill";
 import { createClient } from "@/lib/supabase/client";
 import {
+  shouldRequireForm1823RenewalOnPresenceChange,
+} from "@/lib/admissions/form-1823-renewal";
+import {
   PRESENCE_OPTIONS,
   presenceLabel,
   presenceTone,
@@ -36,6 +39,9 @@ import { cn } from "@/lib/utils";
  *
  * Only the three in-census presence states are offered — this control cannot
  * discharge or otherwise change lifecycle, by design.
+ *
+ * BH-4: hospital_hold stamps hold_case_manager_notified_at when empty.
+ * BH-6: hospital_hold → active marks latest Form 1823 renewal_due.
  */
 export function ResidentPresenceControl({
   residentId,
@@ -73,11 +79,72 @@ export function ResidentPresenceControl({
         setPending(null);
         return;
       }
+
+      const { data: currentRow, error: currentErr } = await supabase
+        .from("residents")
+        .select("status, hold_case_manager_notified_at, organization_id, facility_id")
+        .eq("id", residentId)
+        .maybeSingle();
+      if (currentErr) throw currentErr;
+
+      const previousDbStatus =
+        ((currentRow as { status?: string | null } | null)?.status as string | null) ?? null;
+      const nextDb = residencyStatusToDbValue(next);
+      const notifiedAt = (currentRow as { hold_case_manager_notified_at?: string | null } | null)
+        ?.hold_case_manager_notified_at;
+      const patch: Record<string, unknown> = {
+        status: nextDb,
+        updated_by: user.id,
+      };
+
+      // BH-4: Medicaid hold clock — stamp case-manager notified when entering hospital hold.
+      if (nextDb === "hospital_hold" && !notifiedAt) {
+        patch.hold_case_manager_notified_at = new Date().toISOString();
+      }
+
+      // Private-pay decline-return clears when returning in-house.
+      if (nextDb === "active") {
+        patch.hold_decline_return_at = null;
+        patch.hold_decline_return_notes = null;
+      }
+
       const { error } = await supabase
         .from("residents")
-        .update({ status: residencyStatusToDbValue(next), updated_by: user.id })
+        .update(patch as never)
         .eq("id", residentId);
       if (error) throw error;
+
+      // BH-6: return from hospital → Form 1823 renewal due.
+      if (
+        shouldRequireForm1823RenewalOnPresenceChange({
+          previousDbStatus,
+          nextDbStatus: nextDb,
+        })
+      ) {
+        const { error: formErr } = await supabase
+          .from("form_1823_records" as never)
+          .update({
+            status: "renewal_due",
+            updated_by: user.id,
+            updated_at: new Date().toISOString(),
+          } as never)
+          .eq("resident_id", residentId)
+          .is("deleted_at", null)
+          .in("status", ["received", "pending", "renewal_due"]);
+        if (formErr) {
+          // Presence already saved — surface advisory only.
+          toast.message(
+            "Presence updated. Mark Form 1823 renewal when the new physician report arrives.",
+          );
+        } else {
+          toast.success(
+            `Presence updated — ${presenceLabel(next)}. Form 1823 marked renewal due.`,
+          );
+          onChanged?.(next);
+          return;
+        }
+      }
+
       toast.success(`Presence updated — ${presenceLabel(next)}.`);
       onChanged?.(next);
     } catch (e) {

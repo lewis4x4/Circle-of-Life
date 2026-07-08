@@ -14,7 +14,7 @@
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`306` (`306_resident_rate_agreements_concessions.sql`) — **next free migration: `307`** |
+| Repo migrations | `001`–`307` (`307_michelle_bed_hold_medicaid_catalog.sql`) — **next free migration: `308`** |
 | README "current state" drift | Reconcile `docs/specs/README.md` when the next DDL segment ships; treat **this file + the migrations folder** as current |
 | Pilot | Oakridge ALF live pilot; Homewood Lodge launch workstream in repo (`docs/homewood/`) |
 | Production | Netlify auto-publish from `main` only |

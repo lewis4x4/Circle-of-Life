@@ -252,7 +252,7 @@ export default function ResidentBillingPage() {
           .select("id, provider_name, rate_unit")
           .eq("facility_id", r.facility_id)
           .is("deleted_at", null)
-          .eq("is_active", true)
+          .eq("active", true)
           .order("provider_name", { ascending: true }),
       ])) as unknown as [QueryListResult<SupabasePayer>, QueryListResult<RateSchedule>, QueryListResult<RateAgreement>, QueryListResult<MedicaidProvider>];
 

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const DEST_LINKS = [
   { href: "/admin/billing", label: "Overview" },
   { href: "/admin/billing/invoices", label: "Invoices" },
+  { href: "/admin/billing/invoices/opening-balance", label: "Opening balance" },
   { href: "/admin/billing/ar-aging", label: "AR aging" },
   { href: "/admin/billing/rates", label: "Rate library" },
   { href: "/admin/billing/concessions", label: "Concessions" },

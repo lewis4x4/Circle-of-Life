@@ -22,6 +22,7 @@ import {
 } from "@/components/residents/resident-clinical-overview-widgets";
 import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/components/residents/ResidentDetailTabStrip";
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
+import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -463,11 +464,18 @@ export function ResidentDetailOverviewClient({
                 <div className="mt-1 flex flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {isPresenceStatus(detail.rawStatus) ? (
-                      <ResidentPresenceControl
-                        residentId={detail.id}
-                        status={detail.status}
-                        onChanged={onAfterLog}
-                      />
+                      <>
+                        <ResidentPresenceControl
+                          residentId={detail.id}
+                          status={detail.status}
+                          onChanged={onAfterLog}
+                        />
+                        <HoldDeclineReturnButton
+                          residentId={detail.id}
+                          status={detail.status}
+                          onDone={onAfterLog}
+                        />
+                      </>
                     ) : (
                       <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
                     )}
