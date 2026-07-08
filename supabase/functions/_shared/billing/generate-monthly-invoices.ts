@@ -361,9 +361,11 @@ export async function buildMonthlyInvoicePreview(
     }
   }
 
+  const medicaidRateMissing: string[] = [];
+
   const preview: PreviewLine[] = residents
     .filter((r) => !alreadyInvoiced.has(r.id))
-    .map((r) => {
+    .map((r): PreviewLine | null => {
       const name = `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(
         /^, |, $/,
         "",
@@ -398,17 +400,21 @@ export async function buildMonthlyInvoicePreview(
             ? catalog.default_rate_cents * days
             : null);
 
-        if (medicaidMonthly != null && medicaidMonthly > 0) {
-          billingSource = override != null ? "medicaid_resident_override" : "medicaid_provider_rate";
-          concessionReason = null;
-          standardBaseRate = medicaidMonthly;
-          standardCareSurcharge = 0;
-          standardTotal = medicaidMonthly;
-          negotiatedBaseRate = medicaidMonthly;
-          negotiatedCareSurcharge = 0;
-          negotiatedTotal = medicaidMonthly;
-          roomClass = "other";
+        if (medicaidMonthly == null || medicaidMonthly <= 0) {
+          // Never fall through to the private-pay schedule for a Medicaid resident —
+          // skip and surface a warning so staff link a provider or set an override.
+          medicaidRateMissing.push(name || r.id);
+          return null;
         }
+        billingSource = override != null ? "medicaid_resident_override" : "medicaid_provider_rate";
+        concessionReason = null;
+        standardBaseRate = medicaidMonthly;
+        standardCareSurcharge = 0;
+        standardTotal = medicaidMonthly;
+        negotiatedBaseRate = medicaidMonthly;
+        negotiatedCareSurcharge = 0;
+        negotiatedTotal = medicaidMonthly;
+        roomClass = "other";
       } else if (agreement) {
         roomClass = agreement.room_class;
         billingSource = "resident_rate_agreement";
@@ -439,7 +445,10 @@ export async function buildMonthlyInvoicePreview(
 
       standardBaseRate = prorateAmount(standardBaseRate, factor);
       standardCareSurcharge = prorateAmount(standardCareSurcharge, factor);
-      standardTotal = prorateAmount(standardTotal, factor);
+      // The RPC requires non-adjustment line items to sum exactly to p_subtotal,
+      // so the subtotal must be the sum of the already-rounded line amounts —
+      // rounding the prorated total independently can drift by a cent.
+      standardTotal = standardBaseRate + standardCareSurcharge;
       negotiatedBaseRate = prorateAmount(negotiatedBaseRate, factor);
       negotiatedCareSurcharge = prorateAmount(negotiatedCareSurcharge, factor);
       negotiatedTotal = prorateAmount(negotiatedTotal, factor);
@@ -468,10 +477,14 @@ export async function buildMonthlyInvoicePreview(
         presenceStatus: r.status,
       };
     })
-    .filter((line) => line.total > 0 || line.standardTotal > 0);
+    .filter((line): line is PreviewLine =>
+      line != null && (line.total > 0 || line.standardTotal > 0),
+    );
 
   let message: string | null = null;
-  if (alreadyInvoiced.size > 0 && preview.length === 0 && residents.length > 0) {
+  if (medicaidRateMissing.length > 0) {
+    message = `Skipped ${medicaidRateMissing.length} Medicaid resident(s) with no usable rate (link a facility Medicaid provider or set a resident rate override): ${medicaidRateMissing.join("; ")}.`;
+  } else if (alreadyInvoiced.size > 0 && preview.length === 0 && residents.length > 0) {
     message = `All ${residents.length} billable residents already have invoices for ${billingLabel}. No new invoices to generate.`;
   }
 

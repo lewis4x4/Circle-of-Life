@@ -222,6 +222,145 @@ describe("buildMonthlyInvoicePreview", () => {
     );
   });
 
+  it("keeps prorated line items summing exactly to the subtotal (half-cent boundary)", async () => {
+    // April 2026: admitted on the 16th → factor 15/30 = 0.5.
+    // 333333 * 0.5 and 55555 * 0.5 both land on .5 — independently rounding the
+    // total used to drift one cent from the line-item sum and trip the RPC guard.
+    const queryResults = new Map<string, MockQueryResult>([
+      [
+        "residents",
+        {
+          data: [
+            {
+              id: "resident-r",
+              first_name: "Rae",
+              last_name: "Round",
+              acuity_level: "level_1",
+              status: "active",
+              admission_date: "2026-04-16",
+              discharge_date: null,
+              facility_id: "facility-1",
+              organization_id: "org-1",
+            },
+          ],
+          error: null,
+        },
+      ],
+      [
+        "rate_schedules",
+        {
+          data: [
+            {
+              id: "rate-1",
+              base_rate_private: 333333,
+              base_rate_semi_private: null,
+              care_surcharge_level_1: 55555,
+              care_surcharge_level_2: 0,
+              care_surcharge_level_3: 0,
+            },
+          ],
+          error: null,
+        },
+      ],
+      ["resident_payers", { data: [], error: null }],
+      ["facility_medicaid_providers", { data: [], error: null }],
+      ["resident_rate_agreements", { data: [], error: null }],
+      ["invoices", { data: [], error: null }],
+    ]);
+
+    const supabase = {
+      from: vi.fn(
+        (table: string) =>
+          new PreviewQueryMock(queryResults.get(table) ?? { data: [], error: null }),
+      ),
+    } as never;
+
+    const result = await buildMonthlyInvoicePreview(supabase, {
+      facilityId: "facility-1",
+      billingYear: 2026,
+      billingMonth: 4,
+    });
+
+    const line = result.preview[0];
+    expect(line.standardBaseRate + line.standardCareSurcharge).toBe(line.standardTotal);
+    expect(line.standardTotal).toBe(166667 + 27778);
+  });
+
+  it("skips Medicaid residents with no usable rate instead of billing private", async () => {
+    const queryResults = new Map<string, MockQueryResult>([
+      [
+        "residents",
+        {
+          data: [
+            {
+              id: "resident-nolink",
+              first_name: "Nia",
+              last_name: "Unlinked",
+              acuity_level: "level_1",
+              status: "active",
+              admission_date: "2025-01-01",
+              discharge_date: null,
+              facility_id: "facility-1",
+              organization_id: "org-1",
+            },
+          ],
+          error: null,
+        },
+      ],
+      [
+        "rate_schedules",
+        {
+          data: [
+            {
+              id: "rate-1",
+              base_rate_private: 555000,
+              base_rate_semi_private: null,
+              care_surcharge_level_1: 0,
+              care_surcharge_level_2: 0,
+              care_surcharge_level_3: 0,
+            },
+          ],
+          error: null,
+        },
+      ],
+      [
+        "resident_payers",
+        {
+          data: [
+            {
+              resident_id: "resident-nolink",
+              payer_type: "medicaid_oss",
+              payer_name: "Medicaid",
+              medicaid_rate: null,
+              facility_medicaid_provider_id: null,
+            },
+          ],
+          error: null,
+        },
+      ],
+      ["facility_medicaid_providers", { data: [], error: null }],
+      ["resident_rate_agreements", { data: [], error: null }],
+      ["invoices", { data: [], error: null }],
+    ]);
+
+    const supabase = {
+      from: vi.fn(
+        (table: string) =>
+          new PreviewQueryMock(queryResults.get(table) ?? { data: [], error: null }),
+      ),
+    } as never;
+
+    const result = await buildMonthlyInvoicePreview(supabase, {
+      facilityId: "facility-1",
+      billingYear: 2026,
+      billingMonth: 5,
+    });
+
+    expect(result.preview).toHaveLength(0);
+    expect(result.error).toContain("Skipped 1 Medicaid resident");
+    expect(result.error).toContain("Unlinked, Nia");
+  });
+
   it("uses Medicaid catalog monthly rate for medicaid_oss payers", async () => {
     const queryResults = new Map<string, MockQueryResult>([
       [
