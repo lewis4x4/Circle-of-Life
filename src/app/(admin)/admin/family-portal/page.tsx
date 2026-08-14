@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { addDays, format } from "date-fns";
-import { AlertCircle, Calendar, FileText, MessageCircle } from "lucide-react";
+import { AlertCircle, Calendar, ClipboardList, FileText } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -360,9 +360,12 @@ export default function AdminFamilyPortalPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Family Connections</h1>
         <p className="max-w-[52rem] text-[13px] leading-relaxed text-muted-foreground">
-          Family Connections at <span className="font-medium text-foreground">{subtitleFacility}</span>. Surface family
-          messages that need clinical follow-up, track care conferences, and verify consent records for surveyor
-          readiness.
+          Family Connections at <span className="font-medium text-foreground">{subtitleFacility}</span>. Post one-way
+          bulletin notes for families to read on the portal, surface staff notes that need clinical follow-up, track
+          care conferences, and verify consent records for surveyor readiness.
+        </p>
+        <p className="max-w-[52rem] text-[12px] leading-relaxed text-muted-foreground">
+          Haven → family only. Families cannot reply in the portal; staff post updates from the bulletin log.
         </p>
       </header>
 
@@ -430,7 +433,7 @@ export default function AdminFamilyPortalPage() {
         <div className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <AlertCircle className={cn("h-5 w-5 shrink-0", triageIconClass)} aria-hidden />
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Message triage</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Posted-note triage</h2>
             {triageFilter !== "all" ? (
               <Badge variant="outline" className="font-normal">
                 {featuredTriage.length} visible
@@ -444,8 +447,8 @@ export default function AdminFamilyPortalPage() {
               "inline-flex items-center gap-2 self-start text-[13px] font-medium sm:self-auto",
             )}
           >
-            <MessageCircle className="h-4 w-4" aria-hidden />
-            Go to direct messages
+            <ClipboardList className="h-4 w-4" aria-hidden />
+            Post family bulletin
           </Link>
         </div>
 
@@ -497,7 +500,10 @@ export default function AdminFamilyPortalPage() {
             ) : loading ? (
               <QuietEmptyState>Loading…</QuietEmptyState>
             ) : triage.length === 0 ? (
-              <QuietEmptyState>No clinical triage anomalies detected in family messages.</QuietEmptyState>
+              <QuietEmptyState>
+                No clinical triage flags on posted family notes. Staff bulletin posts families can read will appear
+                here when keywords need review.
+              </QuietEmptyState>
             ) : featuredTriage.length === 0 ? (
               <QuietEmptyState>No triage items match this filter.</QuietEmptyState>
             ) : (
