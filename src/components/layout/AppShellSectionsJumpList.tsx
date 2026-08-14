@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 
 function entrySearchValue(entry: SectionJumpEntry): string {
-  const parts = [entry.label, entry.href, entry.pillarLabel ?? "", entry.group].filter(Boolean);
+  const parts = [entry.label, entry.href, entry.pillarLabel ?? ""].filter(Boolean);
   return parts.join(" ").toLowerCase();
 }
 
