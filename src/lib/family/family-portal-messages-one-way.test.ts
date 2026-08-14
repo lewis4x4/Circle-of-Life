@@ -16,6 +16,7 @@ const migrationPath = path.join(
 const familyDataPath = path.join(repoRoot, "src/lib/family/family-messages-data.ts");
 const familyPagePath = path.join(repoRoot, "src/app/(family)/family/messages/page.tsx");
 const staffPagePath = path.join(repoRoot, "src/app/(admin)/admin/family-messages/page.tsx");
+const familyFeedPath = path.join(repoRoot, "src/lib/family/family-feed.ts");
 const staffComposerPath = path.join(
   repoRoot,
   "src/components/family-portal/StaffFamilyNoteComposer.tsx",
@@ -76,6 +77,24 @@ describe("family portal messages one-way policy", () => {
 
   it("staff post helper remains available for one-way notes", () => {
     expect(typeof postStaffMessage).toBe("function");
+  });
+});
+
+describe("family home feed surfaces staff bulletin notes", () => {
+  it("family-feed queries staff-only portal messages for linked residents", () => {
+    const source = fs.readFileSync(familyFeedPath, "utf8");
+    expect(source).toMatch(/family_portal_messages/);
+    expect(source).toMatch(/\.eq\("author_kind", "staff"\)/);
+    expect(source).toMatch(/featuredNote/);
+  });
+
+  it("family home page spotlights the latest staff note before the journal feed", () => {
+    const homePath = path.join(repoRoot, "src/app/(family)/family/page.tsx");
+    const source = fs.readFileSync(homePath, "utf8");
+    expect(source).toMatch(/FeaturedStaffNote/);
+    expect(source).toMatch(/featuredNote/);
+    expect(source).not.toMatch(/postFamilyMessage/);
+    expect(source).not.toMatch(/Send/);
   });
 });
 

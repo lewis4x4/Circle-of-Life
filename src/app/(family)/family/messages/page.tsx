@@ -125,7 +125,7 @@ export default function FamilyMessagesPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pb-16 pt-8 md:pb-0">
       <FamilySectionIntro
-        active="messages"
+        active="updates"
         title="Care team updates"
         description="Read-only notes from your care team. This portal does not support replies."
         residentSummary={

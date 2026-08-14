@@ -3,13 +3,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Banknote, FileText, Loader2, Shield, Heart, ChevronRight } from "lucide-react";
+import { Banknote, FileText, Loader2, Shield, Heart, ChevronRight, Megaphone } from "lucide-react";
 
 import {
   fetchFamilyHomeSnapshot,
   type FamilyFeedItem,
+  type FamilyFeedNoteItem,
   type FamilyHomeSnapshot,
 } from "@/lib/family/family-feed";
+import { FamilyPortalNoteEntry } from "@/components/family-portal/FamilyPortalNoteEntry";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -144,6 +146,9 @@ export default function FamilyHomePage() {
           {snapshot.linkedResidents > 0 && (
             <div className="mx-auto flex w-full max-w-lg flex-wrap justify-center gap-2">
               <StatChip label="Connected" value={snapshot.stats.linkedResidents} />
+              {Number(snapshot.stats.staffNotes) > 0 && (
+                <StatChip label="Team updates" value={snapshot.stats.staffNotes} />
+              )}
               <StatChip label="Recent Clinical" value={snapshot.stats.clinicalWeek} />
               {Number(snapshot.stats.billingOpen) > 0 && (
                 <StatChip label="Open Invoices" value={snapshot.stats.billingOpen} />
@@ -151,6 +156,10 @@ export default function FamilyHomePage() {
             </div>
           )}
         </div>
+
+        {snapshot.featuredNote ? (
+          <FeaturedStaffNote note={snapshot.featuredNote} />
+        ) : null}
 
         {/* Journal feed */}
         <div className="mt-10 w-full md:mt-16">
@@ -162,18 +171,36 @@ export default function FamilyHomePage() {
             <div className="h-px flex-1 bg-border"></div>
           </div>
 
-          {snapshot.linkedResidents === 0 || snapshot.items.length === 0 ? (
+          {snapshot.linkedResidents === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center">
               <p className="font-serif text-xl italic text-muted-foreground">The journal is quiet right now.</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Updates will flow in gently when your team posts them.
+                Ask your facility for an invitation link to connect your loved one.
               </p>
+            </div>
+          ) : snapshot.items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <p className="font-serif text-xl italic text-muted-foreground">No recent activity yet.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Care team updates and billing notices will appear here when posted.
+              </p>
+              <Link
+                href="/family/messages"
+                className={cn(
+                  "mt-6 inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+                )}
+              >
+                View care team updates
+              </Link>
             </div>
           ) : (
             <div className="space-y-6 md:space-y-8">
-              {snapshot.items.map((item) => (
-                <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
-              ))}
+              {snapshot.items
+                .filter((item) => item.kind !== "note" || item.id !== snapshot.featuredNote?.id)
+                .map((item) => (
+                  <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
+                ))}
             </div>
           )}
         </div>
@@ -182,20 +209,64 @@ export default function FamilyHomePage() {
   );
 }
 
+function FeaturedStaffNote({ note }: { note: FamilyFeedNoteItem }) {
+  return (
+    <section
+      aria-label="Latest care team update"
+      className="mb-10 w-full rounded-lg border border-primary/20 bg-card/95 p-5 shadow-sm backdrop-blur-sm md:p-6"
+    >
+      <div className="mb-4 flex items-center gap-2 text-primary">
+        <Megaphone className="h-4 w-4 shrink-0" aria-hidden />
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em]">Latest from your care team</p>
+      </div>
+      <FamilyPortalNoteEntry
+        id={note.id}
+        body={note.body}
+        timestamp={note.sortAt}
+        authorLabel="Care team"
+        variant="staff"
+      />
+      <div className="mt-4 flex justify-end">
+        <Link
+          href={note.href}
+          className={cn(
+            "inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:text-primary/80",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+          )}
+        >
+          View all updates
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
   const isInvoice = item.kind === "invoice";
+  const isNote = item.kind === "note";
   const isClinical = item.badge === "Clinical";
 
   const iconWrapClass = isInvoice
     ? "bg-warning/10 border-warning/30"
-    : isClinical
-      ? "bg-success/10 border-success/30"
-      : "bg-info/10 border-info/30";
+    : isNote
+      ? "bg-primary/10 border-primary/30"
+      : isClinical
+        ? "bg-success/10 border-success/30"
+        : "bg-info/10 border-info/30";
 
-  const iconColorClass = isInvoice ? "text-warning" : isClinical ? "text-success" : "text-info";
+  const iconColorClass = isInvoice
+    ? "text-warning"
+    : isNote
+      ? "text-primary"
+      : isClinical
+        ? "text-success"
+        : "text-info";
 
   const icon = isInvoice ? (
     <Banknote className={cn("h-5 w-5", iconColorClass)} />
+  ) : isNote ? (
+    <Megaphone className={cn("h-5 w-5", iconColorClass)} />
   ) : isClinical ? (
     <Heart className={cn("h-5 w-5", iconColorClass)} />
   ) : (
@@ -238,7 +309,7 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
 
   return (
     <div className="relative w-full">
-      {isInvoice ? (
+      {isInvoice || isNote ? (
         <Link
           href={item.href}
           className="block rounded-lg outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
