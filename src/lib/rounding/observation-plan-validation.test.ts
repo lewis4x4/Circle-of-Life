@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPlanSchedulePreview,
+  getNextScheduledChecks,
   getObservationPlanSaveBlockers,
   getRuleChecksPerDay,
   validateEffectiveWindow,
@@ -125,5 +126,23 @@ describe("observation plan preview", () => {
     expect(preview.nextChecks).toHaveLength(12);
     expect(preview.nextChecks[0]?.getHours()).toBe(7);
     expect(preview.nextChecks[11]?.getHours()).toBe(18);
+  });
+
+  it("includes remaining morning checks from an overnight window that started yesterday", () => {
+    const homewoodNightRule: PlanRuleInput = {
+      intervalType: "fixed_minutes",
+      intervalMinutes: 120,
+      shift: "night",
+      daypartStart: "18:00",
+      daypartEnd: "06:00",
+      graceMinutes: 30,
+      active: true,
+      sortOrder: 0,
+    };
+    const now = new Date(2026, 0, 2, 1, 0);
+
+    const nextChecks = getNextScheduledChecks([homewoodNightRule], now);
+
+    expect(nextChecks.map((check) => check.getHours()).slice(0, 3)).toEqual([2, 4, 6]);
   });
 });

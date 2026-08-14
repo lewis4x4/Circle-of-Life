@@ -106,7 +106,11 @@ export function getNextScheduledChecks(
     const spanMinutes = end < start ? end + 24 * 60 - start : end - start;
     if (spanMinutes < 0) continue;
 
-    for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
+    const isOvernight = end < start;
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const minDayOffset = isOvernight && nowMinutes <= end ? -1 : 0;
+
+    for (let dayOffset = minDayOffset; dayOffset <= 1; dayOffset += 1) {
       for (let offset = 0; offset <= spanMinutes; offset += intervalMinutes) {
         const minuteOfDay = (start + offset) % (24 * 60);
         const candidate = new Date(now);

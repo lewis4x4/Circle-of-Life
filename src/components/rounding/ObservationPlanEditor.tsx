@@ -531,7 +531,7 @@ export function ObservationPlanEditor({
             description={`The census at ${facilityName} is empty right now. You can still draft cadence rules, but choose a resident once someone is admitted before saving a plan.`}
           />
         ) : null}
-        {!loadError && isNewPlan ? (
+        {!loadError && isNewPlan && cadenceKey != null ? (
           <CadenceDefaultsPanel
             templates={templates}
             selectedTemplateId={selectedTemplateId}
