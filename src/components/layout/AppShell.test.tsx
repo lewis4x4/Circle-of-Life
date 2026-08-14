@@ -145,6 +145,23 @@ describe("AppShell all-sections jump list", () => {
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
 
+  it("closes when the trigger is clicked again", async () => {
+    const user = userEvent.setup();
+    renderAppShell();
+
+    const trigger = screen.getByRole("button", { name: /open all sections menu/i });
+    await user.click(trigger);
+
+    await screen.findByTestId("all-sections-jump-list");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(trigger);
+
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+
   it("filters the full section list as the operator types", async () => {
     const user = userEvent.setup();
     renderAppShell();

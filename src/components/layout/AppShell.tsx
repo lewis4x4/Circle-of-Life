@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import {
   HavenNavLink,
@@ -100,10 +101,10 @@ const AppShellCommandPalette = dynamic(
   { ssr: false, loading: () => null },
 );
 
-const AppShellSectionsJumpList = dynamic(
+const AppShellSectionsJumpListPanel = dynamic(
   () =>
     import("@/components/layout/AppShellSectionsJumpList").then((m) => ({
-      default: m.AppShellSectionsJumpList,
+      default: m.AppShellSectionsJumpListPanel,
     })),
   { ssr: false, loading: () => null },
 );
@@ -192,7 +193,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [sectionsJumpListMounted, setSectionsJumpListMounted] = useState(false);
   const [sectionsJumpListOpen, setSectionsJumpListOpen] = useState(false);
   const [sectionsJumpListSearch, setSectionsJumpListSearch] = useState("");
-  const sectionsJumpListTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -402,13 +402,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   );
 
   const handleSectionsJumpListOpenChange = useCallback((nextOpen: boolean) => {
+    if (nextOpen) setSectionsJumpListMounted(true);
     setSectionsJumpListOpen(nextOpen);
     if (!nextOpen) setSectionsJumpListSearch("");
-  }, []);
-
-  const toggleSectionsJumpList = useCallback(() => {
-    setSectionsJumpListMounted(true);
-    setSectionsJumpListOpen((open) => !open);
   }, []);
 
   // ── render helpers ───────────────────────────────────────────────
@@ -716,32 +712,27 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       >
         {renderBrand()}
         {renderFacilityScope()}
-        <button
-          ref={sectionsJumpListTriggerRef}
-          type="button"
-          aria-label="Open all sections menu"
-          aria-expanded={sectionsJumpListOpen}
-          aria-haspopup="dialog"
-          onClick={toggleSectionsJumpList}
-          className={cn(
-            WORKSPACE_ICON_LG,
-            "transition-colors",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          )}
-        >
-          <MenuIcon className="size-4" aria-hidden />
-        </button>
-        {sectionsJumpListMounted ? (
-          <AppShellSectionsJumpList
-            open={sectionsJumpListOpen}
-            onOpenChange={handleSectionsJumpListOpenChange}
-            anchorRef={sectionsJumpListTriggerRef}
-            pillars={visiblePillars}
-            onSelect={navigate}
-            search={sectionsJumpListSearch}
-            onSearchChange={setSectionsJumpListSearch}
-          />
-        ) : null}
+        <Popover open={sectionsJumpListOpen} onOpenChange={handleSectionsJumpListOpenChange}>
+          <PopoverTrigger
+            aria-label="Open all sections menu"
+            className={cn(
+              WORKSPACE_ICON_LG,
+              "transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
+          >
+            <MenuIcon className="size-4" aria-hidden />
+          </PopoverTrigger>
+          {sectionsJumpListMounted ? (
+            <AppShellSectionsJumpListPanel
+              pillars={visiblePillars}
+              onSelect={navigate}
+              search={sectionsJumpListSearch}
+              onSearchChange={setSectionsJumpListSearch}
+              onOpenChange={handleSectionsJumpListOpenChange}
+            />
+          ) : null}
+        </Popover>
 
         {/* Pillar tabs — desktop. Mobile uses the scroll strip below. */}
         <nav

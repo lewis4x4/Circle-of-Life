@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, type RefObject } from "react";
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { useCallback, useMemo } from "react";
 
 import {
   Command,
@@ -12,6 +11,7 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
+import { PopoverContent } from "@/components/ui/popover";
 import {
   allSectionJumpEntries,
   sectionJumpQuickEntries,
@@ -31,22 +31,18 @@ function matchesQuery(entry: SectionJumpEntry, query: string): boolean {
   return entrySearchValue(entry).includes(normalized);
 }
 
-export function AppShellSectionsJumpList({
-  open,
-  onOpenChange,
-  anchorRef,
+export function AppShellSectionsJumpListPanel({
   pillars,
   onSelect,
   search,
   onSearchChange,
+  onOpenChange,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  anchorRef: RefObject<HTMLButtonElement | null>;
   pillars: Pillar[];
   onSelect: (href: string) => void;
   search: string;
   onSearchChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
 }) {
   const allEntries = useMemo(() => allSectionJumpEntries(pillars), [pillars]);
   const quickEntries = useMemo(() => sectionJumpQuickEntries(pillars), [pillars]);
@@ -69,56 +65,45 @@ export function AppShellSectionsJumpList({
   );
 
   return (
-    <PopoverPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Positioner
-          anchor={anchorRef}
-          align="start"
-          sideOffset={6}
-          className="isolate z-50"
-        >
-          <PopoverPrimitive.Popup
-            data-slot="popover-content"
-            data-testid="all-sections-jump-list"
-            className={cn(
-              "z-50 flex w-[min(22rem,calc(100vw-1rem))] origin-(--transform-origin) flex-col gap-2.5 rounded-lg bg-popover p-0 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden duration-100 sm:w-72",
-              "data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-            )}
-          >
-            <Command shouldFilter={false} loop>
-              <CommandInput
-                placeholder="Jump to a section…"
-                autoFocus
-                value={search}
-                onValueChange={onSearchChange}
-                aria-label="Filter sections"
-              />
-              <CommandList>
-                <CommandEmpty>No matches.</CommandEmpty>
-                <CommandGroup heading={isSearching ? "Sections" : "Common"}>
-                  {visibleEntries.map((entry) => {
-                    const Icon = entry.icon;
-                    return (
-                      <CommandItem
-                        key={`${entry.group}-${entry.key}`}
-                        value={entrySearchValue(entry)}
-                        onSelect={() => handleSelect(entry.href)}
-                        className="cursor-pointer"
-                      >
-                        <Icon className="text-muted-foreground" aria-hidden />
-                        <span>{entry.label}</span>
-                        {entry.pillarLabel ? (
-                          <CommandShortcut>{entry.pillarLabel}</CommandShortcut>
-                        ) : null}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverPrimitive.Popup>
-        </PopoverPrimitive.Positioner>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
+    <PopoverContent
+      align="start"
+      sideOffset={6}
+      data-testid="all-sections-jump-list"
+      className={cn(
+        "w-[min(22rem,calc(100vw-1rem))] gap-0 p-0 sm:w-72",
+      )}
+    >
+      <Command shouldFilter={false} loop>
+        <CommandInput
+          placeholder="Jump to a section…"
+          autoFocus
+          value={search}
+          onValueChange={onSearchChange}
+          aria-label="Filter sections"
+        />
+        <CommandList>
+          <CommandEmpty>No matches.</CommandEmpty>
+          <CommandGroup heading={isSearching ? "Sections" : "Common"}>
+            {visibleEntries.map((entry) => {
+              const Icon = entry.icon;
+              return (
+                <CommandItem
+                  key={`${entry.group}-${entry.key}`}
+                  value={entrySearchValue(entry)}
+                  onSelect={() => handleSelect(entry.href)}
+                  className="cursor-pointer"
+                >
+                  <Icon className="text-muted-foreground" aria-hidden />
+                  <span>{entry.label}</span>
+                  {entry.pillarLabel ? (
+                    <CommandShortcut>{entry.pillarLabel}</CommandShortcut>
+                  ) : null}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
   );
 }
