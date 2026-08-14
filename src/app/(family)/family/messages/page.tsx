@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, MessageSquare, Send, ShieldCheck } from "lucide-react";
+import { Loader2, MessageSquare, ShieldCheck } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   fetchFamilyMessageResidents,
   fetchFamilyMessagesForResident,
-  postFamilyMessage,
   type FamilyLinkedResidentOption,
   type FamilyMessageRow,
 } from "@/lib/family/family-messages-data";
@@ -28,7 +27,6 @@ export default function FamilyMessagesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingResidents, setLoadingResidents] = useState(true);
   const [residents, setResidents] = useState<FamilyLinkedResidentOption[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const loadResidents = useCallback(async () => {
     setLoadingResidents(true);
@@ -42,8 +40,6 @@ export default function FamilyMessagesPage() {
       return;
     }
     try {
-      const u = await supabase.auth.getUser();
-      setCurrentUserId(u.data.user?.id ?? null);
       const result = await fetchFamilyMessageResidents(supabase);
       if (!result.ok) {
         setLoadError(result.error);
@@ -52,7 +48,7 @@ export default function FamilyMessagesPage() {
         setResidents(result.residents);
       }
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load messaging.");
+      setLoadError(e instanceof Error ? e.message : "Could not load updates.");
       setResidents([]);
     } finally {
       setLoadingResidents(false);
@@ -133,7 +129,7 @@ export default function FamilyMessagesPage() {
             No linked residents.
           </p>
           <p className="mx-auto mt-2 max-w-xs text-xs text-muted-foreground">
-            Messaging is not available until your account is linked to a
+            Care team updates are not available until your account is linked to a
             resident.
           </p>
         </div>
@@ -144,14 +140,14 @@ export default function FamilyMessagesPage() {
   const queue: T8QueueItem[] = residents.map((r) => ({
     id: r.id,
     title: r.displayName,
-    meta: "Conversation",
+    meta: "Updates",
   }));
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-8 pt-6 md:pt-10">
       <T8InboxThreaded
-        title="Messages"
-        subtitle="A calm place to ask questions and share updates with the care team."
+        title="Updates"
+        subtitle="Read-only notes from your care team. This portal does not support replies."
         queue={queue}
         initialSelectedId={residents[0]?.id}
         renderThread={(item) => (
@@ -159,12 +155,11 @@ export default function FamilyMessagesPage() {
             supabase={supabase}
             residentId={item?.id ?? null}
             residentName={item?.title ?? null}
-            currentUserId={currentUserId}
           />
         )}
         contextRail={
           <section
-            aria-label="Messaging visibility"
+            aria-label="Update visibility"
             className="rounded-lg border border-border bg-card"
           >
             <header className="border-b border-border px-4 py-2 text-xs font-semibold uppercase tracking-caps text-muted-foreground">
@@ -177,13 +172,13 @@ export default function FamilyMessagesPage() {
                   aria-hidden="true"
                 />
                 <span>
-                  Messages are private, time-stamped, and visible to the care
+                  Updates are private, time-stamped, and posted by the care
                   team.
                 </span>
               </p>
               <p>
-                Use messages for context and questions. Urgent medical concerns
-                should still be directed to the facility right away.
+                For urgent medical concerns, contact the facility directly by
+                phone.
               </p>
             </div>
           </section>
@@ -202,18 +197,14 @@ function ThreadDetail({
   supabase,
   residentId,
   residentName,
-  currentUserId,
 }: {
   supabase: SupabaseDb;
   residentId: string | null;
   residentName: string | null;
-  currentUserId: string | null;
 }) {
   const [messages, setMessages] = useState<FamilyMessageRow[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!residentId) {
@@ -234,7 +225,7 @@ function ThreadDetail({
         setMessages(result.messages);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load messages.");
+      setError(e instanceof Error ? e.message : "Could not load updates.");
       setMessages([]);
     } finally {
       setLoadingMessages(false);
@@ -245,43 +236,23 @@ function ThreadDetail({
     void refresh();
   }, [refresh]);
 
-  const send = useCallback(async () => {
-    if (!residentId || sending) return;
-    if (!draft.trim()) return;
-    setSending(true);
-    setError(null);
-    try {
-      const result = await postFamilyMessage(supabase, residentId, draft);
-      if (!result.ok) {
-        setError(result.error);
-      } else {
-        setDraft("");
-        await refresh();
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Send failed.");
-    } finally {
-      setSending(false);
-    }
-  }, [residentId, draft, sending, supabase, refresh]);
-
   if (!residentId) {
     return (
       <p className="text-sm text-muted-foreground">
-        Select a conversation to view messages.
+        Select a resident to view care team updates.
       </p>
     );
   }
 
   return (
     <article
-      aria-label={`Conversation: ${residentName ?? "Resident"}`}
+      aria-label={`Care team updates: ${residentName ?? "Resident"}`}
       className="flex flex-col gap-4"
     >
       <header className="flex items-center justify-between gap-3 border-b border-border pb-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-caps text-muted-foreground">
-            Conversation for
+            Updates for
           </p>
           <h2 className="truncate text-base font-semibold text-foreground">
             {residentName ?? "Resident"}
@@ -328,109 +299,32 @@ function ThreadDetail({
               aria-hidden="true"
             />
             <p className="text-sm font-medium text-foreground">
-              It&apos;s quiet here.
+              No updates yet.
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Send a message to the care team to start a thread.
+              When the care team posts a note, it will appear here.
             </p>
           </div>
         ) : (
           <ul className="flex flex-col gap-3">
-            {messages.map((m) => {
-              const isSelfFamily =
-                m.authorKind === "family" &&
-                currentUserId != null &&
-                m.authorUserId === currentUserId;
-              const authorLabel =
-                m.authorKind === "staff"
-                  ? "Care Team"
-                  : isSelfFamily
-                    ? "You"
-                    : "Family";
-              return (
-                <li
-                  key={m.id}
+            {messages.map((m) => (
+              <li key={m.id} className="flex w-full flex-col gap-1 items-start">
+                <div
                   className={cn(
-                    "flex w-full flex-col gap-1",
-                    isSelfFamily ? "items-end" : "items-start",
+                    "max-w-[85%] rounded-lg border border-border bg-muted px-4 py-3 text-sm leading-relaxed sm:max-w-[70%]",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-lg border px-4 py-3 text-sm leading-relaxed sm:max-w-[70%]",
-                      isSelfFamily
-                        ? "border-primary/30 bg-primary/10 text-foreground"
-                        : "border-border bg-muted text-foreground",
-                    )}
-                  >
-                    <p className="whitespace-pre-wrap">{m.body}</p>
-                  </div>
-                  <p
-                    className={cn(
-                      "flex gap-2 text-xs text-muted-foreground",
-                      isSelfFamily ? "justify-end" : "justify-start",
-                    )}
-                  >
-                    <span className="font-medium text-foreground">
-                      {authorLabel}
-                    </span>
-                    <span aria-hidden="true">·</span>
-                    <span>{m.timeLabel}</span>
-                  </p>
-                </li>
-              );
-            })}
+                  <p className="whitespace-pre-wrap text-foreground">{m.body}</p>
+                </div>
+                <p className="flex gap-2 text-xs text-muted-foreground justify-start">
+                  <span className="font-medium text-foreground">Care Team</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{m.timeLabel}</span>
+                </p>
+              </li>
+            ))}
           </ul>
         )}
-      </div>
-
-      <div className="flex flex-col gap-2 border-t border-border pt-3">
-        <label
-          htmlFor="family-message-input"
-          className="text-xs font-semibold uppercase tracking-caps text-muted-foreground"
-        >
-          New message
-        </label>
-        <textarea
-          id="family-message-input"
-          rows={3}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Type a secure message…"
-          maxLength={8000}
-          disabled={sending}
-          className={cn(
-            "w-full resize-y rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground",
-            "transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-            "disabled:cursor-not-allowed disabled:opacity-60",
-          )}
-        />
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-caps text-muted-foreground">
-            Max 8,000 characters
-          </p>
-          <button
-            type="button"
-            onClick={() => void send()}
-            disabled={sending || !draft.trim()}
-            className={cn(
-              "inline-flex h-9 items-center gap-2 rounded-md border border-primary/30 bg-primary px-3 text-xs font-semibold text-primary-foreground",
-              "transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
-              "hover:bg-primary/90",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-              "disabled:cursor-not-allowed disabled:opacity-40",
-            )}
-          >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Send className="h-4 w-4" aria-hidden="true" />
-            )}
-            <span>Send</span>
-          </button>
-        </div>
       </div>
     </article>
   );
