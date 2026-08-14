@@ -25,3 +25,44 @@ CREATE POLICY staff_send_family_portal_messages ON family_portal_messages
         AND r.facility_id = family_portal_messages.facility_id
         AND r.organization_id = family_portal_messages.organization_id
         AND r.deleted_at IS NULL));
+
+DROP POLICY IF EXISTS staff_read_family_portal_messages ON family_portal_messages;
+
+CREATE POLICY staff_read_family_portal_messages ON family_portal_messages
+  FOR SELECT
+  USING (
+    organization_id = haven.organization_id ()
+    AND deleted_at IS NULL
+    AND facility_id IN (
+      SELECT
+        haven.accessible_facility_ids ())
+    AND haven.app_role () IN ('owner', 'org_admin', 'facility_admin', 'admin_assistant', 'nurse', 'caregiver'));
+
+DROP POLICY IF EXISTS family_message_triage_select_staff ON family_message_triage_items;
+
+CREATE POLICY family_message_triage_select_staff ON family_message_triage_items
+  FOR SELECT
+  USING (
+    organization_id = haven.organization_id ()
+    AND deleted_at IS NULL
+    AND facility_id IN (
+      SELECT
+        haven.accessible_facility_ids ())
+    AND haven.app_role () IN ('owner', 'org_admin', 'facility_admin', 'admin_assistant', 'nurse', 'caregiver'));
+
+DROP POLICY IF EXISTS family_message_triage_update_staff ON family_message_triage_items;
+
+CREATE POLICY family_message_triage_update_staff ON family_message_triage_items
+  FOR UPDATE
+  USING (
+    organization_id = haven.organization_id ()
+    AND deleted_at IS NULL
+    AND facility_id IN (
+      SELECT
+        haven.accessible_facility_ids ())
+    AND haven.app_role () IN ('owner', 'org_admin', 'facility_admin', 'admin_assistant', 'nurse', 'caregiver'))
+  WITH CHECK (
+    organization_id = haven.organization_id ()
+    AND facility_id IN (
+      SELECT
+        haven.accessible_facility_ids ()));
