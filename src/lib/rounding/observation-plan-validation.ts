@@ -57,7 +57,11 @@ export function getRuleChecksPerDay(rule: PlanRuleInput): number {
 
   if (start == null || end == null) return 0;
   if (!Number.isFinite(intervalMinutes) || intervalMinutes < MIN_INTERVAL_MINUTES) return 0;
-  if (end < start) return 0;
+  if (end < start) {
+    const overnightSpan = 24 * 60 - start + end;
+    return Math.floor(overnightSpan / intervalMinutes);
+  }
+  if (end === start) return 0;
 
   return Math.floor((end - start) / intervalMinutes) + 1;
 }
@@ -96,7 +100,31 @@ export function getNextScheduledChecks(
 
     if (start == null || end == null) continue;
     if (!Number.isFinite(intervalMinutes) || intervalMinutes < MIN_INTERVAL_MINUTES) continue;
-    if (end < start) continue;
+
+    if (end < start) {
+      for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
+        for (let minuteOfDay = start; minuteOfDay < 24 * 60; minuteOfDay += intervalMinutes) {
+          const candidate = new Date(now);
+          candidate.setDate(now.getDate() + dayOffset);
+          candidate.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+
+          if (candidate >= now && candidate <= horizon) {
+            checks.push(candidate);
+          }
+        }
+
+        for (let minuteOfDay = 0; minuteOfDay < end; minuteOfDay += intervalMinutes) {
+          const candidate = new Date(now);
+          candidate.setDate(now.getDate() + dayOffset + 1);
+          candidate.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+
+          if (candidate >= now && candidate <= horizon) {
+            checks.push(candidate);
+          }
+        }
+      }
+      continue;
+    }
 
     for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
       for (let minuteOfDay = start; minuteOfDay <= end; minuteOfDay += intervalMinutes) {

@@ -11,6 +11,52 @@ import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FACILITY_TZ = "America/New_York";
+
+function getTimeZoneParts(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const lookup = new Map(parts.map((part) => [part.type, part.value]));
+  return {
+    year: lookup.get("year") ?? "0000",
+    month: lookup.get("month") ?? "01",
+    day: lookup.get("day") ?? "01",
+    hour: Number(lookup.get("hour") ?? "00"),
+    minute: Number(lookup.get("minute") ?? "00"),
+    second: Number(lookup.get("second") ?? "00"),
+  };
+}
+
+function formatDateInTimeZone(date: Date, timeZone: string) {
+  const parts = getTimeZoneParts(date, timeZone);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function zonedDateTimeToUtc(date: string, hour: number, minute: number, timeZone: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  const zonedGuess = getTimeZoneParts(utcGuess, timeZone);
+  const actualUtc = Date.UTC(
+    Number(zonedGuess.year),
+    Number(zonedGuess.month) - 1,
+    Number(zonedGuess.day),
+    zonedGuess.hour,
+    zonedGuess.minute,
+    Number(zonedGuess.second),
+  );
+  const targetUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  return new Date(utcGuess.getTime() + (targetUtc - actualUtc));
+}
 
 // Shift windows (hour-of-day, 24h clock)
 const SHIFTS = [
@@ -51,10 +97,12 @@ function generateTimestamps(
     const [hours, minutes] = discreteTime.split(":").map(Number);
     if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return timestamps;
 
-    const cursor = new Date(now);
-    cursor.setUTCHours(hours, minutes, 0, 0);
+    const todayInTz = formatDateInTimeZone(now, FACILITY_TZ);
+    let cursor = zonedDateTimeToUtc(todayInTz, hours, minutes, FACILITY_TZ);
     if (cursor < now) {
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60_000);
+      const tomorrowInTz = formatDateInTimeZone(tomorrow, FACILITY_TZ);
+      cursor = zonedDateTimeToUtc(tomorrowInTz, hours, minutes, FACILITY_TZ);
     }
     if (cursor < horizon) timestamps.push(new Date(cursor));
     return timestamps;

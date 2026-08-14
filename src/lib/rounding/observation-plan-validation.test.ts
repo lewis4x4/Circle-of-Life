@@ -8,6 +8,7 @@ import {
   validateObservationPlanPayload,
   validatePlanRule,
 } from "./observation-plan-validation";
+import { buildColDiscoveryRoundRules } from "./col-discovery-round-cadence";
 import type { PlanRuleInput } from "./types";
 
 const BASE_RULE: PlanRuleInput = {
@@ -104,5 +105,15 @@ describe("observation plan preview", () => {
     expect(preview.nextChecks).toHaveLength(12);
     expect(preview.nextChecks[0]?.getHours()).toBe(7);
     expect(preview.nextChecks[11]?.getHours()).toBe(18);
+  });
+
+  it("counts overnight interval rules in Homewood preview", () => {
+    const homewoodRules = buildColDiscoveryRoundRules("homewood_two_hour_night");
+    const preview = buildPlanSchedulePreview(homewoodRules, new Date(2026, 7, 24, 12, 0));
+
+    expect(preview.checksPerDay).toBe(10);
+    expect(preview.nextChecks.some((check) => check.getHours() === 18)).toBe(true);
+    expect(preview.nextChecks.some((check) => check.getHours() === 22)).toBe(true);
+    expect(preview.nextChecks.some((check) => check.getHours() === 2)).toBe(true);
   });
 });

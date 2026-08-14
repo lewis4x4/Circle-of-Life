@@ -1,6 +1,10 @@
+import { formatInTimeZone, toDate as zonedToDate } from "date-fns-tz";
+
 import type { GeneratedTaskInput, ObservationTaskStatus, PlanRuleInput } from "@/lib/rounding/types";
 import { extractDiscreteScheduledTime } from "@/lib/rounding/col-discovery-round-cadence";
 import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
+
+const OPERATOR_TZ = "America/New_York";
 
 type GenerateArgs = {
   organizationId: string;
@@ -18,7 +22,7 @@ type GenerateArgs = {
   now?: string | Date;
 };
 
-function toDate(value: string | Date): Date {
+function coerceToDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
@@ -27,13 +31,13 @@ function combineDateAndTime(day: Date, hhmm: string): Date {
   const hours = Number.parseInt(parts[0] ?? "0", 10);
   const minutes = Number.parseInt(parts[1] ?? "0", 10);
   if (Number.isNaN(hours) || Number.isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    const result = new Date(day);
-    result.setHours(0, 0, 0, 0);
-    return result;
+    const ymd = formatInTimeZone(day, OPERATOR_TZ, "yyyy-MM-dd");
+    return zonedToDate(`${ymd}T00:00:00`, { timeZone: OPERATOR_TZ });
   }
-  const result = new Date(day);
-  result.setHours(hours, minutes, 0, 0);
-  return result;
+  const ymd = formatInTimeZone(day, OPERATOR_TZ, "yyyy-MM-dd");
+  const hh = String(hours).padStart(2, "0");
+  const mm = String(minutes).padStart(2, "0");
+  return zonedToDate(`${ymd}T${hh}:${mm}:00`, { timeZone: OPERATOR_TZ });
 }
 
 function normalizeDaypartWindow(day: Date, startTime?: string | null, endTime?: string | null) {
@@ -57,9 +61,17 @@ function normalizeDaypartWindow(day: Date, startTime?: string | null, endTime?: 
 }
 
 function sameDay(date: Date) {
-  const out = new Date(date);
-  out.setHours(0, 0, 0, 0);
-  return out;
+  const ymd = formatInTimeZone(date, OPERATOR_TZ, "yyyy-MM-dd");
+  return zonedToDate(`${ymd}T00:00:00`, { timeZone: OPERATOR_TZ });
+}
+
+function isOvernightDaypart(startTime?: string | null, endTime?: string | null): boolean {
+  if (!startTime || !endTime) return false;
+  const startParts = startTime.split(":").map(Number);
+  const endParts = endTime.split(":").map(Number);
+  const startMinutes = (startParts[0] ?? 0) * 60 + (startParts[1] ?? 0);
+  const endMinutes = (endParts[0] ?? 0) * 60 + (endParts[1] ?? 0);
+  return endMinutes <= startMinutes;
 }
 
 function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
@@ -97,8 +109,8 @@ function pushGeneratedTask(
 }
 
 function generateDiscreteScheduledTasks(args: GenerateArgs, scheduledTime: string): GeneratedTaskInput[] {
-  const windowStart = toDate(args.windowStart);
-  const windowEnd = toDate(args.windowEnd);
+  const windowStart = coerceToDate(args.windowStart);
+  const windowEnd = coerceToDate(args.windowEnd);
   if (Number.isNaN(windowStart.getTime()) || Number.isNaN(windowEnd.getTime()) || windowEnd.getTime() < windowStart.getTime()) {
     return [];
   }
@@ -133,8 +145,8 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
     return generateDiscreteScheduledTasks(args, scheduledTime);
   }
 
-  const windowStart = toDate(args.windowStart);
-  const windowEnd = toDate(args.windowEnd);
+  const windowStart = coerceToDate(args.windowStart);
+  const windowEnd = coerceToDate(args.windowEnd);
 
   if (Number.isNaN(windowStart.getTime()) || Number.isNaN(windowEnd.getTime()) || windowEnd.getTime() < windowStart.getTime()) {
     return [];
@@ -168,7 +180,13 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
     let cursor = new Date(Math.max(daypart.start.getTime(), windowStart.getTime()));
     cursor.setSeconds(0, 0);
 
-    while (cursor.getTime() <= daypart.end.getTime() && cursor.getTime() <= windowEnd.getTime()) {
+    const overnight = isOvernightDaypart(args.rule.daypartStart, args.rule.daypartEnd);
+    const endInclusive = !overnight;
+
+    while (
+      (endInclusive ? cursor.getTime() <= daypart.end.getTime() : cursor.getTime() < daypart.end.getTime()) &&
+      cursor.getTime() <= windowEnd.getTime()
+    ) {
       pushGeneratedTask(tasks, args, new Date(cursor));
       cursor = new Date(cursor.getTime() + intervalMinutes * 60 * 1000);
     }

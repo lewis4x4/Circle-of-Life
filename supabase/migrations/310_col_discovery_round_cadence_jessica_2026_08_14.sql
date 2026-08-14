@@ -354,6 +354,16 @@ BEGIN
     RETURN v_existing_plan_id;
   END IF;
 
+  UPDATE public.resident_observation_plans
+  SET
+    status = 'ended'::public.resident_observation_plan_status,
+    effective_to = now(),
+    updated_at = now()
+  WHERE resident_id = p_resident_id
+    AND facility_id = v_facility_id
+    AND status = 'active'::public.resident_observation_plan_status
+    AND deleted_at IS NULL;
+
   INSERT INTO public.resident_observation_plans (
     organization_id,
     entity_id,
