@@ -15,6 +15,11 @@ const migrationPath = path.join(
 );
 const familyDataPath = path.join(repoRoot, "src/lib/family/family-messages-data.ts");
 const familyPagePath = path.join(repoRoot, "src/app/(family)/family/messages/page.tsx");
+const staffPagePath = path.join(repoRoot, "src/app/(admin)/admin/family-messages/page.tsx");
+const staffComposerPath = path.join(
+  repoRoot,
+  "src/components/family-portal/StaffFamilyNoteComposer.tsx",
+);
 
 describe("family portal messages one-way policy", () => {
   it("migration drops family INSERT policy and restricts staff INSERT roles", () => {
@@ -41,7 +46,32 @@ describe("family portal messages one-way policy", () => {
     expect(source).not.toMatch(/Send/);
     expect(source).not.toMatch(/textarea/);
     expect(source).not.toMatch(/ask questions/i);
+    expect(source).not.toMatch(/T8InboxThreaded/);
+    expect(source).not.toMatch(/inbox queue/i);
     expect(source).toMatch(/does not support replies/i);
+    expect(source).toMatch(/FamilyPortalUpdateLog/);
+  });
+
+  it("staff page presents bulletin posting, not a two-way inbox", () => {
+    const source = fs.readFileSync(staffPagePath, "utf8");
+    expect(source).toMatch(/postStaffMessage/);
+    expect(source).toMatch(/StaffFamilyNoteComposer/);
+    expect(source).toMatch(/FamilyPortalUpdateLog/);
+    expect(source).not.toMatch(/Start the conversation/i);
+    expect(source).not.toMatch(/family replied/i);
+    expect(source).not.toMatch(/Inbox Zero/i);
+    expect(source).not.toMatch(/Resident threads/i);
+    expect(source).not.toMatch(/<Send /);
+    expect(source).not.toMatch(/justify-end/);
+  });
+
+  it("staff composer uses post-update copy, not reply or send affordances", () => {
+    const source = fs.readFileSync(staffComposerPath, "utf8");
+    expect(source).toMatch(/Post update/);
+    expect(source).toMatch(/Post an update/);
+    expect(source).not.toMatch(/type a reply/i);
+    expect(source).not.toMatch(/Send className/);
+    expect(source).not.toMatch(/lucide-react.*Send/);
   });
 
   it("staff post helper remains available for one-way notes", () => {
