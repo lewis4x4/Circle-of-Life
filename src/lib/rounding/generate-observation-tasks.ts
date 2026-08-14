@@ -1,4 +1,5 @@
 import type { GeneratedTaskInput, ObservationTaskStatus, PlanRuleInput } from "@/lib/rounding/types";
+import { extractDiscreteScheduledTime } from "@/lib/rounding/col-discovery-round-cadence";
 import { calculateObservationTaskStatus } from "@/lib/rounding/update-task-status";
 
 type GenerateArgs = {
@@ -65,7 +66,73 @@ function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
   return aStart.getTime() <= bEnd.getTime() && bStart.getTime() <= aEnd.getTime();
 }
 
+function pushGeneratedTask(
+  tasks: GeneratedTaskInput[],
+  args: GenerateArgs,
+  dueAt: Date,
+) {
+  const graceEndsAt = new Date(dueAt.getTime() + (args.rule.graceMinutes ?? 15) * 60 * 1000);
+  const status = calculateObservationTaskStatus({
+    dueAt,
+    graceEndsAt,
+    now: args.now,
+  });
+
+  tasks.push({
+    organizationId: args.organizationId,
+    entityId: args.entityId ?? null,
+    facilityId: args.facilityId,
+    residentId: args.residentId,
+    planId: args.planId,
+    planRuleId: args.planRuleId,
+    watchInstanceId: args.watchInstanceId ?? null,
+    shiftAssignmentId: args.shiftAssignmentId ?? null,
+    assignedStaffId: args.assignedStaffId ?? null,
+    scheduledFor: dueAt.toISOString(),
+    dueAt: dueAt.toISOString(),
+    graceEndsAt: graceEndsAt.toISOString(),
+    status: status as ObservationTaskStatus,
+    notes: null,
+  });
+}
+
+function generateDiscreteScheduledTasks(args: GenerateArgs, scheduledTime: string): GeneratedTaskInput[] {
+  const windowStart = toDate(args.windowStart);
+  const windowEnd = toDate(args.windowEnd);
+  if (Number.isNaN(windowStart.getTime()) || Number.isNaN(windowEnd.getTime()) || windowEnd.getTime() < windowStart.getTime()) {
+    return [];
+  }
+
+  const tasks: GeneratedTaskInput[] = [];
+  const startDay = sameDay(windowStart);
+  const endDay = sameDay(windowEnd);
+  const dayCursor = new Date(startDay);
+
+  while (dayCursor.getTime() <= endDay.getTime()) {
+    const dayOfWeek = dayCursor.getDay();
+    const allowedDays = args.rule.daysOfWeek?.length ? args.rule.daysOfWeek : [0, 1, 2, 3, 4, 5, 6];
+    if (!allowedDays.includes(dayOfWeek)) {
+      dayCursor.setDate(dayCursor.getDate() + 1);
+      continue;
+    }
+
+    const dueAt = combineDateAndTime(dayCursor, scheduledTime);
+    if (dueAt.getTime() >= windowStart.getTime() && dueAt.getTime() <= windowEnd.getTime()) {
+      pushGeneratedTask(tasks, args, dueAt);
+    }
+
+    dayCursor.setDate(dayCursor.getDate() + 1);
+  }
+
+  return tasks;
+}
+
 export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput[] {
+  const scheduledTime = extractDiscreteScheduledTime(args.rule);
+  if (scheduledTime && args.rule.intervalType === "daypart" && args.rule.intervalMinutes == null) {
+    return generateDiscreteScheduledTasks(args, scheduledTime);
+  }
+
   const windowStart = toDate(args.windowStart);
   const windowEnd = toDate(args.windowEnd);
 
@@ -102,31 +169,7 @@ export function generateObservationTasks(args: GenerateArgs): GeneratedTaskInput
     cursor.setSeconds(0, 0);
 
     while (cursor.getTime() <= daypart.end.getTime() && cursor.getTime() <= windowEnd.getTime()) {
-      const dueAt = new Date(cursor);
-      const graceEndsAt = new Date(dueAt.getTime() + (args.rule.graceMinutes ?? 15) * 60 * 1000);
-      const status = calculateObservationTaskStatus({
-        dueAt,
-        graceEndsAt,
-        now: args.now,
-      });
-
-      tasks.push({
-        organizationId: args.organizationId,
-        entityId: args.entityId ?? null,
-        facilityId: args.facilityId,
-        residentId: args.residentId,
-        planId: args.planId,
-        planRuleId: args.planRuleId,
-        watchInstanceId: args.watchInstanceId ?? null,
-        shiftAssignmentId: args.shiftAssignmentId ?? null,
-        assignedStaffId: args.assignedStaffId ?? null,
-        scheduledFor: dueAt.toISOString(),
-        dueAt: dueAt.toISOString(),
-        graceEndsAt: graceEndsAt.toISOString(),
-        status: status as ObservationTaskStatus,
-        notes: null,
-      });
-
+      pushGeneratedTask(tasks, args, new Date(cursor));
       cursor = new Date(cursor.getTime() + intervalMinutes * 60 * 1000);
     }
 
