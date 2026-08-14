@@ -68,6 +68,44 @@ beforeEach(() => {
     ],
     error: null,
   });
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/rounding/plans/templates")) {
+        return new Response(
+          JSON.stringify({
+            templates: [
+              {
+                id: "template-discovery",
+                name: "COL Discovery Rounds — Day + Night",
+                description: "Jessica cadence",
+                cadenceProfile: "standard_day_night",
+                rules: [
+                  {
+                    intervalType: "daypart",
+                    intervalMinutes: null,
+                    shift: "day",
+                    daypartStart: "06:00",
+                    daypartEnd: "06:05",
+                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+                    graceMinutes: 30,
+                    requiredFieldsSchema: { scheduled_time: "06:00", shift: "day" },
+                    escalationPolicyKey: "resident-assurance-standard",
+                    sortOrder: 0,
+                    active: true,
+                  },
+                ],
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+    }),
+  );
 });
 
 const sourcePlanResponse = {
@@ -120,10 +158,16 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
   it("prefills Jessica discovery cadence for new COL plans", async () => {
     render(<ObservationPlanEditor title="Create observation plan" />);
 
-    expect(await screen.findByText(/Starting from COL Discovery Rounds — Day \+ Night/)).toBeTruthy();
+    expect(await screen.findByText("Facility cadence template")).toBeTruthy();
     expect(screen.getByDisplayValue("06:00")).toBeTruthy();
-    expect(screen.getByDisplayValue("05:30")).toBeTruthy();
-    expect(screen.getAllByLabelText(/Drag Rule/)).toHaveLength(7);
+    expect(screen.getByText("COL Discovery Rounds — Day + Night")).toBeTruthy();
+  });
+
+  it("disables apply-discovery-default until a resident is selected", async () => {
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    const applyButton = await screen.findByRole("button", { name: "Apply discovery default for resident" });
+    expect(applyButton).toBeDisabled();
   });
 
   it("strips ids in duplicate mode payload", async () => {

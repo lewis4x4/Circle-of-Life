@@ -43,9 +43,12 @@ import {
 } from "@/lib/rounding/observation-plan-validation";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
+  getColDiscoveryCadenceProfile,
+  resolveColDiscoveryCadenceKey,
   resolveColDiscoveryDefaultRules,
   type ColDiscoveryCadenceProfile,
 } from "@/lib/rounding/col-discovery-round-cadence";
+import type { ObservationPlanTemplateOption } from "@/lib/rounding/observation-plan-templates";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { ObservationPlanInput, PlanRuleInput } from "@/lib/rounding/types";
@@ -219,13 +222,29 @@ export function ObservationPlanEditor({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [cadenceProfile, setCadenceProfile] = useState<ColDiscoveryCadenceProfile | null>(null);
   const [cadenceTemplateName, setCadenceTemplateName] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<ObservationPlanTemplateOption[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [applyingDefault, setApplyingDefault] = useState(false);
   const [residentId, setResidentId] = useState("");
   const [status, setStatus] = useState<PlanStatus>("draft");
   const [sourceType, setSourceType] = useState<SourceType>("manual");
   const [effectiveFrom, setEffectiveFrom] = useState("");
   const [effectiveTo, setEffectiveTo] = useState("");
   const [rationale, setRationale] = useState("");
-  const [rules, setRules] = useState<PlanRuleInput[]>([blankRule()]);
+  const [rules, setRules] = useState<PlanRuleInput[]>([]);
+
+  const cadenceKey = resolveColDiscoveryCadenceKey(facilityName);
+  const isPlantationPending = cadenceKey != null && getColDiscoveryCadenceProfile(cadenceKey) === "pending";
+  const isNewPlan = !planId && !duplicatePlanId;
+  const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? null;
+
+  const applyTemplateRules = useCallback((template: ObservationPlanTemplateOption | null) => {
+    if (!template) return;
+    setRules(template.rules.map((rule, index) => ({ ...rule, sortOrder: index })));
+    setCadenceProfile((template.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? null);
+    setCadenceTemplateName(template.name);
+    setSourceType("care_plan");
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -312,16 +331,40 @@ export function ObservationPlanEditor({
             })),
         );
       } else {
+        const templateResponse = await fetch(
+          `/api/rounding/plans/templates?facilityId=${encodeURIComponent(selectedFacilityId)}`,
+          { cache: "no-store" },
+        );
+        const templateJson = (await templateResponse.json()) as {
+          templates?: ObservationPlanTemplateOption[];
+        };
+        const loadedTemplates = templateResponse.ok ? (templateJson.templates ?? []) : [];
+        setTemplates(loadedTemplates);
+
         const defaults = defaultRulesForNewPlan(facilityName);
-        setCadenceProfile(defaults.cadenceProfile);
-        setCadenceTemplateName(defaults.templateName);
+        const initialTemplate =
+          loadedTemplates.find((template) => template.name === defaults.templateName) ??
+          loadedTemplates[0] ??
+          null;
+
+        if (initialTemplate) {
+          setSelectedTemplateId(initialTemplate.id);
+          setCadenceProfile((initialTemplate.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? defaults.cadenceProfile);
+          setCadenceTemplateName(initialTemplate.name);
+          setRules(initialTemplate.rules.map((rule, index) => ({ ...rule, sortOrder: index })));
+        } else {
+          setSelectedTemplateId("");
+          setCadenceProfile(defaults.cadenceProfile);
+          setCadenceTemplateName(defaults.templateName);
+          setRules(defaults.rules);
+        }
+
         setResidentId("");
         setStatus("draft");
-        setSourceType("manual");
+        setSourceType(initialTemplate ? "care_plan" : "manual");
         setEffectiveFrom("");
         setEffectiveTo("");
         setRationale("");
-        setRules(defaults.rules);
       }
     } catch (err) {
       setLoadError(
@@ -331,6 +374,41 @@ export function ObservationPlanEditor({
       setLoading(false);
     }
   }, [duplicatePlanId, facilityName, planId, selectedFacilityId, supabase]);
+
+  async function applyDiscoveryDefaultForResident() {
+    if (!selectedFacilityId || !residentId) {
+      setSaveError("Select a resident before applying the discovery default.");
+      return;
+    }
+
+    if (isPlantationPending) {
+      setSaveError("Plantation discovery cadence is pending owner decision.");
+      return;
+    }
+
+    setApplyingDefault(true);
+    setSaveError(null);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch("/api/rounding/plans/apply-discovery-default", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ residentId, facilityId: selectedFacilityId }),
+      });
+      const json = (await response.json()) as { error?: string; planId?: string };
+      if (!response.ok) {
+        throw new Error(json.error ?? "Could not apply discovery-round default");
+      }
+
+      setStatusMessage("Discovery-round default applied for this resident.");
+      router.replace(`/admin/rounding/plans/${json.planId ?? ""}`);
+    } catch (err) {
+      setSaveError(formatLiveDataLoadError(err, "Could not apply discovery-round default. Confirm resident scope and retry."));
+    } finally {
+      setApplyingDefault(false);
+    }
+  }
 
   useEffect(() => {
     void load();
@@ -453,11 +531,23 @@ export function ObservationPlanEditor({
             description={`The census at ${facilityName} is empty right now. You can still draft cadence rules, but choose a resident once someone is admitted before saving a plan.`}
           />
         ) : null}
-        {!loadError && cadenceTemplateName && !planId && !duplicatePlanId ? (
-          <CadenceTemplateNotice
-            templateName={cadenceTemplateName}
+        {!loadError && isNewPlan ? (
+          <CadenceDefaultsPanel
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
             cadenceProfile={cadenceProfile}
+            cadenceTemplateName={cadenceTemplateName}
             facilityName={facilityName}
+            isPlantationPending={isPlantationPending}
+            residentSelected={Boolean(residentId)}
+            applyingDefault={applyingDefault}
+            onTemplateChange={(templateId) => {
+              setSelectedTemplateId(templateId);
+              const template = templates.find((entry) => entry.id === templateId) ?? null;
+              applyTemplateRules(template);
+            }}
+            onResetFromTemplate={() => applyTemplateRules(selectedTemplate)}
+            onApplyForResident={() => void applyDiscoveryDefaultForResident()}
           />
         ) : null}
 
@@ -847,19 +937,37 @@ export function ObservationPlanEditor({
   }
 }
 
-function CadenceTemplateNotice({
-  templateName,
+function CadenceDefaultsPanel({
+  templates,
+  selectedTemplateId,
   cadenceProfile,
+  cadenceTemplateName,
   facilityName,
+  isPlantationPending,
+  residentSelected,
+  applyingDefault,
+  onTemplateChange,
+  onResetFromTemplate,
+  onApplyForResident,
 }: {
-  templateName: string;
+  templates: ObservationPlanTemplateOption[];
+  selectedTemplateId: string;
   cadenceProfile: ColDiscoveryCadenceProfile | null;
+  cadenceTemplateName: string | null;
   facilityName: string;
+  isPlantationPending: boolean;
+  residentSelected: boolean;
+  applyingDefault: boolean;
+  onTemplateChange: (templateId: string) => void;
+  onResetFromTemplate: () => void;
+  onApplyForResident: () => void;
 }) {
-  if (cadenceProfile === "pending") {
+  if (isPlantationPending) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-card px-4 py-4">
-        <p className="text-[13px] font-semibold text-foreground">{templateName}</p>
+        <p className="text-[13px] font-semibold text-foreground">
+          {cadenceTemplateName ?? "COL Discovery Rounds (cadence pending)"}
+        </p>
         <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
           {facilityName} discovery cadence is pending owner decision. Haven will not apply wing-stagger or 12-hour
           defaults here — add rules after Jessica confirms times.
@@ -869,12 +977,63 @@ function CadenceTemplateNotice({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-muted/20 px-4 py-4">
-      <p className="text-[13px] font-semibold text-foreground">Starting from {templateName}</p>
-      <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-        Pre-filled with Jessica discovery-round cadence for {facilityName}. Review daypart windows and grace before
-        saving.
-      </p>
+    <div className="space-y-4 rounded-lg border border-border bg-muted/20 px-4 py-4">
+      <div>
+        <p className="text-[13px] font-semibold text-foreground">Facility cadence template</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+          New plans start from Jessica discovery-round times for {facilityName}. Migration 219 12-hour and wing
+          templates are not offered here.
+        </p>
+      </div>
+
+      {templates.length > 0 ? (
+        <FormField
+          id="cadence-template"
+          label="Template"
+          helper="Choose the facility discovery template, then review rules before saving."
+        >
+          <Select value={selectedTemplateId} onValueChange={onTemplateChange}>
+            <SelectTrigger id="cadence-template" className="h-9">
+              <SelectValue placeholder="Select cadence template" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+      ) : (
+        <p className="text-[12px] text-muted-foreground">
+          {cadenceTemplateName
+            ? `Using ${cadenceTemplateName} from Haven defaults.`
+            : "No facility template is configured. Add rules manually."}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button type="button" variant="outline" size="sm" disabled={!selectedTemplateId} onClick={onResetFromTemplate}>
+          Reset rules from template
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!residentSelected || applyingDefault}
+          onClick={onApplyForResident}
+        >
+          {applyingDefault ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Apply discovery default for resident
+        </Button>
+      </div>
+
+      {cadenceProfile && cadenceProfile !== "pending" ? (
+        <p className="text-[12px] text-muted-foreground">
+          Preview below reflects discrete Jessica check times
+          {cadenceProfile === "homewood_two_hour_night" ? " with two-hour overnight checks" : " for day and night"}.
+        </p>
+      ) : null}
     </div>
   );
 }
