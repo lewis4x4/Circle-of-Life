@@ -48,6 +48,11 @@ export function formatPreviewTimestamp(value: Date): string {
   }).format(value);
 }
 
+function getDaypartDurationMinutes(start: number, end: number): number {
+  if (end >= start) return end - start;
+  return end + 24 * 60 - start;
+}
+
 export function getRuleChecksPerDay(rule: PlanRuleInput): number {
   if (isDiscreteScheduledDaypartRule(rule)) return 1;
 
@@ -57,9 +62,8 @@ export function getRuleChecksPerDay(rule: PlanRuleInput): number {
 
   if (start == null || end == null) return 0;
   if (!Number.isFinite(intervalMinutes) || intervalMinutes < MIN_INTERVAL_MINUTES) return 0;
-  if (end < start) return 0;
 
-  return Math.floor((end - start) / intervalMinutes) + 1;
+  return Math.floor(getDaypartDurationMinutes(start, end) / intervalMinutes) + 1;
 }
 
 export function getNextScheduledChecks(
@@ -96,12 +100,17 @@ export function getNextScheduledChecks(
 
     if (start == null || end == null) continue;
     if (!Number.isFinite(intervalMinutes) || intervalMinutes < MIN_INTERVAL_MINUTES) continue;
-    if (end < start) continue;
 
-    for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
-      for (let minuteOfDay = start; minuteOfDay <= end; minuteOfDay += intervalMinutes) {
+    const checkCount = Math.floor(getDaypartDurationMinutes(start, end) / intervalMinutes) + 1;
+
+    for (let windowDayOffset = 0; windowDayOffset <= 1; windowDayOffset += 1) {
+      for (let i = 0; i < checkCount; i += 1) {
+        const absoluteMinute = start + i * intervalMinutes;
+        const additionalDayOffset = Math.floor(absoluteMinute / (24 * 60));
+        const minuteOfDay = absoluteMinute % (24 * 60);
+
         const candidate = new Date(now);
-        candidate.setDate(now.getDate() + dayOffset);
+        candidate.setDate(now.getDate() + windowDayOffset + additionalDayOffset);
         candidate.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
 
         if (candidate >= now && candidate <= horizon) {
