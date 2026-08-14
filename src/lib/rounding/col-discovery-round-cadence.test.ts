@@ -4,6 +4,7 @@ import {
   buildColDiscoveryPresetDefinition,
   buildColDiscoveryRoundRules,
   COL_DISCOVERY_DAY_TIMES,
+  resolveColDiscoveryDefaultRules,
   COL_DISCOVERY_FACILITY_NAMES,
   COL_DISCOVERY_HOMWOOD_NIGHT_INTERVAL_MINUTES,
   COL_DISCOVERY_NIGHT_TIMES_STANDARD,
@@ -92,5 +93,22 @@ describe("COL discovery round cadence — owner decision 2026-08-14", () => {
     expect(COL_DISCOVERY_TEMPLATE_NAMES.standard_day_night).not.toBe(LEGACY_MIGRATION_219_TEMPLATE_NAMES[0]);
     expect(COL_DISCOVERY_TEMPLATE_NAMES.homewood_two_hour_night).not.toBe(LEGACY_MIGRATION_219_TEMPLATE_NAMES[1]);
     expect(COL_DISCOVERY_TEMPLATE_NAMES.pending).not.toBe(LEGACY_MIGRATION_219_TEMPLATE_NAMES[2]);
+  });
+
+  it("resolves default rules for COL facility display names without migration 219 cadence", () => {
+    const oakridge = resolveColDiscoveryDefaultRules(COL_DISCOVERY_FACILITY_NAMES.oakridge);
+    expect(oakridge.templateName).toBe(COL_DISCOVERY_TEMPLATE_NAMES.standard_day_night);
+    expect(oakridge.rules.length).toBeGreaterThan(0);
+    expect(oakridge.rules.every((rule) => rule.intervalMinutes !== 720)).toBe(true);
+
+    const homewood = resolveColDiscoveryDefaultRules(COL_DISCOVERY_FACILITY_NAMES.homewood);
+    expect(homewood.templateName).toBe(COL_DISCOVERY_TEMPLATE_NAMES.homewood_two_hour_night);
+    expect(homewood.rules.some((rule) => rule.intervalMinutes === COL_DISCOVERY_HOMWOOD_NIGHT_INTERVAL_MINUTES)).toBe(
+      true,
+    );
+
+    const plantation = resolveColDiscoveryDefaultRules(COL_DISCOVERY_FACILITY_NAMES.plantation);
+    expect(plantation.templateName).toBe(COL_DISCOVERY_TEMPLATE_NAMES.pending);
+    expect(plantation.rules).toEqual([]);
   });
 });

@@ -81,6 +81,27 @@ describe("observation plan rule validation", () => {
     );
     expect(validatePlanRule({ ...BASE_RULE, intervalMinutes: 30, graceMinutes: 29 })).toEqual({});
   });
+
+  it("rejects legacy migration 219 12-hour facility defaults", () => {
+    expect(validatePlanRule({ ...BASE_RULE, intervalMinutes: 720 }).intervalMinutes).toBe(
+      "12-hour (720 minute) facility defaults are retired. Use Jessica discovery-round cadence instead.",
+    );
+  });
+
+  it("computes overnight interval checks for Homewood two-hour night cadence", () => {
+    const homewoodNightRule: PlanRuleInput = {
+      intervalType: "fixed_minutes",
+      intervalMinutes: 120,
+      shift: "night",
+      daypartStart: "18:00",
+      daypartEnd: "06:00",
+      graceMinutes: 30,
+      active: true,
+      sortOrder: 0,
+    };
+
+    expect(getRuleChecksPerDay(homewoodNightRule)).toBe(7);
+  });
 });
 
 describe("observation plan preview", () => {

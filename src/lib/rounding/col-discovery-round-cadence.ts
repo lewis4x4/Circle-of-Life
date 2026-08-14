@@ -34,6 +34,9 @@ export const LEGACY_MIGRATION_219_TEMPLATE_NAMES = [
   "COL Plantation Wing Rounds",
 ] as const;
 
+/** Migration 219 facility-default interval — blocked on new plans and templates. */
+export const LEGACY_MIGRATION_219_INTERVAL_MINUTES = 720;
+
 export function resolveColDiscoveryCadenceKey(facilityName: string): ColDiscoveryCadenceKey | null {
   const normalized = facilityName.trim().toLowerCase();
   for (const [key, name] of Object.entries(COL_DISCOVERY_FACILITY_NAMES)) {
@@ -42,6 +45,27 @@ export function resolveColDiscoveryCadenceKey(facilityName: string): ColDiscover
     }
   }
   return null;
+}
+
+export type ColDiscoveryDefaultRulesResult = {
+  profile: ColDiscoveryCadenceProfile | null;
+  templateName: string | null;
+  rules: PlanRuleInput[];
+};
+
+/** Facility-scoped Jessica discovery cadence for new observation plans (not migration 219 defaults). */
+export function resolveColDiscoveryDefaultRules(facilityName: string): ColDiscoveryDefaultRulesResult {
+  const key = resolveColDiscoveryCadenceKey(facilityName);
+  if (!key) {
+    return { profile: null, templateName: null, rules: [] };
+  }
+
+  const profile = getColDiscoveryCadenceProfile(key);
+  return {
+    profile,
+    templateName: COL_DISCOVERY_TEMPLATE_NAMES[profile],
+    rules: buildColDiscoveryRoundRules(profile),
+  };
 }
 
 export function getColDiscoveryCadenceProfile(key: ColDiscoveryCadenceKey): ColDiscoveryCadenceProfile {
@@ -139,6 +163,41 @@ export type ColDiscoveryPresetRule = {
   sort_order: number;
   active: boolean;
 };
+
+export function isLegacyMigration219TemplateName(name: string): boolean {
+  return (LEGACY_MIGRATION_219_TEMPLATE_NAMES as readonly string[]).includes(name);
+}
+
+export function presetRuleToPlanRule(record: ColDiscoveryPresetRule, index = 0): PlanRuleInput {
+  return {
+    intervalType: record.interval_type,
+    intervalMinutes: record.interval_minutes,
+    shift: record.shift,
+    daypartStart: record.daypart_start,
+    daypartEnd: record.daypart_end,
+    daysOfWeek: record.days_of_week ?? [0, 1, 2, 3, 4, 5, 6],
+    graceMinutes: record.grace_minutes,
+    requiredFieldsSchema: record.required_fields_schema ?? {},
+    escalationPolicyKey: record.escalation_policy_key,
+    sortOrder: record.sort_order ?? index,
+    active: record.active ?? true,
+  };
+}
+
+export function planRulesFromPresetDefinition(preset: Record<string, unknown> | null | undefined): PlanRuleInput[] {
+  if (!preset || isLegacyMigration219PresetDefinition(preset)) return [];
+  if (preset.cadence_profile === "pending") return [];
+
+  const rules = preset.rules;
+  if (!Array.isArray(rules)) return [];
+
+  return rules
+    .map((rule, index) => {
+      if (!rule || typeof rule !== "object") return null;
+      return presetRuleToPlanRule(rule as ColDiscoveryPresetRule, index);
+    })
+    .filter((rule): rule is PlanRuleInput => rule != null);
+}
 
 export function planRuleToPresetRule(rule: PlanRuleInput): ColDiscoveryPresetRule {
   return {
