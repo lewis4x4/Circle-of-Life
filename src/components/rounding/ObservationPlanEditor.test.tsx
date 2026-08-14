@@ -13,10 +13,11 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/hooks/useFacilityStore", () => ({
   useFacilityStore: () => ({
     selectedFacilityId: "facility-1",
-    availableFacilities: [{ id: "facility-1", name: "Oakridge" }],
+    availableFacilities: [{ id: "facility-1", name: "Oakridge ALF" }],
   }),
 }));
 
+const residentsSelectMock = vi.fn();
 const residentsEqMock = vi.fn().mockReturnThis();
 const residentsIsMock = vi.fn().mockReturnThis();
 const residentsOrderMock = vi.fn();
@@ -24,11 +25,7 @@ const residentsOrderMock = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: () => ({
-      select: () => ({
-        eq: residentsEqMock,
-        is: residentsIsMock,
-        order: residentsOrderMock,
-      }),
+      select: residentsSelectMock,
     }),
   }),
 }));
@@ -50,6 +47,11 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  residentsSelectMock.mockImplementation(() => ({
+    eq: residentsEqMock,
+    is: residentsIsMock,
+    order: residentsOrderMock,
+  }));
   residentsOrderMock.mockResolvedValue({
     data: [
       {
@@ -99,6 +101,31 @@ const sourcePlanResponse = {
 };
 
 describe("ObservationPlanEditor duplicate and edit payload ids", () => {
+  it("loads residents with explicit bed FK and shows calm empty census copy", async () => {
+    residentsOrderMock.mockResolvedValueOnce({
+      data: [],
+      error: null,
+    });
+
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText("No active residents at this facility")).toBeTruthy();
+    expect(screen.queryByText("Could not load observation plan form. Confirm facility scope and retry.")).toBeNull();
+    expect(residentsSelectMock).toHaveBeenCalledWith(
+      expect.stringContaining("beds!residents_bed_id_fkey"),
+    );
+    expect(screen.getByText(/No active residents at Oakridge ALF right now\./)).toBeTruthy();
+  });
+
+  it("prefills Jessica discovery cadence for new COL plans", async () => {
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText(/Starting from COL Discovery Rounds — Day \+ Night/)).toBeTruthy();
+    expect(screen.getByDisplayValue("06:00")).toBeTruthy();
+    expect(screen.getByDisplayValue("05:30")).toBeTruthy();
+    expect(screen.getAllByLabelText(/Drag Rule/)).toHaveLength(7);
+  });
+
   it("strips ids in duplicate mode payload", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

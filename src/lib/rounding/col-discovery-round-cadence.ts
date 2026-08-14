@@ -44,6 +44,27 @@ export function resolveColDiscoveryCadenceKey(facilityName: string): ColDiscover
   return null;
 }
 
+export type ColDiscoveryDefaultRulesResult = {
+  profile: ColDiscoveryCadenceProfile | null;
+  templateName: string | null;
+  rules: PlanRuleInput[];
+};
+
+/** Facility-scoped Jessica discovery cadence for new observation plans (not migration 219 defaults). */
+export function resolveColDiscoveryDefaultRules(facilityName: string): ColDiscoveryDefaultRulesResult {
+  const key = resolveColDiscoveryCadenceKey(facilityName);
+  if (!key) {
+    return { profile: null, templateName: null, rules: [] };
+  }
+
+  const profile = getColDiscoveryCadenceProfile(key);
+  return {
+    profile,
+    templateName: COL_DISCOVERY_TEMPLATE_NAMES[profile],
+    rules: buildColDiscoveryRoundRules(profile),
+  };
+}
+
 export function getColDiscoveryCadenceProfile(key: ColDiscoveryCadenceKey): ColDiscoveryCadenceProfile {
   if (key === "plantation") return "pending";
   if (key === "homewood") return "homewood_two_hour_night";
