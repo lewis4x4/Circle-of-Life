@@ -31,7 +31,7 @@ import { extractXlsxSheets } from "./onboarding/homewood/ingestion-lib.mjs";
 
 const ROOT = process.cwd();
 const DEFAULT_FILE = "/Users/brianlewis/Desktop/AR May 2026.xlsx";
-const DEFAULT_ROOM_OVERRIDES = path.join(ROOT, "scripts", "homewood", "data", "homewood-ar-room-overrides.json");
+const DEFAULT_ROOM_OVERRIDES = null;
 const DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001";
 const DEFAULT_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const DEFAULT_ENTITY_ID = "00000000-0000-0000-0001-000000000003";
@@ -49,8 +49,8 @@ function usage() {
     "",
     "Options:",
     `  --file <path>              Current A/R XLSX (default: ${DEFAULT_FILE})`,
-    `  --room-overrides <path>    JSON room correction file (default: ${DEFAULT_ROOM_OVERRIDES})`,
-    "  --no-room-overrides        Ignore the default room correction file",
+    `  --room-overrides <path>    JSON room correction file (default: none; use local gitignored homewood-ar-room-overrides.json)`,
+    "  --no-room-overrides        Ignore room correction file (same as default)",
     "  --dry-run                  Plan only; no writes",
     `  --facility-id <uuid>       Homewood facility id (default: ${DEFAULT_FACILITY_ID})`,
     `  --organization-id <uuid>   COL organization id (default: ${DEFAULT_ORG_ID})`,

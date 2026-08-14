@@ -2,9 +2,9 @@
 /**
  * Homewood Lodge ALF — resident import.
  *
- * Reads the main CSV at `scripts/homewood/data/homewood-residents.csv`, plus
- * the restored Karen Coone one-row addendum, and creates `residents`,
- * `resident_payers`, `resident_contacts`, and an initial
+ * Reads the main CSV at `scripts/homewood/data/homewood-residents.csv` (gitignored)
+ * and optionally a second addendum CSV via `HOMEWOOD_ADDENDUM_CSV_PATH` or `--addendum=`.
+ * Creates `residents`, `resident_payers`, `resident_contacts`, and an initial
  * `resident_status_history` row for each imported resident.
  *
  * Idempotent on (facility_id, first_name, last_name, date_of_birth).
@@ -16,7 +16,7 @@
  * The dry-run mode validates the CSV (presence of required columns, room
  * lookup, enum value validity) without writing anything. The real run
  * upserts residents and writes per-row status to
- * `docs/homewood/IMPORT_LOG.md`.
+ * `test-results/homewood-import/import-residents-log.md` (gitignored).
  *
  * Required env (auto-loaded from .env.local):
  *   NEXT_PUBLIC_SUPABASE_URL
@@ -25,8 +25,8 @@
  * Optional env:
  *   HOMEWOOD_FACILITY_ID (default: 00000000-0000-0000-0002-000000000003)
  *   HOMEWOOD_CSV_PATH    (default: scripts/homewood/data/homewood-residents.csv)
- *   HOMEWOOD_ADDENDUM_CSV_PATH
- *     (default: scripts/homewood/data/homewood-residents-karen-coone.csv)
+ *   HOMEWOOD_ADDENDUM_CSV_PATH (optional second roster CSV; no default)
+ *   HOMEWOOD_IMPORT_LOG_PATH (override log output path)
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -37,8 +37,7 @@ import { createClient } from "@supabase/supabase-js";
 const ROOT = process.cwd();
 const DEFAULT_HOMEWOOD_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const DEFAULT_CSV_PATH = "scripts/homewood/data/homewood-residents.csv";
-const DEFAULT_ADDENDUM_CSV_PATH = "scripts/homewood/data/homewood-residents-karen-coone.csv";
-const LOG_PATH = path.join(ROOT, "docs", "homewood", "IMPORT_LOG.md");
+const LOG_PATH = path.join(ROOT, "test-results", "homewood-import", "import-residents-log.md");
 
 const REQUIRED_COLUMNS = [
   "first_name",
@@ -223,13 +222,17 @@ async function main() {
   const csvArg = csvOverride ? csvOverride.slice("--csv=".length) : process.env.HOMEWOOD_CSV_PATH ?? DEFAULT_CSV_PATH;
   const csvPath = resolveInputPath(csvArg);
   const addendumOverride = args.find((a) => a.startsWith("--addendum="));
-  const addendumArg = addendumOverride
-    ? addendumOverride.slice("--addendum=".length)
-    : process.env.HOMEWOOD_ADDENDUM_CSV_PATH ?? DEFAULT_ADDENDUM_CSV_PATH;
-  const addendumPath = resolveInputPath(addendumArg);
+  const addendumEnv = process.env.HOMEWOOD_ADDENDUM_CSV_PATH?.trim();
+  const addendumArg = addendumOverride ? addendumOverride.slice("--addendum=".length) : addendumEnv;
+  const logPath = process.env.HOMEWOOD_IMPORT_LOG_PATH?.trim()
+    ? resolveInputPath(process.env.HOMEWOOD_IMPORT_LOG_PATH.trim())
+    : LOG_PATH;
   const sourcePaths = [{ role: "main roster", filePath: csvPath }];
-  if (path.resolve(addendumPath) !== path.resolve(csvPath)) {
-    sourcePaths.push({ role: "Karen Coone addendum", filePath: addendumPath });
+  if (addendumArg) {
+    const addendumPath = resolveInputPath(addendumArg);
+    if (path.resolve(addendumPath) !== path.resolve(csvPath)) {
+      sourcePaths.push({ role: "addendum roster", filePath: addendumPath });
+    }
   }
 
   const url = requireEnv("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
@@ -536,12 +539,12 @@ async function main() {
     lines.push(`| ${r.source} | ${r.rowNum} | ${r.name} | ${r.status} | ${(r.reason ?? "").replace(/\|/g, "\\|")} |`);
   }
   lines.push("");
-  lines.push(`_Names appear in this log because the user runs the import locally and reviews the result. The log is committed only when no real PII has been imported — i.e. when the source CSV is \`homewood-residents.csv.example\`. Real-import logs stay local._`);
+  lines.push(`_Real import logs are gitignored under \`test-results/homewood-import/\`. Example shape only in \`docs/homewood/IMPORT_LOG.md\`._`);
   lines.push("");
-  mkdirSync(path.dirname(LOG_PATH), { recursive: true });
-  writeFileSync(LOG_PATH, `${lines.join("\n")}\n`);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  writeFileSync(logPath, `${lines.join("\n")}\n`);
 
-  console.log(`[homewood:import-residents] log: ${path.relative(ROOT, LOG_PATH)}`);
+  console.log(`[homewood:import-residents] log: ${path.relative(ROOT, logPath)}`);
   console.log(`[homewood:import-residents] tally: ${JSON.stringify(tally)}`);
   const fatal = (tally.FAILED ?? 0) + (tally.PARTIAL ?? 0);
   if (fatal > 0) process.exit(1);

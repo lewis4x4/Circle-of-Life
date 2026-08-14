@@ -3,8 +3,8 @@
  * Homewood Lodge ALF — live resident import.
  *
  * Sources:
- *   scripts/homewood/data/homewood-residents.csv
- *   scripts/homewood/data/homewood-residents-karen-coone.csv
+ *   scripts/homewood/data/homewood-residents.csv (gitignored)
+ *   optional addendum via --addendum-csv or HOMEWOOD_ADDENDUM_CSV_PATH
  *
  * Target live tables:
  *   residents
@@ -30,10 +30,9 @@ import { createClient } from "@supabase/supabase-js";
 
 const ROOT = process.cwd();
 const DEFAULT_CSV = path.join(ROOT, "scripts", "homewood", "data", "homewood-residents.csv");
-const DEFAULT_ADDENDUM_CSV = path.join(ROOT, "scripts", "homewood", "data", "homewood-residents-karen-coone.csv");
 const DEFAULT_FACILITY_ID = "00000000-0000-0000-0002-000000000003";
 const DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001";
-const LOG_PATH = path.join(ROOT, "docs", "homewood", "RESIDENT_IMPORT_LOG.md");
+const LOG_PATH = path.join(ROOT, "test-results", "homewood-import", "resident-import-log.md");
 const HOMEWOOD_DEMO_RESIDENT_IDS = [
   "c0000003-0000-0000-0000-000000000001",
   "c0000003-0000-0000-0000-000000000002",
@@ -68,8 +67,7 @@ function usage() {
     "",
     "Options:",
     `  --csv <path>             Source CSV (default: ${DEFAULT_CSV})`,
-    `  --addendum-csv <path>    Addendum CSV (default: ${DEFAULT_ADDENDUM_CSV})`,
-    "  --skip-addendum         Do not load the default Karen Coone addendum",
+    "  --addendum-csv <path>    Optional second roster CSV (no default; gitignored paths only)",
     "  --dry-run                Validate/plan only; no writes",
     "  --purge-demo             Soft-delete deterministic migration-120 demo Homewood residents before import",
     `  --facility-id <uuid>     Homewood facility id (default: ${DEFAULT_FACILITY_ID})`,
@@ -82,8 +80,7 @@ function usage() {
 function parseArgs(argv) {
   const args = {
     csv: DEFAULT_CSV,
-    addendumCsv: DEFAULT_ADDENDUM_CSV,
-    skipAddendum: false,
+    addendumCsv: null,
     dryRun: false,
     purgeDemo: false,
     facilityId: DEFAULT_FACILITY_ID,
@@ -96,7 +93,6 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--csv") args.csv = path.resolve(process.cwd(), argv[++i]);
     else if (a === "--addendum-csv") args.addendumCsv = path.resolve(process.cwd(), argv[++i]);
-    else if (a === "--skip-addendum") args.skipAddendum = true;
     else if (a === "--dry-run") args.dryRun = true;
     else if (a === "--purge-demo") args.purgeDemo = true;
     else if (a === "--facility-id") args.facilityId = argv[++i];
@@ -251,9 +247,14 @@ function loadCsvSource(source) {
 }
 
 function loadResidentSources(args) {
+  const addendumCsv =
+    args.addendumCsv ||
+    (process.env.HOMEWOOD_ADDENDUM_CSV_PATH?.trim()
+      ? path.resolve(ROOT, process.env.HOMEWOOD_ADDENDUM_CSV_PATH.trim())
+      : null);
   const sourcePaths = [{ role: "main roster", filePath: args.csv }];
-  if (!args.skipAddendum && path.resolve(args.addendumCsv) !== path.resolve(args.csv)) {
-    sourcePaths.push({ role: "Karen Coone addendum", filePath: args.addendumCsv });
+  if (addendumCsv && path.resolve(addendumCsv) !== path.resolve(args.csv)) {
+    sourcePaths.push({ role: "addendum roster", filePath: addendumCsv });
   }
 
   for (const source of sourcePaths) {
@@ -555,6 +556,9 @@ function summarize(results) {
 }
 
 function writeLog(args, facility, results, counters, warnings, sources) {
+  const logPath = process.env.HOMEWOOD_IMPORT_LOG_PATH?.trim()
+    ? path.resolve(ROOT, process.env.HOMEWOOD_IMPORT_LOG_PATH.trim())
+    : LOG_PATH;
   const lines = [];
   lines.push("# Homewood — Live Resident Import Log");
   lines.push("");
@@ -594,11 +598,11 @@ function writeLog(args, facility, results, counters, warnings, sources) {
     );
   }
   lines.push("");
-  lines.push("_This log contains resident names. Do not commit it after a real production import._");
+  lines.push("_Real import logs are gitignored under `test-results/homewood-import/`. Example shape only in `docs/homewood/RESIDENT_IMPORT_LOG.md`._");
   lines.push("");
 
-  mkdirSync(path.dirname(LOG_PATH), { recursive: true });
-  writeFileSync(LOG_PATH, `${lines.join("\n")}\n`);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  writeFileSync(logPath, `${lines.join("\n")}\n`);
 }
 
 async function run() {
@@ -626,7 +630,10 @@ async function run() {
       detail: `payer=${row.payer_type}; contact=${row.emergency_contact_name}`,
     }));
     writeLog(args, null, parseResults, { demoResidentsPurged: 0 }, allWarnings, sources);
-    console.log(`[homewood:residents] log: ${path.relative(ROOT, LOG_PATH)}`);
+    const logPath = process.env.HOMEWOOD_IMPORT_LOG_PATH?.trim()
+      ? path.resolve(ROOT, process.env.HOMEWOOD_IMPORT_LOG_PATH.trim())
+      : LOG_PATH;
+    console.log(`[homewood:residents] log: ${path.relative(ROOT, logPath)}`);
     return;
   }
 
@@ -716,7 +723,10 @@ async function run() {
   const tally = summarize(results);
   console.log(`[homewood:residents] ${args.dryRun ? "dry-run" : "write"} tally: ${JSON.stringify(tally)}`);
   console.log(`[homewood:residents] demo residents soft-deleted/planned: ${counters.demoResidentsPurged}`);
-  console.log(`[homewood:residents] log: ${path.relative(ROOT, LOG_PATH)}`);
+  const logPath = process.env.HOMEWOOD_IMPORT_LOG_PATH?.trim()
+    ? path.resolve(ROOT, process.env.HOMEWOOD_IMPORT_LOG_PATH.trim())
+    : LOG_PATH;
+  console.log(`[homewood:residents] log: ${path.relative(ROOT, logPath)}`);
 
   const failures = (tally.failed ?? 0) + (tally.blocked ?? 0);
   if (failures > 0) process.exit(1);
