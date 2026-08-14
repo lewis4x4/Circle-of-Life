@@ -141,6 +141,11 @@ async function main() {
       runFile(f, path.join(migrationsDir, f));
     }
 
+    const rpcGrantPosturePath = path.join(root, "supabase", "tests", "rpc_grant_posture.sql");
+    if (fs.existsSync(rpcGrantPosturePath)) {
+      runFile("rpc_grant_posture", rpcGrantPosturePath);
+    }
+
     console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s))`);
   } finally {
     cleanup();
