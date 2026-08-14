@@ -199,7 +199,7 @@ export default function StaffFamilyMessagesPage() {
                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
              </button>
              <div>
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 mb-2">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-2">
                    One-way note
                </div>
                <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
