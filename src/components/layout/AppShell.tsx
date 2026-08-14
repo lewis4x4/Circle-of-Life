@@ -49,9 +49,7 @@ import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-c
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -63,6 +61,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import {
   HavenNavLink,
@@ -98,6 +97,14 @@ const AppShellCommandPalette = dynamic(
   () =>
     import("@/components/layout/AppShellCommandPalette").then((m) => ({
       default: m.AppShellCommandPalette,
+    })),
+  { ssr: false, loading: () => null },
+);
+
+const AppShellSectionsJumpListPanel = dynamic(
+  () =>
+    import("@/components/layout/AppShellSectionsJumpList").then((m) => ({
+      default: m.AppShellSectionsJumpListPanel,
     })),
   { ssr: false, loading: () => null },
 );
@@ -183,6 +190,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [pillarSheetOpen, setPillarSheetOpen] = useState(false);
   const [sheetPillarId, setSheetPillarId] = useState<Pillar["id"] | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sectionsJumpListMounted, setSectionsJumpListMounted] = useState(false);
+  const [sectionsJumpListOpen, setSectionsJumpListOpen] = useState(false);
+  const [sectionsJumpListSearch, setSectionsJumpListSearch] = useState("");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -219,6 +229,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setPillarSheetOpen(false);
     setPaletteOpen(false);
+    setSectionsJumpListOpen(false);
+    setSectionsJumpListSearch("");
   }, [pathname]);
 
   useEffect(() => {
@@ -389,6 +401,12 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     [navigate],
   );
 
+  const handleSectionsJumpListOpenChange = useCallback((nextOpen: boolean) => {
+    if (nextOpen) setSectionsJumpListMounted(true);
+    setSectionsJumpListOpen(nextOpen);
+    if (!nextOpen) setSectionsJumpListSearch("");
+  }, []);
+
   // ── render helpers ───────────────────────────────────────────────
 
   const renderBrand = () => (
@@ -467,53 +485,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               <Check className="size-3.5 shrink-0 text-success mt-0.5" />
             )}
           </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  const renderAllSectionsMenu = (pillarsForMenu: Pillar[]) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Open all sections menu"
-        className={cn(
-          WORKSPACE_ICON_LG,
-          "transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-      >
-        <MenuIcon className="size-4" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={6}
-        className="w-[min(22rem,calc(100vw-1rem))] sm:w-72"
-      >
-        {pillarsForMenu.map((pillar, pillarIdx) => (
-          <React.Fragment key={pillar.id}>
-            {pillarIdx > 0 && <DropdownMenuSeparator />}
-            {/* GroupLabel is a base-ui "group part" and MUST sit inside a Group,
-                or base-ui throws error #31 at runtime (dev tolerates it, prod crashes). */}
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                {React.createElement(pillar.icon, { className: "size-3.5", "aria-hidden": true })}
-                {pillar.label}
-              </DropdownMenuLabel>
-              {pillar.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <DropdownMenuItem
-                    key={item.key}
-                    onClick={() => navigate(item.href)}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px]"
-                  >
-                    <Icon className="size-3.5 text-muted-foreground" aria-hidden />
-                    <span>{item.label}</span>
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuGroup>
-          </React.Fragment>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -741,7 +712,27 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       >
         {renderBrand()}
         {renderFacilityScope()}
-        {renderAllSectionsMenu(visiblePillars)}
+        <Popover open={sectionsJumpListOpen} onOpenChange={handleSectionsJumpListOpenChange}>
+          <PopoverTrigger
+            aria-label="Open all sections menu"
+            className={cn(
+              WORKSPACE_ICON_LG,
+              "transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
+          >
+            <MenuIcon className="size-4" aria-hidden />
+          </PopoverTrigger>
+          {sectionsJumpListMounted ? (
+            <AppShellSectionsJumpListPanel
+              pillars={visiblePillars}
+              onSelect={navigate}
+              search={sectionsJumpListSearch}
+              onSearchChange={setSectionsJumpListSearch}
+              onOpenChange={handleSectionsJumpListOpenChange}
+            />
+          ) : null}
+        </Popover>
 
         {/* Pillar tabs — desktop. Mobile uses the scroll strip below. */}
         <nav

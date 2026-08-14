@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import React from "react";
+import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -18,7 +19,16 @@ vi.mock("next-themes", () => ({
 }));
 
 vi.mock("next/dynamic", () => ({
-  default: () => () => null,
+  default: (importFn: () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>) => {
+    const Lazy = React.lazy(importFn);
+    return function DynamicComponent(props: Record<string, unknown>) {
+      return (
+        <React.Suspense fallback={null}>
+          <Lazy {...props} />
+        </React.Suspense>
+      );
+    };
+  },
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -109,33 +119,77 @@ function renderAppShell() {
   );
 }
 
-describe("AppShell all-sections menu", () => {
+describe("AppShell all-sections jump list", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // Regression guard for Base UI error #31: DropdownMenuLabel (a base-ui
-  // "group part") must sit inside a DropdownMenuGroup, or opening the menu
-  // throws at runtime (dev tolerates it; production crashes the page).
-  it("opens the all-sections menu on /admin/executive without crashing", async () => {
+  it("opens on /admin/executive without crashing and shows common destinations", async () => {
     const user = userEvent.setup();
     renderAppShell();
 
     const trigger = screen.getByRole("button", { name: /open all sections menu/i });
     await user.click(trigger);
 
+    await waitFor(() => {
+      expect(screen.getByTestId("all-sections-jump-list")).toBeInTheDocument();
+    });
+
     expect(trigger).toHaveAttribute("aria-expanded", "true");
 
-    const menuPanels = Array.from(
-      document.querySelectorAll('[data-slot="dropdown-menu-content"]'),
-    ) as HTMLElement[];
-    const allSectionsMenu = menuPanels.find(
-      (panel) =>
-        panel.textContent?.includes("Family Portal") &&
-        panel.textContent?.includes("Ask knowledge base"),
-    );
-    expect(allSectionsMenu).toBeTruthy();
-    expect(within(allSectionsMenu!).getByText("Executive")).toBeInTheDocument();
+    const jumpList = screen.getByTestId("all-sections-jump-list");
+    expect(within(jumpList).getByPlaceholderText("Jump to a section…")).toHaveFocus();
+    expect(within(jumpList).getByText("Executive")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Family Portal")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
+  });
+
+  it("closes when the trigger is clicked again", async () => {
+    const user = userEvent.setup();
+    renderAppShell();
+
+    const trigger = screen.getByRole("button", { name: /open all sections menu/i });
+    await user.click(trigger);
+
+    await screen.findByTestId("all-sections-jump-list");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(trigger);
+
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+
+  it("filters the full section list as the operator types", async () => {
+    const user = userEvent.setup();
+    renderAppShell();
+
+    await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
+
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
+    const search = within(jumpList).getByPlaceholderText("Jump to a section…");
+
+    await user.type(search, "billing");
+
+    expect(within(jumpList).getByText("Billing & AR")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Family Portal")).not.toBeInTheDocument();
+  });
+
+  it("navigates when a filtered destination is chosen", async () => {
+    const user = userEvent.setup();
+    renderAppShell();
+
+    await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
+
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
+    const search = within(jumpList).getByPlaceholderText("Jump to a section…");
+    await user.type(search, "clinical");
+
+    await user.click(within(jumpList).getByRole("option", { name: /clinical desk/i }));
+
+    expect(pushMock).toHaveBeenCalledWith("/admin/assessments/overdue");
   });
 });
