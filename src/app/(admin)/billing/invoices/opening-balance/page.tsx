@@ -200,6 +200,10 @@ export default function AdminOpeningBalancePage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading residents…
             </div>
+          ) : error && residents.length === 0 ? (
+            <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
           ) : residents.length === 0 ? (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
               No billable residents found for this facility. Confirm resident status is active or
