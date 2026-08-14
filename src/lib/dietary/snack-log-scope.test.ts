@@ -8,7 +8,7 @@ const readSource = (relativePath: string) =>
 
 const dietaryBootstrapSource = readSource("src/lib/dietary/load-dietary-hub-bootstrap.ts");
 const dietaryClientSource = readSource("src/components/dietary/AdminDietaryPageClient.tsx");
-const migrationSource = readSource("supabase/migrations/310_snack_logs_time_and_passer_only.sql");
+const migrationSource = readSource("supabase/migrations/311_snack_logs_time_and_passer_only.sql");
 
 const OUT_OF_SCOPE_SNACK_FIELDS = [
   "snack_description",

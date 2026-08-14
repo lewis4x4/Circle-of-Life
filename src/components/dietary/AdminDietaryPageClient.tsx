@@ -425,7 +425,7 @@ export function AdminDietaryPageClient({
               >
                 Med / diet review
               </Link>
-              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wider text-xs tap-responsive bg-primary-600 hover:bg-primary-700 text-white")} >
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wide text-xs tap-responsive bg-primary-600 hover:bg-primary-700 text-white")} >
                 + New Diet Order
               </Link>
            </div>
