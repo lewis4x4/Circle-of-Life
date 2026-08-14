@@ -88,6 +88,7 @@ export async function fetchFamilyMessagesForResident(
     .from("family_portal_messages")
     .select("id, author_user_id, author_kind, body, created_at")
     .eq("resident_id", residentId)
+    .eq("author_kind", "staff")
     .is("deleted_at", null)
     .order("created_at", { ascending: true })
     .limit(200);
@@ -112,44 +113,4 @@ export async function fetchFamilyMessagesForResident(
   }));
 
   return { ok: true, messages };
-}
-
-export async function postFamilyMessage(
-  supabase: SupabaseClient<Database>,
-  residentId: string,
-  body: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const trimmed = body.trim();
-  if (!trimmed) return { ok: false, error: "Message cannot be empty." };
-  if (trimmed.length > 8000) return { ok: false, error: "Message is too long (max 8000 characters)." };
-
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr) return { ok: false, error: userErr.message };
-  if (!user) return { ok: false, error: "Sign in to send a message." };
-
-  const resQ = await supabase
-    .from("residents")
-    .select("id, facility_id, organization_id")
-    .eq("id", residentId)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (resQ.error) return { ok: false, error: resQ.error.message };
-  const res = resQ.data as { id: string; facility_id: string; organization_id: string } | null;
-  if (!res) return { ok: false, error: "Resident not found or not accessible." };
-
-  const ins = await supabase.from("family_portal_messages").insert({
-    organization_id: res.organization_id,
-    facility_id: res.facility_id,
-    resident_id: residentId,
-    author_user_id: user.id,
-    author_kind: "family",
-    body: trimmed,
-  });
-
-  if (ins.error) return { ok: false, error: ins.error.message };
-  return { ok: true };
 }

@@ -10,7 +10,6 @@ export type StaffMessageThread = {
   lastMessageAt: string;
   lastMessageAtIso: string;
   lastAuthorKind: "family" | "staff";
-  unreadHint: boolean;
   messageCount: number;
   latestDeliveryMethod: FamilyDeliveryMethod;
   latestFamilyAcknowledgedAt: string | null;
@@ -212,7 +211,6 @@ export async function fetchStaffMessageThreads(
       lastMessageAt: timeAgo(latest.created_at),
       lastMessageAtIso: latest.created_at,
       lastAuthorKind: latest.author_kind,
-      unreadHint: latest.author_kind === "family",
       messageCount: msgs.length,
       latestDeliveryMethod: latest.delivery_method,
       latestFamilyAcknowledgedAt: latest.family_acknowledged_at,
@@ -232,7 +230,6 @@ export async function fetchStaffMessageThreads(
     const aTriage = a.triageStatus ? (triagePriority[a.triageStatus] ?? 9) : 9;
     const bTriage = b.triageStatus ? (triagePriority[b.triageStatus] ?? 9) : 9;
     if (aTriage !== bTriage) return aTriage - bTriage;
-    if (a.unreadHint !== b.unreadHint) return a.unreadHint ? -1 : 1;
     return new Date(b.lastMessageAtIso).getTime() - new Date(a.lastMessageAtIso).getTime();
   });
 

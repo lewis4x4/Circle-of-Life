@@ -38,15 +38,15 @@ export default function StaffFamilyMessagesPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<FamilyDeliveryMethod>("portal_only");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [threadFilter, setThreadFilter] = useState<"all" | "triage" | "family_replied">("all");
+  const [threadFilter, setThreadFilter] = useState<"all" | "triage">("all");
   const [threadActionLoading, setThreadActionLoading] = useState<string | null>(null);
   const [threadActionError, setThreadActionError] = useState<string | null>(null);
   const [threadActionMessage, setThreadActionMessage] = useState<string | null>(null);
   const requestedFilter = searchParams.get("filter");
 
   useEffect(() => {
-    if (requestedFilter === "triage" || requestedFilter === "family_replied") {
-      setThreadFilter(requestedFilter);
+    if (requestedFilter === "triage") {
+      setThreadFilter("triage");
       return;
     }
     setThreadFilter("all");
@@ -117,9 +117,6 @@ export default function StaffFamilyMessagesPage() {
   const visibleThreads = threads.filter((thread) => {
     if (threadFilter === "triage") {
       return thread.triageStatus === "pending_review" || thread.triageStatus === "in_review";
-    }
-    if (threadFilter === "family_replied") {
-      return thread.unreadHint;
     }
     return true;
   });
@@ -202,8 +199,8 @@ export default function StaffFamilyMessagesPage() {
                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
              </button>
              <div>
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 mb-2">
-                   Active Thread
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wide text-primary-600 dark:text-primary-400 mb-2">
+                   One-way note
                </div>
                <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
                  {residentName}
@@ -307,7 +304,7 @@ export default function StaffFamilyMessagesPage() {
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8">
                     <MessageCircle className="h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
-                    <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">No messages yet. Start the conversation.</p>
+                    <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">No notes yet. Post the first update to the family portal.</p>
                   </div>
                 ) : (
                   messages.map((m) => {
@@ -362,7 +359,7 @@ export default function StaffFamilyMessagesPage() {
                 </div>
                 <div className="flex gap-3 items-end">
                 <textarea
-                  placeholder="Type your reply to the family..."
+                  placeholder="Post a one-way note to the family portal…"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   maxLength={8000}
@@ -402,10 +399,10 @@ export default function StaffFamilyMessagesPage() {
          <div className="space-y-2">
            
            <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Direct Messages
+              Family Portal Notes
            </h1>
            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-             Conversations with families about their residents.
+             One-way updates from staff to families. Families cannot reply from the portal.
            </p>
          </div>
       </div>
@@ -421,7 +418,7 @@ export default function StaffFamilyMessagesPage() {
           <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2">
             <MessageCircle className="h-5 w-5 text-primary-500" />
             <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
-              Active Threads
+              Resident threads
             </h3>
             {threadFilter !== "all" ? (
               <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-primary-500/10 text-primary-600 border-primary-500/20 dark:text-primary-400 text-[10px] font-bold uppercase tracking-wider">
@@ -434,12 +431,11 @@ export default function StaffFamilyMessagesPage() {
             {[
               { key: "all", label: `All (${threads.length})` },
               { key: "triage", label: `Triage (${threads.filter((t) => t.triageStatus === "pending_review" || t.triageStatus === "in_review").length})` },
-              { key: "family_replied", label: `Family replied (${threads.filter((t) => t.unreadHint).length})` },
             ].map((option) => (
               <button
                 key={option.key}
                 type="button"
-                onClick={() => setThreadFilter(option.key as "all" | "triage" | "family_replied")}
+                onClick={() => setThreadFilter(option.key as "all" | "triage")}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                   threadFilter === option.key
@@ -454,7 +450,7 @@ export default function StaffFamilyMessagesPage() {
           {threadFilter !== "all" ? (
             <div className="flex flex-wrap items-center gap-2 px-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-primary-500/10 text-primary-600 border-primary-500/20 dark:text-primary-400 text-[10px] font-bold uppercase tracking-wider">
-                Thread filter: {threadFilter === "family_replied" ? "family replied" : threadFilter}
+                Thread filter: {threadFilter}
               </span>
               <Link href="/admin/family-messages" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
                 Clear thread filter
@@ -484,11 +480,6 @@ export default function StaffFamilyMessagesPage() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                         {t.lastMessageAt}
                       </span>
-                      {t.unreadHint && (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                          Family replied
-                        </span>
-                      )}
                       {t.triageStatus === "pending_review" ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider">
                           Triage pending
@@ -504,7 +495,7 @@ export default function StaffFamilyMessagesPage() {
                   <div className="bg-white rounded-lg p-5 shadow-sm border border-slate-100 dark:border-white/5">
                     <p className="text-[15px] text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
                       <span className="font-bold text-slate-900 dark:text-white mr-2 opacity-80 uppercase tracking-wider text-[10px]">
-                        {t.lastAuthorKind === "staff" ? "You" : "Family"}
+                        {t.lastAuthorKind === "staff" ? "Staff" : "Legacy"}
                       </span>
                       {t.lastMessageBody}
                     </p>

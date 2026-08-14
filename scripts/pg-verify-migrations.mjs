@@ -146,6 +146,11 @@ async function main() {
       runFile("rpc_grant_posture", rpcGrantPosturePath);
     }
 
+    const familyOneWayPath = path.join(root, "supabase", "tests", "family_portal_messages_one_way.sql");
+    if (fs.existsSync(familyOneWayPath)) {
+      runFile("family_portal_messages_one_way", familyOneWayPath);
+    }
+
     console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s))`);
   } finally {
     cleanup();
