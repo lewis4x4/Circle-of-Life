@@ -492,11 +492,13 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         {pillarsForMenu.map((pillar, pillarIdx) => (
           <React.Fragment key={pillar.id}>
             {pillarIdx > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuLabel className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {React.createElement(pillar.icon, { className: "size-3.5", "aria-hidden": true })}
-              {pillar.label}
-            </DropdownMenuLabel>
+            {/* GroupLabel is a base-ui "group part" and MUST sit inside a Group,
+                or base-ui throws error #31 at runtime (dev tolerates it, prod crashes). */}
             <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {React.createElement(pillar.icon, { className: "size-3.5", "aria-hidden": true })}
+                {pillar.label}
+              </DropdownMenuLabel>
               {pillar.items.map((item) => {
                 const Icon = item.icon;
                 return (
