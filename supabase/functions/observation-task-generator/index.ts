@@ -27,10 +27,16 @@ interface PlanRule {
   daypart_start: string | null; // "HH:MM"
   daypart_end: string | null;
   grace_minutes: number;
+  required_fields_schema: Record<string, unknown> | null;
   organization_id: string;
   entity_id: string;
   facility_id: string;
   resident_id: string;
+}
+
+function scheduledTimeFromSchema(schema: Record<string, unknown> | null | undefined): string | null {
+  const value = schema?.scheduled_time;
+  return typeof value === "string" ? value : null;
 }
 
 function generateTimestamps(
@@ -39,6 +45,20 @@ function generateTimestamps(
   horizon: Date,
 ): Date[] {
   const timestamps: Date[] = [];
+  const discreteTime = scheduledTimeFromSchema(rule.required_fields_schema);
+
+  if (rule.interval_type === "daypart" && discreteTime && rule.interval_minutes == null) {
+    const [hours, minutes] = discreteTime.split(":").map(Number);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return timestamps;
+
+    const cursor = new Date(now);
+    cursor.setUTCHours(hours, minutes, 0, 0);
+    if (cursor < now) {
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    if (cursor < horizon) timestamps.push(new Date(cursor));
+    return timestamps;
+  }
 
   if (rule.interval_type === "fixed_minutes") {
     const interval = (rule.interval_minutes ?? 60) * 60_000;
@@ -123,7 +143,7 @@ Deno.serve(async (req) => {
   // 2. Active rules
   const { data: rules, error: rulesErr } = await admin
     .from("resident_observation_plan_rules")
-    .select("id, plan_id, interval_type, interval_minutes, daypart_start, daypart_end, grace_minutes")
+    .select("id, plan_id, interval_type, interval_minutes, daypart_start, daypart_end, grace_minutes, required_fields_schema")
     .in("plan_id", planIds)
     .eq("active", true)
     .is("deleted_at", null);
