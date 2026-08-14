@@ -183,12 +183,28 @@ export default function AdminOpeningBalancePage() {
             opening balance). Creates a draft invoice in Haven so aging and payments work against
             the real ledger.
           </CardDescription>
+          <p className="text-sm text-muted-foreground">
+            This records prior AR already owed — not a new monthly room-and-board invoice. Use{" "}
+            <Link href="/admin/billing/invoices/generate" className="font-medium underline-offset-2 hover:underline">
+              Generate invoices
+            </Link>{" "}
+            for recurring billing.
+          </p>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) ? (
+            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              Select a facility in the header to enter an opening balance for that site.
+            </p>
+          ) : loading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading residents…
             </div>
+          ) : residents.length === 0 ? (
+            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              No billable residents found for this facility. Confirm resident status is active or
+              pending move-in, then refresh.
+            </p>
           ) : (
             <form className="space-y-4" onSubmit={(e) => void submit(e)}>
               {error ? (
