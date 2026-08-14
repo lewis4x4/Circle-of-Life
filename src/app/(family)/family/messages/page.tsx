@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, MessageSquare, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -11,22 +11,20 @@ import {
   type FamilyMessageRow,
 } from "@/lib/family/family-messages-data";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
-import {
-  T8InboxThreaded,
-  type T8QueueItem,
-} from "@/design-system/templates/T8InboxThreaded";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
+import { FamilyPortalUpdateLog } from "@/components/family-portal/FamilyPortalUpdateLog";
 
 type SupabaseDb = SupabaseClient<Database>;
 
 export default function FamilyMessagesPage() {
   const supabase = useMemo(() => createClient(), []);
-  const [pageOpenedAt] = useState(() => new Date());
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingResidents, setLoadingResidents] = useState(true);
   const [residents, setResidents] = useState<FamilyLinkedResidentOption[]>([]);
+  const [selectedResidentId, setSelectedResidentId] = useState<string | null>(null);
 
   const loadResidents = useCallback(async () => {
     setLoadingResidents(true);
@@ -46,6 +44,7 @@ export default function FamilyMessagesPage() {
         setResidents([]);
       } else {
         setResidents(result.residents);
+        setSelectedResidentId((current) => current ?? result.residents[0]?.id ?? null);
       }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load updates.");
@@ -59,13 +58,13 @@ export default function FamilyMessagesPage() {
     void loadResidents();
   }, [loadResidents]);
 
+  const selectedResident = residents.find((resident) => resident.id === selectedResidentId) ?? null;
+
   if (configError) {
     return (
       <div
         role="alert"
-        className={cn(
-          "mx-auto mt-20 max-w-lg rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm text-destructive",
-        )}
+        className="mx-auto mt-20 max-w-lg rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm text-destructive"
       >
         {configError}
       </div>
@@ -79,11 +78,8 @@ export default function FamilyMessagesPage() {
         role="status"
         aria-live="polite"
       >
-        <Loader2
-          className="h-8 w-8 animate-spin text-primary"
-          aria-hidden="true"
-        />
-        <p className="text-sm font-medium">Securing connection…</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+        <p className="text-sm font-medium">Loading care team updates…</p>
       </div>
     );
   }
@@ -95,10 +91,6 @@ export default function FamilyMessagesPage() {
           role="alert"
           className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-6 text-sm text-destructive"
         >
-          <MessageSquare
-            className="mx-auto mb-3 h-8 w-8 text-destructive"
-            aria-hidden="true"
-          />
           <p>{loadError}</p>
         </div>
         <button
@@ -111,7 +103,7 @@ export default function FamilyMessagesPage() {
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
           )}
         >
-          Retry connection
+          Retry
         </button>
       </div>
     );
@@ -121,79 +113,85 @@ export default function FamilyMessagesPage() {
     return (
       <div className="mx-auto mt-20 max-w-md px-4 pb-16 text-center md:pb-0">
         <div className="rounded-lg border border-border bg-card px-4 py-8">
-          <MessageSquare
-            className="mx-auto mb-3 h-8 w-8 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <p className="text-sm font-semibold text-foreground">
-            No linked residents.
-          </p>
+          <p className="text-sm font-semibold text-foreground">No linked residents</p>
           <p className="mx-auto mt-2 max-w-xs text-xs text-muted-foreground">
-            Care team updates are not available until your account is linked to a
-            resident.
+            Care team updates are not available until your account is linked to a resident.
           </p>
         </div>
       </div>
     );
   }
 
-  const queue: T8QueueItem[] = residents.map((r) => ({
-    id: r.id,
-    title: r.displayName,
-    meta: "Updates",
-  }));
-
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-8 pt-6 md:pt-10">
-      <T8InboxThreaded
-        title="Updates"
-        subtitle="Read-only notes from your care team. This portal does not support replies."
-        queue={queue}
-        initialSelectedId={residents[0]?.id}
-        renderThread={(item) => (
-          <ThreadDetail
-            supabase={supabase}
-            residentId={item?.id ?? null}
-            residentName={item?.title ?? null}
-          />
-        )}
-        contextRail={
-          <section
-            aria-label="Update visibility"
-            className="rounded-lg border border-border bg-card"
-          >
-            <header className="border-b border-border px-4 py-2 text-xs font-semibold uppercase tracking-caps text-muted-foreground">
-              Visibility
-            </header>
-            <div className="space-y-2 px-4 py-3 text-xs text-muted-foreground">
-              <p className="flex items-start gap-2 text-foreground">
-                <ShieldCheck
-                  className="mt-0.5 h-4 w-4 shrink-0 text-success"
-                  aria-hidden="true"
-                />
-                <span>
-                  Updates are private, time-stamped, and posted by the care
-                  team.
-                </span>
-              </p>
-              <p>
-                For urgent medical concerns, contact the facility directly by
-                phone.
-              </p>
-            </div>
-          </section>
+    <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pb-16 pt-8 md:pb-0">
+      <FamilySectionIntro
+        active="messages"
+        title="Care team updates"
+        description="Read-only notes from your care team. This portal does not support replies."
+        residentSummary={
+          residents.length === 1 ? residents[0]?.displayName : undefined
         }
-        audit={{
-          auditHref: "/family",
-          updatedAt: pageOpenedAt,
-          live: true,
-        }}
       />
+
+      {residents.length > 1 ? (
+        <div className="flex flex-wrap justify-center gap-2">
+          {residents.map((resident) => {
+            const active = resident.id === selectedResidentId;
+            return (
+              <button
+                key={resident.id}
+                type="button"
+                onClick={() => setSelectedResidentId(resident.id)}
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm transition-colors",
+                  active
+                    ? "border-border bg-card text-foreground shadow-sm"
+                    : "border-transparent bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                aria-current={active ? "true" : undefined}
+              >
+                {resident.displayName}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+        <ResidentUpdateLog
+          supabase={supabase}
+          residentId={selectedResidentId}
+          residentName={selectedResident?.displayName ?? null}
+        />
+
+        <aside
+          aria-label="Update visibility"
+          className="h-fit rounded-lg border border-border bg-card"
+        >
+          <header className="border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
+            About these updates
+          </header>
+          <div className="space-y-2 px-4 py-3 text-xs text-muted-foreground">
+            <p className="flex items-start gap-2 text-foreground">
+              <ShieldCheck
+                className="mt-0.5 h-4 w-4 shrink-0 text-success"
+                aria-hidden="true"
+              />
+              <span>
+                Updates are private, time-stamped, and posted by the care team.
+              </span>
+            </p>
+            <p>
+              For urgent medical concerns, contact the facility directly by phone.
+            </p>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
 
-function ThreadDetail({
+function ResidentUpdateLog({
   supabase,
   residentId,
   residentName,
@@ -214,10 +212,7 @@ function ThreadDetail({
     setLoadingMessages(true);
     setError(null);
     try {
-      const result = await fetchFamilyMessagesForResident(
-        supabase,
-        residentId,
-      );
+      const result = await fetchFamilyMessagesForResident(supabase, residentId);
       if (!result.ok) {
         setError(result.error);
         setMessages([]);
@@ -245,87 +240,47 @@ function ThreadDetail({
   }
 
   return (
-    <article
-      aria-label={`Care team updates: ${residentName ?? "Resident"}`}
-      className="flex flex-col gap-4"
-    >
-      <header className="flex items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-caps text-muted-foreground">
-            Updates for
-          </p>
-          <h2 className="truncate text-base font-semibold text-foreground">
+    <section aria-label={`Care team updates for ${residentName ?? "resident"}`}>
+      <header className="mb-4 border-b border-border pb-3">
+        <p className="text-xs text-muted-foreground">Updates for</p>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="truncate text-lg font-medium text-foreground">
             {residentName ?? "Resident"}
           </h2>
+          {error ? (
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="inline-flex h-7 shrink-0 items-center rounded-md border border-border bg-card px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Refresh
+            </button>
+          ) : null}
         </div>
-        {error ? (
-          <button
-            type="button"
-            onClick={() => void refresh()}
-            className={cn(
-              "inline-flex h-7 shrink-0 items-center rounded-md border border-border bg-card px-2 text-xs font-medium text-muted-foreground",
-              "transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]",
-              "hover:bg-muted hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-            )}
-          >
-            Refresh
-          </button>
-        ) : null}
       </header>
 
       {error ? (
         <p
           role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
         >
           {error}
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-4">
-        {loadingMessages ? (
-          <div
-            className="flex items-center justify-center py-10 text-muted-foreground"
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <MessageSquare
-              className="mb-3 h-10 w-10 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <p className="text-sm font-medium text-foreground">
-              No updates yet.
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              When the care team posts a note, it will appear here.
-            </p>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {messages.map((m) => (
-              <li key={m.id} className="flex w-full flex-col gap-1 items-start">
-                <div
-                  className={cn(
-                    "max-w-[85%] rounded-lg border border-border bg-muted px-4 py-3 text-sm leading-relaxed sm:max-w-[70%]",
-                  )}
-                >
-                  <p className="whitespace-pre-wrap text-foreground">{m.body}</p>
-                </div>
-                <p className="flex gap-2 text-xs text-muted-foreground justify-start">
-                  <span className="font-medium text-foreground">Care Team</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{m.timeLabel}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </article>
+      <FamilyPortalUpdateLog
+        loading={loadingMessages}
+        items={[...messages].reverse().map((message) => ({
+          id: message.id,
+          body: message.body,
+          timestamp: message.timeLabel,
+          authorLabel: "Care team",
+          variant: "staff" as const,
+        }))}
+        emptyTitle="No updates yet"
+        emptyDescription="When the care team posts a note, it will appear here."
+        listLabel="Posted updates"
+      />
+    </section>
   );
 }
