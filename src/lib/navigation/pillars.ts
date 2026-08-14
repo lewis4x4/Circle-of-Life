@@ -205,4 +205,48 @@ export function allPillarItems(): Array<PillarItem & { pillar: Pillar }> {
   return PILLARS.flatMap((pillar) => pillar.items.map((item) => ({ ...item, pillar })));
 }
 
+/**
+ * Stable keys for the all-sections jump list when the search field is empty.
+ * Curated operator screens — not a full pillar dump.
+ */
+export const SECTION_JUMP_QUICK_KEYS = [
+  "executive",
+  "residents",
+  "incidents",
+  "billing",
+  "facilities",
+  "family-portal",
+  "kb-chat",
+  "staff",
+] as const;
+
+export type SectionJumpEntry = PillarItem & {
+  pillarLabel?: string;
+  group: "pillar" | "auxiliary";
+};
+
+/** All jump-list destinations (pillar items + auxiliary routes). */
+export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
+  const pillarEntries = pillars.flatMap((pillar) =>
+    pillar.items.map((item) => ({
+      ...item,
+      pillarLabel: pillar.label,
+      group: "pillar" as const,
+    })),
+  );
+  const auxiliaryEntries = AUXILIARY_ROUTES.map((item) => ({
+    ...item,
+    group: "auxiliary" as const,
+  }));
+  return [...pillarEntries, ...auxiliaryEntries];
+}
+
+/** Quick links shown before the operator types in the all-sections jump list. */
+export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
+  const byKey = new Map(allSectionJumpEntries(pillars).map((entry) => [entry.key, entry]));
+  return SECTION_JUMP_QUICK_KEYS.map((key) => byKey.get(key)).filter(
+    (entry): entry is SectionJumpEntry => entry != null,
+  );
+}
+
 export const PILLAR_ITEM_CAP = 9;
