@@ -14,7 +14,6 @@ const FAMILY_ADMIN_ROUTES = [
   "/admin/family-portal",
   "/admin/family-portal/consents/new",
   "/admin/family-messages",
-  "/admin/family-messages?filter=triage",
 ];
 
 function operatorFacingText(context: ReturnType<typeof resolveModuleContext>): string {
