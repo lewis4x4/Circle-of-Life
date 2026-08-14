@@ -25,8 +25,15 @@ test-results/homewood-launch-html/
 test-results/homewood-launch-output/
 test-results/homewood-launch.json
 
-# Real Homewood roster data — never commit. The .example file IS committed.
+# Homewood real resident import artifacts — never commit. Example stubs ARE committed.
 scripts/homewood/data/homewood-residents.csv
+scripts/homewood/data/homewood-residents-*.csv
+!scripts/homewood/data/homewood-residents.csv.example
+!scripts/homewood/data/homewood-residents-addendum.example.csv
+scripts/homewood/data/homewood-residents.PROVENANCE.md
+scripts/homewood/data/homewood-ar-room-overrides.json
+# Generated import logs (real runs write here; docs/homewood/* stubs stay example-only)
+test-results/homewood-import/
 
 # next.js
 /.next/
