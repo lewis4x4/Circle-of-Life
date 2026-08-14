@@ -87,7 +87,7 @@ describe("family billing queries filter soft-deleted rows", () => {
 });
 
 describe("family feed queries filter soft-deleted rows", () => {
-  it("incidents and invoices both filter deleted_at IS NULL", async () => {
+  it("incidents, invoices, and staff notes filter deleted_at IS NULL", async () => {
     const mock = makeMockSupabase({
       linkRows: [
         { resident_id: "r-1", can_view_clinical: true, can_view_financial: true },
@@ -97,5 +97,6 @@ describe("family feed queries filter soft-deleted rows", () => {
     expect(res.ok).toBe(true);
     expect(mock.hasSoftDeleteFilter("incidents")).toBe(true);
     expect(mock.hasSoftDeleteFilter("invoices")).toBe(true);
+    expect(mock.hasSoftDeleteFilter("family_portal_messages")).toBe(true);
   });
 });

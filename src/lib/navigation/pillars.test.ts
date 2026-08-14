@@ -27,8 +27,8 @@ describe("pillars navigation", () => {
     expect(quick.length).toBeGreaterThan(0);
     expect(quick.length).toBeLessThan(all.length);
     expect(quick.map((entry) => entry.key)).toContain("executive");
-    expect(quick.map((entry) => entry.key)).toContain("family-portal");
-    expect(all.some((entry) => entry.href === "/admin/family-portal")).toBe(true);
+    expect(quick.map((entry) => entry.key)).toContain("family-messages");
+    expect(all.some((entry) => entry.href === "/admin/family-messages")).toBe(true);
     expect(all.some((entry) => entry.href === "/admin/knowledge")).toBe(true);
     expect(all.some((entry) => entry.href === "/admin/finance")).toBe(true);
   });

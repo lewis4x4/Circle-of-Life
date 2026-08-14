@@ -10,7 +10,7 @@ import {
   HeartPulse,
   Loader2,
   LogOut,
-  MessageSquare,
+  Megaphone,
   UserCircle2,
 } from "lucide-react";
 
@@ -94,8 +94,8 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       },
       {
         href: "/family/messages",
-        label: "Messages",
-        icon: <MessageSquare className="h-5 w-5" aria-hidden />,
+        label: "Updates",
+        icon: <Megaphone className="h-5 w-5" aria-hidden />,
         active: pathname.startsWith("/family/messages"),
       },
       {

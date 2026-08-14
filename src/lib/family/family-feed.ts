@@ -27,7 +27,24 @@ export type FamilyFeedInvoiceItem = {
   href: string;
 };
 
-export type FamilyFeedItem = FamilyFeedIncidentItem | FamilyFeedInvoiceItem;
+export type FamilyFeedNoteItem = {
+  kind: "note";
+  id: string;
+  sortAt: string;
+  residentId: string;
+  residentName: string;
+  title: string;
+  body: string;
+  detail: string;
+  timeLabel: string;
+  badge: string;
+  href: string;
+};
+
+export type FamilyFeedItem =
+  | FamilyFeedIncidentItem
+  | FamilyFeedInvoiceItem
+  | FamilyFeedNoteItem;
 
 /** Data for `/family` home feed (RLS-scoped). */
 export type FamilyHomeSnapshot = {
@@ -39,7 +56,10 @@ export type FamilyHomeSnapshot = {
     clinicalWeek: string;
     billingOpen: string;
     feedToday: string;
+    staffNotes: string;
   };
+  /** Most recent staff bulletin note — surfaced first on Today home. */
+  featuredNote: FamilyFeedNoteItem | null;
   items: FamilyFeedItem[];
 };
 
@@ -147,7 +167,9 @@ export async function fetchFamilyHomeSnapshot(
           clinicalWeek: "0",
           billingOpen: "0",
           feedToday: "0",
+          staffNotes: "0",
         },
+        featuredNote: null,
         items: [],
       },
     };
@@ -156,7 +178,7 @@ export async function fetchFamilyHomeSnapshot(
   const linkByResident = new Map(links.map((l) => [l.resident_id, l] as const));
   const residentIds = [...new Set(links.map((l) => l.resident_id))];
 
-  const [resQ, incQ, invQ] = await Promise.all([
+  const [resQ, incQ, invQ, noteQ] = await Promise.all([
     supabase
       .from("residents")
       .select("id, first_name, last_name, preferred_name")
@@ -176,11 +198,20 @@ export async function fetchFamilyHomeSnapshot(
       .is("deleted_at", null)
       .order("invoice_date", { ascending: false })
       .limit(20),
+    supabase
+      .from("family_portal_messages")
+      .select("id, resident_id, body, created_at")
+      .in("resident_id", residentIds)
+      .eq("author_kind", "staff")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(25),
   ]);
 
   if (resQ.error) return { ok: false, error: resQ.error.message };
   if (incQ.error) return { ok: false, error: incQ.error.message };
   if (invQ.error) return { ok: false, error: invQ.error.message };
+  if (noteQ.error) return { ok: false, error: noteQ.error.message };
 
   const nameById = new Map(
     (resQ.data ?? []).map((r) => {
@@ -235,6 +266,34 @@ export async function fetchFamilyHomeSnapshot(
     });
   }
 
+  for (const raw of noteQ.data ?? []) {
+    const note = raw as {
+      id: string;
+      resident_id: string;
+      body: string;
+      created_at: string;
+    };
+    if (!linkByResident.has(note.resident_id)) continue;
+
+    const residentName = nameById.get(note.resident_id) ?? "Your loved one";
+    const title = `Care team update · ${residentName}`;
+    const detail = truncate(note.body, 220);
+
+    items.push({
+      kind: "note",
+      id: note.id,
+      sortAt: note.created_at,
+      residentId: note.resident_id,
+      residentName,
+      title,
+      body: note.body,
+      detail,
+      timeLabel: formatShortTime(note.created_at),
+      badge: "Update",
+      href: "/family/messages",
+    });
+  }
+
   for (const raw of invQ.data ?? []) {
     const inv = raw as {
       id: string;
@@ -285,6 +344,14 @@ export async function fetchFamilyHomeSnapshot(
 
   const feedToday = items.filter((it) => isCalendarToday(it.sortAt, now)).length;
 
+  const staffNotes = (noteQ.data ?? []).filter((row) => {
+    const note = row as { resident_id: string };
+    return linkByResident.has(note.resident_id);
+  }).length;
+
+  const featuredNote =
+    items.find((it): it is FamilyFeedNoteItem => it.kind === "note") ?? null;
+
   return {
     ok: true,
     data: {
@@ -295,7 +362,9 @@ export async function fetchFamilyHomeSnapshot(
         clinicalWeek: String(incidentsWeek),
         billingOpen: String(openInvoices),
         feedToday: String(feedToday),
+        staffNotes: String(staffNotes),
       },
+      featuredNote,
       items: topItems,
     },
   };

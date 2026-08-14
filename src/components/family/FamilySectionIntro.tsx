@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type FamilySectionKey = "today" | "calendar" | "care" | "messages" | "billing";
+type FamilySectionKey = "today" | "calendar" | "care" | "updates" | "billing";
 
 const SECTION_LINKS: Array<{ key: FamilySectionKey; href: string; label: string }> = [
   { key: "today", href: "/family", label: "Today" },
   { key: "calendar", href: "/family/calendar", label: "Calendar" },
   { key: "care", href: "/family/care-plan", label: "Care" },
-  { key: "messages", href: "/family/messages", label: "Messages" },
+  { key: "updates", href: "/family/messages", label: "Updates" },
   { key: "billing", href: "/family/billing", label: "Billing" },
 ];
 
@@ -33,7 +33,7 @@ export function FamilySectionIntro({
           </p>
         ) : (
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-400">
-            Family Portal
+            Family updates
           </p>
         )}
         <h1 className="mt-3 text-4xl md:text-5xl font-serif text-stone-800 tracking-tight">{title}</h1>

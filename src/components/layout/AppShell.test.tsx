@@ -140,7 +140,7 @@ describe("AppShell all-sections jump list", () => {
     const jumpList = screen.getByTestId("all-sections-jump-list");
     expect(within(jumpList).getByPlaceholderText("Jump to a section…")).toHaveFocus();
     expect(within(jumpList).getByText("Executive")).toBeInTheDocument();
-    expect(within(jumpList).getByText("Family Portal")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Family notes")).toBeInTheDocument();
     expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
@@ -175,7 +175,7 @@ describe("AppShell all-sections jump list", () => {
 
     expect(within(jumpList).getByText("Billing & AR")).toBeInTheDocument();
     expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Family Portal")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Family notes")).not.toBeInTheDocument();
   });
 
   it("navigates when a filtered destination is chosen", async () => {
