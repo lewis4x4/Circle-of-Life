@@ -64,6 +64,7 @@ export function NavPendingIndicator({ className }: { className?: string }) {
 
   return (
     <div
+      data-testid="admin-navigation-feedback"
       role="progressbar"
       aria-hidden={!isNavigating}
       aria-valuemin={0}

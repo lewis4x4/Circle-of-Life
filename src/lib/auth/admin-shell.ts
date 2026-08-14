@@ -1,7 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isOrgAdminAppRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, isOrgAdminAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -45,7 +44,7 @@ export function isAdminShellPath(pathname: string): boolean {
  * When the request targets the admin shell: require a Supabase session and a role that may use it.
  * Returns a redirect response, or null to continue with the session refresh response.
  */
-export function adminShellAccessRedirect(request: NextRequest, user: User | null): NextResponse | null {
+export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;
 
   if (!user) {

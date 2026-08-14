@@ -15695,6 +15695,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_command_center_projection: {
+        Args: { p_facility_id?: string | null }
+        Returns: Json
+      }
       allocate_incident_number: {
         Args: { p_facility_id: string }
         Returns: string

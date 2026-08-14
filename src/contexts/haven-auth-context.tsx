@@ -10,7 +10,12 @@ import React, {
   useState,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import {
+  clearClientRoleContext,
+  primeClientRoleContext,
+} from "@/lib/auth/client-role-context";
 import { createClient, withSupabaseAuthLockRetry } from "@/lib/supabase/client";
+import type { Database } from "@/types/database";
 
 export type HavenAuthContextValue = {
   user: User | null;
@@ -54,6 +59,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session ?? null);
 
       if (!user) {
+        clearClientRoleContext(supabase);
         setAppRole("facility_admin");
         setOrganizationId(null);
         setOrgName(null);
@@ -69,6 +75,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         .from("user_profiles")
         .select("app_role, organization_id, full_name, avatar_url, organizations(name)")
         .eq("id", user.id)
+        .is("deleted_at", null)
         .maybeSingle();
 
       if (profileError) {
@@ -81,7 +88,13 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      const organizationIdFromProfile = (profile?.organization_id as string | null | undefined) ?? null;
+      const profileOrganizationId =
+        (profile?.organization_id as string | null | undefined) ?? null;
+      const organizationIdFromProfile =
+        profileOrganizationId ??
+        (typeof user.app_metadata?.organization_id === "string"
+          ? user.app_metadata.organization_id
+          : null);
       // PostgREST returns the embedded relation as an object or array depending
       // on cardinality inference; normalize both shapes before reading `name`.
       const embeddedOrg = (profile as { organizations?: unknown } | null)?.organizations;
@@ -92,13 +105,22 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       const organizationName: string | null = organizationRecord?.name ?? null;
 
       const roleFromMeta = user.app_metadata?.app_role as string | undefined;
-      setAppRole((profile?.app_role as string) ?? roleFromMeta ?? "facility_admin");
+      const resolvedRole = (profile?.app_role as string) ?? roleFromMeta ?? "facility_admin";
+      setAppRole(resolvedRole);
       setOrganizationId(organizationIdFromProfile);
       setOrgName(organizationName);
       setFullName((profile?.full_name as string | null | undefined) ?? null);
       setAvatarUrl((profile?.avatar_url as string | null | undefined) ?? null);
+      if (organizationIdFromProfile) {
+        primeClientRoleContext(supabase, {
+          userId: user.id,
+          organizationId: organizationIdFromProfile,
+          appRole: resolvedRole as Database["public"]["Enums"]["app_role"],
+        });
+      }
     } catch (error) {
       console.error("[HavenAuth] Failed to resolve browser session", error);
+      clearClientRoleContext(supabase);
       setSession(null);
       setUser(null);
       setAppRole("facility_admin");
@@ -128,6 +150,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
+      clearClientRoleContext(supabase);
       queueMicrotask(() => {
         void safeLoad();
       });

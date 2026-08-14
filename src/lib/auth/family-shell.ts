@@ -1,7 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /** Family portal lives under `src/app/(family)/family/`. */
@@ -12,7 +11,7 @@ export function isFamilyShellPath(pathname: string): boolean {
 /**
  * Family UI requires a session and `family` role. Other known roles go to their shells.
  */
-export function familyShellAccessRedirect(request: NextRequest, user: User | null): NextResponse | null {
+export function familyShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;
 
   if (!user) {

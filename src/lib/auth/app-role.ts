@@ -15,10 +15,12 @@ export const ADMIN_ELIGIBLE_APP_ROLES = new Set<string>([
   "broker",
 ]);
 
-export function getAppRoleFromClaims(user: {
+export type AuthClaimUser = {
   app_metadata?: Record<string, unknown>;
   user_metadata?: Record<string, unknown>;
-} | null): string {
+};
+
+export function getAppRoleFromClaims(user: AuthClaimUser | null): string {
   if (!user) return "";
   // Only trust app_metadata for authorization — user_metadata is user-editable
   // in many Supabase configurations and must not be used for role decisions.

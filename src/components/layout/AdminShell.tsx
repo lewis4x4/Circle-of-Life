@@ -173,7 +173,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     visibleFacilities.some((facility) => facility.id === selectedFacilityId);
   const safeSelectedFacilityId = selectedFacilityIsValid ? selectedFacilityId : null;
   const currentFacility = visibleFacilities.find((f) => f.id === safeSelectedFacilityId);
-  const surveyVisit = useSurveyVisitSession(safeSelectedFacilityId);
+  const surveyVisit = useSurveyVisitSession(safeSelectedFacilityId, {
+    userId: currentUserId,
+    appRole,
+    organizationId,
+    loading: authLoading,
+  });
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);

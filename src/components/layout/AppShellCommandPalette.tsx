@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Command,
   CommandDialog,
@@ -16,11 +17,29 @@ export function AppShellCommandPalette({
   open,
   onOpenChange,
   onSelect,
+  onPrefetch,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (href: string) => void;
+  onPrefetch: (href: string) => void;
 }) {
+  const hrefByValue = useMemo(() => {
+    const entries = [
+      ...PILLARS.flatMap((pillar) =>
+        pillar.items.map((item) => [
+          `${pillar.label} ${item.label} ${item.href}`,
+          item.href,
+        ] as const),
+      ),
+      ...AUXILIARY_ROUTES.map((item) => [
+        `${item.label} ${item.href}`,
+        item.href,
+      ] as const),
+    ];
+    return new Map<string, string>(entries);
+  }, []);
+
   return (
     <CommandDialog
       open={open}
@@ -29,7 +48,14 @@ export function AppShellCommandPalette({
       description="Jump to any page, resident, staff member, or incident."
       className="sm:max-w-[480px]"
     >
-      <Command shouldFilter loop>
+      <Command
+        shouldFilter
+        loop
+        onValueChange={(value) => {
+          const href = hrefByValue.get(value);
+          if (href) onPrefetch(href);
+        }}
+      >
         <CommandInput placeholder="Search residents, staff, incidents, routes…" autoFocus />
         <CommandList>
           <CommandEmpty>No matches.</CommandEmpty>
@@ -41,6 +67,8 @@ export function AppShellCommandPalette({
                   <CommandItem
                     key={`${pillar.id}-${item.key}`}
                     value={`${pillar.label} ${item.label} ${item.href}`}
+                    onPointerMove={() => onPrefetch(item.href)}
+                    onFocus={() => onPrefetch(item.href)}
                     onSelect={() => onSelect(item.href)}
                   >
                     <Icon className="text-muted-foreground" aria-hidden />
@@ -58,6 +86,8 @@ export function AppShellCommandPalette({
                 <CommandItem
                   key={`aux-${item.key}`}
                   value={`${item.label} ${item.href}`}
+                  onPointerMove={() => onPrefetch(item.href)}
+                  onFocus={() => onPrefetch(item.href)}
                   onSelect={() => onSelect(item.href)}
                 >
                   <Icon className="text-muted-foreground" aria-hidden />

@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 
+import AdminRouteLoading from "@/components/layout/admin-route-loading";
 import { AdminStaffPageClient } from "@/components/staff/AdminStaffPageClient";
 import {
   SELECTED_FACILITY_COOKIE,
@@ -8,7 +10,15 @@ import {
 import { fetchStaffFromSupabase, type StaffRow } from "@/lib/staff/load-staff";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AdminStaffPage() {
+export default function AdminStaffPage() {
+  return (
+    <Suspense fallback={<AdminRouteLoading inset={false} />}>
+      <StaffRosterData />
+    </Suspense>
+  );
+}
+
+async function StaffRosterData() {
   const cookieStore = await cookies();
   const initialFacilityId = parseSelectedFacilityCookieValue(
     cookieStore.get(SELECTED_FACILITY_COOKIE)?.value,

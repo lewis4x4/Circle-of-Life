@@ -1,7 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 /**
@@ -17,7 +16,7 @@ export function isMedTechShellPath(pathname: string): boolean {
  */
 export function medTechShellAccessRedirect(
   request: NextRequest,
-  user: User | null,
+  user: AuthClaimUser | null,
 ): NextResponse | null {
   const nextUrl = request.nextUrl;
 

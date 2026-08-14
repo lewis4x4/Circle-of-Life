@@ -1,7 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
@@ -33,7 +32,7 @@ export function isCaregiverShellPath(pathname: string): boolean {
  * Caregiver UI requires a session and a floor role (`caregiver` or `housekeeper`).
  * Other known roles go to their shells.
  */
-export function caregiverShellAccessRedirect(request: NextRequest, user: User | null): NextResponse | null {
+export function caregiverShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;
 
   if (!user) {

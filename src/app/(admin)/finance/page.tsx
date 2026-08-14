@@ -1,10 +1,21 @@
+import { Suspense } from "react";
+
+import AdminRouteLoading from "@/components/layout/admin-route-loading";
 import FinanceOverviewPageClient from "@/components/finance/FinanceOverviewPageClient";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import { loadFinanceOverviewData } from "@/lib/finance/load-finance-overview-data";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AdminFinanceHubPage() {
+export default function AdminFinanceHubPage() {
+  return (
+    <Suspense fallback={<AdminRouteLoading inset={false} />}>
+      <FinanceOverviewData />
+    </Suspense>
+  );
+}
+
+async function FinanceOverviewData() {
   const roleContext = await loadFinanceRoleContextServer();
   const roleLabel = roleContext.ok
     ? getRoleDashboardConfig(roleContext.ctx.appRole).roleLabel

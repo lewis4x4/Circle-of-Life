@@ -2,13 +2,14 @@
  * AdminRouteLoading — shared route-level skeleton for admin surfaces.
  * Quiet Operator pattern: animated `bg-muted` bars and `bg-card` cards.
  */
-export default function AdminRouteLoading() {
+export default function AdminRouteLoading({ inset = true }: { inset?: boolean } = {}) {
   return (
     <div
+      data-testid="admin-route-loading"
       role="status"
       aria-live="polite"
-      aria-label="Loading"
-      className="animate-pulse space-y-6 p-6"
+      aria-label="Loading page"
+      className={`animate-pulse space-y-6${inset ? " p-6" : ""}`}
     >
       <div className="h-8 w-48 rounded-md bg-muted" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -20,7 +21,7 @@ export default function AdminRouteLoading() {
         ))}
       </div>
       <div className="h-64 rounded-lg border border-border bg-card" />
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">Loading page…</span>
     </div>
   );
 }
