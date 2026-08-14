@@ -98,6 +98,9 @@ export default function FamilyHomePage() {
 
   const initial = snapshot.residentSummary ? snapshot.residentSummary.charAt(0).toUpperCase() : "H";
   const firstName = snapshot.residentSummary ? snapshot.residentSummary.split(" ")[0] : "Resident";
+  const journalItems = snapshot.items.filter(
+    (item) => item.kind !== "note" || item.id !== snapshot.featuredNote?.id,
+  );
 
   return (
     <div className="flex flex-col items-center pb-8">
@@ -178,7 +181,7 @@ export default function FamilyHomePage() {
                 Ask your facility for an invitation link to connect your loved one.
               </p>
             </div>
-          ) : snapshot.items.length === 0 ? (
+          ) : journalItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-center">
               <p className="font-serif text-xl italic text-muted-foreground">No recent activity yet.</p>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -196,11 +199,9 @@ export default function FamilyHomePage() {
             </div>
           ) : (
             <div className="space-y-6 md:space-y-8">
-              {snapshot.items
-                .filter((item) => item.kind !== "note" || item.id !== snapshot.featuredNote?.id)
-                .map((item) => (
-                  <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
-                ))}
+              {journalItems.map((item) => (
+                <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
+              ))}
             </div>
           )}
         </div>
