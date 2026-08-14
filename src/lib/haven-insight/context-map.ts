@@ -378,17 +378,51 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
     },
   },
   {
+    prefix: "/admin/family-messages",
+    context: {
+      module: "Family Bulletin Notes",
+      perspective: "one-way staff bulletin notes families read (no family replies)",
+      suggestedQuestions: [
+        "Which residents have no staff bulletin note in the last 7 days?",
+        "Who posted the most recent update for this resident?",
+        "Are any residents flagged for bulletin triage follow-up?",
+        "How many staff updates were posted this week?",
+      ],
+      kpiDomains: [],
+      systemPromptAddon:
+        "The user is posting one-way bulletin notes for families. Families read staff updates but cannot reply. Do not suggest unread family messages, inbox triage, or two-way chat. Focus on posting cadence, residents needing updates, and delivery acknowledgments.",
+    },
+  },
+  {
+    prefix: "/admin/family-portal",
+    context: {
+      module: "Family Portal Hub",
+      perspective: "care conferences, consent tracking, bulletin triage, family engagement",
+      suggestedQuestions: [
+        "Which care conferences are scheduled this week?",
+        "Are any consents expiring in the next 30 days?",
+        "Which residents need a bulletin note follow-up?",
+        "How many linked family contacts are active on the portal?",
+      ],
+      kpiDomains: [],
+      systemPromptAddon:
+        "The user is in the Family Portal hub. Family communication is one-way: staff post bulletin notes families read. Do not describe family replies or a chat inbox. Focus on care conferences, consent follow-up, bulletin triage, and family portal engagement.",
+    },
+  },
+  {
     prefix: "/admin/family",
     context: {
       module: "Family Portal",
-      perspective: "family communication, care updates, satisfaction, engagement",
+      perspective: "one-way bulletin updates, care conferences, consent follow-up, family engagement",
       suggestedQuestions: [
-        "Are there any unread family messages?",
-        "What's our family satisfaction score?",
-        "How many family members are active on the portal?",
+        "Which residents need a staff bulletin note posted?",
+        "When was the last staff update posted for this resident?",
+        "Are any care conferences or consents due for follow-up?",
+        "How many family contacts are linked and active?",
       ],
       kpiDomains: [],
-      systemPromptAddon: "The user is in the Family Portal area. Focus on family communication, engagement metrics, and satisfaction feedback.",
+      systemPromptAddon:
+        "The user is in the Family Portal area. Communication is one-way: staff post bulletin notes that families read; families cannot reply. Do not suggest unread family messages, replies, or two-way chat. Focus on posted notes, conference scheduling, consent tracking, and engagement metrics.",
     },
   },
 ];
