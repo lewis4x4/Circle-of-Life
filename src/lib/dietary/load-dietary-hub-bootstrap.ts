@@ -32,11 +32,9 @@ export type DietaryHubMealLogRow = {
 export type DietaryHubSnackLogRow = {
   id: string;
   snack_at: string;
-  snack_description: string | null;
-  residents_offered_count: number | null;
-  residents_accepted_count: number | null;
-  notes: string | null;
+  passed_by_user_id: string;
   created_at: string;
+  user_profiles: { full_name: string | null } | null;
 };
 
 export type DietaryHubBootstrap = {
@@ -95,7 +93,7 @@ export async function loadDietaryHubBootstrap(
     supabase
       .from("snack_logs" as never)
       .select(
-        "id, snack_at, snack_description, residents_offered_count, residents_accepted_count, notes, created_at",
+        "id, snack_at, passed_by_user_id, created_at, user_profiles!passed_by_user_id(full_name)",
       )
       .eq("facility_id", selectedFacilityId)
       .is("deleted_at", null)

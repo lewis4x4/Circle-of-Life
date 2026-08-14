@@ -196,10 +196,6 @@ export function AdminDietaryPageClient({
   });
   const [snackForm, setSnackForm] = useState({
     snack_at: new Date().toISOString().slice(0, 16),
-    snack_description: "PM snack pass",
-    residents_offered_count: "",
-    residents_accepted_count: "",
-    notes: "",
   });
 
   const applyBootstrap = useCallback((bootstrap: DietaryHubBootstrap) => {
@@ -354,34 +350,16 @@ export function AdminDietaryPageClient({
     setSavingSnack(true);
     setError(null);
     try {
-      const offered = snackForm.residents_offered_count.trim();
-      const accepted = snackForm.residents_accepted_count.trim();
-      const offeredCount = offered === "" ? null : Number(offered);
-      const acceptedCount = accepted === "" ? null : Number(accepted);
       const snackAt = new Date(snackForm.snack_at);
       if (Number.isNaN(snackAt.getTime())) {
         throw new Error("Snack time is required.");
-      }
-      if (offeredCount !== null && (!Number.isFinite(offeredCount) || offeredCount < 0)) {
-        throw new Error("Offered count must be zero or greater.");
-      }
-      if (acceptedCount !== null && (!Number.isFinite(acceptedCount) || acceptedCount < 0)) {
-        throw new Error("Accepted count must be zero or greater.");
-      }
-      if (offeredCount !== null && acceptedCount !== null && acceptedCount > offeredCount) {
-        throw new Error("Accepted count cannot be greater than offered count.");
       }
       const { error: insertErr } = await supabase.from("snack_logs" as never).insert(({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
         snack_at: snackAt.toISOString(),
-        snack_description: snackForm.snack_description.trim() || null,
-        residents_offered_count: offeredCount,
-        residents_accepted_count: acceptedCount,
-        notes: snackForm.notes.trim() || null,
       }) as never);
       if (insertErr) throw insertErr;
-      setSnackForm((prev) => ({ ...prev, notes: "" }));
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save snack log.");
@@ -723,46 +701,18 @@ export function AdminDietaryPageClient({
               </div>
 
               <div className="space-y-3 text-xs border-t border-slate-200/70 dark:border-white/10 pt-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                  Snack passed
+                </p>
                 <input
                   type="datetime-local"
                   value={snackForm.snack_at}
                   onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                />
-                <input
-                  type="text"
-                  value={snackForm.snack_description}
-                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_description: e.target.value }))}
-                  placeholder="Snack description"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    value={snackForm.residents_offered_count}
-                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_offered_count: e.target.value }))}
-                    placeholder="Offered"
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    value={snackForm.residents_accepted_count}
-                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_accepted_count: e.target.value }))}
-                    placeholder="Accepted"
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  />
-                </div>
-                <textarea
-                  value={snackForm.notes}
-                  onChange={(e) => setSnackForm((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Snack notes"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  rows={2}
+                  aria-label="Snack pass time"
                 />
                 <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>
-                  {savingSnack ? "Saving snack…" : "Log snack pass"}
+                  {savingSnack ? "Saving…" : "Log snack passed"}
                 </Button>
               </div>
 
@@ -776,7 +726,7 @@ export function AdminDietaryPageClient({
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
                 {snackLogs.slice(0, 3).map((log) => (
                   <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
-                    {format(new Date(log.snack_at), "MMM d, h:mm a")} — {log.snack_description || "Snack pass"}
+                    {format(new Date(log.snack_at), "MMM d, h:mm a")} — Snack passed — {log.user_profiles?.full_name?.trim() || "Staff"}
                   </p>
                 ))}
               </div>
