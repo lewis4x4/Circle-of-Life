@@ -280,12 +280,7 @@ export async function fetchStaffMessagesForResident(
     authorName: nameMap.get(m.author_user_id) ?? "Unknown",
     authorKind: m.author_kind,
     body: m.body,
-    createdAt: new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(m.created_at)),
+    createdAt: m.created_at,
     deliveryMethod: m.delivery_method,
     familyAcknowledgedAt: m.family_acknowledged_at,
   }));

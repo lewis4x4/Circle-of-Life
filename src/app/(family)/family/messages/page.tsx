@@ -273,7 +273,7 @@ function ResidentUpdateLog({
         items={[...messages].reverse().map((message) => ({
           id: message.id,
           body: message.body,
-          timestamp: message.timeLabel,
+          timestamp: message.createdAt,
           authorLabel: "Care team",
           variant: "staff" as const,
         }))}

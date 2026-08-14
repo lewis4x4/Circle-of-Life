@@ -52,6 +52,7 @@ export default function StaffFamilyMessagesPage() {
   const [messages, setMessages] = useState<StaffMessageRow[]>([]);
   const [residentName, setResidentName] = useState("");
   const [msgLoading, setMsgLoading] = useState(false);
+  const [logLoadError, setLogLoadError] = useState<string | null>(null);
   const [msgError, setMsgError] = useState<string | null>(null);
 
   const [draft, setDraft] = useState("");
@@ -89,18 +90,18 @@ export default function StaffFamilyMessagesPage() {
   const openResidentLog = useCallback(async (residentId: string) => {
     setSelectedResidentId(residentId);
     setMsgLoading(true);
-    setMsgError(null);
+    setLogLoadError(null);
     try {
       const supabase = createClient();
       const result = await fetchStaffMessagesForResident(supabase, residentId);
       if (!result.ok) {
-        setMsgError(result.error);
+        setLogLoadError(result.error);
       } else {
         setMessages(result.messages);
         setResidentName(result.residentName);
       }
     } catch (err) {
-      setMsgError(err instanceof Error ? err.message : "Failed to load posted updates");
+      setLogLoadError(err instanceof Error ? err.message : "Failed to load posted updates");
     } finally {
       setMsgLoading(false);
     }
@@ -216,6 +217,7 @@ export default function StaffFamilyMessagesPage() {
               onClick={() => {
                 setSelectedResidentId(null);
                 setMessages([]);
+                setLogLoadError(null);
                 void loadThreads();
               }}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -340,6 +342,22 @@ export default function StaffFamilyMessagesPage() {
 
         {msgLoading ? (
           <FamilyPortalUpdateLog items={[]} loading listLabel="Posted updates" />
+        ) : logLoadError ? (
+          <div
+            role="alert"
+            className="flex flex-col items-center gap-4 rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-8 text-center text-sm text-destructive"
+          >
+            <p>{logLoadError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (selectedResidentId) void openResidentLog(selectedResidentId);
+              }}
+            >
+              Retry
+            </Button>
+          </div>
         ) : (
           <FamilyPortalUpdateLog
             items={bulletinItemsFromMessages(messages)}
