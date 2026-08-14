@@ -1,4 +1,5 @@
 import type { ObservationPlanInput, PlanRuleInput } from "@/lib/rounding/types";
+import { isDiscreteScheduledDaypartRule } from "@/lib/rounding/col-discovery-round-cadence";
 
 export const MIN_RATIONALE_CHARACTERS = 30;
 export const MIN_INTERVAL_MINUTES = 5;
@@ -48,6 +49,8 @@ export function formatPreviewTimestamp(value: Date): string {
 }
 
 export function getRuleChecksPerDay(rule: PlanRuleInput): number {
+  if (isDiscreteScheduledDaypartRule(rule)) return 1;
+
   const start = parseTimeToMinutes(rule.daypartStart ?? "00:00");
   const end = parseTimeToMinutes(rule.daypartEnd ?? "23:59");
   const intervalMinutes = Number(rule.intervalMinutes ?? 0);
@@ -69,6 +72,23 @@ export function getNextScheduledChecks(
 
   for (const rule of rules) {
     if (rule.active === false) continue;
+    if (isDiscreteScheduledDaypartRule(rule)) {
+      const scheduledTime = rule.requiredFieldsSchema?.scheduled_time;
+      if (typeof scheduledTime !== "string") continue;
+      const minuteOfDay = parseTimeToMinutes(scheduledTime);
+      if (minuteOfDay == null) continue;
+
+      for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
+        const candidate = new Date(now);
+        candidate.setDate(now.getDate() + dayOffset);
+        candidate.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+
+        if (candidate >= now && candidate <= horizon) {
+          checks.push(candidate);
+        }
+      }
+      continue;
+    }
 
     const start = parseTimeToMinutes(rule.daypartStart ?? "00:00");
     const end = parseTimeToMinutes(rule.daypartEnd ?? "23:59");
@@ -145,8 +165,16 @@ export function validateRationale(value?: string | null): string | null {
 
 export function validatePlanRule(rule: PlanRuleInput): RuleValidationErrors {
   const errors: RuleValidationErrors = {};
-  const intervalMinutes = Number(rule.intervalMinutes ?? 0);
   const graceMinutes = Number(rule.graceMinutes ?? 0);
+
+  if (isDiscreteScheduledDaypartRule(rule)) {
+    if (!Number.isFinite(graceMinutes) || graceMinutes < 0) {
+      errors.graceMinutes = "Grace minutes must be 0 or greater.";
+    }
+    return errors;
+  }
+
+  const intervalMinutes = Number(rule.intervalMinutes ?? 0);
 
   if (
     !Number.isFinite(intervalMinutes) ||
