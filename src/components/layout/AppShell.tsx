@@ -33,6 +33,7 @@ import {
   Check,
   ChevronDown,
   LineChart,
+  Menu as MenuIcon,
   MessageSquare,
   Moon,
   Search,
@@ -70,7 +71,6 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
-import { AppShellSectionsJumpList } from "@/components/layout/AppShellSectionsJumpList";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
   PILLARS,
@@ -96,6 +96,14 @@ const AppShellCommandPalette = dynamic(
   () =>
     import("@/components/layout/AppShellCommandPalette").then((m) => ({
       default: m.AppShellCommandPalette,
+    })),
+  { ssr: false, loading: () => null },
+);
+
+const AppShellSectionsJumpList = dynamic(
+  () =>
+    import("@/components/layout/AppShellSectionsJumpList").then((m) => ({
+      default: m.AppShellSectionsJumpList,
     })),
   { ssr: false, loading: () => null },
 );
@@ -181,6 +189,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [pillarSheetOpen, setPillarSheetOpen] = useState(false);
   const [sheetPillarId, setSheetPillarId] = useState<Pillar["id"] | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sectionsJumpListMounted, setSectionsJumpListMounted] = useState(false);
+  const [sectionsJumpListOpen, setSectionsJumpListOpen] = useState(false);
+  const [sectionsJumpListSearch, setSectionsJumpListSearch] = useState("");
+  const sectionsJumpListTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -217,6 +229,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setPillarSheetOpen(false);
     setPaletteOpen(false);
+    setSectionsJumpListOpen(false);
+    setSectionsJumpListSearch("");
   }, [pathname]);
 
   useEffect(() => {
@@ -386,6 +400,16 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     },
     [navigate],
   );
+
+  const handleSectionsJumpListOpenChange = useCallback((nextOpen: boolean) => {
+    setSectionsJumpListOpen(nextOpen);
+    if (!nextOpen) setSectionsJumpListSearch("");
+  }, []);
+
+  const toggleSectionsJumpList = useCallback(() => {
+    setSectionsJumpListMounted(true);
+    setSectionsJumpListOpen((open) => !open);
+  }, []);
 
   // ── render helpers ───────────────────────────────────────────────
 
@@ -692,15 +716,32 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       >
         {renderBrand()}
         {renderFacilityScope()}
-        <AppShellSectionsJumpList
-          pillars={visiblePillars}
-          onSelect={navigate}
-          triggerClassName={cn(
+        <button
+          ref={sectionsJumpListTriggerRef}
+          type="button"
+          aria-label="Open all sections menu"
+          aria-expanded={sectionsJumpListOpen}
+          aria-haspopup="dialog"
+          onClick={toggleSectionsJumpList}
+          className={cn(
             WORKSPACE_ICON_LG,
             "transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
-        />
+        >
+          <MenuIcon className="size-4" aria-hidden />
+        </button>
+        {sectionsJumpListMounted ? (
+          <AppShellSectionsJumpList
+            open={sectionsJumpListOpen}
+            onOpenChange={handleSectionsJumpListOpenChange}
+            anchorRef={sectionsJumpListTriggerRef}
+            pillars={visiblePillars}
+            onSelect={navigate}
+            search={sectionsJumpListSearch}
+            onSearchChange={setSectionsJumpListSearch}
+          />
+        ) : null}
 
         {/* Pillar tabs — desktop. Mobile uses the scroll strip below. */}
         <nav

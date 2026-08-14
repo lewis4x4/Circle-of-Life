@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import React from "react";
+import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -18,7 +19,16 @@ vi.mock("next-themes", () => ({
 }));
 
 vi.mock("next/dynamic", () => ({
-  default: () => () => null,
+  default: (importFn: () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>) => {
+    const Lazy = React.lazy(importFn);
+    return function DynamicComponent(props: Record<string, unknown>) {
+      return (
+        <React.Suspense fallback={null}>
+          <Lazy {...props} />
+        </React.Suspense>
+      );
+    };
+  },
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -121,6 +131,10 @@ describe("AppShell all-sections jump list", () => {
     const trigger = screen.getByRole("button", { name: /open all sections menu/i });
     await user.click(trigger);
 
+    await waitFor(() => {
+      expect(screen.getByTestId("all-sections-jump-list")).toBeInTheDocument();
+    });
+
     expect(trigger).toHaveAttribute("aria-expanded", "true");
 
     const jumpList = screen.getByTestId("all-sections-jump-list");
@@ -137,7 +151,7 @@ describe("AppShell all-sections jump list", () => {
 
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
 
-    const jumpList = screen.getByTestId("all-sections-jump-list");
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
     const search = within(jumpList).getByPlaceholderText("Jump to a section…");
 
     await user.type(search, "billing");
@@ -153,7 +167,7 @@ describe("AppShell all-sections jump list", () => {
 
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
 
-    const jumpList = screen.getByTestId("all-sections-jump-list");
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
     const search = within(jumpList).getByPlaceholderText("Jump to a section…");
     await user.type(search, "clinical");
 

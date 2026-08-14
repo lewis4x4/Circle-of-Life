@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { Menu as MenuIcon } from "lucide-react";
+import { useCallback, useMemo, type RefObject } from "react";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import {
   Command,
@@ -12,7 +12,6 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   allSectionJumpEntries,
   sectionJumpQuickEntries,
@@ -33,17 +32,22 @@ function matchesQuery(entry: SectionJumpEntry, query: string): boolean {
 }
 
 export function AppShellSectionsJumpList({
+  open,
+  onOpenChange,
+  anchorRef,
   pillars,
   onSelect,
-  triggerClassName,
+  search,
+  onSearchChange,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  anchorRef: RefObject<HTMLButtonElement | null>;
   pillars: Pillar[];
   onSelect: (href: string) => void;
-  triggerClassName?: string;
+  search: string;
+  onSearchChange: (value: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-
   const allEntries = useMemo(() => allSectionJumpEntries(pillars), [pillars]);
   const quickEntries = useMemo(() => sectionJumpQuickEntries(pillars), [pillars]);
 
@@ -55,74 +59,66 @@ export function AppShellSectionsJumpList({
     return allEntries.filter((entry) => matchesQuery(entry, trimmedSearch));
   }, [allEntries, isSearching, quickEntries, trimmedSearch]);
 
-  const resetSurface = useCallback(() => {
-    setSearch("");
-  }, []);
-
-  const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      setOpen(nextOpen);
-      if (!nextOpen) resetSurface();
-    },
-    [resetSurface],
-  );
-
   const handleSelect = useCallback(
     (href: string) => {
-      setOpen(false);
-      resetSurface();
+      onOpenChange(false);
+      onSearchChange("");
       onSelect(href);
     },
-    [onSelect, resetSurface],
+    [onOpenChange, onSearchChange, onSelect],
   );
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger
-        aria-label="Open all sections menu"
-        aria-expanded={open}
-        className={cn(triggerClassName)}
-      >
-        <MenuIcon className="size-4" aria-hidden />
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        sideOffset={6}
-        className="w-[min(22rem,calc(100vw-1rem))] p-0 sm:w-72"
-        data-testid="all-sections-jump-list"
-      >
-        <Command shouldFilter={false} loop>
-          <CommandInput
-            placeholder="Jump to a section…"
-            autoFocus
-            value={search}
-            onValueChange={setSearch}
-            aria-label="Filter sections"
-          />
-          <CommandList>
-            <CommandEmpty>No matches.</CommandEmpty>
-            <CommandGroup heading={isSearching ? "Sections" : "Common"}>
-              {visibleEntries.map((entry) => {
-                const Icon = entry.icon;
-                return (
-                  <CommandItem
-                    key={`${entry.group}-${entry.key}`}
-                    value={entrySearchValue(entry)}
-                    onSelect={() => handleSelect(entry.href)}
-                    className="cursor-pointer"
-                  >
-                    <Icon className="text-muted-foreground" aria-hidden />
-                    <span>{entry.label}</span>
-                    {entry.pillarLabel ? (
-                      <CommandShortcut>{entry.pillarLabel}</CommandShortcut>
-                    ) : null}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <PopoverPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Positioner
+          anchor={anchorRef}
+          align="start"
+          sideOffset={6}
+          className="isolate z-50"
+        >
+          <PopoverPrimitive.Popup
+            data-slot="popover-content"
+            data-testid="all-sections-jump-list"
+            className={cn(
+              "z-50 flex w-[min(22rem,calc(100vw-1rem))] origin-(--transform-origin) flex-col gap-2.5 rounded-lg bg-popover p-0 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden duration-100 sm:w-72",
+              "data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            )}
+          >
+            <Command shouldFilter={false} loop>
+              <CommandInput
+                placeholder="Jump to a section…"
+                autoFocus
+                value={search}
+                onValueChange={onSearchChange}
+                aria-label="Filter sections"
+              />
+              <CommandList>
+                <CommandEmpty>No matches.</CommandEmpty>
+                <CommandGroup heading={isSearching ? "Sections" : "Common"}>
+                  {visibleEntries.map((entry) => {
+                    const Icon = entry.icon;
+                    return (
+                      <CommandItem
+                        key={`${entry.group}-${entry.key}`}
+                        value={entrySearchValue(entry)}
+                        onSelect={() => handleSelect(entry.href)}
+                        className="cursor-pointer"
+                      >
+                        <Icon className="text-muted-foreground" aria-hidden />
+                        <span>{entry.label}</span>
+                        {entry.pillarLabel ? (
+                          <CommandShortcut>{entry.pillarLabel}</CommandShortcut>
+                        ) : null}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverPrimitive.Popup>
+        </PopoverPrimitive.Positioner>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
   );
 }
