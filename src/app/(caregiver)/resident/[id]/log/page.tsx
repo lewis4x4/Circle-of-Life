@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, FileText, Loader2 } from "lucide-react";
 
 import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
+import { formatCaregiverResidentLogGeneralNotes } from "@/lib/caregiver/resident-log-display-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
@@ -465,7 +466,9 @@ export default function CaregiverResidentLogPage() {
                     <p className="text-xs text-zinc-500">
                       {row.log_date} · {row.shift}
                     </p>
-                    <p className="mt-1 whitespace-pre-wrap text-zinc-200">{row.general_notes?.trim() || "—"}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-zinc-200">
+                      {formatCaregiverResidentLogGeneralNotes(row.general_notes)}
+                    </p>
                   </li>
                 ))}
               </ul>
