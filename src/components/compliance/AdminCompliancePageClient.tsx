@@ -255,29 +255,29 @@ export function AdminCompliancePageClient({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono text-foreground")}>
+            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] font-mono text-foreground")}>
               Audit log export
             </Link>
-            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono text-foreground")}>
+            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] font-mono text-foreground")}>
               Policy library
             </Link>
-            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-primary-600 hover:bg-primary-700 text-white")}>
+            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] font-mono bg-primary-600 hover:bg-primary-700 text-white")}>
               Add deficiencies
             </Link>
-            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50")}>
+            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] font-mono bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50")}>
               Certifications
             </Link>
             {/* Enhanced tier links */}
-            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
               Compliance Rules
             </Link>
-            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
               Run Scan
             </Link>
-            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
               Analysis
             </Link>
-            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
+            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] font-mono text-orange-700 dark:text-orange-300")}>
               Emergency Prep
             </Link>
           </div>
@@ -391,7 +391,7 @@ export function AdminCompliancePageClient({
 
                     <Link
                       href={`/admin/compliance/deficiencies/${row.id}`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] uppercase tracking-wider shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-primary-500 group-hover:text-primary-600 dark:group-hover:text-primary-400")}
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-primary-500 group-hover:text-primary-600 dark:group-hover:text-primary-400")}
                     >
                       Manage Finding
                     </Link>
@@ -413,7 +413,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Based on latest rule-based scan</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
                 Run New Scan
               </Link>
             </div>
@@ -475,7 +475,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Next required drills and checks</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
+              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] font-mono text-orange-700 dark:text-orange-300")}>
                 Manage Checklist
               </Link>
             </div>
@@ -536,7 +536,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Action items requiring attention</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
                 View All
               </Link>
             </div>
