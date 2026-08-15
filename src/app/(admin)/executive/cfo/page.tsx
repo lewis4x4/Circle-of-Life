@@ -14,12 +14,17 @@ import {
   OfficerLanes,
   OfficerLinkOutPanel,
   officerAlarmTone,
-  officerCountLabel,
   useFacilityNameMap,
   type OfficerLane,
 } from "@/components/executive/officer-dashboard";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  formatExecutiveArOutstandingCents,
+  formatExecutiveCertsExpiringCount,
+  formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOpenInvoiceCount,
+} from "@/lib/executive/executive-display-copy";
 
 const CFO_TABS = [
   "Overview",
@@ -57,20 +62,20 @@ export default function CfoDashboardPage() {
   const openInvoices = kpis?.financial.openInvoicesCount;
   const certsExpiring = kpis?.workforce.certificationsExpiring30d;
 
-  const arValue = loading ? "…" : arCents == null ? "—" : money.format(arCents / 100);
-  const occValue = loading ? "…" : occupancyPct == null ? "—" : `${occupancyPct}%`;
-  const invoicesValue = loading ? "…" : openInvoices == null ? "—" : String(openInvoices);
-  const certsValue = loading ? "…" : certsExpiring == null ? "—" : String(certsExpiring);
+  const arValue = loading ? "…" : formatExecutiveArOutstandingCents(arCents);
+  const occValue = loading ? "…" : formatExecutiveOccupancyPctWithSuffix(occupancyPct);
+  const invoicesValue = loading ? "…" : formatExecutiveOpenInvoiceCount(openInvoices);
+  const certsValue = loading ? "…" : formatExecutiveCertsExpiringCount(certsExpiring);
 
   const lanes: OfficerLane[] = [
     {
-      stat: officerCountLabel(openInvoices, "open invoices"),
+      stat: openInvoices == null ? formatExecutiveOpenInvoiceCount(null) : `${openInvoices} open invoices`,
       title: "Finance hub",
       description: "Billed revenue, labor pressure, and monthly financials.",
       href: "/admin/finance",
     },
     {
-      stat: arCents == null ? "— outstanding" : `${money.format(arCents / 100)} outstanding`,
+      stat: arCents == null ? formatExecutiveArOutstandingCents(null) : `${money.format(arCents / 100)} outstanding`,
       title: "AR & collections",
       description: "Aging, payer mix, and collections workflow.",
       href: "/admin/billing/ar-aging",
