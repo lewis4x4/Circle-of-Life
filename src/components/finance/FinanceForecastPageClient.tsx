@@ -13,6 +13,7 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCents } from "@/lib/finance/format-cents";
+import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { ForecastSnapshot } from "@/lib/finance/load-forecast-data";
 
 type FinanceForecastPageClientProps = {
@@ -110,11 +111,7 @@ export default function FinanceForecastPageClient({
             <ForecastMetricCard
               icon={ArrowRight}
               label="30d cost / resident"
-              value={
-                snapshot.cost.summary.costPerResidentCents != null
-                  ? formatCents(snapshot.cost.summary.costPerResidentCents)
-                  : "—"
-              }
+              value={formatUsdFromCents(snapshot.cost.summary.costPerResidentCents)}
               detail={`${snapshot.cost.summary.activeResidents} active residents in scope`}
             />
             <ForecastMetricCard
@@ -232,9 +229,7 @@ export default function FinanceForecastPageClient({
                             <td className="py-3 pr-4">{formatCents(row.laborCostCents)}</td>
                             <td className="py-3 pr-4">{formatCents(row.vendorCostCents)}</td>
                             <td className="py-3 pr-4">{formatCents(row.totalCostCents)}</td>
-                            <td className="py-3">
-                              {row.costPerResidentCents != null ? formatCents(row.costPerResidentCents) : "—"}
-                            </td>
+                            <td className="py-3">{formatUsdFromCents(row.costPerResidentCents)}</td>
                           </tr>
                         ))}
                       </tbody>
