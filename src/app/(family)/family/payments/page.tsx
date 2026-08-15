@@ -128,9 +128,6 @@ export default function FamilyPaymentsPage() {
           <Banknote className="h-6 w-6 text-warning" />
           <div>
             <h2 className="text-2xl font-serif text-foreground">Payments</h2>
-            <p className="text-sm text-muted-foreground">
-              Posted payments visible for linked residents. This page is for review only.
-            </p>
           </div>
         </div>
         <div className="mb-4">
