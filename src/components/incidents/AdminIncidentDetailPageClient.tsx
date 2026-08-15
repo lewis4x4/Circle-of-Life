@@ -40,9 +40,13 @@ import {
   type SupabaseIncidentDetail,
 } from "@/lib/incidents/load-incident-detail";
 import {
+  formatIncidentDetailFallActivity,
+  formatIncidentDetailFallType,
+  formatIncidentDetailFallWitnessed,
   formatIncidentDetailInjuryBodyLocation,
   formatIncidentDetailInjuryDescription,
   formatIncidentDetailInjurySeverity,
+  formatIncidentDetailTimestamp,
 } from "@/lib/incidents/incident-detail-display-copy";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 
@@ -317,7 +321,7 @@ export function AdminIncidentDetailPageClient({
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
         title="Incident detail"
-        subtitle={`${incident.incident_number} · ${formatCategoryRaw(incident.category)} · Updated ${formatTs(incident.updated_at)}`}
+        subtitle={`${incident.incident_number} · ${formatCategoryRaw(incident.category)} · Updated ${formatIncidentDetailTimestamp(incident.updated_at)}`}
         statusChips={
           <>
             <CategoryBadge category={categoryUi} />
@@ -454,8 +458,8 @@ export function AdminIncidentDetailPageClient({
                         </Badge>
                       </div>
                       <div className="grid gap-2 text-sm sm:grid-cols-2">
-                        <DetailRow label="Started" value={formatTs(watch.starts_at)} />
-                        <DetailRow label="Ends" value={watch.ends_at ? formatTs(watch.ends_at) : "Open-ended"} />
+                        <DetailRow label="Started" value={formatIncidentDetailTimestamp(watch.starts_at)} />
+                        <DetailRow label="Ends" value={watch.ends_at ? formatIncidentDetailTimestamp(watch.ends_at) : "Open-ended"} />
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -493,7 +497,7 @@ export function AdminIncidentDetailPageClient({
                           <li key={event.id} className="rounded-[8px] border border-border bg-card px-3 py-2">
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                               <span className="font-medium">{event.event_type.replace(/_/g, " ")}</span>
-                              <span className="text-xs tabular-nums text-muted-foreground">{formatTs(event.occurred_at)}</span>
+                              <span className="text-xs tabular-nums text-muted-foreground">{formatIncidentDetailTimestamp(event.occurred_at)}</span>
                             </div>
                             {event.note ? <p className="mt-1 text-xs text-muted-foreground">{event.note}</p> : null}
                           </li>
@@ -530,7 +534,7 @@ export function AdminIncidentDetailPageClient({
                         <Badge variant="outline">{escalation.task_status.replace(/_/g, " ")}</Badge>
                       </div>
                       <p className="text-sm tabular-nums text-foreground">
-                        Triggered {formatTs(escalation.triggered_at)} · Task due {formatTs(escalation.task_due_at)}
+                        Triggered {formatIncidentDetailTimestamp(escalation.triggered_at)} · Task due {formatIncidentDetailTimestamp(escalation.task_due_at)}
                       </p>
                       {escalation.resolution_note ? (
                         <p className="text-sm text-muted-foreground">{escalation.resolution_note}</p>
@@ -547,8 +551,8 @@ export function AdminIncidentDetailPageClient({
         ) : null}
         <RecordDetailSection title="Context" description="When, where, and how the event was surfaced">
           <div className="space-y-3 text-sm">
-            <DetailRow label="Occurred" value={formatTs(incident.occurred_at)} />
-            <DetailRow label="Discovered" value={formatTs(incident.discovered_at)} />
+            <DetailRow label="Occurred" value={formatIncidentDetailTimestamp(incident.occurred_at)} />
+            <DetailRow label="Discovered" value={formatIncidentDetailTimestamp(incident.discovered_at)} />
             <DetailRow label="Shift" value={formatShift(incident.shift)} />
             <DetailRow label="Location" value={incident.location_description} />
             {incident.location_type ? (
@@ -630,10 +634,10 @@ export function AdminIncidentDetailPageClient({
             <div className="grid gap-3 text-sm sm:grid-cols-2">
               <DetailRow
                 label="Witnessed"
-                value={incident.fall_witnessed == null ? "—" : incident.fall_witnessed ? "Yes" : "No"}
+                value={formatIncidentDetailFallWitnessed(incident.fall_witnessed)}
               />
-              <DetailRow label="Fall type" value={incident.fall_type ? formatSnake(incident.fall_type) : "—"} />
-              <DetailRow label="Activity" value={incident.fall_activity ? formatSnake(incident.fall_activity) : "—"} />
+              <DetailRow label="Fall type" value={formatIncidentDetailFallType(incident.fall_type)} />
+              <DetailRow label="Activity" value={formatIncidentDetailFallActivity(incident.fall_activity)} />
             </div>
           </RecordDetailSection>
         ) : null}
@@ -652,13 +656,13 @@ export function AdminIncidentDetailPageClient({
             </div>
 
             <div className="grid gap-3 text-sm sm:grid-cols-2">
-              <DetailRow label="Nurse notified" value={incident.nurse_notified_at ? formatTs(incident.nurse_notified_at) : incident.nurse_notified ? "Yes" : "Pending"} />
-              <DetailRow label="Administrator notified" value={incident.administrator_notified_at ? formatTs(incident.administrator_notified_at) : incident.administrator_notified ? "Yes" : "Pending"} />
-              <DetailRow label="Owner notified" value={incident.owner_notified_at ? formatTs(incident.owner_notified_at) : incident.owner_notified ? "Yes" : "Not required / not done"} />
-              <DetailRow label="Physician notified" value={incident.physician_notified_at ? formatTs(incident.physician_notified_at) : incident.physician_notified ? "Yes" : "Not required / not done"} />
-              <DetailRow label="Family notified" value={incident.family_notified_at ? formatTs(incident.family_notified_at) : incident.family_notified ? "Yes" : "Pending"} />
-              <DetailRow label="AHCA reported" value={incident.ahca_reported_at ? formatTs(incident.ahca_reported_at) : incident.ahca_reported ? "Yes" : incident.ahca_reportable ? "Pending" : "Not reportable"} />
-              <DetailRow label="Insurance reported" value={incident.insurance_reported_at ? formatTs(incident.insurance_reported_at) : incident.insurance_reported ? "Yes" : incident.insurance_reportable ? "Pending" : "Not reportable"} />
+              <DetailRow label="Nurse notified" value={incident.nurse_notified_at ? formatIncidentDetailTimestamp(incident.nurse_notified_at) : incident.nurse_notified ? "Yes" : "Pending"} />
+              <DetailRow label="Administrator notified" value={incident.administrator_notified_at ? formatIncidentDetailTimestamp(incident.administrator_notified_at) : incident.administrator_notified ? "Yes" : "Pending"} />
+              <DetailRow label="Owner notified" value={incident.owner_notified_at ? formatIncidentDetailTimestamp(incident.owner_notified_at) : incident.owner_notified ? "Yes" : "Not required / not done"} />
+              <DetailRow label="Physician notified" value={incident.physician_notified_at ? formatIncidentDetailTimestamp(incident.physician_notified_at) : incident.physician_notified ? "Yes" : "Not required / not done"} />
+              <DetailRow label="Family notified" value={incident.family_notified_at ? formatIncidentDetailTimestamp(incident.family_notified_at) : incident.family_notified ? "Yes" : "Pending"} />
+              <DetailRow label="AHCA reported" value={incident.ahca_reported_at ? formatIncidentDetailTimestamp(incident.ahca_reported_at) : incident.ahca_reported ? "Yes" : incident.ahca_reportable ? "Pending" : "Not reportable"} />
+              <DetailRow label="Insurance reported" value={incident.insurance_reported_at ? formatIncidentDetailTimestamp(incident.insurance_reported_at) : incident.insurance_reported ? "Yes" : incident.insurance_reportable ? "Pending" : "Not reportable"} />
             </div>
 
             {openObligations.length > 0 ? (
@@ -836,7 +840,7 @@ export function AdminIncidentDetailPageClient({
         {(incident.resolved_at || incident.resolution_notes) && (
           <RecordDetailSection className="lg:col-span-2" title="Resolution">
             <div className="space-y-2 text-sm">
-              {incident.resolved_at ? <DetailRow label="Resolved" value={formatTs(incident.resolved_at)} /> : null}
+              {incident.resolved_at ? <DetailRow label="Resolved" value={formatIncidentDetailTimestamp(incident.resolved_at)} /> : null}
               {incident.resolution_notes ? (
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Notes</p>
@@ -968,19 +972,6 @@ export function AdminIncidentDetailPageClient({
       </div>
     </div>
   );
-}
-
-function formatTs(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
 }
 
 function formatShift(value: string): string {
