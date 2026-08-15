@@ -10,6 +10,11 @@ import {
 } from "@/lib/admin/facilities/operational-threshold-preview";
 import type { ThresholdRow } from "@/hooks/useFacilityThresholds";
 import { formatDistanceToNow } from "date-fns";
+import {
+  formatThresholdsStripLastChanged,
+  thresholdsStripLastChangedIsMissing,
+} from "@/lib/facilities/thresholds-tab-display-copy";
+import { cn } from "@/lib/utils";
 
 export type FacilityThresholdsStripProps = {
   loading: boolean;
@@ -43,6 +48,12 @@ export function FacilityThresholdsMetricsStrip(props: FacilityThresholdsStripPro
     return maxAt ? new Date(maxAt) : null;
   }, [rows]);
 
+  const lastChangedMissing = thresholdsStripLastChangedIsMissing(lastChanged);
+  const lastChangedLabel = formatThresholdsStripLastChanged(
+    lastChanged,
+    lastChanged ? formatDistanceToNow(lastChanged, { addSuffix: true }) : "",
+  );
+
   if (loading || rows.length === 0) {
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -75,8 +86,13 @@ export function FacilityThresholdsMetricsStrip(props: FacilityThresholdsStripPro
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Recently changed</p>
-        <p className="mt-2 text-lg font-semibold leading-snug tabular-nums text-foreground">
-          {lastChanged ? formatDistanceToNow(lastChanged, { addSuffix: true }) : "—"}
+        <p
+          className={cn(
+            "mt-2 font-semibold leading-snug tabular-nums text-foreground",
+            lastChangedMissing ? "text-base text-muted-foreground" : "text-lg",
+          )}
+        >
+          {lastChangedLabel}
         </p>
         <p className="mt-1 text-[12px] text-muted-foreground">Latest threshold save</p>
       </div>

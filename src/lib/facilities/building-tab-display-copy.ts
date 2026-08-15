@@ -4,6 +4,7 @@
  */
 
 export const BUILDING_TAB_NO_LICENSED_BED_COUNT_COPY = "No licensed-bed count posted";
+export const BUILDING_TAB_NO_CEMP_STATUS_COPY = "No CEMP status posted";
 
 /** Licensed-bed count on the building tab when unset; real zero stays numeric. */
 export function formatBuildingTabLicensedBedCount(

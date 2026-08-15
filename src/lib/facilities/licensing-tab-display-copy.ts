@@ -111,3 +111,21 @@ export function formatLicensingTabNextDueDate(nextDueIso: string | null | undefi
   if (!nextDueIso || !YMD_RE.test(nextDueIso)) return LICENSING_TAB_NO_NEXT_DUE_DATE_COPY;
   return nextDueIso;
 }
+
+/** Days-to-renewal count on the compliance metrics strip; real zero stays numeric. */
+export function formatComplianceStripDaysToRenewal(days: number | null): string {
+  if (days === null) return LICENSING_TAB_NO_EXPIRATION_DATE_COPY;
+  return String(days);
+}
+
+/** Renewal lead caption under days-to-renewal on the compliance metrics strip. */
+export function formatComplianceStripRenewalLead(days: number | null): string {
+  if (days === null) return LICENSING_TAB_NO_EXPIRATION_CAPTION_COPY;
+  if (days < 0) return "Past due";
+  if (days === 0) return "Today";
+  return `In ${days} day${days === 1 ? "" : "s"}`;
+}
+
+export function complianceStripDaysToRenewalIsMissing(days: number | null): boolean {
+  return days === null;
+}

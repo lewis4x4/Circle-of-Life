@@ -22,3 +22,13 @@ export function formatThresholdsTabLastChangedSuffix(
   if (!latestSaved) return THRESHOLDS_TAB_NO_CHANGES_COPY;
   return `${relativeUpdatedAgo} by ${formatThresholdsTabEditorDisplay(latestSaved.updated_by_display)}`;
 }
+
+/** Recently-changed tile on the thresholds metrics strip. */
+export function formatThresholdsStripLastChanged(lastChanged: Date | null, formattedRelative: string): string {
+  if (lastChanged == null || Number.isNaN(lastChanged.getTime())) return THRESHOLDS_TAB_NO_CHANGES_COPY;
+  return formattedRelative;
+}
+
+export function thresholdsStripLastChangedIsMissing(lastChanged: Date | null): boolean {
+  return lastChanged == null || Number.isNaN(lastChanged.getTime());
+}
