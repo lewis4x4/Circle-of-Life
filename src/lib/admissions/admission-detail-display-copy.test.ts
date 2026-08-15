@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ADMISSIONS_HUB_MISSING_DATE_COPY } from "./admissions-hub-display-copy";
 import {
   ADMISSION_DETAIL_NO_BED_COPY,
   ADMISSION_DETAIL_NO_CHECKLIST_RECEIVED_COPY,
@@ -11,9 +12,28 @@ import {
   formatAdmissionDetailEffectiveDate,
   formatAdmissionDetailForm1823LatestUpdated,
   formatAdmissionDetailReferralLeadName,
+  formatAdmissionDetailTimestamp,
 } from "./admission-detail-display-copy";
 
 const EM_DASH = "—";
+
+describe("formatAdmissionDetailTimestamp", () => {
+  it("names a missing timestamp instead of an em dash", () => {
+    expect(formatAdmissionDetailTimestamp(null)).toBe(ADMISSIONS_HUB_MISSING_DATE_COPY);
+    expect(formatAdmissionDetailTimestamp("")).toBe(ADMISSIONS_HUB_MISSING_DATE_COPY);
+    expect(formatAdmissionDetailTimestamp("   ")).toBe(ADMISSIONS_HUB_MISSING_DATE_COPY);
+    expect(formatAdmissionDetailTimestamp(null)).not.toBe(EM_DASH);
+  });
+
+  it("names an unparseable timestamp instead of returning raw input", () => {
+    expect(formatAdmissionDetailTimestamp("not-a-date")).toBe(ADMISSIONS_HUB_MISSING_DATE_COPY);
+  });
+
+  it("formats a parseable timestamp with toLocaleString", () => {
+    const formatted = formatAdmissionDetailTimestamp("2026-08-24T12:00:00.000Z");
+    expect(formatted).toBe(new Date("2026-08-24T12:00:00.000Z").toLocaleString());
+  });
+});
 
 describe("formatAdmissionDetailBedLabel", () => {
   it("names a missing bed instead of an em dash", () => {

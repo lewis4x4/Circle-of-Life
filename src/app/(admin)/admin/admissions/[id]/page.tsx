@@ -26,6 +26,7 @@ import {
   formatAdmissionDetailEffectiveDate,
   formatAdmissionDetailForm1823LatestUpdated,
   formatAdmissionDetailReferralLeadName,
+  formatAdmissionDetailTimestamp,
 } from "@/lib/admissions/admission-detail-display-copy";
 
 type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
@@ -87,15 +88,6 @@ const MEDICAID_PIPELINE_STAGE_OPTIONS: Array<{ value: MedicaidPipelineStage; lab
 
 function formatStatus(s: string) {
   return formatColLabel(s);
-}
-
-function formatTs(iso: string | null) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
 }
 
 function formatCents(value: number | null | undefined) {
@@ -597,11 +589,11 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Financial Clearance</dt>
-                    <dd className="text-sm font-mono text-foreground">{formatTs(row.financial_clearance_at)}</dd>
+                    <dd className="text-sm font-mono text-foreground">{formatAdmissionDetailTimestamp(row.financial_clearance_at)}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Physician Orders</dt>
-                    <dd className="text-sm font-mono text-foreground">{formatTs(row.physician_orders_received_at)}</dd>
+                    <dd className="text-sm font-mono text-foreground">{formatAdmissionDetailTimestamp(row.physician_orders_received_at)}</dd>
                   </div>
                   <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Medicaid Pipeline Tracking</dt>
@@ -685,7 +677,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     </dd>
                   </div>
                   <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-muted-foreground uppercase tracking-wider font-mono mt-2">
-                    Updated: {formatTs(row.updated_at)}
+                    Updated: {formatAdmissionDetailTimestamp(row.updated_at)}
                   </div>
                 </dl>
               </RecordDetailSection>
