@@ -10,8 +10,10 @@ import {
   admissionsHubScopeLabel,
   formatAdmissionsHubConferenceScheduledDate,
   formatAdmissionsHubMedicaidStage,
+  formatAdmissionsHubReferralSource,
   formatAdmissionsHubRelativeDate,
   formatAdmissionsHubTargetMoveInDate,
+  formatAdmissionsHubTargetMoveInDateValue,
 } from "./admissions-hub-display-copy";
 
 const REF = new Date("2026-08-15T12:00:00.000Z");
@@ -87,6 +89,34 @@ describe("formatAdmissionsHubTargetMoveInDate", () => {
 
   it("prefixes a real target date", () => {
     expect(formatAdmissionsHubTargetMoveInDate("2026-08-24")).toBe("Target: 2026-08-24");
+  });
+});
+
+describe("formatAdmissionsHubTargetMoveInDateValue", () => {
+  it("names a missing target date without a Target prefix", () => {
+    expect(formatAdmissionsHubTargetMoveInDateValue(null)).toBe("No target move-in date");
+    expect(formatAdmissionsHubTargetMoveInDateValue("")).toBe("No target move-in date");
+  });
+
+  it("returns the raw date when set", () => {
+    expect(formatAdmissionsHubTargetMoveInDateValue("2026-08-24")).toBe("2026-08-24");
+  });
+
+  it("never returns an em dash", () => {
+    expect(formatAdmissionsHubTargetMoveInDateValue(null)).not.toBe("—");
+  });
+});
+
+describe("formatAdmissionsHubReferralSource", () => {
+  it("names a missing source instead of an em dash", () => {
+    expect(formatAdmissionsHubReferralSource(null)).toBe("No source");
+    expect(formatAdmissionsHubReferralSource("")).toBe("No source");
+  });
+
+  it("keeps a real source name", () => {
+    expect(formatAdmissionsHubReferralSource("Hospital discharge planner")).toBe(
+      "Hospital discharge planner",
+    );
   });
 });
 
