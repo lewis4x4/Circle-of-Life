@@ -1,4 +1,5 @@
-import { RESIDENT_ROSTER_NO_DATE_COPY } from "./roster-display-copy";
+import { RESIDENT_ROSTER_NO_ACUITY_COPY, RESIDENT_ROSTER_NO_DATE_COPY } from "./roster-display-copy";
+import type { ResidentRow } from "./load-residents";
 
 /**
  * Compact relative timestamps for roster "Updated" column (America/New_York oriented display).
@@ -60,6 +61,13 @@ export function formatResidentRosterUpdatedAt(iso: string | null): string {
   }
 
   return monthDay;
+}
+
+/** Group header average acuity; names empty groups instead of a silent em dash. */
+export function averageAcuity(rows: ResidentRow[]): string {
+  if (rows.length === 0) return RESIDENT_ROSTER_NO_ACUITY_COPY;
+  const sum = rows.reduce((acc, r) => acc + r.acuity, 0);
+  return (sum / rows.length).toFixed(1);
 }
 
 /** Deterministic accent for avatar dot / initials background (HSL). */

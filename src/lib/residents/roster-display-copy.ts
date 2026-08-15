@@ -4,3 +4,4 @@
  */
 
 export const RESIDENT_ROSTER_NO_DATE_COPY = "No date posted";
+export const RESIDENT_ROSTER_NO_ACUITY_COPY = "No acuity posted";

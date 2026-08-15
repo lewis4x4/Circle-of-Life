@@ -1,10 +1,42 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { formatResidentRosterUpdatedAt } from "./roster-format";
-import { RESIDENT_ROSTER_NO_DATE_COPY } from "./roster-display-copy";
+import { averageAcuity, formatResidentRosterUpdatedAt } from "./roster-format";
+import { RESIDENT_ROSTER_NO_ACUITY_COPY, RESIDENT_ROSTER_NO_DATE_COPY } from "./roster-display-copy";
+import type { ResidentRow } from "./load-residents";
 
 const EM_DASH = "—";
 const PLACEHOLDER_ISO = "2026-01-15T18:30:00.000Z";
+
+function placeholderResidentRow(acuity: ResidentRow["acuity"]): ResidentRow {
+  return {
+    id: "resident-placeholder",
+    name: "Placeholder Resident",
+    initials: "PR",
+    room: "101",
+    unit: "East Wing",
+    acuity,
+    adlStatus: "independent",
+    status: "active",
+    careSummary: "",
+    updatedAtIso: PLACEHOLDER_ISO,
+  };
+}
+
+describe("averageAcuity", () => {
+  it("names empty roster groups instead of a silent em dash", () => {
+    expect(averageAcuity([])).toBe(RESIDENT_ROSTER_NO_ACUITY_COPY);
+    expect(averageAcuity([])).not.toBe(EM_DASH);
+  });
+
+  it("formats posted group averages to one decimal place", () => {
+    expect(averageAcuity([placeholderResidentRow(2), placeholderResidentRow(3)])).toBe("2.5");
+    expect(averageAcuity([placeholderResidentRow(1)])).toBe("1.0");
+  });
+
+  it("uses the named gap copy constant", () => {
+    expect(RESIDENT_ROSTER_NO_ACUITY_COPY).toBe("No acuity posted");
+  });
+});
 
 describe("formatResidentRosterUpdatedAt", () => {
   it("names missing updated-at timestamps instead of a silent em dash", () => {
