@@ -38,14 +38,16 @@ export function familyPortalAdminKpiValue(
 
 /** Posted bulletin note body on a triage row — trim only; never invents note text. */
 export function formatFamilyPortalAdminNoteBody(body: string | null | undefined): string {
-  if (isBlankPostedValue(body)) return FAMILY_PORTAL_ADMIN_NO_NOTE_COPY;
-  return body.trim();
+  const trimmed = body?.trim() ?? "";
+  if (isBlankPostedValue(trimmed)) return FAMILY_PORTAL_ADMIN_NO_NOTE_COPY;
+  return trimmed;
 }
 
 /** Conference external room id — trim only; never invents a room label. */
 export function formatFamilyPortalAdminConferenceRoom(roomId: string | null | undefined): string {
-  if (isBlankPostedValue(roomId)) return FAMILY_PORTAL_ADMIN_NO_ROOM_COPY;
-  return roomId.trim();
+  const trimmed = roomId?.trim() ?? "";
+  if (isBlankPostedValue(trimmed)) return FAMILY_PORTAL_ADMIN_NO_ROOM_COPY;
+  return trimmed;
 }
 
 /** Matched triage keywords when none were flagged on the posted note. */
