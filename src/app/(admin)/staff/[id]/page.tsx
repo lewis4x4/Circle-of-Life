@@ -18,13 +18,17 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import {
   formatStaffDetailAltPhone,
+  formatStaffDetailCertExpirationDate,
+  formatStaffDetailCertIssueDate,
   formatStaffDetailEmail,
   formatStaffDetailEmergencyName,
   formatStaffDetailEmergencyPhone,
   formatStaffDetailEmergencyRelationship,
+  formatStaffDetailHireDate,
   formatStaffDetailMaxHours,
   formatStaffDetailPhone,
   formatStaffDetailRateCents,
+  formatStaffDetailTerminationDate,
   formatStaffDetailUpdatedAt,
 } from "@/lib/staff/staff-detail-display-copy";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -346,10 +350,13 @@ export default function AdminStaffDetailPage() {
 
           <RecordDetailSection title="Employment">
             <div className="space-y-4 text-sm">
-              <DetailRow label="Hire date" value={formatDateOnly(staff.hire_date)} />
+              <DetailRow label="Hire date" value={formatStaffDetailHireDate(staff.hire_date)} />
               <DetailRow label="Status" value={formatSnake(staff.employment_status)} />
               {staff.termination_date ? (
-                <DetailRow label="Termination" value={formatDateOnly(staff.termination_date)} />
+                <DetailRow
+                  label="Termination"
+                  value={formatStaffDetailTerminationDate(staff.termination_date)}
+                />
               ) : null}
               {staff.termination_reason ? (
                 <DetailRow label="Termination reason" value={staff.termination_reason} />
@@ -398,8 +405,8 @@ export default function AdminStaffDetailPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground tabular-nums">
-                      <span>Issued: {formatDateOnly(c.issue_date)}</span>
-                      {c.expiration_date ? <span>Exp: {formatDateOnly(c.expiration_date)}</span> : null}
+                      <span>Issued: {formatStaffDetailCertIssueDate(c.issue_date)}</span>
+                      <span>Exp: {formatStaffDetailCertExpirationDate(c.expiration_date)}</span>
                       <Badge variant="outline" className="text-[9px]">
                         {c.status.replace(/_/g, " ")}
                       </Badge>
@@ -501,13 +508,6 @@ function aggregateCertStatus(
     }
   }
   return worst;
-}
-
-function formatDateOnly(iso: string | null): string {
-  if (!iso) return "—";
-  const parsed = new Date(`${iso}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
 }
 
 function formatSnake(value: string): string {
