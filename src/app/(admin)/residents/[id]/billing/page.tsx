@@ -9,12 +9,15 @@ import { AdminTableLoadingState } from "@/components/common/admin-list-patterns"
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { formatColLabel } from "@/lib/col-labels";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
+import {
+  formatResidentBillingMedicaidProviderFromCatalog,
+  formatResidentBillingMedicaidRateUnitLabel,
+} from "@/lib/billing/resident-billing-display-copy";
 import { BillingInvoiceLedger, PayerTypeBadge, billingCurrency, mapDbPayerTypeToUi } from "../../../billing/billing-invoice-ledger";
 
 type SupabaseResident = {
@@ -139,15 +142,6 @@ function careForAcuity(schedule: RateSchedule | null, acuity: string | null): nu
 
 function reasonLabel(reason: string): string {
   return CONCESSION_REASONS.find(([value]) => value === reason)?.[1] ?? reason.replace(/_/g, " ");
-}
-
-function formatRateUnitLabel(value: string | null | undefined): string {
-  if (!value) return "—";
-  if (value === "monthly") return "Monthly";
-  if (value === "daily") return "Daily";
-  if (value === "weekly") return "Weekly";
-  if (value === "per_billable_day") return "Per Billable Day";
-  return formatColLabel(value);
 }
 
 export default function ResidentBillingPage() {
@@ -616,7 +610,7 @@ export default function ResidentBillingPage() {
                             </select>
                           </label>
                           <p className="text-xs text-slate-500 sm:col-span-2">
-                            Current: {providers.find((item) => item.id === p.facility_medicaid_provider_id)?.provider_name ?? "—"} · {formatRateUnitLabel(p.medicaid_rate_unit)}
+                            Current: {formatResidentBillingMedicaidProviderFromCatalog(p.facility_medicaid_provider_id, providers)} · {formatResidentBillingMedicaidRateUnitLabel(p.medicaid_rate_unit)}
                           </p>
                         </div>
                       ) : null}
