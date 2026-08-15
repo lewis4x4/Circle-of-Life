@@ -293,13 +293,17 @@ export function ExecutiveOverviewPageClient({
     metricKey: ExecutiveKpiMetricKey,
     value: number | undefined,
     format: "pct" | "num" | "cur",
+    options?: { emptyCopy?: boolean },
   ): ReactNode {
     if (!hasMetric(value)) {
-      return (
-        <span className="text-[12px] leading-snug text-muted-foreground">
-          {executiveKpiEmptyCopy(metricKey)}
-        </span>
-      );
+      if (options?.emptyCopy) {
+        return (
+          <span className="text-[12px] leading-snug text-muted-foreground">
+            {executiveKpiEmptyCopy(metricKey)}
+          </span>
+        );
+      }
+      return dashEm;
     }
     return renderMetric(value, format);
   }
@@ -781,6 +785,7 @@ type DashboardBodyProps = {
     metricKey: ExecutiveKpiMetricKey,
     value: number | undefined,
     format: "pct" | "num" | "cur",
+    options?: { emptyCopy?: boolean },
   ) => ReactNode;
   kpiStripHelperLine: string;
   assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
@@ -1084,16 +1089,16 @@ function ExecutiveDashboardBody({
                         Enterprise avg
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("occ_pt", metrics["occ_pt"], "pct")}
+                        {renderPortfolioMetric("occ_pt", metrics["occ_pt"], "pct", { emptyCopy: true })}
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("labor_pct", metrics["labor_pct"], "pct")}
+                        {renderPortfolioMetric("labor_pct", metrics["labor_pct"], "pct", { emptyCopy: true })}
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("inc_rate", metrics["inc_rate"], "num")}
+                        {renderPortfolioMetric("inc_rate", metrics["inc_rate"], "num", { emptyCopy: true })}
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderPortfolioMetric("survey_rd", metrics["survey_rd"], "pct")}
+                        {renderPortfolioMetric("survey_rd", metrics["survey_rd"], "pct", { emptyCopy: true })}
                       </td>
                     </tr>
                   </tfoot>

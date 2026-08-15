@@ -16,7 +16,7 @@ export type OccupancyContext = {
 };
 
 const EMPTY_COPY: Record<ExecutiveKpiMetricKey, string> = {
-  occ_pt: "No census loaded yet",
+  occ_pt: "No occupancy snapshot yet",
   rev_mtd: "No billed revenue this period",
   labor_pct: "No payroll loaded this period",
   inc_rate: "No incident rate yet",
