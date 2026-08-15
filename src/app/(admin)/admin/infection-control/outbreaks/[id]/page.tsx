@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { formatOutbreakDetailStatusLine } from "@/lib/infection-control/outbreak-detail-display-copy";
 import {
   RecordDetailHeader,
   RecordDetailSection,
@@ -49,7 +50,7 @@ export default function OutbreakDetailPage() {
         title={out ? String(out.infection_type) : "Outbreak"}
         subtitle={
           out
-            ? `Status: ${String(out.status)} · Cases: ${String(out.total_cases ?? "—")}`
+            ? formatOutbreakDetailStatusLine(out.status, out.total_cases as number | null | undefined)
             : undefined
         }
         backLink={{ label: "Infection control", href: "/admin/infection-control" }}
