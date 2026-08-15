@@ -31,6 +31,7 @@ import {
   type SearchToolTier,
   type SearchAuditEntry,
 } from "@/lib/search-tools";
+import { formatSearchToolUserEmailDisplay } from "@/lib/admin/settings/search-tool-display-copy";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
@@ -174,7 +175,7 @@ function AuditRow({ entry }: { entry: SearchAuditEntry }) {
       {/* User */}
       <div className="hidden flex-shrink-0 text-right sm:block">
         <p className="text-xs text-slate-700 dark:text-slate-300 truncate max-w-[140px]">
-          {entry.user_email ?? "Unknown"}
+          {formatSearchToolUserEmailDisplay(entry.user_email)}
         </p>
         <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
           {roleLabel}
