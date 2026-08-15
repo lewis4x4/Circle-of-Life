@@ -5,7 +5,6 @@ import {
   FAMILY_HOME_BULLETIN_EMPTY_DESCRIPTION,
   FAMILY_HOME_BULLETIN_EMPTY_TITLE,
   FAMILY_HOME_BULLETIN_HELPER,
-  FAMILY_HOME_BULLETIN_LIST_LABEL,
   FAMILY_HOME_BULLETIN_TITLE,
 } from "@/lib/family/family-portal-copy";
 import { formatFamilyPortalTimestamp } from "@/lib/family/family-portal-notes-display";
@@ -67,10 +66,7 @@ export function FamilyHomeBulletinBar({
           </div>
         </div>
       ) : (
-        <div
-          aria-label={FAMILY_HOME_BULLETIN_LIST_LABEL}
-          className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center"
-        >
+        <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center">
           <p className="text-sm font-medium text-foreground">{FAMILY_HOME_BULLETIN_EMPTY_TITLE}</p>
           <p className="mx-auto mt-2 max-w-sm text-xs text-muted-foreground">
             {FAMILY_HOME_BULLETIN_EMPTY_DESCRIPTION}
