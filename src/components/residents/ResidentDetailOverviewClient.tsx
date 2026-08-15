@@ -630,7 +630,7 @@ export function ResidentDetailOverviewClient({
                   {detail.recentDailyNotes[0] ? (
                     <div className="border-border rounded-md border bg-card/70 p-3 text-[11px]">
                       <p className="text-muted-foreground mb-1">Latest daily note excerpt</p>
-                      <p className="leading-relaxed">{detail.recentDailyNotes[0]?.snippet ?? "—"}</p>
+                      <p className="leading-relaxed">{detail.recentDailyNotes[0]?.snippet?.trim() || "No note posted"}</p>
                     </div>
                   ) : null}
                 </div>
