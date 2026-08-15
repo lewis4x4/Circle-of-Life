@@ -272,6 +272,97 @@ export type LiveBoardEmptyCopy = {
   overviewCta: string;
 };
 
+export type CaregiverRoundsQueueState =
+  | "no_facility"
+  | "plantation_pending"
+  | "no_tasks_assigned"
+  | "empty_window";
+
+export type CaregiverRoundsEmptyCopy = {
+  why: string;
+  guidance: string;
+};
+
+/** Derive caregiver queue gap from loaded task counts — does not invent tasks or residents. */
+export function deriveCaregiverRoundsQueueState(args: {
+  hasFacility: boolean;
+  totalTasks: number;
+  activeTaskCount: number;
+  facilityName: string | null;
+}): CaregiverRoundsQueueState | null {
+  if (!args.hasFacility) return "no_facility";
+
+  if (args.totalTasks === 0) {
+    const cadence = args.facilityName ? describeColDiscoveryCadenceForFacility(args.facilityName) : null;
+    if (cadence?.profile === "pending") return "plantation_pending";
+    return "no_tasks_assigned";
+  }
+
+  if (args.activeTaskCount === 0) return "empty_window";
+
+  return null;
+}
+
+/** Operator copy when the caregiver rounds queue has no live work in scope. */
+export function describeCaregiverRoundsEmptyState(state: CaregiverRoundsQueueState): CaregiverRoundsEmptyCopy {
+  switch (state) {
+    case "no_facility":
+      return {
+        why: "No facility scoped",
+        guidance:
+          "Your account is not linked to a facility yet. Ask an administrator to grant facility access.",
+      };
+    case "plantation_pending":
+      return {
+        why: "Discovery rounds not active here yet",
+        guidance:
+          "Plantation round times are pending owner decision. Ask your charge nurse or administrator for the schedule.",
+      };
+    case "no_tasks_assigned":
+      return {
+        why: "No rounds queued for you",
+        guidance:
+          "Nothing is assigned to you in this queue. Ask your charge nurse or administrator to apply Jessica discovery rounds.",
+      };
+    case "empty_window":
+      return {
+        why: "No checks due in this window",
+        guidance:
+          "Completed or upcoming rounds may appear when the next window opens. Refresh if you expect a check right now.",
+      };
+  }
+}
+
+/** Copy when a caregiver opens a resident round with no active task. */
+export function describeCaregiverResidentRoundEmptyState(args: {
+  facilityName: string | null;
+  taskQueuedLocally: boolean;
+}): CaregiverRoundsEmptyCopy {
+  if (args.taskQueuedLocally) {
+    return {
+      why: "Round queued for sync",
+      guidance: "This check will upload automatically when the device reconnects.",
+    };
+  }
+
+  if (args.facilityName) {
+    const cadence = describeColDiscoveryCadenceForFacility(args.facilityName);
+    if (cadence.profile === "pending") {
+      return {
+        why: "No active round for this resident",
+        guidance:
+          "Plantation discovery times are pending. Ask your charge nurse if a check should be open now.",
+      };
+    }
+  }
+
+  return {
+    why: "No active round for this resident",
+    guidance:
+      "Nothing is due right now in your assigned queue. Return to the live queue or refresh if a check should be open.",
+  };
+}
+
 /** Operator copy when the live board has no tasks in the loaded window. */
 export function describeLiveBoardEmptyState(facilityName: string | null): LiveBoardEmptyCopy {
   if (!facilityName) {
