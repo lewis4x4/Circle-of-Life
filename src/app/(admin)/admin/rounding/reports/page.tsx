@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { formatRoundingReportKpiValue } from "@/lib/rounding/rounding-reports-display-copy";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -424,25 +425,31 @@ export default function AdminRoundingReportsPage() {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <KpiCard
                 label="Completion rate"
-                value={hasData ? `${Math.round(summary.completionRate * 100)}%` : "—"}
+                value={formatRoundingReportKpiValue(
+                  hasData,
+                  `${Math.round(summary.completionRate * 100)}%`,
+                )}
                 tone={resolveRateTone(summary.completionRate, hasData)}
                 hint={`${summary.completed} of ${summary.expected} checks`}
               />
               <KpiCard
                 label="On-time rate"
-                value={hasData ? `${Math.round(summary.onTimeRate * 100)}%` : "—"}
+                value={formatRoundingReportKpiValue(
+                  hasData,
+                  `${Math.round(summary.onTimeRate * 100)}%`,
+                )}
                 tone={resolveRateTone(summary.onTimeRate, hasData)}
                 hint={`${summary.onTime} on time`}
               />
               <KpiCard
                 label="Late checks"
-                value={hasData ? String(summary.late) : "—"}
+                value={formatRoundingReportKpiValue(hasData, String(summary.late))}
                 tone={resolveLateTone(summary.late)}
                 hint={`Avg ${summary.avgDelayMin.toFixed(1)}m delay`}
               />
               <KpiCard
                 label="Missed checks"
-                value={hasData ? String(summary.missed) : "—"}
+                value={formatRoundingReportKpiValue(hasData, String(summary.missed))}
                 tone={resolveMissedTone(summary.missed)}
                 hint={
                   hasData
