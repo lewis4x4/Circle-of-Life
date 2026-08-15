@@ -16,6 +16,17 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
+import {
+  formatStaffDetailAltPhone,
+  formatStaffDetailEmail,
+  formatStaffDetailEmergencyName,
+  formatStaffDetailEmergencyPhone,
+  formatStaffDetailEmergencyRelationship,
+  formatStaffDetailMaxHours,
+  formatStaffDetailPhone,
+  formatStaffDetailRateCents,
+  formatStaffDetailUpdatedAt,
+} from "@/lib/staff/staff-detail-display-copy";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
   DetailRow,
@@ -264,7 +275,7 @@ export default function AdminStaffDetailPage() {
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
         title={fullName}
-        subtitle={`${formatSnake(staff.staff_role)} · Updated ${formatTs(staff.updated_at)}${staff.preferred_name ? ` · "${staff.preferred_name}"` : ""}`}
+        subtitle={`${formatSnake(staff.staff_role)} · Updated ${formatStaffDetailUpdatedAt(staff.updated_at)}${staff.preferred_name ? ` · "${staff.preferred_name}"` : ""}`}
         statusChips={
           <>
             <StatusBadge status={statusUi} />
@@ -283,12 +294,12 @@ export default function AdminStaffDetailPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <RecordDetailSection title="Contact">
             <div className="space-y-4 text-sm">
-              <DetailRow label="Phone" value={staff.phone ?? "—"} />
-              <DetailRow label="Alt phone" value={staff.phone_alt ?? "—"} />
+              <DetailRow label="Phone" value={formatStaffDetailPhone(staff.phone)} />
+              <DetailRow label="Alt phone" value={formatStaffDetailAltPhone(staff.phone_alt)} />
               <DetailRow
                 label="Email"
                 value={
-                  staff.email ? (
+                  staff.email?.trim() ? (
                     <a
                       href={`mailto:${staff.email}`}
                       className="inline-flex items-center gap-1.5 font-medium underline-offset-4 hover:underline"
@@ -297,7 +308,7 @@ export default function AdminStaffDetailPage() {
                       {staff.email}
                     </a>
                   ) : (
-                    "—"
+                    <span className="text-muted-foreground">{formatStaffDetailEmail(staff.email)}</span>
                   )
                 }
               />
@@ -306,9 +317,18 @@ export default function AdminStaffDetailPage() {
 
           <RecordDetailSection title="Emergency contact">
             <div className="space-y-4 text-sm">
-              <DetailRow label="Name" value={staff.emergency_contact_name ?? "—"} />
-              <DetailRow label="Relationship" value={staff.emergency_contact_relationship ?? "—"} />
-              <DetailRow label="Phone" value={staff.emergency_contact_phone ?? "—"} />
+              <DetailRow
+                label="Name"
+                value={formatStaffDetailEmergencyName(staff.emergency_contact_name)}
+              />
+              <DetailRow
+                label="Relationship"
+                value={formatStaffDetailEmergencyRelationship(staff.emergency_contact_relationship)}
+              />
+              <DetailRow
+                label="Phone"
+                value={formatStaffDetailEmergencyPhone(staff.emergency_contact_phone)}
+              />
             </div>
           </RecordDetailSection>
 
@@ -337,7 +357,7 @@ export default function AdminStaffDetailPage() {
               <DetailRow label="Schedule" value={staff.is_full_time ? "Full time" : "Part time"} />
               <DetailRow
                 label="Max hrs / week"
-                value={staff.max_hours_per_week != null ? String(staff.max_hours_per_week) : "—"}
+                value={formatStaffDetailMaxHours(staff.max_hours_per_week)}
               />
             </div>
           </RecordDetailSection>
@@ -346,11 +366,19 @@ export default function AdminStaffDetailPage() {
             <div className="space-y-4 text-sm">
               <DetailRow
                 label="Base hourly"
-                value={<span className="tabular-nums text-lg font-medium">{formatCents(staff.hourly_rate)}</span>}
+                value={
+                  <span className="tabular-nums text-lg font-medium">
+                    {formatStaffDetailRateCents(staff.hourly_rate)}
+                  </span>
+                }
               />
               <DetailRow
                 label="Overtime"
-                value={<span className="tabular-nums text-lg font-medium">{formatCents(staff.overtime_rate)}</span>}
+                value={
+                  <span className="tabular-nums text-lg font-medium">
+                    {formatStaffDetailRateCents(staff.overtime_rate)}
+                  </span>
+                }
               />
             </div>
           </RecordDetailSection>
@@ -475,29 +503,11 @@ function aggregateCertStatus(
   return worst;
 }
 
-function formatTs(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
-}
-
 function formatDateOnly(iso: string | null): string {
   if (!iso) return "—";
   const parsed = new Date(`${iso}T12:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return iso;
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
-}
-
-function formatCents(cents: number | null): string {
-  if (cents == null) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 }
 
 function formatSnake(value: string): string {
