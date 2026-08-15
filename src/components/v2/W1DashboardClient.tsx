@@ -17,7 +17,10 @@ import type {
   V2DashboardPayload,
   V2DashboardTableRow,
 } from "@/lib/v2-dashboards";
-import { formatV2DashboardMetric } from "@/lib/v2-dashboard-display-copy";
+import {
+  formatV2DashboardMetric,
+  V2_DASHBOARD_NO_VALUE_COPY,
+} from "@/lib/v2-dashboard-display-copy";
 import { V2EmptyOnboarding } from "./V2EmptyOnboarding";
 
 const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
@@ -125,12 +128,18 @@ export function W1DashboardClient({
       : undefined;
 
   // "Empty install" — the underlying jobs haven't run yet, so every KPI is
-  // the seeded "—" placeholder, the alerts/action-queue/table arrays are
+  // the seeded gap placeholder, the alerts/action-queue/table arrays are
   // empty, and the panels carry neutral "live source pending" subtitles.
   // Render an onboarding card instead of the empty
   // dashboard chrome so the page tells the operator what to do next.
   const shellAvailableFacilities = useFacilityStore((s) => s.availableFacilities);
-  const allKpisEmpty = payload.kpis.every((k) => k.value === "—" || k.value == null || k.value === "");
+  const allKpisEmpty = payload.kpis.every(
+    (k) =>
+      k.value === V2_DASHBOARD_NO_VALUE_COPY ||
+      k.value === "—" ||
+      k.value == null ||
+      k.value === "",
+  );
   const allTableRowsEmpty = payload.tableRows.length === 0;
   const allAlertsEmpty = payload.alerts.length === 0;
   const allActionsEmpty = payload.actionQueue.length === 0;

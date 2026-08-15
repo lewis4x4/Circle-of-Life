@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { V2_DASHBOARD_NO_VALUE_COPY } from "./v2-dashboard-display-copy";
 import {
   V2_DASHBOARD_IDS,
   getV2DashboardPayload,
@@ -41,7 +42,7 @@ describe("v2-dashboards live shell surface", () => {
       expect(payload.tableRows).toEqual([]);
       expect(payload.alerts).toEqual([]);
       expect(payload.actionQueue).toEqual([]);
-      expect(payload.kpis.every((kpi) => kpi.value === "—")).toBe(true);
+      expect(payload.kpis.every((kpi) => kpi.value === V2_DASHBOARD_NO_VALUE_COPY)).toBe(true);
     }
   });
 

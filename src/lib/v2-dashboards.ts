@@ -11,6 +11,7 @@ import type { AlertItem } from "@/design-system/components/PriorityAlertStack";
 import type { KPITileProps } from "@/design-system/components/KPITile";
 import type { PanelProps } from "@/design-system/components/Panel";
 import type { ThresholdMap } from "@/design-system/components/DataTable";
+import { V2_DASHBOARD_NO_VALUE_COPY } from "./v2-dashboard-display-copy";
 
 export type V2DashboardId =
   | "command-center"
@@ -161,7 +162,7 @@ function buildKpis(
 ): V2DashboardPayload["kpis"] {
   return labels.map((label) => ({
     label,
-    value: "—",
+    value: V2_DASHBOARD_NO_VALUE_COPY,
     info: LIVE_SOURCE_PENDING,
   })) as V2DashboardPayload["kpis"];
 }
