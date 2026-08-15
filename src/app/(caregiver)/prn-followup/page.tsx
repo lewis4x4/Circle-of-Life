@@ -10,6 +10,11 @@ import {
   DEFAULT_PRN_REASSESS_MINUTES,
   prnReassessmentDueAt,
 } from "@/lib/caregiver/floor-queues";
+import {
+  caregiverDisplayRoomLabel,
+  caregiverPrnFollowupEmptyNoticeHelper,
+  caregiverPrnFollowupEmptyNoticeTitle,
+} from "@/lib/caregiver/emar-queue-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-residents";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -136,7 +141,7 @@ export default function CaregiverPrnFollowupPage() {
           id: row.id,
           residentId: row.resident_id,
           name: res?.displayName ?? "Resident",
-          room: res?.roomLabel ?? "—",
+          room: caregiverDisplayRoomLabel(res?.roomLabel),
           med: medName,
           givenLabel: formatShortDateTime(row.actual_time),
           reassessLabel: formatShortDateTime(dueAt.toISOString()),
@@ -238,8 +243,9 @@ export default function CaregiverPrnFollowupPage() {
       ) : null}
 
       {rows.length === 0 ? (
-        <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center">
-          <p className="text-sm font-mono text-zinc-400">No pending PRN reassessments.</p>
+        <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center space-y-2">
+          <p className="text-sm font-mono text-zinc-400">{caregiverPrnFollowupEmptyNoticeTitle()}</p>
+          <p className="text-xs font-mono text-zinc-500">{caregiverPrnFollowupEmptyNoticeHelper()}</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
@@ -307,13 +313,13 @@ export default function CaregiverPrnFollowupPage() {
                         <Button
                           type="button"
                           disabled={savingId === r.id}
-                          className="h-12 px-8 rounded-full font-mono uppercase tracking-wider text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-primary-500 text-white font-bold bg-primary-600 hover:bg-primary-500 tap-responsive flex-1 sm:flex-none"
+                          className="h-12 px-8 rounded-full font-mono text-xs shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-primary-500 text-white font-bold bg-primary-600 hover:bg-primary-500 tap-responsive flex-1 sm:flex-none"
                           onClick={() => void saveEffectiveness(r.id)}
                         >
                           {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Save Result
                         </Button>
-                        <Button type="button" className="h-12 px-6 rounded-full font-mono uppercase tracking-wider text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
+                        <Button type="button" className="h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
                           Cancel
                         </Button>
                       </div>
@@ -323,7 +329,7 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId !== r.id ? (
                     <Button
                       type="button"
-                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono uppercase tracking-wider text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
+                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
                       onClick={() => {
                         setOpenId(r.id);
                         setResult("effective");
