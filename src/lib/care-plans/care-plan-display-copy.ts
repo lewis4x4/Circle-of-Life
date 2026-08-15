@@ -8,6 +8,26 @@ export const CARE_PLAN_NO_TITLE_COPY = "No title posted";
 export const CARE_PLAN_NO_DESCRIPTION_COPY = "No description posted";
 export const CARE_PLAN_NO_VERSION_COPY = "No version posted";
 export const CARE_PLAN_NO_DATE_COPY = "No date posted";
+export const CARE_PLAN_NO_NAME_COPY = "No name posted";
+
+const LEGACY_PLACEHOLDER_RESIDENT_NAMES = new Set([
+  "—",
+  "unknown",
+  "unknown resident",
+  "unnamed",
+  "unnamed resident",
+]);
+
+export type CarePlanResidentNameFields = {
+  first_name: string | null;
+  last_name: string | null;
+};
+
+function isMissingCarePlanResidentName(combined: string): boolean {
+  const trimmed = combined.trim();
+  if (trimmed.length === 0) return true;
+  return LEGACY_PLACEHOLDER_RESIDENT_NAMES.has(trimmed.toLowerCase());
+}
 
 const CARE_PLAN_DATE_ONLY_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",
@@ -44,4 +64,14 @@ export function formatCarePlanVersion(version: number | null | undefined): strin
   const n = typeof version === "number" ? version : Number(version);
   if (Number.isNaN(n)) return CARE_PLAN_NO_VERSION_COPY;
   return `v${n}`;
+}
+
+/** Resident name on the care plan page when posted name is blank or legacy placeholder. */
+export function formatCarePlanResidentName(resident: CarePlanResidentNameFields): string {
+  const first = (resident.first_name ?? "").trim();
+  const last = (resident.last_name ?? "").trim();
+  const combined = `${first} ${last}`.trim();
+
+  if (isMissingCarePlanResidentName(combined)) return CARE_PLAN_NO_NAME_COPY;
+  return combined;
 }
