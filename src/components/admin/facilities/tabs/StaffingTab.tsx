@@ -12,6 +12,10 @@ import {
   FACILITY_STAFF_TAXONOMY,
   resolveRequiredRoleContext,
 } from "@/lib/admin/facilities/facility-required-staff-roles";
+import {
+  formatStaffingTabAdministratorName,
+  formatStaffingTabRosterDate,
+} from "@/lib/facilities/staffing-tab-display-copy";
 import type { FacilityDetailRow } from "@/types/facility";
 import type { FacilityStaffKpiPayload } from "@/hooks/useFacilityStaffKpis";
 
@@ -30,15 +34,6 @@ type StaffSummaryRow = {
   staff_role: string;
   employment_status: string;
 };
-
-const NY_TZ = "America/New_York";
-
-function formatEtMedium(iso: string | null): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: NY_TZ }).format(d);
-}
 
 function freshnessDays(iso: string | null): number | null {
   if (!iso) return null;
@@ -158,14 +153,15 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
 
   const kpi = staffKpis.data;
   const rosterLine = useMemo(() => {
-    const d = formatEtMedium(kpi?.rosterUpdatedAt ?? null);
+    const rosterIso = kpi?.rosterUpdatedAt ?? null;
     const by = kpi?.rosterUpdatedByDisplayName?.trim();
-    const fresh = freshnessDays(kpi?.rosterUpdatedAt ?? null);
-    if (!d && !by && fresh == null) return null;
+    const fresh = freshnessDays(rosterIso);
+    if (!rosterIso && !by && fresh == null) return null;
+    const d = formatStaffingTabRosterDate(rosterIso);
     const freshnessBit =
       typeof fresh === "number" ? `· Roster freshness: ${fresh === 0 ? "today" : `${fresh} days`}` : "";
     const byBit = by ? `by ${by}` : "";
-    return `Last roster update: ${d ?? "—"} ${byBit} ${freshnessBit}`.replace(/\s+/g, " ").trim();
+    return `Last roster update: ${d} ${byBit} ${freshnessBit}`.replace(/\s+/g, " ").trim();
   }, [kpi?.rosterUpdatedAt, kpi?.rosterUpdatedByDisplayName]);
 
   const navCards = [
@@ -209,7 +205,9 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
         <div className="grid gap-6 sm:grid-cols-3">
           <div>
             <FieldLabel>Administrator of record</FieldLabel>
-            <p className="mt-1 text-[13px] font-medium text-foreground">{facility.administrator_name ?? "—"}</p>
+            <p className="mt-1 text-[13px] font-medium text-foreground">
+              {formatStaffingTabAdministratorName(facility.administrator_name)}
+            </p>
           </div>
           <div>
             <FieldLabel>Active staff</FieldLabel>
