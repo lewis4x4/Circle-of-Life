@@ -7,6 +7,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import {
   carePlanAnnualReviewDeltaDays,
 } from "@/lib/residents/care-plan-annual-review-window";
+import { formatResidentOverviewVerifiedByStaffLabel } from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import type { Database } from "@/types/database";
 
@@ -650,17 +651,20 @@ export async function loadResidentOverviewDetail(
     primaryPhysicianName: resident.primary_physician_name,
     primaryPhysicianPhone: resident.primary_physician_phone,
     codeStatusVerifiedAt: resident.code_status_verified_at,
-    codeStatusVerifiedByName: resident.code_status_verified_by
-      ? nameById.get(resident.code_status_verified_by) ?? "Unknown staff"
-      : null,
+    codeStatusVerifiedByName: formatResidentOverviewVerifiedByStaffLabel(
+      resident.code_status_verified_by,
+      nameById.get(resident.code_status_verified_by ?? ""),
+    ),
     allergyReviewedAt: resident.allergy_list_reviewed_at,
-    allergyReviewedByName: resident.allergy_list_reviewed_by
-      ? nameById.get(resident.allergy_list_reviewed_by) ?? "Unknown staff"
-      : null,
+    allergyReviewedByName: formatResidentOverviewVerifiedByStaffLabel(
+      resident.allergy_list_reviewed_by,
+      nameById.get(resident.allergy_list_reviewed_by ?? ""),
+    ),
     diagnosesReviewedAt: resident.primary_diagnosis_reviewed_at,
-    diagnosesReviewedByName: resident.primary_diagnosis_reviewed_by
-      ? nameById.get(resident.primary_diagnosis_reviewed_by) ?? "Unknown staff"
-      : null,
+    diagnosesReviewedByName: formatResidentOverviewVerifiedByStaffLabel(
+      resident.primary_diagnosis_reviewed_by,
+      nameById.get(resident.primary_diagnosis_reviewed_by ?? ""),
+    ),
     carePlanVersion: activePlan?.version ?? null,
     carePlanEffectiveDate: activePlan?.effective_date ?? null,
     carePlanAnnualDeltaDays: careAnnualDelta,
