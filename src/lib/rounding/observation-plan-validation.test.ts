@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { ROUNDING_PLAN_NO_TIME_COPY } from "./rounding-plans-display-copy";
 import {
   buildPlanSchedulePreview,
+  formatTimeLabel,
   getObservationPlanSaveBlockers,
   getRuleChecksPerDay,
   validateEffectiveWindow,
@@ -19,6 +21,23 @@ const BASE_RULE: PlanRuleInput = {
   active: true,
   sortOrder: 0,
 };
+
+describe("formatTimeLabel", () => {
+  it("names missing or unparseable HH:MM gaps", () => {
+    expect(formatTimeLabel(null)).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel(undefined)).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel("")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel("not-a-time")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel("25:00")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+  });
+
+  it("formats posted HH:MM with en-US hour and minute", () => {
+    const formatted = formatTimeLabel("07:30");
+    expect(formatted).not.toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatted).toMatch(/\d/);
+    expect(formatted).toMatch(/30/);
+  });
+});
 
 describe("observation plan effective window validation", () => {
   it("allows an open-ended plan", () => {
