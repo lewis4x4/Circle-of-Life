@@ -10,6 +10,7 @@ export const ADMISSION_DETAIL_NO_EFFECTIVE_DATE_COPY = "No effective date posted
 export const ADMISSION_DETAIL_NO_REFERRAL_LEAD_COPY = "No referral lead posted";
 export const ADMISSION_DETAIL_NO_FORM1823_RECORD_COPY = "No record posted";
 export const ADMISSION_DETAIL_NO_CHECKLIST_RECEIVED_COPY = "No received date posted";
+export const ADMISSION_DETAIL_NO_AMOUNT_COPY = "No amount posted";
 
 /** Bed label on the case overview when unset or blank. */
 export function formatAdmissionDetailBedLabel(bedLabel: string | null | undefined): string {
@@ -54,4 +55,10 @@ export function formatAdmissionDetailChecklistReceivedAt(
 ): string {
   if (!receivedAt || !receivedAt.trim()) return ADMISSION_DETAIL_NO_CHECKLIST_RECEIVED_COPY;
   return formatReferralDetailTimestamp(receivedAt);
+}
+
+/** Quoted or schedule rate amounts in cents when unset, null, or unparseable. */
+export function formatAdmissionDetailCents(value: number | null | undefined): string {
+  if (typeof value !== "number" || Number.isNaN(value)) return ADMISSION_DETAIL_NO_AMOUNT_COPY;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value / 100);
 }

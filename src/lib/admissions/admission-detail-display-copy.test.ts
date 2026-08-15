@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ADMISSIONS_HUB_MISSING_DATE_COPY } from "./admissions-hub-display-copy";
 import {
+  ADMISSION_DETAIL_NO_AMOUNT_COPY,
   ADMISSION_DETAIL_NO_BED_COPY,
   ADMISSION_DETAIL_NO_CHECKLIST_RECEIVED_COPY,
   ADMISSION_DETAIL_NO_EFFECTIVE_DATE_COPY,
@@ -9,6 +10,7 @@ import {
   ADMISSION_DETAIL_NO_REFERRAL_LEAD_COPY,
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
+  formatAdmissionDetailCents,
   formatAdmissionDetailEffectiveDate,
   formatAdmissionDetailForm1823LatestUpdated,
   formatAdmissionDetailReferralLeadName,
@@ -92,6 +94,23 @@ describe("formatAdmissionDetailForm1823LatestUpdated", () => {
       updated_at: "2026-08-24T12:00:00.000Z",
     });
     expect(formatted).toBe(new Date("2026-08-24T12:00:00.000Z").toLocaleString());
+  });
+});
+
+describe("formatAdmissionDetailCents", () => {
+  it("names a missing amount instead of an em dash", () => {
+    expect(formatAdmissionDetailCents(null)).toBe(ADMISSION_DETAIL_NO_AMOUNT_COPY);
+    expect(formatAdmissionDetailCents(undefined)).toBe(ADMISSION_DETAIL_NO_AMOUNT_COPY);
+    expect(formatAdmissionDetailCents(NaN)).toBe(ADMISSION_DETAIL_NO_AMOUNT_COPY);
+    expect(formatAdmissionDetailCents(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats zero cents as $0.00", () => {
+    expect(formatAdmissionDetailCents(0)).toBe("$0.00");
+  });
+
+  it("formats posted cents as USD", () => {
+    expect(formatAdmissionDetailCents(12500)).toBe("$125.00");
   });
 });
 

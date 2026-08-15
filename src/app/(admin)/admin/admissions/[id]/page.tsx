@@ -23,6 +23,7 @@ import { formatAdmissionsHubTargetMoveInDateValue } from "@/lib/admissions/admis
 import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
+  formatAdmissionDetailCents,
   formatAdmissionDetailEffectiveDate,
   formatAdmissionDetailForm1823LatestUpdated,
   formatAdmissionDetailReferralLeadName,
@@ -91,11 +92,7 @@ function formatStatus(s: string) {
 }
 
 function formatCents(value: number | null | undefined) {
-  if (typeof value !== "number" || Number.isNaN(value)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value / 100);
+  return formatAdmissionDetailCents(value);
 }
 
 function admissionReadinessChecklist(
