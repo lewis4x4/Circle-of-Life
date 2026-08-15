@@ -160,7 +160,7 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
     const d = formatStaffingTabRosterDate(rosterIso);
     const freshnessBit =
       typeof fresh === "number" ? `· Roster freshness: ${fresh === 0 ? "today" : `${fresh} days`}` : "";
-    const byBit = by ? `by ${by}` : "";
+    const byBit = by ? (fresh != null ? `by ${by}` : `· Updated by ${by}`) : "";
     return `Last roster update: ${d} ${byBit} ${freshnessBit}`.replace(/\s+/g, " ").trim();
   }, [kpi?.rosterUpdatedAt, kpi?.rosterUpdatedByDisplayName]);
 
