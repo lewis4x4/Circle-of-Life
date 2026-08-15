@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  formatFamilyMessagesAuthorName,
+  formatFamilyMessagesResidentLabel,
+  formatFamilyMessagesRoomLabel,
+} from "@/lib/admin/family-messages-display-copy";
 import type { Database } from "@/types/database";
 
 export type StaffMessageThread = {
@@ -68,10 +73,6 @@ type TriageMini = {
   matched_keywords: string[];
   updated_at: string;
 };
-
-function residentName(r: ResRow): string {
-  return `${r.first_name?.trim() ?? ""} ${r.last_name?.trim() ?? ""}`.trim() || "Resident";
-}
 
 function facilityNameForResident(
   resident: ResRow | undefined,
@@ -204,8 +205,8 @@ export async function fetchStaffMessageThreads(
     const triage = triageByResident.get(resId);
     threads.push({
       residentId: resId,
-      residentName: res ? residentName(res) : "Unknown Resident",
-      roomLabel: roomByResident.get(resId) ?? "—",
+      residentName: formatFamilyMessagesResidentLabel(res),
+      roomLabel: formatFamilyMessagesRoomLabel(roomByResident.get(resId)),
       facilityName: facilityNameForResident(res, facilityNames),
       lastMessageBody: latest.body.length > 120 ? latest.body.slice(0, 120) + "…" : latest.body,
       lastMessageAt: timeAgo(latest.created_at),
@@ -277,7 +278,7 @@ export async function fetchStaffMessagesForResident(
 
   const messages: StaffMessageRow[] = rows.map((m) => ({
     id: m.id,
-    authorName: nameMap.get(m.author_user_id) ?? "Unknown",
+    authorName: formatFamilyMessagesAuthorName(nameMap.get(m.author_user_id)),
     authorKind: m.author_kind,
     body: m.body,
     createdAt: new Intl.DateTimeFormat("en-US", {
