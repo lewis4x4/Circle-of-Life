@@ -24,6 +24,7 @@ import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { V2Card } from "@/components/ui/v2-card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatShiftSwapCoveringName } from "@/lib/staffing/shift-swaps-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -488,7 +489,7 @@ export default function AdminApprovalsInboxPage() {
                       <span className="font-semibold text-foreground truncate">
                         {row.requestingName}
                         <span className="text-muted-foreground font-normal"> → </span>
-                        {row.coveringName ?? "—"}
+                        {formatShiftSwapCoveringName(row.coveringName)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {formatDateTime(row.createdAt)} · {row.swapType}
