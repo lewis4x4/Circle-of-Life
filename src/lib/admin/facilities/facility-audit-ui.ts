@@ -2,6 +2,8 @@
  * Facility audit log — operator-facing mapping (Quiet Operator · no shouting caps).
  */
 
+import { FACILITY_AUDIT_NO_VALUE_COPY } from "./facility-audit-display-copy";
+
 export const AUDIT_RETENTION_COPY =
   "Audit events for this facility are retained for seven years under typical Florida ALF record expectations. Older events may be archived to cold storage and produced on request as policy matures.";
 
@@ -117,7 +119,7 @@ export function buildFacilityAuditEntityHref(
 }
 
 export function formatAuditJsonCell(value: unknown): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return FACILITY_AUDIT_NO_VALUE_COPY;
   if (typeof value === "string") return value;
   try {
     return JSON.stringify(value);
