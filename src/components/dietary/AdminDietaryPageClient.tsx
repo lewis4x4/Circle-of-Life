@@ -19,6 +19,11 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import {
+  dietaryBatchStatBarWidthPct,
+  formatDietaryBatchStatPct,
+  formatDietaryHubRelativeUpdatedAt,
+} from "@/lib/dietary/dietary-batch-stats-display-copy";
+import {
   loadDietaryHubBootstrap,
   type DietaryHubBootstrap,
   type DietaryHubDietRow as DietRow,
@@ -102,18 +107,6 @@ function attentionSummary(row: DietRow): string {
   if (row.status === "draft") return "Diet order is still in draft and needs activation.";
   if (row.requires_swallow_eval) return "Marked for swallow evaluation follow-up.";
   return "Review diet order details.";
-}
-
-function formatRelativeShort(iso: string): string {
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return "—";
-  const diffMs = Date.now() - t;
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 48) return `${hrs}h ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
 
 function buildDietOrdersCsv(rows: DietRow[]): string {
@@ -598,7 +591,7 @@ export function AdminDietaryPageClient({
                           {badge.label}
                         </span>
                         <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                          Updated: {formatRelativeShort(row.updated_at)}
+                          Updated: {formatDietaryHubRelativeUpdatedAt(row.updated_at)}
                         </span>
                       </div>
                       <div className="mb-5 pl-2">
@@ -677,12 +670,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Thickened Fluids</p>
-                    <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.thickenedPct}%`}</span>
+                    <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("thickened", batchStats.thickenedPct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-amber-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.thickenedPct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.thickenedPct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -690,12 +685,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Swallow Flags</p>
-                    <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.swallowPct}%`}</span>
+                    <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("swallow", batchStats.swallowPct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-rose-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.swallowPct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.swallowPct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -703,12 +700,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy Alert</p>
-                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.allergyPct}%`}</span>
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("allergy", batchStats.allergyPct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.allergyPct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.allergyPct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -716,12 +715,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Texture Reviews</p>
-                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("texture", batchStats.medTexturePct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.medTexturePct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.medTexturePct, loading)}%` }}
                     />
                   </div>
                 </div>
