@@ -5,6 +5,8 @@ import {
   buildColDiscoveryRoundRules,
   COL_DISCOVERY_DAY_TIMES,
   describeColDiscoveryCadenceForFacility,
+  describeLiveBoardCadenceReminder,
+  describeLiveBoardEmptyState,
   resolveColDiscoveryDefaultRules,
   COL_DISCOVERY_FACILITY_NAMES,
   COL_DISCOVERY_HOMWOOD_NIGHT_INTERVAL_MINUTES,
@@ -131,5 +133,37 @@ describe("COL discovery round cadence — owner decision 2026-08-14", () => {
     expect(plantation.canApply).toBe(false);
     expect(plantation.detail).toContain("pending owner decision");
     expect(plantation.detail).not.toContain("6:00");
+  });
+
+  it("describes live board empty copy without apply-from-live for Plantation", () => {
+    const plantation = describeLiveBoardEmptyState(COL_DISCOVERY_FACILITY_NAMES.plantation);
+    expect(plantation.why).toBe("No live tasks in the last 12 hours.");
+    expect(plantation.guidance).toContain("pending owner decision");
+    expect(plantation.guidance).not.toContain("Apply Jessica");
+    expect(plantation.overviewCta).toBe("Go to overview");
+
+    const oakridge = describeLiveBoardEmptyState(COL_DISCOVERY_FACILITY_NAMES.oakridge);
+    expect(oakridge.guidance).toContain("Apply Jessica discovery rounds");
+    expect(oakridge.overviewCta).toBe("Go to overview");
+    expect(oakridge.guidance).not.toContain("pending owner decision");
+  });
+
+  it("distinguishes no facility scoped from empty task window on the live board", () => {
+    const noFacility = describeLiveBoardEmptyState(null);
+    expect(noFacility.why).toBe("No facility scoped");
+    expect(noFacility.guidance).toContain("Select a facility");
+
+    const scoped = describeLiveBoardEmptyState(COL_DISCOVERY_FACILITY_NAMES.oakridge);
+    expect(scoped.why).toBe("No live tasks in the last 12 hours.");
+    expect(scoped.why).not.toContain("No facility scoped");
+  });
+
+  it("provides a one-line cadence reminder for the scoped facility", () => {
+    const oakridge = describeLiveBoardCadenceReminder(COL_DISCOVERY_FACILITY_NAMES.oakridge);
+    expect(oakridge).toContain("Eastern");
+
+    const plantation = describeLiveBoardCadenceReminder(COL_DISCOVERY_FACILITY_NAMES.plantation);
+    expect(plantation).toContain("pending owner decision");
+    expect(plantation).not.toContain("6:00");
   });
 });
