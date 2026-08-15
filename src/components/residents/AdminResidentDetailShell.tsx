@@ -35,6 +35,7 @@ import {
   loadResidentOverviewDetail,
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
+import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import {
   isPresenceStatus,
   lifecycleStatusLabel,
@@ -50,12 +51,6 @@ type AdminResidentDetailShellProps = {
   initialError: string | null;
   initialFacilityId: string | null;
 };
-
-function genderLabel(value: string | null): string {
-  if (value === "male") return "Male";
-  if (value === "female") return "Female";
-  return value?.replace(/_/g, " ") ?? "Unknown";
-}
 
 export function AdminResidentDetailShell({
   children,
@@ -122,9 +117,9 @@ export function AdminResidentDetailShell({
   // so the resident identity and tabs remain mounted while their content swaps.
   if (selectedSegment == null) return children;
 
-  if (loading && !detail) {
+  if (!detail) {
     return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
+      <div className="fade-in animate-in flex max-w-[1440px] flex-col gap-4 pb-4 pt-2 duration-[var(--motion-duration)]">
         <Link
           prefetch={false}
           href={hrefs.rosterHref}
@@ -135,51 +130,32 @@ export function AdminResidentDetailShell({
         >
           ← Resident roster
         </Link>
-        <AdminTableLoadingState />
-      </div>
-    );
-  }
-
-  if (notFound) {
-    return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link
-          prefetch={false}
-          href={hrefs.rosterHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}
-        >
-          ← Resident roster
-        </Link>
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-xl">Resident not found</CardTitle>
-            <CardDescription>
-              This profile may be outside your facility filter, discharged, or the link is invalid.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error || !detail) {
-    return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link
-          prefetch={false}
-          href={hrefs.rosterHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}
-        >
-          ← Resident roster
-        </Link>
+        {loading ? <AdminTableLoadingState /> : null}
+        {notFound ? (
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-xl">Resident profile header unavailable</CardTitle>
+              <CardDescription>
+                This profile may be outside your facility filter, discharged, or the link is invalid.
+                The selected tab remains available below.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : null}
         {error ? (
           <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
         ) : null}
+
+        <div className="w-full shrink-0">
+          <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
+        </div>
+
+        <div className="min-w-0">{children}</div>
       </div>
     );
   }
 
-  const subtitle = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${genderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
+  const subtitle = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
