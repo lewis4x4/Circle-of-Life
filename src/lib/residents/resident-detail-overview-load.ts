@@ -10,6 +10,7 @@ import {
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import {
   formatResidentOverviewAdmissionLabel,
+  formatResidentOverviewDobLabel,
   formatResidentOverviewVerifiedByStaffLabel,
 } from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
@@ -238,13 +239,6 @@ function computeAgeYears(dateOfBirth: string | null, now: Date = new Date()): nu
   const m = now.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
   return age;
-}
-
-function formatDob(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(parsed);
 }
 
 const BEHAVIOR_TYPE_LABELS: Record<string, string> = {
@@ -630,7 +624,7 @@ export async function loadResidentOverviewDetail(
     roomLabel,
     unitName: unitName.length > 0 ? unitName : "No unit linked",
     admissionLabel: formatResidentOverviewAdmissionLabel(resident.admission_date),
-    dobLabel: formatDob(resident.date_of_birth),
+    dobLabel: formatResidentOverviewDobLabel(resident.date_of_birth),
     ageYears: computeAgeYears(resident.date_of_birth),
     gender: resident.gender,
     diagnosisRawList,

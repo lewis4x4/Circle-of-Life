@@ -54,6 +54,23 @@ export function formatResidentOverviewAdmissionLabel(value: string | null | unde
 }
 
 /**
+ * Date of birth label on the resident overview subtitle.
+ * Names a missing DOB gap — never invent or assume a date.
+ */
+export function formatResidentOverviewDobLabel(value: string | null | undefined): string {
+  if (value == null) return RESIDENT_OVERVIEW_NO_DATE_COPY;
+  const trimmed = value.trim();
+  if (isResidentOverviewDateGap(trimmed)) return RESIDENT_OVERVIEW_NO_DATE_COPY;
+  const parsed = new Date(`${trimmed}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return RESIDENT_OVERVIEW_NO_DATE_COPY;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed);
+}
+
+/**
  * Verifier staff label on the resident overview when a verifier id is posted.
  * Returns null when no verifier id is recorded (do not invent a verifier).
  */
