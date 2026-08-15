@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  RESIDENT_OVERVIEW_NO_GENDER_COPY,
   RESIDENT_OVERVIEW_NO_STAFF_COPY,
+  formatResidentOverviewGenderLabel,
   formatResidentOverviewVerifiedByStaffLabel,
 } from "./resident-overview-display-copy";
 
@@ -38,5 +40,31 @@ describe("formatResidentOverviewVerifiedByStaffLabel", () => {
     expect(formatResidentOverviewVerifiedByStaffLabel(VERIFIER_ID, "  Jordan Lee  ")).toBe(
       "Jordan Lee",
     );
+  });
+});
+
+describe("formatResidentOverviewGenderLabel", () => {
+  it("returns Male and Female for posted male/female codes", () => {
+    expect(formatResidentOverviewGenderLabel("male")).toBe("Male");
+    expect(formatResidentOverviewGenderLabel("female")).toBe("Female");
+    expect(formatResidentOverviewGenderLabel("  male  ")).toBe("Male");
+    expect(formatResidentOverviewGenderLabel("FEMALE")).toBe("Female");
+  });
+
+  it("names a missing gender gap instead of generic unknown copy", () => {
+    expect(formatResidentOverviewGenderLabel(null)).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel(undefined)).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel("")).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel("   ")).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel("—")).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel("Unknown")).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel("unknown")).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel("Unnamed")).toBe(RESIDENT_OVERVIEW_NO_GENDER_COPY);
+    expect(formatResidentOverviewGenderLabel(null)).not.toBe("Unknown");
+  });
+
+  it("humanizes other posted gender codes without inventing values", () => {
+    expect(formatResidentOverviewGenderLabel("non_binary")).toBe("non binary");
+    expect(formatResidentOverviewGenderLabel("  other_gender  ")).toBe("other gender");
   });
 });
