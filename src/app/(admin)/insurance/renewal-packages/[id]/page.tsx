@@ -12,7 +12,13 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
-import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  formatRenewalPackageActiveResidents,
+  formatRenewalPackageActiveStaff,
+  formatRenewalPackageIncidentsInPeriod,
+  formatRenewalPackageInvoiceTotal,
+  formatRenewalPackagePayloadVersion,
+} from "@/lib/insurance/renewal-packages-display-copy";
 import type { RenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
 import type { Database } from "@/types/database";
 
@@ -213,23 +219,24 @@ export default function RenewalPackageDetailPage() {
 
       <RecordDetailSection
         title="Underwriting snapshot"
-        description={`Metrics assembled for this period (JSON payload version ${payload?.version ?? "—"}).`}
+        description={`Metrics assembled for this period (JSON payload version ${formatRenewalPackagePayloadVersion(payload?.version)}).`}
       >
         <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
-            <span className="text-muted-foreground">Active residents:</span> {metrics?.active_residents ?? "—"}
+            <span className="text-muted-foreground">Active residents:</span>{" "}
+            {formatRenewalPackageActiveResidents(metrics?.active_residents)}
           </p>
           <p>
-            <span className="text-muted-foreground">Incidents in period:</span> {metrics?.incidents_in_period ?? "—"}
+            <span className="text-muted-foreground">Incidents in period:</span>{" "}
+            {formatRenewalPackageIncidentsInPeriod(metrics?.incidents_in_period)}
           </p>
           <p>
-            <span className="text-muted-foreground">Active staff:</span> {metrics?.active_staff ?? "—"}
+            <span className="text-muted-foreground">Active staff:</span>{" "}
+            {formatRenewalPackageActiveStaff(metrics?.active_staff)}
           </p>
           <p>
             <span className="text-muted-foreground">Invoice total (period overlap):</span>{" "}
-            <span className="tabular-nums">
-              {metrics != null ? formatUsdFromCents(metrics.invoice_total_cents) : "—"}
-            </span>
+            <span className="tabular-nums">{formatRenewalPackageInvoiceTotal(metrics)}</span>
           </p>
         </div>
       </RecordDetailSection>

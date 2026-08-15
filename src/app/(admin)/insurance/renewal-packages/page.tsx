@@ -20,6 +20,7 @@ import {
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { assembleRenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
+import { formatRenewalPackagePolicyNumber } from "@/lib/insurance/renewal-packages-display-copy";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 
@@ -290,7 +291,7 @@ export default function InsuranceRenewalPackagesPage() {
                       }).format(new Date(r.generated_at))}
                     </TableCell>
                     <TableCell>
-                      {r.insurance_policies?.policy_number ?? "—"}
+                      {formatRenewalPackagePolicyNumber(r.insurance_policies?.policy_number)}
                       <span className="block text-xs text-slate-500">{r.insurance_policies?.carrier_name}</span>
                     </TableCell>
                     <TableCell className="font-mono text-xs">
