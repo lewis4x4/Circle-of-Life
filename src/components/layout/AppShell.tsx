@@ -385,9 +385,14 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const isItemActive = useCallback(
     (href: string) => {
       const resolved = resolveRouteHref(href);
+      if (href === "/admin") return pathname === resolved;
+      // When a role's home aliases an existing destination (for example an
+      // owner landing on Executive), give the role-home item sole ownership
+      // of the active state instead of highlighting both links.
+      if (roleConfig.route !== "/admin" && href === roleConfig.route) return false;
       return pathname === resolved || pathname.startsWith(`${resolved}/`);
     },
-    [pathname, resolveRouteHref],
+    [pathname, resolveRouteHref, roleConfig.route],
   );
 
   const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
