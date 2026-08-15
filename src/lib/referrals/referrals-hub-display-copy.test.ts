@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   formatReferralsHubOutreachWeek,
   formatReferralsHubReferralSource,
+  formatReferralsHubTourScheduledFor,
+  REFERRALS_HUB_NO_TOUR_TIME_COPY,
   referralsHubKpiEmptyCopy,
   referralsHubKpiTileValue,
   type ReferralsHubKpiContext,
@@ -105,5 +107,23 @@ describe("formatReferralsHubReferralSource", () => {
     expect(formatReferralsHubReferralSource("Hospital discharge planner")).toBe(
       "Hospital discharge planner",
     );
+  });
+});
+
+describe("formatReferralsHubTourScheduledFor", () => {
+  it("names missing or invalid tour times instead of an em dash", () => {
+    expect(formatReferralsHubTourScheduledFor(null)).toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
+    expect(formatReferralsHubTourScheduledFor(undefined)).toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
+    expect(formatReferralsHubTourScheduledFor("")).toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
+    expect(formatReferralsHubTourScheduledFor("   ")).toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
+    expect(formatReferralsHubTourScheduledFor("not-a-date")).toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
+    expect(formatReferralsHubTourScheduledFor(null)).not.toBe(EM_DASH);
+  });
+
+  it("returns a non-empty locale string for a real ISO timestamp", () => {
+    const formatted = formatReferralsHubTourScheduledFor("2026-04-09T15:30:00.000Z");
+    expect(formatted).toBeTruthy();
+    expect(formatted).not.toBe(REFERRALS_HUB_NO_TOUR_TIME_COPY);
+    expect(formatted).not.toBe(EM_DASH);
   });
 });
