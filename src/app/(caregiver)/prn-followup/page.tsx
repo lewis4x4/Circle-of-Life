@@ -313,13 +313,13 @@ export default function CaregiverPrnFollowupPage() {
                         <Button
                           type="button"
                           disabled={savingId === r.id}
-                          className="h-12 px-8 rounded-full font-mono uppercase tracking-wider text-[10px] shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-primary-500 text-white font-bold bg-primary-600 hover:bg-primary-500 tap-responsive flex-1 sm:flex-none"
+                          className="h-12 px-8 rounded-full font-mono text-xs shadow-[0_4px_20px_rgba(139,92,246,0.15)] transition-all hover:scale-[1.02] border border-primary-500 text-white font-bold bg-primary-600 hover:bg-primary-500 tap-responsive flex-1 sm:flex-none"
                           onClick={() => void saveEffectiveness(r.id)}
                         >
                           {savingId === r.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Save Result
                         </Button>
-                        <Button type="button" className="h-12 px-6 rounded-full font-mono uppercase tracking-wider text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
+                        <Button type="button" className="h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 flex-1 sm:flex-none tap-responsive" onClick={() => setOpenId(null)}>
                           Cancel
                         </Button>
                       </div>
@@ -329,7 +329,7 @@ export default function CaregiverPrnFollowupPage() {
                   {r.canDocument && openId !== r.id ? (
                     <Button
                       type="button"
-                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono uppercase tracking-wider text-[10px] font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
+                      className="mt-3 w-fit h-12 px-6 rounded-full font-mono text-xs font-bold bg-black/40 hover:bg-white/10 text-zinc-300 border border-white/10 tap-responsive shadow-inner"
                       onClick={() => {
                         setOpenId(r.id);
                         setResult("effective");
