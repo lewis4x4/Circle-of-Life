@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
+import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -1028,7 +1029,7 @@ async function mapResidentsToCensusRows(
   return residents.map((resident) => {
     const firstName = resident.first_name ?? "";
     const lastName = resident.last_name ?? "";
-    const fullName = `${firstName} ${lastName}`.trim() || "Unknown resident";
+    const fullName = formatLoadResidentsFullName(firstName, lastName);
     const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
     const bed = bedByResident.get(resident.id);
     const room = bed?.rooms ?? null;
