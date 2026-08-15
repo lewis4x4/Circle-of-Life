@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import {
   financeOverviewKpiTileValue,
   type FinanceOverviewKpiContext,
+  type FinanceOverviewKpiKey,
 } from "@/lib/finance/finance-overview-display-copy";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -30,6 +31,23 @@ export default function AdminFinanceHubPageClient({
   initialError,
 }: FinanceOverviewPageClientProps) {
   const kpiCtx: FinanceOverviewKpiContext = { loadFailed: Boolean(initialError) };
+
+  function renderKpiTileValue(key: FinanceOverviewKpiKey, value: number | null, metricClassName?: string) {
+    if (value !== null) {
+      return (
+        <p className={cn("text-4xl font-mono tracking-tighter pb-1", metricClassName)}>
+          {value}
+        </p>
+      );
+    }
+    return (
+      <p className="pb-1">
+        <span className="text-[13px] font-medium leading-snug text-muted-foreground">
+          {financeOverviewKpiTileValue(key, value, kpiCtx)}
+        </span>
+      </p>
+    );
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -114,9 +132,7 @@ export default function AdminFinanceHubPageClient({
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Posted Entries (30d)
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter pb-1">
-                  {financeOverviewKpiTileValue("posted_count", postedCount, kpiCtx)}
-                </p>
+                {renderKpiTileValue("posted_count", postedCount)}
               </div>
             </V2Card>
           </div>
@@ -130,9 +146,11 @@ export default function AdminFinanceHubPageClient({
                    Unposted Invoices
                 </h3>
                 <div>
-                  <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">
-                    {financeOverviewKpiTileValue("unposted_invoices", unpostedInvoices, kpiCtx)}
-                  </p>
+                  {renderKpiTileValue(
+                    "unposted_invoices",
+                    unpostedInvoices,
+                    "text-amber-600 dark:text-amber-400",
+                  )}
                   {unpostedInvoices != null && unpostedInvoices > 0 && (
                     <Link className="mt-1 block text-[10px] font-mono text-amber-600/80 hover:text-amber-600 dark:text-amber-400/80 dark:hover:text-amber-400 underline-offset-4 hover:underline" href="/admin/billing/invoices">
                       Review Invoices →
