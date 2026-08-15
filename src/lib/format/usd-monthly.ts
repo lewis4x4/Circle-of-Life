@@ -20,7 +20,7 @@ export function formatUsdMonthlyFromCents(cents: number): string {
 }
 
 export function formatUsdCurrencyFromCents(cents: number): string {
-  if (!Number.isFinite(cents)) return "—";
+  if (!Number.isFinite(cents)) return USD_MONTHLY_NO_AMOUNT_POSTED_COPY;
   const dollars = cents / 100;
   const wholeDollars = Number.isInteger(dollars) && cents % 100 === 0;
   return new Intl.NumberFormat("en-US", {
