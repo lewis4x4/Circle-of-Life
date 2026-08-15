@@ -59,7 +59,9 @@ describe("family portal messages one-way policy", () => {
     expect(source).not.toMatch(/ask questions/i);
     expect(source).not.toMatch(/T8InboxThreaded/);
     expect(source).not.toMatch(/inbox queue/i);
-    expect(source).toMatch(/does not support replies/i);
+    expect(source).toMatch(/FAMILY_HOME_BULLETIN_HELPER/);
+    expect(source).toMatch(/FAMILY_HOME_BULLETIN_EMPTY_TITLE/);
+    expect(source).toMatch(/Last posted/);
     expect(source).toMatch(/FamilyPortalUpdateLog/);
   });
 

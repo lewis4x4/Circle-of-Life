@@ -10,6 +10,15 @@ import {
   type FamilyLinkedResidentOption,
   type FamilyMessageRow,
 } from "@/lib/family/family-messages-data";
+import {
+  FAMILY_HOME_BULLETIN_EMPTY_DESCRIPTION,
+  FAMILY_HOME_BULLETIN_EMPTY_TITLE,
+  FAMILY_HOME_BULLETIN_HELPER,
+  FAMILY_MESSAGES_LIST_LABEL,
+  FAMILY_MESSAGES_PAGE_DESCRIPTION,
+  FAMILY_MESSAGES_PAGE_TITLE,
+} from "@/lib/family/family-portal-copy";
+import { formatFamilyPortalTimestamp } from "@/lib/family/family-portal-notes-display";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -126,8 +135,8 @@ export default function FamilyMessagesPage() {
     <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pb-16 pt-8 md:pb-0">
       <FamilySectionIntro
         active="updates"
-        title="Care team updates"
-        description="Read-only notes from your care team. This portal does not support replies."
+        title={FAMILY_MESSAGES_PAGE_TITLE}
+        description={FAMILY_MESSAGES_PAGE_DESCRIPTION}
         residentSummary={
           residents.length === 1 ? residents[0]?.displayName : undefined
         }
@@ -181,6 +190,7 @@ export default function FamilyMessagesPage() {
                 Updates are private, time-stamped, and posted by the care team.
               </span>
             </p>
+            <p>{FAMILY_HOME_BULLETIN_HELPER}</p>
             <p>
               For urgent medical concerns, contact the facility directly by phone.
             </p>
@@ -231,6 +241,13 @@ function ResidentUpdateLog({
     void refresh();
   }, [refresh]);
 
+  const lastPostedAt =
+    messages.length > 0
+      ? messages.reduce((latest, message) =>
+          message.createdAt > latest ? message.createdAt : latest,
+        messages[0]!.createdAt)
+      : null;
+
   if (!residentId) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -257,6 +274,11 @@ function ResidentUpdateLog({
             </button>
           ) : null}
         </div>
+        {lastPostedAt ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Last posted {formatFamilyPortalTimestamp(lastPostedAt)}
+          </p>
+        ) : null}
       </header>
 
       {error ? (
@@ -277,9 +299,9 @@ function ResidentUpdateLog({
           authorLabel: "Care team",
           variant: "staff" as const,
         }))}
-        emptyTitle="No updates yet"
-        emptyDescription="When the care team posts a note, it will appear here."
-        listLabel="Posted updates"
+        emptyTitle={FAMILY_HOME_BULLETIN_EMPTY_TITLE}
+        emptyDescription={FAMILY_HOME_BULLETIN_EMPTY_DESCRIPTION}
+        listLabel={FAMILY_MESSAGES_LIST_LABEL}
       />
     </section>
   );
