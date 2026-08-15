@@ -1,6 +1,6 @@
 /**
- * Quiet Operator copy for the discharge med reconciliation hub KPI tiles.
- * Missing counts name real gaps — never fabricate pipeline metrics.
+ * Quiet Operator copy for the discharge med reconciliation hub.
+ * Missing counts and resident joins name real gaps — never fabricate pipeline metrics or person names.
  */
 
 export type DischargeMedRecHubKpiKey =
@@ -34,4 +34,38 @@ export function formatDischargeMedRecHubKpiValue(
 /** Whether a KPI tile is showing a loaded metric (including real zeros). */
 export function dischargeMedRecHubKpiTileIsMetric(display: string | number): boolean {
   return typeof display === "number";
+}
+
+export const DISCHARGE_MED_REC_NO_RESIDENT_POSTED_COPY = "No resident posted";
+export const DISCHARGE_MED_REC_NO_NAME_POSTED_COPY = "No name posted";
+
+export type DischargeMedRecResidentNameJoin = {
+  first_name: string | null;
+  last_name: string | null;
+} | null | undefined;
+
+const DISCHARGE_MED_REC_PLACEHOLDER_RESIDENT_NAMES = new Set([
+  "—",
+  "unknown",
+  "unknown resident",
+  "unnamed",
+  "unnamed resident",
+]);
+
+/** Resident name on the med rec hub table — never invents a person or legacy Unknown labels. */
+export function formatDischargeMedRecResidentName(
+  resident: DischargeMedRecResidentNameJoin,
+): string {
+  if (!resident) return DISCHARGE_MED_REC_NO_RESIDENT_POSTED_COPY;
+
+  const first = (resident.first_name ?? "").trim();
+  const last = (resident.last_name ?? "").trim();
+  const combined = [first, last].filter((part) => part.length > 0).join(" ");
+
+  if (!combined) return DISCHARGE_MED_REC_NO_NAME_POSTED_COPY;
+  if (DISCHARGE_MED_REC_PLACEHOLDER_RESIDENT_NAMES.has(combined.toLowerCase())) {
+    return DISCHARGE_MED_REC_NO_NAME_POSTED_COPY;
+  }
+
+  return combined;
 }
