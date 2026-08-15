@@ -8,6 +8,13 @@ import type {
   V2AnalyticsLoad,
   V2AnalyticsRollupRow,
 } from "@/lib/v2-analytics";
+import {
+  formatW3AnalyticsAvgRisk,
+  formatW3AnalyticsOccupancyPct,
+  formatW3AnalyticsRiskScore,
+  formatW3AnalyticsSurveyReadinessPct,
+  formatW3AnalyticsTotalIncidents,
+} from "@/lib/v2/w3-analytics-display-copy";
 
 const DASHBOARD_PATH: Record<V2AnalyticsId, string> = {
   "executive-standup": "/admin/executive/standup",
@@ -25,7 +32,7 @@ const COLUMNS: DataTableColumn<V2AnalyticsRollupRow>[] = [
     id: "occupancy_pct",
     header: "Occupancy %",
     accessor: (r) => r.occupancy_pct,
-    render: (r) => (r.occupancy_pct == null ? "—" : String(r.occupancy_pct)),
+    render: (r) => formatW3AnalyticsOccupancyPct(r.occupancy_pct),
     align: "right",
     numeric: true,
     metricKey: "occupancy_pct",
@@ -42,7 +49,7 @@ const COLUMNS: DataTableColumn<V2AnalyticsRollupRow>[] = [
     id: "risk_score",
     header: "Risk score",
     accessor: (r) => r.risk_score,
-    render: (r) => (r.risk_score == null ? "—" : String(r.risk_score)),
+    render: (r) => formatW3AnalyticsRiskScore(r.risk_score),
     align: "right",
     numeric: true,
   },
@@ -50,7 +57,7 @@ const COLUMNS: DataTableColumn<V2AnalyticsRollupRow>[] = [
     id: "survey_readiness_pct",
     header: "Survey readiness %",
     accessor: (r) => r.survey_readiness_pct,
-    render: (r) => (r.survey_readiness_pct == null ? "—" : String(r.survey_readiness_pct)),
+    render: (r) => formatW3AnalyticsSurveyReadinessPct(r.survey_readiness_pct),
     align: "right",
     numeric: true,
     metricKey: "survey_readiness_pct",
@@ -111,13 +118,13 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
         },
         {
           label: "Open incidents",
-          value: totalIncidents ?? "—",
+          value: formatW3AnalyticsTotalIncidents(totalIncidents),
           info: "Sum of open incidents across the live rollup",
           tone: totalIncidents != null && totalIncidents > 0 ? "warning" : "default",
         },
         {
           label: "Avg risk score",
-          value: avgRisk ?? "—",
+          value: formatW3AnalyticsAvgRisk(avgRisk),
           info: "Mean of latest risk_score across live facilities (lower = healthier)",
         },
         {
