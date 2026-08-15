@@ -6,6 +6,7 @@ import {
   EXECUTIVE_NO_CERT_COUNT_POSTED_COPY,
   EXECUTIVE_NO_COMPLETENESS_POSTED_COPY,
   EXECUTIVE_NO_CONFIDENCE_POSTED_COPY,
+  EXECUTIVE_NO_DATE_POSTED_COPY,
   EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY,
   EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY,
   EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY,
@@ -17,6 +18,8 @@ import {
   EXECUTIVE_NO_OCCUPANCY_POSTED_COPY,
   EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY,
   EXECUTIVE_NO_RISK_SCORE_POSTED_COPY,
+  EXECUTIVE_STANDUP_MANUAL_OR_FUTURE_FEED_COPY,
+  EXECUTIVE_STANDUP_NO_DELTA_COPY,
   formatExecutiveArOutstandingCents,
   formatExecutiveCertsExpiringCount,
   formatExecutiveCompletenessPct,
@@ -25,17 +28,24 @@ import {
   formatExecutiveInHouseCount,
   formatExecutiveLastGeneratedAt,
   formatExecutiveLeagueScore,
+  formatExecutiveNoMetricPostedCopy,
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPct,
   formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOfficerCountLabel,
+  formatExecutiveOfficerKpiValue,
   formatExecutiveOnLeaveCount,
   formatExecutiveOpenIncidentCount,
   formatExecutiveOpenInvoiceCount,
   formatExecutivePacketStatus,
+  formatExecutiveRelativeAge,
   formatExecutiveRevenueMtdCents,
   formatExecutiveRiskScore,
   formatExecutiveSurveyDeficiencyCount,
+  formatStandupMetricDelta,
+  formatStandupMetricValue,
 } from "./executive-display-copy";
+import type { StandupMetricRow } from "./standup";
 
 describe("formatExecutiveOccupancyPct", () => {
   it("names the gap when occupancy is missing", () => {
@@ -235,5 +245,103 @@ describe("formatExecutiveLastGeneratedAt", () => {
   it("formats posted generate timestamps", () => {
     const formatted = formatExecutiveLastGeneratedAt("2026-01-15T12:00:00.000Z");
     expect(formatted).toBe(new Date("2026-01-15T12:00:00.000Z").toLocaleString());
+  });
+});
+
+describe("formatExecutiveRelativeAge", () => {
+  it("names the gap when the timestamp is missing or invalid", () => {
+    expect(formatExecutiveRelativeAge(null)).toBe(EXECUTIVE_NO_DATE_POSTED_COPY);
+    expect(formatExecutiveRelativeAge("not-a-date")).toBe(EXECUTIVE_NO_DATE_POSTED_COPY);
+  });
+
+  it("formats a recent posted timestamp", () => {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    expect(formatExecutiveRelativeAge(fiveMinutesAgo)).toBe("5m ago");
+  });
+});
+
+describe("formatExecutiveNoMetricPostedCopy", () => {
+  it("lowercases the metric label in gap copy", () => {
+    expect(formatExecutiveNoMetricPostedCopy("Open incidents")).toBe("No open incidents posted");
+  });
+});
+
+describe("formatExecutiveOfficerKpiValue", () => {
+  it("keeps loading and zero behavior", () => {
+    expect(formatExecutiveOfficerKpiValue(undefined, true, "Open incidents")).toBe("…");
+    expect(formatExecutiveOfficerKpiValue(0, false, "Open incidents")).toBe("0");
+  });
+
+  it("names the gap when the KPI is missing", () => {
+    expect(formatExecutiveOfficerKpiValue(undefined, false, "Open incidents")).toBe("No open incidents posted");
+  });
+});
+
+describe("formatExecutiveOfficerCountLabel", () => {
+  it("names the gap when the count is missing", () => {
+    expect(formatExecutiveOfficerCountLabel(undefined, "overdue")).toBe("No overdue posted");
+  });
+
+  it("keeps real zero in the lane stat", () => {
+    expect(formatExecutiveOfficerCountLabel(0, "overdue")).toBe("0 overdue");
+  });
+});
+
+function standupMetric(overrides: Partial<StandupMetricRow> = {}): StandupMetricRow {
+  return {
+    key: "current_total_census",
+    sectionKey: "ar_census",
+    label: "Current total census",
+    valueType: "count",
+    sourceMode: "auto",
+    description: "Live census total",
+    valueNumeric: 42,
+    valueText: null,
+    freshnessAt: null,
+    confidenceBand: "high",
+    sourceRefJson: [],
+    overrideNote: null,
+    ...overrides,
+  };
+}
+
+describe("formatStandupMetricValue", () => {
+  it("names the gap when the metric row is missing", () => {
+    expect(formatStandupMetricValue(undefined, "Current AR")).toBe("No current AR posted");
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatStandupMetricValue(standupMetric({ valueNumeric: 0 }))).toBe("0");
+  });
+
+  it("uses manual copy for unresolved manual rows", () => {
+    expect(
+      formatStandupMetricValue(
+        standupMetric({ valueNumeric: null, sourceMode: "manual", valueType: "hours" }),
+      ),
+    ).toBe(EXECUTIVE_STANDUP_MANUAL_OR_FUTURE_FEED_COPY);
+  });
+
+  it("formats currency values from cents", () => {
+    expect(
+      formatStandupMetricValue(
+        standupMetric({ key: "current_ar_cents", label: "Current AR", valueType: "currency", valueNumeric: 125000 }),
+      ),
+    ).toBe("$1,250");
+  });
+});
+
+describe("formatStandupMetricDelta", () => {
+  it("names the gap when either side is missing", () => {
+    expect(formatStandupMetricDelta(undefined, standupMetric())).toBe(EXECUTIVE_STANDUP_NO_DELTA_COPY);
+    expect(
+      formatStandupMetricDelta(standupMetric(), standupMetric({ valueNumeric: null, sourceMode: "manual" })),
+    ).toBe(EXECUTIVE_STANDUP_NO_DELTA_COPY);
+  });
+
+  it("reports no change for identical values", () => {
+    expect(formatStandupMetricDelta(standupMetric({ valueNumeric: 10 }), standupMetric({ valueNumeric: 10 }))).toBe(
+      "No change",
+    );
   });
 });

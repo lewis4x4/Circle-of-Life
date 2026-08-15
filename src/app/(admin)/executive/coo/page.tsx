@@ -108,10 +108,10 @@ export default function CooDashboardPage() {
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={refetch} /> : null}
 
         <OfficerKpiStrip>
-          <OfficerKpiTile label="Open incidents" value={officerKpiValue(openIncidents, loading)} tone={officerAlarmTone(openIncidents, "danger")} />
-          <OfficerKpiTile label="Med errors (MTD)" value={officerKpiValue(medErrors, loading)} tone={officerAlarmTone(medErrors, "warning")} />
-          <OfficerKpiTile label="Active outbreaks" value={officerKpiValue(outbreaks, loading)} tone={officerAlarmTone(outbreaks, "danger")} />
-          <OfficerKpiTile label="Overdue tasks" value={officerKpiValue(overdue, loading)} tone={officerAlarmTone(overdue, "warning")} />
+          <OfficerKpiTile label="Open incidents" value={officerKpiValue(openIncidents, loading, "Open incidents")} tone={officerAlarmTone(openIncidents, "danger")} />
+          <OfficerKpiTile label="Med errors (MTD)" value={officerKpiValue(medErrors, loading, "Med errors (MTD)")} tone={officerAlarmTone(medErrors, "warning")} />
+          <OfficerKpiTile label="Active outbreaks" value={officerKpiValue(outbreaks, loading, "Active outbreaks")} tone={officerAlarmTone(outbreaks, "danger")} />
+          <OfficerKpiTile label="Overdue tasks" value={officerKpiValue(overdue, loading, "Overdue tasks")} tone={officerAlarmTone(overdue, "warning")} />
         </OfficerKpiStrip>
 
         {tab === "Operations Hub" ? (

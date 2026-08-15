@@ -16,32 +16,10 @@ import {
   fetchStandupSnapshotDetail,
   STANDUP_SECTION_LABELS,
   type StandupComparison,
-  type StandupMetricRow,
   type StandupSectionKey,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
-
-const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function formatMetricValue(metric: StandupMetricRow | undefined): string {
-  if (!metric) return "—";
-  if (metric.valueText?.trim()) return metric.valueText.trim();
-  if (metric.valueNumeric == null) return "—";
-  if (metric.valueType === "currency") return USD.format(metric.valueNumeric / 100);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
-}
-
-function formatDelta(metricLeft: StandupMetricRow | undefined, metricRight: StandupMetricRow | undefined): string {
-  if (!metricLeft || !metricRight || metricLeft.valueNumeric == null || metricRight.valueNumeric == null) return "—";
-  const delta = metricRight.valueNumeric - metricLeft.valueNumeric;
-  if (delta === 0) return "No change";
-  if (metricRight.valueType === "currency") return `${delta > 0 ? "+" : "-"}${USD.format(Math.abs(delta) / 100)}`;
-  if (metricRight.valueType === "hours") return `${delta > 0 ? "+" : "-"}${Math.abs(delta).toFixed(2)} hrs`;
-  if (metricRight.valueType === "percent") return `${delta > 0 ? "+" : "-"}${Math.abs(delta).toFixed(1)}%`;
-  return `${delta > 0 ? "+" : "-"}${Math.abs(delta)}`;
-}
+import { formatStandupMetricDelta, formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
 
 export default function ExecutiveStandupComparePage() {
   const searchParams = useSearchParams();
@@ -192,10 +170,10 @@ export default function ExecutiveStandupComparePage() {
                       <div key={metricKey} className="rounded-xl border border-slate-200/80 p-4 dark:border-white/10">
                         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{rightMetric?.label ?? leftMetric?.label ?? metricKey}</div>
                         <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">{comparison.fromWeek}</div>
-                        <div className="font-semibold text-slate-900 dark:text-white">{formatMetricValue(leftMetric)}</div>
+                        <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</div>
                         <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">{comparison.toWeek}</div>
-                        <div className="font-semibold text-slate-900 dark:text-white">{formatMetricValue(rightMetric)}</div>
-                        <div className="mt-3 text-sm font-medium text-primary-600 dark:text-primary-300">{formatDelta(leftMetric, rightMetric)}</div>
+                        <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</div>
+                        <div className="mt-3 text-sm font-medium text-primary-600 dark:text-primary-300">{formatStandupMetricDelta(leftMetric, rightMetric)}</div>
                       </div>
                     );
                   })}
@@ -264,9 +242,9 @@ export default function ExecutiveStandupComparePage() {
                                 <div className="font-medium text-slate-900 dark:text-white">{sample.label}</div>
                                 <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{sample.description}</div>
                               </td>
-                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatMetricValue(leftMetric)}</td>
-                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatMetricValue(rightMetric)}</td>
-                              <td className="px-3 py-3 text-primary-600 dark:text-primary-300">{formatDelta(leftMetric, rightMetric)}</td>
+                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</td>
+                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</td>
+                              <td className="px-3 py-3 text-primary-600 dark:text-primary-300">{formatStandupMetricDelta(leftMetric, rightMetric)}</td>
                             </tr>
                           );
                         })}
