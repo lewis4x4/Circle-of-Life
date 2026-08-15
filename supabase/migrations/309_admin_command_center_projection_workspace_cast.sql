@@ -24,7 +24,7 @@ BEGIN
     RAISE EXCEPTION 'Organization missing on profile' USING ERRCODE = '42501';
   END IF;
 
-  IF haven.app_role() NOT IN ('owner', 'org_admin', 'facility_admin') THEN
+  IF haven.app_role() NOT IN ('owner', 'org_admin', 'facility_admin', 'manager') THEN
     RAISE EXCEPTION 'Command Center access denied' USING ERRCODE = '42501';
   END IF;
 

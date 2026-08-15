@@ -372,10 +372,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const isItemActive = useCallback(
     (href: string) => {
-      if (href === "/admin") return pathname === "/admin";
-      return pathname === href || pathname.startsWith(`${href}/`);
+      const resolved = resolveRouteHref(href);
+      return pathname === resolved || pathname.startsWith(`${resolved}/`);
     },
-    [pathname],
+    [pathname, resolveRouteHref],
   );
 
   const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
