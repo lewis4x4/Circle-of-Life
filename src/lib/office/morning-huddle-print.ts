@@ -1,4 +1,9 @@
 import type { MorningHuddleData } from "@/lib/office/morning-huddle";
+import {
+  formatMorningHuddlePrintAssignedShift,
+  formatMorningHuddlePrintMissedMedReason,
+  formatMorningHuddlePrintResidentName,
+} from "@/lib/office/morning-huddle-print-display-copy";
 
 function escapeHtml(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return "";
@@ -58,7 +63,7 @@ export function buildMorningHuddlePrintHtml(
         <td>${escapeHtml(i.incidentNumber)}</td>
         <td>${escapeHtml(humanize(i.category))}</td>
         <td>${escapeHtml(humanize(i.severity))}${i.ahcaReportable ? ' <span class="tag risk">AHCA</span>' : ""}</td>
-        <td>${escapeHtml(i.residentName ?? "—")}</td>
+        <td>${escapeHtml(formatMorningHuddlePrintResidentName(i.residentName))}</td>
         <td>${escapeHtml(formatTime(i.occurredAt))}</td>
         <td>${escapeHtml(humanize(i.status))}</td>
       </tr>`,
@@ -95,7 +100,7 @@ export function buildMorningHuddlePrintHtml(
         <td>${escapeHtml(t.templateName)}${t.licenseThreatening ? ' <span class="tag risk">license</span>' : ""}</td>
         <td>${escapeHtml(humanize(t.templateCategory))}</td>
         <td>${escapeHtml(t.priority)}</td>
-        <td>${escapeHtml(t.assignedShift ? humanize(t.assignedShift) : "—")}</td>
+        <td>${escapeHtml(formatMorningHuddlePrintAssignedShift(t.assignedShift))}</td>
         <td>${escapeHtml(t.assignedShiftDate)}</td>
         <td>${escapeHtml(humanize(t.status))}</td>
       </tr>`,
@@ -108,7 +113,7 @@ export function buildMorningHuddlePrintHtml(
         <td>${escapeHtml(m.residentName)}</td>
         <td>${escapeHtml(humanize(m.status))}</td>
         <td>${escapeHtml(formatTime(m.scheduledTime))}</td>
-        <td>${escapeHtml(m.reason ?? "—")}</td>
+        <td>${escapeHtml(formatMorningHuddlePrintMissedMedReason(m.reason))}</td>
       </tr>`,
     )
     .join("");
