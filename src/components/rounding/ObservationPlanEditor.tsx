@@ -31,6 +31,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  formatObservationPlanAcuityDisplay,
+  formatObservationPlanAcuitySegment,
+} from "@/lib/rounding/observation-plan-display-copy";
+import {
   buildPlanSchedulePreview,
   formatPreviewTimestamp,
   formatTimeLabel,
@@ -185,15 +189,10 @@ function residentRoom(resident: ResidentOption) {
   return resident.beds?.rooms?.room_number ?? resident.beds?.bed_label ?? "Unassigned";
 }
 
-function residentAcuity(resident: ResidentOption) {
-  if (resident.acuity_score != null) return Number(resident.acuity_score).toLocaleString("en-US");
-  if (resident.acuity_level) return resident.acuity_level.replace("level_", "");
-  return "—";
-}
-
 function residentComboboxLabel(resident: ResidentOption) {
   const name = residentName(resident) || "Unnamed resident";
-  return `${name} · Room ${residentRoom(resident)} · Acuity ${residentAcuity(resident)}`;
+  const acuitySegment = formatObservationPlanAcuitySegment(resident.acuity_score, resident.acuity_level);
+  return `${name} · Room ${residentRoom(resident)} · ${acuitySegment}`;
 }
 
 export function ObservationPlanEditor({
@@ -421,7 +420,7 @@ export function ObservationPlanEditor({
         return {
           id: resident.id,
           label,
-          keywords: `${label} ${residentName(resident)} ${residentRoom(resident)} ${residentAcuity(resident)}`,
+          keywords: `${label} ${residentName(resident)} ${residentRoom(resident)} ${formatObservationPlanAcuityDisplay(resident.acuity_score, resident.acuity_level)}`,
         };
       }),
     [residents],
