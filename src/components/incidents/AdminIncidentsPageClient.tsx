@@ -7,10 +7,18 @@ import { AlertCircle, Clock, ShieldAlert, ArrowRight, CheckCircle2 } from "lucid
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  adminIncidentsGlobalEmptyNotice,
+  adminIncidentsKanbanColumnEmptyHelper,
+  adminIncidentsKanbanColumnEmptyTitle,
+  adminIncidentsNoFacilityNotice,
+  incidentFollowupDueBadgeText,
+} from "@/lib/incidents/incidents-board-copy";
+import {
   fetchIncidentsFromSupabase,
   type IncidentRow,
   type IncidentStatus,
 } from "@/lib/incidents/load-incidents";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -193,6 +201,7 @@ export function AdminIncidentsPageClient({
       : scopeFilter === "all"
         ? "/admin/incidents?severity=level_4&scope=active"
         : `/admin/incidents?severity=level_4&scope=${scopeFilter}`;
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const level4ExceptionCount = rows.filter((row) => {
     if (row.severity !== "level_4") return false;
     if (scopeFilter === "all") return row.status !== "closed";
@@ -290,9 +299,13 @@ export function AdminIncidentsPageClient({
           </Link>
         </div>
       ) : null}
-      {rows.length === 0 ? (
+      {!facilityReady ? (
         <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
-          No live incident records returned for this scope. No fallback incident cards are shown.
+          {adminIncidentsNoFacilityNotice()}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
+          {adminIncidentsGlobalEmptyNotice()}
         </div>
       ) : null}
 
@@ -331,7 +344,12 @@ export function AdminIncidentsPageClient({
             </div>
 
             <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-              {followupPressure.map((incident) => (
+              {followupPressure.map((incident) => {
+                const followupDueBadge = incidentFollowupDueBadgeText({
+                  followupDueMs: incident.followupDueMs,
+                  followupDueStr: incident.followupDueStr,
+                });
+                return (
                 <Link
                   key={incident.id}
                   href={`/admin/incidents/${incident.id}`}
@@ -370,9 +388,9 @@ export function AdminIncidentsPageClient({
                           : `${incident.escalatedFollowups} escalated`}
                       </Badge>
                     ) : null}
-                    {incident.followupDueStr !== "—" ? (
+                    {followupDueBadge ? (
                       <Badge variant="outline" className="bg-info/10 text-info border border-info/30">
-                        Next due {incident.followupDueStr}
+                        {followupDueBadge}
                       </Badge>
                     ) : null}
                     {incident.openObligations > 0 ? (
@@ -392,7 +410,8 @@ export function AdminIncidentsPageClient({
                     ) : null}
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -414,9 +433,10 @@ export function AdminIncidentsPageClient({
                
                <ScrollArea className="flex-1 p-3">
                  {colRows.length === 0 ? (
-                   <div className="mt-8 text-center text-muted-foreground">
+                   <div className="mt-8 text-center text-muted-foreground px-2">
                      <CheckCircle2 className="w-8 h-8 opacity-20 mx-auto mb-2" />
-                     <p className="text-xs font-medium">Queue Empty</p>
+                     <p className="text-xs font-medium">{adminIncidentsKanbanColumnEmptyTitle()}</p>
+                     <p className="mt-1 text-[11px] text-muted-foreground/80">{adminIncidentsKanbanColumnEmptyHelper()}</p>
                    </div>
                  ) : (
                    <MotionList className="flex flex-col gap-3">
