@@ -18,6 +18,7 @@ import {
   resolvePresentation,
   type SummaryRow,
 } from "@/lib/reports/metric-presentation";
+import { formatReportRunCellDisplay } from "@/lib/reports/report-run-display-copy";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import {
   Table,
@@ -137,7 +138,7 @@ export function ReportRunResult({ summary, detailRows }: ReportRunResultProps) {
                   >
                     {Object.keys(detailRows[0]).map((col) => (
                       <TableCell key={col} className="max-w-[240px] truncate">
-                        {row[col] == null ? "—" : String(row[col])}
+                        {formatReportRunCellDisplay(row[col])}
                       </TableCell>
                     ))}
                   </TableRow>
