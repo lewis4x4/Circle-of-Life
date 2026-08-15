@@ -3,6 +3,7 @@ import { format } from "date-fns";
 
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatStaffingConsoleExpiredCertStaffName } from "@/lib/staffing/staffing-console-display-copy";
 import type { Database } from "@/types/database";
 
 export type SnapshotRow = {
@@ -177,13 +178,11 @@ export async function fetchExpiredCertificationWarnings(
 
   return certs.map((row) => {
     const staff = staffById.get(row.staff_id);
-    const first = staff?.first_name?.trim() ?? "";
-    const last = staff?.last_name?.trim() ?? "";
     const expirationAt = row.expiration_date ? new Date(`${row.expiration_date}T23:59:59`).getTime() : now;
     const daysExpired = Math.max(1, Math.ceil((now - expirationAt) / 86_400_000));
     return {
       id: row.id,
-      staffName: `${first} ${last}`.trim() || "Unknown staff",
+      staffName: formatStaffingConsoleExpiredCertStaffName(staff),
       role: mapDbStaffRoleToLabel(staff?.staff_role ?? "other"),
       certName: row.certification_name,
       daysExpired,
