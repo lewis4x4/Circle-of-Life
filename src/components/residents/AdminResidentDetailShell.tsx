@@ -41,6 +41,7 @@ import {
   presenceLabel,
   presenceTone,
 } from "@/lib/residents/presence";
+import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -50,12 +51,6 @@ type AdminResidentDetailShellProps = {
   initialError: string | null;
   initialFacilityId: string | null;
 };
-
-function genderLabel(value: string | null): string {
-  if (value === "male") return "Male";
-  if (value === "female") return "Female";
-  return value?.replace(/_/g, " ") ?? "Unknown";
-}
 
 export function AdminResidentDetailShell({
   children,
@@ -122,111 +117,79 @@ export function AdminResidentDetailShell({
   // so the resident identity and tabs remain mounted while their content swaps.
   if (selectedSegment == null) return children;
 
-  if (loading && !detail) {
-    return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link
-          prefetch={false}
-          href={hrefs.rosterHref}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "inline-flex gap-1",
-          )}
-        >
-          ← Resident roster
-        </Link>
-        <AdminTableLoadingState />
-      </div>
-    );
-  }
-
-  if (notFound) {
-    return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link
-          prefetch={false}
-          href={hrefs.rosterHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}
-        >
-          ← Resident roster
-        </Link>
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-xl">Resident not found</CardTitle>
-            <CardDescription>
-              This profile may be outside your facility filter, discharged, or the link is invalid.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error || !detail) {
-    return (
-      <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
-        <Link
-          prefetch={false}
-          href={hrefs.rosterHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}
-        >
-          ← Resident roster
-        </Link>
-        {error ? (
-          <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
-        ) : null}
-      </div>
-    );
-  }
-
-  const subtitle = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${genderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
-
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-4 pt-2">
-      <RecordDetailHeader
-        title={detail.fullName}
-        subtitle={subtitle}
-        backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
-        statusChips={
-          !isPresenceStatus(detail.rawStatus) ? (
-            <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
-          ) : detail.status !== "active" ? (
-            <StatusPill tone={presenceTone(detail.status)}>
-              {presenceLabel(detail.status)}
-            </StatusPill>
-          ) : null
-        }
-        actions={
-          <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
-            <div className="flex flex-row flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setBehaviorModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setConditionModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setGeneralNoteModalOpen(true)}
-                className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
-              >
-                <FileText className="mr-1.5 size-4" aria-hidden /> General note
-              </Button>
+      {detail && !notFound && !error ? (
+        <RecordDetailHeader
+          title={detail.fullName}
+          subtitle={`${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`}
+          backLink={{ label: "Resident roster", href: hrefs.rosterHref }}
+          statusChips={
+            !isPresenceStatus(detail.rawStatus) ? (
+              <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
+            ) : detail.status !== "active" ? (
+              <StatusPill tone={presenceTone(detail.status)}>
+                {presenceLabel(detail.status)}
+              </StatusPill>
+            ) : null
+          }
+          actions={
+            <div className="flex shrink-0 flex-col items-end gap-2 md:flex-row md:items-start">
+              <div className="flex flex-row flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setBehaviorModalOpen(true)}
+                  className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                >
+                  <Brain className="mr-1.5 size-4" aria-hidden /> Log behavior
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setConditionModalOpen(true)}
+                  className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                >
+                  <Stethoscope className="mr-1.5 size-4" aria-hidden /> Log condition
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setGeneralNoteModalOpen(true)}
+                  className="hover:bg-secondary/70 h-auto min-w-[134px] max-w-[150px] border border-transparent px-3 py-2 text-[12px] font-medium hover:border-border"
+                >
+                  <FileText className="mr-1.5 size-4" aria-hidden /> General note
+                </Button>
+              </div>
             </div>
-          </div>
-        }
-      />
+          }
+        />
+      ) : (
+        <div className="fade-in animate-in space-y-6 duration-[var(--motion-duration)]">
+          <Link
+            prefetch={false}
+            href={hrefs.rosterHref}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1")}
+          >
+            ← Resident roster
+          </Link>
+          {loading && !detail ? <AdminTableLoadingState /> : null}
+          {notFound ? (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="text-xl">Resident not found</CardTitle>
+                <CardDescription>
+                  This profile may be outside your facility filter, discharged, or the link is
+                  invalid.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ) : null}
+          {error ? (
+            <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
+          ) : null}
+        </div>
+      )}
 
       <div className="w-full shrink-0">
         <ResidentDetailTabStrip hrefs={hrefs} active={activeTab} />
@@ -234,27 +197,31 @@ export function AdminResidentDetailShell({
 
       <div className="min-w-0">{children}</div>
 
-      <BehaviorLogModal
-        open={behaviorModalOpen}
-        onOpenChange={setBehaviorModalOpen}
-        residentId={residentId}
-        residentName={detail.fullName}
-        onSuccess={() => void load()}
-      />
-      <ConditionLogModal
-        open={conditionModalOpen}
-        onOpenChange={setConditionModalOpen}
-        residentId={residentId}
-        residentName={detail.fullName}
-        onSuccess={() => void load()}
-      />
-      <GeneralNoteModal
-        open={generalNoteModalOpen}
-        onOpenChange={setGeneralNoteModalOpen}
-        residentId={residentId}
-        residentName={detail.fullName}
-        onSuccess={() => void load()}
-      />
+      {detail ? (
+        <>
+          <BehaviorLogModal
+            open={behaviorModalOpen}
+            onOpenChange={setBehaviorModalOpen}
+            residentId={residentId}
+            residentName={detail.fullName}
+            onSuccess={() => void load()}
+          />
+          <ConditionLogModal
+            open={conditionModalOpen}
+            onOpenChange={setConditionModalOpen}
+            residentId={residentId}
+            residentName={detail.fullName}
+            onSuccess={() => void load()}
+          />
+          <GeneralNoteModal
+            open={generalNoteModalOpen}
+            onOpenChange={setGeneralNoteModalOpen}
+            residentId={residentId}
+            residentName={detail.fullName}
+            onSuccess={() => void load()}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
