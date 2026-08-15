@@ -107,7 +107,7 @@ export default function VendorContractsListPage() {
                     <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
                       {r.effective_date}
                     </span>
-                    <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
+                    <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums truncate">
                       {formatVendorContractExpirationDate(r.expiration_date)}
                     </span>
                     <span className="w-[110px] shrink-0 text-right font-mono text-[13px] font-medium text-foreground tabular-nums">
