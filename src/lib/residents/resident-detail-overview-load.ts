@@ -517,7 +517,7 @@ export async function loadResidentOverviewDetail(
     id: r.id,
     logDate: r.log_date,
     shift: r.shift,
-    snippet: truncateSnippet(r.general_notes?.trim() || "—", 360),
+    snippet: truncateSnippet(r.general_notes?.trim() ?? "", 360),
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
   }));
 
