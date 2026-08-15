@@ -33,6 +33,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   formatObservationPlanAcuityDisplay,
   formatObservationPlanAcuitySegment,
+  formatObservationPlanResidentName,
 } from "@/lib/rounding/observation-plan-display-copy";
 import {
   buildPlanSchedulePreview,
@@ -181,16 +182,12 @@ function defaultRulesForNewPlan(facilityName: string): {
   };
 }
 
-function residentName(resident: Pick<ResidentOption, "first_name" | "last_name" | "preferred_name">) {
-  return [resident.preferred_name ?? resident.first_name, resident.last_name].filter(Boolean).join(" ");
-}
-
 function residentRoom(resident: ResidentOption) {
   return resident.beds?.rooms?.room_number ?? resident.beds?.bed_label ?? "Unassigned";
 }
 
 function residentComboboxLabel(resident: ResidentOption) {
-  const name = residentName(resident) || "Unnamed resident";
+  const name = formatObservationPlanResidentName(resident);
   const acuitySegment = formatObservationPlanAcuitySegment(resident.acuity_score, resident.acuity_level);
   return `${name} · Room ${residentRoom(resident)} · ${acuitySegment}`;
 }
@@ -420,7 +417,7 @@ export function ObservationPlanEditor({
         return {
           id: resident.id,
           label,
-          keywords: `${label} ${residentName(resident)} ${residentRoom(resident)} ${formatObservationPlanAcuityDisplay(resident.acuity_score, resident.acuity_level)}`,
+          keywords: `${label} ${formatObservationPlanResidentName(resident)} ${residentRoom(resident)} ${formatObservationPlanAcuityDisplay(resident.acuity_score, resident.acuity_level)}`,
         };
       }),
     [residents],
@@ -857,7 +854,11 @@ export function ObservationPlanEditor({
           })}
         </div>
 
-        <PlanPreviewCard preview={preview} residentName={selectedResident ? residentName(selectedResident) : null} status={status} />
+        <PlanPreviewCard
+          preview={preview}
+          residentName={selectedResident ? formatObservationPlanResidentName(selectedResident) : null}
+          status={status}
+        />
 
         <div className="flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
           <Button variant="outline" size="lg" className="min-h-11" onClick={() => router.push("/admin/rounding/plans")}>

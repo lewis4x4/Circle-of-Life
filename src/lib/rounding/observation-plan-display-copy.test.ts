@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   OBSERVATION_PLAN_NO_ACUITY_COPY,
+  OBSERVATION_PLAN_NO_NAME_COPY,
   formatObservationPlanAcuityDisplay,
   formatObservationPlanAcuitySegment,
+  formatObservationPlanResidentName,
 } from "./observation-plan-display-copy";
 
 const EM_DASH = "—";
@@ -29,6 +31,68 @@ describe("formatObservationPlanAcuityDisplay", () => {
   it("strips level_ prefix from posted acuity level", () => {
     expect(formatObservationPlanAcuityDisplay(null, "level_2")).toBe("2");
     expect(formatObservationPlanAcuityDisplay(null, "level_4")).toBe("4");
+  });
+});
+
+describe("formatObservationPlanResidentName", () => {
+  it("names the gap when name parts are blank or whitespace", () => {
+    expect(formatObservationPlanResidentName(null)).toBe(OBSERVATION_PLAN_NO_NAME_COPY);
+    expect(formatObservationPlanResidentName(undefined)).toBe(OBSERVATION_PLAN_NO_NAME_COPY);
+    expect(formatObservationPlanResidentName({ first_name: null, last_name: null })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName({ first_name: "", last_name: "" })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName({ first_name: "   ", last_name: "  " })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName("   ")).toBe(OBSERVATION_PLAN_NO_NAME_COPY);
+  });
+
+  it("names the gap for em dash and legacy generic resident strings", () => {
+    expect(formatObservationPlanResidentName({ first_name: "—", last_name: null })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName({ first_name: "Unknown", last_name: null })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName({ first_name: "Unknown", last_name: "resident" })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName({ first_name: "Unnamed", last_name: null })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName({ first_name: "Unnamed", last_name: "resident" })).toBe(
+      OBSERVATION_PLAN_NO_NAME_COPY,
+    );
+    expect(formatObservationPlanResidentName("Unnamed resident")).toBe(OBSERVATION_PLAN_NO_NAME_COPY);
+  });
+
+  it("keeps a posted resident name with preferred-then-first join", () => {
+    expect(formatObservationPlanResidentName({ first_name: "Posted", last_name: "Resident" })).toBe(
+      "Posted Resident",
+    );
+    expect(
+      formatObservationPlanResidentName({
+        preferred_name: "Posted",
+        first_name: "Legacy",
+        last_name: "Resident",
+      }),
+    ).toBe("Posted Resident");
+    expect(formatObservationPlanResidentName({ first_name: "Posted", last_name: null })).toBe("Posted");
+    expect(formatObservationPlanResidentName({ first_name: null, last_name: "Resident" })).toBe("Resident");
+    expect(formatObservationPlanResidentName("  Posted Resident  ")).toBe("Posted Resident");
+  });
+
+  it("never surfaces Unnamed resident or a lone em dash", () => {
+    expect(OBSERVATION_PLAN_NO_NAME_COPY).toBe("No name posted");
+    expect(formatObservationPlanResidentName(null)).not.toBe("Unnamed resident");
+    expect(formatObservationPlanResidentName(null)).not.toBe("Unknown");
+    expect(formatObservationPlanResidentName(null)).not.toBe("—");
+    expect(formatObservationPlanResidentName({ first_name: "Unnamed", last_name: "resident" })).not.toBe(
+      "Unnamed resident",
+    );
   });
 });
 
