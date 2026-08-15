@@ -171,7 +171,8 @@ function LicensingTabBody({
       : "America/New_York";
 
   const licenseNum = facility.ahca_license_number ?? facility.license_number;
-  const licensePending = !licenseNum;
+  const licenseNumberPresent = !!(licenseNum && String(licenseNum).trim() !== "");
+  const licensePending = !licenseNumberPresent;
   const authorityLabel =
     (typeof facility.license_authority === "string" && facility.license_authority.trim() !== ""
       ? facility.license_authority.trim()
@@ -185,7 +186,7 @@ function LicensingTabBody({
       : null;
 
   const standing = deriveLicenseStanding({
-    licenseNumberPresent: !!(licenseNum && String(licenseNum).trim() !== ""),
+    licenseNumberPresent,
     expiryIso: expiryYmd,
     lastSurveyResult: facility.last_survey_result,
     facilityStatus: typeof facility.status === "string" ? facility.status : null,
