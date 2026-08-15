@@ -4,15 +4,14 @@ import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { portfolioOccupancyBarClass } from "@/lib/admin/facilities/portfolio-metrics";
-
-export type PortfolioFacilityBar = {
-  id: string;
-  name: string;
-  occupancyPct: number;
-};
+import {
+  portfolioComparisonHelperLine,
+  portfolioComparisonOccupancyEmptyCopy,
+  type PortfolioComparisonEntry,
+} from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 
 type PortfolioFacilityComparisonProps = {
-  entries: PortfolioFacilityBar[];
+  entries: PortfolioComparisonEntry[];
   className?: string;
 };
 
@@ -32,7 +31,7 @@ export function PortfolioFacilityComparison({ entries, className }: PortfolioFac
     return copy;
   }, [entries, sortMode]);
 
-  const globalZero = sorted.length > 0 && sorted.every((e) => e.occupancyPct <= 0);
+  const comparisonHelperLine = portfolioComparisonHelperLine(entries);
 
   return (
     <section className={cn("rounded-lg border border-border bg-card px-8 py-6", className)} aria-labelledby="portfolio-comparison-heading">
@@ -68,24 +67,34 @@ export function PortfolioFacilityComparison({ entries, className }: PortfolioFac
         {sorted.map((f) => {
           const pct = Math.min(100, Math.max(0, Math.round(f.occupancyPct)));
           const barClass = pct > 0 ? portfolioOccupancyBarClass(pct) : "";
+          const emptyCopy = f.occupancyLoaded ? null : portfolioComparisonOccupancyEmptyCopy();
 
           return (
             <li key={f.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(140px,1fr)_4fr_auto] sm:items-center sm:gap-4">
               <span className="truncate text-sm font-medium text-foreground">{f.name}</span>
               <div className="relative h-2 w-full min-w-[120px] overflow-hidden rounded-full border border-border/60 bg-muted/40">
-                {pct > 0 ? (
+                {f.occupancyLoaded && pct > 0 ? (
                   <div className={cn("h-full rounded-full transition-all", barClass)} style={{ width: `${pct}%` }} />
-                ) : (
-                  globalZero && <div className="absolute inset-x-0 top-1/2 h-px bg-border" aria-hidden />
-                )}
+                ) : null}
               </div>
-              <span className="text-right text-sm tabular-nums font-semibold text-muted-foreground sm:min-w-[3rem]">
-                {pct > 0 ? `${pct}%` : "—"}
+              <span
+                className={cn(
+                  "text-right text-sm sm:min-w-[8rem]",
+                  emptyCopy
+                    ? "font-medium leading-snug text-muted-foreground"
+                    : "tabular-nums font-semibold text-muted-foreground",
+                )}
+              >
+                {emptyCopy ?? `${pct}%`}
               </span>
             </li>
           );
         })}
       </ul>
+
+      {comparisonHelperLine ? (
+        <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">{comparisonHelperLine}</p>
+      ) : null}
     </section>
   );
 }

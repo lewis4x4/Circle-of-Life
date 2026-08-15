@@ -162,6 +162,11 @@ const nextConfig: NextConfig = {
         destination: "/admin/facilities/:facilityId?tab=emergency",
         permanent: false,
       },
+      {
+        source: "/admin/facilities/:facilityId/surveys",
+        destination: "/admin/facilities/:facilityId?tab=licensing",
+        permanent: false,
+      },
     ];
   },
   async headers() {
