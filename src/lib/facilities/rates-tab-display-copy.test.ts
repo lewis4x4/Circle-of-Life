@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   RATES_TAB_NO_CHANGES_COPY,
+  RATES_TAB_NO_OCCUPIED_COUNT_POSTED_COPY,
   RATES_TAB_NO_RATE_POSTED_COPY,
+  RATES_TAB_NO_ROOMS_POSTED_COPY,
   formatRatesTabEditorDisplay,
   formatRatesTabLastChangedSuffix,
+  formatRatesTabOccupiedCountDisplay,
   formatRatesTabPublishedRateDisplay,
+  formatRatesTabRoomCountDisplay,
 } from "./rates-tab-display-copy";
 import { THRESHOLDS_TAB_NO_EDITOR_COPY } from "./thresholds-tab-display-copy";
 
@@ -47,6 +51,40 @@ describe("formatRatesTabEditorDisplay", () => {
 
   it("returns a short posted editor name trimmed", () => {
     expect(formatRatesTabEditorDisplay("  Jane Ops  ")).toBe("Jane Ops");
+  });
+});
+
+describe("formatRatesTabRoomCountDisplay", () => {
+  it("names missing room inventory instead of an em dash", () => {
+    expect(formatRatesTabRoomCountDisplay(null)).toBe(RATES_TAB_NO_ROOMS_POSTED_COPY);
+    expect(formatRatesTabRoomCountDisplay(undefined)).toBe(RATES_TAB_NO_ROOMS_POSTED_COPY);
+    expect(formatRatesTabRoomCountDisplay(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats zero rooms as a real count", () => {
+    expect(formatRatesTabRoomCountDisplay(0)).toBe("0 rooms");
+    expect(formatRatesTabRoomCountDisplay(0)).not.toBe(RATES_TAB_NO_ROOMS_POSTED_COPY);
+  });
+
+  it("formats a posted positive room count", () => {
+    expect(formatRatesTabRoomCountDisplay(12)).toBe("12 rooms");
+  });
+});
+
+describe("formatRatesTabOccupiedCountDisplay", () => {
+  it("names missing occupied count instead of an em dash", () => {
+    expect(formatRatesTabOccupiedCountDisplay(null)).toBe(RATES_TAB_NO_OCCUPIED_COUNT_POSTED_COPY);
+    expect(formatRatesTabOccupiedCountDisplay(undefined)).toBe(RATES_TAB_NO_OCCUPIED_COUNT_POSTED_COPY);
+    expect(formatRatesTabOccupiedCountDisplay(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats zero occupied as a real count", () => {
+    expect(formatRatesTabOccupiedCountDisplay(0)).toBe("0 occupied");
+    expect(formatRatesTabOccupiedCountDisplay(0)).not.toBe(RATES_TAB_NO_OCCUPIED_COUNT_POSTED_COPY);
+  });
+
+  it("formats a posted positive occupied count", () => {
+    expect(formatRatesTabOccupiedCountDisplay(8)).toBe("8 occupied");
   });
 });
 
