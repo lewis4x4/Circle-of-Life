@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+  DISCHARGE_MED_REC_NO_RESIDENT_POSTED_COPY,
   dischargeMedRecHubKpiTileIsMetric,
   formatDischargeMedRecHubKpiValue,
+  formatDischargeMedRecResidentName,
 } from "./discharge-med-rec-display-copy";
 
 describe("formatDischargeMedRecHubKpiValue", () => {
@@ -52,5 +55,69 @@ describe("dischargeMedRecHubKpiTileIsMetric", () => {
   it("treats gap copy as messages", () => {
     expect(dischargeMedRecHubKpiTileIsMetric("Loading planning gaps count…")).toBe(false);
     expect(dischargeMedRecHubKpiTileIsMetric("No ready to complete count posted")).toBe(false);
+  });
+});
+
+describe("formatDischargeMedRecResidentName", () => {
+  it("names a missing resident join", () => {
+    expect(formatDischargeMedRecResidentName(null)).toBe(
+      DISCHARGE_MED_REC_NO_RESIDENT_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName(undefined)).toBe(
+      DISCHARGE_MED_REC_NO_RESIDENT_POSTED_COPY,
+    );
+  });
+
+  it("names blank posted names", () => {
+    expect(formatDischargeMedRecResidentName({ first_name: "", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "   ", last_name: "  " })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+  });
+
+  it("names em dash and legacy generic placeholders", () => {
+    expect(formatDischargeMedRecResidentName({ first_name: "—", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "Unknown", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "Unknown resident", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "Unknown Resident", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "Unnamed", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "Unnamed resident", last_name: "" })).toBe(
+      DISCHARGE_MED_REC_NO_NAME_POSTED_COPY,
+    );
+  });
+
+  it("keeps a posted resident name", () => {
+    expect(formatDischargeMedRecResidentName({ first_name: "Resident", last_name: "Alpha" })).toBe(
+      "Resident Alpha",
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "Resident", last_name: null })).toBe(
+      "Resident",
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: null, last_name: "Beta" })).toBe("Beta");
+  });
+
+  it("never surfaces Unknown, Unknown resident, or a lone em dash", () => {
+    expect(DISCHARGE_MED_REC_NO_RESIDENT_POSTED_COPY).toBe("No resident posted");
+    expect(DISCHARGE_MED_REC_NO_NAME_POSTED_COPY).toBe("No name posted");
+    expect(formatDischargeMedRecResidentName(null)).not.toBe("Unknown");
+    expect(formatDischargeMedRecResidentName(null)).not.toBe("Unknown resident");
+    expect(formatDischargeMedRecResidentName(null)).not.toBe("Unknown Resident");
+    expect(formatDischargeMedRecResidentName(null)).not.toBe("—");
+    expect(formatDischargeMedRecResidentName({ first_name: "Unknown", last_name: null })).not.toBe(
+      "Unknown",
+    );
+    expect(formatDischargeMedRecResidentName({ first_name: "—", last_name: null })).not.toBe("—");
   });
 });

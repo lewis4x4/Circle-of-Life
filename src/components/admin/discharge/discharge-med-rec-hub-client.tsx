@@ -54,6 +54,7 @@ import {
 import {
   dischargeMedRecHubKpiTileIsMetric,
   formatDischargeMedRecHubKpiValue,
+  formatDischargeMedRecResidentName,
 } from "@/lib/discharge/discharge-med-rec-display-copy";
 
 const NEW_MED_REC_PIPELINE_PATH = "/pipeline/discharge-management/new-reconciliation";
@@ -671,9 +672,7 @@ export function DischargeMedRecHubClient({
                                 href={detailHref}
                                 className="text-foreground underline-offset-4 hover:underline"
                               >
-                                {r.residents ?
-                                  `${r.residents.first_name} ${r.residents.last_name}`
-                                : "Unknown resident"}
+                                {formatDischargeMedRecResidentName(r.residents)}
                               </Link>
                             </TableCell>
                             <TableCell className="align-top text-[13px] text-muted-foreground">
