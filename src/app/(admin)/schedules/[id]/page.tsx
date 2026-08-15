@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { formatSchedulePublishedSubtitle } from "@/lib/schedules/schedules-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -235,9 +236,7 @@ export default function AdminScheduleWeekDetailPage() {
       <RecordDetailHeader
         title={schedule ? weekLabel : "Schedule week"}
         subtitle={
-          schedule
-            ? `Published: ${schedule.published_at ? formatDateTime(schedule.published_at) : "—"}${schedule.notes ? ` · ${schedule.notes}` : ""}`
-            : undefined
+          schedule ? formatSchedulePublishedSubtitle(schedule.published_at, schedule.notes) : undefined
         }
         statusChips={schedule ? <ScheduleStatusBadge status={schedule.status} /> : undefined}
         backLink={{ label: "Schedule weeks", href: "/admin/schedules" }}
@@ -335,18 +334,6 @@ function formatWeekLabel(isoDate: string): string {
   const parsed = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
 }
 
 function formatIsoDate(isoDate: string): string {
