@@ -16,6 +16,8 @@ import { downloadBlobFromUrl } from "@/lib/download-blob";
 import type { BoardPacketSummary, LeagueFacilityRow } from "@/lib/executive/league";
 import type { ExecutiveLeagueData } from "@/lib/executive/load-league-data";
 import {
+  EXECUTIVE_NO_COMPLETENESS_POSTED_COPY,
+  EXECUTIVE_NO_CONFIDENCE_POSTED_COPY,
   formatExecutiveCompletenessPct,
   formatExecutiveConfidenceBand,
   formatExecutiveLastSavedAt,
@@ -202,7 +204,19 @@ export default function ExecutiveLeaguePageClient({
               value={boardSummary.weekOf ?? "None"}
               detail={
                 boardSummary.weekOf
-                  ? `${formatExecutiveConfidenceBand(boardSummary.confidenceBand)} · ${formatExecutiveCompletenessPct(boardSummary.completenessPct)} complete`
+                  ? (() => {
+                      const confidence = formatExecutiveConfidenceBand(boardSummary.confidenceBand);
+                      const completeness = formatExecutiveCompletenessPct(boardSummary.completenessPct);
+                      const confidencePart =
+                        confidence === EXECUTIVE_NO_CONFIDENCE_POSTED_COPY
+                          ? confidence
+                          : `${confidence} confidence`;
+                      const completenessPart =
+                        completeness === EXECUTIVE_NO_COMPLETENESS_POSTED_COPY
+                          ? completeness
+                          : `${completeness} complete`;
+                      return `${confidencePart} · ${completenessPart}`;
+                    })()
                   : "No published standup packet yet"
               }
               tone={boardSummary.weekOf ? "indigo" : "amber"}

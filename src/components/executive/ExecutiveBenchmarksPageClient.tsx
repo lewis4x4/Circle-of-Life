@@ -66,7 +66,9 @@ function CohortBarRow({
           style={{ width: `${widthPct}%` }}
         />
       </div>
-      <span className="w-24 shrink-0 text-right tabular-nums text-muted-foreground">{display}</span>
+      <span className="w-24 shrink-0 truncate text-right tabular-nums text-muted-foreground" title={display}>
+        {display}
+      </span>
     </div>
   );
 }
