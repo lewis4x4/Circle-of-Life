@@ -39,6 +39,10 @@ import {
   type RcaInvestigationUi,
   type SupabaseIncidentDetail,
 } from "@/lib/incidents/load-incident-detail";
+import {
+  formatIncidentDetailInjuryBodyLocation,
+  formatIncidentDetailInjuryDescription,
+} from "@/lib/incidents/incident-detail-display-copy";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 
 export type AdminIncidentDetailPageClientProps = {
@@ -604,9 +608,15 @@ export function AdminIncidentDetailPageClient({
         {incident.injury_occurred ? (
           <RecordDetailSection className="lg:col-span-2" title="Injury">
             <div className="grid gap-3 text-sm sm:grid-cols-2">
-              <DetailRow label="Description" value={incident.injury_description ?? "—"} />
+              <DetailRow
+                label="Description"
+                value={formatIncidentDetailInjuryDescription(incident.injury_description)}
+              />
               <DetailRow label="Severity" value={incident.injury_severity ? formatSnake(incident.injury_severity) : "—"} />
-              <DetailRow label="Body location" value={incident.injury_body_location ?? "—"} />
+              <DetailRow
+                label="Body location"
+                value={formatIncidentDetailInjuryBodyLocation(incident.injury_body_location)}
+              />
             </div>
           </RecordDetailSection>
         ) : null}
