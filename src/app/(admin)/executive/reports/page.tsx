@@ -29,6 +29,13 @@ import {
   fetchPreviousPublishedStandupSnapshotDetail,
   fetchStandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import {
+  formatExecutiveHospitalCount,
+  formatExecutiveInHouseCount,
+  formatExecutiveLastGeneratedAt,
+  formatExecutiveOccupancyPct,
+  formatExecutiveOnLeaveCount,
+} from "@/lib/executive/executive-display-copy";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { EXECUTIVE_REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -140,11 +147,11 @@ function buildExecutiveKpiPrintHtml(props: {
     { label: "Licensed beds", value: String(kpi.census.licensedBeds) },
     {
       label: "Occupancy %",
-      value: kpi.census.occupancyPct == null ? "—" : String(kpi.census.occupancyPct),
+      value: formatExecutiveOccupancyPct(kpi.census.occupancyPct),
     },
-    { label: "In-house", value: kpi.census.presence ? String(kpi.census.presence.inHouse) : "—" },
-    { label: "Bed hold — hospital", value: kpi.census.presence ? String(kpi.census.presence.hospital) : "—" },
-    { label: "On leave / vacation", value: kpi.census.presence ? String(kpi.census.presence.onLeave) : "—" },
+    { label: "In-house", value: formatExecutiveInHouseCount(kpi.census.presence) },
+    { label: "Bed hold — hospital", value: formatExecutiveHospitalCount(kpi.census.presence) },
+    { label: "On leave / vacation", value: formatExecutiveOnLeaveCount(kpi.census.presence) },
     { label: "Open invoices", value: String(kpi.financial.openInvoicesCount) },
     {
       label: "Total balance due",
@@ -644,7 +651,7 @@ export default function ExecutiveSavedReportsPage() {
                           {parsed.publishedAt ? new Date(parsed.publishedAt).toLocaleString() : "Not yet"}
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
-                          {r.last_generated_at ? new Date(r.last_generated_at).toLocaleString() : "—"}
+                          {formatExecutiveLastGeneratedAt(r.last_generated_at)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-wrap justify-end gap-2">
@@ -728,7 +735,7 @@ export default function ExecutiveSavedReportsPage() {
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">{scopeLabel}</TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
-                          {r.last_generated_at ? new Date(r.last_generated_at).toLocaleString() : "—"}
+                          {formatExecutiveLastGeneratedAt(r.last_generated_at)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-wrap justify-end gap-2">

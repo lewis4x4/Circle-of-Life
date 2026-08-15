@@ -3,12 +3,16 @@ import { describe, expect, it } from "vitest";
 import { FORMAT_USD_NO_AMOUNT_POSTED_COPY } from "@/lib/insurance/format-money";
 
 import {
+  EXECUTIVE_NO_CERT_COUNT_POSTED_COPY,
   EXECUTIVE_NO_COMPLETENESS_POSTED_COPY,
   EXECUTIVE_NO_CONFIDENCE_POSTED_COPY,
   EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY,
-  EXECUTIVE_NO_CERT_COUNT_POSTED_COPY,
+  EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY,
+  EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY,
+  EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY,
   EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY,
   EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY,
+  EXECUTIVE_NO_LEAVE_COUNT_POSTED_COPY,
   EXECUTIVE_NO_LEAGUE_SCORE_POSTED_COPY,
   EXECUTIVE_NO_OCCUPANCY_POSTED_COPY,
   EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY,
@@ -17,10 +21,14 @@ import {
   formatExecutiveCertsExpiringCount,
   formatExecutiveCompletenessPct,
   formatExecutiveConfidenceBand,
+  formatExecutiveHospitalCount,
+  formatExecutiveInHouseCount,
+  formatExecutiveLastGeneratedAt,
   formatExecutiveLeagueScore,
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPct,
   formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOnLeaveCount,
   formatExecutiveOpenIncidentCount,
   formatExecutiveOpenInvoiceCount,
   formatExecutivePacketStatus,
@@ -179,5 +187,53 @@ describe("formatExecutiveCertsExpiringCount", () => {
 
   it("keeps real zero as 0", () => {
     expect(formatExecutiveCertsExpiringCount(0)).toBe("0");
+  });
+});
+
+describe("formatExecutiveInHouseCount", () => {
+  it("names the gap when presence is missing", () => {
+    expect(formatExecutiveInHouseCount(null)).toBe(EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY);
+    expect(formatExecutiveInHouseCount(undefined)).toBe(EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveInHouseCount({ inHouse: 0, hospital: 0, onLeave: 0, onHold: 0, total: 0 })).toBe("0");
+  });
+
+  it("formats posted in-house count", () => {
+    expect(formatExecutiveInHouseCount({ inHouse: 12, hospital: 1, onLeave: 0, onHold: 1, total: 13 })).toBe("12");
+  });
+});
+
+describe("formatExecutiveHospitalCount", () => {
+  it("names the gap when presence is missing", () => {
+    expect(formatExecutiveHospitalCount(null)).toBe(EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveHospitalCount({ inHouse: 5, hospital: 0, onLeave: 0, onHold: 0, total: 5 })).toBe("0");
+  });
+});
+
+describe("formatExecutiveOnLeaveCount", () => {
+  it("names the gap when presence is missing", () => {
+    expect(formatExecutiveOnLeaveCount(undefined)).toBe(EXECUTIVE_NO_LEAVE_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveOnLeaveCount({ inHouse: 5, hospital: 0, onLeave: 0, onHold: 0, total: 5 })).toBe("0");
+  });
+});
+
+describe("formatExecutiveLastGeneratedAt", () => {
+  it("names the gap when generate time is missing", () => {
+    expect(formatExecutiveLastGeneratedAt(null)).toBe(EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY);
+    expect(formatExecutiveLastGeneratedAt("")).toBe(EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY);
+    expect(formatExecutiveLastGeneratedAt("   ")).toBe(EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY);
+  });
+
+  it("formats posted generate timestamps", () => {
+    const formatted = formatExecutiveLastGeneratedAt("2026-01-15T12:00:00.000Z");
+    expect(formatted).toBe(new Date("2026-01-15T12:00:00.000Z").toLocaleString());
   });
 });
