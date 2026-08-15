@@ -3,6 +3,7 @@
  * Aggregates care plans, assessments, family messages, admissions pipeline.
  */
 
+import { formatCoordinatorDashboardResidentName } from "@/lib/coordinator/dashboard-brief-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -85,14 +86,13 @@ export async function fetchCoordinatorDashboardBrief(
 
   const carePlansDue = ((reviewsListRes.data ?? []) as ReviewListRow[]).map((review) => ({
     id: review.id,
-    residentName:
-      `${review.residents?.first_name ?? ""} ${review.residents?.last_name ?? ""}`.trim() || "Unknown",
+    residentName: formatCoordinatorDashboardResidentName(review.residents),
     reviewDate: review.next_review_date,
   }));
 
   const pendingAdmissions = ((pendingListRes.data ?? []) as PendingAdmissionRow[]).map((resident) => ({
     id: resident.id,
-    name: `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Unknown",
+    name: formatCoordinatorDashboardResidentName(resident),
     daysSinceInquiry: Math.round((Date.now() - new Date(resident.created_at).getTime()) / 86400000),
   }));
 
