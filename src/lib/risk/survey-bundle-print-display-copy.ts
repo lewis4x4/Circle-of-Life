@@ -8,6 +8,7 @@ const EM_DASH = "—";
 export const SURVEY_BUNDLE_PRINT_NO_DATE_COPY = "No date posted";
 export const SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY = "No entity posted";
 export const SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY = "No administrator posted";
+export const SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY = "No license posted";
 export const SURVEY_BUNDLE_PRINT_NO_RISK_COPY = "No risk posted";
 
 function isBlankOrEmDash(value: string | null | undefined): boolean {
@@ -36,6 +37,14 @@ export function formatSurveyBundlePrintAdministratorName(
 ): string {
   if (isBlankOrEmDash(administratorName)) return SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY;
   return administratorName!.trim();
+}
+
+/** Facility license number on the print packet when unset, blank, or em dash. */
+export function formatSurveyBundlePrintLicenseNumber(
+  licenseNumber: string | null | undefined,
+): string {
+  if (isBlankOrEmDash(licenseNumber)) return SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY;
+  return licenseNumber!.trim();
 }
 
 function isFiniteRiskScore(value: number | null | undefined): value is number {

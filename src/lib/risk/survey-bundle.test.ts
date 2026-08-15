@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY,
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
+  SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
 } from "./survey-bundle-print-display-copy";
 import { buildSurveyBundlePacket, surveyBundleToMarkdown } from "./survey-bundle";
 
@@ -11,6 +12,7 @@ const EM_DASH = "—";
 function minimalPacket(
   entityName: string | null,
   administratorName: string | null = null,
+  licenseNumber: string | null = null,
 ) {
   return buildSurveyBundlePacket({
     facility: {
@@ -19,7 +21,7 @@ function minimalPacket(
       entityId: null,
       entityName,
       administratorName,
-      licenseNumber: null,
+      licenseNumber,
       licenseType: null,
       alfLicenseType: null,
       totalLicensedBeds: 0,
@@ -75,5 +77,30 @@ describe("surveyBundleToMarkdown administrator line", () => {
   it("keeps a posted administrator name", () => {
     const markdown = surveyBundleToMarkdown(minimalPacket(null, "Admin Alpha"));
     expect(markdown).toContain("Administrator: Admin Alpha");
+  });
+});
+
+describe("surveyBundleToMarkdown license line", () => {
+  it("names a missing license number with the print gap copy", () => {
+    const markdown = surveyBundleToMarkdown(minimalPacket(null, null, null));
+    expect(markdown).toContain(`License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`);
+    expect(markdown).not.toContain("License: Missing");
+  });
+
+  it("names a blank or em-dash license number with the print gap copy", () => {
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, ""))).toContain(
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`,
+    );
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, "   "))).toContain(
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`,
+    );
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, EM_DASH))).toContain(
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`,
+    );
+  });
+
+  it("keeps a posted license number", () => {
+    const markdown = surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001"));
+    expect(markdown).toContain("License: ALF-001 (unspecified)");
   });
 });
