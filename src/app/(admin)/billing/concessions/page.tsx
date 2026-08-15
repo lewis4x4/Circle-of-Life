@@ -18,6 +18,8 @@ import { V2Card } from "@/components/ui/v2-card";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
+import { formatConcessionsDateDisplay } from "@/lib/billing/concessions-display-copy";
+
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
 
@@ -89,13 +91,6 @@ function baseForRoom(schedule: RateSchedule | null, roomClass: string): number {
   if (!schedule) return 0;
   if (roomClass === "companion") return schedule.base_rate_semi_private ?? schedule.base_rate_private;
   return schedule.base_rate_private;
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(`${iso}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
 }
 
 export default function BillingConcessionsPage() {
@@ -272,7 +267,7 @@ export default function BillingConcessionsPage() {
                         <div className="rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"><UserCircle className="h-5 w-5" /></div>
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">{row.residentName}</p>
-                          <p className="text-xs text-slate-500">{formatDate(row.effectiveDate)} · {row.roomClass.replace(/_/g, " ")}</p>
+                          <p className="text-xs text-slate-500">{formatConcessionsDateDisplay(row.effectiveDate)} · {row.roomClass.replace(/_/g, " ")}</p>
                         </div>
                       </div>
                       <Badge variant="outline" className="w-fit capitalize">{row.source === "agreement" ? "Confirmed" : "Imported"}</Badge>
@@ -282,7 +277,7 @@ export default function BillingConcessionsPage() {
                       <div>
                         <p className="text-[10px] uppercase tracking-widest text-slate-500">Reason</p>
                         <p className="text-sm text-slate-700 dark:text-slate-300">{reasonLabel(row.reason)}</p>
-                        {row.expiresOn ? <p className="text-xs text-amber-600 dark:text-amber-300">Expires {formatDate(row.expiresOn)}</p> : null}
+                        {row.expiresOn ? <p className="text-xs text-amber-600 dark:text-amber-300">Expires {formatConcessionsDateDisplay(row.expiresOn)}</p> : null}
                       </div>
                     </div>
                   </Link>
