@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addYears, format, isValid, parseISO } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
 import { Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +34,19 @@ import {
   parseCareServicesArray,
 } from "@/lib/admin/facilities/care-services-model";
 import type { FacilityDetailRow } from "@/types/facility";
+import {
+  formatLicensingTabCitationCount,
+  formatLicensingTabExpirationCaption,
+  formatLicensingTabExpirationDate,
+  formatLicensingTabLastEditedLabel,
+  formatLicensingTabLicenseNumber,
+  formatLicensingTabNextDueDate,
+  formatLicensingTabPlanOfCorrectionStatus,
+  formatLicensingTabSurveyDateLabel,
+  formatLicensingTabYmdDate,
+  LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY,
+  licensingTabCitationCountHasLink,
+} from "@/lib/facilities/licensing-tab-display-copy";
 
 interface LicensingTabProps {
   facilityId: string;
@@ -62,17 +74,6 @@ function approximateNextAnnualSurveyIso(surveyDateYmd: string): string | null {
   }
 }
 
-function planOfCorrectionStatus(row: {
-  citation_count: number;
-  poc_submitted_date: string | null;
-  poc_accepted_date: string | null;
-}): string {
-  if (row.citation_count <= 0) return "—";
-  if (row.poc_accepted_date) return "POC accepted";
-  if (row.poc_submitted_date) return "POC submitted";
-  return "Outstanding";
-}
-
 function parseAlfScopeFromDb(raw: FacilityDetailRow): CareLicenseScope {
   const alf = typeof raw.alf_license_type === "string" ? raw.alf_license_type.trim() : "";
   if (
@@ -84,17 +85,6 @@ function parseAlfScopeFromDb(raw: FacilityDetailRow): CareLicenseScope {
     return alf;
   }
   return "standard_alf";
-}
-
-function formatYmdInFacility(dateYmd: string | null | undefined, timezone: string) {
-  if (!dateYmd || !/^\d{4}-\d{2}-\d{2}$/.test(dateYmd)) return "—";
-  try {
-    const d = parseISO(`${dateYmd}T12:00:00.000Z`);
-    if (!isValid(d)) return "—";
-    return formatInTimeZone(d, timezone, "MMM d, yyyy");
-  } catch {
-    return dateYmd;
-  }
 }
 
 function snapshotCareServices(facility: FacilityDetailRow): {
@@ -201,14 +191,7 @@ function LicensingTabBody({
     facilityStatus: typeof facility.status === "string" ? facility.status : null,
   });
 
-  const expiryCaption =
-    !expiryYmd || daysToExpiry === null
-      ? "—"
-      : daysToExpiry < 0
-        ? `${Math.abs(daysToExpiry)} day${Math.abs(daysToExpiry) === 1 ? "" : "s"} past due`
-        : daysToExpiry === 0
-          ? "Renews today"
-          : `${daysToExpiry} day${daysToExpiry === 1 ? "" : "s"} remaining`;
+  const expiryCaption = formatLicensingTabExpirationCaption(expiryYmd, daysToExpiry);
 
   const ahcaHeaderAction = (
     <Tooltip>
@@ -254,16 +237,7 @@ function LicensingTabBody({
       ? facility.profile_last_saved_by_full_name.trim()
       : "";
 
-  let lastEditedLabel = "—";
-  try {
-    if (facility.updated_at) {
-      const d = parseISO(String(facility.updated_at));
-      if (isValid(d))
-        lastEditedLabel = `${formatInTimeZone(d, tz, "MMM d, yyyy h:mm a")} (${tz})`;
-    }
-  } catch {
-    lastEditedLabel = String(facility.updated_at ?? "—");
-  }
+  const lastEditedLabel = formatLicensingTabLastEditedLabel(facility.updated_at, tz);
 
   const careDescription =
     "Circle of Life commonly operates under Enhanced Assisted Living Services when AHCA permits that tier — select the pathway that matches the certified license on file.";
@@ -290,7 +264,7 @@ function LicensingTabBody({
           <div className="grid gap-1">
             {detailLabel("License number")}
             <p className="font-medium text-foreground">
-              <span className="font-mono tabular-nums">{licenseNum ?? "—"}</span>
+              <span className="font-mono tabular-nums">{formatLicensingTabLicenseNumber(licenseNum)}</span>
               {licensePending ? <PendingBadge /> : null}
             </p>
           </div>
@@ -301,13 +275,13 @@ function LicensingTabBody({
 
           <div className="grid gap-1">
             {detailLabel("Recorded commencement")}
-            <p className="font-medium text-foreground">{formatYmdInFacility(openingYmd, tz)}</p>
+            <p className="font-medium text-foreground">{formatLicensingTabYmdDate(openingYmd, tz)}</p>
             <p className="text-xs text-muted-foreground">Facility opening date on file — not a substitute for issue date lines on the AHCA PDF.</p>
           </div>
           <div className="grid gap-1">
             {detailLabel("Expiration date")}
             <p className="font-medium font-mono tabular-nums text-foreground">
-              {expiryYmd ? expiryYmd : "—"}
+              {formatLicensingTabExpirationDate(expiryYmd)}
             </p>
             <p className="text-[13px] text-muted-foreground">{expiryCaption}</p>
           </div>
@@ -390,8 +364,11 @@ function LicensingTabBody({
               </TableHeader>
               <TableBody>
                 {surveys.map((s) => {
-                  const poc = planOfCorrectionStatus(s);
+                  const poc = formatLicensingTabPlanOfCorrectionStatus(s);
                   const nextDueIso = approximateNextAnnualSurveyIso(s.survey_date);
+                  const surveyDateLabel = formatLicensingTabSurveyDateLabel(s.survey_date);
+                  const surveyDateIsPosted =
+                    surveyDateLabel !== LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY;
                   return (
                     <TableRow
                       key={s.id}
@@ -407,25 +384,37 @@ function LicensingTabBody({
                         }
                       }}
                     >
-                      <TableCell className="font-mono text-sm tabular-nums">{s.survey_date}</TableCell>
+                      <TableCell className="font-mono text-sm tabular-nums">
+                        {surveyDateIsPosted && s.id ? (
+                          <Link
+                            href={`/admin/facilities/${facilityId}/surveys/${encodeURIComponent(s.id)}`}
+                            className="text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {surveyDateLabel}
+                          </Link>
+                        ) : (
+                          surveyDateLabel
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm">{surveyTypeDisplayLabel(s.survey_type)}</TableCell>
                       <TableCell className="text-sm">{surveyResultDisplayLabel(s.result)}</TableCell>
                       <TableCell className="text-right text-sm tabular-nums">
-                        {s.citation_count > 0 ? (
+                        {licensingTabCitationCountHasLink(s.citation_count) ? (
                           <Link
                             href="/admin/compliance"
                             className="text-primary hover:underline"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {s.citation_count}
+                            {formatLicensingTabCitationCount(s.citation_count)}
                           </Link>
                         ) : (
-                          "—"
+                          formatLicensingTabCitationCount(s.citation_count)
                         )}
                       </TableCell>
                       <TableCell className="text-sm">{poc}</TableCell>
                       <TableCell className="font-mono text-sm tabular-nums text-muted-foreground">
-                        {nextDueIso ?? "—"}
+                        {formatLicensingTabNextDueDate(nextDueIso)}
                       </TableCell>
                     </TableRow>
                   );
