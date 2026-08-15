@@ -6,6 +6,7 @@ import type { EventTrigger, PackUiMeta } from "@/lib/reports/pack-ui-metadata";
  */
 
 export const REPORTS_NO_COMPLETE_TIME_COPY = "No complete time posted";
+export const REPORTS_NO_METRIC_VALUE_COPY = "No value posted";
 export const REPORTS_NO_NEXT_RUN_COPY = "No next run posted";
 export const REPORTS_NO_SCHEDULE_COPY = "No schedule posted";
 
