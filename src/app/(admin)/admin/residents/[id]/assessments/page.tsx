@@ -7,6 +7,7 @@ import { ClipboardCheck, Plus } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatAssessmentLiveScore } from "@/lib/assessments/assessment-new-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -207,7 +208,7 @@ export default function ResidentAssessmentHistoryPage() {
 
                         <div className="flex flex-col lg:items-end">
                           <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Score</span>
-                          <span className="tabular-nums text-xl font-medium text-foreground">{r.totalScore !== null ? r.totalScore : "—"}</span>
+                          <span className="tabular-nums text-xl font-medium text-foreground">{formatAssessmentLiveScore(r.totalScore)}</span>
                         </div>
 
                         <div className="flex flex-row justify-between lg:justify-end items-center">
