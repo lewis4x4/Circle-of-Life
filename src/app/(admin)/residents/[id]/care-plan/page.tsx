@@ -12,6 +12,12 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants, Button } from "@/components/ui/button";
+import {
+  formatCarePlanDateOnly,
+  formatCarePlanItemDescription,
+  formatCarePlanItemTitle,
+  formatCarePlanVersion,
+} from "@/lib/care-plans/care-plan-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -290,11 +296,11 @@ export default function AdminResidentCarePlanPage() {
               action={
                 <div className="flex flex-wrap items-center gap-2">
                   {plan?.status ? <CarePlanStatusBadge status={plan.status} /> : null}
-                  {plan && plan.version != null && (
+                  {plan ? (
                     <Badge variant="outline" className="tabular-nums text-[10px] uppercase font-bold tracking-wider bg-muted border-border px-3">
-                      v{plan.version}
+                      {formatCarePlanVersion(plan.version)}
                     </Badge>
-                  )}
+                  ) : null}
                   {reviewState ? (
                     <Badge variant="outline" className={cn("tabular-nums text-[10px] uppercase font-bold tracking-wider px-3 border", reviewState.className)}>
                       Review: {reviewState.label}
@@ -318,7 +324,7 @@ export default function AdminResidentCarePlanPage() {
                     <CalendarClock className="w-3.5 h-3.5" /> Effective date
                   </p>
                   <p className="tabular-nums text-base font-medium text-foreground">
-                    {formatDate(plan?.effective_date ?? null)}
+                    {formatCarePlanDateOnly(plan?.effective_date)}
                   </p>
                 </div>
                 <div className="bg-muted p-[14px] rounded-[8px] border border-border shadow-[var(--shadow-card)]">
@@ -326,7 +332,7 @@ export default function AdminResidentCarePlanPage() {
                     <CalendarClock className="w-3.5 h-3.5" /> Next review
                   </p>
                   <p className="tabular-nums text-base font-medium text-foreground">
-                    {formatDate(plan?.review_due_date ?? null)}
+                    {formatCarePlanDateOnly(plan?.review_due_date)}
                   </p>
                 </div>
                 {plan?.notes ? (
@@ -358,7 +364,7 @@ export default function AdminResidentCarePlanPage() {
                             <div className="space-y-4 relative z-10">
                               <div className="flex items-start justify-between gap-3">
                                 <h4 className="font-semibold text-foreground leading-tight pr-4">
-                                  {row.title ?? "—"}
+                                  {formatCarePlanItemTitle(row.title)}
                                 </h4>
                                 {row.assistance_level ? (
                                   <Badge className="bg-muted text-muted-foreground border-border uppercase tracking-wider text-[9px] font-bold px-2.5 py-0.5 shadow-none whitespace-nowrap">
@@ -368,7 +374,7 @@ export default function AdminResidentCarePlanPage() {
                               </div>
 
                               <p className="text-sm font-medium text-muted-foreground">
-                                {row.description ?? "—"}
+                                {formatCarePlanItemDescription(row.description)}
                               </p>
 
                               {row.frequency && (
@@ -452,11 +458,11 @@ export default function AdminResidentCarePlanPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Version:</span>
-                <span className="tabular-nums font-medium text-foreground">v{plan?.version ?? "—"}</span>
+                <span className="tabular-nums font-medium text-foreground">{formatCarePlanVersion(plan?.version)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Effective:</span>
-                <span className="tabular-nums font-medium text-foreground">{formatDate(plan?.effective_date ?? null)}</span>
+                <span className="tabular-nums font-medium text-foreground">{formatCarePlanDateOnly(plan?.effective_date)}</span>
               </div>
             </div>
 
@@ -519,13 +525,6 @@ function groupByCategory(items: CarePlanItemRow[]): Map<string, CarePlanItemRow[
   return new Map([...map.entries()].sort((a, b) => a[0].localeCompare(b[0])));
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
-}
-
 function formatSnakeLabel(value: string): string {
   return value.replace(/_/g, " ");
 }
@@ -541,23 +540,23 @@ function getReviewBadgeState(isoDate: string): { label: string; className: strin
   const due = new Date(`${isoDate}T23:59:59Z`);
   const now = new Date();
   if (Number.isNaN(due.getTime())) {
-    return { label: formatDate(isoDate), className: "border-border" };
+    return { label: formatCarePlanDateOnly(isoDate), className: "border-border" };
   }
   if (due < now) {
     return {
-      label: `${formatDate(isoDate)} (overdue)`,
+      label: `${formatCarePlanDateOnly(isoDate)} (overdue)`,
       className: "border-destructive/30 bg-destructive/10 text-destructive",
     };
   }
   const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (days <= 14) {
     return {
-      label: `${formatDate(isoDate)} (${days}d)`,
+      label: `${formatCarePlanDateOnly(isoDate)} (${days}d)`,
       className: "border-warning/30 bg-warning/10 text-warning",
     };
   }
   return {
-    label: formatDate(isoDate),
+    label: formatCarePlanDateOnly(isoDate),
     className: "border-border",
   };
 }
