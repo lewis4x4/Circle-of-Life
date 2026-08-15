@@ -20,6 +20,12 @@ import {
   type OfficerLane,
 } from "@/components/executive/officer-dashboard";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
+import {
+  formatExecutiveArOutstandingCents,
+  formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOpenIncidentCount,
+  formatExecutiveSurveyDeficiencyCount,
+} from "@/lib/executive/executive-display-copy";
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 
@@ -95,10 +101,10 @@ export default function CeoDashboardPageClient({
   const arCents = kpis?.financial.totalBalanceDueCents;
   const openIncidents = kpis?.clinical.openIncidents;
 
-  const occValue = occupancyPct == null ? "—" : `${occupancyPct}%`;
-  const deficienciesValue = deficiencies == null ? "—" : String(deficiencies);
-  const arValue = arCents == null ? "—" : money.format(arCents / 100);
-  const incidentsValue = openIncidents == null ? "—" : String(openIncidents);
+  const occValue = formatExecutiveOccupancyPctWithSuffix(occupancyPct);
+  const deficienciesValue = formatExecutiveSurveyDeficiencyCount(deficiencies);
+  const arValue = formatExecutiveArOutstandingCents(arCents);
+  const incidentsValue = formatExecutiveOpenIncidentCount(openIncidents);
 
   const lanes: OfficerLane[] = [
     {
