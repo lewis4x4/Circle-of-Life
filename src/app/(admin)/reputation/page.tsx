@@ -11,6 +11,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { formatReputationListingLabel } from "@/lib/reputation/reputation-display-copy";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
 import { YELP_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/yelp-fusion";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -479,7 +480,7 @@ export default function AdminReputationHubPage() {
                     </div>
                     <div className="mb-4">
                       <p className="text-sm font-medium text-foreground mb-1">
-                        {row.reputation_accounts?.label ?? "Unknown Listing"}
+                        {formatReputationListingLabel(row.reputation_accounts?.label)}
                       </p>
                       <label className="sr-only" htmlFor={`draft-reply-${row.id}`}>
                         Reply draft
