@@ -11,6 +11,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { insuranceHubKpiTileValue } from "@/lib/insurance/hub-kpi-copy";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
@@ -110,6 +111,10 @@ export default function AdminInsuranceHubPage() {
   const openClaims = overview?.openClaims ?? null;
   const tcorLoading = tcorPending;
   const tcorErrorMessage = tcorError?.message ?? null;
+  const kpiCtx = {
+    organizationId: organizationId ?? null,
+    loadFailed: !!overviewError,
+  };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -159,7 +164,9 @@ export default function AdminInsuranceHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Active Policies
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter pb-1">{loading ? "…" : activePolicies ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter pb-1">
+                  {loading ? "…" : insuranceHubKpiTileValue("active_policies", activePolicies, kpiCtx)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -170,7 +177,9 @@ export default function AdminInsuranceHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Renewals in Flight
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{loading ? "…" : renewalsInFlight ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">
+                  {loading ? "…" : insuranceHubKpiTileValue("renewals_in_flight", renewalsInFlight, kpiCtx)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -200,7 +209,7 @@ export default function AdminInsuranceHubPage() {
                       : "text-4xl font-mono tracking-tighter text-foreground pb-1"
                   }
                 >
-                  {loading ? "…" : openClaims ?? "—"}
+                  {loading ? "…" : insuranceHubKpiTileValue("open_claims", openClaims, kpiCtx)}
                 </p>
               </div>
             </V2Card>
@@ -283,22 +292,22 @@ export default function AdminInsuranceHubPage() {
             <p className="text-sm font-mono tracking-wide text-muted-foreground">Navigate insurance workflows.</p>
           </div>
           <div className="p-6 rounded-lg border border-border bg-card flex flex-col gap-3 text-sm shadow-sm">
-          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/policies">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs hover:text-primary-500 transition-colors" href="/admin/insurance/policies">
             Policy inventory
           </Link>
-          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/renewals">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs hover:text-primary-500 transition-colors" href="/admin/insurance/renewals">
             Renewals
           </Link>
-          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/renewal-packages">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs hover:text-primary-500 transition-colors" href="/admin/insurance/renewal-packages">
             Renewal data packages
           </Link>
-          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/claims">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs hover:text-primary-500 transition-colors" href="/admin/insurance/claims">
             Claims
           </Link>
-          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/coi">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs hover:text-primary-500 transition-colors" href="/admin/insurance/coi">
             Certificates of insurance
           </Link>
-          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/insurance/workers-comp">
+          <Link className="text-primary-600 dark:text-primary-400 font-mono text-xs hover:text-primary-500 transition-colors" href="/admin/insurance/workers-comp">
             Workers&apos; comp
           </Link>
         </div>
