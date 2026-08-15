@@ -1,5 +1,7 @@
 import { toDate } from "date-fns-tz";
 
+import { formatCaregiverEmarScheduledInstructions } from "./emar-queue-copy";
+
 export type EmarQueueSlot = {
   /** Stable key for React + dedup */
   queueKey: string;
@@ -148,7 +150,7 @@ export function buildEmarQueueSlots(
         scheduleLabel: formatScheduleLabel(iso, timeZone),
         scheduledTimeIso: iso,
         isPrn: false,
-        instructions: med.instructions?.trim() || "—",
+        instructions: formatCaregiverEmarScheduledInstructions(med.instructions),
         urgency: urgencyForSlot(iso, now),
       });
     }

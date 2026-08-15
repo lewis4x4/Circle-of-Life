@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY,
   CAREGIVER_EMAR_NO_ROOM_LABEL,
   caregiverDisplayRoomLabel,
   caregiverEmarEmptyNoticeHelper,
@@ -10,7 +11,21 @@ import {
   caregiverPrnFollowupEmptyNoticeHelper,
   caregiverPrnFollowupEmptyNoticeTitle,
   formatCaregiverEmarRoomLabel,
+  formatCaregiverEmarScheduledInstructions,
 } from "./emar-queue-copy";
+
+describe("formatCaregiverEmarScheduledInstructions", () => {
+  it("names the gap when instructions are missing or blank", () => {
+    expect(formatCaregiverEmarScheduledInstructions(null)).toBe(CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY);
+    expect(formatCaregiverEmarScheduledInstructions(undefined)).toBe(CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY);
+    expect(formatCaregiverEmarScheduledInstructions("")).toBe(CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY);
+    expect(formatCaregiverEmarScheduledInstructions("   ")).toBe(CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY);
+  });
+
+  it("returns trimmed posted instructions", () => {
+    expect(formatCaregiverEmarScheduledInstructions(" Take with food ")).toBe("Take with food");
+  });
+});
 
 describe("formatCaregiverEmarRoomLabel", () => {
   it("formats room and bed when both are present", () => {
