@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { cache } from "react";
 
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
@@ -6,7 +6,6 @@ import {
   type ResidentOverviewDetail,
 } from "@/lib/residents/resident-detail-overview-load";
 import { createClient } from "@/lib/supabase/server";
-import type { Database } from "@/types/database";
 
 export type ResidentDetailBootstrap = {
   initialDetail: ResidentOverviewDetail | null;
@@ -14,12 +13,11 @@ export type ResidentDetailBootstrap = {
   initialFacilityId: string | null;
 };
 
-export async function loadResidentDetailBootstrap(
+export const loadResidentDetailBootstrap = cache(async function loadResidentDetailBootstrap(
   residentId: string,
   initialFacilityId: string | null,
-  supabase?: SupabaseClient<Database>,
 ): Promise<ResidentDetailBootstrap> {
-  const client = supabase ?? (await createClient());
+  const client = await createClient();
   let initialDetail: ResidentOverviewDetail | null = null;
   let initialError: string | null = null;
 
@@ -37,4 +35,4 @@ export async function loadResidentDetailBootstrap(
   }
 
   return { initialDetail, initialError, initialFacilityId };
-}
+});
