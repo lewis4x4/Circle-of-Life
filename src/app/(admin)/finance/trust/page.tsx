@@ -6,6 +6,7 @@ import { billingCurrency } from "@/app/(admin)/billing/billing-invoice-ledger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerSelectedFacilityId } from "@/lib/facilities/selected-facility-cookie.server";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+import { formatTrustLastEntryDate } from "@/lib/finance/trust-display-copy";
 import { loadFinanceTrustData, type ResidentTrustRow } from "@/lib/finance/load-trust-data";
 import { createClient } from "@/lib/supabase/server";
 
@@ -111,7 +112,7 @@ export default async function FinanceTrustPage() {
                       {billingCurrency.format(row.deltaCents / 100)}
                     </span>
                   </td>
-                  <td className="py-3 pr-4">{row.lastEntryDate ?? "—"}</td>
+                  <td className="py-3 pr-4">{formatTrustLastEntryDate(row.lastEntryDate)}</td>
                   <td className="py-3">
                     <div className="flex gap-2">
                       <Link
