@@ -8,7 +8,10 @@ import {
   carePlanAnnualReviewDeltaDays,
 } from "@/lib/residents/care-plan-annual-review-window";
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
-import { formatResidentOverviewVerifiedByStaffLabel } from "@/lib/residents/resident-overview-display-copy";
+import {
+  formatResidentOverviewAdmissionLabel,
+  formatResidentOverviewVerifiedByStaffLabel,
+} from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import type { Database } from "@/types/database";
 
@@ -235,13 +238,6 @@ function computeAgeYears(dateOfBirth: string | null, now: Date = new Date()): nu
   const m = now.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age -= 1;
   return age;
-}
-
-function formatAdmission(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
 }
 
 function formatDob(value: string | null): string {
@@ -633,7 +629,7 @@ export async function loadResidentOverviewDetail(
     fallRiskRaw: resident.fall_risk_level,
     roomLabel,
     unitName: unitName.length > 0 ? unitName : "No unit linked",
-    admissionLabel: formatAdmission(resident.admission_date),
+    admissionLabel: formatResidentOverviewAdmissionLabel(resident.admission_date),
     dobLabel: formatDob(resident.date_of_birth),
     ageYears: computeAgeYears(resident.date_of_birth),
     gender: resident.gender,

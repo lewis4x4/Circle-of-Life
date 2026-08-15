@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  RESIDENT_OVERVIEW_NO_DATE_COPY,
   RESIDENT_OVERVIEW_NO_GENDER_COPY,
   RESIDENT_OVERVIEW_NO_STAFF_COPY,
+  formatResidentOverviewAdmissionLabel,
   formatResidentOverviewGenderLabel,
   formatResidentOverviewVerifiedByStaffLabel,
 } from "./resident-overview-display-copy";
@@ -40,6 +42,29 @@ describe("formatResidentOverviewVerifiedByStaffLabel", () => {
     expect(formatResidentOverviewVerifiedByStaffLabel(VERIFIER_ID, "  Jordan Lee  ")).toBe(
       "Jordan Lee",
     );
+  });
+});
+
+describe("formatResidentOverviewAdmissionLabel", () => {
+  it("formats a parseable admission date", () => {
+    expect(formatResidentOverviewAdmissionLabel("2026-01-15")).toBe("Jan 15, 2026");
+    expect(formatResidentOverviewAdmissionLabel("  2026-01-15  ")).toBe("Jan 15, 2026");
+  });
+
+  it("names a missing admission date gap instead of a silent em dash", () => {
+    expect(formatResidentOverviewAdmissionLabel(null)).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel(undefined)).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel("")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel("   ")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel("—")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel("Unknown")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel("unknown")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel(null)).not.toBe("—");
+  });
+
+  it("names an unparseable admission date value", () => {
+    expect(formatResidentOverviewAdmissionLabel("not-a-date")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewAdmissionLabel("2026-13-40")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
   });
 });
 
