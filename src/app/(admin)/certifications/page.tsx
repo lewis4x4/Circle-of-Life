@@ -481,7 +481,7 @@ export default function AdminCertificationsPage() {
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px]"
+              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportCertificationsCsv()}
