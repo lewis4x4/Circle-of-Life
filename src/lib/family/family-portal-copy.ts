@@ -37,3 +37,33 @@ export const FAMILY_CALENDAR_EMPTY_DESCRIPTION =
   "When the care team shares an activity, it will appear here.";
 
 export const FAMILY_CALENDAR_NO_LOCATION = "No location posted";
+
+/** Read-only care plan summary at /family/care-plan — staff-published plan lines, not the full chart. */
+
+export const FAMILY_CARE_PLAN_PAGE_TITLE = "Care plan";
+
+export const FAMILY_CARE_PLAN_PAGE_DESCRIPTION =
+  "Read-only summary the care team shares — not the full clinical chart.";
+
+export const FAMILY_CARE_PLAN_LOADING = "Loading the care plan…";
+
+export const FAMILY_CARE_PLAN_RETRY = "Retry";
+
+export const FAMILY_CARE_PLAN_EMPTY_TITLE = "No care plan posted yet";
+
+export const FAMILY_CARE_PLAN_EMPTY_DESCRIPTION =
+  "When the care team shares a plan, it will appear here.";
+
+export const FAMILY_CARE_PLAN_NO_PROTOCOL_LINES =
+  "No protocol lines are published on this plan yet.";
+
+export const FAMILY_CARE_PLAN_FOOTER_TITLE = "How to use this page";
+
+export const FAMILY_CARE_PLAN_FOOTER_HELPER =
+  "For urgent concerns, contact the facility by phone. Updates from the care team appear on the bulletin.";
+
+export const FAMILY_CARE_PLAN_READ_ONLY_BADGE = "Read-only";
+
+export const FAMILY_CARE_PLAN_NOT_POSTED = "Not posted";
+
+export const FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK = "Linked resident";
