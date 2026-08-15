@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import AdminRouteLoading from "@/components/layout/admin-route-loading";
 import { AdminDashboardPageClient } from "@/components/admin/AdminDashboardPageClient";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
@@ -14,7 +16,15 @@ import {
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AdminDashboardPage() {
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<AdminRouteLoading inset={false} />}>
+      <CommandCenterData />
+    </Suspense>
+  );
+}
+
+async function CommandCenterData() {
   const roleContext = await loadFinanceRoleContextServer();
 
   if (!roleContext.ok) {

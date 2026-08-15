@@ -4,15 +4,10 @@ import {
   formatAdminDashboardRelativeShort,
   formatAdminDashboardResidentDobDisplay,
 } from "@/lib/admin/admin-dashboard-display-copy";
-import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
-import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
-
-type QueryError = { message: string };
-type QueryResult<T> = { data: T | null; error: QueryError | null };
 
 export type DashboardCensusRow = {
   id: string;
@@ -96,7 +91,7 @@ export type AdminDashboardSnapshot = {
   activity: DashboardActivityItem[];
 };
 
-type SupabaseResidentRow = {
+type ProjectionResidentRow = {
   id: string;
   first_name: string | null;
   last_name: string | null;
@@ -104,97 +99,39 @@ type SupabaseResidentRow = {
   status: string | null;
   acuity_level: string | null;
   updated_at: string | null;
-  date_of_birth: string;
-  deleted_at: string | null;
+  date_of_birth: string | null;
+  bed_label: string | null;
+  room_number: string | null;
 };
 
-type SupabaseBedRow = {
-  id: string;
-  room_id: string | null;
-  bed_label: string;
-  current_resident_id: string | null;
-};
-
-type SupabaseFacilityRow = {
-  id: string;
-  name: string;
-  total_licensed_beds: number;
-  timezone: string;
-  deleted_at: string | null;
-};
-
-type SupabaseIncidentFeedRow = {
+type ProjectionActivityRow = {
   id: string;
   occurred_at: string;
   category: string;
   severity: string;
   status: string;
   resident_id: string | null;
+  resident_first_name: string | null;
+  resident_last_name: string | null;
 };
 
-type SupabaseDoctrineDocMini = {
-  id: string;
-  review_owner: string | null;
-  review_due_at: string | null;
+type ProjectionPayload = {
+  headlineName?: string;
+  timezoneLabel?: string;
+  licensedBeds?: number | null;
+  counts?: Record<string, unknown>;
+  workflowQueues?: Record<string, unknown>;
+  residentAssurance?: Record<string, unknown>;
+  censusPreview?: ProjectionResidentRow[];
+  acuityWatchlist?: ProjectionResidentRow[];
+  activity?: ProjectionActivityRow[];
 };
-
-type SupabaseIncidentMini = {
-  id: string;
-  severity: string;
-  nurse_notified: boolean;
-  administrator_notified: boolean;
-  owner_notified: boolean;
-  physician_notified: boolean;
-  family_notified: boolean;
-  ahca_reportable: boolean;
-  ahca_reported: boolean;
-  insurance_reportable: boolean;
-  insurance_reported: boolean;
-  care_plan_updated: boolean;
-  resolved_at: string | null;
-};
-
-type SupabaseIncidentRcaMini = {
-  incident_id: string;
-  investigation_status: string;
-};
-
-type SupabaseAdmissionMini = {
-  id: string;
-  resident_id: string;
-  referral_lead_id: string | null;
-  status: string;
-  target_move_in_date: string | null;
-  financial_clearance_at: string | null;
-  physician_orders_received_at: string | null;
-  bed_id: string | null;
-};
-
-type SupabaseDischargeMini = {
-  id: string;
-  status: string;
-  nurse_reconciliation_notes: string | null;
-  pharmacist_npi: string | null;
-  pharmacist_notes: string | null;
-  residents: {
-    discharge_target_date: string | null;
-    hospice_status: string;
-  } | null;
-};
-
-type SupabaseFamilyConferenceMini = {
-  id: string;
-  scheduled_start: string;
-};
-
-type SupabaseResidentMini = { id: string; first_name: string | null; last_name: string | null };
 
 function mapAcuity(value: string | null): 1 | 2 | 3 {
   if (value === "level_3") return 3;
   if (value === "level_2") return 2;
   return 1;
 }
-
 function residencyUiLabel(status: string | null): { label: string; tone: "active" | "away" } {
   if (status === "hospital_hold") return { label: "Hospital", tone: "away" };
   if (status === "loa") return { label: "LOA", tone: "away" };
@@ -217,14 +154,6 @@ function shiftSummaryForTimezone(timeZone: string): string {
 
 function formatIncidentCategory(raw: string): string {
   return raw.replace(/_/g, " ");
-}
-
-function isDueSoon(value: string | null, today: Date): boolean {
-  if (!value) return false;
-  const due = new Date(value);
-  due.setHours(0, 0, 0, 0);
-  const diffDays = Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
-  return diffDays >= 0 && diffDays <= 3;
 }
 
 function buildWorkflowInbox(input: {
@@ -439,647 +368,144 @@ function buildWorkflowInbox(input: {
   return items;
 }
 
+function numericField(source: Record<string, unknown> | undefined, key: string): number {
+  const value = source?.[key];
+  const parsed = typeof value === "number" ? value : Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function mapProjectionResident(row: ProjectionResidentRow): DashboardCensusRow {
+  const firstName = row.first_name ?? "";
+  const lastName = row.last_name ?? "";
+  const name = formatLoadResidentsFullName(firstName, lastName);
+  const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
+  const room = row.room_number
+    ? `${row.room_number}${row.bed_label ? `-${row.bed_label}` : ""}`
+    : "Unassigned";
+  const status = residencyUiLabel(row.status);
+
+  return {
+    id: row.id,
+    name,
+    initials,
+    dobDisplay: formatAdminDashboardResidentDobDisplay(row.date_of_birth),
+    room,
+    acuity: mapAcuity(row.acuity_level),
+    statusLabel: status.label,
+    statusTone: status.tone,
+    updatedRelative: formatAdminDashboardRelativeShort(row.updated_at),
+  };
+}
+
+function mapProjectionActivity(row: ProjectionActivityRow): DashboardActivityItem {
+  const residentName =
+    `${row.resident_first_name ?? ""} ${row.resident_last_name ?? ""}`.trim() ||
+    "Resident";
+  const tone: DashboardActivityItem["tone"] =
+    row.severity === "level_4" || row.severity === "level_3"
+      ? "critical"
+      : row.severity === "level_2"
+        ? "warning"
+        : "normal";
+
+  return {
+    id: row.id,
+    timeLabel: formatAdminDashboardRelativeShort(row.occurred_at),
+    actor: "Incident",
+    message: `${residentName} · ${formatIncidentCategory(row.category)} (${row.status})`,
+    tone,
+    href: `/admin/incidents/${row.id}`,
+    ctaLabel: tone === "critical" ? "Open critical incident" : "Open incident",
+  };
+}
+
+/**
+ * Fetches the complete Command Center read model in one PostgREST request.
+ *
+ * The RPC is SECURITY INVOKER and performs its own role/facility checks; RLS
+ * continues to apply to every source table inside the projection.
+ */
 export async function fetchAdminDashboardSnapshot(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<AdminDashboardSnapshot> {
-  const residentAssuranceBriefPromise = fetchResidentAssuranceCommandBrief(selectedFacilityId, supabase);
+  const { data, error } = await supabase.rpc("admin_command_center_projection", {
+    p_facility_id: isValidFacilityIdForQuery(selectedFacilityId)
+      ? selectedFacilityId
+      : null,
+  });
 
-  let facilitiesQuery = supabase
-    .from("facilities" as never)
-    .select("id, name, total_licensed_beds, timezone, deleted_at")
-    .is("deleted_at", null);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    facilitiesQuery = facilitiesQuery.eq("id", selectedFacilityId);
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Command Center projection returned an invalid payload.");
   }
 
-  let residentsCountQuery = supabase
-    .from("residents" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .in("status", ["active", "hospital_hold", "loa"]);
+  const projection = data as ProjectionPayload;
+  const counts = projection.counts;
+  const workflowSource = projection.workflowQueues;
+  const assuranceSource = projection.residentAssurance;
 
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    residentsCountQuery = residentsCountQuery.eq("facility_id", selectedFacilityId);
-  }
+  const workflowQueues: AdminDashboardSnapshot["workflowQueues"] = {
+    doctrinePendingReview: numericField(workflowSource, "doctrinePendingReview"),
+    doctrineBlockedReview: numericField(workflowSource, "doctrineBlockedReview"),
+    doctrineReadyToPublish: numericField(workflowSource, "doctrineReadyToPublish"),
+    doctrineDueSoon: numericField(workflowSource, "doctrineDueSoon"),
+    doctrineOverdue: numericField(workflowSource, "doctrineOverdue"),
+    incidentOverdueFollowups: numericField(workflowSource, "incidentOverdueFollowups"),
+    incidentUnassignedFollowups: numericField(workflowSource, "incidentUnassignedFollowups"),
+    incidentEscalatedFollowups: numericField(workflowSource, "incidentEscalatedFollowups"),
+    incidentOpenObligations: numericField(workflowSource, "incidentOpenObligations"),
+    incidentRootCausePending: numericField(workflowSource, "incidentRootCausePending"),
+    incidentCarePlanPending: numericField(workflowSource, "incidentCarePlanPending"),
+    admissionsBlocked: numericField(workflowSource, "admissionsBlocked"),
+    admissionsMoveInReady: numericField(workflowSource, "admissionsMoveInReady"),
+    admissionsOnboardingPending: numericField(workflowSource, "admissionsOnboardingPending"),
+    referralsInAdmissions: numericField(workflowSource, "referralsInAdmissions"),
+    referralsBlockedHandoffs: numericField(workflowSource, "referralsBlockedHandoffs"),
+    referralsReadyHandoffs: numericField(workflowSource, "referralsReadyHandoffs"),
+    referralsOnboardingHandoffs: numericField(workflowSource, "referralsOnboardingHandoffs"),
+    dischargePlanning: numericField(workflowSource, "dischargePlanning"),
+    dischargePharmacistReview: numericField(workflowSource, "dischargePharmacistReview"),
+    dischargeReadyToComplete: numericField(workflowSource, "dischargeReadyToComplete"),
+    familyTriagePending: numericField(workflowSource, "familyTriagePending"),
+    familyConferencesUpcoming: numericField(workflowSource, "familyConferencesUpcoming"),
+  };
 
-  let staffCountQuery = supabase
-    .from("staff" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .eq("employment_status", "active");
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    staffCountQuery = staffCountQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  let incidentsCountQuery = supabase
-    .from("incidents" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .in("status", ["open", "investigating"]);
-
-  let staffingGapSnapshotsQuery = supabase
-    .from("staffing_ratio_snapshots" as never)
-    .select("id", { count: "exact", head: true })
-    .eq("is_compliant", false)
-    .gte("snapshot_at", new Date(Date.now() - 24 * 3_600_000).toISOString());
-
-  let medicationErrorsQuery = supabase
-    .from("medication_errors" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .is("reviewed_at", null);
-
-  const todayDate = new Date();
-  const todayIso = todayDate.toISOString().slice(0, 10);
-  const in30Date = new Date(todayDate);
-  in30Date.setUTCDate(in30Date.getUTCDate() + 30);
-  const in30Iso = in30Date.toISOString().slice(0, 10);
-  let expiringCertificationsQuery = supabase
-    .from("staff_certifications" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .eq("status", "active")
-    .not("expiration_date", "is", null)
-    .gte("expiration_date", todayIso)
-    .lte("expiration_date", in30Iso);
-
-  let awayResidentsCountQuery = supabase
-    .from("residents" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .in("status", ["hospital_hold", "loa"]);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    incidentsCountQuery = incidentsCountQuery.eq("facility_id", selectedFacilityId);
-    staffingGapSnapshotsQuery = staffingGapSnapshotsQuery.eq("facility_id", selectedFacilityId);
-    medicationErrorsQuery = medicationErrorsQuery.eq("facility_id", selectedFacilityId);
-    expiringCertificationsQuery = expiringCertificationsQuery.eq("facility_id", selectedFacilityId);
-    awayResidentsCountQuery = awayResidentsCountQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  let residentsPreviewQuery = supabase
-    .from("residents" as never)
-    .select(
-      "id, first_name, last_name, facility_id, status, acuity_level, updated_at, date_of_birth, deleted_at",
-    )
-    .is("deleted_at", null)
-    .in("status", ["active", "hospital_hold", "loa"])
-    .order("updated_at", { ascending: false })
-    .limit(8);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    residentsPreviewQuery = residentsPreviewQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  let acuityWatchlistQuery = supabase
-    .from("residents" as never)
-    .select(
-      "id, first_name, last_name, facility_id, status, acuity_level, updated_at, date_of_birth, deleted_at",
-    )
-    .is("deleted_at", null)
-    .in("status", ["active", "hospital_hold", "loa"])
-    .in("acuity_level", ["level_2", "level_3"])
-    .order("acuity_level", { ascending: false })
-    .order("updated_at", { ascending: false })
-    .limit(4);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    acuityWatchlistQuery = acuityWatchlistQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  let incidentsFeedQuery = supabase
-    .from("incidents" as never)
-    .select("id, occurred_at, category, severity, status, resident_id, deleted_at")
-    .is("deleted_at", null)
-    .order("occurred_at", { ascending: false })
-    .limit(6);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    incidentsFeedQuery = incidentsFeedQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  let doctrinePendingQuery = supabase
-    .from("documents" as never)
-    .select("id, review_owner, review_due_at", { count: "exact" })
-    .eq("status", "pending_review")
-    .is("deleted_at", null);
-
-  let incidentOverdueFollowupsQuery = supabase
-    .from("incident_followups" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .is("completed_at", null)
-    .lt("due_at", new Date().toISOString());
-
-  let incidentUnassignedFollowupsQuery = supabase
-    .from("incident_followups" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .is("completed_at", null)
-    .is("assigned_to", null);
-
-  let incidentEscalatedFollowupsQuery = supabase
-    .from("incident_followups" as never)
-    .select("id, due_at", { count: "exact" })
-    .is("deleted_at", null)
-    .is("completed_at", null)
-    .lt("due_at", new Date(Date.now() - 48 * 3_600_000).toISOString());
-
-  let incidentWorkflowQuery = supabase
-    .from("incidents" as never)
-    .select("id, severity, nurse_notified, administrator_notified, owner_notified, physician_notified, family_notified, ahca_reportable, ahca_reported, insurance_reportable, insurance_reported, care_plan_updated, resolved_at")
-    .is("deleted_at", null)
-    .in("status", ["open", "investigating", "resolved"]);
-
-  let incidentRcaQuery = supabase
-    .from("incident_rca" as never)
-    .select("incident_id, investigation_status");
-
-  let admissionsQueueQuery = supabase
-    .from("admission_cases" as never)
-    .select("id, resident_id, referral_lead_id, status, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id")
-    .is("deleted_at", null)
-    .not("status", "eq", "cancelled");
-
-  let dischargeQueueQuery = supabase
-    .from("discharge_med_reconciliation" as never)
-    .select("id, status, nurse_reconciliation_notes, pharmacist_npi, pharmacist_notes, residents(discharge_target_date, hospice_status)")
-    .is("deleted_at", null);
-
-  let familyTriageQuery = supabase
-    .from("family_message_triage_items" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .in("triage_status", ["pending_review", "in_review"]);
-
-  let familyConferenceQuery = supabase
-    .from("family_care_conference_sessions" as never)
-    .select("id, scheduled_start", { count: "exact" })
-    .is("deleted_at", null)
-    .gte("scheduled_start", new Date().toISOString());
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    doctrinePendingQuery = doctrinePendingQuery.eq("facility_id", selectedFacilityId);
-    incidentOverdueFollowupsQuery = incidentOverdueFollowupsQuery.eq("facility_id", selectedFacilityId);
-    incidentUnassignedFollowupsQuery = incidentUnassignedFollowupsQuery.eq("facility_id", selectedFacilityId);
-    incidentEscalatedFollowupsQuery = incidentEscalatedFollowupsQuery.eq("facility_id", selectedFacilityId);
-    incidentWorkflowQuery = incidentWorkflowQuery.eq("facility_id", selectedFacilityId);
-    incidentRcaQuery = incidentRcaQuery.eq("facility_id", selectedFacilityId);
-    admissionsQueueQuery = admissionsQueueQuery.eq("facility_id", selectedFacilityId);
-    dischargeQueueQuery = dischargeQueueQuery.eq("facility_id", selectedFacilityId);
-    familyTriageQuery = familyTriageQuery.eq("facility_id", selectedFacilityId);
-    familyConferenceQuery = familyConferenceQuery.eq("facility_id", selectedFacilityId);
-  }
-
-  const [
-    facilitiesResult,
-    residentsCountRes,
-    staffCountRes,
-    incidentsCountRes,
-    staffingGapSnapshotsRes,
-    medicationErrorsRes,
-    expiringCertificationsRes,
-    awayResidentsCountRes,
-    residentsPreviewResult,
-    acuityWatchlistResult,
-    incidentsFeedResult,
-    doctrinePendingResult,
-    incidentOverdueFollowupsRes,
-    incidentUnassignedFollowupsRes,
-    incidentEscalatedFollowupsRes,
-    incidentWorkflowRes,
-    incidentRcaRes,
-    admissionsQueueRes,
-    dischargeQueueRes,
-    familyTriageRes,
-    familyConferenceRes,
-    residentAssuranceBrief,
-  ] = await Promise.all([
-    facilitiesQuery as unknown as Promise<QueryResult<SupabaseFacilityRow[]>>,
-    residentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    staffCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    incidentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    staffingGapSnapshotsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    medicationErrorsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    expiringCertificationsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    awayResidentsCountQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    residentsPreviewQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
-    acuityWatchlistQuery as unknown as Promise<QueryResult<SupabaseResidentRow[]>>,
-    incidentsFeedQuery as unknown as Promise<QueryResult<SupabaseIncidentFeedRow[]>>,
-    doctrinePendingQuery as unknown as Promise<QueryResult<SupabaseDoctrineDocMini[]>>,
-    incidentOverdueFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    incidentUnassignedFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    incidentEscalatedFollowupsQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    incidentWorkflowQuery as unknown as Promise<QueryResult<SupabaseIncidentMini[]>>,
-    incidentRcaQuery as unknown as Promise<QueryResult<SupabaseIncidentRcaMini[]>>,
-    admissionsQueueQuery as unknown as Promise<QueryResult<SupabaseAdmissionMini[]>>,
-    dischargeQueueQuery as unknown as Promise<QueryResult<SupabaseDischargeMini[]>>,
-    familyTriageQuery as unknown as Promise<{ count: number | null; error: QueryError | null }>,
-    familyConferenceQuery as unknown as Promise<QueryResult<SupabaseFamilyConferenceMini[]>>,
-    residentAssuranceBriefPromise,
-  ]);
-
-  // Partial-failure tolerant: log any per-query errors but don't throw — the
-  // downstream extractors all default missing data to [] or 0, so the
-  // dashboard renders with whatever queries succeeded instead of blanking.
-  const queryErrors = [
-    facilitiesResult.error && { table: "facilities", ...facilitiesResult.error },
-    residentsCountRes.error && { table: "residents", ...residentsCountRes.error },
-    staffCountRes.error && { table: "staff", ...staffCountRes.error },
-    incidentsCountRes.error && { table: "incidents", ...incidentsCountRes.error },
-    staffingGapSnapshotsRes.error && { table: "staffing_ratio_snapshots", ...staffingGapSnapshotsRes.error },
-    medicationErrorsRes.error && { table: "medication_errors", ...medicationErrorsRes.error },
-    expiringCertificationsRes.error && { table: "staff_certifications", ...expiringCertificationsRes.error },
-    awayResidentsCountRes.error && { table: "residents_away_count", ...awayResidentsCountRes.error },
-    residentsPreviewResult.error && { table: "residents_preview", ...residentsPreviewResult.error },
-    acuityWatchlistResult.error && { table: "residents_acuity_watchlist", ...acuityWatchlistResult.error },
-    incidentsFeedResult.error && { table: "incidents_feed", ...incidentsFeedResult.error },
-    doctrinePendingResult.error && { table: "documents_pending_review", ...doctrinePendingResult.error },
-    incidentOverdueFollowupsRes.error && { table: "incident_followups_overdue", ...incidentOverdueFollowupsRes.error },
-    incidentUnassignedFollowupsRes.error && { table: "incident_followups_unassigned", ...incidentUnassignedFollowupsRes.error },
-    incidentEscalatedFollowupsRes.error && { table: "incident_followups_escalated", ...incidentEscalatedFollowupsRes.error },
-    incidentWorkflowRes.error && { table: "incidents_workflow", ...incidentWorkflowRes.error },
-    incidentRcaRes.error && { table: "incident_rca", ...incidentRcaRes.error },
-    admissionsQueueRes.error && { table: "admission_cases_queue", ...admissionsQueueRes.error },
-    dischargeQueueRes.error && { table: "discharge_med_reconciliation", ...dischargeQueueRes.error },
-    familyTriageRes.error && { table: "family_message_triage_items", ...familyTriageRes.error },
-    familyConferenceRes.error && { table: "family_care_conference_sessions", ...familyConferenceRes.error },
-  ].filter(Boolean);
-
-  if (queryErrors.length > 0) {
-    console.warn("[Haven] Admin dashboard partial failure", queryErrors);
-  }
-
-  const facilityRows = facilitiesResult.data ?? [];
-  const licensedBedsSum = facilityRows.reduce((acc, f) => acc + (f.total_licensed_beds ?? 0), 0);
-  const primaryTz = facilityRows[0]?.timezone?.trim() || "America/New_York";
-  const headlineName =
-    isValidFacilityIdForQuery(selectedFacilityId) && facilityRows.length === 1
-      ? facilityRows[0].name
-      : "All facilities";
-
-  const previewResidents = residentsPreviewResult.data ?? [];
-  const watchlistResidents = acuityWatchlistResult.data ?? [];
-  const incidentRows = incidentsFeedResult.data ?? [];
-
-  const pendingDoctrineDocs = doctrinePendingResult.data ?? [];
-  const doctrineDocIds = pendingDoctrineDocs.map((doc) => doc.id);
-
-  const admissionQueueRowsAll = admissionsQueueRes.data ?? [];
-  const moveInResidentIdsAll = admissionQueueRowsAll
-    .filter((row) => row.status === "move_in")
-    .map((row) => row.resident_id);
-
-  type DoctrineAuditRow = { document_id: string; event_type: string; created_at: string };
-  type MoveInReadinessResult = { data: Array<{ resident_id: string }> | null; error: QueryError | null };
-
-  const doctrineDraftCreatedPromise: Promise<QueryResult<DoctrineAuditRow[]>> =
-    doctrineDocIds.length > 0
-      ? ((supabase
-          .from("document_audit_events" as never)
-          .select("document_id, event_type, created_at")
-          .in("document_id", doctrineDocIds)
-          .in("event_type", ["obsidian_draft_created", "review_completed"])) as unknown as Promise<
-          QueryResult<DoctrineAuditRow[]>
-        >)
-      : Promise.resolve({ data: [], error: null } as QueryResult<DoctrineAuditRow[]>);
-
-  const makeMoveInReadinessPromise = (table: string): Promise<MoveInReadinessResult> =>
-    moveInResidentIdsAll.length > 0
-      ? ((supabase
-          .from(table as never)
-          .select("resident_id")
-          .in("resident_id", moveInResidentIdsAll)
-          .is("deleted_at", null)) as unknown as Promise<MoveInReadinessResult>)
-      : Promise.resolve({ data: [], error: null } as MoveInReadinessResult);
-
-  // Fuse what used to be three serial phases — the census/watchlist/activity
-  // maps, the doctrine draft lookup, and the move-in readiness batch — into a
-  // single parallel phase. Every item here only depends on Phase 1's results,
-  // not on each other, so there is no reason to await them in sequence.
-  const [
-    censusPreview,
-    acuityWatchlist,
-    activity,
-    doctrineDraftCreatedRes,
-    carePlansRes,
-    medsRes,
-    payersRes,
-    consentsRes,
-  ] = await Promise.all([
-    mapResidentsToCensusRows(supabase, previewResidents),
-    mapResidentsToCensusRows(supabase, watchlistResidents),
-    mapIncidentsToActivity(supabase, incidentRows),
-    doctrineDraftCreatedPromise,
-    makeMoveInReadinessPromise("care_plans"),
-    makeMoveInReadinessPromise("resident_medications"),
-    makeMoveInReadinessPromise("resident_payers"),
-    makeMoveInReadinessPromise("family_consent_records"),
-  ]);
-
-  const residentCount = residentsCountRes.count ?? 0;
-  const awayResidentCount = awayResidentsCountRes.count ?? 0;
-  const activeStaffCount = staffCountRes.count ?? 0;
-  const openIncidentAlerts = incidentsCountRes.count ?? 0;
-  const staffingGapSnapshots24h = staffingGapSnapshotsRes.count ?? 0;
-  const medicationErrorsUnreviewed = medicationErrorsRes.count ?? 0;
-  const expiringCertifications30d = expiringCertificationsRes.count ?? 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (doctrineDraftCreatedRes.error) {
-    throw doctrineDraftCreatedRes.error;
-  }
-  const doctrineAuditEvents = doctrineDraftCreatedRes.data ?? [];
-  const latestDraftAtByDoc = new Map<string, string>();
-  const latestReviewCompleteAtByDoc = new Map<string, string>();
-  for (const row of doctrineAuditEvents) {
-    if (row.event_type === "obsidian_draft_created" && !latestDraftAtByDoc.has(row.document_id)) {
-      latestDraftAtByDoc.set(row.document_id, row.created_at);
-    }
-    if (row.event_type === "review_completed" && !latestReviewCompleteAtByDoc.has(row.document_id)) {
-      latestReviewCompleteAtByDoc.set(row.document_id, row.created_at);
-    }
-  }
-  const draftCreatedIds = new Set(Array.from(latestDraftAtByDoc.keys()));
-  const reviewCompletedIds = new Set(
-    pendingDoctrineDocs
-      .filter((doc) => {
-        const draftAt = latestDraftAtByDoc.get(doc.id);
-        const reviewAt = latestReviewCompleteAtByDoc.get(doc.id);
-        if (!reviewAt) return false;
-        if (!draftAt) return true;
-        return new Date(reviewAt).getTime() >= new Date(draftAt).getTime();
-      })
-      .map((doc) => doc.id),
-  );
-  const doctrineBlockedReview = pendingDoctrineDocs.filter(
-    (doc) => !doc.review_owner || !doc.review_due_at || !draftCreatedIds.has(doc.id) || !reviewCompletedIds.has(doc.id),
-  ).length;
-  const doctrineReadyToPublish = pendingDoctrineDocs.length - doctrineBlockedReview;
-  const doctrineDueSoon = pendingDoctrineDocs.filter((doc) => isDueSoon(doc.review_due_at, today)).length;
-  const doctrineOverdue = pendingDoctrineDocs.filter((doc) => {
-    if (!doc.review_due_at) return false;
-    const due = new Date(doc.review_due_at);
-    due.setHours(0, 0, 0, 0);
-    return due < today;
-  }).length;
-  const incidentWorkflowRows = incidentWorkflowRes.data ?? [];
-  const incidentRcaById = new Map((incidentRcaRes.data ?? []).map((row) => [row.incident_id, row.investigation_status] as const));
-  const incidentOpenObligations = incidentWorkflowRows.filter((row) => buildIncidentOpenObligations(row).length > 0).length;
-  const incidentRootCausePending = incidentWorkflowRows.filter((row) => {
-    const rootCauseExpected = row.severity === "level_3" || row.severity === "level_4";
-    return rootCauseExpected && incidentRcaById.get(row.id) !== "complete";
-  }).length;
-  const incidentCarePlanPending = incidentWorkflowRows.filter((row) => {
-    return Boolean(row.resolved_at) && !row.care_plan_updated && (row.severity === "level_3" || row.severity === "level_4");
-  }).length;
-
-  const admissionQueueRows = admissionQueueRowsAll;
-  const admissionsBlocked = admissionQueueRows.filter((row) => {
-    return !row.financial_clearance_at || !row.physician_orders_received_at || !row.bed_id || !row.target_move_in_date;
-  }).length;
-  const admissionsMoveInReady = admissionQueueRows.filter((row) => {
-    return Boolean(row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date);
-  }).length;
-  const referralsInAdmissions = admissionQueueRows.filter((row) => Boolean(row.referral_lead_id)).length;
-
-  // Move-in readiness Sets now derive from the Phase-2 batch that ran in
-  // parallel with the census/watchlist/activity maps — no extra round-trip.
-  const moveInResidentIds = moveInResidentIdsAll;
-  const carePlanIds = new Set(((carePlansRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-  const medIds = new Set(((medsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-  const payerIds = new Set(((payersRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-  const consentIds = new Set(((consentsRes.data ?? []) as Array<{ resident_id: string }>).map((row) => row.resident_id));
-  const admissionsOnboardingPending = moveInResidentIds.filter((residentId) => {
-    return !(carePlanIds.has(residentId) && medIds.has(residentId) && payerIds.has(residentId) && consentIds.has(residentId));
-  }).length;
-
-  let referralsBlockedHandoffs = 0;
-  let referralsReadyHandoffs = 0;
-  let referralsOnboardingHandoffs = 0;
-  for (const row of admissionQueueRows) {
-    if (!row.referral_lead_id) continue;
-    const blocked = !row.financial_clearance_at || !row.physician_orders_received_at || !row.bed_id || !row.target_move_in_date;
-    if (blocked) {
-      referralsBlockedHandoffs += 1;
-      continue;
-    }
-    if (row.status !== "move_in") {
-      referralsReadyHandoffs += 1;
-      continue;
-    }
-    const residentId = row.resident_id;
-    const onboardingMissing =
-      !carePlanIds.has(residentId) ||
-      !medIds.has(residentId) ||
-      !payerIds.has(residentId) ||
-      !consentIds.has(residentId);
-    if (onboardingMissing) {
-      referralsOnboardingHandoffs += 1;
-    }
-  }
-
-  const dischargeRows = dischargeQueueRes.data ?? [];
-  let dischargePlanning = 0;
-  let dischargePharmacistReview = 0;
-  let dischargeReadyToComplete = 0;
-  for (const row of dischargeRows) {
-    const phase = describeDischargePhase(row);
-    if (phase === "planning") dischargePlanning += 1;
-    if (phase === "pharmacist_review") dischargePharmacistReview += 1;
-    if (phase === "ready_to_complete") dischargeReadyToComplete += 1;
-  }
-  const familyTriagePending = familyTriageRes.count ?? 0;
-  const familyConferencesUpcoming = (familyConferenceRes.data ?? []).length;
+  const timezoneLabel = projection.timezoneLabel?.trim() || "America/New_York";
+  const licensedBeds =
+    projection.licensedBeds == null
+      ? null
+      : numericField({ value: projection.licensedBeds }, "value");
 
   return {
-    headlineName,
-    timezoneLabel: primaryTz,
-    shiftSummary: shiftSummaryForTimezone(primaryTz),
-    residentCount,
-    awayResidentCount,
-    licensedBeds: licensedBedsSum > 0 ? licensedBedsSum : null,
-    activeStaffCount,
-    openIncidentAlerts,
-    staffingGapSnapshots24h,
-    medicationErrorsUnreviewed,
-    expiringCertifications30d,
-    workflowQueues: {
-      doctrinePendingReview: pendingDoctrineDocs.length,
-      doctrineBlockedReview,
-      doctrineReadyToPublish,
-      doctrineDueSoon,
-      doctrineOverdue,
-      incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
-      incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
-      incidentEscalatedFollowups: incidentEscalatedFollowupsRes.count ?? 0,
-      incidentOpenObligations,
-      incidentRootCausePending,
-      incidentCarePlanPending,
-      admissionsBlocked,
-      admissionsMoveInReady,
-      admissionsOnboardingPending,
-      referralsInAdmissions,
-      referralsBlockedHandoffs,
-      referralsReadyHandoffs,
-      referralsOnboardingHandoffs,
-      dischargePlanning,
-      dischargePharmacistReview,
-      dischargeReadyToComplete,
-      familyTriagePending,
-      familyConferencesUpcoming,
-    },
+    headlineName: projection.headlineName?.trim() || "All facilities",
+    timezoneLabel,
+    shiftSummary: shiftSummaryForTimezone(timezoneLabel),
+    residentCount: numericField(counts, "residentCount"),
+    awayResidentCount: numericField(counts, "awayResidentCount"),
+    licensedBeds,
+    activeStaffCount: numericField(counts, "activeStaffCount"),
+    openIncidentAlerts: numericField(counts, "openIncidentAlerts"),
+    staffingGapSnapshots24h: numericField(counts, "staffingGapSnapshots24h"),
+    medicationErrorsUnreviewed: numericField(counts, "medicationErrorsUnreviewed"),
+    expiringCertifications30d: numericField(counts, "expiringCertifications30d"),
+    workflowQueues,
     residentAssurance: {
-      activeWatches: residentAssuranceBrief.activeWatches,
-      pendingWatchApprovals: residentAssuranceBrief.pendingWatchApprovals,
-      openEscalations: residentAssuranceBrief.openEscalations,
-      openIntegrityFlags: residentAssuranceBrief.openIntegrityFlags,
-      criticalSafetyResidents: residentAssuranceBrief.criticalSafetyResidents,
-      highOrCriticalSafetyResidents: residentAssuranceBrief.highOrCriticalSafetyResidents,
+      activeWatches: numericField(assuranceSource, "activeWatches"),
+      pendingWatchApprovals: numericField(assuranceSource, "pendingWatchApprovals"),
+      openEscalations: numericField(assuranceSource, "openEscalations"),
+      openIntegrityFlags: numericField(assuranceSource, "openIntegrityFlags"),
+      criticalSafetyResidents: numericField(assuranceSource, "criticalSafetyResidents"),
+      highOrCriticalSafetyResidents: numericField(
+        assuranceSource,
+        "highOrCriticalSafetyResidents",
+      ),
     },
-    workflowInbox: buildWorkflowInbox({
-      doctrinePendingReview: pendingDoctrineDocs.length,
-      doctrineBlockedReview,
-      doctrineReadyToPublish,
-      doctrineDueSoon,
-      doctrineOverdue,
-      incidentOverdueFollowups: incidentOverdueFollowupsRes.count ?? 0,
-      incidentUnassignedFollowups: incidentUnassignedFollowupsRes.count ?? 0,
-      incidentEscalatedFollowups: incidentEscalatedFollowupsRes.count ?? 0,
-      incidentOpenObligations,
-      incidentRootCausePending,
-      incidentCarePlanPending,
-      admissionsBlocked,
-      admissionsMoveInReady,
-      admissionsOnboardingPending,
-      referralsInAdmissions,
-      referralsBlockedHandoffs,
-      referralsReadyHandoffs,
-      referralsOnboardingHandoffs,
-      dischargePlanning,
-      dischargePharmacistReview,
-      dischargeReadyToComplete,
-      familyTriagePending,
-      familyConferencesUpcoming,
-    }),
-    censusPreview,
-    acuityWatchlist,
-    activity,
+    workflowInbox: buildWorkflowInbox(workflowQueues),
+    censusPreview: (projection.censusPreview ?? []).map(mapProjectionResident),
+    acuityWatchlist: (projection.acuityWatchlist ?? []).map(mapProjectionResident),
+    activity: (projection.activity ?? []).map(mapProjectionActivity),
   };
-}
-
-function describeDischargePhase(row: SupabaseDischargeMini): "planning" | "pharmacist_review" | "ready_to_complete" | "complete" | "cancelled" {
-  if (row.status === "cancelled") return "cancelled";
-  if (row.status === "complete") return "complete";
-  if (!row.residents?.discharge_target_date) return "planning";
-  if (row.residents?.hospice_status === "pending") return "planning";
-  if (!row.nurse_reconciliation_notes?.trim()) return "planning";
-  if (row.status === "draft") return "pharmacist_review";
-  if (!row.pharmacist_npi?.trim() || !row.pharmacist_notes?.trim()) return "pharmacist_review";
-  return "ready_to_complete";
-}
-
-async function mapResidentsToCensusRows(
-  supabase: ReturnType<typeof createClient>,
-  residents: SupabaseResidentRow[],
-): Promise<DashboardCensusRow[]> {
-  if (residents.length === 0) {
-    return [];
-  }
-
-  const residentIds = residents.map((r) => r.id);
-
-  // Single nested-select replaces the old beds → rooms two-step chain.
-  // PostgREST walks beds.room_id → rooms in the same request. RLS still
-  // applies to both joined tables.
-  type BedJoinRow = SupabaseBedRow & { rooms: { id: string; room_number: string | null; unit_id: string | null } | null };
-  const bedsResult = (await supabase
-    .from("beds" as never)
-    .select("id, room_id, bed_label, current_resident_id, rooms ( id, room_number, unit_id )")
-    .in("current_resident_id", residentIds)) as unknown as QueryResult<BedJoinRow>;
-  if (bedsResult.error) {
-    throw bedsResult.error;
-  }
-  const beds: BedJoinRow[] = Array.isArray(bedsResult.data) ? bedsResult.data : [];
-
-  const bedByResident = new Map(
-    beds.filter((b) => b.current_resident_id).map((b) => [b.current_resident_id as string, b] as const),
-  );
-
-  return residents.map((resident) => {
-    const firstName = resident.first_name ?? "";
-    const lastName = resident.last_name ?? "";
-    const fullName = formatLoadResidentsFullName(firstName, lastName);
-    const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
-    const bed = bedByResident.get(resident.id);
-    const room = bed?.rooms ?? null;
-    const roomLabel = room?.room_number
-      ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}`
-      : "Unassigned";
-    const acuity = mapAcuity(resident.acuity_level);
-    const { label, tone } = residencyUiLabel(resident.status);
-
-    return {
-      id: resident.id,
-      name: fullName,
-      initials,
-      dobDisplay: formatAdminDashboardResidentDobDisplay(resident.date_of_birth),
-      room: roomLabel,
-      acuity,
-      statusLabel: label,
-      statusTone: tone,
-      updatedRelative: formatAdminDashboardRelativeShort(resident.updated_at),
-    };
-  });
-}
-
-async function mapIncidentsToActivity(
-  supabase: ReturnType<typeof createClient>,
-  incidents: SupabaseIncidentFeedRow[],
-): Promise<DashboardActivityItem[]> {
-  if (incidents.length === 0) {
-    return [];
-  }
-
-  const residentIds = Array.from(
-    new Set(
-      incidents.map((i) => i.resident_id).filter((id): id is string => typeof id === "string" && id.length > 0),
-    ),
-  );
-
-  const residentsResult = residentIds.length
-    ? ((await supabase
-        .from("residents" as never)
-        .select("id, first_name, last_name")
-        .in("id", residentIds)) as unknown as QueryResult<SupabaseResidentMini[]>)
-    : ({ data: [], error: null } as QueryResult<SupabaseResidentMini[]>);
-  if (residentsResult.error) {
-    throw residentsResult.error;
-  }
-  const resById = new Map((residentsResult.data ?? []).map((r) => [r.id, r] as const));
-
-  return incidents.map((row) => {
-    const res = row.resident_id ? resById.get(row.resident_id) : null;
-    const resName = res
-      ? `${res.first_name ?? ""} ${res.last_name ?? ""}`.trim() || "Resident"
-      : "Resident";
-    const sev = row.severity ?? "";
-    const tone: DashboardActivityItem["tone"] =
-      sev === "level_4" || sev === "level_3" ? "critical" : sev === "level_2" ? "warning" : "normal";
-    const message = `${resName} · ${formatIncidentCategory(row.category)} (${row.status})`;
-
-    return {
-      id: row.id,
-      timeLabel: formatAdminDashboardRelativeShort(row.occurred_at),
-      actor: "Incident",
-      message,
-      tone,
-      href: `/admin/incidents/${row.id}`,
-      ctaLabel: tone === "critical" ? "Open critical incident" : "Open incident",
-    };
-  });
 }

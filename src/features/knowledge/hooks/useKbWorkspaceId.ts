@@ -7,11 +7,11 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
  * Uses shared auth context to avoid a duplicate `user_profiles` fetch.
  */
 export function useKbWorkspaceId() {
-  const { organizationId, loading, session, refresh } = useHavenAuth();
+  const { organizationId, loading, user, refresh } = useHavenAuth();
 
   let error: string | null = null;
   if (!loading) {
-    if (!session) {
+    if (!user) {
       error = "Not signed in.";
     } else if (!organizationId) {
       error = "Your profile is missing an organization. Contact an administrator.";

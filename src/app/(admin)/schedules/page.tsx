@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 
+import AdminRouteLoading from "@/components/layout/admin-route-loading";
 import { AdminSchedulesPageClient } from "@/components/schedules/AdminSchedulesPageClient";
 import {
   SELECTED_FACILITY_COOKIE,
@@ -11,7 +13,15 @@ import {
 } from "@/lib/schedules/load-schedules";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AdminSchedulesPage() {
+export default function AdminSchedulesPage() {
+  return (
+    <Suspense fallback={<AdminRouteLoading inset={false} />}>
+      <SchedulesData />
+    </Suspense>
+  );
+}
+
+async function SchedulesData() {
   const cookieStore = await cookies();
   const initialFacilityId = parseSelectedFacilityCookieValue(
     cookieStore.get(SELECTED_FACILITY_COOKIE)?.value,

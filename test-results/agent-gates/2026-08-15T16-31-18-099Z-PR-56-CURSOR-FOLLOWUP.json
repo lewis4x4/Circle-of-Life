@@ -1,0 +1,136 @@
+{
+  "segment": "PR-56-CURSOR-FOLLOWUP",
+  "timestamp": "2026-08-15T16:31:18.099Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 28,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 189,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 545,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 7389,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m4:31PM\u001b[0m \u001b[32mINF\u001b[0m 1756 commits scanned.\n\u001b[90m4:31PM\u001b[0m \u001b[32mINF\u001b[0m scan completed in 6.57s\n\u001b[90m4:31PM\u001b[0m \u001b[32mINF\u001b[0m no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "failed",
+      "duration_ms": 22972,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/admissions/new/page.tsx\n  22:10  warning  'formatCents' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/admin/settings/v2-users-display-copy.ts\n  12:10  warning  'isBlankValue' is defined but never used  @typescript-eslint/no-unused-vars\n\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/lib/executive/overview-model.ts\n  77:23  warning  '_occ' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\n✖ 3 problems (0 errors, 3 warnings)\n\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\nESLint found too many warnings (maximum: 0).\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "failed",
+      "duration_ms": 109,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: duplicate migration numeric prefix detected\n"
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "passed",
+      "duration_ms": 26163,
+      "stdout": "[migrations:verify:pg] PASS (318 migration file(s))\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 219,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: duplicate migration numeric prefix detected\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 292,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.design-review",
+      "required": true,
+      "command": "npm run design:review",
+      "status": "passed",
+      "duration_ms": 2453,
+      "stdout": "[no-schema-leak] PASS: no schema leaks flagged in TSX/JSX under src/\n[design:review] PASS: 4 screenshot(s) -> /Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json\n",
+      "stderr": "",
+      "artifacts": [
+        "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/design-review/report.json"
+      ]
+    },
+    {
+      "id": "cdo.a11y-axe",
+      "required": true,
+      "command": "npm run a11y:routes",
+      "status": "passed",
+      "duration_ms": 1655,
+      "stdout": "[a11y:routes] PASS (1 route(s))\n",
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 3,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.eslint",
+      "qa.migration-sequence",
+      "qa.root-build"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-08-15T16-31-18-099Z-PR-56-CURSOR-FOLLOWUP.json"
+  ]
+}

@@ -43,26 +43,28 @@ jobs:
             || (echo "::error::rounded-3xl on PageClient"; exit 1)
 
       - name: "Uppercase CTAs"
-        # Only scan .tsx files changed in this PR so pre-existing violations
-        # elsewhere in src/ do not block unrelated fixes.
+        # Only scan added .tsx lines so pre-existing violations do not block
+        # unrelated fixes or safe refactors of a file that still has debt.
         run: |
           set -euo pipefail
-          git fetch origin "${{ github.event.pull_request.base.ref }}"
-          mapfile -t CHANGED < <(
-            git diff --name-only --diff-filter=ACMRT \
-              "origin/${{ github.event.pull_request.base.ref }}...HEAD" \
-              | grep -E '^src/.*\.tsx$' || true
-          )
-          if [ "${#CHANGED[@]}" -eq 0 ]; then
-            echo "No changed src/**/*.tsx files — skipping Uppercase CTAs check"
-            exit 0
-          fi
-          echo "Checking ${#CHANGED[@]} changed .tsx file(s) for uppercase CTAs"
-          if grep -HnE 'uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
-            "${CHANGED[@]}"; then
-            echo "::error::uppercase CTA found in PR-changed files"
+          DIFF_FILE="${RUNNER_TEMP}/uppercase-cta.diff"
+          if ! git diff --unified=0 --no-color \
+            "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+            -- ':(glob)src/**/*.tsx' > "$DIFF_FILE"; then
+            echo "::error::unable to generate PR diff for uppercase CTA check"
             exit 1
           fi
+          MATCHES=$(
+            grep -E '^\+[^+].*uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
+              "$DIFF_FILE" \
+              || true
+          )
+          if [ -n "$MATCHES" ]; then
+            echo "$MATCHES"
+            echo "::error::uppercase CTA found in PR-added lines"
+            exit 1
+          fi
+          echo "No uppercase CTA pattern added"
 
       - name: "Gradient text on chrome (bg-clip-text + gradient on PageClient)"
         run: |

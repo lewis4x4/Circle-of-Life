@@ -230,7 +230,6 @@ export async function fetchIncidentsFromSupabase(
     } as IncidentRow;
   });
 }
-
 function mapDbSeverityToUi(value: string): IncidentSeverity {
   if (value === "level_2" || value === "level_3" || value === "level_4") return value;
   return "level_1";
@@ -243,4 +242,3 @@ function mapDbCategoryToUi(value: string): IncidentCategory {
   if (value.startsWith("behavioral_") || value === "abuse_allegation" || value === "neglect_allegation") return "behavioral";
   return "other";
 }
-

@@ -74,8 +74,9 @@ export function applyFacilityOccupancyMetricHonesty(
 
     if (!loaded) {
       if (facility.metrics.occ_pt === undefined) return facility;
-      const { occ_pt: _occ, ...rest } = facility.metrics;
-      return { ...facility, metrics: rest };
+      const metrics = { ...facility.metrics };
+      delete metrics.occ_pt;
+      return { ...facility, metrics };
     }
 
     const occPt = facilityOccPtMetricValue(licensed, census);

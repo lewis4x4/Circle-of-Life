@@ -1,4 +1,3 @@
-import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 import {
@@ -7,6 +6,7 @@ import {
   isMedTechRole,
   isOnboardingAppRole,
   isOrgAdminAppRole,
+  type AuthClaimUser,
 } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
@@ -22,7 +22,7 @@ export function isOnboardingShellPath(pathname: string): boolean {
  *
  * Everyone else is routed to their dedicated home.
  */
-export function onboardingShellAccessRedirect(request: NextRequest, user: User | null): NextResponse | null {
+export function onboardingShellAccessRedirect(request: NextRequest, user: AuthClaimUser | null): NextResponse | null {
   const nextUrl = request.nextUrl;
 
   if (!user) {

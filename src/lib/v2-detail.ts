@@ -56,7 +56,6 @@ export async function loadV2Detail(
   if (result.error || !result.data) return null;
   return mapDetail(listId, recordId, result.data);
 }
-
 function mapDetail(
   listId: V2ListId,
   recordId: string,
@@ -199,4 +198,3 @@ function admissionTone(
       return "default";
   }
 }
-

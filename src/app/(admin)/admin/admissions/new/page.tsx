@@ -19,7 +19,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { formatCents } from "@/lib/finance/format-cents";
 import {
   Dialog,
   DialogContent,

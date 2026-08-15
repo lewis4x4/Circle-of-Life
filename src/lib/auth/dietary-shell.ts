@@ -1,7 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isDietaryRole, type AuthClaimUser } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
 export function isDietaryShellPath(pathname: string): boolean {
@@ -10,7 +9,7 @@ export function isDietaryShellPath(pathname: string): boolean {
 
 export function dietaryShellAccessRedirect(
   request: NextRequest,
-  user: User | null,
+  user: AuthClaimUser | null,
 ): NextResponse | null {
   const nextUrl = request.nextUrl;
 

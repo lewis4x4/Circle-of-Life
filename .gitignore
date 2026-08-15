@@ -76,6 +76,7 @@ supabase/functions/deno.lock
 .cursor/plans/
 .claude/
 .omx/
+/.codex/config.toml
 
 # vercel
 .vercel

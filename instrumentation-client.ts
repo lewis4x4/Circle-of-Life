@@ -1,6 +1,14 @@
 import * as Sentry from "@sentry/nextjs";
+import {
+  parseTraceSampleRate,
+  scrubPerformanceEvent,
+} from "@/lib/observability/sentry-performance";
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const traceSampleRate = parseTraceSampleRate(
+  process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE,
+  process.env.NODE_ENV === "production" ? 0.05 : 0,
+);
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
@@ -51,8 +59,9 @@ if (dsn) {
   Sentry.init({
     dsn,
     enabled: true,
-    tracesSampleRate: 0,
+    tracesSampleRate: traceSampleRate,
     sendDefaultPii: false,
+    beforeSendTransaction: scrubPerformanceEvent,
     beforeSend(event) {
       if (isKnownBenignNoise(event)) {
         return null;

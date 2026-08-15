@@ -7,11 +7,18 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 const ROLES_MANAGE_SESSION = new Set(["owner", "org_admin", "facility_admin"]);
 const ROLES_LOG_ACCESS = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
 
-export function useSurveyVisitSession(facilityId: string | null | undefined) {
+type SurveyVisitAuthContext = {
+  userId: string | null;
+  appRole: string;
+  organizationId: string | null;
+  loading: boolean;
+};
+
+export function useSurveyVisitSession(
+  facilityId: string | null | undefined,
+  auth: SurveyVisitAuthContext,
+) {
   const supabase = createClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [appRole, setAppRole] = useState<string>("");
-  const [orgId, setOrgId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -22,15 +29,17 @@ export function useSurveyVisitSession(facilityId: string | null | undefined) {
   const fid =
     typeof facilityId === "string" && isValidFacilityIdForQuery(facilityId) ? facilityId : null;
 
+  const { userId, appRole, organizationId: orgId, loading: authLoading } = auth;
   const canManage = ROLES_MANAGE_SESSION.has(appRole);
   const canLog = ROLES_LOG_ACCESS.has(appRole);
   const active = !!activeSessionId;
 
   const refresh = useCallback(async () => {
-    if (!fid) {
-      setUserId(null);
-      setAppRole("");
-      setOrgId(null);
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!fid || !userId || !orgId) {
       setActiveSessionId(null);
       setLoading(false);
       return;
@@ -39,39 +48,12 @@ export function useSurveyVisitSession(facilityId: string | null | undefined) {
     setMessage(null);
     setLoadError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setUserId(null);
-        setAppRole("");
-        setOrgId(null);
-        setActiveSessionId(null);
-        return;
-      }
-      setUserId(user.id);
-      const [prof, fac, sess] = await Promise.all([
-        supabase.from("user_profiles").select("app_role").eq("id", user.id).maybeSingle(),
-        supabase.from("facilities").select("organization_id").eq("id", fid).maybeSingle(),
-        supabase.from("survey_visit_sessions").select("id").eq("facility_id", fid).is("deactivated_at", null).maybeSingle(),
-      ]);
-      if (prof.error) {
-        setLoadError(prof.error.message);
-        setAppRole("");
-      } else if (prof.data?.app_role) {
-        setAppRole(prof.data.app_role as string);
-      } else {
-        setAppRole("");
-      }
-      if (fac.error) {
-        setLoadError((prev) => prev ?? fac.error.message);
-        setOrgId(null);
-      } else if (!fac.data?.organization_id) {
-        setLoadError((prev) => prev ?? "Facility organization not found or access denied.");
-        setOrgId(null);
-      } else {
-        setOrgId(fac.data.organization_id);
-      }
+      const sess = await supabase
+        .from("survey_visit_sessions")
+        .select("id")
+        .eq("facility_id", fid)
+        .is("deactivated_at", null)
+        .maybeSingle();
       if (sess.error) {
         setLoadError((prev) => prev ?? sess.error?.message ?? "Could not load survey session.");
         setActiveSessionId(null);
@@ -81,7 +63,7 @@ export function useSurveyVisitSession(facilityId: string | null | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, fid]);
+  }, [supabase, fid, userId, orgId, authLoading]);
 
   useEffect(() => {
     void refresh();

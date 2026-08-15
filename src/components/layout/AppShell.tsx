@@ -166,6 +166,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   } = useHavenAuth();
   const currentUserId = user?.id ?? null;
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
+  const resolveRouteHref = useCallback(
+    (href: string) => (href === "/admin" ? roleConfig.route : href),
+    [roleConfig.route],
+  );
 
   const hasFreshOwnedFacilityCache =
     currentUserId != null &&
@@ -180,7 +184,12 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const safeSelectedFacilityId = selectedFacilityIsValid ? selectedFacilityId : null;
   const currentFacility = visibleFacilities.find((f) => f.id === safeSelectedFacilityId);
 
-  const surveyVisit = useSurveyVisitSession(safeSelectedFacilityId);
+  const surveyVisit = useSurveyVisitSession(safeSelectedFacilityId, {
+    userId: currentUserId,
+    appRole,
+    organizationId,
+    loading: authLoading,
+  });
 
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
@@ -375,10 +384,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const isItemActive = useCallback(
     (href: string) => {
-      if (href === "/admin") return pathname === "/admin";
-      return pathname === href || pathname.startsWith(`${href}/`);
+      const resolved = resolveRouteHref(href);
+      return pathname === resolved || pathname.startsWith(`${resolved}/`);
     },
-    [pathname],
+    [pathname, resolveRouteHref],
   );
 
   const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
@@ -395,10 +404,19 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const handlePaletteSelect = useCallback(
     (href: string) => {
+      const destination = resolveRouteHref(href);
       setPaletteOpen(false);
-      navigate(href);
+      if (destination === pathname) return;
+      navigate(destination);
     },
-    [navigate],
+    [navigate, pathname, resolveRouteHref],
+  );
+
+  const handleRoutePrefetch = useCallback(
+    (href: string) => {
+      router.prefetch(resolveRouteHref(href));
+    },
+    [resolveRouteHref, router],
   );
 
   const handleSectionsJumpListOpenChange = useCallback((nextOpen: boolean) => {
@@ -411,7 +429,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const renderBrand = () => (
     <HavenShellBrandLink
-      href="/admin"
+      href={resolveRouteHref("/admin")}
       aria-label="Haven — admin home"
       className={cn(
         "flex h-9 shrink-0 rounded-md px-1.5 pr-4",
@@ -498,8 +516,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         key={pillar.id}
         pillar={pillar}
         active={activePillar?.id === pillar.id}
-        firstHref={first.href}
+        firstHref={resolveRouteHref(first.href)}
         isItemActive={isItemActive}
+        resolveHref={resolveRouteHref}
         onActivePillarTap={openPillarSheetIfMobile}
       />
     );
@@ -657,7 +676,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     return (
       <HavenNavLink
         key={item.key}
-        href={item.href}
+        href={resolveRouteHref(item.href)}
         aria-current={active ? "page" : undefined}
         className={cn(
           // 36px row · 13px horizontal padding · accent left-border when active
@@ -801,7 +820,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           return (
             <HavenNavLink
               key={pillar.id}
-              href={first.href}
+              href={resolveRouteHref(first.href)}
               aria-current={active ? "page" : undefined}
               aria-haspopup="menu"
               onClick={(event) => {
@@ -907,6 +926,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           open={paletteOpen}
           onOpenChange={setPaletteOpen}
           onSelect={handlePaletteSelect}
+          onPrefetch={handleRoutePrefetch}
         />
       ) : null}
       <LazyOverlayShells />
@@ -932,12 +952,14 @@ function PillarTabWithDropdown({
   active,
   firstHref,
   isItemActive,
+  resolveHref,
   onActivePillarTap,
 }: {
   pillar: Pillar;
   active: boolean;
   firstHref: string;
   isItemActive: (href: string) => boolean;
+  resolveHref: (href: string) => string;
   onActivePillarTap: (pillarId: Pillar["id"]) => boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -1032,7 +1054,7 @@ function PillarTabWithDropdown({
             return (
               <HavenNavLink
                 key={item.key}
-                href={item.href}
+                href={resolveHref(item.href)}
                 role="menuitem"
                 aria-current={itemActive ? "page" : undefined}
                 onClick={() => setOpen(false)}

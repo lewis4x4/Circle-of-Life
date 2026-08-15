@@ -17,6 +17,12 @@ Integrate one client + server error capture tool. Sentry is the default recommen
 | Client (browser) | Unhandled exceptions, React error boundaries, failed fetches | `NEXT_PUBLIC_SENTRY_DSN` (or equivalent) |
 | Server (API routes, middleware) | Uncaught throws, Supabase client errors, auth failures | `SENTRY_DSN` (server-only, never exposed to client bundle) |
 
+Production performance tracing defaults to a 5% sample. Override it with
+`NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` (browser navigations) and
+`SENTRY_TRACES_SAMPLE_RATE` (server/edge). Both accept `0`–`1`. Transaction
+names, URLs, and URL-like span fields are scrubbed of UUIDs, email addresses,
+query strings, and fragments before transmission.
+
 ### Setup checklist
 
 - [x] Add SDK dependency (e.g. `@sentry/nextjs`).
@@ -131,7 +137,7 @@ These are **Track B2 Enhanced** or **post-pilot** scope.
 
 | Item | Status |
 |------|--------|
-| Error tracking SDK integrated | **DONE (code)** — `@sentry/nextjs`, root config files (`sentry.server.config.ts`, `sentry.edge.config.ts`, `instrumentation-client.ts`), CSP allowlist, PHI stripping (`beforeSend`, `sendDefaultPii: false`); real DSN/env verification still pending |
+| Error tracking SDK integrated | **DONE (code)** — `@sentry/nextjs`, root config files (`sentry.server.config.ts`, `sentry.edge.config.ts`, `instrumentation-client.ts`), CSP allowlist, PHI stripping (`beforeSend`, `sendDefaultPii: false`), and privacy-scrubbed 5% production performance sampling; real DSN/env verification still pending |
 | Edge Function structured log shape | **DONE** — shared `supabase/functions/_shared/structured-log.ts` (`slog`, `withTiming`); adopted in core functions including `generate-monthly-invoices`, `exec-kpi-snapshot`, `export-audit-log`, `dispatch-push`, `report-scheduler`, Track C functions (`ar-aging-check`, `generate-emar-schedule`, `emar-missed-dose-check`, `exec-alert-evaluator`) |
 | Cron monthly review checklist | **DONE** — defined in §3; ready to use (manual) |
 | Application health scripts | **DONE** — `web-health`, `auth-smoke`, `auth-check`, `ops-status`, `pilot-readiness` (+ optional `auth-smoke:real` via `PILOT_READINESS_AUTH_SMOKE_REAL`) |

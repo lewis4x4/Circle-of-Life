@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { loadClientRoleContext } from "@/lib/auth/client-role-context";
 import type { Database } from "@/types/database";
 
 export type FinanceRoleContext = {
@@ -14,27 +15,14 @@ export type FinanceRoleContext = {
 export async function loadFinanceRoleContext(
   supabase: SupabaseClient<Database>,
 ): Promise<{ ok: true; ctx: FinanceRoleContext } | { ok: false; error: string }> {
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
-  if (userErr) return { ok: false, error: userErr.message };
-  if (!user) return { ok: false, error: "Sign in required." };
-
-  const { data: profile, error: pErr } = await supabase
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (pErr) return { ok: false, error: pErr.message };
-  if (!profile?.organization_id) return { ok: false, error: "Organization missing on profile." };
+  const roleContext = await loadClientRoleContext(supabase);
+  if (!roleContext.ok) return roleContext;
 
   return {
     ok: true,
     ctx: {
-      organizationId: profile.organization_id,
-      appRole: profile.app_role,
+      organizationId: roleContext.ctx.organizationId,
+      appRole: roleContext.ctx.appRole,
     },
   };
 }

@@ -9,11 +9,6 @@ export const V2_USERS_NO_ROLE_COPY = "No role posted";
 export const V2_USERS_NO_TITLE_COPY = "No title posted";
 export const V2_USERS_NO_LAST_LOGIN_COPY = "No last login posted";
 
-function isBlankValue(value: string | null | undefined): boolean {
-  if (value == null) return true;
-  return value.trim().length === 0;
-}
-
 /** Name column when unset or blank. Posted names return trimmed text as-is. */
 export function formatV2UsersNameDisplay(name: string | null | undefined): string {
   const trimmed = name?.trim() ?? "";

@@ -151,6 +151,11 @@ async function main() {
       runFile("family_portal_messages_one_way", familyOneWayPath);
     }
 
+    const teamSpaceRlsPath = path.join(root, "supabase", "tests", "team_space_rls_no_recursion.sql");
+    if (fs.existsSync(teamSpaceRlsPath)) {
+      runFile("team_space_rls_no_recursion", teamSpaceRlsPath);
+    }
+
     console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s))`);
   } finally {
     cleanup();
