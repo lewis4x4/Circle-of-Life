@@ -15,6 +15,11 @@ import type {
   MealPeriod,
   ServiceStatus,
 } from "@/components/dietary/types";
+import {
+  formatDietaryTodayCompactName,
+  formatDietaryTodayResidentName,
+  formatDietaryTodayRoom,
+} from "@/lib/dietary/dietary-today-display-copy";
 
 type QueryRow = Record<string, unknown>;
 type QueryOrder = { col: string; opts?: Record<string, unknown> };
@@ -227,10 +232,15 @@ export function useDietaryToday(): DietaryDeckState {
             venue,
             meal_service_id: t.meal_service_id as string,
             resident_id: t.resident_id as string,
-            resident_name: res
-              ? `${(res.last_name as string)}, ${(res.first_name as string)}`
-              : "Unknown",
-            room: (res?.room_number as string | undefined) ?? "-",
+            resident_name: formatDietaryTodayResidentName(
+              res
+                ? {
+                    first_name: res.first_name as string | null | undefined,
+                    last_name: res.last_name as string | null | undefined,
+                  }
+                : null,
+            ),
+            room: formatDietaryTodayRoom(res?.room_number as string | undefined),
             diet_type: dietType as TrayTicket["diet_type"],
             diet_label: dietLabel(dietType),
             iddsi_level: iddsi,
@@ -300,10 +310,15 @@ export function useDietaryToday(): DietaryDeckState {
         return {
           id: f.id as string,
           resident_id: f.resident_id as string,
-          resident_name: res
-            ? `${(res.last_name as string)}, ${((res.first_name as string) ?? "").charAt(0)}.`
-            : "Unknown",
-          room: (res?.room_number as string | undefined) ?? "-",
+          resident_name: formatDietaryTodayCompactName(
+            res
+              ? {
+                  first_name: res.first_name as string | null | undefined,
+                  last_name: res.last_name as string | null | undefined,
+                }
+              : null,
+          ),
+          room: formatDietaryTodayRoom(res?.room_number as string | undefined),
           diet_type: dt ? dietLabel(dt) : "Regular",
           trigger: lossStr,
           add: items || "Supplement",
@@ -342,8 +357,15 @@ export function useDietaryToday(): DietaryDeckState {
         const atStr = isToday ? fmtTime(r.refused_at as string) : `yesterday ${fmtTime(r.refused_at as string)}`;
         return {
           resident_id: r.resident_id as string,
-          name: res ? `${(res.last_name as string)}, ${((res.first_name as string) ?? "").charAt(0)}.` : "Unknown",
-          room: (res?.room_number as string | undefined) ?? "-",
+          name: formatDietaryTodayCompactName(
+            res
+              ? {
+                  first_name: res.first_name as string | null | undefined,
+                  last_name: res.last_name as string | null | undefined,
+                }
+              : null,
+          ),
+          room: formatDietaryTodayRoom(res?.room_number as string | undefined),
           item: items,
           suggest: "Alternate available",
           at: atStr,
