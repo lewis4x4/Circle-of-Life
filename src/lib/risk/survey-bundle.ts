@@ -3,6 +3,7 @@ import {
   formatSurveyBundlePrintEntityName,
   formatSurveyBundlePrintLicenseNumber,
   formatSurveyBundlePrintLicenseType,
+  formatSurveyBundlePrintPocSubmissionDueDate,
 } from "./survey-bundle-print-display-copy";
 
 export type SurveyBundleFacility = {
@@ -259,7 +260,7 @@ export function surveyBundleToMarkdown(packet: SurveyBundlePacket) {
   } else {
     for (const deficiency of packet.deficiencies) {
       lines.push(
-        `- ${deficiency.tagNumber} — ${deficiency.tagDescription} | severity=${deficiency.severity} | status=${deficiency.status} | POC=${deficiency.pocStatus ?? "missing"} | due=${deficiency.pocSubmissionDueDate ?? "n/a"}`,
+        `- ${deficiency.tagNumber} — ${deficiency.tagDescription} | severity=${deficiency.severity} | status=${deficiency.status} | POC=${deficiency.pocStatus ?? "missing"} | due=${formatSurveyBundlePrintPocSubmissionDueDate(deficiency.pocSubmissionDueDate)}`,
       );
     }
   }

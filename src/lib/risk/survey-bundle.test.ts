@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY,
+  SURVEY_BUNDLE_PRINT_NO_DATE_COPY,
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY,
@@ -147,5 +148,63 @@ describe("surveyBundleToMarkdown license line", () => {
   it("falls back to licenseType when alfLicenseType is missing", () => {
     const markdown = surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", "limited", null));
     expect(markdown).toContain("License: ALF-001 (limited)");
+  });
+});
+
+function deficiencyPacket(pocSubmissionDueDate: string | null) {
+  return buildSurveyBundlePacket({
+    facility: {
+      id: "facility-001",
+      name: "Facility Alpha",
+      entityId: null,
+      entityName: null,
+      administratorName: null,
+      licenseNumber: null,
+      licenseType: null,
+      alfLicenseType: null,
+      totalLicensedBeds: 0,
+    },
+    riskSnapshot: null,
+    deficiencies: [
+      {
+        id: "def-001",
+        tagNumber: "A-001",
+        tagDescription: "Sample deficiency",
+        severity: "level_1",
+        status: "open",
+        surveyDate: "2026-01-15",
+        followUpSurveyDate: null,
+        verifiedAt: null,
+        pocStatus: null,
+        pocResponsibleParty: null,
+        pocSubmissionDueDate,
+        pocCompletionTargetDate: null,
+      },
+    ],
+    documents: [],
+    incidents: [],
+    policies: [],
+    renewalPackets: [],
+    auditExports: [],
+  });
+}
+
+describe("surveyBundleToMarkdown deficiency due line", () => {
+  it("names a missing POC submission due date with the print gap copy", () => {
+    const markdown = surveyBundleToMarkdown(deficiencyPacket(null));
+    expect(markdown).toContain(`due=${SURVEY_BUNDLE_PRINT_NO_DATE_COPY}`);
+    expect(markdown).not.toContain("due=n/a");
+  });
+
+  it("names a blank or em-dash POC submission due date with the print gap copy", () => {
+    expect(surveyBundleToMarkdown(deficiencyPacket(""))).toContain(`due=${SURVEY_BUNDLE_PRINT_NO_DATE_COPY}`);
+    expect(surveyBundleToMarkdown(deficiencyPacket("   "))).toContain(`due=${SURVEY_BUNDLE_PRINT_NO_DATE_COPY}`);
+    expect(surveyBundleToMarkdown(deficiencyPacket(EM_DASH))).toContain(`due=${SURVEY_BUNDLE_PRINT_NO_DATE_COPY}`);
+  });
+
+  it("keeps a posted POC submission due date", () => {
+    const markdown = surveyBundleToMarkdown(deficiencyPacket("2026-01-15"));
+    expect(markdown).toContain("due=2026-01-15");
+    expect(markdown).not.toContain(`due=${SURVEY_BUNDLE_PRINT_NO_DATE_COPY}`);
   });
 });
