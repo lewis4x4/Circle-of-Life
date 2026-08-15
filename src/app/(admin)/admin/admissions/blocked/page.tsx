@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatAdmissionsHubRelativeDate } from "@/lib/admissions/admissions-hub-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -48,21 +49,6 @@ function admissionBlockers(row: CaseRow): string[] {
   if (!row.bed_id) blockers.push("bed assignment");
   if (!row.target_move_in_date) blockers.push("move-in date");
   return blockers;
-}
-
-function formatRelative(date: string | null): string {
-  if (!date) return "—";
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function AdminBlockedAdmissionsPage() {
@@ -289,7 +275,7 @@ export default function AdminBlockedAdmissionsPage() {
                     ))}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Updated {formatRelative(row.updated_at)}
+                    Updated {formatAdmissionsHubRelativeDate(row.updated_at)}
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <button

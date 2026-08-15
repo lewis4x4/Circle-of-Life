@@ -14,6 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  formatAdmissionsHubReferralSource,
+  formatAdmissionsHubRelativeDate,
+  formatAdmissionsHubTargetMoveInDateValue,
+} from "@/lib/admissions/admissions-hub-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -59,21 +64,6 @@ type PhaseFilter = "all" | HandoffPhase;
 
 function formatStatus(value: string): string {
   return value.replace(/_/g, " ");
-}
-
-function formatRelative(date: string | null): string {
-  if (!date) return "—";
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function AdminReferralsInAdmissionsPage() {
@@ -340,7 +330,7 @@ export default function AdminReferralsInAdmissionsPage() {
                       ) : null}
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      Source: {lead.referral_sources?.name ?? "—"} · Lead status: {formatStatus(lead.status)}
+                      Source: {formatAdmissionsHubReferralSource(lead.referral_sources?.name)} · Lead status: {formatStatus(lead.status)}
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -358,11 +348,13 @@ export default function AdminReferralsInAdmissionsPage() {
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">Lead updated</div>
-                    <div className="mt-1 text-foreground">{formatRelative(lead.updated_at)}</div>
+                    <div className="mt-1 text-foreground">{formatAdmissionsHubRelativeDate(lead.updated_at)}</div>
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">Case target move-in</div>
-                    <div className="mt-1 text-foreground">{admissionCase.target_move_in_date ?? "—"}</div>
+                    <div className="mt-1 text-foreground">
+                      {formatAdmissionsHubTargetMoveInDateValue(admissionCase.target_move_in_date)}
+                    </div>
                   </div>
                 </div>
                 {row.readinessMissing.length > 0 ? (
