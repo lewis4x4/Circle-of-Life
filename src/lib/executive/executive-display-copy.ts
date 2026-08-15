@@ -15,6 +15,8 @@ export const EXECUTIVE_NO_LAST_SAVED_COPY = "No save recorded";
 export const EXECUTIVE_NO_PACKET_DATE_POSTED_COPY = "No packet date posted";
 export const EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY = "No deficiency count posted";
 export const EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY = "No incident count posted";
+export const EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY = "No invoice count posted";
+export const EXECUTIVE_NO_CERT_COUNT_POSTED_COPY = "No cert count posted";
 
 export function isFiniteExecutiveMetric(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -92,5 +94,17 @@ export function formatExecutiveSurveyDeficiencyCount(value: number | null | unde
 /** Open incident count — real zero stays 0; missing names the gap. */
 export function formatExecutiveOpenIncidentCount(value: number | null | undefined): string {
   if (value == null) return EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY;
+  return String(value);
+}
+
+/** Open invoice count — real zero stays 0; missing names the gap. */
+export function formatExecutiveOpenInvoiceCount(value: number | null | undefined): string {
+  if (value == null) return EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY;
+  return String(value);
+}
+
+/** Certifications expiring count — real zero stays 0; missing names the gap. */
+export function formatExecutiveCertsExpiringCount(value: number | null | undefined): string {
+  if (value == null) return EXECUTIVE_NO_CERT_COUNT_POSTED_COPY;
   return String(value);
 }

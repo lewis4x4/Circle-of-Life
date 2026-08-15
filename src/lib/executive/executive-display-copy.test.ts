@@ -6,12 +6,15 @@ import {
   EXECUTIVE_NO_COMPLETENESS_POSTED_COPY,
   EXECUTIVE_NO_CONFIDENCE_POSTED_COPY,
   EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY,
+  EXECUTIVE_NO_CERT_COUNT_POSTED_COPY,
   EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY,
+  EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY,
   EXECUTIVE_NO_LEAGUE_SCORE_POSTED_COPY,
   EXECUTIVE_NO_OCCUPANCY_POSTED_COPY,
   EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY,
   EXECUTIVE_NO_RISK_SCORE_POSTED_COPY,
   formatExecutiveArOutstandingCents,
+  formatExecutiveCertsExpiringCount,
   formatExecutiveCompletenessPct,
   formatExecutiveConfidenceBand,
   formatExecutiveLeagueScore,
@@ -19,6 +22,7 @@ import {
   formatExecutiveOccupancyPct,
   formatExecutiveOccupancyPctWithSuffix,
   formatExecutiveOpenIncidentCount,
+  formatExecutiveOpenInvoiceCount,
   formatExecutivePacketStatus,
   formatExecutiveRevenueMtdCents,
   formatExecutiveRiskScore,
@@ -153,5 +157,27 @@ describe("formatExecutiveOpenIncidentCount", () => {
 
   it("keeps real zero as 0", () => {
     expect(formatExecutiveOpenIncidentCount(0)).toBe("0");
+  });
+});
+
+describe("formatExecutiveOpenInvoiceCount", () => {
+  it("names the gap when invoice count is missing", () => {
+    expect(formatExecutiveOpenInvoiceCount(null)).toBe(EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY);
+    expect(formatExecutiveOpenInvoiceCount(undefined)).toBe(EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveOpenInvoiceCount(0)).toBe("0");
+  });
+});
+
+describe("formatExecutiveCertsExpiringCount", () => {
+  it("names the gap when cert count is missing", () => {
+    expect(formatExecutiveCertsExpiringCount(null)).toBe(EXECUTIVE_NO_CERT_COUNT_POSTED_COPY);
+    expect(formatExecutiveCertsExpiringCount(undefined)).toBe(EXECUTIVE_NO_CERT_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveCertsExpiringCount(0)).toBe("0");
   });
 });
