@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { asUntypedAdmin, type UntypedQueryBuilder } from "@/lib/admin/facilities/untyped-admin";
 import { logError } from "@/lib/observability/logger";
 import type { Database } from "@/types/database";
+import { formatFacilityDocumentUploaderDisplay } from "@/lib/facilities/facility-documents-display-copy";
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
 async function enrichDocumentsWithUploaderLabels(
@@ -18,32 +19,29 @@ async function enrichDocumentsWithUploaderLabels(
   docs: Record<string, unknown>[],
 ): Promise<Array<Record<string, unknown>>> {
   const ids = [...new Set(docs.map((d) => d.uploaded_by as string).filter(Boolean))];
-  if (ids.length === 0) {
-    return docs.map((row) => ({ ...row, uploaded_by_display: undefined }));
-  }
+  let nameByUserId = new Map<string, string>();
 
-  const { data: profiles, error } = await admin.from("user_profiles").select("id, email, full_name").in("id", ids);
-  if (error || !profiles) {
-    return docs.map((row) => ({
-      ...row,
-      uploaded_by_display: "Unknown",
-    }));
+  if (ids.length > 0) {
+    const { data: profiles, error } = await admin
+      .from("user_profiles")
+      .select("id, email, full_name")
+      .in("id", ids);
+    if (!error && profiles) {
+      nameByUserId = new Map(
+        profiles.map((p: { id: string; email: string; full_name: string }) => [
+          p.id,
+          formatUploadedByProfile({
+            email: p.email,
+            full_name: p.full_name,
+          }),
+        ]),
+      );
+    }
   }
-
-  const map = new Map(
-    profiles.map((p: { id: string; email: string; full_name: string }) => [
-      p.id,
-      formatUploadedByProfile({
-        email: p.email,
-        full_name: p.full_name,
-      }),
-    ]),
-  );
 
   return docs.map((row) => ({
     ...row,
-    uploaded_by_display:
-      typeof row.uploaded_by === "string" ? map.get(row.uploaded_by) ?? "Unknown" : "Unknown",
+    uploaded_by_display: formatFacilityDocumentUploaderDisplay(row.uploaded_by, nameByUserId),
   }));
 }
 
