@@ -8,7 +8,10 @@ import { ArrowRight } from "lucide-react";
 import { VendorHubNav } from "./vendor-hub-nav";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  vendorsHubKpiTileValue,
+  vendorsHubMtdSpendTileValue,
+} from "@/lib/vendors/vendors-hub-display-copy";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
@@ -78,6 +81,10 @@ export default function AdminVendorsHubPage() {
   const vendorCount = data?.vendorCount ?? null;
   const openAlerts = data?.openAlerts ?? null;
   const mtdSpend = data?.mtdSpend ?? null;
+  const kpiCtx = {
+    organizationId: organizationId ?? null,
+    loadFailed: !!error,
+  };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -109,7 +116,9 @@ export default function AdminVendorsHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Active Vendors
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter pb-1">{loading ? "…" : vendorCount ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter pb-1">
+                  {loading ? "…" : vendorsHubKpiTileValue("vendor_count", vendorCount, kpiCtx)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -120,7 +129,9 @@ export default function AdminVendorsHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                    Open Contract Alerts
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{loading ? "…" : openAlerts ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">
+                  {loading ? "…" : vendorsHubKpiTileValue("open_alerts", openAlerts, kpiCtx)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -131,7 +142,9 @@ export default function AdminVendorsHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    MTD Vendor Spend
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1 tabular-nums">{loading ? "…" : mtdSpend != null ? formatUsdFromCents(mtdSpend) : "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1 tabular-nums">
+                  {loading ? "…" : vendorsHubMtdSpendTileValue(mtdSpend, kpiCtx)}
+                </p>
               </div>
             </V2Card>
           </div>
