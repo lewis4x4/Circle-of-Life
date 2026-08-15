@@ -6,10 +6,12 @@ import {
 
 import {
   SURVEY_BUNDLE_NO_ENTITY_COPY,
+  SURVEY_BUNDLE_NO_LICENSE_COPY,
   SURVEY_BUNDLE_NO_POC_DUE_DATE_COPY,
   SURVEY_BUNDLE_NO_RESPONSIBLE_PARTY_COPY,
   formatSurveyBundleAdministratorName,
   formatSurveyBundleEntityName,
+  formatSurveyBundleLicenseValue,
   formatSurveyBundlePocResponsibleParty,
   formatSurveyBundlePocSubmissionDueDate,
 } from "./survey-bundle-display-copy";
@@ -42,6 +44,22 @@ describe("formatSurveyBundleAdministratorName", () => {
 
   it("returns posted administrator names unchanged", () => {
     expect(formatSurveyBundleAdministratorName("Supervisor A")).toBe("Supervisor A");
+  });
+});
+
+describe("formatSurveyBundleLicenseValue", () => {
+  it("names a missing license instead of an em dash", () => {
+    expect(formatSurveyBundleLicenseValue(null, null, null)).toBe(SURVEY_BUNDLE_NO_LICENSE_COPY);
+    expect(formatSurveyBundleLicenseValue(undefined, undefined, undefined)).toBe(SURVEY_BUNDLE_NO_LICENSE_COPY);
+    expect(formatSurveyBundleLicenseValue("", "", "")).toBe(SURVEY_BUNDLE_NO_LICENSE_COPY);
+    expect(formatSurveyBundleLicenseValue("   ", null, null)).toBe(SURVEY_BUNDLE_NO_LICENSE_COPY);
+    expect(formatSurveyBundleLicenseValue(null, null, null)).not.toBe(EM_DASH);
+  });
+
+  it("returns posted license numbers with optional type label", () => {
+    expect(formatSurveyBundleLicenseValue("ALF-123", "Standard", null)).toBe("ALF-123 · Standard");
+    expect(formatSurveyBundleLicenseValue("ALF-123", null, "Extended")).toBe("ALF-123 · Extended");
+    expect(formatSurveyBundleLicenseValue("ALF-123", null, null)).toBe("ALF-123");
   });
 });
 

@@ -13,10 +13,12 @@ import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
-import { formatCents } from "@/lib/finance/format-cents";
+import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { formatRiskScore } from "@/lib/risk/risk-display-copy";
 import {
   formatSurveyBundleAdministratorName,
   formatSurveyBundleEntityName,
+  formatSurveyBundleLicenseValue,
   formatSurveyBundlePocResponsibleParty,
   formatSurveyBundlePocSubmissionDueDate,
 } from "@/lib/risk/survey-bundle-display-copy";
@@ -166,7 +168,7 @@ export default function RiskSurveyBundlePageClient({
             <BundleMetricCard
               icon={Stamp}
               label="Risk score"
-              value={packet.riskSnapshot ? `${packet.riskSnapshot.riskScore}/100` : "—"}
+              value={formatRiskScore(packet.riskSnapshot?.riskScore)}
               detail={packet.riskSnapshot ? packet.riskSnapshot.riskLevel : "Nightly scorer not run"}
               tone={
                 packet.riskSnapshot?.riskLevel === "critical"
@@ -201,11 +203,11 @@ export default function RiskSurveyBundlePageClient({
               />
               <PacketValue
                 label="License"
-                value={
-                  packet.facility.licenseNumber
-                    ? `${packet.facility.licenseNumber} · ${packet.facility.alfLicenseType ?? packet.facility.licenseType ?? ""}`
-                    : "—"
-                }
+                value={formatSurveyBundleLicenseValue(
+                  packet.facility.licenseNumber,
+                  packet.facility.alfLicenseType,
+                  packet.facility.licenseType,
+                )}
               />
             </CardContent>
           </Card>
@@ -382,7 +384,7 @@ export default function RiskSurveyBundlePageClient({
                           <td className="py-3 pr-4">{policy.carrierName}</td>
                           <td className="py-3 pr-4">{policy.status}</td>
                           <td className="py-3 pr-4">{policy.expirationDate}</td>
-                          <td className="py-3">{policy.premiumCents != null ? formatCents(policy.premiumCents) : "—"}</td>
+                          <td className="py-3">{formatUsdFromCents(policy.premiumCents)}</td>
                         </tr>
                       ))}
                     </tbody>
