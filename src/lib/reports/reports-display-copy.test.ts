@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   REPORTS_NO_COMPLETE_TIME_COPY,
   REPORTS_NO_NEXT_RUN_COPY,
+  REPORTS_NO_SCHEDULE_COPY,
+  formatReportPackCadenceSummary,
   formatReportRunCompletedAt,
   formatReportScheduleNextRunAt,
 } from "./reports-display-copy";
@@ -36,5 +38,29 @@ describe("formatReportScheduleNextRunAt", () => {
   it("formats posted next-run times unchanged", () => {
     const iso = "2026-04-08T15:30:00.000Z";
     expect(formatReportScheduleNextRunAt(iso)).toBe(new Date(iso).toLocaleString());
+  });
+});
+
+describe("formatReportPackCadenceSummary", () => {
+  it("names missing schedule cadence instead of an em dash", () => {
+    expect(formatReportPackCadenceSummary(undefined, undefined)).toBe(REPORTS_NO_SCHEDULE_COPY);
+    expect(formatReportPackCadenceSummary({ pack_kind: "operational" }, undefined)).toBe(
+      REPORTS_NO_SCHEDULE_COPY,
+    );
+    expect(formatReportPackCadenceSummary(undefined, undefined)).not.toBe(EM_DASH);
+  });
+
+  it("returns posted next-run cadence unchanged", () => {
+    expect(
+      formatReportPackCadenceSummary(
+        { pack_kind: "operational" },
+        {
+          recurrence_rule: "weekly",
+          timezone: "America/New_York",
+          status: "active",
+          next_run_at: "2026-04-08T15:30:00.000Z",
+        },
+      ),
+    ).toBe("Weekly · America/New_York");
   });
 });
