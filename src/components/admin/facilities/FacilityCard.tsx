@@ -8,13 +8,16 @@ import type { StatusPillTone } from "@/components/ui/status-pill";
 import { StatusPill } from "@/components/ui/status-pill";
 import { OccupancyGauge } from "./shared/OccupancyGauge";
 import { cn } from "@/lib/utils";
+import {
+  facilityOccupancyDenominator,
+  facilityOccupiedCount,
+  portfolioFacilityCardFieldEmptyCopy,
+} from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import { portfolioLaborCostTextClass } from "@/lib/admin/facilities/portfolio-metrics";
 
 interface FacilityCardProps {
   facility: FacilityRow;
 }
-
-const EM_DASH = "—";
 
 function facilityOperationalStatusTone(
   status: string | undefined | null,
@@ -46,30 +49,26 @@ function formatIncidentSummary(facility: FacilityRow): string {
   return String(total);
 }
 
-function formatSurveyLine(facility: FacilityRow): string {
-  if (facility.survey_readiness_pct != null && Number.isFinite(facility.survey_readiness_pct)) {
-    return `${Math.round(facility.survey_readiness_pct)}% ready`;
-  }
-  return EM_DASH;
-}
-
 function LaborMtdCell({ facility }: { facility: FacilityRow }) {
-  const v = facility.labor_cost_mtd_pct;
-  if (v == null || !Number.isFinite(v)) {
-    return <span className="font-semibold tabular-nums text-muted-foreground">{EM_DASH}</span>;
+  const emptyCopy = portfolioFacilityCardFieldEmptyCopy("labor_mtd", facility);
+  if (emptyCopy) {
+    return <span className="text-[12px] font-medium leading-snug text-muted-foreground">{emptyCopy}</span>;
   }
+  const v = facility.labor_cost_mtd_pct!;
   return (
     <span className={cn("font-semibold tabular-nums", portfolioLaborCostTextClass(v))}>{v.toFixed(1)}%</span>
   );
 }
 
 export function FacilityCard({ facility }: FacilityCardProps) {
-  const occupiedBeds = facility.occupancy_count ?? facility.current_occupancy ?? 0;
-  const bedRowsTotal = facility.total_beds ?? 0;
-  const licensedCapacity = facility.total_licensed_beds ?? facility.licensed_beds ?? 0;
-  const totalForGauge = bedRowsTotal > 0 ? bedRowsTotal : licensedCapacity;
+  const occupancyEmptyCopy = portfolioFacilityCardFieldEmptyCopy("occupancy", facility);
+  const surveyEmptyCopy = portfolioFacilityCardFieldEmptyCopy("survey_readiness", facility);
+  const locationEmptyCopy = portfolioFacilityCardFieldEmptyCopy("location", facility);
 
-  const administratorDisplay = facility.administrator_name?.trim() || '';
+  const occupiedBeds = facilityOccupiedCount(facility);
+  const totalForGauge = facilityOccupancyDenominator(facility);
+
+  const administratorDisplay = facility.administrator_name?.trim() || "";
   const hasAdministrator = administratorDisplay.length > 0;
   const city = facility.city ?? "";
   const county = facility.county ?? "";
@@ -98,28 +97,32 @@ export function FacilityCard({ facility }: FacilityCardProps) {
               </StatusPill>
             ) : null}
           </div>
-          {location ? (
-            <p className="mt-1.5 truncate text-sm text-muted-foreground">{location}</p>
+          {locationEmptyCopy ? (
+            <p className="mt-1.5 text-sm text-muted-foreground">{locationEmptyCopy}</p>
           ) : (
-            <p className="mt-1.5 text-sm text-muted-foreground">{EM_DASH}</p>
+            <p className="mt-1.5 truncate text-sm text-muted-foreground">{location}</p>
           )}
         </div>
 
         <Link
           href={`/admin/facilities/${facility.id}`}
           className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground"
-          aria-label={`Open ${facility.name}`}
+          aria-label={`Open ${facility.name} facility overview`}
         >
           <ArrowUpRight className="size-4" aria-hidden />
         </Link>
       </div>
 
-      <OccupancyGauge
-        occupied={occupiedBeds}
-        total={totalForGauge || 0}
-        size="sm"
-        portfolioSemantics
-      />
+      {occupancyEmptyCopy ? (
+        <p className="text-[13px] font-medium leading-snug text-muted-foreground">{occupancyEmptyCopy}</p>
+      ) : (
+        <OccupancyGauge
+          occupied={occupiedBeds}
+          total={totalForGauge}
+          size="sm"
+          portfolioSemantics
+        />
+      )}
 
       <div className="my-4 h-px w-full shrink-0 bg-border" />
 
@@ -132,7 +135,11 @@ export function FacilityCard({ facility }: FacilityCardProps) {
         <div className="grid grid-cols-[1fr_auto] items-start gap-x-3">
           <dt className="text-muted-foreground">Survey readiness</dt>
           <dd className="max-w-[60%] text-right font-semibold text-foreground">
-            <span className="line-clamp-2">{formatSurveyLine(facility)}</span>
+            {surveyEmptyCopy ? (
+              <span className="text-[12px] font-medium leading-snug text-muted-foreground">{surveyEmptyCopy}</span>
+            ) : (
+              <span className="line-clamp-2">{`${Math.round(facility.survey_readiness_pct!)}% ready`}</span>
+            )}
           </dd>
         </div>
 
@@ -167,6 +174,13 @@ export function FacilityCard({ facility }: FacilityCardProps) {
           </dd>
         </div>
       </dl>
+
+      <Link
+        href={`/admin/facilities/${facility.id}`}
+        className="mt-4 text-[13px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        Open facility overview
+      </Link>
     </article>
   );
 }
