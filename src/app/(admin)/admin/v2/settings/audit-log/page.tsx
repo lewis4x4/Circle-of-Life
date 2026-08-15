@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation";
 
 import { SettingsShell } from "@/components/v2/settings/SettingsShell";
+import {
+  auditLogActorIdIsPosted,
+  auditLogFacilityIdIsPosted,
+  formatAuditLogActorIdDisplay,
+  formatAuditLogFacilityIdDisplay,
+  formatAuditLogNoteDisplay,
+} from "@/lib/admin/settings/audit-log-display-copy";
 import { uiV2 } from "@/lib/flags";
 import { loadV2AuditLog } from "@/lib/v2-audit-log";
 
@@ -55,16 +62,24 @@ export default async function SettingsAuditLogPage() {
                         <code>{row.alertId.slice(0, 8)}…</code>
                       </td>
                       <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        <code>{row.facilityId?.slice(0, 8) ?? "—"}…</code>
+                        {auditLogFacilityIdIsPosted(row.facilityId) ? (
+                          <code>{formatAuditLogFacilityIdDisplay(row.facilityId)}</code>
+                        ) : (
+                          formatAuditLogFacilityIdDisplay(row.facilityId)
+                        )}
                       </td>
                       <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        <code>{row.actorId?.slice(0, 8) ?? "—"}…</code>
+                        {auditLogActorIdIsPosted(row.actorId) ? (
+                          <code>{formatAuditLogActorIdDisplay(row.actorId)}</code>
+                        ) : (
+                          formatAuditLogActorIdDisplay(row.actorId)
+                        )}
                         {row.actorRole && (
                           <span className="ml-2 text-text-muted">{row.actorRole}</span>
                         )}
                       </td>
                       <td className="px-3 py-2 align-top text-xs text-text-secondary">
-                        {row.note ?? "—"}
+                        {formatAuditLogNoteDisplay(row.note)}
                       </td>
                     </tr>
                   ))}
