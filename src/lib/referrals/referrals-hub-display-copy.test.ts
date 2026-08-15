@@ -103,10 +103,21 @@ describe("formatReferralsHubReferralSource", () => {
     expect(formatReferralsHubReferralSource(null)).not.toBe(EM_DASH);
   });
 
-  it("returns posted source names unchanged", () => {
+  it("maps legacy placeholder labels to the named gap copy", () => {
+    expect(formatReferralsHubReferralSource(EM_DASH)).toBe("No source posted");
+    expect(formatReferralsHubReferralSource("Unknown")).toBe("No source posted");
+    expect(formatReferralsHubReferralSource("Unknown source")).toBe("No source posted");
+    expect(formatReferralsHubReferralSource("  Unknown source  ")).toBe("No source posted");
+    expect(formatReferralsHubReferralSource("Unknown")).not.toBe("Unknown");
+    expect(formatReferralsHubReferralSource("Unknown source")).not.toBe("Unknown source");
+    expect(formatReferralsHubReferralSource(EM_DASH)).not.toBe(EM_DASH);
+  });
+
+  it("returns posted source names trimmed as posted", () => {
     expect(formatReferralsHubReferralSource("Hospital discharge planner")).toBe(
       "Hospital discharge planner",
     );
+    expect(formatReferralsHubReferralSource("  Community partner  ")).toBe("Community partner");
   });
 });
 
