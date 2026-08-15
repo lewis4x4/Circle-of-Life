@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatStaffRosterNextShift } from "@/lib/staff/staff-roster-display-copy";
 import type { Database } from "@/types/database";
 
 export type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
@@ -127,8 +128,7 @@ export async function fetchStaffFromSupabase(
     const certState = aggregateCertStatus(certsByStaff.get(s.id) ?? []);
     const uiRole = mapDbStaffRoleToUi(s.staff_role);
     const uiStatus = mapEmploymentToUiStatus(s.employment_status);
-    const shift = nextShiftByStaff.get(s.id);
-    const nextShift = shift ? formatNextShiftLabel(shift.shift_date, shift.shift_type) : "—";
+    const nextShift = formatStaffRosterNextShift(nextShiftByStaff.get(s.id));
     const overtimeRisk = deriveOvertimeRisk(certState, s.employment_status);
 
     return {
@@ -220,20 +220,4 @@ function deriveOvertimeRisk(cert: CertificationStatus, employment: string): "low
   if (employment === "on_leave") return "medium";
   if (cert === "expiring_soon") return "medium";
   return "low";
-}
-
-function formatNextShiftLabel(shiftDate: string, shiftType: string): string {
-  const parsed = new Date(`${shiftDate}T12:00:00`);
-  const datePart = Number.isNaN(parsed.getTime())
-    ? shiftDate
-    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parsed);
-  const typeLabel =
-    shiftType === "day"
-      ? "Day"
-      : shiftType === "evening"
-        ? "Evening"
-        : shiftType === "night"
-          ? "Night"
-          : "Shift";
-  return `${datePart} · ${typeLabel}`;
 }
