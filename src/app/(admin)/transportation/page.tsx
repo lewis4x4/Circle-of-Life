@@ -19,6 +19,7 @@ import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchTransportationHubSnapshot } from "@/lib/transportation/load-transportation-hub";
+import { formatInspectionLogVehicleDisplayName } from "@/lib/transportation/inspection-log-display-copy";
 import {
   formatTransportationAppointmentTime,
   formatTransportationDriverStaffLabel,
@@ -734,7 +735,7 @@ export default function AdminTransportationHubPage() {
                      <MotionItem key={row.id} className="p-4 rounded-lg border border-slate-200/60 dark:border-white/5 bg-white flex gap-4 items-center shadow-sm">
                        <div className="flex-1 min-w-0">
                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-300 tracking-tight truncate">
-                           {row.fleet_vehicles?.name ?? "Unknown"}
+                           {formatInspectionLogVehicleDisplayName(row.fleet_vehicles)}
                          </p>
                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate capitalize mt-1">
                            Result: {formatEnum(row.result)}
