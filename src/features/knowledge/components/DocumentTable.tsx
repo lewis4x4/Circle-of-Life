@@ -6,6 +6,7 @@ import { FileText, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import type { DocumentRow, DocumentAudience, DocumentStatus } from "../lib/types";
 import { adminUpdateDocument, adminDeleteDocument, createObsidianDraft, reindexDocument } from "../lib/knowledge-api";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
 
 type ReviewFilter = "all" | "ready" | "assigned_to_me" | "unassigned" | "overdue";
 
@@ -338,7 +339,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-slate-500 dark:text-zinc-400">
-                  {doc.word_count?.toLocaleString() ?? "—"}
+                  {formatDocumentWordCount(doc.word_count)}
                 </td>
                 <td className="px-4 py-3">
                   {actionLoading === doc.id ? (
