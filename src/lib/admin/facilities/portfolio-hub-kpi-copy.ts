@@ -67,7 +67,7 @@ const STRIP_EMPTY_COPY: Record<PortfolioStripKpiKey, string> = {
   facility_count: "No facilities in scope",
   licensed_beds: "Licensed beds not on file",
   occupied_beds: "Census not loaded yet",
-  portfolio_occupancy: "No occupancy loaded",
+  portfolio_occupancy: "No occupancy posted",
 };
 
 const CARD_EMPTY_COPY: Record<PortfolioFacilityCardFieldKey, string> = {
@@ -159,6 +159,13 @@ export function portfolioStripOccupiedBedsEmptyCopy(totals: PortfolioStripTotals
 export function portfolioStripPortfolioOccupancyEmptyCopy(totals: PortfolioStripTotals): string | null {
   if (totals.portfolioPctLoaded && totals.portfolioPctRounded != null) return null;
   return STRIP_EMPTY_COPY.portfolio_occupancy;
+}
+
+/** Portfolio occupancy strip value — named gap when census is missing; real 0% stays 0%. */
+export function portfolioStripPortfolioOccupancyDisplay(totals: PortfolioStripTotals): string {
+  const emptyCopy = portfolioStripPortfolioOccupancyEmptyCopy(totals);
+  if (emptyCopy != null) return emptyCopy;
+  return `${totals.portfolioPctRounded}%`;
 }
 
 export function portfolioStripKpiIsLoaded(key: PortfolioStripKpiKey, totals: PortfolioStripTotals): boolean {

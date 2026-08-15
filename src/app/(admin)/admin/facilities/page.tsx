@@ -12,6 +12,7 @@ import {
   portfolioStripFacilityCountEmptyCopy,
   portfolioStripLicensedBedsEmptyCopy,
   portfolioStripOccupiedBedsEmptyCopy,
+  portfolioStripPortfolioOccupancyDisplay,
   portfolioStripPortfolioOccupancyEmptyCopy,
 } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 
@@ -62,10 +63,7 @@ export default function FacilitiesPage() {
                   className="border-0 bg-transparent px-0 py-0 shadow-none ring-0"
                 />
                 <KpiCard
-                  value={
-                    portfolioOccupancyEmptyCopy ??
-                    (totals.portfolioPctRounded != null ? `${totals.portfolioPctRounded}%` : "—")
-                  }
+                  value={portfolioStripPortfolioOccupancyDisplay(totals)}
                   valuePresentation={portfolioOccupancyEmptyCopy != null ? "message" : "metric"}
                   label="Portfolio occupancy"
                   tone={
