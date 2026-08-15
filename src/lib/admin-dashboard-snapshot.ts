@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatAdminDashboardResidentDobDisplay } from "@/lib/admin/admin-dashboard-display-copy";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
@@ -195,14 +196,6 @@ function residencyUiLabel(status: string | null): { label: string; tone: "active
   if (status === "hospital_hold") return { label: "Hospital", tone: "away" };
   if (status === "loa") return { label: "LOA", tone: "away" };
   return { label: "In facility", tone: "active" };
-}
-
-function formatDob(dateStr: string | null | undefined): string {
-  if (!dateStr) return "—";
-  const [y, m, d] = dateStr.split("-").map(Number);
-  if (!y || !m || !d) return "—";
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "2-digit", day: "2-digit", year: "numeric" }).format(dt);
 }
 
 function formatRelativeShort(iso: string | null): string {
@@ -1043,7 +1036,7 @@ async function mapResidentsToCensusRows(
       id: resident.id,
       name: fullName,
       initials,
-      dobDisplay: formatDob(resident.date_of_birth),
+      dobDisplay: formatAdminDashboardResidentDobDisplay(resident.date_of_birth),
       room: roomLabel,
       acuity,
       statusLabel: label,
