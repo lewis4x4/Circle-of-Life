@@ -20,6 +20,10 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import {
+  formatTimeRecordsActualHours,
+  formatTimeRecordsClockOut,
+} from "@/lib/time-records/time-records-display-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -353,7 +357,13 @@ export default function AdminTimeRecordsPage() {
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Recent clock activity with approval state for payroll readiness.</p>
-                 <Link href="/admin/time-records/new" className={cn(buttonVariants({ size: "default" }), "font-medium uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
+                 <Link
+                   href="/admin/time-records/new"
+                   className={cn(
+                     buttonVariants({ size: "default" }),
+                     "font-medium text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap",
+                   )}
+                 >
                    + Log Manual Time
                  </Link>
               </div>
@@ -405,7 +415,7 @@ export default function AdminTimeRecordsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="font-medium text-[10px] uppercase tracking-wider border-warning/40 text-warning hover:bg-warning/10"
+                className="font-medium text-[10px] border-warning/40 text-warning hover:bg-warning/10"
                 disabled={
                   approvingBulk ||
                   exportingCsv ||
@@ -421,7 +431,7 @@ export default function AdminTimeRecordsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="font-medium text-[10px] uppercase tracking-wider"
+                className="font-medium text-[10px]"
                 disabled={exportingCsv || approvingBulk}
                 aria-busy={exportingCsv}
                 onClick={() => void exportTimeRecordsCsv()}
@@ -450,10 +460,10 @@ export default function AdminTimeRecordsPage() {
                       {formatDateTime(row.clockIn)}
                     </span>
                     <span className="w-[130px] shrink-0 font-mono text-[11px] text-foreground tabular-nums truncate">
-                      {row.clockOut ? formatDateTime(row.clockOut) : "—"}
+                      {formatTimeRecordsClockOut(row.clockOut)}
                     </span>
                     <span className="w-[70px] shrink-0 text-right font-mono text-[12px] font-medium text-foreground tabular-nums">
-                      {row.actualHours != null ? Number(row.actualHours).toFixed(2) : "—"}
+                      {formatTimeRecordsActualHours(row.actualHours)}
                     </span>
                     <span className="w-[100px] shrink-0">
                       {row.approved ? (
