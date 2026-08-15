@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { canManageReports, loadReportsRoleContext } from "@/lib/reports/auth";
+import { formatReportScheduleNextRunAt } from "@/lib/reports/reports-display-copy";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -162,7 +163,7 @@ export default function ScheduledReportsPage() {
                  ↓
                </div>
             </div>
-            <Button className="lg:col-span-4 rounded-2xl font-mono uppercase tracking-wider text-[11px] font-bold h-12 w-full hover:-translate-y-0.5 transition-transform shadow-lg" onClick={() => void onCreateSchedule()}>
+            <Button className="lg:col-span-4 rounded-2xl font-mono text-[11px] font-bold h-12 w-full hover:-translate-y-0.5 transition-transform shadow-lg" onClick={() => void onCreateSchedule()}>
               Save Schedule
             </Button>
           </div>
@@ -219,12 +220,12 @@ export default function ScheduledReportsPage() {
                            </div>
                            <div className="flex flex-col gap-2 align-right text-left md:text-right">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Scheduled Dispatch</span>
-                              <span className="font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider">{schedule.next_run_at ? new Date(schedule.next_run_at).toLocaleString() : "—"}</span>
+                              <span className="font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200">{formatReportScheduleNextRunAt(schedule.next_run_at)}</span>
                            </div>
                         </div>
 
                         <div className="flex shrink-0 xl:ml-4 gap-3 mt-4 xl:mt-0">
-                           <Button variant="outline" size="sm" onClick={() => void onToggleStatus(schedule)} className={cn("font-mono uppercase tracking-wider text-[10px] h-10 rounded-xl font-bold bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 w-full sm:w-auto hover:bg-slate-50 dark:hover:bg-white/10 shadow-sm transition-colors px-6 w-full lg:w-auto", schedule.status === "paused" ? "bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900/50" : "")}>
+                           <Button variant="outline" size="sm" onClick={() => void onToggleStatus(schedule)} className={cn("font-mono text-[10px] h-10 rounded-xl font-bold bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 w-full sm:w-auto hover:bg-slate-50 dark:hover:bg-white/10 shadow-sm transition-colors px-6 w-full lg:w-auto", schedule.status === "paused" ? "bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900/50" : "")}>
                              {schedule.status === "paused" ? "Resume" : "Pause"}
                            </Button>
                         </div>
