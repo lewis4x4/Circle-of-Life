@@ -18,6 +18,8 @@ import {
   formatLicensingTabPlanOfCorrectionStatus,
   formatLicensingTabSurveyDateLabel,
   formatLicensingTabYmdDate,
+  formatComplianceStripDaysToRenewal,
+  formatComplianceStripRenewalLead,
   licensingTabCitationCountHasLink,
 } from "./licensing-tab-display-copy";
 
@@ -185,5 +187,35 @@ describe("formatLicensingTabNextDueDate", () => {
 
   it("returns a posted next-due YMD", () => {
     expect(formatLicensingTabNextDueDate(FIXTURE_DATE)).toBe(FIXTURE_DATE);
+  });
+});
+
+describe("formatComplianceStripDaysToRenewal", () => {
+  it("names a missing renewal countdown instead of an em dash", () => {
+    expect(formatComplianceStripDaysToRenewal(null)).toBe(LICENSING_TAB_NO_EXPIRATION_DATE_COPY);
+    expect(formatComplianceStripDaysToRenewal(null)).not.toBe(EM_DASH);
+  });
+
+  it("keeps real zero numeric instead of treating it as missing", () => {
+    expect(formatComplianceStripDaysToRenewal(0)).toBe("0");
+    expect(formatComplianceStripDaysToRenewal(0)).not.toBe(LICENSING_TAB_NO_EXPIRATION_DATE_COPY);
+  });
+
+  it("returns a positive day count as a string", () => {
+    expect(formatComplianceStripDaysToRenewal(42)).toBe("42");
+  });
+});
+
+describe("formatComplianceStripRenewalLead", () => {
+  it("names a missing renewal lead instead of an em dash", () => {
+    expect(formatComplianceStripRenewalLead(null)).toBe(LICENSING_TAB_NO_EXPIRATION_CAPTION_COPY);
+    expect(formatComplianceStripRenewalLead(null)).not.toBe(EM_DASH);
+  });
+
+  it("returns operator-facing lead copy for real countdown values", () => {
+    expect(formatComplianceStripRenewalLead(-3)).toBe("Past due");
+    expect(formatComplianceStripRenewalLead(0)).toBe("Today");
+    expect(formatComplianceStripRenewalLead(1)).toBe("In 1 day");
+    expect(formatComplianceStripRenewalLead(10)).toBe("In 10 days");
   });
 });

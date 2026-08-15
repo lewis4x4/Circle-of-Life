@@ -11,6 +11,12 @@ import {
   compareYmd,
 } from "@/lib/admin/facilities/rate-schedule-metrics";
 import { formatUsdCurrencyFromCents } from "@/lib/format/usd-monthly";
+import {
+  RATES_STRIP_CONTRACTED_MRR_COPY,
+  RATES_STRIP_NO_FULL_CENSUS_MODEL_COPY,
+  formatRatesStripNextScheduledChange,
+  ratesStripNextScheduledChangeIsMissing,
+} from "@/lib/facilities/rates-metrics-strip-display-copy";
 
 export type FacilityRateRow = {
   rate_type: string;
@@ -57,15 +63,8 @@ export function FacilityRatesMetricsStrip({
     };
   }, [rates, facility.licensed_beds, tz]);
 
-  const nextLabel =
-    snapshot.nextScheduled == null
-      ? "—"
-      : new Date(`${snapshot.nextScheduled}T12:00:00.000Z`).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          timeZone: tz,
-        });
+  const nextLabel = formatRatesStripNextScheduledChange(snapshot.nextScheduled, tz);
+  const nextScheduledMissing = ratesStripNextScheduledChangeIsMissing(snapshot.nextScheduled);
 
   const atFullCensusUsd = useMemo(() => {
     const todayYmd = snapshot.todayYmd;
@@ -99,7 +98,7 @@ export function FacilityRatesMetricsStrip({
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Contracted MRR</p>
-        <p className="mt-2 text-3xl font-semibold tabular-nums text-muted-foreground">—</p>
+        <p className="mt-2 text-lg font-semibold leading-snug text-muted-foreground">{RATES_STRIP_CONTRACTED_MRR_COPY}</p>
         <p className="mt-1 text-[12px] text-muted-foreground">
           Per-type census by room category is required to compute contracted MRR.
         </p>
@@ -119,7 +118,9 @@ export function FacilityRatesMetricsStrip({
           </>
         ) : (
           <>
-            <p className="mt-2 text-3xl font-semibold tabular-nums text-muted-foreground">—</p>
+            <p className="mt-2 text-lg font-semibold leading-snug text-muted-foreground">
+              {RATES_STRIP_NO_FULL_CENSUS_MODEL_COPY}
+            </p>
             <p className="mt-1 text-[12px] text-muted-foreground">Add current room rates to model revenue at capacity.</p>
           </>
         )}
@@ -129,13 +130,13 @@ export function FacilityRatesMetricsStrip({
         <p className="text-[13px] text-muted-foreground">Next scheduled rate change</p>
         <p
           className={cn(
-            "mt-2 text-2xl font-semibold tabular-nums leading-snug",
-            snapshot.nextScheduled ? "text-foreground" : "text-muted-foreground",
+            "mt-2 font-semibold tabular-nums leading-snug",
+            nextScheduledMissing ? "text-lg text-muted-foreground" : "text-2xl text-foreground",
           )}
         >
           {nextLabel}
         </p>
-        {snapshot.nextScheduled ? (
+        {!nextScheduledMissing ? (
           <p className="mt-1 text-[12px] text-muted-foreground">
             From a future-dated row in the schedule (
             <Link

@@ -10,6 +10,10 @@ import {
   fireNextDueAccent,
   generatorTestAccent,
 } from "@/lib/admin/facilities/building-metrics-kpi";
+import { BUILDING_TAB_NO_CEMP_STATUS_COPY } from "@/lib/facilities/building-tab-display-copy";
+import { formatLicensingTabYmdDate } from "@/lib/facilities/licensing-tab-display-copy";
+
+const BUILDING_STRIP_TZ = "America/New_York";
 
 export function FacilityBuildingMetricsStrip({
   facilityId,
@@ -40,25 +44,11 @@ export function FacilityBuildingMetricsStrip({
   const untilNext = daysUntilYmd(nextFire);
   const sinceGen = daysSinceYmd(genTest);
 
-  const lastFireLabel =
-    lastFire == null
-      ? "—"
-      : new Date(`${lastFire}T12:00:00.000Z`).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          timeZone: "America/New_York",
-        });
+  const lastFireLabel = formatLicensingTabYmdDate(lastFire, BUILDING_STRIP_TZ);
+  const lastFireMissing = lastFire == null;
 
-  const nextFireLabel =
-    nextFire == null
-      ? "—"
-      : new Date(`${nextFire}T12:00:00.000Z`).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          timeZone: "America/New_York",
-        });
+  const nextFireLabel = formatLicensingTabYmdDate(nextFire, BUILDING_STRIP_TZ);
+  const nextFireMissing = nextFire == null;
 
   const nextFireSub =
     untilNext == null ? "Set next inspection target" : untilNext === 0 ? "Due today" : `In ${untilNext} day${untilNext === 1 ? "" : "s"}`;
@@ -76,8 +66,9 @@ export function FacilityBuildingMetricsStrip({
         <p className="text-[13px] text-muted-foreground">Last fire inspection</p>
         <p
           className={cn(
-            "mt-2 text-2xl font-semibold tabular-nums leading-tight",
-            fireInspectionStalenessAccent(sinceFire),
+            "mt-2 font-semibold tabular-nums leading-tight",
+            lastFireMissing ? "text-lg text-muted-foreground" : "text-2xl",
+            !lastFireMissing && fireInspectionStalenessAccent(sinceFire),
           )}
         >
           {lastFireLabel}
@@ -95,7 +86,13 @@ export function FacilityBuildingMetricsStrip({
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Next fire inspection due</p>
-        <p className={cn("mt-2 text-2xl font-semibold tabular-nums leading-tight", fireNextDueAccent(untilNext))}>
+        <p
+          className={cn(
+            "mt-2 font-semibold tabular-nums leading-tight",
+            nextFireMissing ? "text-lg text-muted-foreground" : "text-2xl",
+            !nextFireMissing && fireNextDueAccent(untilNext),
+          )}
+        >
           {nextFireLabel}
         </p>
         <p className="mt-1 text-[12px] text-muted-foreground">{nextFireSub}</p>
@@ -103,7 +100,7 @@ export function FacilityBuildingMetricsStrip({
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">CEMP status</p>
-        <p className="mt-2 text-2xl font-semibold tabular-nums text-muted-foreground leading-tight">—</p>
+        <p className="mt-2 text-lg font-semibold text-muted-foreground leading-tight">{BUILDING_TAB_NO_CEMP_STATUS_COPY}</p>
         <p className="mt-1 text-[12px] text-muted-foreground">
           County OEM fields ship in schema sprint —{" "}
           <Link href={`/admin/facilities/${facilityId}?tab=documents`} className="text-primary hover:underline">
@@ -116,18 +113,12 @@ export function FacilityBuildingMetricsStrip({
         <p className="text-[13px] text-muted-foreground">Generator last test</p>
         <p
           className={cn(
-            "mt-2 text-2xl font-semibold tabular-nums leading-tight",
-            generatorTestAccent(sinceGen, hasGen),
+            "mt-2 font-semibold tabular-nums leading-tight",
+            genTest == null ? "text-lg text-muted-foreground" : "text-2xl",
+            genTest != null && generatorTestAccent(sinceGen, hasGen),
           )}
         >
-          {genTest == null
-            ? "—"
-            : new Date(`${genTest}T12:00:00.000Z`).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-                timeZone: "America/New_York",
-              })}
+          {formatLicensingTabYmdDate(genTest, BUILDING_STRIP_TZ)}
         </p>
         <p className="mt-1 text-[12px] text-muted-foreground">{genSub}</p>
       </div>
