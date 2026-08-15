@@ -15,6 +15,7 @@ import {
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { formatDrillLogAttendanceLine } from "@/lib/compliance/emergency-preparedness-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -799,7 +800,7 @@ export default function EmergencyPreparednessPage() {
           <Button onClick={() => void submitDrillLog()} disabled={savingDrill}>{savingDrill ? "Saving…" : "Log drill"}</Button>
           <ul className="space-y-2 text-sm">
             {drillLog.slice(0, 5).map((entry) => (
-              <li key={entry.id} className="rounded border p-2">{entry.drill_date} {entry.drill_time.slice(0,5)} · {entry.drill_type} · staff {entry.staff_present_count ?? "—"} / residents {entry.residents_present_count ?? "—"}</li>
+              <li key={entry.id} className="rounded border p-2">{entry.drill_date} {entry.drill_time.slice(0,5)} · {entry.drill_type} · {formatDrillLogAttendanceLine(entry.staff_present_count, entry.residents_present_count)}</li>
             ))}
           </ul>
         </CardContent>
