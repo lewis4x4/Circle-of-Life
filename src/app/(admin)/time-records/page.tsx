@@ -21,6 +21,7 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import {
+  formatTimeRecordStaffName,
   formatTimeRecordsActualHours,
   formatTimeRecordsClockOut,
 } from "@/lib/time-records/time-records-display-copy";
@@ -210,12 +211,12 @@ export default function AdminTimeRecordsPage() {
       for (const s of staffRes.data ?? []) {
         const first = s.first_name?.trim() ?? "";
         const last = s.last_name?.trim() ?? "";
-        nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
+        nameById.set(s.id, `${first} ${last}`.trim());
       }
 
       const exportRows: TimeRecordExportRow[] = list.map((t) => ({
         ...t,
-        staff_display_name: nameById.get(t.staff_id) ?? "Unknown staff",
+        staff_display_name: formatTimeRecordStaffName(nameById.get(t.staff_id)),
       }));
 
       const csv = buildTimeRecordsCsv(exportRows);
@@ -514,13 +515,13 @@ async function fetchTimeRecordsFromSupabase(selectedFacilityId: string | null): 
   for (const s of staffRes.data ?? []) {
     const first = s.first_name?.trim() ?? "";
     const last = s.last_name?.trim() ?? "";
-    nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
+    nameById.set(s.id, `${first} ${last}`.trim());
   }
 
   return list.map((t) => ({
     id: t.id,
     staffId: t.staff_id,
-    staffName: nameById.get(t.staff_id) ?? "Unknown staff",
+    staffName: formatTimeRecordStaffName(nameById.get(t.staff_id)),
     clockIn: t.clock_in,
     clockOut: t.clock_out,
     approved: t.approved,
