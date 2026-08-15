@@ -1,4 +1,9 @@
 import type { ExecutiveLeagueData } from "@/lib/executive/load-league-data";
+import {
+  formatLeaguePrintConfidenceBand,
+  formatLeaguePrintOccupancyPct,
+  formatLeaguePrintRiskScore,
+} from "@/lib/executive/league-print-display-copy";
 
 function escapeHtml(value: string) {
   return value
@@ -17,8 +22,8 @@ export function buildExecutiveLeaguePrintHtml(data: ExecutiveLeagueData) {
           <td>${escapeHtml(row.entityName)}</td>
           <td>${row.leagueScore}/100</td>
           <td>${escapeHtml(row.leagueLabel)}</td>
-          <td>${row.riskScore == null ? "—" : `${row.riskScore}/100`}</td>
-          <td>${row.occupancyPct == null ? "—" : `${row.occupancyPct}%`}</td>
+          <td>${formatLeaguePrintRiskScore(row.riskScore)}</td>
+          <td>${formatLeaguePrintOccupancyPct(row.occupancyPct)}</td>
           <td>${escapeHtml(row.primaryConcern)}</td>
         </tr>`,
     )
@@ -66,7 +71,7 @@ export function buildExecutiveLeaguePrintHtml(data: ExecutiveLeagueData) {
     <p>Generated ${escapeHtml(new Date().toLocaleString())}</p>
     <div class="summary">
       <div class="card"><div class="metric-label">Published week</div><div class="metric-value">${escapeHtml(data.boardSummary.weekOf ?? "None")}</div></div>
-      <div class="card"><div class="metric-label">Packet confidence</div><div class="metric-value">${escapeHtml(data.boardSummary.confidenceBand ?? "—")}</div></div>
+      <div class="card"><div class="metric-label">Packet confidence</div><div class="metric-value">${escapeHtml(formatLeaguePrintConfidenceBand(data.boardSummary.confidenceBand))}</div></div>
       <div class="card"><div class="metric-label">Saved packets</div><div class="metric-value">${data.boardSummary.savedPacketCount}</div></div>
       <div class="card"><div class="metric-label">Entities ready</div><div class="metric-value">${data.insuranceRows.filter((row) => row.readinessLabel === "ready").length}/${data.insuranceRows.length}</div></div>
     </div>
