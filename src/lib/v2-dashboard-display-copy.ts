@@ -5,6 +5,8 @@
 
 export const V2_DASHBOARD_NO_FACILITY_COPY = "No facility posted";
 
+export const V2_DASHBOARD_NO_VALUE_COPY = "No value posted";
+
 const EM_DASH = "—";
 const LEGACY_UNNAMED_FACILITY = "Unnamed facility";
 const LEGACY_UNKNOWN = "Unknown";
@@ -26,4 +28,10 @@ export function formatV2DashboardFacilityDisplay(name: string | null | undefined
     return V2_DASHBOARD_NO_FACILITY_COPY;
   }
   return trimmed;
+}
+
+/** Numeric table metric on v2 dashboard rows when the value is missing or non-finite. */
+export function formatV2DashboardMetric(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return V2_DASHBOARD_NO_VALUE_COPY;
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
