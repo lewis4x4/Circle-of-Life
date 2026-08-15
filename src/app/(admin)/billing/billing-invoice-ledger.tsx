@@ -77,6 +77,11 @@ import {
   type BillingOverviewKpiContext,
 } from "@/lib/billing/billing-overview-kpi-copy";
 import {
+  invoiceHubKpiCountTileValue,
+  invoiceHubKpiMoneyTileValue,
+  type InvoiceHubKpiContext,
+} from "@/lib/billing/invoice-hub-kpi-copy";
+import {
   fetchInvoicesFromSupabase,
   fetchActiveResidentCountForBillingScope,
   type BillingRow,
@@ -912,8 +917,42 @@ function BillingInvoiceLedgerInner({
     else if (key === "paid_month") setStatus("paid");
   }
 
-  const overdueKpiTone =
-    invoiceHubKpis.overdueN === 0
+  const invoiceHubKpiContext = useMemo(
+    (): InvoiceHubKpiContext => ({
+      isLoading,
+      loadFailed: Boolean(error),
+      invoiceFetchComplete: facilityReady && !isPending,
+    }),
+    [error, facilityReady, isLoading, isPending],
+  );
+
+  const invoiceHubKpisReady =
+    invoiceHubKpiContext.invoiceFetchComplete && !invoiceHubKpiContext.loadFailed;
+
+  const inScopeDisplay = invoiceHubKpiCountTileValue(
+    "in_scope",
+    invoiceHubKpisReady ? invoiceHubKpis.inScope : null,
+    invoiceHubKpiContext,
+  );
+  const totalBilledDisplay = invoiceHubKpiMoneyTileValue(
+    "total_billed",
+    invoiceHubKpisReady ? invoiceHubKpis.totalBilledCents : null,
+    invoiceHubKpiContext,
+  );
+  const outstandingDisplay = invoiceHubKpiMoneyTileValue(
+    "outstanding",
+    invoiceHubKpisReady ? invoiceHubKpis.outstandingCents : null,
+    invoiceHubKpiContext,
+  );
+  const overdueDisplay = invoiceHubKpiCountTileValue(
+    "overdue",
+    invoiceHubKpisReady ? invoiceHubKpis.overdueN : null,
+    invoiceHubKpiContext,
+  );
+
+  const overdueKpiTone = !invoiceHubKpisReady
+    ? "text-muted-foreground"
+    : invoiceHubKpis.overdueN === 0
       ? "text-muted-foreground"
       : invoiceHubKpis.overduePct > 0.05
         ? "text-destructive"
@@ -1087,8 +1126,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Invoices in scope</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-              {invoiceHubKpis.inScope === 0 ? "—" : invoiceHubKpis.inScope}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? "text-2xl text-foreground"
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {inScopeDisplay}
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
               {period.start} → {period.end}
@@ -1105,8 +1151,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Total billed</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-              {invoiceHubKpis.inScope === 0 ? "—" : billingCurrency.format(invoiceHubKpis.totalBilledCents / 100)}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? "text-2xl text-foreground"
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {totalBilledDisplay}
             </p>
           </button>
           <button
@@ -1120,8 +1173,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Outstanding</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-              {invoiceHubKpis.inScope === 0 ? "—" : billingCurrency.format(invoiceHubKpis.outstandingCents / 100)}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? "text-2xl text-foreground"
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {outstandingDisplay}
             </p>
           </button>
           <button
@@ -1135,8 +1195,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Overdue</p>
-            <p className={cn("mt-2 text-2xl font-semibold tabular-nums", overdueKpiTone)}>
-              {invoiceHubKpis.inScope === 0 ? "—" : invoiceHubKpis.overdueN}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? cn("text-2xl", overdueKpiTone)
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {overdueDisplay}
             </p>
           </button>
         </section>
