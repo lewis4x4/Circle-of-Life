@@ -47,11 +47,16 @@ jobs:
         # unrelated fixes or safe refactors of a file that still has debt.
         run: |
           set -euo pipefail
+          DIFF_FILE="${RUNNER_TEMP}/uppercase-cta.diff"
+          if ! git diff --unified=0 --no-color \
+            "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+            -- ':(glob)src/**/*.tsx' > "$DIFF_FILE"; then
+            echo "::error::unable to generate PR diff for uppercase CTA check"
+            exit 1
+          fi
           MATCHES=$(
-            git diff --unified=0 --no-color \
-              "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
-              -- ':(glob)src/**/*.tsx' \
-              | grep -E '^\+[^+].*uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
+            grep -E '^\+[^+].*uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
+              "$DIFF_FILE" \
               || true
           )
           if [ -n "$MATCHES" ]; then
