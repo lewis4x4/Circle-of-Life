@@ -14,6 +14,10 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { parseCompetencyAttachments } from "@/lib/training/competency-storage";
+import {
+  formatTrainingHubFacilityName,
+  formatTrainingHubProgramName,
+} from "@/lib/training/training-hub-display-copy";
 import { CompetencyCertificateOpenButton } from "@/components/training/competency-certificate-open-button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -655,7 +659,7 @@ export default function AdminTrainingHubPage() {
                        href="/admin/training/new"
                      className={cn(
                         buttonVariants({ size: "default" }),
-                        "h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
+                        "h-auto min-h-10 whitespace-normal text-left font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
                       )}
                      >
                        + New Demonstration
@@ -695,7 +699,7 @@ export default function AdminTrainingHubPage() {
                     href="/admin/training/completions/new"
                     className={cn(
                       buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
+                      "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
                     )}
                   >
                     + Log completion
@@ -749,7 +753,7 @@ export default function AdminTrainingHubPage() {
                         className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                       >
                         <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
-                          {row.facilities?.name ?? "—"}
+                          {formatTrainingHubFacilityName(row.facilities?.name)}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
                           {row.staff
@@ -757,7 +761,9 @@ export default function AdminTrainingHubPage() {
                             : "—"}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
-                          <span className="font-medium">{row.training_programs?.name ?? "—"}</span>
+                          <span className="font-medium">
+                            {formatTrainingHubProgramName(row.training_programs?.name)}
+                          </span>
                           {row.training_programs?.code ? (
                             <span className="ml-1 text-[12px] text-muted-foreground">
                               ({row.training_programs.code})
@@ -948,7 +954,7 @@ export default function AdminTrainingHubPage() {
                         className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                       >
                         <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
-                          {row.facilities?.name ?? "—"}
+                          {formatTrainingHubFacilityName(row.facilities?.name)}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
                           {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "—"}
@@ -1004,7 +1010,7 @@ export default function AdminTrainingHubPage() {
                     href="/admin/training/inservice/new"
                     className={cn(
                       buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
+                      "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
                     )}
                   >
                     + New in-service session
@@ -1057,7 +1063,7 @@ export default function AdminTrainingHubPage() {
                         className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
                       >
                         <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
-                          {row.facilities?.name ?? "—"}
+                          {formatTrainingHubFacilityName(row.facilities?.name)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
                           {row.session_date
@@ -1070,11 +1076,14 @@ export default function AdminTrainingHubPage() {
                         <td className="px-[13px] py-2 text-[13px]">{row.trainer_name}</td>
                         <td className="px-[13px] py-2 font-mono tabular-nums">{formatHours(Number(row.hours))}</td>
                         <td className="px-[13px] py-2 text-[13px]">
-                          {row.training_programs?.name ? (
-                            <span className="font-medium">{row.training_programs.name}</span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          <span
+                            className={cn(
+                              "font-medium",
+                              !row.training_programs?.name?.trim() && "text-muted-foreground",
+                            )}
+                          >
+                            {formatTrainingHubProgramName(row.training_programs?.name)}
+                          </span>
                         </td>
                         <td className="px-[13px] py-2 font-mono tabular-nums">
                           {(row.inservice_log_attendees ?? []).length}
@@ -1173,7 +1182,7 @@ export default function AdminTrainingHubPage() {
                           </span>
                           <span className="flex flex-col items-end gap-1 text-right sm:flex-row sm:items-center sm:gap-2">
                             {orgWideMode && row.facilities?.name ? (
-                              <span className="text-[9px] uppercase tracking-wider text-primary-600 dark:text-primary-400 font-mono font-bold bg-primary-500/10 px-2 py-0.5 rounded">
+                              <span className="text-[9px] text-primary-600 dark:text-primary-400 font-mono font-bold bg-primary-500/10 px-2 py-0.5 rounded">
                                 {row.facilities.name}
                               </span>
                             ) : null}
@@ -1238,7 +1247,7 @@ export default function AdminTrainingHubPage() {
                         >
                           <div className="flex-1 min-w-0">
                             {orgWideMode && row.facilities?.name ? (
-                              <p className="text-[9px] font-mono uppercase tracking-wider text-primary-600 dark:text-primary-400 mb-0.5 truncate">
+                              <p className="text-[9px] font-mono text-primary-600 dark:text-primary-400 mb-0.5 truncate">
                                 {row.facilities.name}
                               </p>
                             ) : null}
