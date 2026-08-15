@@ -23,6 +23,7 @@ import {
   formatDietaryBatchStatPct,
   formatDietaryHubRelativeUpdatedAt,
 } from "@/lib/dietary/dietary-batch-stats-display-copy";
+import { formatDietaryHubResidentDisplay } from "@/lib/dietary/dietary-hub-display-copy";
 import {
   loadDietaryHubBootstrap,
   type DietaryHubBootstrap,
@@ -596,7 +597,7 @@ export function AdminDietaryPageClient({
                       </div>
                       <div className="mb-5 pl-2">
                         <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight mb-2">
-                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
+                          {formatDietaryHubResidentDisplay(row.residents?.first_name, row.residents?.last_name)}
                         </p>
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{attentionSummary(row)}</p>
                       </div>
@@ -605,7 +606,7 @@ export function AdminDietaryPageClient({
                           href={`/admin/dietary/clinical-review?resident=${row.resident_id}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-9 rounded-lg px-4 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-wider text-[10px]",
+                            "h-9 rounded-lg px-4 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-semibold text-[10px]",
                           )}
                         >
                           Clinical review
@@ -632,7 +633,7 @@ export function AdminDietaryPageClient({
                       <MotionItem key={row.id}>
                         <TableRow>
                           <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
-                            {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
+                            {formatDietaryHubResidentDisplay(row.residents?.first_name, row.residents?.last_name)}
                           </span>
                           <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
                             {row.iddsi_food_level.replace(/_/g, " ")}
