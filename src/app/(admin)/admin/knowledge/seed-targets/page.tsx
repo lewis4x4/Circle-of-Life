@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { formatSeedTargetCoveragePct } from "@/lib/knowledge/seed-targets-display-copy";
 
 type SeedTarget = {
   id: string;
@@ -175,7 +176,7 @@ export default function SeedTargetsRoute() {
           <Stat label="Retired" value={rollup.retired_count} tone="slate" />
           <Stat
             label="Coverage"
-            value={rollup.covered_pct != null ? `${rollup.covered_pct}%` : "—"}
+            value={formatSeedTargetCoveragePct(rollup.covered_pct)}
             tone="slate"
           />
         </div>
