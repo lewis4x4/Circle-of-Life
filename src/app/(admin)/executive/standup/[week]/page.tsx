@@ -32,19 +32,9 @@ import {
   type StandupSectionKey,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
-
-const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function formatMetricValue(metric: StandupMetricRow): string {
-  if (metric.valueText?.trim()) return metric.valueText.trim();
-  if (metric.valueNumeric == null) return "—";
-  if (metric.valueType === "currency") return USD.format(metric.valueNumeric / 100);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
-}
 
 function editable(metric: StandupMetricRow, snapshot: StandupSnapshotDetail["snapshot"]): boolean {
   return snapshot.status === "draft" && metric.sourceMode !== "auto";
@@ -584,7 +574,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                                     </div>
                                   ) : (
                                     <div className="space-y-2">
-                                      <div className="font-semibold tabular-nums text-foreground">{formatMetricValue(metric)}</div>
+                                      <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(metric)}</div>
                                       <div className="flex flex-wrap gap-1.5">
                                         <Badge variant="outline">{metric.sourceMode}</Badge>
                                         <Badge variant="outline">{metric.confidenceBand}</Badge>
@@ -597,7 +587,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                             {totals ? (
                               <td className="px-3 py-3 align-top">
                                 <div className="space-y-2">
-                                  <div className="font-semibold tabular-nums text-foreground">{formatMetricValue(totals.metrics[metricKey])}</div>
+                                  <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(totals.metrics[metricKey])}</div>
                                   <div className="flex flex-wrap gap-1.5">
                                     <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
                                     <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>

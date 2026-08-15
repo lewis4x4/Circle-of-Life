@@ -4,6 +4,7 @@
  */
 
 import type { PresenceCensus } from "@/lib/executive/presence-census";
+import type { StandupMetricRow } from "@/lib/executive/standup";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 
 export const EXECUTIVE_NO_OCCUPANCY_POSTED_COPY = "No occupancy posted";
@@ -22,6 +23,12 @@ export const EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY = "No deficiency count po
 export const EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY = "No incident count posted";
 export const EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY = "No invoice count posted";
 export const EXECUTIVE_NO_CERT_COUNT_POSTED_COPY = "No cert count posted";
+export const EXECUTIVE_NO_DATE_POSTED_COPY = "No date posted";
+export const EXECUTIVE_STANDUP_MANUAL_OR_FUTURE_FEED_COPY = "Manual / future feed";
+export const EXECUTIVE_STANDUP_NO_DELTA_COPY = "No comparison posted";
+export const EXECUTIVE_STANDUP_NO_METRIC_POSTED_COPY = "No metric posted";
+
+const STANDUP_USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function isFiniteExecutiveMetric(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -136,4 +143,76 @@ export function formatExecutiveOnLeaveCount(presence: PresenceCensus | null | un
 export function formatExecutiveLastGeneratedAt(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY;
   return new Date(value).toLocaleString();
+}
+
+/** Generic Quiet Operator gap copy — lowercases the metric label for readability. */
+export function formatExecutiveNoMetricPostedCopy(metricLabel: string): string {
+  const trimmed = metricLabel.trim();
+  if (!trimmed) return EXECUTIVE_STANDUP_NO_METRIC_POSTED_COPY;
+  return `No ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)} posted`;
+}
+
+/** Alert / event relative age — missing or invalid ISO dates name the gap. */
+export function formatExecutiveRelativeAge(iso: string | null | undefined): string {
+  if (!iso) return EXECUTIVE_NO_DATE_POSTED_COPY;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return EXECUTIVE_NO_DATE_POSTED_COPY;
+  const mins = Math.max(0, Math.round((Date.now() - then) / 60000));
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+/** Officer KPI tile value — loading stays …; real zero stays 0; missing names the gap. */
+export function formatExecutiveOfficerKpiValue(
+  value: number | undefined,
+  loading: boolean,
+  metricLabel: string,
+): string {
+  if (loading) return "…";
+  if (value == null) return formatExecutiveNoMetricPostedCopy(metricLabel);
+  return String(value);
+}
+
+/** Officer lane stat line — e.g. "3 overdue" or "No overdue posted". */
+export function formatExecutiveOfficerCountLabel(value: number | undefined, noun: string): string {
+  if (value == null) return formatExecutiveNoMetricPostedCopy(noun);
+  return `${value} ${noun}`;
+}
+
+/** Standup metric display — real zero stays formatted; missing names the gap. */
+export function formatStandupMetricValue(metric: StandupMetricRow | undefined, fallbackLabel?: string): string {
+  if (!metric) {
+    return fallbackLabel ? formatExecutiveNoMetricPostedCopy(fallbackLabel) : EXECUTIVE_STANDUP_NO_METRIC_POSTED_COPY;
+  }
+  if (metric.valueText?.trim()) return metric.valueText.trim();
+  if (metric.valueNumeric == null) {
+    if (metric.sourceMode === "manual" || metric.sourceMode === "forecast" || metric.sourceMode === "hybrid") {
+      return EXECUTIVE_STANDUP_MANUAL_OR_FUTURE_FEED_COPY;
+    }
+    return formatExecutiveNoMetricPostedCopy(metric.label);
+  }
+  if (metric.valueType === "currency") return STANDUP_USD.format(metric.valueNumeric / 100);
+  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
+  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
+  return `${metric.valueNumeric}`;
+}
+
+/** Week-over-week standup delta — missing either side names the gap. */
+export function formatStandupMetricDelta(
+  metricLeft: StandupMetricRow | undefined,
+  metricRight: StandupMetricRow | undefined,
+): string {
+  if (!metricLeft || !metricRight || metricLeft.valueNumeric == null || metricRight.valueNumeric == null) {
+    return EXECUTIVE_STANDUP_NO_DELTA_COPY;
+  }
+  const delta = metricRight.valueNumeric - metricLeft.valueNumeric;
+  if (delta === 0) return "No change";
+  if (metricRight.valueType === "currency") {
+    return `${delta > 0 ? "+" : "-"}${STANDUP_USD.format(Math.abs(delta) / 100)}`;
+  }
+  if (metricRight.valueType === "hours") return `${delta > 0 ? "+" : "-"}${Math.abs(delta).toFixed(2)} hrs`;
+  if (metricRight.valueType === "percent") return `${delta > 0 ? "+" : "-"}${Math.abs(delta).toFixed(1)}%`;
+  return `${delta > 0 ? "+" : "-"}${Math.abs(delta)}`;
 }
