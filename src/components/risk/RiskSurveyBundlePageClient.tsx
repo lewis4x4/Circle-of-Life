@@ -15,6 +15,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { formatCents } from "@/lib/finance/format-cents";
 import {
+  formatSurveyBundleAdministratorName,
+  formatSurveyBundleEntityName,
+  formatSurveyBundlePocResponsibleParty,
+  formatSurveyBundlePocSubmissionDueDate,
+} from "@/lib/risk/survey-bundle-display-copy";
+import {
   surveyBundleToMarkdown,
   type SurveyBundleDocument,
   type SurveyBundlePacket,
@@ -188,8 +194,11 @@ export default function RiskSurveyBundlePageClient({
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <PacketValue label="Facility" value={packet.facility.name} />
-              <PacketValue label="Entity" value={packet.facility.entityName ?? "—"} />
-              <PacketValue label="Administrator" value={packet.facility.administratorName ?? "—"} />
+              <PacketValue label="Entity" value={formatSurveyBundleEntityName(packet.facility.entityName)} />
+              <PacketValue
+                label="Administrator"
+                value={formatSurveyBundleAdministratorName(packet.facility.administratorName)}
+              />
               <PacketValue
                 label="License"
                 value={
@@ -238,8 +247,12 @@ export default function RiskSurveyBundlePageClient({
                             <td className="py-3 pr-4">{row.severity}</td>
                             <td className="py-3 pr-4">{row.status}</td>
                             <td className="py-3 pr-4">{row.pocStatus ?? "Missing"}</td>
-                            <td className="py-3 pr-4">{row.pocSubmissionDueDate ?? "—"}</td>
-                            <td className="py-3">{row.pocResponsibleParty ?? "—"}</td>
+                            <td className="py-3 pr-4">
+                              {formatSurveyBundlePocSubmissionDueDate(row.pocSubmissionDueDate)}
+                            </td>
+                            <td className="py-3">
+                              {formatSurveyBundlePocResponsibleParty(row.pocResponsibleParty)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
