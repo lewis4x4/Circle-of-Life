@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { formatCaregiverResidentRoomLabel } from "@/lib/caregiver/resident-detail-display-copy";
+import {
+  CAREGIVER_RESIDENT_NO_ACUITY_COPY,
+  formatCaregiverResidentRoomLabel,
+} from "@/lib/caregiver/resident-detail-display-copy";
 import type { Database } from "@/types/database";
 
 export type CaregiverResidentProfile = {
@@ -33,8 +36,8 @@ export type RiskBanner = {
   tone: "warning" | "danger" | "ok";
 };
 
-function acuityDisplay(level: string | null): string {
-  if (!level) return "—";
+export function acuityDisplay(level: string | null): string {
+  if (!level) return CAREGIVER_RESIDENT_NO_ACUITY_COPY;
   return level.replace("level_", "Level ");
 }
 
