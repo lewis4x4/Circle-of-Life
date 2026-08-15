@@ -220,8 +220,10 @@ export const SECTION_JUMP_QUICK_KEYS = [
   "snack-pass",
 ] as const;
 
+export type SectionJumpQuickKey = (typeof SECTION_JUMP_QUICK_KEYS)[number];
+
 /** Pin labels for office-week Common shortcuts (may differ from left-rail labels). */
-export const SECTION_JUMP_QUICK_LABELS: Partial<Record<string, string>> = {
+export const SECTION_JUMP_QUICK_LABELS: Partial<Record<SectionJumpQuickKey, string>> = {
   residents: "Resident roster / census",
   billing: "Billing",
 };
