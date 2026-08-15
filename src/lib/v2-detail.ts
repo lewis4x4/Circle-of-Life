@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  formatV2DetailCategory,
+  formatV2DetailDiagnosis,
+  formatV2DetailSeverity,
+  formatV2DetailSourceMetric,
+} from "@/lib/v2/v2-detail-display-copy";
 
 import type { V2ListId } from "./v2-lists";
 
@@ -65,7 +71,7 @@ function mapDetail(
         status: status ? { label: status, tone: residentTone(status) } : null,
         identifiers: [
           { label: "Resident ID", value: recordId },
-          { label: "Diagnosis", value: ((row.primary_diagnosis as string) ?? "—") || "—" },
+          { label: "Diagnosis", value: formatV2DetailDiagnosis(row.primary_diagnosis as string | null) },
           { label: "Discharge", value: formatDate(row.discharge_date) },
           { label: "Updated", value: formatDate(row.updated_at) },
         ],
@@ -82,8 +88,8 @@ function mapDetail(
         subtitle: ((row.location_description as string) ?? null) ?? (row.facility_name as string) ?? null,
         status: status ? { label: status, tone: incidentTone(status, sev) } : null,
         identifiers: [
-          { label: "Severity", value: sev ?? "—" },
-          { label: "Category", value: ((row.category as string) ?? "—") || "—" },
+          { label: "Severity", value: formatV2DetailSeverity(sev) },
+          { label: "Category", value: formatV2DetailCategory(row.category as string | null) },
           { label: "Occurred", value: formatDate(row.occurred_at) },
           { label: "AHCA reportable", value: row.ahca_reportable === true ? "Yes" : "No" },
         ],
@@ -100,10 +106,10 @@ function mapDetail(
         subtitle: ((row.facility_name as string) ?? null) ?? null,
         status: status ? { label: status, tone: alertTone(status, sev) } : null,
         identifiers: [
-          { label: "Severity", value: sev ?? "—" },
-          { label: "Category", value: ((row.category as string) ?? "—") || "—" },
+          { label: "Severity", value: formatV2DetailSeverity(sev) },
+          { label: "Category", value: formatV2DetailCategory(row.category as string | null) },
           { label: "First triggered", value: formatDate(row.first_triggered_at) },
-          { label: "Source metric", value: ((row.source_metric_code as string) ?? "—") || "—" },
+          { label: "Source metric", value: formatV2DetailSourceMetric(row.source_metric_code as string | null) },
         ],
         source: "live",
       };
