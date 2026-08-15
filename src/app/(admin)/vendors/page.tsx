@@ -71,7 +71,7 @@ export default function AdminVendorsHubPage() {
     },
   });
 
-  const loading = authLoading || isPending;
+  const loading = authLoading || (!!organizationId && isPending);
   const loadError =
     !authLoading && !organizationId
       ? "Organization missing on profile."
