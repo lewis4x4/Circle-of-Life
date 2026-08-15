@@ -12,6 +12,7 @@ import {
   type V2PaginationInput,
   type V2PaginationMeta,
 } from "./v2-pagination";
+import { formatV2DashboardFacilityDisplay } from "./v2-dashboard-display-copy";
 
 export type V2DashboardScopeOption = { id: string; label: string };
 
@@ -101,7 +102,7 @@ export async function loadV2Dashboard(
     rowsSource = "live";
     tableRows = tableResult.data.map((row) => ({
       id: row.facility_id,
-      name: (row.facility_name ?? "").trim() || "Unnamed facility",
+      name: formatV2DashboardFacilityDisplay(row.facility_name),
       occupancyPct: normalizePercent(row.occupancy_pct),
       laborCostPct: null, // Source aggregate lands in payroll/finance modules.
       openIncidents: row.open_incidents_count,
@@ -118,7 +119,7 @@ export async function loadV2Dashboard(
     rowsSource !== "unavailable" && Array.isArray(facilityOptionsResult.data)
       ? facilityOptionsResult.data.map((row) => ({
           id: row.facility_id,
-          label: (row.facility_name ?? "").trim() || "Unnamed facility",
+          label: formatV2DashboardFacilityDisplay(row.facility_name),
         }))
       : [];
 
