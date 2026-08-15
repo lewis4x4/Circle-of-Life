@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatCaregiverFacilityResidentRoomLabel } from "@/lib/caregiver/facility-residents-display-copy";
 import type { Database } from "@/types/database";
 
 export type ResidentWithRoom = {
@@ -62,18 +63,21 @@ export async function fetchActiveResidentsWithRooms(
     const bedById = new Map(beds.map((b) => [b.id, b]));
     for (const r of residents) {
       if (!r.bed_id) {
-        roomByResident.set(r.id, "—");
+        roomByResident.set(r.id, formatCaregiverFacilityResidentRoomLabel(null));
         continue;
       }
       const bed = bedById.get(r.bed_id);
       const room = bed?.room_id ? roomById.get(bed.room_id) : null;
-      const label = room?.room_number
-        ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}`
-        : "—";
+      const label = formatCaregiverFacilityResidentRoomLabel(
+        room?.room_number ?? null,
+        bed?.bed_label ?? null,
+      );
       roomByResident.set(r.id, label);
     }
   } else {
-    for (const r of residents) roomByResident.set(r.id, "—");
+    for (const r of residents) {
+      roomByResident.set(r.id, formatCaregiverFacilityResidentRoomLabel(null));
+    }
   }
 
   return residents.map((r) => {
@@ -84,7 +88,7 @@ export async function fetchActiveResidentsWithRooms(
       id: r.id,
       first_name: r.first_name,
       last_name: r.last_name,
-      roomLabel: roomByResident.get(r.id) ?? "—",
+      roomLabel: formatCaregiverFacilityResidentRoomLabel(roomByResident.get(r.id)),
       displayName,
     };
   });
