@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { formatExecutiveBenchmarkFacilitiesDisplay } from "@/lib/executive/executive-benchmarks-display-copy";
 import {
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPct,
@@ -488,11 +489,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r) => {
-                    const labels = (r.facility_ids ?? [])
-                      .map((id) => facNameById[id] ?? id.slice(0, 8))
-                      .join(", ");
-                    return (
+                  {rows.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium">
                           {r.name}
@@ -504,9 +501,10 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                           <Badge variant="secondary">{r.minimum_n}</Badge>
                         </TableCell>
                         <TableCell className="max-w-md text-sm text-muted-foreground">
-                          {(r.facility_ids?.length ?? 0) === 0
-                            ? "—"
-                            : labels || `${r.facility_ids?.length} selected`}
+                          {formatExecutiveBenchmarkFacilitiesDisplay({
+                            facilityIds: r.facility_ids,
+                            facNameById,
+                          })}
                         </TableCell>
                         <TableCell className="text-right">
                           {canManage ? (
@@ -536,8 +534,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                           )}
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
+                  ))}
                 </TableBody>
               </Table>
             )}
