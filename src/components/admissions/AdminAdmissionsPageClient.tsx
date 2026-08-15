@@ -33,6 +33,17 @@ import {
   type AdmissionsHubLeadRow,
   type AdmissionsHubTriageRow,
 } from "@/lib/admissions/admissions-hub-bootstrap";
+import {
+  admissionsHubMetricValue,
+  admissionsHubNoFacilityNotice,
+  admissionsHubScopedEmptyNotice,
+  admissionsHubScopeLabel,
+  formatAdmissionsHubConferenceScheduledDate,
+  formatAdmissionsHubMedicaidStage,
+  formatAdmissionsHubRelativeDate,
+  formatAdmissionsHubTargetMoveInDate,
+  type AdmissionsHubMetricContext,
+} from "@/lib/admissions/admissions-hub-display-copy";
 
 type LeadRow = AdmissionsHubLeadRow;
 type HandoffPhase = "blocked" | "ready" | "onboarding" | "complete";
@@ -56,23 +67,12 @@ function formatStatus(s: string) {
 }
 
 function formatMedicaidStage(stage: string | null) {
-  if (!stage) return "Not set";
+  if (!stage?.trim()) return formatAdmissionsHubMedicaidStage(stage);
   return formatStatus(stage);
 }
 
-function formatRelative(date: string | null): string {
-  if (!date) return "—";
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+function hubMetric(value: number, ctx: AdmissionsHubMetricContext) {
+  return admissionsHubMetricValue(value, ctx);
 }
 
 function leadPriority(status: Database["public"]["Enums"]["referral_lead_status"], handoffPhase: HandoffPhase | null): number {
@@ -505,6 +505,10 @@ export function AdminAdmissionsPageClient({
   }, [conferences]);
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+  const metricCtx = useMemo(
+    (): AdmissionsHubMetricContext => ({ noFacility, loading }),
+    [loading, noFacility],
+  );
 
   const blockedAdmissions = useMemo(() => {
     return admissions.map((row) => ({ row, blockers: admissionBlockers(row) })).filter((entry) => entry.blockers.length > 0).slice(0, 4);
@@ -583,7 +587,7 @@ export function AdminAdmissionsPageClient({
 
       {noFacility ? (
         <div role="status" className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          Select a facility in the header to load intake and discharge metrics.
+          {admissionsHubNoFacilityNotice()}
         </div>
       ) : null}
 
@@ -604,14 +608,10 @@ export function AdminAdmissionsPageClient({
           triage.length === 0 &&
           conferences.length === 0;
         if (!allEmpty) return null;
-        const scopeLabel =
-          hubScope === "today" ? "today" : hubScope === "week" ? "this week" : "this month";
+        const scopeLabel = admissionsHubScopeLabel(hubScope);
         return (
           <div className="flex flex-col items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Nothing updated within the current scope ({scopeLabel}).
-              Imported or historical records may live outside this window.
-            </p>
+            <p>{admissionsHubScopedEmptyNotice(scopeLabel)}</p>
             <button
               type="button"
               onClick={() => setHubScopeParam("all")}
@@ -629,7 +629,7 @@ export function AdminAdmissionsPageClient({
         metrics={
           <InlineMetricsRow
             parts={[
-              { label: "Active pipeline", value: noFacility ? "—" : loading ? "—" : referralMetrics.activePipeline },
+              { label: "Active pipeline", value: hubMetric(referralMetrics.activePipeline, metricCtx) },
             ]}
           />
         }
@@ -678,7 +678,7 @@ export function AdminAdmissionsPageClient({
                       ) : null}
                     </div>
                     <p className="mt-0.5 text-[12px] text-muted-foreground">
-                      {r.referral_sources?.name ?? "No source"} · {formatRelative(r.updated_at)}
+                      {r.referral_sources?.name ?? "No source"} · {formatAdmissionsHubRelativeDate(r.updated_at)}
                     </p>
                     {handoffPhase ? (
                       <p
@@ -712,9 +712,9 @@ export function AdminAdmissionsPageClient({
         metrics={
           <InlineMetricsRow
             parts={[
-              { label: "Pending", value: noFacility ? "—" : loading ? "—" : admissionMetrics.pending },
-              { label: "Bed reserved", value: noFacility ? "—" : loading ? "—" : admissionMetrics.reserved },
-              { label: "Move-in ready", value: noFacility ? "—" : loading ? "—" : admissionMetrics.moveIn },
+              { label: "Pending", value: hubMetric(admissionMetrics.pending, metricCtx) },
+              { label: "Bed reserved", value: hubMetric(admissionMetrics.reserved, metricCtx) },
+              { label: "Move-in ready", value: hubMetric(admissionMetrics.moveIn, metricCtx) },
             ]}
           />
         }
@@ -791,7 +791,7 @@ export function AdminAdmissionsPageClient({
                         ) : null}
                       </div>
                       <p className="mt-0.5 text-[12px] text-muted-foreground">
-                        {r.target_move_in_date ? `Target: ${r.target_move_in_date}` : "No date set"} · {formatRelative(r.updated_at)}
+                        {formatAdmissionsHubTargetMoveInDate(r.target_move_in_date)} · {formatAdmissionsHubRelativeDate(r.updated_at)}
                       </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">
                         Medicaid stage: {formatMedicaidStage(r.medicaid_pipeline_stage)}
@@ -835,7 +835,7 @@ export function AdminAdmissionsPageClient({
         )}
       </HubSection>
 
-      <HubSection title="Discharges" viewAllHref="/pipeline/discharge-management" metrics={<InlineMetricsRow parts={[{ label: "In review", value: noFacility ? "—" : loading ? "—" : dischargeMetrics.inReview }]} />}>
+      <HubSection title="Discharges" viewAllHref="/pipeline/discharge-management" metrics={<InlineMetricsRow parts={[{ label: "In review", value: hubMetric(dischargeMetrics.inReview, metricCtx) }]} />}>
         {noFacility ? (
           <p className="text-sm text-muted-foreground">Select a facility to preview discharge work.</p>
         ) : loading ? (
@@ -881,7 +881,7 @@ export function AdminAdmissionsPageClient({
                         {phase.nextActionLabel}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-[12px] text-muted-foreground">Updated {formatRelative(r.updated_at)}</p>
+                    <p className="mt-0.5 text-[12px] text-muted-foreground">Updated {formatAdmissionsHubRelativeDate(r.updated_at)}</p>
                     <p
                       className={cn(
                         "mt-1 text-[11px]",
@@ -910,9 +910,9 @@ export function AdminAdmissionsPageClient({
         metrics={
           <InlineMetricsRow
             parts={[
-              { label: "Triage alerts", value: noFacility ? "—" : loading ? "—" : familyMetrics.triage },
-              { label: "Upcoming conferences", value: noFacility ? "—" : loading ? "—" : familyMetrics.conferences },
-              { label: "Consents pending", value: noFacility ? "—" : loading ? "—" : familyMetrics.consentsPending },
+              { label: "Triage alerts", value: hubMetric(familyMetrics.triage, metricCtx) },
+              { label: "Upcoming conferences", value: hubMetric(familyMetrics.conferences, metricCtx) },
+              { label: "Consents pending", value: hubMetric(familyMetrics.consentsPending, metricCtx) },
             ]}
           />
         }
@@ -948,7 +948,7 @@ export function AdminAdmissionsPageClient({
                     <span className="rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground">Triage alert</span>
                   </div>
                   <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
-                    {(t.matched_keywords ?? []).join(", ") || "Keywords detected"} · {formatRelative(t.updated_at)}
+                    {(t.matched_keywords ?? []).join(", ") || "Keywords detected"} · {formatAdmissionsHubRelativeDate(t.updated_at)}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="sm" disabled={familyActionLoading === t.id || t.triage_status === "in_review"} onClick={(event) => { event.preventDefault(); void updateTriageStatus(t.id, "in_review", "Message triage moved to in review."); }}>
@@ -984,8 +984,7 @@ export function AdminAdmissionsPageClient({
                     </span>
                   </div>
                   <p className="mt-0.5 text-[12px] text-muted-foreground">
-                    {(c.scheduled_start ? new Date(c.scheduled_start).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date")} ·{" "}
-                    {formatRelative(c.updated_at)}
+                    {formatAdmissionsHubConferenceScheduledDate(c.scheduled_start)} · {formatAdmissionsHubRelativeDate(c.updated_at)}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button
