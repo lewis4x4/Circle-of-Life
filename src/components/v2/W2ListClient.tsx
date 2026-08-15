@@ -9,6 +9,13 @@ import {
   type V2PaginationMeta,
 } from "@/lib/v2-pagination";
 
+import {
+  formatW2ListDetail,
+  formatW2ListFacilityName,
+  formatW2ListOccurredAt,
+  formatW2ListStatus,
+} from "@/lib/v2/w2-list-display-copy";
+
 import { V2PaginationControls } from "./V2PaginationControls";
 
 const LIST_TITLES: Record<V2ListId, { title: string; subtitle: string; basePath: string }> = {
@@ -24,39 +31,32 @@ const COLUMNS: DataTableColumn<V2ListRow>[] = [
     id: "facility",
     header: "Facility",
     accessor: (r) => r.facilityName,
-    render: (r) => r.facilityName ?? "—",
+    render: (r) => formatW2ListFacilityName(r.facilityName),
     align: "left",
   },
   {
     id: "status",
     header: "Status",
     accessor: (r) => r.status,
-    render: (r) => r.status ?? "—",
+    render: (r) => formatW2ListStatus(r.status),
     align: "left",
   },
   {
     id: "secondary",
     header: "Detail",
     accessor: (r) => r.secondary,
-    render: (r) => r.secondary ?? "—",
+    render: (r) => formatW2ListDetail(r.secondary),
     align: "left",
   },
   {
     id: "occurredAt",
     header: "Occurred",
     accessor: (r) => r.occurredAt,
-    render: (r) => formatTime(r.occurredAt),
+    render: (r) => formatW2ListOccurredAt(r.occurredAt),
     align: "right",
     numeric: true,
   },
 ];
-
-function formatTime(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toISOString().slice(0, 16).replace("T", " ");
-}
 
 export type W2ListClientProps = {
   listId: V2ListId;
