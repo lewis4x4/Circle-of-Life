@@ -90,6 +90,40 @@ export function formatAdmissionsHubReferralSource(
   return sourceName;
 }
 
+export const ADMISSIONS_HUB_NO_RESIDENT_COPY = "No resident posted";
+export const ADMISSIONS_HUB_NO_NAME_COPY = "No name posted";
+
+export type AdmissionsHubResidentNameJoin = {
+  first_name: string;
+  last_name: string;
+} | null | undefined;
+
+const ADMISSIONS_HUB_PLACEHOLDER_RESIDENT_NAMES = new Set([
+  "—",
+  "unknown",
+  "unknown resident",
+  "unnamed",
+  "unnamed resident",
+]);
+
+/** Resident name on triage and conference cards — never invents a person. */
+export function formatAdmissionsHubResidentName(
+  resident: AdmissionsHubResidentNameJoin,
+): string {
+  if (!resident) return ADMISSIONS_HUB_NO_RESIDENT_COPY;
+
+  const first = (resident.first_name ?? "").trim();
+  const last = (resident.last_name ?? "").trim();
+  const combined = [first, last].filter((part) => part.length > 0).join(" ");
+
+  if (!combined) return ADMISSIONS_HUB_NO_NAME_COPY;
+  if (ADMISSIONS_HUB_PLACEHOLDER_RESIDENT_NAMES.has(combined.toLowerCase())) {
+    return ADMISSIONS_HUB_NO_NAME_COPY;
+  }
+
+  return combined;
+}
+
 /** Notice when the header facility selector has no valid site. */
 export function admissionsHubNoFacilityNotice(): string {
   return "Select a facility in the header to load intake and discharge metrics.";

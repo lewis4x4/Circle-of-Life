@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   ADMISSIONS_HUB_MISSING_DATE_COPY,
+  ADMISSIONS_HUB_NO_NAME_COPY,
+  ADMISSIONS_HUB_NO_RESIDENT_COPY,
   admissionsHubMetricLoadingCopy,
   admissionsHubMetricNoFacilityCopy,
   admissionsHubMetricValue,
@@ -12,6 +14,7 @@ import {
   formatAdmissionsHubMedicaidStage,
   formatAdmissionsHubReferralSource,
   formatAdmissionsHubRelativeDate,
+  formatAdmissionsHubResidentName,
   formatAdmissionsHubTargetMoveInDate,
   formatAdmissionsHubTargetMoveInDateValue,
 } from "./admissions-hub-display-copy";
@@ -117,6 +120,68 @@ describe("formatAdmissionsHubReferralSource", () => {
     expect(formatAdmissionsHubReferralSource("Hospital discharge planner")).toBe(
       "Hospital discharge planner",
     );
+  });
+});
+
+describe("formatAdmissionsHubResidentName", () => {
+  it("names a missing resident join", () => {
+    expect(formatAdmissionsHubResidentName(null)).toBe(ADMISSIONS_HUB_NO_RESIDENT_COPY);
+    expect(formatAdmissionsHubResidentName(undefined)).toBe(ADMISSIONS_HUB_NO_RESIDENT_COPY);
+  });
+
+  it("names a blank posted name", () => {
+    expect(formatAdmissionsHubResidentName({ first_name: "", last_name: "" })).toBe(
+      ADMISSIONS_HUB_NO_NAME_COPY,
+    );
+    expect(formatAdmissionsHubResidentName({ first_name: "   ", last_name: "  " })).toBe(
+      ADMISSIONS_HUB_NO_NAME_COPY,
+    );
+  });
+
+  it("names an em dash placeholder", () => {
+    expect(formatAdmissionsHubResidentName({ first_name: "—", last_name: "" })).toBe(
+      ADMISSIONS_HUB_NO_NAME_COPY,
+    );
+  });
+
+  it.each([
+    ["Unknown", ""],
+    ["Unknown resident", ""],
+    ["Unknown", "resident"],
+    ["Unknown", "Resident"],
+    ["Unnamed", ""],
+    ["Unnamed resident", ""],
+    ["Unnamed", "resident"],
+  ] as const)("names legacy generic placeholder %j %j", (first_name, last_name) => {
+    expect(formatAdmissionsHubResidentName({ first_name, last_name })).toBe(
+      ADMISSIONS_HUB_NO_NAME_COPY,
+    );
+  });
+
+  it("keeps a posted name", () => {
+    expect(formatAdmissionsHubResidentName({ first_name: "Posted", last_name: "Record" })).toBe(
+      "Posted Record",
+    );
+    expect(formatAdmissionsHubResidentName({ first_name: "Posted", last_name: "" })).toBe("Posted");
+    expect(formatAdmissionsHubResidentName({ first_name: "", last_name: "Record" })).toBe("Record");
+  });
+
+  it("never returns legacy generic strings or an em dash", () => {
+    const samples = [
+      null,
+      undefined,
+      { first_name: "", last_name: "" },
+      { first_name: "—", last_name: "" },
+      { first_name: "Unknown", last_name: "resident" },
+      { first_name: "Posted", last_name: "Record" },
+    ] as const;
+    const forbidden = ["—", "Unknown", "Unknown resident", "Unknown Resident"];
+    for (const sample of samples) {
+      const result = formatAdmissionsHubResidentName(sample);
+      for (const bad of forbidden) {
+        expect(result).not.toBe(bad);
+      }
+    }
   });
 });
 
