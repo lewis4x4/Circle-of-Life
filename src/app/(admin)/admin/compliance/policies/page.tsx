@@ -70,7 +70,7 @@ export default function PoliciesListPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/admin/compliance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground")} >
+            <Link href="/admin/compliance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold bg-primary hover:bg-primary/90 text-primary-foreground")} >
                + New Policy
             </Link>
           </div>
