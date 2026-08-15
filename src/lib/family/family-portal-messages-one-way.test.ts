@@ -16,6 +16,10 @@ const migrationPath = path.join(
 const familyDataPath = path.join(repoRoot, "src/lib/family/family-messages-data.ts");
 const familyPagePath = path.join(repoRoot, "src/app/(family)/family/messages/page.tsx");
 const staffPagePath = path.join(repoRoot, "src/app/(admin)/admin/family-messages/page.tsx");
+const staffBulletinSectionPath = path.join(
+  repoRoot,
+  "src/components/family-portal/StaffFamilyBulletinSection.tsx",
+);
 const familyFeedPath = path.join(repoRoot, "src/lib/family/family-feed.ts");
 const staffComposerPath = path.join(
   repoRoot,
@@ -56,14 +60,25 @@ describe("family portal messages one-way policy", () => {
   it("staff page presents bulletin posting, not a two-way inbox", () => {
     const source = fs.readFileSync(staffPagePath, "utf8");
     expect(source).toMatch(/postStaffMessage/);
-    expect(source).toMatch(/StaffFamilyNoteComposer/);
+    expect(source).toMatch(/StaffFamilyBulletinSection/);
     expect(source).toMatch(/FamilyPortalUpdateLog/);
+    expect(source).toMatch(/FAMILY_BULLETIN_EMPTY_TITLE/);
     expect(source).not.toMatch(/Start the conversation/i);
     expect(source).not.toMatch(/family replied/i);
     expect(source).not.toMatch(/Inbox Zero/i);
     expect(source).not.toMatch(/Resident threads/i);
     expect(source).not.toMatch(/<Send /);
     expect(source).not.toMatch(/justify-end/);
+    expect(source).not.toMatch(/StaffFamilyNoteComposer/);
+  });
+
+  it("bulletin section surfaces one-way helper and resident picker", () => {
+    const source = fs.readFileSync(staffBulletinSectionPath, "utf8");
+    expect(source).toMatch(/FAMILY_BULLETIN_ONE_WAY_HELPER/);
+    expect(source).toMatch(/Post a bulletin note/);
+    expect(source).toMatch(/Last posted/);
+    expect(source).not.toMatch(/type a reply/i);
+    expect(source).not.toMatch(/Send className/);
   });
 
   it("staff composer uses post-update copy, not reply or send affordances", () => {

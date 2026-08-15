@@ -13,6 +13,7 @@ export type StaffFamilyNoteComposerProps = {
   draft: string;
   deliveryMethod: FamilyDeliveryMethod;
   posting?: boolean;
+  disabled?: boolean;
   error?: string | null;
   onDraftChange: (value: string) => void;
   onDeliveryMethodChange: (value: FamilyDeliveryMethod) => void;
@@ -24,13 +25,14 @@ export function StaffFamilyNoteComposer({
   draft,
   deliveryMethod,
   posting = false,
+  disabled = false,
   error,
   onDraftChange,
   onDeliveryMethodChange,
   onPost,
   className,
 }: StaffFamilyNoteComposerProps) {
-  const canPost = draft.trim().length > 0 && !posting;
+  const canPost = draft.trim().length > 0 && !posting && !disabled;
 
   return (
     <section
@@ -58,10 +60,11 @@ export function StaffFamilyNoteComposer({
           <select
             id="family-note-delivery"
             value={deliveryMethod}
+            disabled={disabled || posting}
             onChange={(event) =>
               onDeliveryMethodChange(event.target.value as FamilyDeliveryMethod)
             }
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             {familyDeliveryMethodOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -75,10 +78,11 @@ export function StaffFamilyNoteComposer({
           id="family-note-body"
           placeholder="Write an update for the family portal…"
           value={draft}
+          disabled={disabled || posting}
           onChange={(event) => onDraftChange(event.target.value)}
           maxLength={8000}
           rows={4}
-          className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           onKeyDown={(event) => {
             if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
               event.preventDefault();
