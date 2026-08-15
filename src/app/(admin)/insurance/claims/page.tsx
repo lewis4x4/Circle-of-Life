@@ -120,7 +120,7 @@ export default function InsuranceClaimsPage() {
                            {r.status.replace(/_/g, " ")}
                          </span>
                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                           Loss: {formattedDate}
+                           Loss: <span className="normal-case">{formattedDate}</span>
                          </span>
                          {r.incident_id && (
                            <Link href={`/admin/incidents/${r.incident_id}`} className="text-[10px] font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1">
