@@ -148,6 +148,16 @@ describe("AppShell all-sections jump list", () => {
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
 
+  it("marks only the role-home alias active when it resolves to another nav destination", () => {
+    renderAppShell();
+
+    const ownerHomeLinks = screen.getAllByRole("link", { name: "Owner home" });
+    const executiveLinks = screen.getAllByRole("link", { name: "Executive" });
+
+    expect(ownerHomeLinks.some((link) => link.getAttribute("aria-current") === "page")).toBe(true);
+    expect(executiveLinks.every((link) => link.getAttribute("aria-current") !== "page")).toBe(true);
+  });
+
   it("closes when the trigger is clicked again", async () => {
     const user = userEvent.setup();
     renderAppShell();
