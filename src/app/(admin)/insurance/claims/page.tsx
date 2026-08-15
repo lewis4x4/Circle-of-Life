@@ -123,7 +123,7 @@ export default function InsuranceClaimsPage() {
                            Loss: {formattedDate}
                          </span>
                          {r.incident_id && (
-                           <Link href={`/admin/incidents/${r.incident_id}`} className="text-[10px] font-bold uppercase tracking-wider text-primary-500 hover:text-primary-600 flex items-center gap-1">
+                           <Link href={`/admin/incidents/${r.incident_id}`} className="text-[10px] font-bold text-primary-500 hover:text-primary-600 flex items-center gap-1">
                              Incident linked ↗
                            </Link>
                          )}
