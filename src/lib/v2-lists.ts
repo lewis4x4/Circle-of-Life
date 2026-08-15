@@ -6,6 +6,7 @@ import {
   type V2PaginationInput,
   type V2PaginationMeta,
 } from "./v2-pagination";
+import { formatV2ListResidentPrimary } from "./v2/v2-lists-display-copy";
 
 export type V2ListId = "residents" | "incidents" | "alerts" | "admissions";
 
@@ -143,7 +144,7 @@ function mapRows(listId: V2ListId, rows: SupabaseRow[]): V2ListRow[] {
     case "residents":
       return rows.map((row) => ({
         id: String(row.resident_id ?? ""),
-        primary: String(row.resident_name ?? "—").trim() || "Unnamed resident",
+        primary: formatV2ListResidentPrimary(row.resident_name as string | null | undefined),
         facilityId: (row.facility_id as string | null) ?? null,
         facilityName: (row.facility_name as string | null) ?? null,
         status: (row.resident_status as string | null) ?? null,
@@ -175,7 +176,7 @@ function mapRows(listId: V2ListId, rows: SupabaseRow[]): V2ListRow[] {
     case "admissions":
       return rows.map((row) => ({
         id: String(row.admission_case_id ?? ""),
-        primary: String(row.resident_name ?? "—").trim() || "Unnamed resident",
+        primary: formatV2ListResidentPrimary(row.resident_name as string | null | undefined),
         facilityId: (row.facility_id as string | null) ?? null,
         facilityName: (row.facility_name as string | null) ?? null,
         status: (row.admission_status as string | null) ?? null,
