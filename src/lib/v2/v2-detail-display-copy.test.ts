@@ -5,15 +5,59 @@ import {
   V2_DETAIL_NO_DATE_POSTED_COPY,
   V2_DETAIL_NO_DIAGNOSIS_POSTED_COPY,
   V2_DETAIL_NO_METRIC_POSTED_COPY,
+  V2_DETAIL_NO_RESIDENT_POSTED_COPY,
   V2_DETAIL_NO_SEVERITY_POSTED_COPY,
   formatV2DetailCategory,
   formatV2DetailDate,
   formatV2DetailDiagnosis,
+  formatV2DetailResidentTitle,
   formatV2DetailSeverity,
   formatV2DetailSourceMetric,
 } from "./v2-detail-display-copy";
 
 const EM_DASH = "—";
+
+describe("formatV2DetailResidentTitle", () => {
+  it("names a missing resident instead of legacy generic copy", () => {
+    expect(formatV2DetailResidentTitle(null)).toBe(V2_DETAIL_NO_RESIDENT_POSTED_COPY);
+    expect(formatV2DetailResidentTitle(undefined)).toBe(V2_DETAIL_NO_RESIDENT_POSTED_COPY);
+    expect(formatV2DetailResidentTitle(null)).not.toBe("Unnamed resident");
+  });
+
+  it("names a blank resident instead of inventing a label", () => {
+    expect(formatV2DetailResidentTitle("")).toBe(V2_DETAIL_NO_RESIDENT_POSTED_COPY);
+    expect(formatV2DetailResidentTitle("   ")).toBe(V2_DETAIL_NO_RESIDENT_POSTED_COPY);
+    expect(formatV2DetailResidentTitle("")).not.toBe(EM_DASH);
+  });
+
+  it("names an em dash resident instead of a silent dash", () => {
+    expect(formatV2DetailResidentTitle(EM_DASH)).toBe(V2_DETAIL_NO_RESIDENT_POSTED_COPY);
+    expect(formatV2DetailResidentTitle(`  ${EM_DASH}  `)).toBe(
+      V2_DETAIL_NO_RESIDENT_POSTED_COPY,
+    );
+    expect(formatV2DetailResidentTitle(EM_DASH)).not.toBe("Unnamed resident");
+  });
+
+  it("maps legacy Unnamed resident and Unknown to the named gap copy", () => {
+    expect(formatV2DetailResidentTitle("Unnamed resident")).toBe(
+      V2_DETAIL_NO_RESIDENT_POSTED_COPY,
+    );
+    expect(formatV2DetailResidentTitle("  Unnamed resident  ")).toBe(
+      V2_DETAIL_NO_RESIDENT_POSTED_COPY,
+    );
+    expect(formatV2DetailResidentTitle("Unknown")).toBe(V2_DETAIL_NO_RESIDENT_POSTED_COPY);
+    expect(formatV2DetailResidentTitle("  Unknown  ")).toBe(
+      V2_DETAIL_NO_RESIDENT_POSTED_COPY,
+    );
+    expect(formatV2DetailResidentTitle("Unnamed resident")).not.toBe("Unnamed resident");
+    expect(formatV2DetailResidentTitle("Unknown")).not.toBe("Unknown");
+  });
+
+  it("returns a posted resident name trimmed", () => {
+    expect(formatV2DetailResidentTitle("Jordan Lee")).toBe("Jordan Lee");
+    expect(formatV2DetailResidentTitle("  Jordan Lee  ")).toBe("Jordan Lee");
+  });
+});
 
 describe("formatV2DetailDiagnosis", () => {
   it("names the gap when diagnosis is missing", () => {
