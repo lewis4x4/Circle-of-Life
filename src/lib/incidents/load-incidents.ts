@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  formatIncidentFollowupDue,
+  formatIncidentOccurredAt,
+  INCIDENTS_NO_DATE_POSTED_COPY,
+} from "@/lib/incidents/incidents-display-copy";
 import { classifyFollowupEscalation, isFollowupEscalated } from "@/lib/incidents/followup-escalation";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { createClient } from "@/lib/supabase/client";
@@ -205,9 +210,11 @@ export async function fetchIncidentsFromSupabase(
       category: mapDbCategoryToUi(row.category),
       severity: mapDbSeverityToUi(row.severity),
       status,
-      reportedAt: formatOccurredAt(row.occurred_at),
+      reportedAt: formatIncidentOccurredAt(row.occurred_at),
       reportedBy,
-      followupDueStr: dueMs ? formatFollowupDue(new Date(dueMs).toISOString()) : "—",
+      followupDueStr: dueMs
+        ? formatIncidentFollowupDue(new Date(dueMs).toISOString())
+        : INCIDENTS_NO_DATE_POSTED_COPY,
       followupDueMs: dueMs,
       openFollowups,
       overdueFollowups,
@@ -236,14 +243,3 @@ function mapDbCategoryToUi(value: string): IncidentCategory {
   return "other";
 }
 
-function formatOccurredAt(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Unknown";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(parsed);
-}
-
-function formatFollowupDue(iso: string): string {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(parsed);
-}
