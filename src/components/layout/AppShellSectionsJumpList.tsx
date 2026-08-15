@@ -14,21 +14,17 @@ import {
 import { PopoverContent } from "@/components/ui/popover";
 import {
   allSectionJumpEntries,
+  sectionJumpEntrySearchText,
   sectionJumpQuickEntries,
   type Pillar,
   type SectionJumpEntry,
 } from "@/lib/navigation/pillars";
 import { cn } from "@/lib/utils";
 
-function entrySearchValue(entry: SectionJumpEntry): string {
-  const parts = [entry.label, entry.href, entry.pillarLabel ?? "", entry.group].filter(Boolean);
-  return parts.join(" ").toLowerCase();
-}
-
 function matchesQuery(entry: SectionJumpEntry, query: string): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
-  return entrySearchValue(entry).includes(normalized);
+  return sectionJumpEntrySearchText(entry).includes(normalized);
 }
 
 export function AppShellSectionsJumpListPanel({
@@ -94,7 +90,7 @@ export function AppShellSectionsJumpListPanel({
               return (
                 <CommandItem
                   key={`${entry.group}-${entry.key}`}
-                  value={entrySearchValue(entry)}
+                  value={sectionJumpEntrySearchText(entry)}
                   onSelect={() => handleSelect(entry.href)}
                   className="cursor-pointer"
                 >

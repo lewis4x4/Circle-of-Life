@@ -169,8 +169,6 @@ export const PILLARS: Pillar[] = [
  * pillar.
  */
 export const AUXILIARY_ROUTES: PillarItem[] = [
-  { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
-  { key: "snack-pass", href: "/admin/dietary", label: "Snack pass", icon: Cookie },
   { key: "finance", href: "/admin/finance", label: "Finance hub", icon: Landmark },
   { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
   { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
@@ -208,9 +206,16 @@ export function allPillarItems(): Array<PillarItem & { pillar: Pillar }> {
 }
 
 /**
- * Stable keys for the all-sections jump list when the search field is empty.
- * Curated office-week teachable flows (2026-08-24) — not a full pillar dump.
+ * Jump-list-only routes (not in pillar nav or ⌘K auxiliary group). Used for
+ * office-week Common pins and full jump-list search — e.g. live rounding and
+ * alternate labels for pillar destinations.
  */
+export const SECTION_JUMP_EXTRA_ROUTES: PillarItem[] = [
+  { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
+  { key: "snack-pass", href: "/admin/dietary", label: "Snack pass", icon: Cookie },
+];
+
+/** Stable keys for the all-sections jump list when the search field is empty. */
 export const SECTION_JUMP_QUICK_KEYS = [
   "executive",
   "residents",
@@ -246,7 +251,18 @@ export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpE
     ...item,
     group: "auxiliary" as const,
   }));
-  return [...pillarEntries, ...auxiliaryEntries];
+  const extraEntries = SECTION_JUMP_EXTRA_ROUTES.map((item) => ({
+    ...item,
+    group: "auxiliary" as const,
+  }));
+  return [...pillarEntries, ...auxiliaryEntries, ...extraEntries];
+}
+
+/** Lowercase search text for a jump-list entry (includes teachable quick labels). */
+export function sectionJumpEntrySearchText(entry: SectionJumpEntry): string {
+  const quickLabel = SECTION_JUMP_QUICK_LABELS[entry.key as SectionJumpQuickKey];
+  const parts = [entry.label, quickLabel, entry.href, entry.pillarLabel ?? "", entry.group].filter(Boolean);
+  return parts.join(" ").toLowerCase();
 }
 
 /** Quick links shown before the operator types in the all-sections jump list. */
