@@ -237,8 +237,8 @@ export default function AdminRoundingLivePage() {
   }, [availableFacilities, selectedFacilityId]);
 
   const emptyCopy = useMemo(
-    () => describeLiveBoardEmptyState(facilityName),
-    [facilityName],
+    () => describeLiveBoardEmptyState(facilityName, Boolean(selectedFacilityId)),
+    [facilityName, selectedFacilityId],
   );
 
   const cadenceReminder = useMemo(

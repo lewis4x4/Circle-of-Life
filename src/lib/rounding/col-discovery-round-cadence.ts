@@ -273,11 +273,22 @@ export type LiveBoardEmptyCopy = {
 };
 
 /** Operator copy when the live board has no tasks in the loaded window. */
-export function describeLiveBoardEmptyState(facilityName: string | null): LiveBoardEmptyCopy {
-  if (!facilityName) {
+export function describeLiveBoardEmptyState(
+  facilityName: string | null,
+  hasFacilityScoped = Boolean(facilityName),
+): LiveBoardEmptyCopy {
+  if (!hasFacilityScoped) {
     return {
       why: "No facility scoped",
       guidance: "Select a facility from the top bar to load live rounding tasks.",
+      overviewCta: "Go to overview",
+    };
+  }
+
+  if (!facilityName) {
+    return {
+      why: "No live tasks in the last 12 hours.",
+      guidance: "Return to the Smart Rounding overview to start a rounding cycle.",
       overviewCta: "Go to overview",
     };
   }
