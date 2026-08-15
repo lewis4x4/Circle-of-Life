@@ -18,6 +18,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { ResidentSelector } from "@/components/medication/ResidentSelector";
 import { createClient } from "@/lib/supabase/client";
+import { formatVerbalOrderFacilityName } from "@/lib/medications/verbal-orders-new-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 const ORDER_TYPES = [
@@ -151,7 +152,8 @@ export default function NewVerbalOrderPage() {
 
   const getFacilityName = (): string => {
     if (!selectedFacilityId) return "Select a facility";
-    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name || "Unknown facility";
+    const name = availableFacilities.find((f) => f.id === selectedFacilityId)?.name;
+    return formatVerbalOrderFacilityName(name);
   };
 
   if (authLoading) {
