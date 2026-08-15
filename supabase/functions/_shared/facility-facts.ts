@@ -14,6 +14,10 @@
  * fact list — fact-pack failure must never break the Haven Insight surface.
  */
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  formatFacilityFactsAdministratorName,
+  formatFacilityFactsAssistantAdministratorName,
+} from "./facility-facts-display-copy.ts";
 import { pickRedacted } from "./redact-pii.ts";
 
 export type FacilityFact = {
@@ -229,8 +233,10 @@ export function formatFacilityFactsBlock(facts: FacilityFact[]): string {
     const entityPart = f.entity_name ? ` (entity: ${f.entity_name})` : "";
     const bedsPart = typeof f.licensed_beds === "number" ? ` — ${f.licensed_beds} licensed beds` : "";
     lines.push(`  ${f.name}${entityPart}${bedsPart}`);
-    lines.push(`    Administrator: ${f.administrator_name ?? "—"}`);
-    lines.push(`    Assistant Administrator: ${f.assistant_administrator_name ?? "—"}`);
+    lines.push(`    Administrator: ${formatFacilityFactsAdministratorName(f.administrator_name)}`);
+    lines.push(
+      `    Assistant Administrator: ${formatFacilityFactsAssistantAdministratorName(f.assistant_administrator_name)}`,
+    );
     if (f.address) lines.push(`    Address: ${f.address}`);
     if (f.phone) lines.push(`    Phone: ${f.phone}`);
     if (f.email) lines.push(`    Email: ${f.email}`);
