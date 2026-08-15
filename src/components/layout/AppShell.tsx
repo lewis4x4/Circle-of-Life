@@ -385,11 +385,23 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const isItemActive = useCallback(
     (href: string) => {
       const resolved = resolveRouteHref(href);
-      if (href === "/admin") return pathname === resolved;
-      // When a role's home aliases an existing destination (for example an
-      // owner landing on Executive), give the role-home item sole ownership
-      // of the active state instead of highlighting both links.
-      if (roleConfig.route !== "/admin" && href === roleConfig.route) return false;
+      const roleHomeRoute = roleConfig.route;
+
+      // Role-home (/admin) owns active state for its aliased landing route and
+      // every descendant (e.g. owner on /admin/executive/facility/...).
+      if (href === "/admin") {
+        if (roleHomeRoute === "/admin") {
+          return pathname === "/admin" || pathname.startsWith("/admin/");
+        }
+        return (
+          pathname === roleHomeRoute || pathname.startsWith(`${roleHomeRoute}/`)
+        );
+      }
+
+      // Suppress the aliased destination on the exact landing path so role-home
+      // stays sole current (avoid double-highlight on /admin/executive).
+      if (roleHomeRoute !== "/admin" && href === roleHomeRoute) return false;
+
       return pathname === resolved || pathname.startsWith(`${resolved}/`);
     },
     [pathname, resolveRouteHref, roleConfig.route],
