@@ -382,7 +382,7 @@ export default function AdminCertificationsPage() {
             <V2Card hoverColor="indigo" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Facility-scoped license and training records.</p>
-                 <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
+                 <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
                    + Log Certification
                  </Link>
               </div>
@@ -481,7 +481,7 @@ export default function AdminCertificationsPage() {
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
+              className="shrink-0 font-mono text-[10px]"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportCertificationsCsv()}
