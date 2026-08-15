@@ -2,6 +2,15 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  coverageKpiCoveragePctValue,
+  coverageKpiOpenGapsValue,
+  coverageKpiReviewOverdueValue,
+  coverageKpiStaleExpiredValue,
+  formatCoverageComplianceCategory,
+  formatCoverageDaysSinceRefresh,
+  formatCoverageReviewStatus,
+} from "@/lib/knowledge/coverage-display-copy";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -125,6 +134,8 @@ export default function CoverageDashboardRoute() {
     void load();
   }, [load]);
 
+  const kpiCtx = useMemo(() => ({ loadFailed: Boolean(error) }), [error]);
+
   const resolveGap = useCallback(
     async (gapId: string) => {
       const { error: uErr } = await supabase
@@ -176,7 +187,7 @@ export default function CoverageDashboardRoute() {
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPI
           label="Seed-target coverage"
-          value={rollup ? `${rollup.coverage_pct ?? 0}%` : "—"}
+          value={coverageKpiCoveragePctValue(rollup, kpiCtx)}
           sub={
             rollup ? `${rollup.covered_targets}/${rollup.total_targets} topics covered` : "loading…"
           }
@@ -184,7 +195,7 @@ export default function CoverageDashboardRoute() {
         />
         <KPI
           label="Open gaps"
-          value={rollup ? String(rollup.open_gaps) : "—"}
+          value={String(coverageKpiOpenGapsValue(rollup, kpiCtx))}
           sub={
             rollup
               ? `${rollup.resolved_last_30d} resolved in last 30d`
@@ -194,7 +205,7 @@ export default function CoverageDashboardRoute() {
         />
         <KPI
           label="Stale + expired docs"
-          value={rollup ? String(rollup.stale_documents + rollup.expired_documents) : "—"}
+          value={String(coverageKpiStaleExpiredValue(rollup, kpiCtx))}
           sub={
             rollup
               ? `${rollup.expired_documents} expired · ${rollup.fresh_documents} fresh`
@@ -204,7 +215,7 @@ export default function CoverageDashboardRoute() {
         />
         <KPI
           label="Review overdue"
-          value={rollup ? String(rollup.review_overdue_count) : "—"}
+          value={String(coverageKpiReviewOverdueValue(rollup, kpiCtx))}
           sub={rollup ? `of ${rollup.total_documents} total` : "loading…"}
           tone={rollup && rollup.review_overdue_count > 0 ? "warn" : "default"}
         />
@@ -430,7 +441,7 @@ function FreshnessPanel({ rows }: { rows: FreshnessRow[] }) {
                 </Link>
               </td>
               <td className="px-3 py-2 text-xs text-muted-foreground">
-                {d.compliance_category ?? "—"}
+                {formatCoverageComplianceCategory(d.compliance_category)}
               </td>
               <td className="px-3 py-2">
                 <span
@@ -442,15 +453,17 @@ function FreshnessPanel({ rows }: { rows: FreshnessRow[] }) {
                 </span>
               </td>
               <td className="px-3 py-2 text-right font-mono text-xs">
-                {d.days_since_refresh ?? "—"}
+                {formatCoverageDaysSinceRefresh(d.days_since_refresh)}
               </td>
               <td className="px-3 py-2 text-xs">
                 {d.review_overdue ? (
                   <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] text-rose-800">
-                    Overdue
+                    {formatCoverageReviewStatus(true)}
                   </span>
                 ) : (
-                  <span className="text-muted-foreground">—</span>
+                  <span className="text-muted-foreground">
+                    {formatCoverageReviewStatus(false)}
+                  </span>
                 )}
               </td>
             </tr>
