@@ -2,10 +2,12 @@
  * Quiet Operator copy for the observation plan editor resident combobox.
  * Missing acuity names the gap — never a silent em dash. Real zero stays "0".
  * Missing resident names name the gap — never legacy "Unnamed resident" or fabricated names.
+ * Missing room/bed labels name the gap — never legacy "Unassigned" or fabricated rooms.
  */
 
 export const OBSERVATION_PLAN_NO_ACUITY_COPY = "No acuity posted";
 export const OBSERVATION_PLAN_NO_NAME_COPY = "No name posted";
+export const OBSERVATION_PLAN_NO_ROOM_COPY = "No room posted";
 
 const OBSERVATION_PLAN_PLACEHOLDER_RESIDENT_NAMES = new Set([
   "—",
@@ -64,4 +66,28 @@ export function formatObservationPlanAcuitySegment(
   const display = formatObservationPlanAcuityDisplay(acuityScore, acuityLevel);
   if (display === OBSERVATION_PLAN_NO_ACUITY_COPY) return OBSERVATION_PLAN_NO_ACUITY_COPY;
   return `Acuity ${display}`;
+}
+
+const OBSERVATION_PLAN_PLACEHOLDER_ROOM_LABELS = new Set([
+  "—",
+  "unknown",
+  "unassigned",
+  "unnamed",
+]);
+
+function isMissingObservationPlanRoomLabel(value: string | null | undefined): boolean {
+  if (value == null) return true;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return true;
+  return OBSERVATION_PLAN_PLACEHOLDER_ROOM_LABELS.has(trimmed.toLowerCase());
+}
+
+/** Room or bed label for combobox — room_number first, then bed_label; blank/legacy → named gap. */
+export function formatObservationPlanRoomLabel(
+  roomNumber: string | null | undefined,
+  bedLabel: string | null | undefined,
+): string {
+  if (!isMissingObservationPlanRoomLabel(roomNumber)) return roomNumber!.trim();
+  if (!isMissingObservationPlanRoomLabel(bedLabel)) return bedLabel!.trim();
+  return OBSERVATION_PLAN_NO_ROOM_COPY;
 }

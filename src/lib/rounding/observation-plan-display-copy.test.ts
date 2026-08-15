@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   OBSERVATION_PLAN_NO_ACUITY_COPY,
   OBSERVATION_PLAN_NO_NAME_COPY,
+  OBSERVATION_PLAN_NO_ROOM_COPY,
   formatObservationPlanAcuityDisplay,
   formatObservationPlanAcuitySegment,
   formatObservationPlanResidentName,
+  formatObservationPlanRoomLabel,
 } from "./observation-plan-display-copy";
 
 const EM_DASH = "—";
@@ -93,6 +95,43 @@ describe("formatObservationPlanResidentName", () => {
     expect(formatObservationPlanResidentName({ first_name: "Unnamed", last_name: "resident" })).not.toBe(
       "Unnamed resident",
     );
+  });
+});
+
+describe("formatObservationPlanRoomLabel", () => {
+  it("names the gap when room and bed are missing or blank", () => {
+    expect(formatObservationPlanRoomLabel(null, null)).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel(undefined, undefined)).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel("", "")).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel("   ", "  ")).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+  });
+
+  it("names the gap for em dash and legacy generic room strings", () => {
+    expect(formatObservationPlanRoomLabel("—", null)).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel("Unknown", null)).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel("Unassigned", null)).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel("Unnamed", null)).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel(null, "Unassigned")).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+    expect(formatObservationPlanRoomLabel(null, "—")).toBe(OBSERVATION_PLAN_NO_ROOM_COPY);
+  });
+
+  it("prefers posted room_number over bed_label", () => {
+    expect(formatObservationPlanRoomLabel("Posted Room", "Posted Bed")).toBe("Posted Room");
+    expect(formatObservationPlanRoomLabel("  Posted Room  ", "Posted Bed")).toBe("Posted Room");
+  });
+
+  it("falls back to bed_label when room_number is missing", () => {
+    expect(formatObservationPlanRoomLabel(null, "Posted Bed")).toBe("Posted Bed");
+    expect(formatObservationPlanRoomLabel("", "Posted Bed")).toBe("Posted Bed");
+    expect(formatObservationPlanRoomLabel("Unassigned", "Posted Bed")).toBe("Posted Bed");
+    expect(formatObservationPlanRoomLabel("  Posted Bed  ", null)).toBe("Posted Bed");
+  });
+
+  it("never surfaces Unassigned or a lone em dash", () => {
+    expect(OBSERVATION_PLAN_NO_ROOM_COPY).toBe("No room posted");
+    expect(formatObservationPlanRoomLabel(null, null)).not.toBe("Unassigned");
+    expect(formatObservationPlanRoomLabel(null, null)).not.toBe("Unknown");
+    expect(formatObservationPlanRoomLabel(null, null)).not.toBe("—");
   });
 });
 

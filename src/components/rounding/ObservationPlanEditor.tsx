@@ -34,6 +34,7 @@ import {
   formatObservationPlanAcuityDisplay,
   formatObservationPlanAcuitySegment,
   formatObservationPlanResidentName,
+  formatObservationPlanRoomLabel,
 } from "@/lib/rounding/observation-plan-display-copy";
 import {
   buildPlanSchedulePreview,
@@ -183,7 +184,10 @@ function defaultRulesForNewPlan(facilityName: string): {
 }
 
 function residentRoom(resident: ResidentOption) {
-  return resident.beds?.rooms?.room_number ?? resident.beds?.bed_label ?? "Unassigned";
+  return formatObservationPlanRoomLabel(
+    resident.beds?.rooms?.room_number,
+    resident.beds?.bed_label,
+  );
 }
 
 function residentComboboxLabel(resident: ResidentOption) {
