@@ -19,6 +19,7 @@ import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatShiftSwapStaffLabel } from "@/lib/admin/shift-swaps/shift-swaps-display-copy";
 import { formatShiftSwapCoveringName } from "@/lib/staffing/shift-swaps-display-copy";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -100,13 +101,6 @@ function buildShiftSwapsCsv(rows: SwapExportRow[]): string {
     ].join(","),
   );
   return [header, ...body].join("\r\n");
-}
-
-function staffDisplayName(s: SupabaseStaffMini | undefined): string {
-  if (!s) return "Unknown staff";
-  const first = s.first_name?.trim() ?? "";
-  const last = s.last_name?.trim() ?? "";
-  return `${first} ${last}`.trim() || "Staff member";
 }
 
 const DEFAULT_FILTERS = { search: "", status: "all" };
@@ -211,9 +205,9 @@ export default function AdminShiftSwapsPage() {
 
       const exportRows: SwapExportRow[] = list.map((row) => ({
         ...row,
-        requesting_staff_display_name: staffDisplayName(byId.get(row.requesting_staff_id)),
+        requesting_staff_display_name: formatShiftSwapStaffLabel(byId.get(row.requesting_staff_id)),
         covering_staff_display_name: row.covering_staff_id
-          ? staffDisplayName(byId.get(row.covering_staff_id))
+          ? formatShiftSwapStaffLabel(byId.get(row.covering_staff_id))
           : "",
       }));
 
@@ -571,8 +565,8 @@ async function fetchShiftSwapsFromSupabase(
     swapType: r.swap_type,
     reason: r.reason,
     createdAt: r.created_at,
-    requestingName: staffDisplayName(byId.get(r.requesting_staff_id)),
-    coveringName: r.covering_staff_id ? staffDisplayName(byId.get(r.covering_staff_id)) : null,
+    requestingName: formatShiftSwapStaffLabel(byId.get(r.requesting_staff_id)),
+    coveringName: r.covering_staff_id ? formatShiftSwapStaffLabel(byId.get(r.covering_staff_id)) : null,
   }));
 
   return ui;
