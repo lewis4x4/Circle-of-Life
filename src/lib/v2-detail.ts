@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   formatV2DetailCategory,
+  formatV2DetailDate,
   formatV2DetailDiagnosis,
   formatV2DetailSeverity,
   formatV2DetailSourceMetric,
@@ -72,8 +73,8 @@ function mapDetail(
         identifiers: [
           { label: "Resident ID", value: recordId },
           { label: "Diagnosis", value: formatV2DetailDiagnosis(row.primary_diagnosis as string | null) },
-          { label: "Discharge", value: formatDate(row.discharge_date) },
-          { label: "Updated", value: formatDate(row.updated_at) },
+          { label: "Discharge", value: formatV2DetailDate(row.discharge_date) },
+          { label: "Updated", value: formatV2DetailDate(row.updated_at) },
         ],
         source: "live",
       };
@@ -90,7 +91,7 @@ function mapDetail(
         identifiers: [
           { label: "Severity", value: formatV2DetailSeverity(sev) },
           { label: "Category", value: formatV2DetailCategory(row.category as string | null) },
-          { label: "Occurred", value: formatDate(row.occurred_at) },
+          { label: "Occurred", value: formatV2DetailDate(row.occurred_at) },
           { label: "AHCA reportable", value: row.ahca_reportable === true ? "Yes" : "No" },
         ],
         source: "live",
@@ -108,7 +109,7 @@ function mapDetail(
         identifiers: [
           { label: "Severity", value: formatV2DetailSeverity(sev) },
           { label: "Category", value: formatV2DetailCategory(row.category as string | null) },
-          { label: "First triggered", value: formatDate(row.first_triggered_at) },
+          { label: "First triggered", value: formatV2DetailDate(row.first_triggered_at) },
           { label: "Source metric", value: formatV2DetailSourceMetric(row.source_metric_code as string | null) },
         ],
         source: "live",
@@ -123,10 +124,10 @@ function mapDetail(
         subtitle: (row.facility_name as string) ?? null,
         status: status ? { label: status, tone: admissionTone(status) } : null,
         identifiers: [
-          { label: "Move-in target", value: formatDate(row.target_move_in_date) },
-          { label: "Financial cleared", value: formatDate(row.financial_clearance_at) },
-          { label: "Physician orders", value: formatDate(row.physician_orders_received_at) },
-          { label: "Updated", value: formatDate(row.updated_at) },
+          { label: "Move-in target", value: formatV2DetailDate(row.target_move_in_date) },
+          { label: "Financial cleared", value: formatV2DetailDate(row.financial_clearance_at) },
+          { label: "Physician orders", value: formatV2DetailDate(row.physician_orders_received_at) },
+          { label: "Updated", value: formatV2DetailDate(row.updated_at) },
         ],
         source: "live",
       };
@@ -198,12 +199,3 @@ function admissionTone(
   }
 }
 
-function formatDate(value: unknown): string {
-  if (value == null) return "—";
-  const s = String(value);
-  if (!s) return "—";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toISOString().slice(0, 16).replace("T", " ");
-}
