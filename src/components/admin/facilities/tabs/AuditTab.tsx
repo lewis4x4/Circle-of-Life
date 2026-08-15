@@ -14,6 +14,7 @@ import {
 } from "@/lib/admin/facilities/facility-audit-ui";
 import type { FacilityAuditMetricsPayload } from "@/hooks/useFacilityAuditMetrics";
 import { type AuditLogFilters, type FacilityAuditHookRow, useFacilityAuditLog } from "@/hooks/useFacilityAuditLog";
+import { formatAuditTabNewValue, formatAuditTabOldValue } from "@/lib/facilities/audit-tab-display-copy";
 import { cn } from "@/lib/utils";
 import { Loader2, Download, Filter } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -686,8 +687,8 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
                           {entry.field_name ? (
                             <p className="mt-3 text-muted-foreground">
                               <span className="mr-2 font-medium text-foreground">{entry.field_name}:</span>
-                              <span className="text-destructive line-through">{entry.old_value_text ?? "—"}</span> →{" "}
-                              <strong className="font-semibold text-foreground">{entry.new_value_text ?? "—"}</strong>
+                              <span className="text-destructive line-through">{formatAuditTabOldValue(entry.old_value_text)}</span> →{" "}
+                              <strong className="font-semibold text-foreground">{formatAuditTabNewValue(entry.new_value_text)}</strong>
                             </p>
                           ) : (
                             <pre className="mt-3 max-h-48 overflow-auto rounded-md border border-border bg-background p-2 text-[11px] leading-relaxed">
