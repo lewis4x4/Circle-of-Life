@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { formatV2FormResidentOptionLabel } from "@/lib/v2-form-options-display-copy";
 
 export type FormFacilityOption = { id: string; label: string };
 export type FormResidentOption = { id: string; label: string };
@@ -44,7 +45,7 @@ export async function loadV2FormOptions(): Promise<{
 
   const residents: FormResidentOption[] = (residentsResult.data ?? []).map((row) => ({
     id: row.resident_id,
-    label: (row.resident_name ?? "").trim() || "Unnamed resident",
+    label: formatV2FormResidentOptionLabel(row.resident_name),
   }));
 
   return { facilities, residents };
