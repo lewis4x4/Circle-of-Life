@@ -74,6 +74,22 @@ export function formatAdmissionsHubTargetMoveInDate(
   return `Target: ${targetMoveInDate}`;
 }
 
+/** Target move-in value when a field label already names the date. */
+export function formatAdmissionsHubTargetMoveInDateValue(
+  targetMoveInDate: string | null | undefined,
+): string {
+  if (!targetMoveInDate || !targetMoveInDate.trim()) return "No target move-in date";
+  return targetMoveInDate;
+}
+
+/** Referral source on a lead or handoff card — never invents a source name. */
+export function formatAdmissionsHubReferralSource(
+  sourceName: string | null | undefined,
+): string {
+  if (!sourceName || !sourceName.trim()) return "No source";
+  return sourceName;
+}
+
 /** Notice when the header facility selector has no valid site. */
 export function admissionsHubNoFacilityNotice(): string {
   return "Select a facility in the header to load intake and discharge metrics.";
