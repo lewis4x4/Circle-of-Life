@@ -13,6 +13,8 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchPresenceCensus, presenceSummaryText, type PresenceCensus } from "@/lib/executive/presence-census";
 import { cn } from "@/lib/utils";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
+import { formatFacilityOverviewEmail } from "@/lib/facilities/overview-tab-display-copy";
+import { formatStaffingTabAdministratorName } from "@/lib/facilities/staffing-tab-display-copy";
 
 interface OverviewTabProps {
   facilityId: string;
@@ -221,7 +223,9 @@ export function OverviewTab({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-muted-foreground">Administrator</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{facility.administrator_name ?? "—"}</p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  {formatStaffingTabAdministratorName(facility.administrator_name)}
+                </p>
                 <p className="text-xs text-muted-foreground">{facility.phone ?? "No phone"}</p>
               </div>
             </div>
@@ -232,7 +236,9 @@ export function OverviewTab({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-muted-foreground">Contact email</p>
-                <p className="mt-1 truncate text-sm font-medium text-foreground">{facility.email ?? "—"}</p>
+                <p className="mt-1 truncate text-sm font-medium text-foreground">
+                  {formatFacilityOverviewEmail(facility.email)}
+                </p>
               </div>
             </div>
           </div>
