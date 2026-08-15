@@ -7,9 +7,12 @@ import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
+import {
+  formatInsuranceClaimDateOfLoss,
+  formatInsuranceClaimNumber,
+} from "@/lib/insurance/claims-display-copy";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import {
   INSURANCE_CLAIMS_LIST_SELECT,
@@ -93,9 +96,8 @@ export default function InsuranceClaimsPage() {
              ) : (
                rows.map((r) => {
                  const isOpen = r.status !== "closed";
-                 const d = r.date_of_loss;
-                 const formattedDate = d ? format(parseISO(d.length <= 10 ? `${d}T12:00:00.000Z` : d), "MMM d, yyyy") : "—";
-                 
+                 const formattedDate = formatInsuranceClaimDateOfLoss(r.date_of_loss);
+
                  return (
                    <MotionItem
                      key={r.id}
@@ -137,7 +139,7 @@ export default function InsuranceClaimsPage() {
                          </div>
                          <div className="flex-1">
                             <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">Claim #</p>
-                            <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{r.claim_number ?? "—"}</p>
+                            <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{formatInsuranceClaimNumber(r.claim_number)}</p>
                          </div>
                        </div>
                      </div>
@@ -146,7 +148,7 @@ export default function InsuranceClaimsPage() {
                          href={`/admin/insurance/claims/${r.id}`}
                          className={cn(
                            buttonVariants({ variant: "outline", size: "sm" }),
-                           "h-10 rounded-full px-5 font-bold uppercase tracking-wider text-[10px] bg-white dark:bg-white/5 dark:border-white/10"
+                           "h-10 rounded-full px-5 font-bold text-[10px] bg-white dark:bg-white/5 dark:border-white/10"
                          )}
                        >
                          Manage Claim
