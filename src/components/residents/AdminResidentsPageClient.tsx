@@ -44,6 +44,7 @@ import {
 import type { ResidentRosterMetrics } from "@/lib/residents/resident-roster-metrics";
 import { presenceLabel, presenceTone } from "@/lib/residents/presence";
 import {
+  averageAcuity,
   formatResidentRosterUpdatedAt,
   rosterAvatarAccentFromId,
   truncateCareNoteSubtitle,
@@ -105,12 +106,6 @@ function groupLabelForRow(mode: ResidentRosterGroupBy, row: ResidentRow): string
   if (mode === "acuity") return `Acuity ${row.acuity}`;
   if (mode === "status") return presenceLabel(row.status);
   return "";
-}
-
-function averageAcuity(rows: ResidentRow[]): string {
-  if (rows.length === 0) return "—";
-  const sum = rows.reduce((acc, r) => acc + r.acuity, 0);
-  return (sum / rows.length).toFixed(1);
 }
 
 function sortRows(rows: ResidentRow[], sortKey: SortKey, dir: SortDir): ResidentRow[] {
