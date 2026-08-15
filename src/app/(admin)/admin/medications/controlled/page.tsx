@@ -23,6 +23,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CountInitiationModal } from "@/components/medication/CountInitiationModal";
 import { DiscrepancyResolutionModal, type DiscrepancyRecord } from "@/components/medication/DiscrepancyResolutionModal";
+import { formatMedicationName } from "@/lib/clinical/medications-display-copy";
 
 type Row = {
   id: string;
@@ -112,7 +113,7 @@ export default function AdminControlledSubstancesPage() {
     setSelectedDiscrepancies([
       {
         id: row.id,
-        medicationName: row.resident_medications?.medication_name || "Unknown",
+        medicationName: formatMedicationName(row.resident_medications?.medication_name),
         countDate: row.count_date,
         shift: row.shift,
         expectedCount: row.expected_count,
@@ -144,7 +145,7 @@ export default function AdminControlledSubstancesPage() {
       .filter((r) => r.discrepancy !== 0 && !r.discrepancy_resolved)
       .map((r) => ({
         id: r.id,
-        medicationName: r.resident_medications?.medication_name || "Unknown",
+        medicationName: formatMedicationName(r.resident_medications?.medication_name),
         countDate: r.count_date,
         shift: r.shift,
         expectedCount: r.expected_count,
@@ -253,7 +254,7 @@ export default function AdminControlledSubstancesPage() {
           onClick={() => {
             const csv = filteredRows.map((r) =>
               [
-                r.resident_medications?.medication_name || "Unknown",
+                formatMedicationName(r.resident_medications?.medication_name),
                 r.count_date,
                 r.shift,
                 r.expected_count,
@@ -332,7 +333,7 @@ export default function AdminControlledSubstancesPage() {
           <div className="relative z-10 space-y-4 mt-6">
             <MotionList className="space-y-4">
               {filteredRows.map((r) => {
-                const medName = r.resident_medications?.medication_name ?? "—";
+                const medName = formatMedicationName(r.resident_medications?.medication_name);
                 const hot = r.discrepancy !== 0 && !r.discrepancy_resolved;
                 const resolved = r.discrepancy_resolved;
 
