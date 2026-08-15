@@ -24,6 +24,7 @@ import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { V2Card } from "@/components/ui/v2-card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatApprovalsStaffName } from "@/lib/admin/approvals/approvals-display-copy";
 import { formatShiftSwapCoveringName } from "@/lib/staffing/shift-swaps-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -78,11 +79,6 @@ type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 const MILEAGE_APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
-
-function staffName(s: StaffMini | undefined): string {
-  if (!s) return "Unknown staff";
-  return `${s.first_name?.trim() ?? ""} ${s.last_name?.trim() ?? ""}`.trim() || "Staff member";
-}
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);
@@ -197,8 +193,10 @@ export default function AdminApprovalsInboxPage() {
       setSwaps(
         swapRows.map((r) => ({
           id: r.id,
-          requestingName: staffName(staffById.get(r.requesting_staff_id)),
-          coveringName: r.covering_staff_id ? staffName(staffById.get(r.covering_staff_id)) : null,
+          requestingName: formatApprovalsStaffName(staffById.get(r.requesting_staff_id)),
+          coveringName: r.covering_staff_id
+            ? formatApprovalsStaffName(staffById.get(r.covering_staff_id))
+            : null,
           swapType: r.swap_type,
           reason: r.reason,
           createdAt: r.created_at,
@@ -209,7 +207,7 @@ export default function AdminApprovalsInboxPage() {
           .filter((r): r is TimeRecordRow & { clock_out: string } => r.clock_out !== null)
           .map((r) => ({
             id: r.id,
-            staffName: staffName(staffById.get(r.staff_id)),
+            staffName: formatApprovalsStaffName(staffById.get(r.staff_id)),
             clockIn: r.clock_in,
             clockOut: r.clock_out,
             actualHours: r.actual_hours == null ? null : Number(r.actual_hours),
@@ -218,7 +216,7 @@ export default function AdminApprovalsInboxPage() {
       setMileage(
         (mileageRes.data ?? []).map((r) => ({
           id: r.id,
-          staffName: r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : "Staff member",
+          staffName: formatApprovalsStaffName(r.staff),
           tripDate: r.trip_date,
           purpose: r.purpose,
           miles: Number(r.miles),
