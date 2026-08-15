@@ -194,7 +194,8 @@ export function AdminReferralsPageClient({
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
   const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(initialLoadError);
+  const [bootstrapLoadError, setBootstrapLoadError] = useState<string | null>(initialLoadError);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [rows, setRows] = useState<LeadRow[]>(initialBootstrap.rows);
   const [upcomingTours, setUpcomingTours] = useState<UpcomingTourRow[]>(initialBootstrap.upcomingTours);
   const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<
@@ -277,7 +278,7 @@ export function AdminReferralsPageClient({
     skipNextLoadRef.current = false;
 
     setLoading(true);
-    setLoadError(null);
+    setBootstrapLoadError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       applyBootstrap({
         rows: [],
@@ -295,7 +296,7 @@ export function AdminReferralsPageClient({
       const bootstrap = await loadReferralsHubBootstrap(selectedFacilityId, supabase);
       applyBootstrap(bootstrap);
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
+      setBootstrapLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       applyBootstrap({
         rows: [],
         upcomingTours: [],
@@ -440,7 +441,10 @@ export function AdminReferralsPageClient({
   }, [activeAdmissionCaseByLeadId, kpiScope, noFacility, rows]);
 
   const allKpisZero =
-    Boolean(kpiMetrics) && !loading && (kpiMetrics?.sumScoped ?? 1) === 0;
+    Boolean(kpiMetrics) &&
+    !loading &&
+    !bootstrapLoadError &&
+    (kpiMetrics?.sumScoped ?? 1) === 0;
 
   const recentOutreach = useMemo(() => outreachRows.slice(0, 5), [outreachRows]);
 
@@ -451,8 +455,10 @@ export function AdminReferralsPageClient({
 
   const kpiCtx: ReferralsHubKpiContext = {
     loading,
-    loadFailed: Boolean(loadError),
+    loadFailed: Boolean(bootstrapLoadError),
   };
+
+  const kpiValuePresentation = kpiCtx.loading || kpiCtx.loadFailed ? "message" : "metric";
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 pb-28 pt-4">
@@ -515,27 +521,32 @@ export function AdminReferralsPageClient({
               label={kpiScope === "all" ? "Open new-status leads" : "Leads created in scope"}
               tone="neutral"
               footnote={kpiMetrics?.newFootnote}
+              valuePresentation={kpiValuePresentation}
             />
             <KpiCard
               value={referralsHubKpiTileValue("active_pipeline", kpiMetrics?.activePipeline, kpiCtx)}
               label="Active pipeline (touched in scope)"
               tone="neutral"
+              valuePresentation={kpiValuePresentation}
             />
             <KpiCard
               value={referralsHubKpiTileValue("needs_attention", kpiMetrics?.needsAttention, kpiCtx)}
               label="Needs attention (new · contacted)"
               tone={loading || !kpiMetrics ? "neutral" : kpiMetrics.needsTone}
+              valuePresentation={kpiValuePresentation}
             />
             <KpiCard
               value={referralsHubKpiTileValue("conversions", kpiMetrics?.conversions, kpiCtx)}
               label="Converted in scope"
               tone={loading || !kpiMetrics ? "neutral" : kpiMetrics.convTone}
               footnote={kpiMetrics?.convFootnote}
+              valuePresentation={kpiValuePresentation}
             />
             <KpiCard
               value={referralsHubKpiTileValue("in_admissions", kpiMetrics?.inAdmissions, kpiCtx)}
               label="In admissions (touched in scope)"
               tone="neutral"
+              valuePresentation={kpiValuePresentation}
             />
           </div>
         </section>
@@ -925,8 +936,8 @@ export function AdminReferralsPageClient({
           ) : null}
         </div>
 
-        {loadError ? (
-           <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError}</p>
+        {loadError || bootstrapLoadError ? (
+           <p className="text-sm text-rose-600 dark:text-rose-400" role="alert">{loadError ?? bootstrapLoadError}</p>
         ) : null}
 
         <div className="border-border rounded-lg bg-card shadow-sm overflow-hidden p-6 md:p-8 relative">
