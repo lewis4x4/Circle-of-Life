@@ -119,7 +119,10 @@ export function buildPortfolioStripTotals(facilities: FacilityRow[]): PortfolioS
 
   let portfolioPctRounded: number | null = null;
   let portfolioPctLoaded = false;
-  if (licensedLoaded && licensedSum > 0 && occupiedLoaded) {
+  const censusCompleteForLicensed = facilities
+    .filter((f) => facilityLicensedBedsOnFile(f) != null)
+    .every((f) => facilityOccupancyLoaded(f));
+  if (licensedLoaded && licensedSum > 0 && occupiedLoaded && censusCompleteForLicensed) {
     portfolioPctRounded = Math.min(100, Math.round((occupiedSum / licensedSum) * 100));
     portfolioPctLoaded = true;
   }
