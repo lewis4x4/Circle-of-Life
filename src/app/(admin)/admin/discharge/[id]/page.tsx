@@ -16,6 +16,7 @@ import {
   RecordDetailHeader,
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
+import { formatDischargeDetailTimestamp } from "@/lib/discharge/discharge-detail-display-copy";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: {
@@ -52,15 +53,6 @@ const DISCHARGE_REASONS: Array<Database["public"]["Enums"]["discharge_reason"]> 
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
-}
-
-function formatTs(iso: string | null) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
 }
 
 export default function AdminDischargeDetailPage() {
@@ -350,7 +342,7 @@ export default function AdminDischargeDetailPage() {
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Pharmacist reviewed
                   </dt>
-                  <dd className="mt-0.5 text-foreground">{formatTs(row.pharmacist_reviewed_at)}</dd>
+                  <dd className="mt-0.5 text-foreground">{formatDischargeDetailTimestamp(row.pharmacist_reviewed_at)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pharmacist NPI</dt>
@@ -430,7 +422,7 @@ export default function AdminDischargeDetailPage() {
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
-                  <dd className="mt-0.5 text-foreground">{formatTs(row.updated_at)}</dd>
+                  <dd className="mt-0.5 text-foreground">{formatDischargeDetailTimestamp(row.updated_at)}</dd>
                 </div>
               </dl>
             </div>
