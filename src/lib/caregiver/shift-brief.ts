@@ -8,6 +8,10 @@ import {
   type EmarQueueSlot,
 } from "@/lib/caregiver/emar-queue";
 import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-residents";
+import {
+  caregiverShiftBriefDisplayRoomLabel,
+  formatCaregiverShiftBriefRoomLabel,
+} from "@/lib/caregiver/shift-brief-display-copy";
 import type { CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import type { Database } from "@/types/database";
 
@@ -261,15 +265,18 @@ async function loadTodayEmarSlots(
     const bedById = new Map(beds.map((b) => [b.id, b]));
     for (const [rid, res] of resById) {
       if (!res.bed_id) {
-        roomByResident.set(rid, "—");
+        roomByResident.set(rid, formatCaregiverShiftBriefRoomLabel({}));
         continue;
       }
       const bed = bedById.get(res.bed_id);
       const room = bed?.room_id ? roomById.get(bed.room_id) : null;
-      const label = room?.room_number
-        ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}`
-        : "—";
-      roomByResident.set(rid, label);
+      roomByResident.set(
+        rid,
+        formatCaregiverShiftBriefRoomLabel({
+          roomNumber: room?.room_number,
+          bedLabel: bed?.bed_label,
+        }),
+      );
     }
   }
 
@@ -306,7 +313,7 @@ async function loadTodayEmarSlots(
       scheduled_times: (m.scheduled_times ?? []) as string[],
       instructions: m.instructions,
       resident: { first_name: res?.first_name ?? r.first_name, last_name: res?.last_name ?? r.last_name },
-      roomLabel: roomByResident.get(m.resident_id) ?? "—",
+      roomLabel: caregiverShiftBriefDisplayRoomLabel(roomByResident.get(m.resident_id)),
     };
   });
 
