@@ -83,6 +83,12 @@ export function billingOverviewOverdueCountEmptyCopy(ctx: BillingOverviewKpiCont
   const loadGap = sharedLoadGap("overdue_count", ctx);
   if (loadGap) return loadGap;
   if (!ctx.invoiceFetchComplete) return LOADING_COPY.overdue_count;
+  if (ctx.totalInvoiceRows === 0) {
+    if (ctx.cohortResidentCount > 0) {
+      return "No invoices loaded — use opening balance import";
+    }
+    return "No invoices in this scope";
+  }
   return null;
 }
 
