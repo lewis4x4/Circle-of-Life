@@ -16,6 +16,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
 type EntityMini = { id: string; name: string };
@@ -98,7 +99,8 @@ export default function AdminInsuranceHubPage() {
     },
   });
 
-  const loading = authLoading || overviewPending;
+  const overviewLoading = !!organizationId && overviewPending;
+  const loading = authLoading || overviewLoading;
   const loadError =
     !authLoading && !organizationId
       ? "Organization missing on profile."
@@ -115,6 +117,17 @@ export default function AdminInsuranceHubPage() {
     organizationId: organizationId ?? null,
     loadFailed: !!overviewError,
   };
+  const activePoliciesDisplay = loading
+    ? "…"
+    : insuranceHubKpiTileValue("active_policies", activePolicies, kpiCtx);
+  const renewalsDisplay = loading
+    ? "…"
+    : insuranceHubKpiTileValue("renewals_in_flight", renewalsInFlight, kpiCtx);
+  const openClaimsDisplay = loading
+    ? "…"
+    : insuranceHubKpiTileValue("open_claims", openClaims, kpiCtx);
+  const kpiMessageClass =
+    "text-[13px] font-medium leading-snug text-muted-foreground pb-1";
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -164,8 +177,14 @@ export default function AdminInsuranceHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Active Policies
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter pb-1">
-                  {loading ? "…" : insuranceHubKpiTileValue("active_policies", activePolicies, kpiCtx)}
+                <p
+                  className={cn(
+                    !loading && typeof activePoliciesDisplay === "string"
+                      ? kpiMessageClass
+                      : "text-4xl font-mono tracking-tighter pb-1",
+                  )}
+                >
+                  {activePoliciesDisplay}
                 </p>
               </div>
             </V2Card>
@@ -177,8 +196,14 @@ export default function AdminInsuranceHubPage() {
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                    Renewals in Flight
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">
-                  {loading ? "…" : insuranceHubKpiTileValue("renewals_in_flight", renewalsInFlight, kpiCtx)}
+                <p
+                  className={cn(
+                    !loading && typeof renewalsDisplay === "string"
+                      ? kpiMessageClass
+                      : "text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1",
+                  )}
+                >
+                  {renewalsDisplay}
                 </p>
               </div>
             </V2Card>
@@ -203,13 +228,15 @@ export default function AdminInsuranceHubPage() {
                    Open Claims
                 </h3>
                 <p
-                  className={
-                    openClaims && openClaims > 0
-                      ? "text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1"
-                      : "text-4xl font-mono tracking-tighter text-foreground pb-1"
-                  }
+                  className={cn(
+                    !loading && typeof openClaimsDisplay === "string"
+                      ? kpiMessageClass
+                      : openClaims && openClaims > 0
+                        ? "text-4xl font-mono tracking-tighter text-red-600 dark:text-red-400 pb-1"
+                        : "text-4xl font-mono tracking-tighter text-foreground pb-1",
+                  )}
                 >
-                  {loading ? "…" : insuranceHubKpiTileValue("open_claims", openClaims, kpiCtx)}
+                  {openClaimsDisplay}
                 </p>
               </div>
             </V2Card>
