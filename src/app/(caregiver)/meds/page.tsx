@@ -17,6 +17,15 @@ import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
+import {
+  CAREGIVER_EMAR_BACK_TO_SHIFT_COPY,
+  CAREGIVER_EMAR_LOADING_COPY,
+  caregiverEmarEmptyNoticeHelper,
+  caregiverEmarEmptyNoticeTitle,
+  caregiverEmarMetricDisplay,
+  formatCaregiverEmarRoomLabel,
+  type CaregiverEmarMetricKey,
+} from "@/lib/caregiver/emar-queue-copy";
 
 type ResidentMini = {
   id: string;
@@ -133,15 +142,18 @@ export default function CaregiverMedsPage() {
         const bedById = new Map(beds.map((b) => [b.id, b]));
         for (const [rid, res] of resById) {
           if (!res.bed_id) {
-            roomByResident.set(rid, "—");
+            roomByResident.set(rid, formatCaregiverEmarRoomLabel({}));
             continue;
           }
           const bed = bedById.get(res.bed_id);
           const room = bed?.room_id ? roomById.get(bed.room_id) : null;
-          const label = room?.room_number
-            ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}`
-            : "—";
-          roomByResident.set(rid, label);
+          roomByResident.set(
+            rid,
+            formatCaregiverEmarRoomLabel({
+              roomNumber: room?.room_number,
+              bedLabel: bed?.bed_label,
+            }),
+          );
         }
       }
 
@@ -183,7 +195,7 @@ export default function CaregiverMedsPage() {
           scheduled_times: (m.scheduled_times ?? []) as string[],
           instructions: m.instructions,
           resident: { first_name: res?.first_name ?? r.first_name, last_name: res?.last_name ?? r.last_name },
-          roomLabel: roomByResident.get(m.resident_id) ?? "—",
+          roomLabel: roomByResident.get(m.resident_id) ?? formatCaregiverEmarRoomLabel({}),
         };
       });
 
@@ -253,7 +265,7 @@ export default function CaregiverMedsPage() {
     return (
       <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
         <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
-        <p className="text-sm font-medium tracking-wide uppercase">Syncing eMAR…</p>
+        <p className="text-sm font-medium tracking-wide">{CAREGIVER_EMAR_LOADING_COPY}</p>
       </div>
     );
   }
@@ -269,7 +281,7 @@ export default function CaregiverMedsPage() {
           href={homeHref}
           className="flex h-14 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/20 transition-colors tap-responsive"
         >
-          Back to shift dashboard
+          {CAREGIVER_EMAR_BACK_TO_SHIFT_COPY}
         </Link>
       </div>
     );
@@ -319,19 +331,40 @@ export default function CaregiverMedsPage() {
 
       {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
       <div className="rounded-lg p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3 border border-white/5 bg-slate-900/40">
-        <MetricPill label="Due now / overdue" value={String(counts.dueNow)} tone="danger" />
-        <MetricPill label="Due < 90 min" value={String(counts.dueSoon)} tone="warning" />
-        <MetricPill label="In window" value={String(counts.total)} tone="muted" />
+        <EmarMetricPill
+          label="Due now / overdue"
+          metricKey="due-now"
+          count={counts.dueNow}
+          queueHasSlots={slots.length > 0}
+          tone="danger"
+        />
+        <EmarMetricPill
+          label="Due < 90 min"
+          metricKey="due-soon"
+          count={counts.dueSoon}
+          queueHasSlots={slots.length > 0}
+          tone="warning"
+        />
+        <EmarMetricPill
+          label="In window"
+          metricKey="in-window"
+          count={counts.total}
+          queueHasSlots={slots.length > 0}
+          tone="muted"
+        />
       </div>
 
       {/* ─── QUEUE LIST ────────────────────────────────────────────────────── */}
       <div className="space-y-4 pt-4">
         {slots.length === 0 ? (
-           <div className="rounded-lg border-dashed border-2 border-white/10 p-12 text-center bg-transparent ">
-             <Pill className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-             <p className="text-lg text-white font-medium mb-1">Queue is clear.</p>
-             <p className="text-sm text-zinc-500 font-medium tracking-wide">No medication passes left in the current window.</p>
-           </div>
+          <section
+            aria-label="Medication pass queue status"
+            className="rounded-lg border border-white/10 bg-slate-900/40 px-5 py-4"
+            role="status"
+          >
+            <p className="text-sm font-medium text-white">{caregiverEmarEmptyNoticeTitle()}</p>
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{caregiverEmarEmptyNoticeHelper()}</p>
+          </section>
         ) : (
           <MotionList className="space-y-4">
             {slots.map((item) => (
@@ -352,30 +385,37 @@ export default function CaregiverMedsPage() {
   );
 }
 
-function MetricPill({
+function EmarMetricPill({
   label,
-  value,
+  metricKey,
+  count,
+  queueHasSlots,
   tone,
 }: {
   label: string;
-  value: string;
+  metricKey: CaregiverEmarMetricKey;
+  count: number;
+  queueHasSlots: boolean;
   tone: "muted" | "warning" | "danger" | "success";
 }) {
+  const display = caregiverEmarMetricDisplay(count, metricKey, queueHasSlots);
   const toneClass =
     tone === "danger"
       ? "bg-rose-950/40 text-rose-100 border-transparent shadow-[inset_0_0_20px_rgba(225,29,72,0.15)]"
       : tone === "warning"
         ? "bg-amber-950/30 text-amber-100 border-transparent"
         : "bg-white/5 text-zinc-100 border-transparent";
-          
+
   return (
     <div className={`flex-1 min-w-[120px] rounded-[1.2rem] border px-5 py-4 flex flex-col justify-between ${toneClass}`}>
       <div className="mb-2 uppercase tracking-wider text-[10px] font-bold text-zinc-400">
         {label}
       </div>
-      <div className="text-3xl font-medium tabular-nums tracking-tight">
-         {value}
-      </div>
+      {display.mode === "number" ? (
+        <div className="text-3xl font-medium tabular-nums tracking-tight">{display.text}</div>
+      ) : (
+        <div className="text-[13px] font-medium leading-snug text-zinc-300">{display.text}</div>
+      )}
     </div>
   );
 }
