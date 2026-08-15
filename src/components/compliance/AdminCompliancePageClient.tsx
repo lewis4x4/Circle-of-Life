@@ -196,14 +196,17 @@ export function AdminCompliancePageClient({
 
     setEnhancedScoreLoading(true);
     try {
-      // Load compliance score
-      const score = await getComplianceScore(selectedFacilityId);
-      setComplianceScore(score);
+      try {
+        const score = await getComplianceScore(selectedFacilityId);
+        setComplianceScore(score);
+      } catch (e) {
+        console.error("Failed to load compliance score:", e);
+        setComplianceScore(null);
+      }
 
       setEmergencyItems(await getEmergencyChecklistPreview(selectedFacilityId));
     } catch (e) {
       console.error("Failed to load enhanced data:", e);
-      setComplianceScore(null);
     } finally {
       setEnhancedScoreLoading(false);
     }
