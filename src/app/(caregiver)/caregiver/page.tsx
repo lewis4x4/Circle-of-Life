@@ -16,10 +16,17 @@ import {
   Waves,
   ChevronRight,
   ShieldAlert,
-  Activity,
 } from "lucide-react";
 
 import { fetchCaregiverShiftBrief, type CaregiverShiftBrief } from "@/lib/caregiver/shift-brief";
+import {
+  caregiverShiftBoardIsEmpty,
+  caregiverShiftOverviewEmptyNotice,
+  caregiverShiftOverviewKpiStripHelperLine,
+  caregiverShiftOverviewLoadErrorCopy,
+  caregiverShiftOverviewLoadErrorRetryLabel,
+  caregiverShiftOverviewLoadingCopy,
+} from "@/lib/caregiver/shift-overview-kpi-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
@@ -116,7 +123,7 @@ export default function CaregiverHomePage() {
     return (
       <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium uppercase tracking-wide">Initializing Shift Dashboard…</p>
+        <p className="text-sm font-medium text-muted-foreground">{caregiverShiftOverviewLoadingCopy()}</p>
       </div>
     );
   }
@@ -124,16 +131,15 @@ export default function CaregiverHomePage() {
   if (loadError || !brief) {
     return (
       <div className="mx-auto mt-12 max-w-md space-y-4">
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-5 text-center text-sm text-foreground">
-          <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-destructive" />
-          <p>{loadError ?? "Shift brief unavailable."}</p>
+        <div className="rounded-lg border border-border bg-muted/40 px-6 py-5 text-center text-sm text-foreground">
+          <p>{loadError ?? caregiverShiftOverviewLoadErrorCopy()}</p>
         </div>
         <button
           type="button"
           className="h-12 w-full rounded-lg border border-border bg-card text-sm font-semibold text-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
           onClick={() => void load()}
         >
-          Retry Connection
+          {caregiverShiftOverviewLoadErrorRetryLabel()}
         </button>
       </div>
     );
@@ -141,21 +147,45 @@ export default function CaregiverHomePage() {
 
   const docPending = brief.openConditionCount + brief.pendingPrnCount;
   const emarWindow = brief.emarDueNow + brief.emarDueSoon;
+  const overviewMetrics = {
+    census: brief.census,
+    urgentAlerts: brief.highSeverityConditionCount,
+    medicationsDue: emarWindow,
+    notesToFinish: docPending,
+  };
+  const boardIsEmpty = caregiverShiftBoardIsEmpty(overviewMetrics);
+  const emptyNotice = caregiverShiftOverviewEmptyNotice();
+  const kpiStripHelperLine = caregiverShiftOverviewKpiStripHelperLine(overviewMetrics);
 
   return (
     <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 pb-6 md:grid-cols-4 md:gap-6">
       {/* Row 1: Mission control overview */}
       <div className="relative flex flex-col justify-between rounded-lg border border-border bg-card p-6 md:col-span-full md:p-8">
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Shift Overview</h2>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{shiftLine}</p>
-          </div>
-          <div className="flex w-fit items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm text-foreground">
-            <Activity className="h-4 w-4 text-success" />
-            Live Census sync active
-          </div>
+        <div className="mb-8">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Shift Overview</h2>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{shiftLine}</p>
         </div>
+
+        {boardIsEmpty && (
+          <div className="mb-6 rounded-lg border border-border bg-muted/40 px-5 py-4">
+            <p className="text-sm font-medium text-foreground">{emptyNotice.title}</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{emptyNotice.helper}</p>
+            <div className="mt-3 flex flex-wrap gap-3 text-[13px] font-medium">
+              <Link
+                href="/caregiver/rounds"
+                className="text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+              >
+                Rounds &amp; checks
+              </Link>
+              <Link
+                href="/caregiver/meds"
+                className="text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+              >
+                Medication pass
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <HeroStat
@@ -163,7 +193,7 @@ export default function CaregiverHomePage() {
             value={brief.census}
             icon={<UserRound />}
             tone="muted"
-            href="/caregiver/residents"
+            href="/caregiver/tasks"
           />
           <HeroStat
             label="Urgent Alerts"
@@ -187,6 +217,8 @@ export default function CaregiverHomePage() {
             href="/caregiver/prn-followup"
           />
         </div>
+
+        <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
       </div>
 
       {/* Row 2: Quick actions + alerts */}
