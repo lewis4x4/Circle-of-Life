@@ -27,7 +27,9 @@ import {
   ClipboardList,
   Clock,
   CreditCard,
+  Cookie,
   DoorOpen,
+  Eye,
   FileText,
   GraduationCap,
   Home,
@@ -167,6 +169,8 @@ export const PILLARS: Pillar[] = [
  * pillar.
  */
 export const AUXILIARY_ROUTES: PillarItem[] = [
+  { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
+  { key: "snack-pass", href: "/admin/dietary", label: "Snack pass", icon: Cookie },
   { key: "finance", href: "/admin/finance", label: "Finance hub", icon: Landmark },
   { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
   { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
@@ -205,18 +209,24 @@ export function allPillarItems(): Array<PillarItem & { pillar: Pillar }> {
 
 /**
  * Stable keys for the all-sections jump list when the search field is empty.
- * Curated operator screens — not a full pillar dump.
+ * Curated office-week teachable flows (2026-08-24) — not a full pillar dump.
  */
 export const SECTION_JUMP_QUICK_KEYS = [
   "executive",
   "residents",
-  "incidents",
   "billing",
-  "facilities",
   "family-messages",
-  "kb-chat",
-  "staff",
+  "rounding-live",
+  "snack-pass",
 ] as const;
+
+export type SectionJumpQuickKey = (typeof SECTION_JUMP_QUICK_KEYS)[number];
+
+/** Pin labels for office-week Common shortcuts (may differ from left-rail labels). */
+export const SECTION_JUMP_QUICK_LABELS: Partial<Record<SectionJumpQuickKey, string>> = {
+  residents: "Resident roster / census",
+  billing: "Billing",
+};
 
 export type SectionJumpEntry = PillarItem & {
   pillarLabel?: string;
@@ -242,9 +252,12 @@ export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpE
 /** Quick links shown before the operator types in the all-sections jump list. */
 export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
   const byKey = new Map(allSectionJumpEntries(pillars).map((entry) => [entry.key, entry]));
-  return SECTION_JUMP_QUICK_KEYS.map((key) => byKey.get(key)).filter(
-    (entry): entry is SectionJumpEntry => entry != null,
-  );
+  return SECTION_JUMP_QUICK_KEYS.map((key) => byKey.get(key))
+    .filter((entry): entry is SectionJumpEntry => entry != null)
+    .map((entry) => {
+      const quickLabel = SECTION_JUMP_QUICK_LABELS[entry.key];
+      return quickLabel ? { ...entry, label: quickLabel } : entry;
+    });
 }
 
 export const PILLAR_ITEM_CAP = 9;
