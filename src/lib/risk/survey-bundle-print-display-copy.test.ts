@@ -6,16 +6,36 @@ import {
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY,
+  SURVEY_BUNDLE_PRINT_NO_POC_COPY,
   SURVEY_BUNDLE_PRINT_NO_RISK_COPY,
   formatSurveyBundlePrintAdministratorName,
   formatSurveyBundlePrintEntityName,
   formatSurveyBundlePrintLicenseNumber,
   formatSurveyBundlePrintLicenseType,
+  formatSurveyBundlePrintPocStatus,
   formatSurveyBundlePrintPocSubmissionDueDate,
   formatSurveyBundlePrintRiskScore,
 } from "./survey-bundle-print-display-copy";
 
 const EM_DASH = "—";
+
+describe("formatSurveyBundlePrintPocStatus", () => {
+  it("names a missing POC status instead of an em dash", () => {
+    expect(formatSurveyBundlePrintPocStatus(null)).toBe(SURVEY_BUNDLE_PRINT_NO_POC_COPY);
+    expect(formatSurveyBundlePrintPocStatus(undefined)).toBe(SURVEY_BUNDLE_PRINT_NO_POC_COPY);
+    expect(formatSurveyBundlePrintPocStatus("")).toBe(SURVEY_BUNDLE_PRINT_NO_POC_COPY);
+    expect(formatSurveyBundlePrintPocStatus("   ")).toBe(SURVEY_BUNDLE_PRINT_NO_POC_COPY);
+    expect(formatSurveyBundlePrintPocStatus(EM_DASH)).toBe(SURVEY_BUNDLE_PRINT_NO_POC_COPY);
+    expect(formatSurveyBundlePrintPocStatus(`  ${EM_DASH}  `)).toBe(SURVEY_BUNDLE_PRINT_NO_POC_COPY);
+    expect(formatSurveyBundlePrintPocStatus(null)).not.toBe(EM_DASH);
+    expect(formatSurveyBundlePrintPocStatus(null)).not.toBe("missing");
+  });
+
+  it("returns posted POC statuses trimmed", () => {
+    expect(formatSurveyBundlePrintPocStatus("draft")).toBe("draft");
+    expect(formatSurveyBundlePrintPocStatus("  submitted  ")).toBe("submitted");
+  });
+});
 
 describe("formatSurveyBundlePrintPocSubmissionDueDate", () => {
   it("names a missing due date instead of an em dash", () => {
