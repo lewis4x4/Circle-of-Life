@@ -21,6 +21,7 @@ import {
   fetchSchedulesFromSupabase,
   type ScheduleRow,
 } from "@/lib/schedules/load-schedules";
+import { formatSchedulePublishedAt } from "@/lib/schedules/schedules-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -290,7 +291,7 @@ export function AdminSchedulesPageClient({
                            
                            <div className="flex flex-col gap-1">
                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Published</span>
-                             <span className="text-xs text-slate-600 dark:text-slate-400">{row.publishedAt ? formatDateTime(row.publishedAt) : "—"}</span>
+                             <span className="text-xs text-slate-600 dark:text-slate-400">{formatSchedulePublishedAt(row.publishedAt)}</span>
                            </div>
 
                            {row.notes && (
@@ -317,18 +318,6 @@ function formatWeekLabel(isoDate: string): string {
   const parsed = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
 }
 
 function ScheduleStatusBadge({ status }: { status: string }) {
