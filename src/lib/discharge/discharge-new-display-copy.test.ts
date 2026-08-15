@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DISCHARGE_NEW_NO_DATE_COPY,
   DISCHARGE_NEW_NO_NAME_POSTED_COPY,
   DISCHARGE_NEW_NO_RESIDENT_POSTED_COPY,
   formatDischargeNewResidentLabel,
+  formatDischargeNewStartedLabel,
+  getDischargeNewStartedDaysAgo,
 } from "./discharge-new-display-copy";
 
 const EM_DASH = "—";
@@ -94,5 +97,53 @@ describe("formatDischargeNewResidentLabel", () => {
       expect(result).not.toMatch(/^,\s/);
       expect(result).not.toMatch(/,\s*$/);
     }
+  });
+});
+
+describe("formatDischargeNewStartedLabel", () => {
+  it("names a missing or blank posted timestamp", () => {
+    expect(formatDischargeNewStartedLabel(null)).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+    expect(formatDischargeNewStartedLabel(undefined)).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+    expect(formatDischargeNewStartedLabel("")).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+    expect(formatDischargeNewStartedLabel("   ")).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+  });
+
+  it("names em dash and Unknown placeholders", () => {
+    expect(formatDischargeNewStartedLabel(EM_DASH)).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+    expect(formatDischargeNewStartedLabel("Unknown")).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+    expect(formatDischargeNewStartedLabel(" unknown ")).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+  });
+
+  it("names unparseable values", () => {
+    expect(formatDischargeNewStartedLabel("not-a-date")).toBe(DISCHARGE_NEW_NO_DATE_COPY);
+  });
+
+  it("formats a parseable ISO timestamp", () => {
+    expect(formatDischargeNewStartedLabel("2026-01-15T12:00:00.000Z")).toBe("Jan 15, 2026");
+    expect(formatDischargeNewStartedLabel("2026-01-15")).toBe("Jan 15, 2026");
+  });
+
+  it("never surfaces a lone em dash for draft started labels", () => {
+    const samples = [null, undefined, "", EM_DASH, "Unknown", "not-a-date", "2026-01-15T12:00:00.000Z"] as const;
+    for (const sample of samples) {
+      expect(formatDischargeNewStartedLabel(sample)).not.toBe(EM_DASH);
+    }
+  });
+});
+
+describe("getDischargeNewStartedDaysAgo", () => {
+  const reference = new Date("2026-01-20T12:00:00.000Z");
+
+  it("returns 0 when the posted timestamp is missing or unparseable", () => {
+    expect(getDischargeNewStartedDaysAgo(null, reference)).toBe(0);
+    expect(getDischargeNewStartedDaysAgo("", reference)).toBe(0);
+    expect(getDischargeNewStartedDaysAgo(EM_DASH, reference)).toBe(0);
+    expect(getDischargeNewStartedDaysAgo("Unknown", reference)).toBe(0);
+    expect(getDischargeNewStartedDaysAgo("not-a-date", reference)).toBe(0);
+  });
+
+  it("counts calendar days from a parseable ISO timestamp", () => {
+    expect(getDischargeNewStartedDaysAgo("2026-01-15T12:00:00.000Z", reference)).toBe(5);
+    expect(getDischargeNewStartedDaysAgo("2026-01-15", reference)).toBe(5);
   });
 });

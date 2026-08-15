@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -25,7 +25,11 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
-import { formatDischargeNewResidentLabel } from "@/lib/discharge/discharge-new-display-copy";
+import {
+  formatDischargeNewResidentLabel,
+  formatDischargeNewStartedLabel,
+  getDischargeNewStartedDaysAgo,
+} from "@/lib/discharge/discharge-new-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -638,15 +642,8 @@ export default function AdminDischargeNewPage() {
                   <ul className="space-y-3" aria-label="In-progress medication reconciliation drafts">
                     {visibleDrafts.map((row) => {
                       const name = formatDischargeNewResidentLabel(row.residents);
-                      let startedLabel = "—";
-                      let daysAgo = 0;
-                      try {
-                        const started = parseISO(row.created_at);
-                        startedLabel = format(started, "MMM d, yyyy");
-                        daysAgo = differenceInCalendarDays(new Date(), started);
-                      } catch {
-                        /* ignore */
-                      }
+                      const startedLabel = formatDischargeNewStartedLabel(row.created_at);
+                      const daysAgo = getDischargeNewStartedDaysAgo(row.created_at);
                       const step = workflowStepOf5(row.status);
                       return (
                         <li
