@@ -14,6 +14,7 @@ describe("formatDocumentsTabUploaderDisplay", () => {
     expect(formatDocumentsTabUploaderDisplay("")).toBe(DOCUMENTS_TAB_NO_UPLOADER_COPY);
     expect(formatDocumentsTabUploaderDisplay("   ")).toBe(DOCUMENTS_TAB_NO_UPLOADER_COPY);
     expect(formatDocumentsTabUploaderDisplay(EM_DASH)).toBe(DOCUMENTS_TAB_NO_UPLOADER_COPY);
+    expect(formatDocumentsTabUploaderDisplay("Unknown")).toBe(DOCUMENTS_TAB_NO_UPLOADER_COPY);
     expect(formatDocumentsTabUploaderDisplay(null)).not.toBe(EM_DASH);
   });
 
