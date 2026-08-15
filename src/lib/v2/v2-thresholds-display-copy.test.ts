@@ -32,4 +32,22 @@ describe("formatV2ThresholdFacilityName", () => {
     expect(formatV2ThresholdFacilityName("Oakridge ALF")).toBe("Oakridge ALF");
     expect(formatV2ThresholdFacilityName("  Oakridge ALF  ")).toBe("Oakridge ALF");
   });
+
+  it("replaces legacy Unnamed facility copy with a named gap", () => {
+    expect(formatV2ThresholdFacilityName("Unnamed facility")).toBe(
+      V2_THRESHOLDS_NO_FACILITY_POSTED_COPY,
+    );
+    expect(formatV2ThresholdFacilityName("  Unnamed facility  ")).toBe(
+      V2_THRESHOLDS_NO_FACILITY_POSTED_COPY,
+    );
+    expect(formatV2ThresholdFacilityName("Unnamed facility")).not.toBe("Unnamed facility");
+  });
+
+  it("replaces legacy Unknown copy with a named gap", () => {
+    expect(formatV2ThresholdFacilityName("Unknown")).toBe(V2_THRESHOLDS_NO_FACILITY_POSTED_COPY);
+    expect(formatV2ThresholdFacilityName("  Unknown  ")).toBe(
+      V2_THRESHOLDS_NO_FACILITY_POSTED_COPY,
+    );
+    expect(formatV2ThresholdFacilityName("Unknown")).not.toBe("Unknown");
+  });
 });

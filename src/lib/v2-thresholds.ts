@@ -42,7 +42,7 @@ export async function loadV2Thresholds(): Promise<V2ThresholdLoad> {
 
   const facilities = (facilitiesResult.data ?? []).map((row) => ({
     id: row.id,
-    name: (row.name ?? "").trim() || "Unnamed facility",
+    name: formatV2ThresholdFacilityName(row.name),
     organizationId: row.organization_id,
   }));
 
