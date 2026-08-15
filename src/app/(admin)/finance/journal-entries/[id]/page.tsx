@@ -20,6 +20,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { checkPeriodOpenForPosting } from "@/lib/finance/gl-period-close";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
+import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canCreateDraftFinance, canPostFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -319,7 +320,7 @@ export default function JournalEntryDetailPage() {
     ? "Loading…"
     : header
       ? `${header.entry_date} · ${header.status}`
-      : "—";
+      : "Journal entry not loaded";
 
   const selectCls = cn(
     "flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm",
@@ -511,10 +512,14 @@ export default function JournalEntryDetailPage() {
                               : l.gl_account_id}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
-                            {l.debit_cents ? formatCents(l.debit_cents) : "—"}
+                            {l.debit_cents != null
+                              ? formatUsdFromCents(l.debit_cents)
+                              : "No debit posted"}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
-                            {l.credit_cents ? formatCents(l.credit_cents) : "—"}
+                            {l.credit_cents != null
+                              ? formatUsdFromCents(l.credit_cents)
+                              : "No credit posted"}
                           </TableCell>
                         </TableRow>
                       ))}
