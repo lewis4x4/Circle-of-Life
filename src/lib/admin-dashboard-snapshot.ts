@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { formatAdminDashboardResidentDobDisplay } from "@/lib/admin/admin-dashboard-display-copy";
+import {
+  formatAdminDashboardRelativeShort,
+  formatAdminDashboardResidentDobDisplay,
+} from "@/lib/admin/admin-dashboard-display-copy";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
@@ -196,18 +199,6 @@ function residencyUiLabel(status: string | null): { label: string; tone: "active
   if (status === "hospital_hold") return { label: "Hospital", tone: "away" };
   if (status === "loa") return { label: "LOA", tone: "away" };
   return { label: "In facility", tone: "active" };
-}
-
-function formatRelativeShort(iso: string | null): string {
-  if (!iso) return "—";
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return "—";
-  const diffMin = Math.round((Date.now() - t) / 60000);
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 48) return `${diffHr} hr ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
 
 function shiftSummaryForTimezone(timeZone: string): string {
@@ -1041,7 +1032,7 @@ async function mapResidentsToCensusRows(
       acuity,
       statusLabel: label,
       statusTone: tone,
-      updatedRelative: formatRelativeShort(resident.updated_at),
+      updatedRelative: formatAdminDashboardRelativeShort(resident.updated_at),
     };
   });
 }
@@ -1083,7 +1074,7 @@ async function mapIncidentsToActivity(
 
     return {
       id: row.id,
-      timeLabel: formatRelativeShort(row.occurred_at),
+      timeLabel: formatAdminDashboardRelativeShort(row.occurred_at),
       actor: "Incident",
       message,
       tone,
