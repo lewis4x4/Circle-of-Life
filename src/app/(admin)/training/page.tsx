@@ -1065,7 +1065,7 @@ export default function AdminTrainingHubPage() {
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">{row.trainer_name}</td>
                         <td className="px-[13px] py-2 font-mono tabular-nums">
-                          {formatTrainingHubHours(Number(row.hours))}
+                          {formatTrainingHubHours(row.hours)}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
                           <span
