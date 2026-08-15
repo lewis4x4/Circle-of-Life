@@ -1,11 +1,16 @@
+import { RESIDENT_ROSTER_NO_DATE_COPY } from "./roster-display-copy";
+
 /**
  * Compact relative timestamps for roster "Updated" column (America/New_York oriented display).
  */
 export function formatResidentRosterUpdatedAt(iso: string | null): string {
-  if (!iso) return "—";
+  if (iso == null) return RESIDENT_ROSTER_NO_DATE_COPY;
 
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "—";
+  const trimmed = iso.trim();
+  if (!trimmed) return RESIDENT_ROSTER_NO_DATE_COPY;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return RESIDENT_ROSTER_NO_DATE_COPY;
 
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
