@@ -51,6 +51,7 @@ import {
   groupDiagnosesByCategory,
 } from "@/lib/residents/clinical-text-format";
 import { rosterAvatarAccentFromId } from "@/lib/residents/roster-format";
+import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -82,17 +83,6 @@ function residentHrefSet(id: string, workspace: ResidentOverviewWorkspace): Resi
     vitalsHref: `${canonical}/vitals`,
     billingHref: `${canonical}/billing`,
   };
-}
-
-function genderFriendly(value: string | null): string {
-  switch (value) {
-    case "male":
-      return "Male";
-    case "female":
-      return "Female";
-    default:
-      return value?.replace(/_/g, " ") ?? "Unknown";
-  }
 }
 
 function isoDayLabel(iso: string | null): string | null {
@@ -355,7 +345,7 @@ export function ResidentDetailOverviewClient({
       })),
   ].sort((a, b) => b.time - a.time);
 
-  const subtitleLine = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${genderFriendly(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
+  const subtitleLine = `${detail.ageYears != null ? `Age ${detail.ageYears}` : "Age pending"} · ${formatResidentOverviewGenderLabel(detail.gender)} · Room ${detail.roomLabel} · Admitted ${detail.admissionLabel}`;
 
   const accent = rosterAvatarAccentFromId(detail.id);
   const dxBuckets = groupDiagnosesByCategory(detail.diagnosisRawList.length ? detail.diagnosisRawList : []);
