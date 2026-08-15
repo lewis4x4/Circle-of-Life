@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BellRing, ChevronRight, Clock3, Loader2 } from "lucide-react";
 
 import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
+import { caregiverDisplayRoomLabel } from "@/lib/caregiver/emar-queue-copy";
 import { conditionChangeTypeLabel } from "@/lib/caregiver/floor-queues";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-residents";
@@ -79,7 +80,7 @@ export default function CaregiverFollowupsPage() {
         };
         const res = resById.get(r.resident_id);
         const name = res?.displayName ?? "Resident";
-        const roomLabel = res?.roomLabel ?? "—";
+        const roomLabel = caregiverDisplayRoomLabel(res?.roomLabel);
         const sev = (r.severity ?? "moderate").toLowerCase();
         const priority: "high" | "medium" = sev === "critical" || sev === "high" ? "high" : "medium";
         const cat = conditionChangeTypeLabel(r.change_type);
