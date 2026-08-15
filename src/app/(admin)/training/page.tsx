@@ -14,6 +14,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { parseCompetencyAttachments } from "@/lib/training/competency-storage";
+import { formatTrainingStaffLabel } from "@/lib/training/training-display-copy";
 import {
   TRAINING_HUB_NO_PDF_COPY,
   formatTrainingHubDate,
@@ -1185,8 +1186,7 @@ export default function AdminTrainingHubPage() {
                         </div>
                         <div className="mb-4">
                           <p className="text-sm font-medium text-foreground mb-1">
-                            {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Staff"} —{" "}
-                            {formatStatus(row.status)}
+                            {formatTrainingStaffLabel(row.staff)} — {formatStatus(row.status)}
                           </p>
                           {row.notes ? (
                             <p className="text-xs text-muted-foreground line-clamp-3">{row.notes}</p>
@@ -1244,7 +1244,7 @@ export default function AdminTrainingHubPage() {
                               </p>
                             ) : null}
                             <p className="text-xs font-medium text-foreground truncate">
-                              {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown"}
+                              {formatTrainingStaffLabel(row.staff)}
                             </p>
                             <p className="text-[12px] text-muted-foreground truncate capitalize">
                               Status: {formatStatus(row.status)}
