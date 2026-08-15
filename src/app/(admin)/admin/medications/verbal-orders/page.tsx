@@ -13,6 +13,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { formatVerbalOrderResidentName } from "@/lib/medications/verbal-orders-display-copy";
 
 type Row = {
   id: string;
@@ -135,9 +136,7 @@ export default function AdminVerbalOrdersPage() {
           <div className="relative z-10 space-y-4 mt-6">
             <MotionList className="space-y-4">
               {rows.map((r) => {
-                const name = r.residents
-                  ? [r.residents.first_name, r.residents.last_name].filter(Boolean).join(" ")
-                  : "—";
+                const name = formatVerbalOrderResidentName(r.residents);
                 const due = new Date(r.cosignature_due_at);
                 const now = Date.now();
                 const hoursLeft = (due.getTime() - now) / 36e5;
