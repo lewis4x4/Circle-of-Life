@@ -32,15 +32,21 @@ export function DiscoveryCadenceApplyPanel({
     setApplying(true);
     setNotice(null);
 
-    const result = await applyColDiscoveryForFacility({ facilityId, facilityName });
-    if (result.ok) {
-      router.push("/admin/rounding/live");
-      return;
-    }
+    try {
+      const result = await applyColDiscoveryForFacility({ facilityId, facilityName });
+      if (result.ok) {
+        router.push("/admin/rounding/live");
+        return;
+      }
 
-    setNoticeTone(result.code === "empty_census" ? "muted" : "warning");
-    setNotice(result.message);
-    setApplying(false);
+      setNoticeTone(result.code === "empty_census" ? "muted" : "warning");
+      setNotice(result.message);
+    } catch {
+      setNoticeTone("warning");
+      setNotice("Could not apply discovery rounds. Check your connection and retry.");
+    } finally {
+      setApplying(false);
+    }
   }
 
   return (
