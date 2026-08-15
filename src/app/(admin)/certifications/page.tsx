@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
+import { formatCertificationStaffName } from "@/lib/certifications/certifications-display-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -258,12 +259,12 @@ export default function AdminCertificationsPage() {
       for (const s of staffRes.data ?? []) {
         const first = s.first_name?.trim() ?? "";
         const last = s.last_name?.trim() ?? "";
-        nameById.set(s.id, `${first} ${last}`.trim() || "Staff member");
+        nameById.set(s.id, `${first} ${last}`.trim());
       }
 
       const exportRows: StaffCertExportRow[] = sortedCerts.map((c) => ({
         ...c,
-        staff_display_name: nameById.get(c.staff_id) ?? "Unknown staff",
+        staff_display_name: formatCertificationStaffName(nameById.get(c.staff_id)),
       }));
 
       const csv = buildCertificationsCsv(exportRows);
@@ -562,14 +563,13 @@ async function fetchCertificationsFromSupabase(selectedFacilityId: string | null
   for (const s of staffRes.data ?? []) {
     const first = s.first_name?.trim() ?? "";
     const last = s.last_name?.trim() ?? "";
-    const name = `${first} ${last}`.trim() || "Staff member";
-    nameById.set(s.id, name);
+    nameById.set(s.id, `${first} ${last}`.trim());
   }
 
   return certs.map((c) => ({
     id: c.id,
     staffId: c.staff_id,
-    staffName: nameById.get(c.staff_id) ?? "Unknown staff",
+    staffName: formatCertificationStaffName(nameById.get(c.staff_id)),
     certificationType: c.certification_type,
     certificationName: c.certification_name,
     issuingAuthority: c.issuing_authority,
