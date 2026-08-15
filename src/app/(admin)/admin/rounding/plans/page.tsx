@@ -24,6 +24,10 @@ import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  formatRoundingPlanDateDisplay,
+  formatRoundingPlanDateTimeDisplay,
+} from "@/lib/rounding/rounding-plans-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -67,26 +71,6 @@ function displayName(person?: {
   return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null]
     .filter(Boolean)
     .join(" ");
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
 }
 
 function formatTime(value?: string | null) {
@@ -387,14 +371,14 @@ function PlansTable({ plans }: { plans: PlanRow[] }) {
                 <td className="px-3 py-3 align-top text-[13px] text-muted-foreground">{ruleSummary(plan)}</td>
                 <td className="px-3 py-3 align-top text-[13px] text-muted-foreground">
                   <div className="flex flex-col gap-1 tabular-nums">
-                    <span>{formatDate(plan.effective_from)}</span>
-                    <span>{plan.effective_to ? `Ends ${formatDate(plan.effective_to)}` : "Open-ended"}</span>
+                    <span>{formatRoundingPlanDateDisplay(plan.effective_from)}</span>
+                    <span>{plan.effective_to ? `Ends ${formatRoundingPlanDateDisplay(plan.effective_to)}` : "Open-ended"}</span>
                   </div>
                 </td>
                 <td className="px-3 py-3 align-top">
                   <StatusPill value={statusLabel(derivedStatus)} defaultValue="Active" tone={statusTone(derivedStatus)} />
                 </td>
-                <td className="px-3 py-3 align-top text-[13px] tabular-nums text-muted-foreground">{formatDateTime(plan.updated_at ?? plan.effective_from)}</td>
+                <td className="px-3 py-3 align-top text-[13px] tabular-nums text-muted-foreground">{formatRoundingPlanDateTimeDisplay(plan.updated_at ?? plan.effective_from)}</td>
                 <td className="px-3 py-3 align-top">
                   <div className="flex justify-end gap-2">
                     <Link href={`/admin/rounding/plans/${plan.id}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8")}>View plan</Link>
