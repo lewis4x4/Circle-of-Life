@@ -21,6 +21,7 @@ import {
   fetchPresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
+import type { OccupancyContext } from "@/lib/executive/kpi-tile-copy";
 import type { Database } from "@/types/database";
 
 export type ExecutiveOverviewData = {
@@ -30,6 +31,7 @@ export type ExecutiveOverviewData = {
   assuranceHeatMap: ResidentAssuranceFacilityRollup[];
   assuranceTrends: ResidentAssuranceFacilityTrendRow[];
   presenceCensus: PresenceCensus;
+  occupancyContext: OccupancyContext | null;
 };
 
 type MetricSnapshotRow = {
@@ -92,7 +94,7 @@ export async function loadExecutiveOverview(
       withTimeout(
         supabase
           .from("facilities")
-          .select("id, name")
+          .select("id, name, total_licensed_beds")
           .eq("organization_id", organizationId)
           .is("deleted_at", null)
           .order("name", { ascending: true }),
@@ -111,6 +113,16 @@ export async function loadExecutiveOverview(
   const trends = assuranceTrendRows.status === "fulfilled" ? assuranceTrendRows.value : [];
   const presenceCensus = presenceCensusRes.status === "fulfilled" ? presenceCensusRes.value : EMPTY_PRESENCE_CENSUS;
 
+  const licensedBeds = facilityRows.reduce(
+    (sum, facility) => sum + ((facility as { total_licensed_beds?: number | null }).total_licensed_beds ?? 0),
+    0,
+  );
+  const occupiedResidents = presenceCensus.total;
+  const occupancyContext =
+    occupiedResidents > 0 && licensedBeds > 0
+      ? { occupiedResidents, licensedBeds }
+      : null;
+
   return {
     metrics: buildLatestMetricMap(aggregateRows as MetricSnapshotRow[]),
     alerts: alertRows as AlertWithFacility[],
@@ -118,5 +130,6 @@ export async function loadExecutiveOverview(
     assuranceHeatMap: heatMap,
     assuranceTrends: trends,
     presenceCensus,
+    occupancyContext,
   };
 }
