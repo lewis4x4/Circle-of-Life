@@ -24,6 +24,14 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { SafetyScoreBadge } from "@/components/rounding/SafetyScoreBadge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  formatSafetyBoardFacilityName,
+  formatSafetyBoardIncidentRecency,
+  formatSafetyBoardMedicationAdherence,
+  formatSafetyBoardObservationCompliance,
+  formatSafetyBoardRoomNumber,
+  formatSafetyBoardScoreTrendEmpty,
+} from "@/lib/rounding/safety-board-display-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -239,10 +247,10 @@ export default function SafetyScoresPage() {
                         <tr key={row.id} className="transition-colors hover:bg-muted/40">
                           <td className="px-3 py-2.5 font-medium text-foreground">{name}</td>
                           <td className="px-3 py-2.5 text-[13px] text-muted-foreground">
-                            {row.facilities?.name ?? "—"}
+                            {formatSafetyBoardFacilityName(row.facilities?.name)}
                           </td>
                           <td className="px-3 py-2.5 tabular-nums text-[13px] text-muted-foreground">
-                            {row.residents?.room_number ?? "—"}
+                            {formatSafetyBoardRoomNumber(row.residents?.room_number)}
                           </td>
                           <td className="px-3 py-2.5">
                             <SafetyScoreBadge
@@ -272,23 +280,19 @@ export default function SafetyScoresPage() {
                                 {delta}
                               </span>
                             ) : (
-                              <span className="text-[12px] text-muted-foreground">—</span>
+                              <span className="text-[12px] text-muted-foreground">
+                                {formatSafetyBoardScoreTrendEmpty()}
+                              </span>
                             )}
                           </td>
                           <td className="px-3 py-2.5 tabular-nums text-[13px] text-foreground">
-                            {cs.observation_compliance != null
-                              ? `${cs.observation_compliance.toFixed(0)}%`
-                              : "—"}
+                            {formatSafetyBoardObservationCompliance(cs.observation_compliance)}
                           </td>
                           <td className="px-3 py-2.5 tabular-nums text-[13px] text-foreground">
-                            {cs.incident_recency != null
-                              ? cs.incident_recency.toFixed(0)
-                              : "—"}
+                            {formatSafetyBoardIncidentRecency(cs.incident_recency)}
                           </td>
                           <td className="px-3 py-2.5 tabular-nums text-[13px] text-foreground">
-                            {cs.medication_adherence != null
-                              ? `${cs.medication_adherence.toFixed(0)}%`
-                              : "—"}
+                            {formatSafetyBoardMedicationAdherence(cs.medication_adherence)}
                           </td>
                           <td className="px-3 py-2.5 text-[12px] text-muted-foreground">
                             {new Date(row.computed_at).toLocaleDateString()}
