@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   CAREGIVER_RESIDENT_NO_ACUITY_COPY,
   CAREGIVER_RESIDENT_NO_MOOD_COPY,
+  CAREGIVER_RESIDENT_NO_ROOM_COPY,
   formatCaregiverResidentAcuity,
   formatCaregiverResidentMood,
+  formatCaregiverResidentRoomLabel,
 } from "./resident-detail-display-copy";
 
 describe("formatCaregiverResidentAcuity", () => {
@@ -39,5 +41,19 @@ describe("formatCaregiverResidentMood", () => {
   it("returns posted mood as-is (trim only)", () => {
     expect(formatCaregiverResidentMood("Calm")).toBe("Calm");
     expect(formatCaregiverResidentMood("  Restless  ")).toBe("Restless");
+  });
+});
+
+describe("formatCaregiverResidentRoomLabel", () => {
+  it("names the gap when room number is missing", () => {
+    expect(formatCaregiverResidentRoomLabel(null)).toBe(CAREGIVER_RESIDENT_NO_ROOM_COPY);
+    expect(formatCaregiverResidentRoomLabel(undefined)).toBe(CAREGIVER_RESIDENT_NO_ROOM_COPY);
+    expect(formatCaregiverResidentRoomLabel("")).toBe(CAREGIVER_RESIDENT_NO_ROOM_COPY);
+    expect(formatCaregiverResidentRoomLabel("   ")).toBe(CAREGIVER_RESIDENT_NO_ROOM_COPY);
+  });
+
+  it("returns posted room as Room {number}", () => {
+    expect(formatCaregiverResidentRoomLabel("101")).toBe("Room 101");
+    expect(formatCaregiverResidentRoomLabel("  202  ")).toBe("Room 202");
   });
 });
