@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserStatusBadge } from "./UserStatusBadge";
 import { UserRowActions } from "./UserRowActions";
+import { formatUserTablePrimaryFacilitiesDisplay } from "@/lib/admin/users/user-table-display-copy";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
@@ -109,10 +110,7 @@ export function UserDataTable({
               <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
               <TableCell className="text-sm">{ROLE_LABELS[user.app_role] ?? user.app_role}</TableCell>
               <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                {user.facilities
-                  .filter((f) => f.is_primary)
-                  .map((f) => f.facility_name)
-                  .join(", ") || "—"}
+                {formatUserTablePrimaryFacilitiesDisplay(user.facilities)}
               </TableCell>
               <TableCell>
                 <UserStatusBadge is_active={user.is_active} deleted_at={user.deleted_at} />
