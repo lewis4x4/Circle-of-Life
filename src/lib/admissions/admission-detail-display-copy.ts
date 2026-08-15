@@ -35,6 +35,11 @@ export function formatAdmissionDetailReferralLeadName(
   return name;
 }
 
+/** Timestamp on the admission case detail page when unset or unparseable. */
+export function formatAdmissionDetailTimestamp(iso: string | null | undefined): string {
+  return formatReferralDetailTimestamp(iso);
+}
+
 /** Latest Form 1823 record update timestamp when no record exists or updated_at is unset. */
 export function formatAdmissionDetailForm1823LatestUpdated(
   record: { updated_at: string | null } | null | undefined,
