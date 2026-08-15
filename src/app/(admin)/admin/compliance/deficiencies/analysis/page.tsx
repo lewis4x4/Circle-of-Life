@@ -27,6 +27,10 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
+  formatDeficiencyAverageResolutionDays,
+  formatRecurringTagAverageGapDays,
+} from "@/lib/compliance/deficiencies-analysis-display-copy";
+import {
   getDeficiencyTrendByTag,
   getDeficiencyCountsByTag,
   getRecurringTags,
@@ -227,7 +231,11 @@ export default function DeficienciesAnalysisPage() {
             </div>
 
             {/* Summary Statistics */}
-            {summary && (
+            {summary && (() => {
+              const averageResolutionDaysValue = formatDeficiencyAverageResolutionDays(
+                summary.averageResolutionDays,
+              );
+              return (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <V2Card className="p-4 text-center">
                   <p className="text-3xl font-bold text-foreground tabular-nums">{summary.total}</p>
@@ -240,8 +248,12 @@ export default function DeficienciesAnalysisPage() {
                   <p className="text-[10px] text-muted-foreground uppercase mt-1">Serious/Critical</p>
                 </V2Card>
                 <V2Card className="p-4 text-center">
-                  <p className="text-3xl font-bold text-foreground tabular-nums">
-                    {summary.averageResolutionDays ?? "—"}
+                  <p
+                    className={`font-bold text-foreground tabular-nums ${
+                      typeof averageResolutionDaysValue === "number" ? "text-3xl" : "text-sm"
+                    }`}
+                  >
+                    {averageResolutionDaysValue}
                   </p>
                   <p className="text-[10px] text-muted-foreground uppercase mt-1">Avg Resolution Days</p>
                 </V2Card>
@@ -252,7 +264,8 @@ export default function DeficienciesAnalysisPage() {
                   <p className="text-[10px] text-muted-foreground uppercase mt-1">Recurring Tags</p>
                 </V2Card>
               </div>
-            )}
+              );
+            })()}
 
             {/* Trend Chart */}
             {trendData.length > 0 && (
@@ -346,6 +359,14 @@ export default function DeficienciesAnalysisPage() {
                     <tbody>
                       {recurringTags.map((recurrence) => {
                         const lastStatus = recurrence.occurrences[recurrence.occurrences.length - 1]?.status ?? "unknown";
+                        const averageGapValue = formatRecurringTagAverageGapDays(
+                          recurrence.total_occurrences,
+                          recurrence.days_between_average,
+                        );
+                        const averageGapCopy =
+                          typeof averageGapValue === "number"
+                            ? `~${averageGapValue} days`
+                            : averageGapValue;
                         return (
                         <TableRow key={recurrence.tag_number} render={<tr tabIndex={0} />} className="mt-1">
                           <td className="w-24">
@@ -358,13 +379,15 @@ export default function DeficienciesAnalysisPage() {
                             {recurrence.total_occurrences}
                           </td>
                           <td className="w-32 text-center">
-                            {recurrence.days_between_average > 0 ? (
-                              <span className="font-mono text-[12px] text-warning">
-                                ~{recurrence.days_between_average} days
-                              </span>
-                            ) : (
-                              <span className="text-[12px] text-muted-foreground">—</span>
-                            )}
+                            <span
+                              className={
+                                typeof averageGapValue === "number"
+                                  ? "font-mono text-[12px] text-warning"
+                                  : "text-[12px] text-muted-foreground"
+                              }
+                            >
+                              {averageGapCopy}
+                            </span>
                           </td>
                           <td className="w-28 text-center">
                             <StatusPill
