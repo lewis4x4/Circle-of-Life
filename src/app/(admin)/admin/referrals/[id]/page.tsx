@@ -14,6 +14,14 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { formatAdmissionsHubReferralSource } from "@/lib/admissions/admissions-hub-display-copy";
+import {
+  formatReferralDetailConvertedResidentId,
+  formatReferralDetailDateOfBirth,
+  formatReferralDetailEmail,
+  formatReferralDetailPhone,
+  formatReferralDetailTimestamp,
+} from "@/lib/admissions/referral-detail-display-copy";
 
 type LeadDetail = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
@@ -43,15 +51,6 @@ const STATUS_OPTIONS: Array<{ value: EditableLeadStatus; label: string }> = [
 
 function formatStatus(s: string) {
   return s.replace(/_/g, " ");
-}
-
-function formatTs(iso: string | null) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
 }
 
 function syncTourStatus(
@@ -310,19 +309,25 @@ export default function AdminReferralLeadDetailPage() {
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Referral source</dt>
-                  <dd className="mt-0.5 text-foreground">{lead.referral_sources?.name ?? "—"}</dd>
+                  <dd className="mt-0.5 text-foreground">
+                    {formatAdmissionsHubReferralSource(lead.referral_sources?.name)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date of birth</dt>
-                  <dd className="mt-0.5 text-foreground">{lead.date_of_birth ?? "—"}</dd>
+                  <dd className="mt-0.5 text-foreground">
+                    {formatReferralDetailDateOfBirth(lead.date_of_birth)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Phone</dt>
-                  <dd className="mt-0.5 text-foreground">{lead.phone ?? "—"}</dd>
+                  <dd className="mt-0.5 text-foreground">{formatReferralDetailPhone(lead.phone)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</dt>
-                  <dd className="mt-0.5 break-all text-foreground">{lead.email ?? "—"}</dd>
+                  <dd className="mt-0.5 break-all text-foreground">
+                    {formatReferralDetailEmail(lead.email)}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -405,20 +410,26 @@ export default function AdminReferralLeadDetailPage() {
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Converted resident</dt>
                 <dd className="mt-0.5 font-mono text-xs text-foreground">
-                  {lead.converted_resident_id ?? "—"}
+                  {formatReferralDetailConvertedResidentId(lead.converted_resident_id)}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Converted at</dt>
-                <dd className="mt-0.5 text-foreground">{formatTs(lead.converted_at)}</dd>
+                <dd className="mt-0.5 text-foreground">
+                  {formatReferralDetailTimestamp(lead.converted_at)}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
-                <dd className="mt-0.5 text-foreground">{formatTs(lead.created_at)}</dd>
+                <dd className="mt-0.5 text-foreground">
+                  {formatReferralDetailTimestamp(lead.created_at)}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
-                <dd className="mt-0.5 text-foreground">{formatTs(lead.updated_at)}</dd>
+                <dd className="mt-0.5 text-foreground">
+                  {formatReferralDetailTimestamp(lead.updated_at)}
+                </dd>
               </div>
             </dl>
           </RecordDetailSection>
