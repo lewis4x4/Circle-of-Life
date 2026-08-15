@@ -20,6 +20,11 @@ import {
   portfolioLaborCostTextClass,
   portfolioOccupancyKpiTextClass,
 } from "@/lib/admin/facilities/portfolio-metrics";
+import {
+  formatFacilityHeaderLaborSharePct,
+  formatFacilityHeaderSurveyReadinessPct,
+  isFiniteFacilityHeaderMetric,
+} from "@/lib/facilities/facility-header-display-copy";
 import { FacilityComplianceMetricsStrip } from "@/components/admin/facilities/FacilityComplianceMetricsStrip";
 import {
   FacilityRatesMetricsStrip,
@@ -54,8 +59,10 @@ export function FacilityOverviewMetricsStrip({ facility }: FacilityOverviewMetri
   const readiness = facility.survey_readiness_pct;
   const laborPct = facility.labor_cost_mtd_pct;
 
-  const laborOk = typeof laborPct === "number" && Number.isFinite(laborPct);
-  const readinessOk = typeof readiness === "number" && Number.isFinite(readiness);
+  const laborPosted = isFiniteFacilityHeaderMetric(laborPct);
+  const readinessPosted = isFiniteFacilityHeaderMetric(readiness);
+  const laborDisplay = formatFacilityHeaderLaborSharePct(laborPct);
+  const readinessDisplay = formatFacilityHeaderSurveyReadinessPct(readiness);
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -71,11 +78,12 @@ export function FacilityOverviewMetricsStrip({ facility }: FacilityOverviewMetri
         <p className="text-[13px] text-muted-foreground">Labor cost (MTD)</p>
         <p
           className={cn(
-            "mt-2 text-3xl font-semibold tabular-nums",
-            laborOk ? portfolioLaborCostTextClass(laborPct!) : "text-muted-foreground",
+            "mt-2 font-semibold tabular-nums",
+            laborPosted ? "text-3xl" : "text-lg leading-tight",
+            laborPosted ? portfolioLaborCostTextClass(laborPct) : "text-muted-foreground",
           )}
         >
-          {laborOk ? `${Math.round(laborPct)}%` : "—"}
+          {laborDisplay}
         </p>
         <p className="mt-1 text-[12px] text-muted-foreground">Share of census revenue</p>
       </div>
@@ -84,11 +92,12 @@ export function FacilityOverviewMetricsStrip({ facility }: FacilityOverviewMetri
         <p className="text-[13px] text-muted-foreground">Survey readiness</p>
         <p
           className={cn(
-            "mt-2 text-3xl font-semibold tabular-nums",
-            readinessOk ? portfolioOccupancyKpiTextClass(readiness!) : "text-muted-foreground",
+            "mt-2 font-semibold tabular-nums",
+            readinessPosted ? "text-3xl" : "text-lg leading-tight",
+            readinessPosted ? portfolioOccupancyKpiTextClass(readiness) : "text-muted-foreground",
           )}
         >
-          {readinessOk ? `${Math.round(readiness)}%` : "—"}
+          {readinessDisplay}
         </p>
       </div>
 
