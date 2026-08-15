@@ -29,6 +29,12 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
+function qualityHubKpiClass(value: string | number): string {
+  return typeof value === "number"
+    ? "text-4xl font-mono tracking-tighter pb-1"
+    : "text-[13px] font-medium leading-snug pb-1";
+}
+
 export default function AdminQualityHubPage() {
   const { selectedFacilityId } = useFacilityStore();
   const { appRole, user, organizationId, loading: authLoading } = useHavenAuth();
@@ -67,6 +73,9 @@ export default function AdminQualityHubPage() {
 
   const noFacility = !facilityReady;
   const metricCtx = { noFacility, loading };
+  const measuresKpi = qualityHubMetricValue(measures.length, metricCtx);
+  const latestKpi = qualityHubMetricValue(latest.length, metricCtx);
+  const pbjKpi = qualityHubMetricValue(pbjRows.length, metricCtx);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
@@ -103,7 +112,7 @@ export default function AdminQualityHubPage() {
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400">
                  Active Measures
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{qualityHubMetricValue(measures.length, metricCtx)}</p>
+              <p className={cn("text-primary-600 dark:text-primary-400", qualityHubKpiClass(measuresKpi))}>{measuresKpi}</p>
             </div>
           </V2Card>
         </div>
@@ -114,7 +123,7 @@ export default function AdminQualityHubPage() {
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                  Latest Snapshot Rows
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{qualityHubMetricValue(latest.length, metricCtx)}</p>
+              <p className={cn("text-emerald-600 dark:text-emerald-400", qualityHubKpiClass(latestKpi))}>{latestKpi}</p>
             </div>
           </V2Card>
         </div>
@@ -125,7 +134,7 @@ export default function AdminQualityHubPage() {
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
                  PBJ Batches
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-slate-600 dark:text-slate-400 pb-1">{qualityHubMetricValue(pbjRows.length, metricCtx)}</p>
+              <p className={cn("text-slate-600 dark:text-slate-400", qualityHubKpiClass(pbjKpi))}>{pbjKpi}</p>
             </div>
           </V2Card>
         </div>
@@ -174,7 +183,7 @@ export default function AdminQualityHubPage() {
                       <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground truncate">{m.measure_key}</span>
                       {m.domain ? <span className="text-[11px] text-muted-foreground truncate">· {m.domain}</span> : null}
                     </span>
-                    <span className="w-[90px] shrink-0 text-right text-[12px] font-medium text-foreground">{formatQualityHubMeasureUnit(m.unit)}</span>
+                    <span className="w-[90px] min-w-0 shrink-0 truncate text-right text-[12px] font-medium text-foreground">{formatQualityHubMeasureUnit(m.unit)}</span>
                   </TableRow>
                 </MotionItem>
               ))}
@@ -211,7 +220,7 @@ export default function AdminQualityHubPage() {
                     <span className="flex-1 min-w-0 text-[11px] text-muted-foreground font-mono tabular-nums truncate">
                       {formatQualityHubPeriodStart(r.period_start)} → {formatQualityHubPeriodEnd(r.period_end)}
                     </span>
-                    <span className="w-[110px] shrink-0 text-right text-[13px] font-medium text-foreground font-mono tabular-nums">
+                    <span className="w-[110px] min-w-0 shrink-0 truncate text-right text-[13px] font-medium text-foreground font-mono tabular-nums">
                       {formatQualityHubResultValue(r.value_numeric, r.value_text)}
                     </span>
                   </TableRow>
@@ -250,7 +259,7 @@ export default function AdminQualityHubPage() {
                   <TableRow>
                     <span className="flex-[2] min-w-0 text-[12px] font-mono text-foreground tabular-nums truncate">{p.period_start} → {p.period_end}</span>
                     <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{p.status.replace(/_/g, " ")}</span>
-                    <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{formatQualityHubPbjRowCount(p.row_count)}</span>
+                    <span className="w-[80px] min-w-0 shrink-0 truncate text-right text-[12px] font-medium text-foreground tabular-nums">{formatQualityHubPbjRowCount(p.row_count)}</span>
                     <span className="w-[140px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
                       {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                     </span>
