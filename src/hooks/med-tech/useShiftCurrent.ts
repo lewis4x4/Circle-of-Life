@@ -7,6 +7,12 @@ import type { ResidentItem } from "@/components/med-tech/ResidentRail";
 import type { TapeEvent } from "@/components/med-tech/ShiftTape";
 import type { ShiftBarProps } from "@/components/med-tech/ShiftBar";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import {
+  formatShiftCurrentMedicationLabel,
+  formatShiftCurrentResidentCompactName,
+  formatShiftCurrentResidentName,
+  formatShiftCurrentRoomLabel,
+} from "@/lib/med-tech/shift-current-display-copy";
 
 type QueryRow = Record<string, unknown>;
 type QueryOrder = { col: string; opts?: Record<string, unknown> };
@@ -177,10 +183,27 @@ export function useShiftCurrent(): ShiftData {
           const { status, minutes } = derivePassStatus(p.status as string, p.scheduled_time as string | null);
           const sr = shiftResidents.find(s => s.resident_id === p.resident_id);
           const res = sr?.residents as QueryRow | null;
-          const resName = res ? `${res.last_name}, ${res.preferred_name || res.first_name}` : "Unknown";
+          const resName = formatShiftCurrentResidentName(
+            res
+              ? {
+                  first_name: (res.first_name as string | null) ?? null,
+                  last_name: (res.last_name as string | null) ?? null,
+                  preferred_name: (res.preferred_name as string | null) ?? null,
+                }
+              : null,
+          );
           return {
-            id: p.id as string, resident: resName, room: "-",
-            med: med ? `${med.medication_name} ${med.strength}` : "Unknown",
+            id: p.id as string,
+            resident: resName,
+            room: formatShiftCurrentRoomLabel(null),
+            med: formatShiftCurrentMedicationLabel(
+              med
+                ? {
+                    medication_name: (med.medication_name as string | null) ?? null,
+                    strength: (med.strength as string | null) ?? null,
+                  }
+                : null,
+            ),
             dose: med ? `1 ${med.form} ${med.route}` : "",
             time: p.scheduled_time ? fmtTime(p.scheduled_time as string) : "--:--",
             status, minutes,
@@ -205,8 +228,16 @@ export function useShiftCurrent(): ShiftData {
         const nextPass = passItems.find(p => p.resident.startsWith(ln) && p.status !== "given");
         return {
           id: rid,
-          name: res ? `${res.last_name}, ${((res.preferred_name || res.first_name) as string).charAt(0)}.` : "Unknown",
-          room: "-",
+          name: formatShiftCurrentResidentCompactName(
+            res
+              ? {
+                  first_name: (res.first_name as string | null) ?? null,
+                  last_name: (res.last_name as string | null) ?? null,
+                  preferred_name: (res.preferred_name as string | null) ?? null,
+                }
+              : null,
+          ),
+          room: formatShiftCurrentRoomLabel(null),
           status,
           note: hasHold ? "Hold active" : hasOverdue ? `Overdue ${nextPass?.time ?? ""}` : nextPass ? `Next ${nextPass.time}` : "All clear",
         };
