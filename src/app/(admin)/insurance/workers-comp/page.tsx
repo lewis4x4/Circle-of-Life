@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { workersCompReturnToWorkDateCopy } from "@/lib/insurance/workers-comp-copy";
 import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_WORKERS_COMP_LIST_SELECT,
@@ -84,7 +85,7 @@ export default function InsuranceWorkersCompPage() {
                   <td className="py-2 pr-4">{r.status.replace(/_/g, " ")}</td>
                   <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.reserve_cents)}</td>
                   <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.paid_cents)}</td>
-                  <td className="py-2">{r.return_to_work_date ?? "—"}</td>
+                  <td className="py-2">{workersCompReturnToWorkDateCopy(r.return_to_work_date)}</td>
                 </tr>
               ))}
             </tbody>
