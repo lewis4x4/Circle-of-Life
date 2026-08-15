@@ -25,6 +25,7 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { formatDischargeNewResidentLabel } from "@/lib/discharge/discharge-new-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -74,10 +75,6 @@ type DraftCardRow = {
   updated_at: string;
   residents: { first_name: string; last_name: string } | null;
 };
-
-function residentLabel(r: Pick<ResidentPickerRow, "first_name" | "last_name">): string {
-  return `${r.last_name}, ${r.first_name}`;
-}
 
 function normalizeBed(row: ResidentPickerRow): ResidentBedNested {
   const b = row.beds;
@@ -368,11 +365,12 @@ export default function AdminDischargeNewPage() {
       residents.map((r) => {
         const room = formatRoom(r);
         const admitted = formatAdmitted(r.admission_date);
-        const label = `${residentLabel(r)} · Room ${room} · Admitted ${admitted}`;
+        const residentName = formatDischargeNewResidentLabel(r);
+        const label = `${residentName} · Room ${room} · Admitted ${admitted}`;
         return {
           id: r.id,
           label,
-          keywords: `${residentLabel(r)} ${room} ${admitted} ${r.status} ${r.id}`,
+          keywords: `${residentName} ${room} ${admitted} ${r.status} ${r.id}`,
         };
       }),
     [residents],
@@ -639,8 +637,7 @@ export default function AdminDischargeNewPage() {
                 <>
                   <ul className="space-y-3" aria-label="In-progress medication reconciliation drafts">
                     {visibleDrafts.map((row) => {
-                      const rn = row.residents;
-                      const name = rn ? residentLabel({ first_name: rn.first_name, last_name: rn.last_name }) : "Unknown resident";
+                      const name = formatDischargeNewResidentLabel(row.residents);
                       let startedLabel = "—";
                       let daysAgo = 0;
                       try {
