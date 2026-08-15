@@ -14,6 +14,10 @@ import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { createClient } from "@/lib/supabase/client";
+import {
+  formatCaregiverResidentAcuity,
+  formatCaregiverResidentMood,
+} from "@/lib/caregiver/resident-detail-display-copy";
 import type { Database } from "@/types/database";
 
 function zonedTimeShort(now: Date, tz: string): string {
@@ -158,7 +162,11 @@ export default function CaregiverResidentQuickProfilePage() {
            </div>
            
            <div className="grid grid-cols-2 gap-3 shrink-0 md:w-80">
-              <MetricPill label="Acuity" value={p.acuityLevel ?? "—"} tone={acuityTone} />
+              <MetricPill
+                label="Acuity"
+                value={formatCaregiverResidentAcuity(p.acuityLevel)}
+                tone={acuityTone}
+              />
               <MetricPill
                 label="Meds Due"
                 value={p.scheduledMedsDueNow > 0 ? `${p.scheduledMedsDueNow} now` : "None"}
@@ -167,7 +175,7 @@ export default function CaregiverResidentQuickProfilePage() {
               <MetricPill label="Active Meds" value={String(p.activeMedCount)} tone="muted" />
               <MetricPill
                 label="Mood"
-                value={p.recentDailyLogMood ?? "—"}
+                value={formatCaregiverResidentMood(p.recentDailyLogMood)}
                 tone={moodTone}
               />
            </div>
