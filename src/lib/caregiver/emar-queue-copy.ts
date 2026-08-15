@@ -9,6 +9,15 @@ export const CAREGIVER_EMAR_BACK_TO_SHIFT_COPY = "Back to this shift";
 
 export const CAREGIVER_EMAR_NO_ROOM_LABEL = "No room on file";
 
+export const CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY = "No instructions posted";
+
+/** Scheduled-slot instructions — names the gap when none are posted. */
+export function formatCaregiverEmarScheduledInstructions(instructions?: string | null): string {
+  const trimmed = instructions?.trim();
+  if (!trimmed) return CAREGIVER_EMAR_NO_INSTRUCTIONS_COPY;
+  return trimmed;
+}
+
 export type CaregiverEmarMetricKey = "due-now" | "due-soon" | "in-window";
 
 const EMPTY_METRIC_COPY: Record<CaregiverEmarMetricKey, string> = {
