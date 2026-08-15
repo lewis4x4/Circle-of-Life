@@ -181,6 +181,26 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).queryByText("Family notes")).not.toBeInTheDocument();
   });
 
+  it("still surfaces non-common destinations when the operator searches", async () => {
+    const user = userEvent.setup();
+    renderAppShell();
+
+    await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
+
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
+    const search = within(jumpList).getByPlaceholderText("Search all sections…");
+
+    await user.type(search, "incident");
+
+    expect(within(jumpList).getByText("Incident queue")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Live rounding")).not.toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "knowledge");
+
+    expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
+  });
+
   it("navigates when a filtered destination is chosen", async () => {
     const user = userEvent.setup();
     renderAppShell();
