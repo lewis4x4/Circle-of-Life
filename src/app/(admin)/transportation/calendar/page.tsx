@@ -251,7 +251,7 @@ export default function TransportationWeekCalendarPage() {
                 type="button"
                 onClick={() => setCalendarView("week")}
                 className={cn(
-                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "week"
                     ? "bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-300"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
@@ -263,7 +263,7 @@ export default function TransportationWeekCalendarPage() {
                 type="button"
                 onClick={() => setCalendarView("month")}
                 className={cn(
-                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "month"
                     ? "bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-300"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
@@ -277,7 +277,7 @@ export default function TransportationWeekCalendarPage() {
               onClick={viewMode === "week" ? goThisWeek : goThisMonth}
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                "h-11 rounded-full text-[10px] font-bold",
               )}
             >
               {viewMode === "week" ? "This week" : "This month"}
@@ -286,7 +286,7 @@ export default function TransportationWeekCalendarPage() {
               href="/admin/transportation"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
+                "h-11 rounded-full gap-2 text-[10px] font-bold",
               )}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -346,7 +346,7 @@ export default function TransportationWeekCalendarPage() {
                   disabled={loading}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "default" }),
-                    "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
+                    "h-11 rounded-full gap-2 text-[10px] font-bold",
                     loading && "pointer-events-none opacity-50",
                   )}
                   aria-label="Download calendar as ICS file"
@@ -356,7 +356,7 @@ export default function TransportationWeekCalendarPage() {
                 </button>
                 <Link
                   href="/admin/transportation/requests/new"
-                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary-600 hover:bg-primary-700 text-white")}
+                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold bg-primary-600 hover:bg-primary-700 text-white")}
                 >
                   + Request
                 </Link>

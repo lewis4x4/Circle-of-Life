@@ -334,7 +334,7 @@ export default function AdminTransportationHubPage() {
                href="/admin/transportation/mileage-approvals"
                className={cn(
                  buttonVariants({ size: "default", variant: "outline" }),
-                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/15 dark:bg-white/5",
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold dark:border-white/15 dark:bg-white/5",
                )}
              >
                <CircleDollarSign className="h-4 w-4" aria-hidden />
@@ -344,23 +344,23 @@ export default function AdminTransportationHubPage() {
                href="/admin/transportation/calendar"
                className={cn(
                  buttonVariants({ size: "default", variant: "outline" }),
-                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/15 dark:bg-white/5",
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold dark:border-white/15 dark:bg-white/5",
                )}
              >
                <CalendarDays className="h-4 w-4" aria-hidden />
                Week view
              </Link>
-             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white shadow-lg")} >
+             <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white shadow-lg")} >
                + Transport request
              </Link>
-             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold uppercase tracking-wider text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
+             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
                + Vehicle
              </Link>
              <Link
                href="/admin/transportation/settings"
                className={cn(
                  buttonVariants({ size: "default", variant: "outline" }),
-                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/15 dark:bg-white/5",
+                 "h-12 gap-2 rounded-full border-slate-300/80 px-5 text-[10px] font-bold dark:border-white/15 dark:bg-white/5",
                )}
              >
                <Settings2 className="h-4 w-4" aria-hidden />
@@ -437,7 +437,7 @@ export default function AdminTransportationHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/10 bg-white dark:bg-white/5 shadow-sm"
+                className="shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold dark:border-white/10 bg-white dark:bg-white/5 shadow-sm"
                 onClick={() => void exportTransportRequestsCsv()}
               >
                 <Download className="h-4 w-4" aria-hidden />
@@ -447,7 +447,7 @@ export default function AdminTransportationHubPage() {
                 href="/admin/transportation/calendar"
                 className={cn(
                   buttonVariants({ size: "default", variant: "outline" }),
-                  "shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold uppercase tracking-wider dark:border-white/10 bg-white dark:bg-white/5 shadow-sm",
+                  "shrink-0 h-12 gap-2 rounded-full px-5 text-[10px] font-bold dark:border-white/10 bg-white dark:bg-white/5 shadow-sm",
                 )}
               >
                 <CalendarDays className="h-4 w-4" aria-hidden />
@@ -455,7 +455,7 @@ export default function AdminTransportationHubPage() {
               </Link>
               <Link
                 href="/admin/transportation/requests/new"
-                className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold uppercase tracking-wider dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
+                className={cn(buttonVariants({ size: "default", variant: "outline" }), "shrink-0 h-12 rounded-full px-6 text-[10px] font-bold dark:border-white/10 bg-white dark:bg-white/5 shadow-sm")}
               >
                 Log Request
               </Link>
@@ -627,7 +627,7 @@ export default function AdminTransportationHubPage() {
                           href={`/admin/staff/${a.staffId}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px]",
+                            "h-10 rounded-full px-6 font-bold text-[10px]",
                             critical ? "bg-red-600 hover:bg-red-700 text-white shadow-md" : "bg-amber-500 hover:bg-amber-600 text-white shadow-md",
                           )}
                         >
@@ -711,7 +711,7 @@ export default function AdminTransportationHubPage() {
                           href="/admin/transportation/inspections/new"
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-10 rounded-full px-6 font-bold uppercase tracking-wider text-[10px]",
+                            "h-10 rounded-full px-6 font-bold text-[10px]",
                             critical ? "bg-white text-red-600 hover:bg-slate-100 shadow-md border border-red-200 dark:border-red-500/30 dark:bg-white/5 dark:text-red-400 dark:hover:bg-red-500/20" : "bg-white text-amber-600 hover:bg-slate-100 shadow-md border border-amber-200 dark:border-amber-500/30 dark:bg-white/5 dark:text-amber-400 dark:hover:bg-amber-500/20",
                           )}
                         >
@@ -737,7 +737,7 @@ export default function AdminTransportationHubPage() {
                            Result: {formatEnum(row.result)}
                          </p>
                        </div>
-                       <span className="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 text-right bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 px-3 py-1.5 rounded-full shrink-0">
+                       <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 text-right bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 px-3 py-1.5 rounded-full shrink-0">
                          {format(new Date(row.inspected_at), "MMM d")}
                        </span>
                      </MotionItem>
