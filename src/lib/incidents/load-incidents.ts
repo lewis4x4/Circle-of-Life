@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   formatIncidentFollowupDue,
   formatIncidentOccurredAt,
+  formatIncidentResidentName,
   INCIDENTS_NO_DATE_POSTED_COPY,
 } from "@/lib/incidents/incidents-display-copy";
 import { classifyFollowupEscalation, isFollowupEscalated } from "@/lib/incidents/followup-escalation";
@@ -170,8 +171,8 @@ export async function fetchIncidentsFromSupabase(
   }
 
   return incidents.map((row) => {
-    const resident = row.resident_id ? residentById.get(row.resident_id) : null;
-    const residentName = resident ? `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() : "Unknown resident";
+    const resident = row.resident_id ? residentById.get(row.resident_id) ?? null : null;
+    const residentName = formatIncidentResidentName(resident);
     const reporter = reporterById.get(row.reported_by);
     const reportedBy = reporter?.full_name?.trim() || "Staff";
     const openFollowups = openFollowupsByIncident.get(row.id) ?? 0;

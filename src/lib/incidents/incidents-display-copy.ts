@@ -4,6 +4,13 @@
  */
 
 export const INCIDENTS_NO_DATE_POSTED_COPY = "No date posted";
+export const INCIDENTS_NO_RESIDENT_POSTED_COPY = "No resident posted";
+export const INCIDENTS_NO_NAME_POSTED_COPY = "No name posted";
+
+export type IncidentResidentNameParts = {
+  first_name: string | null;
+  last_name: string | null;
+};
 
 const INCIDENTS_LIST_TIMESTAMP_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",
@@ -34,4 +41,32 @@ export function formatIncidentOccurredAt(value: string | null | undefined): stri
 export function formatIncidentFollowupDue(value: string | null | undefined): string {
   if (isMissingIncidentDateInput(value)) return INCIDENTS_NO_DATE_POSTED_COPY;
   return formatPostedIncidentListTimestamp(value!.trim());
+}
+
+const LEGACY_PLACEHOLDER_RESIDENT_NAMES = new Set([
+  "—",
+  "unknown",
+  "unknown resident",
+  "unnamed",
+  "unnamed resident",
+]);
+
+function isMissingIncidentResidentName(combined: string): boolean {
+  const trimmed = combined.trim();
+  if (trimmed.length === 0) return true;
+  return LEGACY_PLACEHOLDER_RESIDENT_NAMES.has(trimmed.toLowerCase());
+}
+
+/** Resident name on the incidents board when join is missing or posted name is blank/legacy placeholder. */
+export function formatIncidentResidentName(
+  resident: IncidentResidentNameParts | null | undefined,
+): string {
+  if (resident == null) return INCIDENTS_NO_RESIDENT_POSTED_COPY;
+
+  const first = (resident.first_name ?? "").trim();
+  const last = (resident.last_name ?? "").trim();
+  const combined = `${first} ${last}`.trim();
+
+  if (isMissingIncidentResidentName(combined)) return INCIDENTS_NO_NAME_POSTED_COPY;
+  return combined;
 }
