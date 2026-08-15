@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   RESIDENT_OVERVIEW_NO_DATE_COPY,
   RESIDENT_OVERVIEW_NO_GENDER_COPY,
+  RESIDENT_OVERVIEW_NO_NOTE_COPY,
   RESIDENT_OVERVIEW_NO_STAFF_COPY,
   formatResidentOverviewAdmissionLabel,
+  formatResidentOverviewDailyNoteSnippet,
   formatResidentOverviewDobLabel,
   formatResidentOverviewGenderLabel,
   formatResidentOverviewVerifiedByStaffLabel,
@@ -115,5 +117,31 @@ describe("formatResidentOverviewGenderLabel", () => {
   it("humanizes other posted gender codes without inventing values", () => {
     expect(formatResidentOverviewGenderLabel("non_binary")).toBe("non binary");
     expect(formatResidentOverviewGenderLabel("  other_gender  ")).toBe("other gender");
+  });
+});
+
+describe("formatResidentOverviewDailyNoteSnippet", () => {
+  it("names a missing daily note gap instead of a silent em dash", () => {
+    expect(formatResidentOverviewDailyNoteSnippet(null)).toBe(RESIDENT_OVERVIEW_NO_NOTE_COPY);
+    expect(formatResidentOverviewDailyNoteSnippet(undefined)).toBe(RESIDENT_OVERVIEW_NO_NOTE_COPY);
+    expect(formatResidentOverviewDailyNoteSnippet("")).toBe(RESIDENT_OVERVIEW_NO_NOTE_COPY);
+    expect(formatResidentOverviewDailyNoteSnippet("   ")).toBe(RESIDENT_OVERVIEW_NO_NOTE_COPY);
+    expect(formatResidentOverviewDailyNoteSnippet("—")).toBe(RESIDENT_OVERVIEW_NO_NOTE_COPY);
+    expect(formatResidentOverviewDailyNoteSnippet(null)).not.toBe("—");
+  });
+
+  it("returns trimmed posted note text without altering content", () => {
+    expect(formatResidentOverviewDailyNoteSnippet("Resident rested well during shift.")).toBe(
+      "Resident rested well during shift.",
+    );
+    expect(formatResidentOverviewDailyNoteSnippet("  Resident rested well during shift.  ")).toBe(
+      "Resident rested well during shift.",
+    );
+  });
+
+  it("preserves long posted note text for downstream truncation", () => {
+    const longNote = "A".repeat(400);
+    expect(formatResidentOverviewDailyNoteSnippet(longNote)).toBe(longNote);
+    expect(formatResidentOverviewDailyNoteSnippet(longNote).length).toBe(400);
   });
 });

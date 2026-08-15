@@ -6,6 +6,7 @@
 export const RESIDENT_OVERVIEW_NO_STAFF_COPY = "No staff posted";
 export const RESIDENT_OVERVIEW_NO_GENDER_COPY = "No gender posted";
 export const RESIDENT_OVERVIEW_NO_DATE_COPY = "No date posted";
+export const RESIDENT_OVERVIEW_NO_NOTE_COPY = "No note posted";
 
 function isResidentOverviewDateGap(value: string): boolean {
   const trimmed = value.trim();
@@ -68,6 +69,18 @@ export function formatResidentOverviewDobLabel(value: string | null | undefined)
     day: "numeric",
     year: "numeric",
   }).format(parsed);
+}
+
+/**
+ * Daily note excerpt on the resident overview.
+ * Names a missing general_notes gap — never invent note content.
+ */
+export function formatResidentOverviewDailyNoteSnippet(value: string | null | undefined): string {
+  if (value == null) return RESIDENT_OVERVIEW_NO_NOTE_COPY;
+  const trimmed = value.trim();
+  if (!trimmed) return RESIDENT_OVERVIEW_NO_NOTE_COPY;
+  if (trimmed === "—") return RESIDENT_OVERVIEW_NO_NOTE_COPY;
+  return trimmed;
 }
 
 /**

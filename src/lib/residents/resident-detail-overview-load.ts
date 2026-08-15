@@ -10,6 +10,7 @@ import {
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import {
   formatResidentOverviewAdmissionLabel,
+  formatResidentOverviewDailyNoteSnippet,
   formatResidentOverviewDobLabel,
   formatResidentOverviewVerifiedByStaffLabel,
 } from "@/lib/residents/resident-overview-display-copy";
@@ -509,7 +510,7 @@ export async function loadResidentOverviewDetail(
     id: r.id,
     logDate: r.log_date,
     shift: r.shift,
-    snippet: truncateSnippet(r.general_notes?.trim() || "—", 360),
+    snippet: truncateSnippet(formatResidentOverviewDailyNoteSnippet(r.general_notes), 360),
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
   }));
 
