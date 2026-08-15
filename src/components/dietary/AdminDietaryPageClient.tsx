@@ -104,6 +104,11 @@ function attentionSummary(row: DietRow): string {
   return "Review diet order details.";
 }
 
+function toLocalDatetimeValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function formatRelativeShort(iso: string): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "—";
@@ -201,8 +206,9 @@ export function AdminDietaryPageClient({
     notes: "",
   });
   const [snackForm, setSnackForm] = useState({
-    snack_at: new Date().toISOString().slice(0, 16),
+    snack_at: toLocalDatetimeValue(new Date()),
   });
+  const [locationHash, setLocationHash] = useState("");
 
   const applyBootstrap = useCallback((bootstrap: DietaryHubBootstrap) => {
     setRows(bootstrap.rows);
@@ -321,14 +327,37 @@ export function AdminDietaryPageClient({
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncHash = () => setLocationHash(window.location.hash);
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    window.addEventListener("popstate", syncHash);
+    const { pushState, replaceState } = history;
+    history.pushState = function (...args) {
+      pushState.apply(this, args);
+      syncHash();
+    };
+    history.replaceState = function (...args) {
+      replaceState.apply(this, args);
+      syncHash();
+    };
+    return () => {
+      window.removeEventListener("hashchange", syncHash);
+      window.removeEventListener("popstate", syncHash);
+      history.pushState = pushState;
+      history.replaceState = replaceState;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!facilityReady || typeof window === "undefined") return;
-    if (window.location.hash !== `#${SNACK_PASS_SECTION_ID}`) return;
+    if (locationHash !== `#${SNACK_PASS_SECTION_ID}`) return;
     const section = snackPassSectionRef.current;
     if (!section) return;
     requestAnimationFrame(() => {
       section.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [facilityReady]);
+  }, [facilityReady, locationHash]);
 
   const saveMealLog = useCallback(async () => {
     if (!facilityReady || !selectedFacilityId || !organizationId || !mealForm.resident_id) return;
@@ -383,7 +412,7 @@ export function AdminDietaryPageClient({
         passed_by_user_id: user.id,
       }) as never);
       if (insertErr) throw insertErr;
-      setSnackForm({ snack_at: new Date().toISOString().slice(0, 16) });
+      setSnackForm({ snack_at: toLocalDatetimeValue(new Date()) });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save snack log.");
