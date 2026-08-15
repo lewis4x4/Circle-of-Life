@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ClipboardList, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -11,6 +11,14 @@ import type {
   StaffMessageRow,
   StaffMessageThread,
 } from "@/lib/admin/family-messages-data";
+import {
+  FAMILY_BULLETIN_EMPTY_DESCRIPTION,
+  FAMILY_BULLETIN_EMPTY_TITLE,
+  FAMILY_BULLETIN_PAGE_DESCRIPTION,
+  FAMILY_BULLETIN_PAGE_TITLE,
+  FAMILY_BULLETIN_RESIDENT_EMPTY_DESCRIPTION,
+  FAMILY_BULLETIN_RESIDENT_EMPTY_TITLE,
+} from "@/lib/admin/family-messages-copy";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -21,7 +29,7 @@ import {
 import { formatFamilyDeliveryMethod } from "@/lib/family/family-portal-notes-display";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { FamilyPortalUpdateLog } from "@/components/family-portal/FamilyPortalUpdateLog";
-import { StaffFamilyNoteComposer } from "@/components/family-portal/StaffFamilyNoteComposer";
+import { StaffFamilyBulletinSection } from "@/components/family-portal/StaffFamilyBulletinSection";
 
 function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
   return [...messages]
@@ -49,6 +57,7 @@ export default function StaffFamilyMessagesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedResidentId, setSelectedResidentId] = useState<string | null>(null);
+  const [composeResidentId, setComposeResidentId] = useState("");
   const [messages, setMessages] = useState<StaffMessageRow[]>([]);
   const [residentName, setResidentName] = useState("");
   const [msgLoading, setMsgLoading] = useState(false);
@@ -80,7 +89,7 @@ export default function StaffFamilyMessagesPage() {
       if (!result.ok) setError(result.error);
       else setThreads(result.threads);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load update logs");
+      setError(err instanceof Error ? err.message : "Failed to load bulletin notes");
     } finally {
       setLoading(false);
     }
@@ -88,6 +97,7 @@ export default function StaffFamilyMessagesPage() {
 
   const openResidentLog = useCallback(async (residentId: string) => {
     setSelectedResidentId(residentId);
+    setComposeResidentId(residentId);
     setMsgLoading(true);
     setMsgError(null);
     try {
@@ -106,26 +116,30 @@ export default function StaffFamilyMessagesPage() {
     }
   }, []);
 
+  const activeComposeResidentId = selectedResidentId ?? composeResidentId;
+
   const handlePost = useCallback(async () => {
-    if (!selectedResidentId || !draft.trim() || posting) return;
+    if (!activeComposeResidentId || !draft.trim() || posting) return;
     setPosting(true);
     setMsgError(null);
     try {
       const supabase = createClient();
-      const result = await postStaffMessage(supabase, selectedResidentId, draft, deliveryMethod);
+      const result = await postStaffMessage(supabase, activeComposeResidentId, draft, deliveryMethod);
       if (!result.ok) {
         setMsgError(result.error);
       } else {
         setDraft("");
-        await openResidentLog(selectedResidentId);
+        if (selectedResidentId) {
+          await openResidentLog(selectedResidentId);
+        }
         await loadThreads();
       }
     } catch (err) {
-      setMsgError(err instanceof Error ? err.message : "Failed to post update");
+      setMsgError(err instanceof Error ? err.message : "Failed to post bulletin note");
     } finally {
       setPosting(false);
     }
-  }, [selectedResidentId, draft, deliveryMethod, posting, openResidentLog, loadThreads]);
+  }, [activeComposeResidentId, draft, deliveryMethod, posting, openResidentLog, selectedResidentId, loadThreads]);
 
   useEffect(() => {
     void loadThreads();
@@ -140,6 +154,11 @@ export default function StaffFamilyMessagesPage() {
   const selectedThread = selectedResidentId
     ? threads.find((thread) => thread.residentId === selectedResidentId) ?? null
     : null;
+
+  const composeThread = useMemo(
+    () => threads.find((thread) => thread.residentId === activeComposeResidentId) ?? null,
+    [activeComposeResidentId, threads],
+  );
 
   const updateThreadTriageStatus = useCallback(
     async (
@@ -219,12 +238,12 @@ export default function StaffFamilyMessagesPage() {
                 void loadThreads();
               }}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Back to residents"
+              aria-label="Back to bulletin notes"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div>
-              <p className="text-xs text-muted-foreground">Family portal update log</p>
+              <p className="text-xs text-muted-foreground">Family portal bulletin log</p>
               <h2 className="text-2xl font-medium tracking-tight text-foreground">
                 {residentName}
               </h2>
@@ -328,7 +347,9 @@ export default function StaffFamilyMessagesPage() {
           </div>
         ) : null}
 
-        <StaffFamilyNoteComposer
+        <StaffFamilyBulletinSection
+          residentId={selectedResidentId}
+          lastPostedAtIso={selectedThread?.lastMessageAtIso ?? null}
           draft={draft}
           deliveryMethod={deliveryMethod}
           posting={posting}
@@ -339,13 +360,13 @@ export default function StaffFamilyMessagesPage() {
         />
 
         {msgLoading ? (
-          <FamilyPortalUpdateLog items={[]} loading listLabel="Posted updates" />
+          <FamilyPortalUpdateLog items={[]} loading listLabel="Posted bulletin notes" />
         ) : (
           <FamilyPortalUpdateLog
             items={bulletinItemsFromMessages(messages)}
-            emptyTitle="No updates posted yet"
-            emptyDescription="Post the first note for this resident's family portal."
-            listLabel="Posted updates"
+            emptyTitle={FAMILY_BULLETIN_RESIDENT_EMPTY_TITLE}
+            emptyDescription={FAMILY_BULLETIN_RESIDENT_EMPTY_DESCRIPTION}
+            listLabel="Posted bulletin notes"
           />
         )}
       </div>
@@ -356,25 +377,44 @@ export default function StaffFamilyMessagesPage() {
     <div className="mx-auto w-full max-w-5xl space-y-8 pb-12">
       <div className="mt-4 rounded-lg border border-border bg-card p-8 shadow-sm">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Family portal notes
+          {FAMILY_BULLETIN_PAGE_TITLE}
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Post one-way updates for families. Notes appear on the family portal; families cannot reply in Haven.
+          {FAMILY_BULLETIN_PAGE_DESCRIPTION}
         </p>
       </div>
 
+      <StaffFamilyBulletinSection
+        residentId={composeResidentId}
+        onResidentChange={(residentId) => {
+          setComposeResidentId(residentId);
+          setMsgError(null);
+        }}
+        lastPostedAtIso={composeThread?.lastMessageAtIso ?? null}
+        draft={draft}
+        deliveryMethod={deliveryMethod}
+        posting={posting}
+        error={msgError}
+        onDraftChange={setDraft}
+        onDeliveryMethodChange={setDeliveryMethod}
+        onPost={() => { void handlePost(); }}
+      />
+
       {threads.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/20 p-16 text-center">
-          <ClipboardList className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-          <h3 className="text-lg font-medium text-foreground">No updates posted yet</h3>
+        <div
+          className="rounded-lg border border-dashed border-border bg-muted/20 p-16 text-center"
+          role="status"
+        >
+          <ClipboardList className="mx-auto mb-4 h-10 w-10 text-muted-foreground" aria-hidden="true" />
+          <h2 className="text-lg font-medium text-foreground">{FAMILY_BULLETIN_EMPTY_TITLE}</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            When staff post family portal notes, residents will appear here.
+            {FAMILY_BULLETIN_EMPTY_DESCRIPTION}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 px-1">
-            <h2 className="text-lg font-medium text-foreground">Residents</h2>
+            <h2 className="text-lg font-medium text-foreground">Posted bulletin notes</h2>
             {residentFilter !== "all" ? (
               <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                 {visibleThreads.length} shown
@@ -482,7 +522,7 @@ export default function StaffFamilyMessagesPage() {
                     </div>
 
                     <p className="mt-4 text-xs text-muted-foreground">
-                      {thread.messageCount} update{thread.messageCount !== 1 ? "s" : ""}
+                      {thread.messageCount} bulletin note{thread.messageCount !== 1 ? "s" : ""}
                     </p>
                   </button>
                 </MotionItem>
