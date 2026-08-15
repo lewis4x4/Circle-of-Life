@@ -4,7 +4,9 @@ import {
   DISCHARGE_NEW_NO_DATE_COPY,
   DISCHARGE_NEW_NO_NAME_POSTED_COPY,
   DISCHARGE_NEW_NO_RESIDENT_POSTED_COPY,
+  DISCHARGE_NEW_NO_ROOM_COPY,
   formatDischargeNewResidentLabel,
+  formatDischargeNewRoomLabel,
   formatDischargeNewStartedLabel,
   getDischargeNewStartedDaysAgo,
 } from "./discharge-new-display-copy";
@@ -96,6 +98,51 @@ describe("formatDischargeNewResidentLabel", () => {
       }
       expect(result).not.toMatch(/^,\s/);
       expect(result).not.toMatch(/,\s*$/);
+    }
+  });
+});
+
+describe("formatDischargeNewRoomLabel", () => {
+  it("names a missing or blank room and bed", () => {
+    expect(formatDischargeNewRoomLabel(null, null)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel(undefined, undefined)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel("", "")).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel("   ", "  ")).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+  });
+
+  it("names em dash and legacy generic placeholders", () => {
+    expect(formatDischargeNewRoomLabel(EM_DASH, null)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel("Unknown", null)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel("Unassigned", null)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel("Unnamed", null)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel(null, "Unassigned")).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel(null, EM_DASH)).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+    expect(formatDischargeNewRoomLabel(" unknown ", " unassigned ")).toBe(DISCHARGE_NEW_NO_ROOM_COPY);
+  });
+
+  it("prefers a posted room number over bed label", () => {
+    expect(formatDischargeNewRoomLabel("Posted Room", "Posted Bed")).toBe("Posted Room");
+    expect(formatDischargeNewRoomLabel("  Posted Room  ", "Posted Bed")).toBe("Posted Room");
+  });
+
+  it("falls back to a posted bed label when room number is missing", () => {
+    expect(formatDischargeNewRoomLabel(null, "Posted Bed")).toBe("Posted Bed");
+    expect(formatDischargeNewRoomLabel("", "  Posted Bed  ")).toBe("Posted Bed");
+    expect(formatDischargeNewRoomLabel("Unknown", "Posted Bed")).toBe("Posted Bed");
+  });
+
+  it("never surfaces a lone em dash for resident picker room labels", () => {
+    const samples = [
+      [null, null],
+      [undefined, undefined],
+      ["", ""],
+      [EM_DASH, null],
+      ["Unknown", "Unassigned"],
+      ["Posted Room", "Posted Bed"],
+      [null, "Posted Bed"],
+    ] as const;
+    for (const [roomNumber, bedLabel] of samples) {
+      expect(formatDischargeNewRoomLabel(roomNumber, bedLabel)).not.toBe(EM_DASH);
     }
   });
 });

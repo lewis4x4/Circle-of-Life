@@ -27,6 +27,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import {
   formatDischargeNewResidentLabel,
+  formatDischargeNewRoomLabel,
   formatDischargeNewStartedLabel,
   getDischargeNewStartedDaysAgo,
 } from "@/lib/discharge/discharge-new-display-copy";
@@ -88,11 +89,7 @@ function normalizeBed(row: ResidentPickerRow): ResidentBedNested {
 
 function formatRoom(row: ResidentPickerRow): string {
   const bed = normalizeBed(row);
-  const rn = bed?.rooms?.room_number?.trim();
-  if (rn) return rn;
-  const lbl = bed?.bed_label?.trim();
-  if (lbl) return lbl;
-  return "—";
+  return formatDischargeNewRoomLabel(bed?.rooms?.room_number, bed?.bed_label);
 }
 
 function workflowStepOf5(status: string): number {

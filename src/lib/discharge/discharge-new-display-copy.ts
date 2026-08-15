@@ -9,6 +9,7 @@ import { differenceInCalendarDays, format, parseISO } from "date-fns";
 export const DISCHARGE_NEW_NO_RESIDENT_POSTED_COPY = "No resident posted";
 export const DISCHARGE_NEW_NO_NAME_POSTED_COPY = "No name posted";
 export const DISCHARGE_NEW_NO_DATE_COPY = "No date posted";
+export const DISCHARGE_NEW_NO_ROOM_COPY = "No room posted";
 
 export type DischargeNewResidentNameJoin = {
   first_name: string | null;
@@ -72,6 +73,30 @@ export function formatDischargeNewStartedLabel(iso: string | null | undefined): 
   const parsed = parseDischargeNewStartedAt(iso);
   if (!parsed) return DISCHARGE_NEW_NO_DATE_COPY;
   return format(parsed, "MMM d, yyyy");
+}
+
+const DISCHARGE_NEW_PLACEHOLDER_ROOM_LABELS = new Set([
+  "—",
+  "unknown",
+  "unassigned",
+  "unnamed",
+]);
+
+function isMissingDischargeNewRoomLabel(value: string | null | undefined): boolean {
+  if (value == null) return true;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return true;
+  return DISCHARGE_NEW_PLACEHOLDER_ROOM_LABELS.has(trimmed.toLowerCase());
+}
+
+/** Room or bed label for resident picker — room_number first, then bed_label; blank/legacy → named gap. */
+export function formatDischargeNewRoomLabel(
+  roomNumber: string | null | undefined,
+  bedLabel: string | null | undefined,
+): string {
+  if (!isMissingDischargeNewRoomLabel(roomNumber)) return roomNumber!.trim();
+  if (!isMissingDischargeNewRoomLabel(bedLabel)) return bedLabel!.trim();
+  return DISCHARGE_NEW_NO_ROOM_COPY;
 }
 
 /** Calendar days since draft start; 0 when the posted timestamp is missing or unparseable. */
