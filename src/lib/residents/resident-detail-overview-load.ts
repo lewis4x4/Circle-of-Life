@@ -7,6 +7,7 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import {
   carePlanAnnualReviewDeltaDays,
 } from "@/lib/residents/care-plan-annual-review-window";
+import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import { formatResidentOverviewVerifiedByStaffLabel } from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import type { Database } from "@/types/database";
@@ -355,7 +356,7 @@ export async function loadResidentOverviewDetail(
 
   const firstName = resident.first_name ?? "";
   const lastName = resident.last_name ?? "";
-  const fullName = `${firstName} ${lastName}`.trim() || "Unknown Resident";
+  const fullName = formatLoadResidentsFullName(firstName, lastName);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
   const acuity = mapAcuity(resident.acuity_level);
   const status = mapResidencyStatus(resident.status);
