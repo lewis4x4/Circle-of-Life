@@ -10,6 +10,10 @@ import {
   invokeDispatchPushTest,
   subscribePushAndSave,
 } from "@/lib/push-notifications";
+import {
+  formatNotificationsChannelsDisplay,
+  formatNotificationsRoleTargetsDisplay,
+} from "@/lib/admin/settings/notifications-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -535,8 +539,10 @@ export default function AdminNotificationsSettingsPage() {
                       <td className="px-3 py-2 font-medium">{route.name}</td>
                       <td className="px-3 py-2">{route.facilities?.name ?? "All facilities"}</td>
                       <td className="px-3 py-2">{severityLabel(route.severity_min)}</td>
-                      <td className="px-3 py-2">{(route.channels ?? []).join(", ") || "—"}</td>
-                      <td className="px-3 py-2">{(route.staff_role_targets ?? []).join(", ") || "—"}</td>
+                      <td className="px-3 py-2">{formatNotificationsChannelsDisplay(route.channels)}</td>
+                      <td className="px-3 py-2">
+                        {formatNotificationsRoleTargetsDisplay(route.staff_role_targets)}
+                      </td>
                       <td className="px-3 py-2">{route.is_active ? "Active" : "Inactive"}</td>
                       <td className="px-3 py-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => startEdit(route)} disabled={!canManageRoutes}>
