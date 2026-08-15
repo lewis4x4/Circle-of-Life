@@ -103,7 +103,7 @@ export default function AdminVerbalOrdersPage() {
           </p>
         </div>
         <div>
-          <Link href="/admin/medications/verbal-orders/new" className={cn(buttonVariants(), "h-12 px-8 rounded-[var(--radius)] font-bold uppercase tracking-wider text-xs tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground gap-2")}>
+          <Link href="/admin/medications/verbal-orders/new" className={cn(buttonVariants(), "h-12 px-8 rounded-[var(--radius)] font-bold text-xs tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground gap-2")}>
             <Plus className="h-4 w-4" />
             New Verbal Order
           </Link>
