@@ -14,15 +14,17 @@ import {
 } from "@/lib/admin/facilities/facility-audit-ui";
 import type { FacilityAuditMetricsPayload } from "@/hooks/useFacilityAuditMetrics";
 import { type AuditLogFilters, type FacilityAuditHookRow, useFacilityAuditLog } from "@/hooks/useFacilityAuditLog";
-import { formatAuditTabNewValue, formatAuditTabOldValue } from "@/lib/facilities/audit-tab-display-copy";
+import {
+  formatAuditTabLastEventRelative,
+  formatAuditTabNewValue,
+  formatAuditTabOldValue,
+} from "@/lib/facilities/audit-tab-display-copy";
 import { cn } from "@/lib/utils";
 import { Loader2, Download, Filter } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatDistanceToNow } from "date-fns";
-
 const LS_VIEWS = "haven:facility-audit-log:saved-view";
 const PER_PAGE = 50;
 
@@ -320,11 +322,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
   const summaryLine = (() => {
     const n = total;
     const m = participants.length;
-    const lastAt = metricsSummary?.last_event_at ? new Date(metricsSummary.last_event_at) : null;
-    const relative =
-      lastAt && !Number.isNaN(lastAt.getTime())
-        ? formatDistanceToNow(lastAt, { addSuffix: true })
-        : "—";
+    const relative = formatAuditTabLastEventRelative(metricsSummary?.last_event_at);
     return `Showing ${n} event${n === 1 ? "" : "s"} from ${m} user${m === 1 ? "" : "s"} · Last event ${relative}`;
   })();
 

@@ -1,3 +1,5 @@
+import { formatDistanceToNow } from "date-fns";
+
 /**
  * Quiet Operator copy for the facility detail audit tab diff preview.
  * Missing audit values name real gaps — never fabricate prior or new field text.
@@ -28,6 +30,19 @@ export function formatAuditTabNewValue(value: string | null | undefined): string
 export function formatAuditStripLastEventRelative(lastEventAt: Date | null, formattedAgo: string): string {
   if (lastEventAt == null || Number.isNaN(lastEventAt.getTime())) return AUDIT_STRIP_NO_LAST_EVENT_COPY;
   return formattedAgo;
+}
+
+/** Relative last-event label for the audit tab summary line from an ISO timestamp string. */
+export function formatAuditTabLastEventRelative(lastEventAt: string | null | undefined): string {
+  const trimmed = lastEventAt?.trim();
+  if (!trimmed) {
+    return formatAuditStripLastEventRelative(null, "");
+  }
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) {
+    return formatAuditStripLastEventRelative(null, "");
+  }
+  return formatAuditStripLastEventRelative(date, formatDistanceToNow(date, { addSuffix: true }));
 }
 
 /** Top-user tile on the audit metrics strip; real zero event counts stay explicit. */

@@ -7,6 +7,7 @@ import {
   AUDIT_STRIP_NO_TOP_USER_COPY,
   formatAuditStripLastEventRelative,
   formatAuditStripTopUserDisplay,
+  formatAuditTabLastEventRelative,
   formatAuditTabNewValue,
   formatAuditTabOldValue,
 } from "./audit-tab-display-copy";
@@ -40,6 +41,24 @@ describe("formatAuditTabNewValue", () => {
 
   it("returns a posted new value trimmed", () => {
     expect(formatAuditTabNewValue("  enabled  ")).toBe("enabled");
+  });
+});
+
+describe("formatAuditTabLastEventRelative", () => {
+  it("names a missing last event instead of an em dash", () => {
+    expect(formatAuditTabLastEventRelative(null)).toBe(AUDIT_STRIP_NO_LAST_EVENT_COPY);
+    expect(formatAuditTabLastEventRelative(undefined)).toBe(AUDIT_STRIP_NO_LAST_EVENT_COPY);
+    expect(formatAuditTabLastEventRelative("")).toBe(AUDIT_STRIP_NO_LAST_EVENT_COPY);
+    expect(formatAuditTabLastEventRelative("   ")).toBe(AUDIT_STRIP_NO_LAST_EVENT_COPY);
+    expect(formatAuditTabLastEventRelative("not-a-date")).toBe(AUDIT_STRIP_NO_LAST_EVENT_COPY);
+    expect(formatAuditTabLastEventRelative(null)).not.toBe(EM_DASH);
+  });
+
+  it("returns a non-empty relative phrase when a posted ISO timestamp exists", () => {
+    const relative = formatAuditTabLastEventRelative("2026-01-01T12:00:00.000Z");
+    expect(relative).toBeTruthy();
+    expect(relative).not.toBe(EM_DASH);
+    expect(relative).not.toBe(AUDIT_STRIP_NO_LAST_EVENT_COPY);
   });
 });
 
