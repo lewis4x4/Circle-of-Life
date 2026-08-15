@@ -10,6 +10,11 @@ import {
   DEFAULT_PRN_REASSESS_MINUTES,
   prnReassessmentDueAt,
 } from "@/lib/caregiver/floor-queues";
+import {
+  caregiverDisplayRoomLabel,
+  caregiverPrnFollowupEmptyNoticeHelper,
+  caregiverPrnFollowupEmptyNoticeTitle,
+} from "@/lib/caregiver/emar-queue-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms } from "@/lib/caregiver/facility-residents";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -136,7 +141,7 @@ export default function CaregiverPrnFollowupPage() {
           id: row.id,
           residentId: row.resident_id,
           name: res?.displayName ?? "Resident",
-          room: res?.roomLabel ?? "—",
+          room: caregiverDisplayRoomLabel(res?.roomLabel),
           med: medName,
           givenLabel: formatShortDateTime(row.actual_time),
           reassessLabel: formatShortDateTime(dueAt.toISOString()),
@@ -238,8 +243,9 @@ export default function CaregiverPrnFollowupPage() {
       ) : null}
 
       {rows.length === 0 ? (
-        <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center">
-          <p className="text-sm font-mono text-zinc-400">No pending PRN reassessments.</p>
+        <div className="p-8 rounded-lg border border-white/5 bg-slate-900/40 text-center space-y-2">
+          <p className="text-sm font-mono text-zinc-400">{caregiverPrnFollowupEmptyNoticeTitle()}</p>
+          <p className="text-xs font-mono text-zinc-500">{caregiverPrnFollowupEmptyNoticeHelper()}</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
