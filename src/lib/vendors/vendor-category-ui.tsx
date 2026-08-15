@@ -1,6 +1,8 @@
 import { AlertTriangle } from "lucide-react";
 import React from "react";
 
+import { VENDOR_CONTRACT_NO_STATUS_COPY } from "@/lib/vendors/contracts-display-copy";
+
 /** Broad label map across historical + planned `vendor_category` enum values */
 export const VENDOR_CATEGORY_UI_LABELS: Record<string, string> = {
   maintenance: "Maintenance",
@@ -119,7 +121,7 @@ export function vendorContractUiLabel(raw: unknown): string {
     case "na":
       return "N/A";
     case "":
-      return "—";
+      return VENDOR_CONTRACT_NO_STATUS_COPY;
     default:
       return prettifyFallback(s);
   }

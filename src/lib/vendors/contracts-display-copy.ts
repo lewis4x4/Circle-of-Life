@@ -5,6 +5,7 @@
 
 export const VENDOR_CONTRACT_NO_VENDOR_NAME_COPY = "No vendor posted";
 export const VENDOR_CONTRACT_NO_EXPIRATION_DATE_COPY = "No expiration date posted";
+export const VENDOR_CONTRACT_NO_STATUS_COPY = "No status posted";
 
 /** Vendor name on a contract row or detail header when unset or blank. */
 export function formatVendorContractVendorName(name: string | null | undefined): string {
