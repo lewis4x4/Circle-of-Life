@@ -6,6 +6,25 @@
 import { format, parseISO } from "date-fns";
 
 export const TRANSPORTATION_NO_TIME_COPY = "No time posted";
+export const TRANSPORTATION_NO_STAFF_COPY = "No staff posted";
+export const TRANSPORTATION_NO_NAME_COPY = "No name posted";
+
+export type TransportationDriverStaffMini = {
+  first_name?: string | null;
+  last_name?: string | null;
+};
+
+/** Driver staff label when the join is missing or posted names are blank. */
+export function formatTransportationDriverStaffLabel(
+  staff: TransportationDriverStaffMini | null | undefined,
+): string {
+  if (!staff) return TRANSPORTATION_NO_STAFF_COPY;
+  const first = staff.first_name?.trim() ?? "";
+  const last = staff.last_name?.trim() ?? "";
+  const name = `${first} ${last}`.trim();
+  if (!name) return TRANSPORTATION_NO_NAME_COPY;
+  return name;
+}
 
 /** Appointment time column — posted time formatted or explicit missing copy. */
 export function formatTransportationAppointmentTime(

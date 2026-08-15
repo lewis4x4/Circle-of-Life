@@ -19,7 +19,10 @@ import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchTransportationHubSnapshot } from "@/lib/transportation/load-transportation-hub";
-import { formatTransportationAppointmentTime } from "@/lib/transportation/transportation-display-copy";
+import {
+  formatTransportationAppointmentTime,
+  formatTransportationDriverStaffLabel,
+} from "@/lib/transportation/transportation-display-copy";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -235,7 +238,7 @@ export default function AdminTransportationHubPage() {
   const driverAlerts = useMemo((): DriverAlert[] => {
     const out: DriverAlert[] = [];
     for (const row of drivers) {
-      const staffName = row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "Unknown staff";
+      const staffName = formatTransportationDriverStaffLabel(row.staff);
       const lic = daysUntilCalendar(row.license_expires_on);
       if (lic !== null && lic <= COMPLIANCE_WINDOW_DAYS) {
         out.push({
