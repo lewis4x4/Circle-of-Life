@@ -16,6 +16,7 @@ import {
   formatCarePlanDateOnly,
   formatCarePlanItemDescription,
   formatCarePlanItemTitle,
+  formatCarePlanResidentName,
   formatCarePlanVersion,
 } from "@/lib/care-plans/care-plan-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -138,9 +139,10 @@ export default function AdminResidentCarePlanPage() {
         return;
       }
 
-      const firstName = resident.first_name ?? "";
-      const lastName = resident.last_name ?? "";
-      const residentName = `${firstName} ${lastName}`.trim() || "Unknown Resident";
+      const residentName = formatCarePlanResidentName({
+        first_name: resident.first_name,
+        last_name: resident.last_name,
+      });
 
       const plansResult = (await supabase
         .from("care_plans" as never)
