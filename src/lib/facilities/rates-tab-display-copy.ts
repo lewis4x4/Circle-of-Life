@@ -11,6 +11,8 @@ import {
 
 export const RATES_TAB_NO_RATE_POSTED_COPY = "No rate posted";
 export const RATES_TAB_NO_CHANGES_COPY = "No changes posted";
+export const RATES_TAB_NO_ROOMS_POSTED_COPY = "No rooms posted";
+export const RATES_TAB_NO_OCCUPIED_COUNT_POSTED_COPY = "No occupied count posted";
 
 /** Published rate amount for a schedule row when no current line exists. */
 export function formatRatesTabPublishedRateDisplay(
@@ -31,6 +33,18 @@ export function formatRatesTabEditorDisplay(editorId: string | null | undefined)
   if (display === THRESHOLDS_TAB_NO_EDITOR_COPY) return display;
   if (display.length > 8) return `${display.slice(0, 8)}…`;
   return display;
+}
+
+/** Per–room-type inventory count when census is not wired for the rates tab. */
+export function formatRatesTabRoomCountDisplay(count: number | null | undefined): string {
+  if (count == null || !Number.isFinite(count)) return RATES_TAB_NO_ROOMS_POSTED_COPY;
+  return `${count} rooms`;
+}
+
+/** Per–room-type occupied count when census is not wired for the rates tab. */
+export function formatRatesTabOccupiedCountDisplay(count: number | null | undefined): string {
+  if (count == null || !Number.isFinite(count)) return RATES_TAB_NO_OCCUPIED_COUNT_POSTED_COPY;
+  return `${count} occupied`;
 }
 
 /** Suffix after "Last changed" on an expanded rate category. */

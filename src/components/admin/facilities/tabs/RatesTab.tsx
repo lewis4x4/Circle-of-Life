@@ -17,7 +17,9 @@ import {
 import {
   formatRatesTabEditorDisplay,
   formatRatesTabLastChangedSuffix,
+  formatRatesTabOccupiedCountDisplay,
   formatRatesTabPublishedRateDisplay,
+  formatRatesTabRoomCountDisplay,
 } from "@/lib/facilities/rates-tab-display-copy";
 import { labelFirstMonthlyBillingCycle } from "@/lib/admin/facilities/first-billing-cycle-label";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -277,9 +279,13 @@ export function RatesTab({
                       <p className="text-sm font-medium text-foreground">
                         {RATE_TYPE_LABELS[roomType as keyof typeof RATE_TYPE_LABELS] ?? roomType}{" "}
                         <span className="text-muted-foreground"> · </span>
-                        <span className="tabular-nums text-muted-foreground">— rooms</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatRatesTabRoomCountDisplay(null)}
+                        </span>
                         <span className="text-muted-foreground"> · </span>
-                        <span className="tabular-nums text-muted-foreground">— occupied</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatRatesTabOccupiedCountDisplay(null)}
+                        </span>
                         <span className="text-muted-foreground"> · </span>
                         <span className="font-semibold tabular-nums text-foreground">
                           {formatRatesTabPublishedRateDisplay(
