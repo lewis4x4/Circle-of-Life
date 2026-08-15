@@ -381,6 +381,7 @@ export default function AdminFamilyPortalPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <KpiCard
             value={familyPortalAdminKpiValue("pending_triage", facilityReady, pendingAttentionCount)}
+            valuePresentation={facilityReady ? "metric" : "message"}
             label="Pending triage"
             tone={pendingAttentionCount > 0 ? "warning" : "neutral"}
             footnote={
@@ -393,6 +394,7 @@ export default function AdminFamilyPortalPage() {
               facilityReady,
               conferencesThisWeekCount,
             )}
+            valuePresentation={facilityReady ? "metric" : "message"}
             label="Conferences this week"
             tone="neutral"
             footnote={undefined}
@@ -403,6 +405,7 @@ export default function AdminFamilyPortalPage() {
               facilityReady,
               consentsExpiringCount,
             )}
+            valuePresentation={facilityReady ? "metric" : "message"}
             label="Consents expiring in 30 days"
             tone={consentExpiryTone}
             footnote={
