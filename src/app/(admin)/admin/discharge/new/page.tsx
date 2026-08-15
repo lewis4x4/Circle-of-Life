@@ -95,15 +95,6 @@ function formatRoom(row: ResidentPickerRow): string {
   return "—";
 }
 
-function formatAdmitted(isoDate: string | null | undefined): string {
-  if (!isoDate || !isoDate.trim()) return "—";
-  try {
-    return format(parseISO(isoDate.length > 10 ? isoDate : `${isoDate}T12:00:00`), "MMM d, yyyy");
-  } catch {
-    return "—";
-  }
-}
-
 function workflowStepOf5(status: string): number {
   if (status === "pharmacist_review") return 3;
   return 2;
@@ -368,7 +359,7 @@ export default function AdminDischargeNewPage() {
     () =>
       residents.map((r) => {
         const room = formatRoom(r);
-        const admitted = formatAdmitted(r.admission_date);
+        const admitted = formatDischargeNewStartedLabel(r.admission_date);
         const residentName = formatDischargeNewResidentLabel(r);
         const label = `${residentName} · Room ${room} · Admitted ${admitted}`;
         return {
