@@ -426,7 +426,7 @@ export default function AdminReputationHubPage() {
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">Connected listings and reply workflow for the selected facility.</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
-                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
+                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
                      + Connect Listing
                    </Link>
                  </div>
