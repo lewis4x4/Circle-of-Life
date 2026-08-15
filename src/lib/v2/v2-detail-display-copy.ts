@@ -8,6 +8,11 @@ export const V2_DETAIL_NO_SEVERITY_POSTED_COPY = "No severity posted";
 export const V2_DETAIL_NO_CATEGORY_POSTED_COPY = "No category posted";
 export const V2_DETAIL_NO_METRIC_POSTED_COPY = "No metric posted";
 export const V2_DETAIL_NO_DATE_POSTED_COPY = "No date posted";
+export const V2_DETAIL_NO_RESIDENT_POSTED_COPY = "No resident posted";
+
+const EM_DASH = "—";
+const LEGACY_UNNAMED_RESIDENT = "Unnamed resident";
+const LEGACY_UNKNOWN = "Unknown";
 
 function isBlankString(value: string | null | undefined): boolean {
   return value == null || String(value).trim() === "";
@@ -19,6 +24,26 @@ function formatPostedStringOrGap(
 ): string {
   if (isBlankString(value)) return gapCopy;
   return String(value).trim();
+}
+
+function isBlankEmDashOrLegacyResidentName(value: string): boolean {
+  const trimmed = value.trim();
+  return (
+    trimmed === "" ||
+    trimmed === EM_DASH ||
+    trimmed === LEGACY_UNNAMED_RESIDENT ||
+    trimmed === LEGACY_UNKNOWN
+  );
+}
+
+/** Resident detail page title when unset, blank, em dash, or legacy generic copy. */
+export function formatV2DetailResidentTitle(
+  residentName: string | null | undefined,
+): string {
+  if (residentName == null) return V2_DETAIL_NO_RESIDENT_POSTED_COPY;
+  const trimmed = String(residentName).trim();
+  if (isBlankEmDashOrLegacyResidentName(trimmed)) return V2_DETAIL_NO_RESIDENT_POSTED_COPY;
+  return trimmed;
 }
 
 /** Resident primary diagnosis — trimmed when posted; explicit gap copy when missing. */

@@ -3,6 +3,7 @@ import {
   formatV2DetailCategory,
   formatV2DetailDate,
   formatV2DetailDiagnosis,
+  formatV2DetailResidentTitle,
   formatV2DetailSeverity,
   formatV2DetailSourceMetric,
 } from "@/lib/v2/v2-detail-display-copy";
@@ -67,7 +68,7 @@ function mapDetail(
       return {
         listId,
         recordId,
-        title: ((row.resident_name as string) ?? "").trim() || "Unnamed resident",
+        title: formatV2DetailResidentTitle(row.resident_name as string | null),
         subtitle: (row.facility_name as string) ?? null,
         status: status ? { label: status, tone: residentTone(status) } : null,
         identifiers: [
