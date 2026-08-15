@@ -7,6 +7,7 @@ import { ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { invokeExportAuditLog } from "@/lib/audit-export";
+import { formatAuditExportRowCount } from "@/lib/compliance/audit-export-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -279,7 +280,7 @@ export default function AuditLogExportPage() {
                         <span className="mt-1 block text-xs text-destructive">{j.error_message}</span>
                       )}
                     </TableCell>
-                    <TableCell>{j.row_count ?? "—"}</TableCell>
+                    <TableCell>{formatAuditExportRowCount(j.row_count)}</TableCell>
                     <TableCell className="text-xs text-slate-600 dark:text-slate-400">
                       {j.date_from ?? "…"} → {j.date_to ?? "…"}
                     </TableCell>
