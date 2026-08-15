@@ -264,8 +264,9 @@ export function CarePlanDiffModal({
                 <div>
                   <DialogTitle className="text-2xl">Care Plan Comparison</DialogTitle>
                   <DialogDescription className="mt-2">
-                    Comparing version {formatCarePlanVersion(oldPlan?.version)} →{" "}
-                    {formatCarePlanVersion(newPlan?.version)}
+                    {oldPlan
+                      ? `Comparing ${formatCarePlanVersion(oldPlan.version)} → ${formatCarePlanVersion(newPlan?.version)}`
+                      : formatCarePlanVersion(newPlan?.version)}
                   </DialogDescription>
                 </div>
                 <div className="flex gap-2">
