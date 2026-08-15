@@ -203,6 +203,15 @@ describe("COL discovery round cadence — owner decision 2026-08-14", () => {
         hasFacility: true,
         totalTasks: 4,
         activeTaskCount: 0,
+        facilityName: COL_DISCOVERY_FACILITY_NAMES.plantation,
+      }),
+    ).toBe("plantation_pending");
+
+    expect(
+      deriveCaregiverRoundsQueueState({
+        hasFacility: true,
+        totalTasks: 4,
+        activeTaskCount: 0,
         facilityName: COL_DISCOVERY_FACILITY_NAMES.oakridge,
       }),
     ).toBe("empty_window");

@@ -292,13 +292,12 @@ export function deriveCaregiverRoundsQueueState(args: {
 }): CaregiverRoundsQueueState | null {
   if (!args.hasFacility) return "no_facility";
 
-  if (args.totalTasks === 0) {
+  if (args.activeTaskCount === 0) {
     const cadence = args.facilityName ? describeColDiscoveryCadenceForFacility(args.facilityName) : null;
     if (cadence?.profile === "pending") return "plantation_pending";
-    return "no_tasks_assigned";
+    if (args.totalTasks === 0) return "no_tasks_assigned";
+    return "empty_window";
   }
-
-  if (args.activeTaskCount === 0) return "empty_window";
 
   return null;
 }

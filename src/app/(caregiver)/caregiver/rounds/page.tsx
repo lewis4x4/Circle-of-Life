@@ -62,6 +62,9 @@ export default function CaregiverRoundsPage() {
     try {
       const resolved = await loadCaregiverFacilityContext(supabase);
       if (!resolved.ok) {
+        setHasFacility(false);
+        setFacilityName(null);
+        setTasks([]);
         setLoadError(resolved.error);
         setLoading(false);
         return;
