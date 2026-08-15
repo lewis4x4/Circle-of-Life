@@ -1,6 +1,7 @@
 import { differenceInCalendarDays } from "date-fns";
 
 import { formatDateOnly, getRangeForView, parseDateParam } from "@/lib/operations/dates";
+import { formatOperationsFacilityName } from "@/lib/operations/operations-display-copy";
 import type {
   OperationTask,
   OperationTaskPriority,
@@ -218,7 +219,7 @@ function shapeOperationTask(
     estimated_minutes: row.estimated_minutes,
     current_escalation_level: row.current_escalation_level ?? 0,
     facility_id: row.facility_id,
-    facility_name: facilityNames.get(row.facility_id) ?? "Unknown Facility",
+    facility_name: formatOperationsFacilityName(facilityNames.get(row.facility_id)),
     created_at: row.created_at,
     updated_at: row.updated_at,
     days_overdue: daysOverdue,
