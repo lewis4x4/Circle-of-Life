@@ -34,20 +34,23 @@ function formatTruncatedId(value: string): string {
 export function formatAuditLogFacilityIdDisplay(
   facilityId: string | null | undefined,
 ): string {
-  if (isBlankValue(facilityId)) return AUDIT_LOG_NO_FACILITY_COPY;
-  return formatTruncatedId(facilityId);
+  const trimmed = facilityId?.trim() ?? "";
+  if (!trimmed) return AUDIT_LOG_NO_FACILITY_COPY;
+  return formatTruncatedId(trimmed);
 }
 
 /** Actor column when unset or blank. Posted IDs truncate to the first eight characters. */
 export function formatAuditLogActorIdDisplay(
   actorId: string | null | undefined,
 ): string {
-  if (isBlankValue(actorId)) return AUDIT_LOG_NO_ACTOR_COPY;
-  return formatTruncatedId(actorId);
+  const trimmed = actorId?.trim() ?? "";
+  if (!trimmed) return AUDIT_LOG_NO_ACTOR_COPY;
+  return formatTruncatedId(trimmed);
 }
 
 /** Note column when unset or blank. Posted notes return trimmed text as-is. */
 export function formatAuditLogNoteDisplay(note: string | null | undefined): string {
-  if (isBlankValue(note)) return AUDIT_LOG_NO_NOTE_COPY;
-  return note!.trim();
+  const trimmed = note?.trim() ?? "";
+  if (!trimmed) return AUDIT_LOG_NO_NOTE_COPY;
+  return trimmed;
 }
