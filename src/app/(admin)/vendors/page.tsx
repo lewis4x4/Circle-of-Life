@@ -167,10 +167,10 @@ export default function AdminVendorsHubPage() {
              <MotionItem key={link.href}>
                  <Link href={link.href} className="p-6 rounded-lg group transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 cursor-pointer border border-border bg-card w-full flex flex-col justify-between gap-4 shadow-sm hover:shadow-md hover:border-ring/30 h-[140px] relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
                     <div className="relative z-10 flex flex-col gap-1">
-                       <span className="font-bold text-foreground uppercase tracking-wider text-xs group-hover:text-primary transition-colors">
+                       <span className="font-bold text-foreground text-xs group-hover:text-primary transition-colors">
                           {link.title}
                        </span>
-                       <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground pr-4 mt-2 leading-relaxed">
+                       <span className="text-[10px] font-mono text-muted-foreground pr-4 mt-2 leading-relaxed">
                           {link.desc}
                        </span>
                     </div>
