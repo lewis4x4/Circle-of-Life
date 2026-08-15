@@ -5,6 +5,14 @@ import Link from "next/link";
 import { ArrowLeft, Banknote, Loader2 } from "lucide-react";
 
 import { fetchFamilyPaymentsList, formatUsd, type FamilyPaymentRow } from "@/lib/family/family-billing-data";
+import {
+  FAMILY_PAYMENTS_EMPTY_DESCRIPTION,
+  FAMILY_PAYMENTS_EMPTY_TITLE,
+  FAMILY_PAYMENTS_LOADING,
+  FAMILY_PAYMENTS_PAGE_DESCRIPTION,
+  FAMILY_PAYMENTS_PAGE_TITLE,
+  FAMILY_PAYMENTS_RETRY,
+} from "@/lib/family/family-portal-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
@@ -70,7 +78,7 @@ export default function FamilyPaymentsPage() {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading payments…
+        {FAMILY_PAYMENTS_LOADING}
       </div>
     );
   }
@@ -89,7 +97,7 @@ export default function FamilyPaymentsPage() {
           )}
           onClick={() => void load()}
         >
-          Retry
+          {FAMILY_PAYMENTS_RETRY}
         </button>
       </div>
     );
@@ -99,8 +107,8 @@ export default function FamilyPaymentsPage() {
     <div className="space-y-4 pb-16 md:pb-0">
       <FamilySectionIntro
         active="billing"
-        title="Payments"
-        description="A simple record of posted payments for the people linked to your account."
+        title={FAMILY_PAYMENTS_PAGE_TITLE}
+        description={FAMILY_PAYMENTS_PAGE_DESCRIPTION}
         residentSummary={residentSummary || undefined}
       />
       <Link
@@ -135,9 +143,10 @@ export default function FamilyPaymentsPage() {
         </div>
         <div className="space-y-3">
           {rows.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              No payments are visible right now, or your current family access does not include payment history.
-            </p>
+            <div className="rounded-lg border border-border bg-card p-8 text-center">
+              <p className="font-medium text-foreground">{FAMILY_PAYMENTS_EMPTY_TITLE}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{FAMILY_PAYMENTS_EMPTY_DESCRIPTION}</p>
+            </div>
           ) : (
             rows.map((p) => (
               <div

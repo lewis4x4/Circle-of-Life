@@ -5,10 +5,22 @@ import Link from "next/link";
 import { CreditCard, FileText, Loader2, ShieldCheck, Banknote } from "lucide-react";
 
 import {
+  formatFamilyLastPaymentAmount,
+  formatFamilyLastPaymentDate,
+} from "@/lib/family/family-billing-copy";
+import {
   fetchFamilyBillingContext,
   formatUsd,
   type FamilyBillingContext,
 } from "@/lib/family/family-billing-data";
+import {
+  FAMILY_BILLING_EMPTY_INVOICES_DESCRIPTION,
+  FAMILY_BILLING_EMPTY_INVOICES_TITLE,
+  FAMILY_BILLING_LOADING,
+  FAMILY_BILLING_PAGE_DESCRIPTION,
+  FAMILY_BILLING_PAGE_TITLE,
+  FAMILY_BILLING_RETRY,
+} from "@/lib/family/family-portal-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
@@ -78,7 +90,7 @@ export default function FamilyBillingSummaryPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-warning" />
-        <p className="text-sm font-medium tracking-wide">Crunching the numbers…</p>
+        <p className="text-sm font-medium tracking-wide">{FAMILY_BILLING_LOADING}</p>
       </div>
     );
   }
@@ -98,7 +110,7 @@ export default function FamilyBillingSummaryPage() {
           )}
           onClick={() => void load()}
         >
-          Retry Connection
+          {FAMILY_BILLING_RETRY}
         </button>
       </div>
     );
@@ -127,8 +139,8 @@ export default function FamilyBillingSummaryPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 pb-8 pt-12 md:pt-20">
       <FamilySectionIntro
         active="billing"
-        title="Billing Summary"
-        description="A calm overview of statements and payment history that are visible to your account."
+        title={FAMILY_BILLING_PAGE_TITLE}
+        description={FAMILY_BILLING_PAGE_DESCRIPTION}
         residentSummary={residentSummary || undefined}
       />
 
@@ -139,10 +151,14 @@ export default function FamilyBillingSummaryPage() {
           <SummaryBlock label="Account status" value={accountStatus} tone={accountTone} />
           <SummaryBlock
             label="Last payment"
-            value={data.lastPaymentAmount != null ? formatUsd(data.lastPaymentAmount) : "—"}
+            value={formatFamilyLastPaymentAmount(data.lastPaymentAmount)}
             tone="muted"
           />
-          <SummaryBlock label="Payment date" value={data.lastPaymentDateLabel ?? "—"} tone="muted" />
+          <SummaryBlock
+            label="Payment date"
+            value={formatFamilyLastPaymentDate(data.lastPaymentDateLabel)}
+            tone="muted"
+          />
         </div>
 
         {/* Invoices — warm split-theme uses bg-muted to soften the panel */}
@@ -152,8 +168,11 @@ export default function FamilyBillingSummaryPage() {
           </h2>
 
           {recent.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
-              <p className="font-medium text-muted-foreground">No invoices to show yet.</p>
+            <div className="rounded-lg border border-border bg-card p-8 text-center">
+              <p className="font-medium text-foreground">{FAMILY_BILLING_EMPTY_INVOICES_TITLE}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {FAMILY_BILLING_EMPTY_INVOICES_DESCRIPTION}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
