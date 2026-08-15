@@ -1,4 +1,10 @@
 import type { SurveyBundlePacket } from "@/lib/risk/survey-bundle";
+import {
+  formatSurveyBundlePrintAdministratorName,
+  formatSurveyBundlePrintEntityName,
+  formatSurveyBundlePrintPocSubmissionDueDate,
+  formatSurveyBundlePrintRiskScore,
+} from "@/lib/risk/survey-bundle-print-display-copy";
 
 function escapeHtml(value: string) {
   return value
@@ -19,7 +25,7 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
               <td>${escapeHtml(row.severity)}</td>
               <td>${escapeHtml(row.status)}</td>
               <td>${escapeHtml(row.pocStatus ?? "Missing")}</td>
-              <td>${escapeHtml(row.pocSubmissionDueDate ?? "—")}</td>
+              <td>${escapeHtml(formatSurveyBundlePrintPocSubmissionDueDate(row.pocSubmissionDueDate))}</td>
             </tr>`,
         )
         .join("")
@@ -105,8 +111,8 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
     <h1>AHCA Survey Bundle</h1>
     <p>${escapeHtml(packet.facility.name)} · Generated ${escapeHtml(new Date(packet.generatedAt).toLocaleString())}</p>
     <div class="meta-grid">
-      <div class="card"><strong>Entity</strong><br />${escapeHtml(packet.facility.entityName ?? "—")}</div>
-      <div class="card"><strong>Administrator</strong><br />${escapeHtml(packet.facility.administratorName ?? "—")}</div>
+      <div class="card"><strong>Entity</strong><br />${escapeHtml(formatSurveyBundlePrintEntityName(packet.facility.entityName))}</div>
+      <div class="card"><strong>Administrator</strong><br />${escapeHtml(formatSurveyBundlePrintAdministratorName(packet.facility.administratorName))}</div>
       <div class="card"><strong>License</strong><br />${escapeHtml(packet.facility.licenseNumber ?? "Missing")} (${escapeHtml(packet.facility.alfLicenseType ?? packet.facility.licenseType ?? "unspecified")})</div>
       <div class="card"><strong>Licensed beds</strong><br />${packet.facility.totalLicensedBeds}</div>
     </div>
@@ -114,7 +120,7 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
     <div class="summary">
       <div class="card"><div class="metric-label">Packet coverage</div><div class="metric-value">${packet.packetCoveragePct}%</div></div>
       <div class="card"><div class="metric-label">Open deficiencies</div><div class="metric-value">${packet.readinessSummary.openDeficiencies}</div></div>
-      <div class="card"><div class="metric-label">Risk score</div><div class="metric-value">${packet.riskSnapshot ? `${packet.riskSnapshot.riskScore}/100` : "—"}</div></div>
+      <div class="card"><div class="metric-label">Risk score</div><div class="metric-value">${escapeHtml(formatSurveyBundlePrintRiskScore(packet.riskSnapshot))}</div></div>
     </div>
 
     <h2>Risk Snapshot</h2>
