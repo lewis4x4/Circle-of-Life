@@ -138,10 +138,13 @@ describe("AppShell all-sections jump list", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
 
     const jumpList = screen.getByTestId("all-sections-jump-list");
-    expect(within(jumpList).getByPlaceholderText("Jump to a section…")).toHaveFocus();
+    expect(within(jumpList).getByPlaceholderText("Search all sections…")).toHaveFocus();
     expect(within(jumpList).getByText("Executive")).toBeInTheDocument();
     expect(within(jumpList).getByText("Family notes")).toBeInTheDocument();
-    expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Live rounding")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Snack pass")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Ask knowledge base")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Incident queue")).not.toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
 
@@ -169,13 +172,33 @@ describe("AppShell all-sections jump list", () => {
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
 
     const jumpList = await screen.findByTestId("all-sections-jump-list");
-    const search = within(jumpList).getByPlaceholderText("Jump to a section…");
+    const search = within(jumpList).getByPlaceholderText("Search all sections…");
 
     await user.type(search, "billing");
 
     expect(within(jumpList).getByText("Billing & AR")).toBeInTheDocument();
     expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
     expect(within(jumpList).queryByText("Family notes")).not.toBeInTheDocument();
+  });
+
+  it("still surfaces non-common destinations when the operator searches", async () => {
+    const user = userEvent.setup();
+    renderAppShell();
+
+    await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
+
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
+    const search = within(jumpList).getByPlaceholderText("Search all sections…");
+
+    await user.type(search, "incident");
+
+    expect(within(jumpList).getByText("Incident queue")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Live rounding")).not.toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "knowledge");
+
+    expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
   });
 
   it("navigates when a filtered destination is chosen", async () => {
@@ -185,7 +208,7 @@ describe("AppShell all-sections jump list", () => {
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
 
     const jumpList = await screen.findByTestId("all-sections-jump-list");
-    const search = within(jumpList).getByPlaceholderText("Jump to a section…");
+    const search = within(jumpList).getByPlaceholderText("Search all sections…");
     await user.type(search, "clinical");
 
     await user.click(within(jumpList).getByRole("option", { name: /clinical desk/i }));
