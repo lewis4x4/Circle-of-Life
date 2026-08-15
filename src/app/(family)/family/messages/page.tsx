@@ -221,6 +221,7 @@ function ResidentUpdateLog({
     }
     setLoadingMessages(true);
     setError(null);
+    setMessages([]);
     try {
       const result = await fetchFamilyMessagesForResident(supabase, residentId);
       if (!result.ok) {
