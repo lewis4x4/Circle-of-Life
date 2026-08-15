@@ -249,7 +249,7 @@ export default function NewVerbalOrderPage() {
 
       {/* Context Section */}
       <div className="rounded-lg border border-primary-500/10 bg-card p-6 md:p-8 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-primary-500 mb-6 flex items-center gap-2">
+        <h3 className="text-sm font-bold text-primary-500 mb-6 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-primary-500"></span>
           Context
         </h3>
@@ -305,7 +305,7 @@ export default function NewVerbalOrderPage() {
 
       {/* Order Details Section */}
       <div className="rounded-lg border border-primary-500/10 bg-card p-6 md:p-8 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-primary-500 mb-6 flex items-center gap-2">
+        <h3 className="text-sm font-bold text-primary-500 mb-6 flex items-center gap-2">
           <Stethoscope className="w-4 h-4" />
           Order Details
         </h3>
