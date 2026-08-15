@@ -138,10 +138,13 @@ describe("AppShell all-sections jump list", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
 
     const jumpList = screen.getByTestId("all-sections-jump-list");
-    expect(within(jumpList).getByPlaceholderText("Jump to a section…")).toHaveFocus();
+    expect(within(jumpList).getByPlaceholderText("Search all sections…")).toHaveFocus();
     expect(within(jumpList).getByText("Executive")).toBeInTheDocument();
     expect(within(jumpList).getByText("Family notes")).toBeInTheDocument();
-    expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Live rounding")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Snack pass")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Ask knowledge base")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Incident queue")).not.toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
 
@@ -169,7 +172,7 @@ describe("AppShell all-sections jump list", () => {
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
 
     const jumpList = await screen.findByTestId("all-sections-jump-list");
-    const search = within(jumpList).getByPlaceholderText("Jump to a section…");
+    const search = within(jumpList).getByPlaceholderText("Search all sections…");
 
     await user.type(search, "billing");
 
@@ -185,7 +188,7 @@ describe("AppShell all-sections jump list", () => {
     await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
 
     const jumpList = await screen.findByTestId("all-sections-jump-list");
-    const search = within(jumpList).getByPlaceholderText("Jump to a section…");
+    const search = within(jumpList).getByPlaceholderText("Search all sections…");
     await user.type(search, "clinical");
 
     await user.click(within(jumpList).getByRole("option", { name: /clinical desk/i }));

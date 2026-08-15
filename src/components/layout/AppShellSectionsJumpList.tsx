@@ -75,15 +75,20 @@ export function AppShellSectionsJumpListPanel({
     >
       <Command shouldFilter={false} loop>
         <CommandInput
-          placeholder="Jump to a section…"
+          placeholder="Search all sections…"
           autoFocus
           value={search}
           onValueChange={onSearchChange}
-          aria-label="Filter sections"
+          aria-label="Search or jump to a section"
         />
+        {!isSearching ? (
+          <p className="px-3 pb-1 text-[11px] text-muted-foreground">
+            Common shortcuts for office week. Type to search every section.
+          </p>
+        ) : null}
         <CommandList>
           <CommandEmpty>No matches.</CommandEmpty>
-          <CommandGroup heading={isSearching ? "Sections" : "Common"}>
+          <CommandGroup heading={isSearching ? "All sections" : "Common"}>
             {visibleEntries.map((entry) => {
               const Icon = entry.icon;
               return (
