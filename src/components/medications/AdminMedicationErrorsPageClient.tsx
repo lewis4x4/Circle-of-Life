@@ -11,6 +11,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  formatMedicationErrorReviewedAt,
+  formatMedicationErrorsSeverityInView,
+} from "@/lib/medications/medication-errors-display-copy";
+import {
   fetchMedicationErrors,
   type MedicationErrorRow,
 } from "@/lib/medications/load-medication-errors";
@@ -121,11 +125,7 @@ export function AdminMedicationErrorsPageClient({
         <div className="rounded-[var(--radius)] border border-border bg-card p-4 sm:col-span-2">
           <p className="text-xs font-medium uppercase text-muted-foreground">By severity in view</p>
           <p className="text-sm text-muted-foreground">
-            {Object.entries(visibleTotals.bySeverity).length === 0
-              ? "—"
-              : Object.entries(visibleTotals.bySeverity)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(" · ")}
+            {formatMedicationErrorsSeverityInView(visibleTotals.bySeverity)}
           </p>
         </div>
       </div>
@@ -217,7 +217,7 @@ export function AdminMedicationErrorsPageClient({
                     <div className="flex flex-col lg:items-end lg:pr-2">
                       <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Reviewed</span>
                       <span className="text-[11px] font-mono tracking-wider text-muted-foreground whitespace-nowrap tabular-nums">
-                        {r.reviewed_at ? new Date(r.reviewed_at).toLocaleString() : "—"}
+                        {formatMedicationErrorReviewedAt(r.reviewed_at)}
                       </span>
                     </div>
 
