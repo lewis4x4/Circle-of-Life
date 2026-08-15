@@ -5,6 +5,7 @@
  */
 
 import { SURVEY_RESULT_NO_RESULT_COPY } from "@/lib/admin/facilities/survey-result-display-copy";
+import { SURVEY_TYPE_NO_TYPE_COPY } from "@/lib/admin/facilities/survey-type-display-copy";
 
 // ─── Contact Categories ──────────────────────────────────────────────────────
 
@@ -172,7 +173,7 @@ export function surveyResultDisplayLabel(raw: string | null | undefined): string
 
 export function surveyTypeDisplayLabel(raw: string | null | undefined): string {
   const s = (raw ?? "").trim();
-  if (!s) return "—";
+  if (!s) return SURVEY_TYPE_NO_TYPE_COPY;
   const lower = s.toLowerCase();
   const map: Record<string, string> = {
     annual: "Annual inspection",
