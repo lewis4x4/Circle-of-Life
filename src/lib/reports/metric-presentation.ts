@@ -3,6 +3,8 @@
  * Used by run preview, CSV export, and print/PDF popup HTML.
  */
 
+import { REPORTS_NO_METRIC_VALUE_COPY } from "@/lib/reports/reports-display-copy";
+
 export type MetricFormat = "integer" | "percent" | "currency_cents" | "decimal" | "text";
 
 export type MetricPresentation = {
@@ -292,9 +294,9 @@ export function formatMetricValue(
   value: string | number | null | undefined,
   format: MetricFormat,
 ): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return REPORTS_NO_METRIC_VALUE_COPY;
   if (format === "text") return String(value);
-  if (typeof value === "string" && value.trim() === "") return "—";
+  if (typeof value === "string" && value.trim() === "") return REPORTS_NO_METRIC_VALUE_COPY;
 
   const n = typeof value === "number" ? value : Number(value);
   if (Number.isNaN(n)) return String(value);
