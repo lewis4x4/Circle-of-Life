@@ -19,6 +19,7 @@ import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchTransportationHubSnapshot } from "@/lib/transportation/load-transportation-hub";
+import { formatTransportationAppointmentTime } from "@/lib/transportation/transportation-display-copy";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -111,15 +112,6 @@ function buildTransportRequestsCsv(rows: TransportRequestExportRow[]): string {
 
 function formatEnum(s: string) {
   return s.replace(/_/g, " ");
-}
-
-function formatAppointmentTime(t: string | null): string {
-  if (!t) return "—";
-  try {
-    return format(parseISO(`2000-01-01T${t.slice(0, 8)}`), "h:mm a");
-  } catch {
-    return t;
-  }
 }
 
 /** Group label for an appointment_date (YYYY-MM-DD): Today / Tomorrow / weekday. */
@@ -524,7 +516,7 @@ export default function AdminTransportationHubPage() {
                                 <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Time</span>
                                 <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 flex items-center gap-1.5 border border-primary-100 dark:border-primary-500/20">
                                   <Clock className="w-3 h-3" />
-                                  {format(apptDate, "EEE MMM d")} · {formatAppointmentTime(row.appointment_time)}
+                                  {format(apptDate, "EEE MMM d")} · {formatTransportationAppointmentTime(row.appointment_time)}
                                 </span>
                               </div>
                               <div className="flex flex-col items-end">

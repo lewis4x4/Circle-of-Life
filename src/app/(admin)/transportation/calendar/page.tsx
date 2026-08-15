@@ -12,7 +12,6 @@ import {
   format,
   isSameDay,
   isSameMonth,
-  parseISO,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -26,6 +25,10 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { triggerFileDownload } from "@/lib/csv-export";
 import { buildTransportRequestsIcs } from "@/lib/transportation/transport-requests-ics";
+import {
+  formatTransportationAppointmentTime,
+  formatTransportationDayTripCount,
+} from "@/lib/transportation/transportation-display-copy";
 import { cn } from "@/lib/utils";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 
@@ -42,15 +45,6 @@ type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requ
 
 function formatEnum(s: string) {
   return s.replace(/_/g, " ");
-}
-
-function formatAppointmentTime(t: string | null): string {
-  if (!t) return "—";
-  try {
-    return format(parseISO(`2000-01-01T${t.slice(0, 8)}`), "h:mm a");
-  } catch {
-    return t;
-  }
 }
 
 export default function TransportationWeekCalendarPage() {
@@ -401,7 +395,7 @@ export default function TransportationWeekCalendarPage() {
                           n > 0 ? "text-primary-600 dark:text-primary-400" : "text-slate-400",
                         )}
                       >
-                        {n} trip{n === 1 ? "" : "s"}
+                        {formatTransportationDayTripCount(n)}
                       </span>
                     </button>
                   );
@@ -449,7 +443,7 @@ export default function TransportationWeekCalendarPage() {
                             n > 0 ? "text-primary-600 dark:text-primary-400" : "text-slate-400",
                           )}
                         >
-                          {n > 0 ? `${n} trip${n === 1 ? "" : "s"}` : "—"}
+                          {formatTransportationDayTripCount(n)}
                         </span>
                       </button>
                     );
@@ -501,7 +495,7 @@ export default function TransportationWeekCalendarPage() {
                           <div className="flex shrink-0 flex-wrap items-center gap-3 sm:flex-col sm:items-end">
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-100 bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-400">
                               <Clock className="h-3 w-3" />
-                              {formatAppointmentTime(row.appointment_time)}
+                              {formatTransportationAppointmentTime(row.appointment_time)}
                             </span>
                             <span
                               className={cn(
