@@ -4,6 +4,7 @@ import {
   isDiscreteScheduledDaypartRule,
   LEGACY_MIGRATION_219_INTERVAL_MINUTES,
 } from "@/lib/rounding/col-discovery-round-cadence";
+import { ROUNDING_PLAN_NO_TIME_COPY } from "@/lib/rounding/rounding-plans-display-copy";
 
 export const MIN_RATIONALE_CHARACTERS = 30;
 export const MIN_INTERVAL_MINUTES = 5;
@@ -36,7 +37,7 @@ export function parseTimeToMinutes(value?: string | null): number | null {
 
 export function formatTimeLabel(value?: string | null): string {
   const minutes = parseTimeToMinutes(value);
-  if (minutes == null) return "—";
+  if (minutes == null) return ROUNDING_PLAN_NO_TIME_COPY;
 
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
