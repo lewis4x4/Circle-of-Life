@@ -4,6 +4,9 @@ import {
   buildColDiscoveryPresetDefinition,
   buildColDiscoveryRoundRules,
   COL_DISCOVERY_DAY_TIMES,
+  deriveCaregiverRoundsQueueState,
+  describeCaregiverResidentRoundEmptyState,
+  describeCaregiverRoundsEmptyState,
   describeColDiscoveryCadenceForFacility,
   describeLiveBoardCadenceReminder,
   describeLiveBoardEmptyState,
@@ -165,5 +168,95 @@ describe("COL discovery round cadence — owner decision 2026-08-14", () => {
     const plantation = describeLiveBoardCadenceReminder(COL_DISCOVERY_FACILITY_NAMES.plantation);
     expect(plantation).toContain("pending owner decision");
     expect(plantation).not.toContain("6:00");
+  });
+
+  it("derives caregiver queue gaps without inventing tasks", () => {
+    expect(
+      deriveCaregiverRoundsQueueState({
+        hasFacility: false,
+        totalTasks: 0,
+        activeTaskCount: 0,
+        facilityName: null,
+      }),
+    ).toBe("no_facility");
+
+    expect(
+      deriveCaregiverRoundsQueueState({
+        hasFacility: true,
+        totalTasks: 0,
+        activeTaskCount: 0,
+        facilityName: COL_DISCOVERY_FACILITY_NAMES.plantation,
+      }),
+    ).toBe("plantation_pending");
+
+    expect(
+      deriveCaregiverRoundsQueueState({
+        hasFacility: true,
+        totalTasks: 0,
+        activeTaskCount: 0,
+        facilityName: COL_DISCOVERY_FACILITY_NAMES.oakridge,
+      }),
+    ).toBe("no_tasks_assigned");
+
+    expect(
+      deriveCaregiverRoundsQueueState({
+        hasFacility: true,
+        totalTasks: 4,
+        activeTaskCount: 0,
+        facilityName: COL_DISCOVERY_FACILITY_NAMES.oakridge,
+      }),
+    ).toBe("empty_window");
+
+    expect(
+      deriveCaregiverRoundsQueueState({
+        hasFacility: true,
+        totalTasks: 2,
+        activeTaskCount: 1,
+        facilityName: COL_DISCOVERY_FACILITY_NAMES.oakridge,
+      }),
+    ).toBeNull();
+  });
+
+  it("describes caregiver empty copy with nurse or admin guidance, not apply-from-caregiver", () => {
+    const noTasks = describeCaregiverRoundsEmptyState("no_tasks_assigned");
+    expect(noTasks.why).toBe("No rounds queued for you");
+    expect(noTasks.guidance).toContain("charge nurse or administrator");
+    expect(noTasks.guidance).not.toContain("Apply Jessica");
+
+    const emptyWindow = describeCaregiverRoundsEmptyState("empty_window");
+    expect(emptyWindow.why).toBe("No checks due in this window");
+    expect(emptyWindow.guidance).toContain("next window");
+
+    const plantation = describeCaregiverRoundsEmptyState("plantation_pending");
+    expect(plantation.why).toContain("not active");
+    expect(plantation.guidance).toContain("pending owner decision");
+    expect(plantation.guidance).not.toContain("Apply Jessica");
+
+    const noFacility = describeCaregiverRoundsEmptyState("no_facility");
+    expect(noFacility.why).toBe("No facility scoped");
+    expect(noFacility.guidance).toContain("administrator");
+  });
+
+  it("describes caregiver resident round empty copy without resident PHI", () => {
+    const idle = describeCaregiverResidentRoundEmptyState({
+      facilityName: COL_DISCOVERY_FACILITY_NAMES.oakridge,
+      taskQueuedLocally: false,
+    });
+    expect(idle.why).toContain("No active round");
+    expect(idle.guidance).toContain("live queue");
+    expect(idle.guidance).not.toMatch(/[A-Z][a-z]+ [A-Z][a-z]+/);
+
+    const queued = describeCaregiverResidentRoundEmptyState({
+      facilityName: COL_DISCOVERY_FACILITY_NAMES.oakridge,
+      taskQueuedLocally: true,
+    });
+    expect(queued.why).toContain("queued for sync");
+
+    const plantation = describeCaregiverResidentRoundEmptyState({
+      facilityName: COL_DISCOVERY_FACILITY_NAMES.plantation,
+      taskQueuedLocally: false,
+    });
+    expect(plantation.guidance).toContain("pending");
+    expect(plantation.guidance).not.toContain("Apply Jessica");
   });
 });
