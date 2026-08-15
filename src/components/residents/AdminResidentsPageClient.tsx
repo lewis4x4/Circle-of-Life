@@ -35,8 +35,14 @@ import {
   type ResidencyStatus,
   type ResidentRow,
 } from "@/lib/residents/load-residents";
-import { presenceLabel, presenceTone } from "@/lib/residents/presence";
+import {
+  residentRosterCarePlanReviewsEmptyCopy,
+  residentRosterKpiStripHelperLine,
+  residentRosterOpenBedsEmptyCopy,
+  rosterOpenBedsLoadedFootnote,
+} from "@/lib/residents/resident-roster-kpi-copy";
 import type { ResidentRosterMetrics } from "@/lib/residents/resident-roster-metrics";
+import { presenceLabel, presenceTone } from "@/lib/residents/presence";
 import {
   formatResidentRosterUpdatedAt,
   rosterAvatarAccentFromId,
@@ -411,8 +417,17 @@ export function AdminResidentsPageClient({
   if (highAcuityInViewCount >= 4) highAcuityTone = "danger";
   else if (highAcuityInViewCount >= 1) highAcuityTone = "warning";
 
-  const openBedsValue = metrics?.openBeds;
-  const careDueValue = metrics?.carePlanReviewsDueWeek;
+  const openBedsEmptyCopy = residentRosterOpenBedsEmptyCopy(selectedFacilityId, metrics);
+  const careReviewsEmptyCopy = residentRosterCarePlanReviewsEmptyCopy(selectedFacilityId, metrics);
+  const openBedsLoaded = openBedsEmptyCopy == null && metrics?.openBeds != null;
+  const careReviewsLoaded = careReviewsEmptyCopy == null && metrics?.carePlanReviewsDueWeek != null;
+  const openBedsFootnote =
+    openBedsLoaded && metrics != null ? rosterOpenBedsLoadedFootnote(metrics) : null;
+  const kpiStripHelperLine = residentRosterKpiStripHelperLine(
+    selectedFacilityId,
+    openBedsLoaded,
+    careReviewsLoaded,
+  );
 
   // Presence breakdown of the residents in view — additive to census, computed
   // client-side from the rows already loaded (no extra query).
@@ -673,42 +688,53 @@ export function AdminResidentsPageClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-        <KpiCard
-          value={residentsInViewCount}
-          label="Residents in view"
-          tone="neutral"
-          className="flex min-h-[118px] flex-col justify-between"
-        />
-        <KpiCard
-          value={presenceInView.inHouse}
-          label="In-house"
-          tone="neutral"
-          footnote={`Hospital ${presenceInView.hospital} · On leave ${presenceInView.onLeave}`}
-          className="flex min-h-[118px] flex-col justify-between"
-        />
-        <KpiCard
-          value={highAcuityInViewCount}
-          label="High acuity in view (level 3+)"
-          tone={highAcuityTone}
-          className="flex min-h-[118px] flex-col justify-between"
-        />
-        <KpiCard
-          value={openBedsValue ?? "—"}
-          label="Open beds (licensed − occupied census)"
-          tone="neutral"
-          footnote={
-            metrics?.licensedBeds != null ? `${metrics.licensedBeds} licensed beds` : "Facility scope required"
-          }
-          className="flex min-h-[118px] flex-col justify-between"
-        />
-        <KpiCard
-          value={careDueValue ?? "—"}
-          label="Care plan reviews due (7 days)"
-          tone={careDueValue != null && careDueValue > 0 ? "warning" : "neutral"}
-          footnote="Active / under-review plans with review due in the next week"
-          className="flex min-h-[118px] flex-col justify-between"
-        />
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
+          <KpiCard
+            value={residentsInViewCount}
+            label="Residents in view"
+            tone="neutral"
+            className="flex min-h-[118px] flex-col justify-between"
+          />
+          <KpiCard
+            value={presenceInView.inHouse}
+            label="In-house"
+            tone="neutral"
+            footnote={`Hospital ${presenceInView.hospital} · On leave ${presenceInView.onLeave}`}
+            className="flex min-h-[118px] flex-col justify-between"
+          />
+          <KpiCard
+            value={highAcuityInViewCount}
+            label="High acuity in view (level 3+)"
+            tone={highAcuityTone}
+            className="flex min-h-[118px] flex-col justify-between"
+          />
+          <KpiCard
+            value={openBedsEmptyCopy ?? metrics?.openBeds}
+            valuePresentation={openBedsEmptyCopy != null ? "message" : "metric"}
+            label="Open beds (licensed − occupied census)"
+            tone="neutral"
+            footnote={openBedsFootnote ?? undefined}
+            className="flex min-h-[118px] flex-col justify-between"
+          />
+          <KpiCard
+            value={careReviewsEmptyCopy ?? metrics?.carePlanReviewsDueWeek}
+            valuePresentation={careReviewsEmptyCopy != null ? "message" : "metric"}
+            label="Care plan reviews due (7 days)"
+            tone={
+              careReviewsEmptyCopy == null && metrics?.carePlanReviewsDueWeek != null && metrics.carePlanReviewsDueWeek > 0
+                ? "warning"
+                : "neutral"
+            }
+            footnote={
+              careReviewsLoaded
+                ? "Active / under-review plans with review due in the next week"
+                : undefined
+            }
+            className="flex min-h-[118px] flex-col justify-between"
+          />
+        </div>
+        <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
       </div>
 
       <AdminFilterBar
