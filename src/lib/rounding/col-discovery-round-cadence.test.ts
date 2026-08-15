@@ -4,6 +4,7 @@ import {
   buildColDiscoveryPresetDefinition,
   buildColDiscoveryRoundRules,
   COL_DISCOVERY_DAY_TIMES,
+  describeColDiscoveryCadenceForFacility,
   resolveColDiscoveryDefaultRules,
   COL_DISCOVERY_FACILITY_NAMES,
   COL_DISCOVERY_HOMWOOD_NIGHT_INTERVAL_MINUTES,
@@ -110,5 +111,25 @@ describe("COL discovery round cadence — owner decision 2026-08-14", () => {
     const plantation = resolveColDiscoveryDefaultRules(COL_DISCOVERY_FACILITY_NAMES.plantation);
     expect(plantation.templateName).toBe(COL_DISCOVERY_TEMPLATE_NAMES.pending);
     expect(plantation.rules).toEqual([]);
+  });
+
+  it("describes Jessica cadence in plain English for configured facilities", () => {
+    const oakridge = describeColDiscoveryCadenceForFacility(COL_DISCOVERY_FACILITY_NAMES.oakridge);
+    expect(oakridge.canApply).toBe(true);
+    expect(oakridge.headline).toContain("day and night");
+    expect(oakridge.detail).toContain("6 AM");
+    expect(oakridge.detail).toContain("5:30 PM");
+    expect(oakridge.detail).toContain("10 PM");
+    expect(oakridge.detail).toContain("Eastern");
+
+    const homewood = describeColDiscoveryCadenceForFacility(COL_DISCOVERY_FACILITY_NAMES.homewood);
+    expect(homewood.canApply).toBe(true);
+    expect(homewood.headline).toContain("two-hour night");
+    expect(homewood.detail).toContain("two-hour overnight checks");
+
+    const plantation = describeColDiscoveryCadenceForFacility(COL_DISCOVERY_FACILITY_NAMES.plantation);
+    expect(plantation.canApply).toBe(false);
+    expect(plantation.detail).toContain("pending owner decision");
+    expect(plantation.detail).not.toContain("6:00");
   });
 });

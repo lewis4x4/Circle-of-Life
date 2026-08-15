@@ -239,6 +239,75 @@ export function extractDiscreteScheduledTime(rule: PlanRuleInput): string | null
   return typeof value === "string" ? value : null;
 }
 
+export type ColDiscoveryCadenceSummary = {
+  profile: ColDiscoveryCadenceProfile | null;
+  headline: string;
+  detail: string;
+  canApply: boolean;
+};
+
+function formatScheduledTimePlain(time24: string): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(time24);
+  if (!match) return time24;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: minutes === 0 ? undefined : "2-digit",
+  }).format(new Date(2026, 0, 1, hours, minutes));
+}
+
+function formatScheduledTimeList(times: readonly string[]): string {
+  const formatted = times.map(formatScheduledTimePlain);
+  if (formatted.length === 0) return "";
+  if (formatted.length === 1) return formatted[0]!;
+  if (formatted.length === 2) return `${formatted[0]} and ${formatted[1]}`;
+  return `${formatted.slice(0, -1).join(", ")}, and ${formatted[formatted.length - 1]}`;
+}
+
+/** Plain-English cadence copy for operator surfaces (overview, training week). */
+export function describeColDiscoveryCadenceForFacility(facilityName: string): ColDiscoveryCadenceSummary {
+  const key = resolveColDiscoveryCadenceKey(facilityName);
+  if (!key) {
+    return {
+      profile: null,
+      headline: "Discovery cadence not configured",
+      detail: "This facility is not on the COL Jessica discovery-round schedule.",
+      canApply: false,
+    };
+  }
+
+  const profile = getColDiscoveryCadenceProfile(key);
+  if (profile === "pending") {
+    return {
+      profile,
+      headline: "Discovery cadence pending",
+      detail:
+        "Plantation discovery round times are pending owner decision. Haven will not apply wing-stagger or 12-hour templates until Jessica confirms times.",
+      canApply: false,
+    };
+  }
+
+  const dayTimes = formatScheduledTimeList(COL_DISCOVERY_DAY_TIMES);
+  if (profile === "homewood_two_hour_night") {
+    return {
+      profile,
+      headline: "Jessica discovery rounds — day and two-hour night",
+      detail: `Day checks at ${dayTimes}; two-hour overnight checks from 6:00 PM to 6:00 AM Eastern.`,
+      canApply: true,
+    };
+  }
+
+  const nightTimes = formatScheduledTimeList(COL_DISCOVERY_NIGHT_TIMES_STANDARD);
+  return {
+    profile,
+    headline: "Jessica discovery rounds — day and night",
+    detail: `Day checks at ${dayTimes}; night checks at ${nightTimes}. Times are Eastern (America/New_York).`,
+    canApply: true,
+  };
+}
+
 export function isLegacyMigration219PresetDefinition(preset: Record<string, unknown> | null | undefined): boolean {
   if (!preset) return false;
 
