@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchNurseMedicationBrief, type NurseMedicationBrief } from "@/lib/nurse/medication-brief";
+import { formatNurseWatchlistRoomLabel } from "@/lib/nurse/medication-brief-display-copy";
 import { Pill, ShieldCheck, AlertTriangle, Activity, FileWarning, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -105,7 +106,7 @@ export default function NurseDashboardPage() {
                 <div key={r.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
                   <div>
                     <span className="text-[15px] font-semibold text-foreground">{r.name}</span>
-                    <span className="text-xs font-medium text-muted-foreground ml-2">{r.room === "—" ? "Safety watch" : `Room ${r.room}`}</span>
+                    <span className="text-xs font-medium text-muted-foreground ml-2">{formatNurseWatchlistRoomLabel(r.room)}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">{r.reason}</span>
                 </div>
