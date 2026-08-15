@@ -26,7 +26,10 @@ import {
   describeLiveBoardCadenceReminder,
   describeLiveBoardEmptyState,
 } from "@/lib/rounding/col-discovery-round-cadence";
-import { formatLiveRoundingShiftType } from "@/lib/rounding/live-rounding-display-copy";
+import {
+  formatLiveRoundingDueLabel,
+  formatLiveRoundingShiftType,
+} from "@/lib/rounding/live-rounding-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -126,16 +129,6 @@ function statusConfig(status: string) {
     tone: "default" as Tone,
     filterGroup: "pending" as StatusFilter,
   };
-}
-
-function formatDueLabel(value: string) {
-  const dueAt = new Date(value);
-  if (Number.isNaN(dueAt.getTime())) return "Unknown";
-  const diff = dueAt.getTime() - Date.now();
-  const mins = Math.round(Math.abs(diff) / 60000);
-  if (mins < 1) return "Now";
-  if (diff > 0) return `in ${mins}m`;
-  return `${mins}m ago`;
 }
 
 function formatRelativeAgo(ts: number | null, now: number): string {
@@ -679,7 +672,7 @@ export default function AdminRoundingLivePage() {
                               cfg.tone === "default" && "text-foreground",
                             )}
                           >
-                            {formatDueLabel(task.due_at)}
+                            {formatLiveRoundingDueLabel(task.due_at)}
                           </p>
                           <Badge
                             variant="outline"
