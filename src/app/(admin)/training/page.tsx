@@ -15,8 +15,13 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { parseCompetencyAttachments } from "@/lib/training/competency-storage";
 import {
+  TRAINING_HUB_NO_PDF_COPY,
+  formatTrainingHubDate,
   formatTrainingHubFacilityName,
+  formatTrainingHubHours,
   formatTrainingHubProgramName,
+  formatTrainingHubSignerName,
+  formatTrainingHubStaffName,
 } from "@/lib/training/training-hub-display-copy";
 import { CompetencyCertificateOpenButton } from "@/components/training/competency-certificate-open-button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -82,13 +87,6 @@ type CompletionRow = Database["public"]["Tables"]["staff_training_completions"][
   facilities: { name: string } | null;
   training_programs: { code: string; name: string } | null;
 };
-
-function formatHours(h: number | null | undefined): string {
-  if (h == null) return "—";
-  const n = typeof h === "number" ? h : Number(h);
-  if (Number.isNaN(n)) return "—";
-  return n.toFixed(2);
-}
 
 function buildStaffTrainingCompletionsCsv(rows: CompletionRow[]): string {
   const header = [
@@ -756,9 +754,7 @@ export default function AdminTrainingHubPage() {
                           {formatTrainingHubFacilityName(row.facilities?.name)}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
-                          {row.staff
-                            ? `${row.staff.first_name} ${row.staff.last_name}`
-                            : "—"}
+                          {formatTrainingHubStaffName(row.staff)}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
                           <span className="font-medium">
@@ -771,16 +767,14 @@ export default function AdminTrainingHubPage() {
                           ) : null}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {row.completed_at
-                            ? format(new Date(`${row.completed_at}T12:00:00`), "MMM d, yyyy")
-                            : "—"}
+                          {formatTrainingHubDate(row.completed_at)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {row.expires_at
-                            ? format(new Date(`${row.expires_at}T12:00:00`), "MMM d, yyyy")
-                            : "—"}
+                          {formatTrainingHubDate(row.expires_at)}
                         </td>
-                        <td className="px-[13px] py-2 font-mono tabular-nums">{formatHours(row.hours_completed)}</td>
+                        <td className="px-[13px] py-2 font-mono tabular-nums">
+                          {formatTrainingHubHours(row.hours_completed)}
+                        </td>
                         <td className="px-[13px] py-2 capitalize text-muted-foreground">
                           {formatStatus(row.delivery_method)}
                         </td>
@@ -792,7 +786,7 @@ export default function AdminTrainingHubPage() {
                               className="h-7 text-[9px] px-2"
                             />
                           ) : (
-                            <span className="text-slate-400">—</span>
+                            <span className="text-slate-400">{TRAINING_HUB_NO_PDF_COPY}</span>
                           )}
                         </td>
                       </tr>
@@ -957,25 +951,23 @@ export default function AdminTrainingHubPage() {
                           {formatTrainingHubFacilityName(row.facilities?.name)}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">
-                          {row.staff ? `${row.staff.first_name} ${row.staff.last_name}` : "—"}
+                          {formatTrainingHubStaffName(row.staff)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[10px] uppercase tracking-wider">
                           {row.attestation_type.replace(/_/g, " ")}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {row.signed_at ? format(new Date(row.signed_at), "MMM d, yyyy") : "—"}
+                          {formatTrainingHubDate(row.signed_at)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {row.effective_date
-                            ? format(new Date(`${row.effective_date}T12:00:00`), "MMM d, yyyy")
-                            : "—"}
+                          {formatTrainingHubDate(row.effective_date)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {row.expires_at
-                            ? format(new Date(`${row.expires_at}T12:00:00`), "MMM d, yyyy")
-                            : "—"}
+                          {formatTrainingHubDate(row.expires_at)}
                         </td>
-                        <td className="px-[13px] py-2 text-[13px]">{row.signer_name ?? "—"}</td>
+                        <td className="px-[13px] py-2 text-[13px]">
+                          {formatTrainingHubSignerName(row.signer_name)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1066,15 +1058,15 @@ export default function AdminTrainingHubPage() {
                           {formatTrainingHubFacilityName(row.facilities?.name)}
                         </td>
                         <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {row.session_date
-                            ? format(new Date(`${row.session_date}T12:00:00`), "MMM d, yyyy")
-                            : "—"}
+                          {formatTrainingHubDate(row.session_date)}
                         </td>
                         <td className="px-[13px] py-2 max-w-[200px] truncate text-[13px]" title={row.topic}>
                           {row.topic}
                         </td>
                         <td className="px-[13px] py-2 text-[13px]">{row.trainer_name}</td>
-                        <td className="px-[13px] py-2 font-mono tabular-nums">{formatHours(Number(row.hours))}</td>
+                        <td className="px-[13px] py-2 font-mono tabular-nums">
+                          {formatTrainingHubHours(Number(row.hours))}
+                        </td>
                         <td className="px-[13px] py-2 text-[13px]">
                           <span
                             className={cn(
