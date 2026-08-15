@@ -266,6 +266,58 @@ function formatScheduledTimeList(times: readonly string[]): string {
   return `${formatted.slice(0, -1).join(", ")}, and ${formatted[formatted.length - 1]}`;
 }
 
+export type LiveBoardEmptyCopy = {
+  why: string;
+  guidance: string;
+  overviewCta: string;
+};
+
+/** Operator copy when the live board has no tasks in the loaded window. */
+export function describeLiveBoardEmptyState(facilityName: string | null): LiveBoardEmptyCopy {
+  if (!facilityName) {
+    return {
+      why: "No facility scoped",
+      guidance: "Select a facility from the top bar to load live rounding tasks.",
+      overviewCta: "Go to overview",
+    };
+  }
+
+  const cadence = describeColDiscoveryCadenceForFacility(facilityName);
+
+  if (cadence.profile === "pending") {
+    return {
+      why: "No live tasks in the last 12 hours.",
+      guidance:
+        "Plantation discovery round times are pending owner decision. Return to the Smart Rounding overview for cadence status.",
+      overviewCta: "Go to overview",
+    };
+  }
+
+  if (cadence.canApply) {
+    return {
+      why: "No live tasks in the last 12 hours.",
+      guidance:
+        "Apply Jessica discovery rounds from the Smart Rounding overview to generate checks for this window.",
+      overviewCta: "Go to overview",
+    };
+  }
+
+  return {
+    why: "No live tasks in the last 12 hours.",
+    guidance: "Return to the Smart Rounding overview to start a rounding cycle.",
+    overviewCta: "Go to overview",
+  };
+}
+
+/** One-line cadence reminder for the scoped facility on the live board. */
+export function describeLiveBoardCadenceReminder(facilityName: string): string {
+  const cadence = describeColDiscoveryCadenceForFacility(facilityName);
+  if (cadence.profile === null) {
+    return "Discovery cadence is not configured for this facility.";
+  }
+  return cadence.detail;
+}
+
 /** Plain-English cadence copy for operator surfaces (overview, training week). */
 export function describeColDiscoveryCadenceForFacility(facilityName: string): ColDiscoveryCadenceSummary {
   const key = resolveColDiscoveryCadenceKey(facilityName);

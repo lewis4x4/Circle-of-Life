@@ -44,20 +44,23 @@ describe("rounding pages seeded fallback removal", () => {
 
   it("keeps explicit live-source empty states instead of seeded fallback rows", () => {
     const sources = ROUNDING_SOURCES.map(readSource).join("\n");
+    const cadenceLib = readSource("src/lib/rounding/col-discovery-round-cadence.ts");
 
-    expect(sources).toContain("No active rounding cycle");
+    expect(sources).toContain("describeLiveBoardEmptyState");
+    expect(cadenceLib).toContain("No live tasks in the last 12 hours");
     expect(sources).toContain("No reports generated yet");
     expect(sources).toContain("No checks match the current filter");
     expect(sources).toContain("No observation plans at");
   });
 
   it("does not render healthy or fake-derived statuses for empty live sources", () => {
-    const hubSource = readSource("src/app/(admin)/admin/rounding/page.tsx");
+    const hubSource = readSource("src/components/rounding/AdminRoundingPageClient.tsx");
     const liveSource = readSource("src/app/(admin)/admin/rounding/live/page.tsx");
     const reportsSource = readSource("src/app/(admin)/admin/rounding/reports/page.tsx");
 
     expect(hubSource).toContain("summary.expectedCount > 0");
-    expect(liveSource).toContain("No active rounding cycle");
+    expect(liveSource).toContain("describeLiveBoardEmptyState");
+    expect(liveSource).toContain("LiveBoardEmptyNotice");
     expect(reportsSource).not.toContain("Select a broader window.");
     expect(reportsSource).toContain("No matching entries for this window");
     expect(reportsSource).not.toContain("No live rows returned");
