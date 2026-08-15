@@ -28,6 +28,10 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { billingNyTodayIso, daysPastDueAsOf } from "@/lib/billing/ar-aging-as-of";
+import {
+  formatArAgingBucketCents,
+  formatArAgingInvoiceCountCaption,
+} from "@/lib/billing/ar-aging-display-copy";
 import { ninetyPlusRiskShareClass } from "@/lib/billing/billing-ar-semantics";
 import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 
@@ -111,10 +115,6 @@ function bucketFieldFromUrl(b: ArBucketUrlKey | null): keyof Pick<ResidentRollup
   if (b === "61-90") return "b61_90";
   if (b === "91-plus") return "b91";
   return null;
-}
-
-function formatUsdCell(cents: number): string {
-  return cents > 0 ? billingCurrency.format(cents / 100) : "—";
 }
 
 function csvEscape(s: string): string {
@@ -725,8 +725,8 @@ function AdminArAgingPageContent() {
                 tile.key === "all"
                   ? bucketFilter == null
                   : bucketFilter === tile.key;
-              const amountDisplay = tile.cents > 0 ? billingCurrency.format(tile.cents / 100) : "—";
-              const countDisplay = tile.count > 0 ? String(tile.count) : "—";
+              const amountDisplay = formatArAgingBucketCents(tile.cents);
+              const countCaption = formatArAgingInvoiceCountCaption(tile.count);
               return (
                 <button
                   key={tile.key}
@@ -752,9 +752,7 @@ function AdminArAgingPageContent() {
                   >
                     {amountDisplay}
                   </p>
-                  <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                    {countDisplay === "—" ? "— invoices" : `${countDisplay} invoices`}
-                  </p>
+                  <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">{countCaption}</p>
                 </button>
               );
             })}
@@ -895,10 +893,10 @@ function AdminArAgingPageContent() {
                         <td className="px-3 py-2 font-medium text-foreground">{r.residentName}</td>
                         {orgWideHub ? <td className="px-3 py-2 text-muted-foreground">{r.facilityName}</td> : null}
                         <td className="px-3 py-2 tabular-nums text-muted-foreground">{r.oldestDueIso}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatUsdCell(r.b0_30)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatUsdCell(r.b31_60)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatUsdCell(r.b61_90)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatUsdCell(r.b91)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b0_30)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b31_60)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b61_90)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b91)}</td>
                         <td className="px-3 py-2 text-right tabular-nums font-medium">{billingCurrency.format(r.totalCents / 100)}</td>
                         <td className="px-3 py-2 text-right">
                           <DropdownMenu>
