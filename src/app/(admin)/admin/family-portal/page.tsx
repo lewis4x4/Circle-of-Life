@@ -18,6 +18,13 @@ import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
+import {
+  familyPortalAdminKpiValue,
+  formatFamilyPortalAdminConferenceRoom,
+  formatFamilyPortalAdminMatchedKeywords,
+  formatFamilyPortalAdminNoteBody,
+  formatFamilyPortalAdminResidentName,
+} from "@/lib/family/family-portal-admin-display-copy";
 import { cn } from "@/lib/utils";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
@@ -373,7 +380,7 @@ export default function AdminFamilyPortalPage() {
         <h2 className="text-[13px] font-semibold text-foreground">Needs attention</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <KpiCard
-            value={facilityReady ? pendingAttentionCount : "—"}
+            value={familyPortalAdminKpiValue("pending_triage", facilityReady, pendingAttentionCount)}
             label="Pending triage"
             tone={pendingAttentionCount > 0 ? "warning" : "neutral"}
             footnote={
@@ -381,13 +388,21 @@ export default function AdminFamilyPortalPage() {
             }
           />
           <KpiCard
-            value={facilityReady ? conferencesThisWeekCount : "—"}
+            value={familyPortalAdminKpiValue(
+              "conferences_this_week",
+              facilityReady,
+              conferencesThisWeekCount,
+            )}
             label="Conferences this week"
             tone="neutral"
             footnote={undefined}
           />
           <KpiCard
-            value={facilityReady ? consentsExpiringCount : "—"}
+            value={familyPortalAdminKpiValue(
+              "consents_expiring",
+              facilityReady,
+              consentsExpiringCount,
+            )}
             label="Consents expiring in 30 days"
             tone={consentExpiryTone}
             footnote={
@@ -513,7 +528,7 @@ export default function AdminFamilyPortalPage() {
                     <div className="grid min-h-[36px] grid-cols-1 items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-colors hover:bg-muted/30 lg:grid-cols-[2fr_1fr_2fr_3fr_1fr]">
                       <div className="flex min-w-0 items-center gap-3">
                         <span className="truncate text-[13px] font-semibold text-foreground">
-                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
+                          {formatFamilyPortalAdminResidentName(row.residents)}
                         </span>
                       </div>
 
@@ -533,14 +548,14 @@ export default function AdminFamilyPortalPage() {
                       <div className="flex flex-row items-center justify-between lg:justify-start">
                         <span className="text-[12px] text-muted-foreground lg:hidden">Keywords</span>
                         <span className="max-w-[200px] truncate text-[12px] text-muted-foreground">
-                          {(row.matched_keywords?.length ?? 0) > 0 ? row.matched_keywords.join(", ") : "—"}
+                          {formatFamilyPortalAdminMatchedKeywords(row.matched_keywords)}
                         </span>
                       </div>
 
                       <div className="flex flex-row items-center justify-between lg:justify-start">
                         <span className="text-[12px] text-muted-foreground lg:hidden">Message snippet</span>
                         <span className="max-w-[300px] truncate text-[13px] text-foreground">
-                          {row.family_portal_messages?.body ?? "—"}
+                          {formatFamilyPortalAdminNoteBody(row.family_portal_messages?.body)}
                         </span>
                       </div>
 
@@ -661,7 +676,7 @@ export default function AdminFamilyPortalPage() {
                     <div className="grid min-h-[36px] grid-cols-1 items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-colors hover:bg-muted/30 lg:grid-cols-[2fr_1.5fr_1fr_1fr_1fr]">
                       <div className="flex min-w-0 items-center gap-3">
                         <span className="truncate text-[13px] font-semibold text-foreground">
-                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
+                          {formatFamilyPortalAdminResidentName(row.residents)}
                         </span>
                       </div>
 
@@ -693,7 +708,7 @@ export default function AdminFamilyPortalPage() {
                         <span className="text-[12px] text-muted-foreground lg:hidden">Room</span>
                         <div className="flex flex-col items-start gap-2 lg:items-end">
                           <span className="max-w-full truncate font-mono text-[12px] tabular-nums text-muted-foreground">
-                            {row.external_room_id ?? "—"}
+                            {formatFamilyPortalAdminConferenceRoom(row.external_room_id)}
                           </span>
                           <div className="flex flex-wrap gap-2">
                             <Button
@@ -788,7 +803,7 @@ export default function AdminFamilyPortalPage() {
                     <div className="grid min-h-[36px] grid-cols-1 items-center gap-3 rounded-lg border border-border bg-card px-[13px] py-2 transition-colors hover:bg-muted/30 lg:grid-cols-[2fr_2fr_1fr_1fr]">
                       <div className="flex min-w-0 items-center gap-3">
                         <span className="truncate text-[13px] font-semibold text-foreground">
-                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "—"}
+                          {formatFamilyPortalAdminResidentName(row.residents)}
                         </span>
                       </div>
 
