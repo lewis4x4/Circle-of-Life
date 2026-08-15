@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { format, parseISO } from "date-fns";
 
+import { formatStaffIllnessStaffLabel } from "@/lib/admin/infection-control/staff-illness-display-copy";
+
 type Row = {
   id: string;
   staff_id: string;
@@ -104,7 +106,7 @@ export default function StaffIllnessListPage() {
                </TableRowHeader>
                <MotionList className="space-y-1 mt-2">
                  {rows.map((r) => {
-                   const name = r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : "Unknown Staff";
+                   const name = formatStaffIllnessStaffLabel(r.staff);
                    const stillOut = !r.return_cleared;
                    const formatD = (d: string) => format(parseISO(d.length <= 10 ? `${d}T12:00:00.000Z` : d), "MMM d, yyyy");
                    return (
