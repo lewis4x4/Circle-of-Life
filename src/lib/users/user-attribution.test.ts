@@ -83,6 +83,27 @@ describe("formatUploadedByProfile", () => {
     ).toBe(PLACEHOLDER_NAME);
   });
 
+  it("care-plan approve wiring: full_name and email only", () => {
+    expect(
+      formatUploadedByProfile({
+        full_name: PLACEHOLDER_NAME,
+        email: PLACEHOLDER_EMAIL,
+      }),
+    ).toBe(PLACEHOLDER_NAME);
+    expect(
+      formatUploadedByProfile({
+        full_name: "",
+        email: PLACEHOLDER_EMAIL,
+      }),
+    ).toBe(PLACEHOLDER_EMAIL);
+    expect(
+      formatUploadedByProfile({
+        full_name: null,
+        email: null,
+      }),
+    ).toBe(USER_ATTRIBUTION_NO_NAME_COPY);
+  });
+
   it("returns a single posted name part when the other is a gap", () => {
     expect(
       formatUploadedByProfile({
