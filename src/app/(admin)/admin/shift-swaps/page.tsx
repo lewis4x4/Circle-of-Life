@@ -19,6 +19,7 @@ import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatShiftSwapCoveringName } from "@/lib/staffing/shift-swaps-display-copy";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -418,7 +419,7 @@ export default function AdminShiftSwapsPage() {
                     <span className="font-semibold text-foreground truncate">
                       {row.requestingName}
                       <span className="text-muted-foreground font-normal"> → </span>
-                      {row.coveringName ?? "—"}
+                      {formatShiftSwapCoveringName(row.coveringName)}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {formatDateTime(row.createdAt)} · {row.swapType}
