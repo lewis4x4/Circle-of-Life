@@ -4,9 +4,11 @@ import {
   SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY,
   SURVEY_BUNDLE_PRINT_NO_DATE_COPY,
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
+  SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
   SURVEY_BUNDLE_PRINT_NO_RISK_COPY,
   formatSurveyBundlePrintAdministratorName,
   formatSurveyBundlePrintEntityName,
+  formatSurveyBundlePrintLicenseNumber,
   formatSurveyBundlePrintPocSubmissionDueDate,
   formatSurveyBundlePrintRiskScore,
 } from "./survey-bundle-print-display-copy";
@@ -59,6 +61,23 @@ describe("formatSurveyBundlePrintAdministratorName", () => {
   it("returns posted administrator names trimmed", () => {
     expect(formatSurveyBundlePrintAdministratorName("Jordan Lee")).toBe("Jordan Lee");
     expect(formatSurveyBundlePrintAdministratorName("  Jordan Lee  ")).toBe("Jordan Lee");
+  });
+});
+
+describe("formatSurveyBundlePrintLicenseNumber", () => {
+  it("names a missing license number instead of an em dash", () => {
+    expect(formatSurveyBundlePrintLicenseNumber(null)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY);
+    expect(formatSurveyBundlePrintLicenseNumber(undefined)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY);
+    expect(formatSurveyBundlePrintLicenseNumber("")).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY);
+    expect(formatSurveyBundlePrintLicenseNumber("   ")).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY);
+    expect(formatSurveyBundlePrintLicenseNumber(EM_DASH)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY);
+    expect(formatSurveyBundlePrintLicenseNumber(`  ${EM_DASH}  `)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY);
+    expect(formatSurveyBundlePrintLicenseNumber(null)).not.toBe(EM_DASH);
+  });
+
+  it("returns posted license numbers trimmed", () => {
+    expect(formatSurveyBundlePrintLicenseNumber("ALF-001")).toBe("ALF-001");
+    expect(formatSurveyBundlePrintLicenseNumber("  ALF-001  ")).toBe("ALF-001");
   });
 });
 
