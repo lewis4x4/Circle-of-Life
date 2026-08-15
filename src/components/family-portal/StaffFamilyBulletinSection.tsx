@@ -84,7 +84,7 @@ export function StaffFamilyBulletinSection({
         .from("residents")
         .select("id, first_name, last_name, preferred_name")
         .eq("facility_id", selectedFacilityId)
-        .eq("status", "active")
+        .in("status", ["active", "hospital_hold", "loa"])
         .is("deleted_at", null)
         .order("last_name")
         .order("first_name")
@@ -111,6 +111,21 @@ export function StaffFamilyBulletinSection({
   useEffect(() => {
     void loadResidents();
   }, [loadResidents]);
+
+  useEffect(() => {
+    if (!showResidentPicker || !onResidentChange || residentOptions || residentsLoading) return;
+    if (!residentId) return;
+    if (!residents.some((resident) => resident.id === residentId)) {
+      onResidentChange("");
+    }
+  }, [
+    onResidentChange,
+    residentId,
+    residentOptions,
+    residents,
+    residentsLoading,
+    showResidentPicker,
+  ]);
 
   const handleResidentChange = (nextResidentId: string) => {
     const selected = residents.find((resident) => resident.id === nextResidentId);
