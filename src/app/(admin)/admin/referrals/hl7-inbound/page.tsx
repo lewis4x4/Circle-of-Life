@@ -46,6 +46,10 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { tryParsePid5Name } from "@/lib/referrals/hl7-pid-name";
 import {
+  formatHl7InboundMessageControlId,
+  formatHl7InboundTriggerEvent,
+} from "@/lib/referrals/hl7-inbound-display-copy";
+import {
   hl7InboxRangeStartUtc,
   type Hl7InboxRangeKey,
 } from "@/lib/referrals/hl7-inbox-range";
@@ -809,7 +813,7 @@ export default function AdminReferralsHl7InboundPage() {
                               {format(new Date(row.created_at), "MMM d, yyyy p")}
                             </span>
                             <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
-                              {row.message_control_id ?? "—"}
+                              {formatHl7InboundMessageControlId(row.message_control_id)}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -832,7 +836,7 @@ export default function AdminReferralsHl7InboundPage() {
                                 className="size-3.5 shrink-0 text-muted-foreground"
                                 aria-hidden
                               />
-                              {row.trigger_event ?? "—"}
+                              {formatHl7InboundTriggerEvent(row.trigger_event)}
                             </span>
                           </TableCell>
                           <TableCell className="whitespace-normal">
