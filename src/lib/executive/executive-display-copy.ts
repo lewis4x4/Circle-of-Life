@@ -3,9 +3,14 @@
  * Copy reflects real data gaps — never fabricates occupancy, revenue, or confidence.
  */
 
+import type { PresenceCensus } from "@/lib/executive/presence-census";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 
 export const EXECUTIVE_NO_OCCUPANCY_POSTED_COPY = "No occupancy posted";
+export const EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY = "No in-house count posted";
+export const EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY = "No hospital count posted";
+export const EXECUTIVE_NO_LEAVE_COUNT_POSTED_COPY = "No leave count posted";
+export const EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY = "No generate time posted";
 export const EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY = "No packet status posted";
 export const EXECUTIVE_NO_CONFIDENCE_POSTED_COPY = "No confidence posted";
 export const EXECUTIVE_NO_LEAGUE_SCORE_POSTED_COPY = "No league score posted";
@@ -107,4 +112,28 @@ export function formatExecutiveOpenInvoiceCount(value: number | null | undefined
 export function formatExecutiveCertsExpiringCount(value: number | null | undefined): string {
   if (value == null) return EXECUTIVE_NO_CERT_COUNT_POSTED_COPY;
   return String(value);
+}
+
+/** In-house presence count — real zero stays 0; missing names the gap. */
+export function formatExecutiveInHouseCount(presence: PresenceCensus | null | undefined): string {
+  if (presence == null) return EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY;
+  return String(presence.inHouse);
+}
+
+/** Hospital hold presence count — real zero stays 0; missing names the gap. */
+export function formatExecutiveHospitalCount(presence: PresenceCensus | null | undefined): string {
+  if (presence == null) return EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY;
+  return String(presence.hospital);
+}
+
+/** On-leave presence count — real zero stays 0; missing names the gap. */
+export function formatExecutiveOnLeaveCount(presence: PresenceCensus | null | undefined): string {
+  if (presence == null) return EXECUTIVE_NO_LEAVE_COUNT_POSTED_COPY;
+  return String(presence.onLeave);
+}
+
+/** Saved report last-generated timestamp — posted datetimes stay formatted. */
+export function formatExecutiveLastGeneratedAt(value: string | null | undefined): string {
+  if (value == null || value.trim() === "") return EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY;
+  return new Date(value).toLocaleString();
 }
