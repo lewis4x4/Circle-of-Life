@@ -20,11 +20,13 @@ import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
+  applyFacilityOccupancyMetricHonesty,
   attachFacilityMetrics,
   buildLatestMetricMap,
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
+import { fetchFacilityBedCensusById } from "@/lib/executive/facility-occupancy-census";
 import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
@@ -155,7 +157,17 @@ export function ExecutiveOverviewPageClient({
         .order("name", { ascending: true });
         
       if (!facErr && facData && facData.length > 0) {
-        setFacilities(attachFacilityMetrics(facData, facilityMetricData ?? []));
+        const bedCensusByFacility = await fetchFacilityBedCensusById(
+          supabase,
+          facData.map((facility) => facility.id),
+        );
+        setFacilities(
+          applyFacilityOccupancyMetricHonesty(
+            attachFacilityMetrics(facData, facilityMetricData ?? []),
+            bedCensusByFacility,
+            facData,
+          ),
+        );
       } else {
         setFacilities([]);
       }

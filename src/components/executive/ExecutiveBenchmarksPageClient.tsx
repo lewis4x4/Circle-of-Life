@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { executiveKpiEmptyCopy } from "@/lib/executive/kpi-tile-copy";
 import { formatExecutiveBenchmarkFacilitiesDisplay } from "@/lib/executive/executive-benchmarks-display-copy";
 import {
   formatExecutiveOccupancyBarLabel,
@@ -51,21 +52,33 @@ function CohortBarRow({
   label,
   display,
   widthPct,
+  namedGap = false,
 }: {
   label: string;
   display: string;
   widthPct: number;
+  namedGap?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div
+      className="flex items-center gap-2 text-sm"
+      aria-label={namedGap ? `${label}: ${display}` : undefined}
+    >
       <span className="w-36 shrink-0 truncate font-medium sm:w-44" title={label}>
         {label}
       </span>
-      <div className="h-2.5 min-w-[72px] flex-1 rounded-full bg-muted">
-        <div
-          className="h-2.5 rounded-full bg-info/70 transition-[width] duration-[var(--motion-duration)]"
-          style={{ width: `${widthPct}%` }}
-        />
+      <div
+        className={cn(
+          "h-2.5 min-w-[72px] flex-1 rounded-full",
+          namedGap ? "border border-dashed border-muted-foreground/35 bg-transparent" : "bg-muted",
+        )}
+      >
+        {!namedGap && (
+          <div
+            className="h-2.5 rounded-full bg-info/70 transition-[width] duration-[var(--motion-duration)]"
+            style={{ width: `${widthPct}%` }}
+          />
+        )}
       </div>
       <span className="w-24 shrink-0 text-right tabular-nums text-muted-foreground">{display}</span>
     </div>
@@ -679,16 +692,21 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                         <div className="space-y-1.5">
                           {series.map((s, idx) => {
                             const occ = s.kpi.census.occupancyPct;
+                            const namedGap = occ == null || !Number.isFinite(occ);
+                            const display = namedGap
+                              ? executiveKpiEmptyCopy("occ_pt")
+                              : formatExecutiveOccupancyBarLabel(occ);
                             const w =
-                              occ != null && Number.isFinite(occ)
+                              !namedGap && occ != null && Number.isFinite(occ)
                                 ? pctBarWidth(Math.min(100, Math.max(0, occ)), 100)
                                 : 0;
                             return (
                               <CohortBarRow
                                 key={`occ-${idx}`}
                                 label={s.label}
-                                display={formatExecutiveOccupancyBarLabel(occ)}
+                                display={display}
                                 widthPct={w}
+                                namedGap={namedGap}
                               />
                             );
                           })}
