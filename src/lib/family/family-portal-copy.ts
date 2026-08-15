@@ -19,3 +19,21 @@ export const FAMILY_MESSAGES_PAGE_TITLE = "Care team updates";
 export const FAMILY_MESSAGES_PAGE_DESCRIPTION = FAMILY_HOME_BULLETIN_HELPER;
 
 export const FAMILY_MESSAGES_LIST_LABEL = "Posted updates";
+
+/** Read-only activity calendar at /family/calendar — facility sessions the care team shares. */
+
+export const FAMILY_CALENDAR_PAGE_TITLE = "Calendar";
+
+export const FAMILY_CALENDAR_PAGE_DESCRIPTION =
+  "Read-only list of facility activities the care team shares.";
+
+export const FAMILY_CALENDAR_LOADING = "Loading the calendar…";
+
+export const FAMILY_CALENDAR_RETRY = "Retry";
+
+export const FAMILY_CALENDAR_EMPTY_TITLE = "No activities posted yet";
+
+export const FAMILY_CALENDAR_EMPTY_DESCRIPTION =
+  "When the care team shares an activity, it will appear here.";
+
+export const FAMILY_CALENDAR_NO_LOCATION = "No location posted";

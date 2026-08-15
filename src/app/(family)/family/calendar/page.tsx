@@ -4,6 +4,14 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock, Loader2, MapPin } from "lucide-react";
 
 import { fetchFamilyCalendarEvents, type FamilyCalendarEventRow } from "@/lib/family/family-calendar-data";
+import {
+  FAMILY_CALENDAR_EMPTY_DESCRIPTION,
+  FAMILY_CALENDAR_EMPTY_TITLE,
+  FAMILY_CALENDAR_LOADING,
+  FAMILY_CALENDAR_PAGE_DESCRIPTION,
+  FAMILY_CALENDAR_PAGE_TITLE,
+  FAMILY_CALENDAR_RETRY,
+} from "@/lib/family/family-portal-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
@@ -64,9 +72,13 @@ export default function FamilyCalendarPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium tracking-wide">Syncing itinerary…</p>
+      <div
+        className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground"
+        role="status"
+        aria-live="polite"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+        <p className="text-sm font-medium tracking-wide">{FAMILY_CALENDAR_LOADING}</p>
       </div>
     );
   }
@@ -86,7 +98,7 @@ export default function FamilyCalendarPage() {
           )}
           onClick={() => void load()}
         >
-          Retry Connection
+          {FAMILY_CALENDAR_RETRY}
         </button>
       </div>
     );
@@ -96,18 +108,17 @@ export default function FamilyCalendarPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 pb-8 pt-12 md:pt-20">
       <FamilySectionIntro
         active="calendar"
-        title="Upcoming Moments"
-        description="Shared activities and events happening around your loved one&apos;s day."
+        title={FAMILY_CALENDAR_PAGE_TITLE}
+        description={FAMILY_CALENDAR_PAGE_DESCRIPTION}
         residentSummary={residentSummary || undefined}
       />
 
       <div className="w-full space-y-6">
         {rows.length === 0 ? (
-          <div className="rounded-lg border-2 border-dashed border-border p-10 text-center">
-            <p className="mb-2 font-serif text-xl italic text-foreground">No scheduled activities.</p>
-            <p className="mx-auto max-w-md text-sm text-muted-foreground">
-              We could not find any shared events in this window, or your current family access does not include
-              calendar updates yet.
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
+            <p className="text-sm font-medium text-foreground">{FAMILY_CALENDAR_EMPTY_TITLE}</p>
+            <p className="mx-auto mt-2 max-w-sm text-xs text-muted-foreground">
+              {FAMILY_CALENDAR_EMPTY_DESCRIPTION}
             </p>
           </div>
         ) : (
