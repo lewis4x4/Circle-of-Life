@@ -13,6 +13,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  formatCarePlanDateOnly,
+  formatCarePlanItemDescription,
+  formatCarePlanItemTitle,
+  formatCarePlanVersion,
+} from "@/lib/care-plans/care-plan-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -60,17 +66,6 @@ interface DiffItem {
   }[];
 }
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "—";
-  const parsed = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(parsed);
-}
-
 function formatSnakeLabel(value: string): string {
   return value.replace(/_/g, " ");
 }
@@ -80,6 +75,28 @@ function formatCategoryLabel(category: string): string {
     .split(" ")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+function formatDiffChangeValue(
+  field: string,
+  value: string | string[] | null,
+): string {
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return `No ${formatSnakeLabel(field)} posted`;
+    }
+    return value.join(", ");
+  }
+
+  if (field === "description") {
+    return formatCarePlanItemDescription(value);
+  }
+
+  if (!value || !value.trim()) {
+    return `No ${formatSnakeLabel(field)} posted`;
+  }
+
+  return value;
 }
 
 export function CarePlanDiffModal({
@@ -247,7 +264,8 @@ export function CarePlanDiffModal({
                 <div>
                   <DialogTitle className="text-2xl">Care Plan Comparison</DialogTitle>
                   <DialogDescription className="mt-2">
-                    Comparing version {oldPlan?.version ?? "—"} → {newPlan?.version ?? "—"}
+                    Comparing version {formatCarePlanVersion(oldPlan?.version)} →{" "}
+                    {formatCarePlanVersion(newPlan?.version)}
                   </DialogDescription>
                 </div>
                 <div className="flex gap-2">
@@ -285,7 +303,7 @@ export function CarePlanDiffModal({
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Badge variant="outline" className="font-mono text-xs">
-                        v{oldPlan.version}
+                        {formatCarePlanVersion(oldPlan.version)}
                       </Badge>
                       <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                         Previous Version
@@ -294,7 +312,7 @@ export function CarePlanDiffModal({
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="text-slate-500 dark:text-slate-500">Effective:</span>{" "}
-                        <span className="font-medium">{formatDate(oldPlan.effective_date)}</span>
+                        <span className="font-medium">{formatCarePlanDateOnly(oldPlan.effective_date)}</span>
                       </div>
                       <div>
                         <span className="text-slate-500 dark:text-slate-500">Status:</span>{" "}
@@ -307,7 +325,7 @@ export function CarePlanDiffModal({
                   <div className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Badge className="bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/40 dark:text-primary-300 font-mono text-xs">
-                        v{newPlan?.version}
+                        {formatCarePlanVersion(newPlan?.version)}
                       </Badge>
                       <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                         New Version
@@ -316,7 +334,7 @@ export function CarePlanDiffModal({
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="text-slate-500 dark:text-slate-500">Effective:</span>{" "}
-                        <span className="font-medium">{formatDate(newPlan?.effective_date)}</span>
+                        <span className="font-medium">{formatCarePlanDateOnly(newPlan?.effective_date)}</span>
                       </div>
                       <div>
                         <span className="text-slate-500 dark:text-slate-500">Status:</span>{" "}
@@ -410,7 +428,7 @@ function DiffItemRow({ diff }: { diff: DiffItem }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-              {item?.title ?? "—"}
+              {formatCarePlanItemTitle(item?.title)}
             </h4>
             {diff.oldItem?.assistance_level && (
               <Badge variant="outline" className="text-[9px] font-mono uppercase px-2 py-0.5">
@@ -436,9 +454,7 @@ function DiffItemRow({ diff }: { diff: DiffItem }) {
                           isRemoved && "line-through text-slate-400"
                         )}
                       >
-                        {Array.isArray(change.oldValue)
-                          ? change.oldValue.join(", ")
-                          : change.oldValue || "—"}
+                        {formatDiffChangeValue(change.field, change.oldValue)}
                       </span>
                     </div>
                   )}
@@ -455,9 +471,7 @@ function DiffItemRow({ diff }: { diff: DiffItem }) {
                           isModified && "text-amber-700 dark:text-amber-300"
                         )}
                       >
-                        {Array.isArray(change.newValue)
-                          ? change.newValue.join(", ")
-                          : change.newValue || "—"}
+                        {formatDiffChangeValue(change.field, change.newValue)}
                       </span>
                     </div>
                   )}
