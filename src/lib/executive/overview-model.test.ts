@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { attachFacilityMetrics, buildLatestMetricMap } from "./overview-model";
+import {
+  applyFacilityOccupancyMetricHonesty,
+  attachFacilityMetrics,
+  buildLatestMetricMap,
+} from "./overview-model";
 
 describe("executive overview model", () => {
   it("builds aggregate metrics from latest scoped rows without treating zero as missing", () => {
@@ -56,5 +60,39 @@ describe("executive overview model", () => {
     );
 
     expect(facility?.metrics.survey_rd).toBe(0.91);
+  });
+
+  it("strips occ_pt when bed census is unloaded even if snapshots posted zero", () => {
+    const [facility] = applyFacilityOccupancyMetricHonesty(
+      attachFacilityMetrics(
+        [{ id: "homewood", name: "Homewood Lodge ALF" }],
+        [{ facility_id: "homewood", metric_code: "occ_pt", metric_value_numeric: 0 }],
+      ),
+      new Map(),
+      [{ id: "homewood", total_licensed_beds: 48 }],
+    );
+
+    expect(facility?.metrics.occ_pt).toBeUndefined();
+  });
+
+  it("refreshes occ_pt from loaded bed census instead of stale snapshot zeros", () => {
+    const [facility] = applyFacilityOccupancyMetricHonesty(
+      attachFacilityMetrics(
+        [{ id: "oakridge", name: "Oakridge ALF" }],
+        [{ facility_id: "oakridge", metric_code: "occ_pt", metric_value_numeric: 0 }],
+      ),
+      new Map([
+        [
+          "oakridge",
+          {
+            total_beds: 4,
+            occupancy_count: 2,
+          },
+        ],
+      ]),
+      [{ id: "oakridge", total_licensed_beds: 52 }],
+    );
+
+    expect(facility?.metrics.occ_pt).toBe(0.5);
   });
 });

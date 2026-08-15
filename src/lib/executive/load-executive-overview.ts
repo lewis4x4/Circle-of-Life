@@ -2,10 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   attachFacilityMetrics,
+  applyFacilityOccupancyMetricHonesty,
   buildLatestMetricMap,
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
+import { fetchFacilityBedCensusById } from "@/lib/executive/facility-occupancy-census";
 import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
@@ -77,6 +79,7 @@ export async function loadExecutiveOverview(
     assuranceRows,
     assuranceTrendRows,
     presenceCensusRes,
+    bedCensusRes,
   ] = await Promise.allSettled([
       withTimeout(buildAggregateSnapshotQuery(supabase, organizationId), "aggregate-snapshots"),
       withTimeout(buildFacilitySnapshotQuery(supabase, organizationId), "facility-snapshots"),
@@ -103,6 +106,19 @@ export async function loadExecutiveOverview(
       withTimeout(fetchResidentAssuranceFacilityHeatMap(supabase, organizationId), "assurance-heatmap"),
       withTimeout(fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7), "assurance-trends"),
       withTimeout(fetchPresenceCensus(supabase, organizationId), "presence-census"),
+      withTimeout(
+        (async () => {
+          const { data: facilityRows, error } = await supabase
+            .from("facilities")
+            .select("id")
+            .eq("organization_id", organizationId)
+            .is("deleted_at", null);
+          if (error) throw new Error(error.message);
+          const ids = (facilityRows ?? []).map((facility) => facility.id);
+          return fetchFacilityBedCensusById(supabase, ids);
+        })(),
+        "bed-census",
+      ),
     ]);
 
   const aggregateRows = aggregateSnapshotsRes.status === "fulfilled" ? aggregateSnapshotsRes.value.data ?? [] : [];
@@ -112,6 +128,8 @@ export async function loadExecutiveOverview(
   const heatMap = assuranceRows.status === "fulfilled" ? assuranceRows.value : [];
   const trends = assuranceTrendRows.status === "fulfilled" ? assuranceTrendRows.value : [];
   const presenceCensus = presenceCensusRes.status === "fulfilled" ? presenceCensusRes.value : EMPTY_PRESENCE_CENSUS;
+  const bedCensusByFacility =
+    bedCensusRes.status === "fulfilled" ? bedCensusRes.value : new Map<string, never>();
 
   const licensedBeds = facilityRows.reduce(
     (sum, facility) => sum + ((facility as { total_licensed_beds?: number | null }).total_licensed_beds ?? 0),
@@ -123,10 +141,16 @@ export async function loadExecutiveOverview(
       ? { occupiedResidents, licensedBeds }
       : null;
 
+  const facilitiesWithMetrics = applyFacilityOccupancyMetricHonesty(
+    attachFacilityMetrics(facilityRows, facilitySnapshotRows as MetricSnapshotRow[]),
+    bedCensusByFacility,
+    facilityRows as Array<{ id: string; total_licensed_beds?: number | null }>,
+  );
+
   return {
     metrics: buildLatestMetricMap(aggregateRows as MetricSnapshotRow[]),
     alerts: alertRows as AlertWithFacility[],
-    facilities: attachFacilityMetrics(facilityRows, facilitySnapshotRows as MetricSnapshotRow[]),
+    facilities: facilitiesWithMetrics,
     assuranceHeatMap: heatMap,
     assuranceTrends: trends,
     presenceCensus,
