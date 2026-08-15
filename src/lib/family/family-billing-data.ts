@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatFamilyPaymentReference } from "@/lib/family/family-billing-copy";
 import type { Database } from "@/types/database";
 
 export type FamilyInvoiceRow = {
@@ -248,7 +249,7 @@ export async function fetchFamilyPaymentsList(
       amount: p.amount,
       dateLabel: formatMediumDate(datePart),
       methodLabel: paymentMethodLabel(p.payment_method),
-      reference: p.reference_number?.trim() || "—",
+      reference: formatFamilyPaymentReference(p.reference_number),
     };
   });
 

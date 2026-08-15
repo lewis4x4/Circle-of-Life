@@ -3,8 +3,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  FAMILY_BILLING_NO_REFERENCE_COPY,
   formatFamilyLastPaymentAmount,
   formatFamilyLastPaymentDate,
+  formatFamilyPaymentReference,
 } from "@/lib/family/family-billing-copy";
 import {
   FAMILY_BILLING_EMPTY_INVOICES_DESCRIPTION,
@@ -27,6 +29,7 @@ import {
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 const familyPortalCopyPath = path.join(repoRoot, "src/lib/family/family-portal-copy.ts");
 const billingPagePath = path.join(repoRoot, "src/app/(family)/family/billing/page.tsx");
+const billingDataPath = path.join(repoRoot, "src/lib/family/family-billing-data.ts");
 const invoicesPagePath = path.join(repoRoot, "src/app/(family)/family/invoices/page.tsx");
 const paymentsPagePath = path.join(repoRoot, "src/app/(family)/family/payments/page.tsx");
 
@@ -86,6 +89,22 @@ describe("family billing portal copy", () => {
     expect(formatFamilyLastPaymentAmount(0)).toBe("$0.00");
     expect(formatFamilyLastPaymentAmount(12500)).toBe("$12,500.00");
     expect(formatFamilyLastPaymentDate("Jan 15, 2026")).toBe("Jan 15, 2026");
+  });
+
+  it("payment reference helper uses explicit copy instead of silent dashes", () => {
+    expect(FAMILY_BILLING_NO_REFERENCE_COPY).toBe("No reference posted");
+    expect(formatFamilyPaymentReference(null)).toBe("No reference posted");
+    expect(formatFamilyPaymentReference(undefined)).toBe("No reference posted");
+    expect(formatFamilyPaymentReference("")).toBe("No reference posted");
+    expect(formatFamilyPaymentReference("   ")).toBe("No reference posted");
+    expect(formatFamilyPaymentReference("  REF-PLACEHOLDER-001  ")).toBe("REF-PLACEHOLDER-001");
+  });
+
+  it("family billing data load path uses payment reference formatter", () => {
+    const source = fs.readFileSync(billingDataPath, "utf8");
+
+    expect(source).toMatch(/formatFamilyPaymentReference/);
+    expect(source).not.toMatch(/reference_number\?\.trim\(\) \|\| "—"/);
   });
 
   it("billing page imports shared copy and has no fintech demo language", () => {
