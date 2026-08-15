@@ -42,6 +42,10 @@ import {
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
 import { RateConfirmationBanner } from "@/components/billing/RateConfirmationBanner";
+import {
+  formatGeneratePreviewBillingPeriodRange,
+  formatGeneratePreviewConcessionCents,
+} from "@/lib/billing/invoice-generate-display-copy";
 
 export default function AdminInvoiceGeneratePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -327,9 +331,7 @@ export default function AdminInvoiceGeneratePage() {
                         {billingCurrency.format(line.total / 100)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {line.concessionAmount !== 0
-                          ? billingCurrency.format(line.concessionAmount / 100)
-                          : "—"}
+                        {formatGeneratePreviewConcessionCents(line.concessionAmount)}
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
                         {billingCurrency.format(line.total / 100)}
@@ -342,9 +344,11 @@ export default function AdminInvoiceGeneratePage() {
               <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
                 <div className="text-sm text-slate-600 dark:text-slate-400">
                   {preview.length} resident{preview.length !== 1 ? "s" : ""} ·{" "}
-                  {days} days in {billingLabel}
+                  {formatGeneratePreviewBillingPeriodRange(meta.periodStart, meta.periodEnd)}
                   <span className="ml-2 block text-xs sm:inline">
-                    Standard {billingCurrency.format(standardTotal / 100)} · Concessions {billingCurrency.format(concessionTotal / 100)}
+                    {days} days in {billingLabel} · Standard{" "}
+                    {billingCurrency.format(standardTotal / 100)} · Concessions{" "}
+                    {billingCurrency.format(concessionTotal / 100)}
                   </span>
                 </div>
                 <div className="text-right">
