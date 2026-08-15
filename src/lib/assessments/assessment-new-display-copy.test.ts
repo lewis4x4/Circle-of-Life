@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ASSESSMENT_NEW_NO_RISK_COPY,
   ASSESSMENT_NEW_NO_SCORE_COPY,
   formatAssessmentLiveScore,
+  formatAssessmentRiskLevelLabel,
+  isPostedAssessmentRiskLevel,
   isPostedAssessmentScore,
 } from "./assessment-new-display-copy";
 
@@ -40,5 +43,39 @@ describe("formatAssessmentLiveScore", () => {
   it("never returns an em dash", () => {
     expect(formatAssessmentLiveScore(null)).not.toBe(EM_DASH);
     expect(formatAssessmentLiveScore(undefined)).not.toBe(EM_DASH);
+  });
+});
+
+describe("isPostedAssessmentRiskLevel", () => {
+  it("treats null, undefined, blank, and em dash as not posted", () => {
+    expect(isPostedAssessmentRiskLevel(null)).toBe(false);
+    expect(isPostedAssessmentRiskLevel(undefined)).toBe(false);
+    expect(isPostedAssessmentRiskLevel("")).toBe(false);
+    expect(isPostedAssessmentRiskLevel("   ")).toBe(false);
+    expect(isPostedAssessmentRiskLevel(EM_DASH)).toBe(false);
+  });
+
+  it("keeps a posted risk level", () => {
+    expect(isPostedAssessmentRiskLevel("high")).toBe(true);
+    expect(isPostedAssessmentRiskLevel("very_high")).toBe(true);
+  });
+});
+
+describe("formatAssessmentRiskLevelLabel", () => {
+  it("names a missing risk level", () => {
+    expect(formatAssessmentRiskLevelLabel(null)).toBe(ASSESSMENT_NEW_NO_RISK_COPY);
+    expect(formatAssessmentRiskLevelLabel(undefined)).toBe(ASSESSMENT_NEW_NO_RISK_COPY);
+    expect(formatAssessmentRiskLevelLabel("")).toBe(ASSESSMENT_NEW_NO_RISK_COPY);
+    expect(formatAssessmentRiskLevelLabel(EM_DASH)).toBe(ASSESSMENT_NEW_NO_RISK_COPY);
+  });
+
+  it("formats a posted risk level", () => {
+    expect(formatAssessmentRiskLevelLabel("very_high")).toBe("very high");
+    expect(formatAssessmentRiskLevelLabel("level_1")).toBe("level 1");
+  });
+
+  it("never returns an em dash for a gap", () => {
+    expect(formatAssessmentRiskLevelLabel(null)).not.toBe(EM_DASH);
+    expect(formatAssessmentRiskLevelLabel(undefined)).not.toBe(EM_DASH);
   });
 });

@@ -7,7 +7,11 @@ import { ClipboardCheck, Plus } from "lucide-react";
 
 import { AdminEmptyState, AdminFilterBar, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { formatAssessmentLiveScore } from "@/lib/assessments/assessment-new-display-copy";
+import {
+  ASSESSMENT_NEW_NO_RISK_COPY,
+  formatAssessmentLiveScore,
+  isPostedAssessmentRiskLevel,
+} from "@/lib/assessments/assessment-new-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -197,12 +201,12 @@ export default function ResidentAssessmentHistoryPage() {
 
                         <div className="flex flex-col items-start lg:items-start">
                           <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Risk level</span>
-                          {r.riskLevel ? (
+                          {isPostedAssessmentRiskLevel(r.riskLevel) ? (
                             <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider shadow-none", RISK_COLORS[r.riskLevel] ?? "bg-muted text-muted-foreground border-border")}>
                               {r.riskLevel.replace(/_/g, " ")}
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">{ASSESSMENT_NEW_NO_RISK_COPY}</span>
                           )}
                         </div>
 
