@@ -8,7 +8,7 @@ import {
   LICENSING_TAB_NO_LAST_EDITED_COPY,
   LICENSING_TAB_NO_LICENSE_NUMBER_COPY,
   LICENSING_TAB_NO_NEXT_DUE_DATE_COPY,
-  LICENSING_TAB_NO_SURVEY_LINK_COPY,
+  LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY,
   formatLicensingTabCitationCount,
   formatLicensingTabExpirationCaption,
   formatLicensingTabExpirationDate,
@@ -16,7 +16,7 @@ import {
   formatLicensingTabLicenseNumber,
   formatLicensingTabNextDueDate,
   formatLicensingTabPlanOfCorrectionStatus,
-  formatLicensingTabSurveyLink,
+  formatLicensingTabSurveyDateLabel,
   formatLicensingTabYmdDate,
   licensingTabCitationCountHasLink,
 } from "./licensing-tab-display-copy";
@@ -161,17 +161,17 @@ describe("formatLicensingTabCitationCount", () => {
   });
 });
 
-describe("formatLicensingTabSurveyLink", () => {
-  it("names a missing survey document link instead of an em dash", () => {
-    expect(formatLicensingTabSurveyLink(null)).toBe(LICENSING_TAB_NO_SURVEY_LINK_COPY);
-    expect(formatLicensingTabSurveyLink(undefined)).toBe(LICENSING_TAB_NO_SURVEY_LINK_COPY);
-    expect(formatLicensingTabSurveyLink("")).toBe(LICENSING_TAB_NO_SURVEY_LINK_COPY);
-    expect(formatLicensingTabSurveyLink("   ")).toBe(LICENSING_TAB_NO_SURVEY_LINK_COPY);
-    expect(formatLicensingTabSurveyLink(null)).not.toBe(EM_DASH);
+describe("formatLicensingTabSurveyDateLabel", () => {
+  it("names a missing survey date instead of an em dash", () => {
+    expect(formatLicensingTabSurveyDateLabel(null)).toBe(LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY);
+    expect(formatLicensingTabSurveyDateLabel(undefined)).toBe(LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY);
+    expect(formatLicensingTabSurveyDateLabel("")).toBe(LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY);
+    expect(formatLicensingTabSurveyDateLabel("not-a-date")).toBe(LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY);
+    expect(formatLicensingTabSurveyDateLabel(null)).not.toBe(EM_DASH);
   });
 
-  it("returns a posted survey document id", () => {
-    expect(formatLicensingTabSurveyLink("doc-uuid-fixture")).toBe("doc-uuid-fixture");
+  it("returns a posted survey YMD", () => {
+    expect(formatLicensingTabSurveyDateLabel(FIXTURE_DATE)).toBe(FIXTURE_DATE);
   });
 });
 

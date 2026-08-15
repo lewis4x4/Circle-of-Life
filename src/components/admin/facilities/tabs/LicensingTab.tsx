@@ -42,8 +42,9 @@ import {
   formatLicensingTabLicenseNumber,
   formatLicensingTabNextDueDate,
   formatLicensingTabPlanOfCorrectionStatus,
-  formatLicensingTabSurveyLink,
+  formatLicensingTabSurveyDateLabel,
   formatLicensingTabYmdDate,
+  LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY,
   licensingTabCitationCountHasLink,
 } from "@/lib/facilities/licensing-tab-display-copy";
 
@@ -365,6 +366,9 @@ function LicensingTabBody({
                 {surveys.map((s) => {
                   const poc = formatLicensingTabPlanOfCorrectionStatus(s);
                   const nextDueIso = approximateNextAnnualSurveyIso(s.survey_date);
+                  const surveyDateLabel = formatLicensingTabSurveyDateLabel(s.survey_date);
+                  const surveyDateIsPosted =
+                    surveyDateLabel !== LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY;
                   return (
                     <TableRow
                       key={s.id}
@@ -381,16 +385,16 @@ function LicensingTabBody({
                       }}
                     >
                       <TableCell className="font-mono text-sm tabular-nums">
-                        {s.survey_date && s.id ? (
+                        {surveyDateIsPosted && s.id ? (
                           <Link
                             href={`/admin/facilities/${facilityId}/surveys/${encodeURIComponent(s.id)}`}
                             className="text-primary hover:underline"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {s.survey_date}
+                            {surveyDateLabel}
                           </Link>
                         ) : (
-                          formatLicensingTabSurveyLink(null)
+                          surveyDateLabel
                         )}
                       </TableCell>
                       <TableCell className="text-sm">{surveyTypeDisplayLabel(s.survey_type)}</TableCell>

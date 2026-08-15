@@ -12,7 +12,7 @@ export const LICENSING_TAB_NO_LAST_EDITED_COPY = "No last-edited date posted";
 export const LICENSING_TAB_NO_LICENSE_NUMBER_COPY = "No license number posted";
 export const LICENSING_TAB_NO_EXPIRATION_DATE_COPY = "No expiration date posted";
 export const LICENSING_TAB_NO_CITATIONS_COPY = "No citations";
-export const LICENSING_TAB_NO_SURVEY_LINK_COPY = "No survey link posted";
+export const LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY = "No survey date posted";
 export const LICENSING_TAB_NO_NEXT_DUE_DATE_COPY = "No next-due date posted";
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -100,12 +100,10 @@ export function licensingTabCitationCountHasLink(citationCount: number): boolean
   return citationCount > 0;
 }
 
-/** Vault document link label when no survey document id is posted. */
-export function formatLicensingTabSurveyLink(documentId: string | null | undefined): string {
-  if (documentId == null || String(documentId).trim() === "") {
-    return LICENSING_TAB_NO_SURVEY_LINK_COPY;
-  }
-  return String(documentId).trim();
+/** Survey history date when unset, blank, or unparseable. */
+export function formatLicensingTabSurveyDateLabel(surveyDateYmd: string | null | undefined): string {
+  if (!surveyDateYmd || !YMD_RE.test(surveyDateYmd)) return LICENSING_TAB_NO_SURVEY_DATE_POSTED_COPY;
+  return surveyDateYmd;
 }
 
 /** Next annual survey target when approximate date cannot be derived. */
