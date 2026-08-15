@@ -1,9 +1,13 @@
 import { format } from "date-fns";
 
+import { FIRST_BILLING_CYCLE_NO_DATE_COPY } from "./first-billing-cycle-display-copy";
+
 /** Posted monthly rent: first full cycle aligns to the first of the month on/after effective (pro‑rata out of scope). */
 export function labelFirstMonthlyBillingCycle(ymd: string): string {
   const parts = ymd.split("-").map((s) => parseInt(s, 10));
-  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return "—";
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) {
+    return FIRST_BILLING_CYCLE_NO_DATE_COPY;
+  }
   const [y, m, d] = parts;
   if (d === 1) {
     return format(new Date(Date.UTC(y, m - 1, 1, 12, 0, 0)), "MMM d, yyyy");
