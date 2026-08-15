@@ -41,6 +41,7 @@ import {
   fetchPresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
+import { formatExecutiveRevenueMtdCents } from "@/lib/executive/executive-display-copy";
 import {
   executiveKpiEmptyCopy,
   executiveKpiStripHelperLine,
@@ -221,7 +222,7 @@ export function ExecutiveOverviewPageClient({
       title: "Finance hub",
       description: "Billed revenue, labor pressure, monthly financials.",
       href: "/admin/finance",
-      stat: formatCur(metrics["rev_mtd"]) ?? "—",
+      stat: formatExecutiveRevenueMtdCents(metrics["rev_mtd"]),
     },
     {
       title: "Insurance & risk",

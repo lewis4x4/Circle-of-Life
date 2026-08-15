@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+
+import { FORMAT_USD_NO_AMOUNT_POSTED_COPY } from "@/lib/insurance/format-money";
+
+import {
+  EXECUTIVE_NO_COMPLETENESS_POSTED_COPY,
+  EXECUTIVE_NO_CONFIDENCE_POSTED_COPY,
+  EXECUTIVE_NO_LEAGUE_SCORE_POSTED_COPY,
+  EXECUTIVE_NO_OCCUPANCY_POSTED_COPY,
+  EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY,
+  EXECUTIVE_NO_RISK_SCORE_POSTED_COPY,
+  formatExecutiveCompletenessPct,
+  formatExecutiveConfidenceBand,
+  formatExecutiveLeagueScore,
+  formatExecutiveOccupancyBarLabel,
+  formatExecutiveOccupancyPct,
+  formatExecutiveOccupancyPctWithSuffix,
+  formatExecutivePacketStatus,
+  formatExecutiveRevenueMtdCents,
+  formatExecutiveRiskScore,
+} from "./executive-display-copy";
+
+describe("formatExecutiveOccupancyPct", () => {
+  it("names the gap when occupancy is missing", () => {
+    expect(formatExecutiveOccupancyPct(null)).toBe(EXECUTIVE_NO_OCCUPANCY_POSTED_COPY);
+    expect(formatExecutiveOccupancyPct(undefined)).toBe(EXECUTIVE_NO_OCCUPANCY_POSTED_COPY);
+  });
+
+  it("keeps real zero as zero", () => {
+    expect(formatExecutiveOccupancyPct(0)).toBe("0");
+  });
+
+  it("formats posted occupancy values", () => {
+    expect(formatExecutiveOccupancyPct(87.5)).toBe("87.5");
+  });
+});
+
+describe("formatExecutiveOccupancyPctWithSuffix", () => {
+  it("keeps real zero as 0%", () => {
+    expect(formatExecutiveOccupancyPctWithSuffix(0)).toBe("0%");
+  });
+
+  it("names the gap when occupancy is missing", () => {
+    expect(formatExecutiveOccupancyPctWithSuffix(null)).toBe(EXECUTIVE_NO_OCCUPANCY_POSTED_COPY);
+  });
+});
+
+describe("formatExecutiveOccupancyBarLabel", () => {
+  it("formats posted occupancy with one decimal", () => {
+    expect(formatExecutiveOccupancyBarLabel(82.456)).toBe("82.5%");
+  });
+
+  it("keeps real zero as 0.0%", () => {
+    expect(formatExecutiveOccupancyBarLabel(0)).toBe("0.0%");
+  });
+});
+
+describe("formatExecutivePacketStatus", () => {
+  it("names the gap when packet status is missing", () => {
+    expect(formatExecutivePacketStatus(null)).toBe(EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY);
+    expect(formatExecutivePacketStatus("")).toBe(EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY);
+  });
+
+  it("returns posted status unchanged", () => {
+    expect(formatExecutivePacketStatus("published")).toBe("published");
+  });
+});
+
+describe("formatExecutiveConfidenceBand", () => {
+  it("names the gap when confidence is missing", () => {
+    expect(formatExecutiveConfidenceBand(null)).toBe(EXECUTIVE_NO_CONFIDENCE_POSTED_COPY);
+    expect(formatExecutiveConfidenceBand("   ")).toBe(EXECUTIVE_NO_CONFIDENCE_POSTED_COPY);
+  });
+
+  it("returns posted confidence unchanged", () => {
+    expect(formatExecutiveConfidenceBand("high")).toBe("high");
+  });
+});
+
+describe("formatExecutiveLeagueScore", () => {
+  it("names the gap when league score is missing", () => {
+    expect(formatExecutiveLeagueScore(null)).toBe(EXECUTIVE_NO_LEAGUE_SCORE_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0/100", () => {
+    expect(formatExecutiveLeagueScore(0)).toBe("0/100");
+  });
+});
+
+describe("formatExecutiveRiskScore", () => {
+  it("names the gap when risk score is missing", () => {
+    expect(formatExecutiveRiskScore(undefined)).toBe(EXECUTIVE_NO_RISK_SCORE_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0/100", () => {
+    expect(formatExecutiveRiskScore(0)).toBe("0/100");
+  });
+});
+
+describe("formatExecutiveCompletenessPct", () => {
+  it("names the gap when completeness is missing", () => {
+    expect(formatExecutiveCompletenessPct(null)).toBe(EXECUTIVE_NO_COMPLETENESS_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0%", () => {
+    expect(formatExecutiveCompletenessPct(0)).toBe("0%");
+  });
+});
+
+describe("formatExecutiveRevenueMtdCents", () => {
+  it("names the gap when revenue is missing", () => {
+    expect(formatExecutiveRevenueMtdCents(null)).toBe(FORMAT_USD_NO_AMOUNT_POSTED_COPY);
+    expect(formatExecutiveRevenueMtdCents(undefined)).toBe(FORMAT_USD_NO_AMOUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as $0.00", () => {
+    expect(formatExecutiveRevenueMtdCents(0)).toBe("$0.00");
+  });
+});
