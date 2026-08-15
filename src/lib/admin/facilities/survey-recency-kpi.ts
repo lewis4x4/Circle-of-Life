@@ -2,6 +2,8 @@
  * AHCA survey cycle context (~15 mo / ~450 d) for days-since-survey KPI tiles.
  */
 
+import { SURVEY_RECENCY_NO_SURVEY_COPY } from "./survey-recency-display-copy";
+
 export function daysSinceLastSurvey(date: string | null | undefined): number | null {
   if (date == null || typeof date !== "string" || date.trim() === "") return null;
   try {
@@ -31,7 +33,7 @@ export function surveyRecencyTileCopy(days: number | null): {
   if (days == null) {
     return {
       title: "Days since last survey",
-      valueLine: "—",
+      valueLine: SURVEY_RECENCY_NO_SURVEY_COPY,
       valueClass: "text-muted-foreground",
       footnote: null,
     };
