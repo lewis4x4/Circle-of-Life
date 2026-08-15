@@ -15,6 +15,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatIncidentOccurredAt } from "@/lib/incidents/incidents-display-copy";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { cn } from "@/lib/utils";
 
@@ -431,7 +432,7 @@ export default function AdminIncidentObligationsPage() {
                     <div>
                       <p className="font-semibold text-foreground">{row.incidentNumber}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {row.residentName} · {formatOccurredAt(row.occurredAt)}
+                        {row.residentName} · {formatIncidentOccurredAt(row.occurredAt)}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -538,10 +539,4 @@ export default function AdminIncidentObligationsPage() {
       )}
     </div>
   );
-}
-
-function formatOccurredAt(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Unknown";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(parsed);
 }
