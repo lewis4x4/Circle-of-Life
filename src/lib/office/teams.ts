@@ -1,3 +1,5 @@
+import { formatTeamUserLabel } from "@/lib/office/teams-display-copy";
+
 export type SpaceRole = "member" | "lead";
 
 export type TeamSpaceRow = {
@@ -36,5 +38,5 @@ export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function userLabel(id: string, users: OrgUserMini[]): string {
   const u = users.find((x) => x.id === id);
-  return u ? u.full_name || u.email : "Unknown";
+  return formatTeamUserLabel(u ?? null);
 }
