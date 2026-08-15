@@ -54,6 +54,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  formatEmergencyTabHoursLine,
+  formatEmergencyTabPhone,
+  formatEmergencyTabVerifyLine,
+} from "@/lib/facilities/emergency-tab-display-copy";
 import { cn } from "@/lib/utils";
 
 type ContactsApi = ReturnType<typeof useFacilityEmergencyContacts>;
@@ -118,7 +123,7 @@ function EmergencyQuickStrip({
     sub?: string;
     phone: string | null;
     dial?: boolean;
-    verify: string;
+    verify: string | null;
   }[] = [
     {
       key: "911",
@@ -126,28 +131,28 @@ function EmergencyQuickStrip({
       sub: "Life safety, fire, medical emergency, active crime",
       phone: null,
       dial: false,
-      verify: "—",
+      verify: null,
     },
     {
       key: "sheriff",
       name: sheriff?.contact_name ?? "Sheriff dispatch",
       phone: sheriff?.phone_primary ?? null,
       dial: true,
-      verify: "—",
+      verify: null,
     },
     {
       key: "fire",
       name: fireAlarm?.contact_name ?? "Fire alarm monitoring",
       phone: fireAlarm?.phone_primary ?? null,
       dial: true,
-      verify: "—",
+      verify: null,
     },
     {
       key: "er",
       name: hospital?.contact_name ?? "Closest receiving hospital ER",
       phone: hospital?.phone_primary ?? null,
       dial: true,
-      verify: "—",
+      verify: null,
     },
   ];
 
@@ -174,7 +179,7 @@ function EmergencyQuickStrip({
                     911 (dial on handset)
                   </span>
                 ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
+                  <span className="text-sm text-muted-foreground">{formatEmergencyTabPhone(r.phone)}</span>
                 )}
                 <span className="rounded-[6px] bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                   24/7
@@ -182,7 +187,7 @@ function EmergencyQuickStrip({
               </div>
             </div>
             <p className="w-full text-[11px] text-muted-foreground sm:w-40 sm:text-right">
-              Last verified {r.verify}
+              {formatEmergencyTabVerifyLine(r.verify)}
             </p>
           </li>
         ))}
@@ -639,7 +644,9 @@ export function EmergencyTab({
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                           <PhoneLink phone={c.phone_primary} />
                           {c.phone_secondary ? <PhoneLink phone={c.phone_secondary} /> : null}
-                          <span className="text-[11px] text-muted-foreground">Hours: —</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {formatEmergencyTabHoursLine(null)}
+                          </span>
                         </div>
                         {c.notes ? (
                           <p className="mt-1 max-w-prose text-[12px] leading-snug text-muted-foreground">{c.notes}</p>
