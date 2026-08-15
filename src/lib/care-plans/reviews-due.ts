@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatReviewsDueResidentLabel } from "@/lib/care-plans/reviews-due-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -96,9 +97,7 @@ export async function fetchCarePlanReviewsDue(
 
   return plans.map((p) => {
     const resident = resById.get(p.resident_id);
-    const residentName = resident
-      ? `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Unknown"
-      : "Unknown";
+    const residentName = formatReviewsDueResidentLabel(resident);
     const dueMs = parseISODateOnly(p.review_due_date);
     const daysOverdue =
       Number.isNaN(dueMs) || Number.isNaN(todayMs) ? 0 : Math.max(0, Math.round((todayMs - dueMs) / 86400000));
