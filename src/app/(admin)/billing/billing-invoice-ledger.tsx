@@ -67,6 +67,21 @@ import {
   totalOpenArCents,
 } from "@/lib/billing/billing-ar-semantics";
 import {
+  billingActionQueueDraftCopy,
+  billingActionQueueOverdueCopy,
+  billingOverviewAppliedPeriodEmptyCopy,
+  billingOverviewKpiStripHelperLine,
+  billingOverviewNinetyPlusShareEmptyCopy,
+  billingOverviewOutstandingArEmptyCopy,
+  billingOverviewOverdueCountEmptyCopy,
+  type BillingOverviewKpiContext,
+} from "@/lib/billing/billing-overview-kpi-copy";
+import {
+  invoiceHubKpiCountTileValue,
+  invoiceHubKpiMoneyTileValue,
+  type InvoiceHubKpiContext,
+} from "@/lib/billing/invoice-hub-kpi-copy";
+import {
   fetchInvoicesFromSupabase,
   fetchActiveResidentCountForBillingScope,
   type BillingRow,
@@ -276,11 +291,19 @@ type MetricLinkProps = {
   label: string;
   value: string;
   valueClassName: string;
+  valuePresentation?: "metric" | "message";
   /** Optional clarification next to title (Quiet Operator KPIs). */
   labelTooltip?: string;
 };
 
-function MetricLinkTile({ href, label, value, valueClassName, labelTooltip }: MetricLinkProps) {
+function MetricLinkTile({
+  href,
+  label,
+  value,
+  valueClassName,
+  valuePresentation = "metric",
+  labelTooltip,
+}: MetricLinkProps) {
   return (
     <div
       className={cn(
@@ -293,7 +316,9 @@ function MetricLinkTile({ href, label, value, valueClassName, labelTooltip }: Me
       >
         <span
           className={cn(
-            "text-[28px] font-semibold tabular-nums leading-tight tracking-tight md:text-[28px]",
+            valuePresentation === "message"
+              ? "px-2 text-[13px] font-medium leading-snug"
+              : "text-[28px] font-semibold tabular-nums leading-tight tracking-tight md:text-[28px]",
             valueClassName,
           )}
         >
@@ -755,6 +780,40 @@ function BillingInvoiceLedgerInner({
     period.end,
   ]);
 
+  const billingOverviewKpiContext = useMemo((): BillingOverviewKpiContext => {
+    const invoiceFetchComplete = facilityReady && !isPending;
+    return {
+      isLoading,
+      loadFailed: Boolean(error),
+      invoiceFetchComplete,
+      totalInvoiceRows: rows.length,
+      openArTotalCents,
+      cohortResidentCount: cohortCount,
+      periodBilledCents: periodInvoiceSnapshot.billedCents,
+      periodAppliedRatePct: periodInvoiceSnapshot.ratePct,
+      ninetyPlusSharePct,
+      overdueCount,
+    };
+  }, [
+    cohortCount,
+    error,
+    facilityReady,
+    isLoading,
+    isPending,
+    ninetyPlusSharePct,
+    openArTotalCents,
+    overdueCount,
+    periodInvoiceSnapshot.billedCents,
+    periodInvoiceSnapshot.ratePct,
+    rows.length,
+  ]);
+
+  const outstandingArEmptyCopy = billingOverviewOutstandingArEmptyCopy(billingOverviewKpiContext);
+  const ninetyPlusEmptyCopy = billingOverviewNinetyPlusShareEmptyCopy(billingOverviewKpiContext);
+  const appliedPeriodEmptyCopy = billingOverviewAppliedPeriodEmptyCopy(billingOverviewKpiContext);
+  const overdueCountEmptyCopy = billingOverviewOverdueCountEmptyCopy(billingOverviewKpiContext);
+  const billingKpiStripHelperLine = billingOverviewKpiStripHelperLine(billingOverviewKpiContext);
+
   /** Activity sidebar */
   type PayLine = { id: string; payment_date: string; amount: number };
   type RatePeek = { id: string; name: string; effective_date: string };
@@ -858,8 +917,42 @@ function BillingInvoiceLedgerInner({
     else if (key === "paid_month") setStatus("paid");
   }
 
-  const overdueKpiTone =
-    invoiceHubKpis.overdueN === 0
+  const invoiceHubKpiContext = useMemo(
+    (): InvoiceHubKpiContext => ({
+      isLoading,
+      loadFailed: Boolean(error),
+      invoiceFetchComplete: facilityReady && !isPending,
+    }),
+    [error, facilityReady, isLoading, isPending],
+  );
+
+  const invoiceHubKpisReady =
+    invoiceHubKpiContext.invoiceFetchComplete && !invoiceHubKpiContext.loadFailed;
+
+  const inScopeDisplay = invoiceHubKpiCountTileValue(
+    "in_scope",
+    invoiceHubKpisReady ? invoiceHubKpis.inScope : null,
+    invoiceHubKpiContext,
+  );
+  const totalBilledDisplay = invoiceHubKpiMoneyTileValue(
+    "total_billed",
+    invoiceHubKpisReady ? invoiceHubKpis.totalBilledCents : null,
+    invoiceHubKpiContext,
+  );
+  const outstandingDisplay = invoiceHubKpiMoneyTileValue(
+    "outstanding",
+    invoiceHubKpisReady ? invoiceHubKpis.outstandingCents : null,
+    invoiceHubKpiContext,
+  );
+  const overdueDisplay = invoiceHubKpiCountTileValue(
+    "overdue",
+    invoiceHubKpisReady ? invoiceHubKpis.overdueN : null,
+    invoiceHubKpiContext,
+  );
+
+  const overdueKpiTone = !invoiceHubKpisReady
+    ? "text-muted-foreground"
+    : invoiceHubKpis.overdueN === 0
       ? "text-muted-foreground"
       : invoiceHubKpis.overduePct > 0.05
         ? "text-destructive"
@@ -931,16 +1024,22 @@ function BillingInvoiceLedgerInner({
           <ul className="mt-3 list-none space-y-2 text-[13px] leading-snug">
             <li className={overdueCount > 0 ? "" : "text-muted-foreground"}>
               <Link href="/admin/billing/invoices?status=overdue" className="text-primary underline-offset-4 hover:underline">
-                {overdueCount > 0
-                  ? `${overdueCount} overdue invoice${overdueCount === 1 ? "" : "s"} awaiting follow-up`
-                  : "No overdue invoices in fetched rows"}
+                {billingActionQueueOverdueCopy(billingOverviewKpiContext)}
               </Link>
             </li>
             <li className={draftInvoiceCount > 0 ? "" : "text-muted-foreground"}>
               <Link href="/admin/billing/invoices?status=draft" className="text-primary underline-offset-4 hover:underline">
-                {draftInvoiceCount > 0
-                  ? `${draftInvoiceCount} draft invoice${draftInvoiceCount === 1 ? "" : "s"} to finalize`
-                  : "No draft invoices"}
+                {billingActionQueueDraftCopy(draftInvoiceCount, billingOverviewKpiContext)}
+              </Link>
+            </li>
+            <li className={billingOverviewKpiContext.totalInvoiceRows === 0 ? "" : "text-muted-foreground"}>
+              <Link
+                href="/admin/billing/invoices/opening-balance"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                {billingOverviewKpiContext.totalInvoiceRows === 0
+                  ? "Import opening balance for migrated AR"
+                  : "Opening balance entry for new residents"}
               </Link>
             </li>
             <li>
@@ -953,51 +1052,64 @@ function BillingInvoiceLedgerInner({
       ) : null}
 
       {isOverviewChrome ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MetricLinkTile
-            href="/admin/billing/ar-aging"
-            label="Outstanding AR"
-            value={openArTotalCents <= 0 && cohortCount > 0 ? "—" : billingCurrency.format(openArTotalCents / 100)}
-            valueClassName={
-              openArTotalCents <= 0 && cohortCount > 0
-                ? "text-muted-foreground"
-                : outstandingArValueClass({
-                    outstandingCents: openArTotalCents,
-                    cohortResidentCount: cohortCount,
-                    ninetyPlusCents: aging.d91Plus,
-                  })
-            }
-          />
-          <MetricLinkTile
-            href="/admin/billing/ar-aging?bucket=91-plus"
-            label="90+ share of open AR"
-            value={ninetyPlusSharePct == null ? "—" : `${Math.round(ninetyPlusSharePct)}%`}
-            valueClassName={
-              ninetyPlusSharePct == null ? "text-muted-foreground" : ninetyPlusRiskShareClass(openArTotalCents, aging.d91Plus)
-            }
-            labelTooltip="Percentage of outstanding balance that sits in ninety-plus aging. Details on the Aging tab."
-          />
-          <MetricLinkTile
-            href="/admin/billing/invoices"
-            label="Applied (invoice period)"
-            value={
-              periodInvoiceSnapshot.ratePct == null || periodInvoiceSnapshot.billedCents === 0
-                ? "—"
-                : `${Math.round(periodInvoiceSnapshot.ratePct)}%`
-            }
-            valueClassName={
-              periodInvoiceSnapshot.ratePct == null || periodInvoiceSnapshot.billedCents === 0
-                ? "text-muted-foreground"
-                : collectionRateSemanticClass(periodInvoiceSnapshot.ratePct)
-            }
-            labelTooltip={`Share of non-void invoiced totals dated ${period.start}–${period.end} that already have payments or adjustments applied (ledger snapshot).`}
-          />
-          <MetricLinkTile
-            href="/admin/billing/invoices?status=overdue"
-            label="Overdue invoices"
-            value={overdueCount === 0 ? "—" : String(overdueCount)}
-            valueClassName={overdueInvoicesValueClass(overdueCount)}
-          />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <MetricLinkTile
+              href="/admin/billing/ar-aging"
+              label="Outstanding AR"
+              value={
+                outstandingArEmptyCopy ?? billingCurrency.format(openArTotalCents / 100)
+              }
+              valuePresentation={outstandingArEmptyCopy != null ? "message" : "metric"}
+              valueClassName={
+                outstandingArEmptyCopy != null
+                  ? "text-muted-foreground"
+                  : outstandingArValueClass({
+                      outstandingCents: openArTotalCents,
+                      cohortResidentCount: cohortCount,
+                      ninetyPlusCents: aging.d91Plus,
+                    })
+              }
+            />
+            <MetricLinkTile
+              href="/admin/billing/ar-aging?bucket=91-plus"
+              label="90+ share of open AR"
+              value={
+                ninetyPlusEmptyCopy ?? `${Math.round(ninetyPlusSharePct ?? 0)}%`
+              }
+              valuePresentation={ninetyPlusEmptyCopy != null ? "message" : "metric"}
+              valueClassName={
+                ninetyPlusEmptyCopy != null
+                  ? "text-muted-foreground"
+                  : ninetyPlusRiskShareClass(openArTotalCents, aging.d91Plus)
+              }
+              labelTooltip="Percentage of outstanding balance that sits in ninety-plus aging. Details on the Aging tab."
+            />
+            <MetricLinkTile
+              href="/admin/billing/invoices"
+              label="Applied (invoice period)"
+              value={
+                appliedPeriodEmptyCopy ?? `${Math.round(periodInvoiceSnapshot.ratePct ?? 0)}%`
+              }
+              valuePresentation={appliedPeriodEmptyCopy != null ? "message" : "metric"}
+              valueClassName={
+                appliedPeriodEmptyCopy != null
+                  ? "text-muted-foreground"
+                  : collectionRateSemanticClass(periodInvoiceSnapshot.ratePct)
+              }
+              labelTooltip={`Share of non-void invoiced totals dated ${period.start}–${period.end} that already have payments or adjustments applied (ledger snapshot).`}
+            />
+            <MetricLinkTile
+              href="/admin/billing/invoices?status=overdue"
+              label="Overdue invoices"
+              value={overdueCountEmptyCopy ?? String(overdueCount)}
+              valuePresentation={overdueCountEmptyCopy != null ? "message" : "metric"}
+              valueClassName={
+                overdueCountEmptyCopy != null ? "text-muted-foreground" : overdueInvoicesValueClass(overdueCount)
+              }
+            />
+          </div>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">{billingKpiStripHelperLine}</p>
         </div>
       ) : null}
 
@@ -1014,8 +1126,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Invoices in scope</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-              {invoiceHubKpis.inScope === 0 ? "—" : invoiceHubKpis.inScope}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? "text-2xl text-foreground"
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {inScopeDisplay}
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
               {period.start} → {period.end}
@@ -1032,8 +1151,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Total billed</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-              {invoiceHubKpis.inScope === 0 ? "—" : billingCurrency.format(invoiceHubKpis.totalBilledCents / 100)}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? "text-2xl text-foreground"
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {totalBilledDisplay}
             </p>
           </button>
           <button
@@ -1047,8 +1173,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Outstanding</p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-              {invoiceHubKpis.inScope === 0 ? "—" : billingCurrency.format(invoiceHubKpis.outstandingCents / 100)}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? "text-2xl text-foreground"
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {outstandingDisplay}
             </p>
           </button>
           <button
@@ -1062,8 +1195,15 @@ function BillingInvoiceLedgerInner({
             }}
           >
             <p className="text-[12px] font-medium text-muted-foreground">Overdue</p>
-            <p className={cn("mt-2 text-2xl font-semibold tabular-nums", overdueKpiTone)}>
-              {invoiceHubKpis.inScope === 0 ? "—" : invoiceHubKpis.overdueN}
+            <p
+              className={cn(
+                "mt-2 font-semibold tabular-nums",
+                invoiceHubKpisReady
+                  ? cn("text-2xl", overdueKpiTone)
+                  : "text-[13px] font-medium leading-snug text-muted-foreground",
+              )}
+            >
+              {overdueDisplay}
             </p>
           </button>
         </section>
@@ -1937,7 +2077,11 @@ function BillingInvoiceLedgerInner({
                 <div>
                   <p className="text-[12px] font-medium text-muted-foreground">Scheduled invoicing</p>
                   <p className="mt-2 text-[12px] text-muted-foreground">
-                    Batch generation runs will surface here once scheduling is configured in Billing settings.
+                    Batch generation runs will surface here once scheduling is configured.{" "}
+                    <Link href="/admin/billing/settings" className="text-primary underline-offset-4 hover:underline">
+                      Billing settings
+                    </Link>{" "}
+                    explains what is available in this pilot build.
                   </p>
                 </div>
               </div>

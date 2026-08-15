@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PhoneLink } from "@/components/common/phone-link";
+import {
+  buildingTabLicensedBedCountIsMissing,
+  formatBuildingTabLicensedBedCount,
+} from "@/lib/facilities/building-tab-display-copy";
 
 const ENUM_UNSET = "__unset__";
 const CURRENT_YEAR = new Date().getFullYear();
@@ -313,8 +317,15 @@ export function BuildingTab({
           <div className="text-sm text-foreground">
             <span className="block">Licensed beds</span>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="text-[13px] tabular-nums text-foreground">
-                {facility.total_licensed_beds ?? "—"}
+              <span
+                className={cn(
+                  "text-[13px] tabular-nums",
+                  buildingTabLicensedBedCountIsMissing(facility.total_licensed_beds)
+                    ? "text-muted-foreground"
+                    : "text-foreground",
+                )}
+              >
+                {formatBuildingTabLicensedBedCount(facility.total_licensed_beds)}
               </span>
               <Link href={licensingHref} className="text-[13px] text-primary hover:underline">
                 Licensing tab

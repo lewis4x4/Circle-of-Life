@@ -13,10 +13,11 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/hooks/useFacilityStore", () => ({
   useFacilityStore: () => ({
     selectedFacilityId: "facility-1",
-    availableFacilities: [{ id: "facility-1", name: "Oakridge" }],
+    availableFacilities: [{ id: "facility-1", name: "Oakridge ALF" }],
   }),
 }));
 
+const residentsSelectMock = vi.fn();
 const residentsEqMock = vi.fn().mockReturnThis();
 const residentsIsMock = vi.fn().mockReturnThis();
 const residentsOrderMock = vi.fn();
@@ -24,11 +25,7 @@ const residentsOrderMock = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: () => ({
-      select: () => ({
-        eq: residentsEqMock,
-        is: residentsIsMock,
-        order: residentsOrderMock,
-      }),
+      select: residentsSelectMock,
     }),
   }),
 }));
@@ -50,6 +47,11 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  residentsSelectMock.mockImplementation(() => ({
+    eq: residentsEqMock,
+    is: residentsIsMock,
+    order: residentsOrderMock,
+  }));
   residentsOrderMock.mockResolvedValue({
     data: [
       {
@@ -66,6 +68,44 @@ beforeEach(() => {
     ],
     error: null,
   });
+
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/rounding/plans/templates")) {
+        return new Response(
+          JSON.stringify({
+            templates: [
+              {
+                id: "template-discovery",
+                name: "COL Discovery Rounds — Day + Night",
+                description: "Jessica cadence",
+                cadenceProfile: "standard_day_night",
+                rules: [
+                  {
+                    intervalType: "daypart",
+                    intervalMinutes: null,
+                    shift: "day",
+                    daypartStart: "06:00",
+                    daypartEnd: "06:05",
+                    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+                    graceMinutes: 30,
+                    requiredFieldsSchema: { scheduled_time: "06:00", shift: "day" },
+                    escalationPolicyKey: "resident-assurance-standard",
+                    sortOrder: 0,
+                    active: true,
+                  },
+                ],
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+    }),
+  );
 });
 
 const sourcePlanResponse = {
@@ -99,6 +139,37 @@ const sourcePlanResponse = {
 };
 
 describe("ObservationPlanEditor duplicate and edit payload ids", () => {
+  it("loads residents with explicit bed FK and shows calm empty census copy", async () => {
+    residentsOrderMock.mockResolvedValueOnce({
+      data: [],
+      error: null,
+    });
+
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText("No active residents at this facility")).toBeTruthy();
+    expect(screen.queryByText("Could not load observation plan form. Confirm facility scope and retry.")).toBeNull();
+    expect(residentsSelectMock).toHaveBeenCalledWith(
+      expect.stringContaining("beds!residents_bed_id_fkey"),
+    );
+    expect(screen.getByText(/No active residents at Oakridge ALF right now\./)).toBeTruthy();
+  });
+
+  it("prefills Jessica discovery cadence for new COL plans", async () => {
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText("Facility cadence template")).toBeTruthy();
+    expect(screen.getByDisplayValue("06:00")).toBeTruthy();
+    expect(screen.getByText("COL Discovery Rounds — Day + Night")).toBeTruthy();
+  });
+
+  it("disables apply-discovery-default until a resident is selected", async () => {
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    const applyButton = await screen.findByRole("button", { name: "Apply discovery default for resident" });
+    expect(applyButton).toBeDisabled();
+  });
+
   it("strips ids in duplicate mode payload", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

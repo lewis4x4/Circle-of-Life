@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  FAMILY_CARE_PLAN_NOT_POSTED,
+  FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK,
+} from "@/lib/family/family-portal-copy";
 import type { Database } from "@/types/database";
 
 export type FamilyCarePlanItemRow = {
@@ -40,19 +44,21 @@ function residentDisplayName(row: {
   return (
     row.preferred_name?.trim() ||
     [row.first_name, row.last_name].filter(Boolean).join(" ").trim() ||
-    "Your loved one"
+    FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK
   );
 }
 
-function formatMediumDate(ymd: string): string {
+function formatMediumDate(ymd: string | null | undefined): string {
+  if (!ymd?.trim()) return FAMILY_CARE_PLAN_NOT_POSTED;
   const d = new Date(`${ymd}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return ymd;
+  if (Number.isNaN(d.getTime())) return FAMILY_CARE_PLAN_NOT_POSTED;
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
 }
 
-function formatDateTime(iso: string): string {
+function formatDateTime(iso: string | null | undefined): string {
+  if (!iso?.trim()) return FAMILY_CARE_PLAN_NOT_POSTED;
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  if (Number.isNaN(d.getTime())) return FAMILY_CARE_PLAN_NOT_POSTED;
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -124,7 +130,7 @@ export async function fetchFamilyCarePlanOverview(
     error: userErr,
   } = await supabase.auth.getUser();
   if (userErr) return { ok: false, error: userErr.message };
-  if (!user) return { ok: false, error: "Sign in to view the care summary." };
+  if (!user) return { ok: false, error: "Sign in to view the care plan." };
 
   const plansQ = await supabase
     .from("care_plans")
@@ -243,7 +249,7 @@ export async function fetchFamilyCarePlanOverview(
 
     return {
       residentId: plan.resident_id,
-      residentName: nameById.get(plan.resident_id) ?? "Your loved one",
+      residentName: nameById.get(plan.resident_id) ?? FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK,
       planId: plan.id,
       status: plan.status,
       statusLabel: statusLabel(plan.status),

@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  formatAdminDashboardRelativeShort,
+  formatAdminDashboardResidentDobDisplay,
+} from "@/lib/admin/admin-dashboard-display-copy";
+import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -131,26 +136,6 @@ function residencyUiLabel(status: string | null): { label: string; tone: "active
   if (status === "hospital_hold") return { label: "Hospital", tone: "away" };
   if (status === "loa") return { label: "LOA", tone: "away" };
   return { label: "In facility", tone: "active" };
-}
-
-function formatDob(dateStr: string | null | undefined): string {
-  if (!dateStr) return "—";
-  const [y, m, d] = dateStr.split("-").map(Number);
-  if (!y || !m || !d) return "—";
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "2-digit", day: "2-digit", year: "numeric" }).format(dt);
-}
-
-function formatRelativeShort(iso: string | null): string {
-  if (!iso) return "—";
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return "—";
-  const diffMin = Math.round((Date.now() - t) / 60000);
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 48) return `${diffHr} hr ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
 
 function shiftSummaryForTimezone(timeZone: string): string {
@@ -392,7 +377,7 @@ function numericField(source: Record<string, unknown> | undefined, key: string):
 function mapProjectionResident(row: ProjectionResidentRow): DashboardCensusRow {
   const firstName = row.first_name ?? "";
   const lastName = row.last_name ?? "";
-  const name = `${firstName} ${lastName}`.trim() || "Unknown resident";
+  const name = formatLoadResidentsFullName(firstName, lastName);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
   const room = row.room_number
     ? `${row.room_number}${row.bed_label ? `-${row.bed_label}` : ""}`
@@ -403,12 +388,12 @@ function mapProjectionResident(row: ProjectionResidentRow): DashboardCensusRow {
     id: row.id,
     name,
     initials,
-    dobDisplay: formatDob(row.date_of_birth),
+    dobDisplay: formatAdminDashboardResidentDobDisplay(row.date_of_birth),
     room,
     acuity: mapAcuity(row.acuity_level),
     statusLabel: status.label,
     statusTone: status.tone,
-    updatedRelative: formatRelativeShort(row.updated_at),
+    updatedRelative: formatAdminDashboardRelativeShort(row.updated_at),
   };
 }
 
@@ -425,7 +410,7 @@ function mapProjectionActivity(row: ProjectionActivityRow): DashboardActivityIte
 
   return {
     id: row.id,
-    timeLabel: formatRelativeShort(row.occurred_at),
+    timeLabel: formatAdminDashboardRelativeShort(row.occurred_at),
     actor: "Incident",
     message: `${residentName} · ${formatIncidentCategory(row.category)} (${row.status})`,
     tone,

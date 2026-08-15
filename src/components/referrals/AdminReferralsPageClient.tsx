@@ -27,6 +27,14 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
+  formatReferralsHubOutreachWeek,
+  formatReferralsHubReferralSource,
+  formatReferralsHubTourScheduledFor,
+  REFERRALS_HUB_NO_TOUR_TIME_COPY,
+  referralsHubKpiTileValue,
+  type ReferralsHubKpiContext,
+} from "@/lib/referrals/referrals-hub-display-copy";
+import {
   loadReferralsHubBootstrap,
   REFERRAL_UPCOMING_TOUR_LIMIT,
   type ReferralsActiveAdmissionCase,
@@ -443,6 +451,11 @@ export function AdminReferralsPageClient({
   const handoffCardMuted = handoffRollup.blocked === 0;
   const hl7NeedsReview = hl7Counts.failed > 0;
 
+  const kpiCtx: ReferralsHubKpiContext = {
+    loading,
+    loadFailed: Boolean(loadError),
+  };
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 pb-28 pt-4">
       <header className="space-y-4">
@@ -500,29 +513,29 @@ export function AdminReferralsPageClient({
         <section aria-label="Referral KPIs">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <KpiCard
-              value={loading ? "—" : (kpiMetrics?.newLeads ?? "—")}
+              value={referralsHubKpiTileValue("new_leads", kpiMetrics?.newLeads, kpiCtx)}
               label={kpiScope === "all" ? "Open new-status leads" : "Leads created in scope"}
               tone="neutral"
               footnote={kpiMetrics?.newFootnote}
             />
             <KpiCard
-              value={loading ? "—" : (kpiMetrics?.activePipeline ?? "—")}
+              value={referralsHubKpiTileValue("active_pipeline", kpiMetrics?.activePipeline, kpiCtx)}
               label="Active pipeline (touched in scope)"
               tone="neutral"
             />
             <KpiCard
-              value={loading ? "—" : (kpiMetrics?.needsAttention ?? "—")}
+              value={referralsHubKpiTileValue("needs_attention", kpiMetrics?.needsAttention, kpiCtx)}
               label="Needs attention (new · contacted)"
               tone={loading || !kpiMetrics ? "neutral" : kpiMetrics.needsTone}
             />
             <KpiCard
-              value={loading ? "—" : (kpiMetrics?.conversions ?? "—")}
+              value={referralsHubKpiTileValue("conversions", kpiMetrics?.conversions, kpiCtx)}
               label="Converted in scope"
               tone={loading || !kpiMetrics ? "neutral" : kpiMetrics.convTone}
               footnote={kpiMetrics?.convFootnote}
             />
             <KpiCard
-              value={loading ? "—" : (kpiMetrics?.inAdmissions ?? "—")}
+              value={referralsHubKpiTileValue("in_admissions", kpiMetrics?.inAdmissions, kpiCtx)}
               label="In admissions (touched in scope)"
               tone="neutral"
             />
@@ -570,7 +583,7 @@ export function AdminReferralsPageClient({
                       <div className="text-[12px] font-medium capitalize text-muted-foreground">{formatStatus(row.status)}</div>
                     </div>
                     <div className="text-[12px] text-muted-foreground tabular-nums">
-                      {row.tour_scheduled_for ? new Date(row.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}
+                      {formatReferralsHubTourScheduledFor(row.tour_scheduled_for)}
                     </div>
                   </div>
                 </Link>
@@ -728,7 +741,7 @@ export function AdminReferralsPageClient({
                                 dateStyle: "medium",
                                 timeStyle: "short",
                               })
-                            : (row.performed_for_week ?? "—")}
+                            : formatReferralsHubOutreachWeek(row.performed_for_week)}
                         </p>
                       </div>
                       {row.notes ? <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{row.notes}</p> : null}
@@ -1003,7 +1016,7 @@ export function AdminReferralsPageClient({
                           <div className="flex flex-row justify-between lg:justify-end items-center">
                             <span className="lg:hidden text-[12px] font-medium text-muted-foreground">Source</span>
                             <span className="text-[13px] text-foreground truncate">
-                              {r.referral_sources?.name ?? "—"}
+                              {formatReferralsHubReferralSource(r.referral_sources?.name)}
                             </span>
                           </div>
 
@@ -1013,11 +1026,20 @@ export function AdminReferralsPageClient({
                             <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
                               {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                             </span>
-                            {r.tour_scheduled_for ? (
-                              <span className="text-[12px] text-primary tabular-nums">
-                                Tour {new Date(r.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                              </span>
-                            ) : null}
+                            {(() => {
+                              const tourLabel = formatReferralsHubTourScheduledFor(r.tour_scheduled_for);
+                              const hasTourTime = tourLabel !== REFERRALS_HUB_NO_TOUR_TIME_COPY;
+                              return (
+                                <span
+                                  className={cn(
+                                    "text-[12px] tabular-nums",
+                                    hasTourTime ? "text-primary" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {hasTourTime ? `Tour ${tourLabel}` : tourLabel}
+                                </span>
+                              );
+                            })()}
                             {linkedAdmissionCaseId ? (
                               <span className="text-[12px] text-amber-700 dark:text-amber-300">
                                 {handoffPhase === "blocked"

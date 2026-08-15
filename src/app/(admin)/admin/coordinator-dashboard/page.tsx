@@ -5,6 +5,13 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchCoordinatorDashboardBrief, type CoordinatorDashboardBrief } from "@/lib/coordinator/dashboard-brief";
+import {
+  FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL,
+  FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL,
+  FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE,
+  FAMILY_BULLETIN_DASHBOARD_TILE_TITLE,
+} from "@/lib/admin/family-bulletin-dashboard-copy";
+import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
 import { ClipboardList, FileCheck, MessageSquare, UserPlus, Activity, CalendarClock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +50,7 @@ export default function CoordinatorDashboardPage() {
             Coordinator Dashboard
           </h1>
           <p className="text-muted-foreground font-medium tracking-wide mt-2">
-            Care plans, assessments, family engagement, and admissions pipeline
+            Care plans, assessments, family portal notes, and admissions pipeline
           </p>
         </div>
       </div>
@@ -53,14 +60,23 @@ export default function CoordinatorDashboardPage() {
         <StatCard title="Active Care Plans" value={brief.activeCarePlans} icon={ClipboardList} urgency="normal" subLabel="Currently active" href="/admin/care-plans/reviews-due" />
         <StatCard title="Reviews Due (14d)" value={brief.reviewsDue14d} icon={CalendarClock} urgency={brief.reviewsDue14d > 0 ? "critical" : "normal"} subLabel={brief.reviewsDue14d > 0 ? "Attention needed" : "All current"} href="/admin/care-plans/reviews-due" />
         <StatCard title="Pending Assessments" value={brief.pendingAssessments} icon={FileCheck} urgency={brief.pendingAssessments > 0 ? "critical" : "normal"} subLabel={brief.pendingAssessments > 0 ? "Awaiting completion" : "None pending"} href="/admin/assessments/overdue" />
-        <StatCard title="Family Messages" value={brief.unreadFamilyMessages} icon={MessageSquare} urgency={brief.unreadFamilyMessages > 0 ? "critical" : "normal"} subLabel={brief.unreadFamilyMessages > 0 ? "Unread messages" : "All read"} href="/admin/family-messages" />
+        <StatCard
+          title={FAMILY_BULLETIN_DASHBOARD_TILE_TITLE}
+          value={brief.staffBulletinNotes}
+          icon={MessageSquare}
+          urgency="normal"
+          subLabel={brief.staffBulletinNotes > 0 ? FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE : FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL}
+          href="/admin/family-messages"
+        />
       </div>
+
+      <p className="text-sm text-muted-foreground -mt-4">{FAMILY_BULLETIN_ONE_WAY_HELPER}</p>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Care Plans" href="/admin/care-plans/reviews-due" />
         <ActionTile label="Assessments" href="/admin/assessments/overdue" />
-        <ActionTile label="Family Messages" href="/admin/family-messages" />
+        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-messages" />
         <ActionTile label="Admissions" href="/admin/admissions" />
       </div>
 

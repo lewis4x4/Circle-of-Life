@@ -8,6 +8,7 @@ import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
+import { formatResidentDailyNotesDisplay } from "@/lib/residents/resident-log-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -1127,7 +1128,9 @@ export function GeneralNoteModal({
                       <p className="text-xs text-zinc-500">
                         {row.log_date} · {row.shift}
                       </p>
-                      <p className="mt-1 whitespace-pre-wrap text-zinc-200">{row.general_notes?.trim() || "—"}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-zinc-200">
+                        {formatResidentDailyNotesDisplay(row.general_notes)}
+                      </p>
                     </li>
                   ))}
                 </ul>

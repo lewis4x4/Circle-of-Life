@@ -1,3 +1,5 @@
+import { COL_LABEL_NO_VALUE_COPY } from "@/lib/col-labels-display-copy";
+
 const COL_LABEL_OVERRIDES = {
   hospital_hold: "Bed Hold — Hospital",
   loa: "Bed Hold — Vacation/Family",
@@ -25,7 +27,7 @@ function toSentenceCase(value: string) {
 }
 
 export function formatColLabel(value: string | null | undefined, options: FormatColLabelOptions = {}) {
-  if (!value) return "—";
+  if (!value) return COL_LABEL_NO_VALUE_COPY;
   const normalized = value.trim().toLowerCase();
   const override = COL_LABEL_OVERRIDES[normalized as keyof typeof COL_LABEL_OVERRIDES];
   if (override) return override;

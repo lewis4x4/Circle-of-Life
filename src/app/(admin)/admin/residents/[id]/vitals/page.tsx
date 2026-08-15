@@ -3,6 +3,14 @@
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import {
+  formatVitalsBloodPressure,
+  formatVitalsOxygenSaturation,
+  formatVitalsPulse,
+  formatVitalsRespiration,
+  formatVitalsTemperature,
+  formatVitalsWeight,
+} from "@/lib/clinical/vitals-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -111,24 +119,39 @@ export default function ResidentVitalsPage() {
 
                           <div className="flex flex-col">
                             <span className="md:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">BP / Pulse</span>
-                            <span className="tabular-nums text-sm text-foreground">{r.blood_pressure_systolic ?? "—"}/{r.blood_pressure_diastolic ?? "—"}</span>
-                            <span className="text-xs tabular-nums text-muted-foreground mt-0.5">{r.pulse ?? "—"} bpm</span>
+                            <span className="tabular-nums text-sm text-foreground">
+                              {formatVitalsBloodPressure(
+                                r.blood_pressure_systolic,
+                                r.blood_pressure_diastolic,
+                              )}
+                            </span>
+                            <span className="text-xs tabular-nums text-muted-foreground mt-0.5">
+                              {formatVitalsPulse(r.pulse)}
+                            </span>
                           </div>
 
                           <div className="flex flex-col">
                             <span className="md:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">O₂ / RR</span>
-                            <span className="tabular-nums text-sm text-foreground">{r.oxygen_saturation ? `${r.oxygen_saturation}%` : "—"}</span>
-                            <span className="text-xs tabular-nums text-muted-foreground mt-0.5">{r.respiration ?? "—"} resp</span>
+                            <span className="tabular-nums text-sm text-foreground">
+                              {formatVitalsOxygenSaturation(r.oxygen_saturation)}
+                            </span>
+                            <span className="text-xs tabular-nums text-muted-foreground mt-0.5">
+                              {formatVitalsRespiration(r.respiration)}
+                            </span>
                           </div>
 
                           <div className="flex flex-col">
                             <span className="md:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Temp</span>
-                            <span className="tabular-nums text-sm text-foreground">{r.temperature ? `${r.temperature}°` : "—"}</span>
+                            <span className="tabular-nums text-sm text-foreground">
+                              {formatVitalsTemperature(r.temperature)}
+                            </span>
                           </div>
 
                           <div className="flex flex-col md:items-end">
                             <span className="md:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Weight</span>
-                            <span className="tabular-nums text-sm text-foreground">{r.weight_lbs ? `${r.weight_lbs} lbs` : "—"}</span>
+                            <span className="tabular-nums text-sm text-foreground">
+                              {formatVitalsWeight(r.weight_lbs)}
+                            </span>
                           </div>
 
                         </div>

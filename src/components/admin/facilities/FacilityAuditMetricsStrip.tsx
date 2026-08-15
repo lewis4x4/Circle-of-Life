@@ -2,8 +2,15 @@
 
 import React from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { FacilityAuditMetricsPayload } from "@/hooks/useFacilityAuditMetrics";
 import { formatDistanceToNow } from "date-fns";
+import {
+  AUDIT_STRIP_NO_TOP_USER_COPY,
+  auditStripLastEventIsMissing,
+  formatAuditStripLastEventRelative,
+  formatAuditStripTopUserDisplay,
+} from "@/lib/facilities/audit-tab-display-copy";
 
 interface FacilityAuditMetricsStripProps {
   loading: boolean;
@@ -23,8 +30,14 @@ export function FacilityAuditMetricsStrip({ loading, metrics, retentionCopy }: F
   }
 
   const last = metrics?.last_event_at != null ? new Date(metrics.last_event_at) : null;
-  const relative =
-    last != null && !Number.isNaN(last.getTime()) ? `${formatDistanceToNow(last)} ago` : "—";
+  const lastMissing = auditStripLastEventIsMissing(last);
+  const relative = formatAuditStripLastEventRelative(
+    last,
+    last != null && !Number.isNaN(last.getTime()) ? `${formatDistanceToNow(last)} ago` : "",
+  );
+  const eventsLast7d = metrics?.events_last_7d ?? 0;
+  const topUserLabel = formatAuditStripTopUserDisplay(metrics?.top_user_display, eventsLast7d);
+  const topUserMissing = topUserLabel === AUDIT_STRIP_NO_TOP_USER_COPY;
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -47,16 +60,19 @@ export function FacilityAuditMetricsStrip({ loading, metrics, retentionCopy }: F
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Most active user (7d)</p>
         <p className="mt-2 line-clamp-2 text-xl font-semibold leading-snug text-foreground">
-          {metrics?.top_user_display?.trim()
-            ? metrics.top_user_display
-            : (metrics?.events_last_7d ?? 0) > 0
-              ? "Service session actors"
-              : "—"}
+          <span className={topUserMissing ? "text-lg text-muted-foreground" : undefined}>{topUserLabel}</span>
         </p>
       </div>
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Last event</p>
-        <p className="mt-2 text-xl font-semibold tabular-nums text-foreground">{relative}</p>
+        <p
+          className={cn(
+            "mt-2 font-semibold tabular-nums text-foreground",
+            lastMissing ? "text-lg leading-snug text-muted-foreground" : "text-xl",
+          )}
+        >
+          {relative}
+        </p>
         <p className="mt-1 text-[11px] text-muted-foreground">Facility-scoped immutable trail</p>
       </div>
     </div>

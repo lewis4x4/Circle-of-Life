@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { fetchExecutiveKpiSnapshot } from "@/lib/exec-kpi-snapshot";
+import {
+  formatReportStaffMemberFromFields,
+  formatReportStaffMemberFromMap,
+} from "@/lib/reports/report-staff-display-copy";
 import { fetchResidentAssuranceFacilityTrendSeries } from "@/lib/resident-assurance/command-center-brief";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
@@ -238,7 +242,7 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
       .in("id", staffIds)
       .is("deleted_at", null);
     for (const s of staffRows ?? []) {
-      nameById.set(s.id, `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim());
+      nameById.set(s.id, formatReportStaffMemberFromFields(s));
     }
   }
 
@@ -264,7 +268,7 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
     rows: rows.slice(0, 500).map((r) => ({
       shift_date: r.shift_date,
       shift_type: r.shift_type,
-      staff_member: nameById.get(r.staff_id) ?? "Unknown",
+      staff_member: formatReportStaffMemberFromMap(r.staff_id, nameById),
     })),
     footnotes: [
       "Counts scheduled shift assignments in the published schedule for the next two weeks (including today).",
@@ -314,7 +318,7 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
       .in("id", otStaffIds)
       .is("deleted_at", null);
     for (const s of otStaffRows ?? []) {
-      otNameById.set(s.id, `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim());
+      otNameById.set(s.id, formatReportStaffMemberFromFields(s));
     }
   }
 
@@ -328,7 +332,7 @@ async function runOvertimeLaborPressure(params: ExecuteParams): Promise<ReportEx
       .filter((r) => (r.overtime_hours ?? 0) > 0)
       .slice(0, 500)
       .map((r) => ({
-        staff_member: otNameById.get(r.staff_id) ?? "Unknown",
+        staff_member: formatReportStaffMemberFromMap(r.staff_id, otNameById),
         overtime_hours: r.overtime_hours,
         clock_in: r.clock_in,
       })),

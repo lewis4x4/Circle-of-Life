@@ -13,6 +13,7 @@ import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RiskPageSnapshot, RiskSnapshotRow } from "@/lib/risk/load-risk-command";
+import { formatRiskDateTime, formatRiskScore } from "@/lib/risk/risk-display-copy";
 import { cn } from "@/lib/utils";
 
 type RiskCommandPageClientProps = {
@@ -20,11 +21,6 @@ type RiskCommandPageClientProps = {
   initialError: string | null;
   initialFacilityId: string | null;
 };
-
-function formatDateTime(value: string | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString();
-}
 
 function formatDelta(delta: number | null) {
   if (delta == null) return "New";
@@ -129,7 +125,7 @@ export default function RiskCommandPageClient({
             <MetricCard
               icon={ShieldAlert}
               label="Portfolio score"
-              value={summary.portfolioScore != null ? `${summary.portfolioScore}/100` : "—"}
+              value={formatRiskScore(summary.portfolioScore)}
               detail={scopeFacilityId ? "Current facility latest score" : "Average of latest facility snapshots"}
               tone={summary.portfolioScore != null && summary.portfolioScore < 50 ? "red" : summary.portfolioScore != null && summary.portfolioScore < 70 ? "amber" : "emerald"}
             />
@@ -195,7 +191,7 @@ export default function RiskCommandPageClient({
                             <td className="py-3 pr-4">
                               {row.topDrivers[0] ? `${row.topDrivers[0].label} (${row.topDrivers[0].count})` : "Stable"}
                             </td>
-                            <td className="py-3">{formatDateTime(row.computed_at)}</td>
+                            <td className="py-3">{formatRiskDateTime(row.computed_at)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -246,7 +242,7 @@ export default function RiskCommandPageClient({
                       </div>
                       <div className="mt-3 text-sm text-slate-600 dark:text-slate-400">
                         <p>{delivery.recipient_phone ?? "No phone on file"}</p>
-                        <p>{formatDateTime(delivery.sent_at)}</p>
+                        <p>{formatRiskDateTime(delivery.sent_at)}</p>
                         {delivery.error_message ? <p className="mt-1 text-red-600 dark:text-red-400">{delivery.error_message}</p> : null}
                       </div>
                     </div>
@@ -280,7 +276,7 @@ export default function RiskCommandPageClient({
                       {alert.body ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{alert.body}</p> : null}
                       <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                         <span>{alert.severity}</span>
-                        <span>{formatDateTime(alert.created_at)}</span>
+                        <span>{formatRiskDateTime(alert.created_at)}</span>
                       </div>
                     </div>
                   ))

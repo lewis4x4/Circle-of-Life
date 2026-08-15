@@ -4,11 +4,17 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw } from "lucide-react";
 
+import { CaregiverRoundsEmptyNotice } from "@/components/caregiver/CaregiverRoundsEmptyNotice";
 import { RoundingTaskCard, type RoundingTaskCardData } from "@/components/rounding/RoundingTaskCard";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
+import {
+  deriveCaregiverRoundsQueueState,
+  describeCaregiverRoundsEmptyState,
+  describeLiveBoardCadenceReminder,
+} from "@/lib/rounding/col-discovery-round-cadence";
 import { cn } from "@/lib/utils";
 
 type TaskApiRow = {
@@ -34,7 +40,7 @@ export default function CaregiverRoundsPage() {
   const supabase = useMemo(() => createClient(), []);
   const roundingSync = useRoundingOfflineSync();
   const [facilityName, setFacilityName] = useState<string | null>(null);
-  const [, setFacilityId] = useState<string | null>(null);
+  const [hasFacility, setHasFacility] = useState(false);
   const [loading, setLoading] = useState(true);
   const [configError, setConfigError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -61,7 +67,7 @@ export default function CaregiverRoundsPage() {
         return;
       }
 
-      setFacilityId(resolved.ctx.facilityId);
+      setHasFacility(true);
       setFacilityName(resolved.ctx.facilityName);
 
       const response = await fetch(
@@ -110,8 +116,43 @@ export default function CaregiverRoundsPage() {
       done: tasks.filter(
         (task) => task.derivedStatus === "completed_on_time" || task.derivedStatus === "completed_late",
       ),
+      activeCount: activeTasks.filter(
+        (task) =>
+          task.derivedStatus !== "completed_on_time" &&
+          task.derivedStatus !== "completed_late" &&
+          task.derivedStatus !== "excused",
+      ).length,
     };
   }, [roundingSync.queuedTaskIdSet, tasks]);
+
+  const queueState = useMemo(
+    () =>
+      deriveCaregiverRoundsQueueState({
+        hasFacility,
+        totalTasks: tasks.length,
+        activeTaskCount: grouped.activeCount,
+        facilityName,
+      }),
+    [facilityName, grouped.activeCount, hasFacility, tasks.length],
+  );
+
+  const emptyCopy = useMemo(
+    () => (queueState ? describeCaregiverRoundsEmptyState(queueState) : null),
+    [queueState],
+  );
+
+  const cadenceReminder = useMemo(
+    () => (facilityName ? describeLiveBoardCadenceReminder(facilityName) : null),
+    [facilityName],
+  );
+
+  const showGlobalEmpty = queueState != null && !loadError;
+  const noFacilityFromError =
+    loadError != null &&
+    (loadError.includes("facility access") || loadError.includes("No facility"));
+  const facilityEmptyCopy = noFacilityFromError
+    ? describeCaregiverRoundsEmptyState("no_facility")
+    : emptyCopy;
 
   if (configError) {
     return (
@@ -185,11 +226,22 @@ export default function CaregiverRoundsPage() {
         </div>
       </div>
 
-      {loadError && (
+      {loadError && !noFacilityFromError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-5 py-4 text-sm text-foreground">
           {loadError}
         </div>
       )}
+
+      {(showGlobalEmpty || noFacilityFromError) && facilityEmptyCopy ? (
+        <CaregiverRoundsEmptyNotice copy={facilityEmptyCopy} cadenceReminder={cadenceReminder} />
+      ) : cadenceReminder ? (
+        <section
+          aria-label="Jessica discovery cadence reminder"
+          className="rounded-lg border border-border bg-card px-4 py-3"
+        >
+          <p className="text-[13px] leading-relaxed text-muted-foreground">{cadenceReminder}</p>
+        </section>
+      ) : null}
 
       {roundingSync.pendingCount > 0 && (
         <div className="rounded-lg border border-warning/30 bg-warning/10 px-5 py-4 text-sm text-foreground">
@@ -214,19 +266,32 @@ export default function CaregiverRoundsPage() {
         tone="danger"
         emptyMessage="No critical rounds right now."
         count={grouped.urgent.length}
+        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError}
       >
         {grouped.urgent.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
       </Section>
 
-      <Section title="Due Now" tone="warning" emptyMessage="No due-now rounds." count={grouped.due.length}>
+      <Section
+        title="Due Now"
+        tone="warning"
+        emptyMessage="No due-now rounds."
+        count={grouped.due.length}
+        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError}
+      >
         {grouped.due.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
       </Section>
 
-      <Section title="Coming Up" tone="muted" emptyMessage="No upcoming rounds in window." count={grouped.next.length}>
+      <Section
+        title="Coming Up"
+        tone="muted"
+        emptyMessage="No upcoming rounds in window."
+        count={grouped.next.length}
+        hideWhenGloballyEmpty={showGlobalEmpty || noFacilityFromError}
+      >
         {grouped.next.map((task) => (
           <RoundingTaskCard key={task.id} task={task} href={`/caregiver/rounds/${task.residentId}?taskId=${task.id}`} />
         ))}
@@ -280,16 +345,19 @@ function Section({
   tone,
   emptyMessage,
   count,
+  hideWhenGloballyEmpty = false,
   children,
 }: {
   title: string;
   tone: "muted" | "warning" | "danger";
   emptyMessage: string;
   count: number;
+  hideWhenGloballyEmpty?: boolean;
   children: ReactNode;
 }) {
   const items = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
 
+  if (hideWhenGloballyEmpty && items.length === 0) return null;
   if (items.length === 0 && tone === "muted") return null;
 
   return (

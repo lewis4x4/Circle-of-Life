@@ -1,0 +1,24 @@
+import { formatUsd } from "@/lib/family/family-billing-data";
+import { FAMILY_BILLING_NO_PAYMENT } from "@/lib/family/family-portal-copy";
+
+/** Payment reference for family payment rows — explicit copy when none posted. */
+export const FAMILY_BILLING_NO_REFERENCE_COPY = "No reference posted";
+
+/** Payment reference label — explicit copy when reference_number is missing or blank. */
+export function formatFamilyPaymentReference(referenceNumber: string | null | undefined): string {
+  const trimmed = referenceNumber?.trim();
+  if (!trimmed) return FAMILY_BILLING_NO_REFERENCE_COPY;
+  return trimmed;
+}
+
+/** Last payment amount for family billing summary — explicit copy when none posted. */
+export function formatFamilyLastPaymentAmount(amount: number | null): string {
+  if (amount == null) return FAMILY_BILLING_NO_PAYMENT;
+  return formatUsd(amount);
+}
+
+/** Last payment date for family billing summary — explicit copy when none posted. */
+export function formatFamilyLastPaymentDate(dateLabel: string | null): string {
+  if (dateLabel == null) return FAMILY_BILLING_NO_PAYMENT;
+  return dateLabel;
+}

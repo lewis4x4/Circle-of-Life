@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Utensils } from "lucide-react";
+import { Utensils, Cookie } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -18,6 +18,12 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import {
+  dietaryBatchStatBarWidthPct,
+  formatDietaryBatchStatPct,
+  formatDietaryHubRelativeUpdatedAt,
+} from "@/lib/dietary/dietary-batch-stats-display-copy";
+import { formatDietaryHubResidentDisplay } from "@/lib/dietary/dietary-hub-display-copy";
 import {
   loadDietaryHubBootstrap,
   type DietaryHubBootstrap,
@@ -41,6 +47,11 @@ const MEAL_STATUS_LABELS: Record<MealLogStatus, string> = {
   out_of_facility: "Out of facility",
   not_observed: "Not observed",
 };
+
+export const SNACK_PASS_SECTION_ID = "snack-pass";
+
+export const SNACK_PASS_HELPER_COPY =
+  "Record when the snack round happened and who passed it. Facility-level only — time and passer, no snack contents or resident counts.";
 
 const DIET_ORDER_STATUS_FILTERS: { value: "all" | DietOrderStatus; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -97,18 +108,6 @@ function attentionSummary(row: DietRow): string {
   if (row.status === "draft") return "Diet order is still in draft and needs activation.";
   if (row.requires_swallow_eval) return "Marked for swallow evaluation follow-up.";
   return "Review diet order details.";
-}
-
-function formatRelativeShort(iso: string): string {
-  const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return "—";
-  const diffMs = Date.now() - t;
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 48) return `${hrs}h ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
 
 function buildDietOrdersCsv(rows: DietRow[]): string {
@@ -175,6 +174,7 @@ export function AdminDietaryPageClient({
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
+  const snackPassSectionRef = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<DietRow[]>(initialBootstrap.rows);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialLoadError);
@@ -196,10 +196,6 @@ export function AdminDietaryPageClient({
   });
   const [snackForm, setSnackForm] = useState({
     snack_at: new Date().toISOString().slice(0, 16),
-    snack_description: "PM snack pass",
-    residents_offered_count: "",
-    residents_accepted_count: "",
-    notes: "",
   });
 
   const applyBootstrap = useCallback((bootstrap: DietaryHubBootstrap) => {
@@ -318,6 +314,16 @@ export function AdminDietaryPageClient({
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
+  useEffect(() => {
+    if (!facilityReady || typeof window === "undefined") return;
+    if (window.location.hash !== `#${SNACK_PASS_SECTION_ID}`) return;
+    const section = snackPassSectionRef.current;
+    if (!section) return;
+    requestAnimationFrame(() => {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [facilityReady]);
+
   const saveMealLog = useCallback(async () => {
     if (!facilityReady || !selectedFacilityId || !organizationId || !mealForm.resident_id) return;
     setSavingMeal(true);
@@ -354,34 +360,24 @@ export function AdminDietaryPageClient({
     setSavingSnack(true);
     setError(null);
     try {
-      const offered = snackForm.residents_offered_count.trim();
-      const accepted = snackForm.residents_accepted_count.trim();
-      const offeredCount = offered === "" ? null : Number(offered);
-      const acceptedCount = accepted === "" ? null : Number(accepted);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        throw new Error("Sign in to log a snack pass.");
+      }
       const snackAt = new Date(snackForm.snack_at);
       if (Number.isNaN(snackAt.getTime())) {
         throw new Error("Snack time is required.");
-      }
-      if (offeredCount !== null && (!Number.isFinite(offeredCount) || offeredCount < 0)) {
-        throw new Error("Offered count must be zero or greater.");
-      }
-      if (acceptedCount !== null && (!Number.isFinite(acceptedCount) || acceptedCount < 0)) {
-        throw new Error("Accepted count must be zero or greater.");
-      }
-      if (offeredCount !== null && acceptedCount !== null && acceptedCount > offeredCount) {
-        throw new Error("Accepted count cannot be greater than offered count.");
       }
       const { error: insertErr } = await supabase.from("snack_logs" as never).insert(({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
         snack_at: snackAt.toISOString(),
-        snack_description: snackForm.snack_description.trim() || null,
-        residents_offered_count: offeredCount,
-        residents_accepted_count: acceptedCount,
-        notes: snackForm.notes.trim() || null,
+        passed_by_user_id: user.id,
       }) as never);
       if (insertErr) throw insertErr;
-      setSnackForm((prev) => ({ ...prev, notes: "" }));
+      setSnackForm({ snack_at: new Date().toISOString().slice(0, 16) });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save snack log.");
@@ -447,7 +443,7 @@ export function AdminDietaryPageClient({
               >
                 Med / diet review
               </Link>
-              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wider text-xs tap-responsive bg-primary-600 hover:bg-primary-700 text-white")} >
+              <Link href="/admin/dietary/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-6 rounded-lg font-bold uppercase tracking-wide text-xs tap-responsive bg-primary-600 hover:bg-primary-700 text-white")} >
                 + New Diet Order
               </Link>
            </div>
@@ -480,7 +476,74 @@ export function AdminDietaryPageClient({
       )}
 
       {facilityReady && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <>
+          <section
+            id={SNACK_PASS_SECTION_ID}
+            ref={snackPassSectionRef}
+            aria-labelledby="snack-pass-heading"
+            className="scroll-mt-24 rounded-lg border border-primary-200/70 bg-primary-50/40 p-6 shadow-sm dark:border-primary-500/20 dark:bg-primary-950/20"
+          >
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-4 lg:max-w-xl">
+                <div className="space-y-2">
+                  <h2
+                    id="snack-pass-heading"
+                    className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
+                  >
+                    <Cookie className="h-5 w-5 text-primary-600 dark:text-primary-400" aria-hidden />
+                    Snack pass
+                  </h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{SNACK_PASS_HELPER_COPY}</p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <label className="flex flex-1 flex-col gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    Pass time
+                    <input
+                      type="datetime-local"
+                      value={snackForm.snack_at}
+                      onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                      aria-label="Snack pass time"
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    size="default"
+                    disabled={savingSnack}
+                    className="h-10 shrink-0 rounded-lg px-6 font-semibold"
+                    onClick={() => void saveSnackLog()}
+                  >
+                    {savingSnack ? "Saving…" : "Log snack pass"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="w-full lg:max-w-md">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-3">
+                  Recent snack passes
+                </p>
+                {loading ? (
+                  <p className="text-xs text-muted-foreground">Loading…</p>
+                ) : snackLogs.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                    No snack passes logged yet for this facility.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {snackLogs.slice(0, 5).map((log) => (
+                      <li key={log.id} className="rounded-lg border border-slate-200/70 bg-white px-3 py-2 text-xs text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                        <span className="font-medium">{format(new Date(log.snack_at), "MMM d, h:mm a")}</span>
+                        <span className="text-muted-foreground"> · Snack passed — </span>
+                        <span>{log.user_profiles?.full_name?.trim() || "Staff"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* ACTION QUEUE: Dietary Risk Board */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
@@ -529,12 +592,12 @@ export function AdminDietaryPageClient({
                           {badge.label}
                         </span>
                         <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                          Updated: {formatRelativeShort(row.updated_at)}
+                          Updated: {formatDietaryHubRelativeUpdatedAt(row.updated_at)}
                         </span>
                       </div>
                       <div className="mb-5 pl-2">
                         <p className="text-xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight mb-2">
-                          {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Resident"}
+                          {formatDietaryHubResidentDisplay(row.residents?.first_name, row.residents?.last_name)}
                         </p>
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{attentionSummary(row)}</p>
                       </div>
@@ -543,7 +606,7 @@ export function AdminDietaryPageClient({
                           href={`/admin/dietary/clinical-review?resident=${row.resident_id}`}
                           className={cn(
                             buttonVariants({ variant: "default", size: "sm" }),
-                            "h-9 rounded-lg px-4 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold uppercase tracking-wider text-[10px]",
+                            "h-9 rounded-lg px-4 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-semibold text-[10px]",
                           )}
                         >
                           Clinical review
@@ -570,7 +633,7 @@ export function AdminDietaryPageClient({
                       <MotionItem key={row.id}>
                         <TableRow>
                           <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">
-                            {row.residents ? `${row.residents.first_name} ${row.residents.last_name}` : "Unknown"}
+                            {formatDietaryHubResidentDisplay(row.residents?.first_name, row.residents?.last_name)}
                           </span>
                           <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
                             {row.iddsi_food_level.replace(/_/g, " ")}
@@ -608,12 +671,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Thickened Fluids</p>
-                    <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.thickenedPct}%`}</span>
+                    <span className="text-xs font-bold text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("thickened", batchStats.thickenedPct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-amber-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.thickenedPct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.thickenedPct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -621,12 +686,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Swallow Flags</p>
-                    <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.swallowPct}%`}</span>
+                    <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("swallow", batchStats.swallowPct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-rose-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.swallowPct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.swallowPct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -634,12 +701,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Allergy Alert</p>
-                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.allergyPct}%`}</span>
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("allergy", batchStats.allergyPct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.allergyPct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.allergyPct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -647,12 +716,14 @@ export function AdminDietaryPageClient({
                 <div className="p-5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Texture Reviews</p>
-                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">{loading ? "—" : `${batchStats.medTexturePct}%`}</span>
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 dark:bg-primary-500/10 px-2 py-0.5 rounded-md">
+                      {formatDietaryBatchStatPct("texture", batchStats.medTexturePct, loading)}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/60 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
                       className="bg-primary-500 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${loading ? 0 : batchStats.medTexturePct}%` }}
+                      style={{ width: `${dietaryBatchStatBarWidthPct(batchStats.medTexturePct, loading)}%` }}
                     />
                   </div>
                 </div>
@@ -660,7 +731,7 @@ export function AdminDietaryPageClient({
             </div>
 
             <div className="mt-6 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 space-y-5">
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Meal / snack log</h3>
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Meal log</h3>
               <div className="space-y-3 text-xs">
                 <select
                   value={mealForm.resident_id}
@@ -722,68 +793,25 @@ export function AdminDietaryPageClient({
                 </Button>
               </div>
 
-              <div className="space-y-3 text-xs border-t border-slate-200/70 dark:border-white/10 pt-4">
-                <input
-                  type="datetime-local"
-                  value={snackForm.snack_at}
-                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                />
-                <input
-                  type="text"
-                  value={snackForm.snack_description}
-                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_description: e.target.value }))}
-                  placeholder="Snack description"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    value={snackForm.residents_offered_count}
-                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_offered_count: e.target.value }))}
-                    placeholder="Offered"
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    value={snackForm.residents_accepted_count}
-                    onChange={(e) => setSnackForm((prev) => ({ ...prev, residents_accepted_count: e.target.value }))}
-                    placeholder="Accepted"
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  />
-                </div>
-                <textarea
-                  value={snackForm.notes}
-                  onChange={(e) => setSnackForm((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Snack notes"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  rows={2}
-                />
-                <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>
-                  {savingSnack ? "Saving snack…" : "Log snack pass"}
-                </Button>
-              </div>
-
               <div className="space-y-2 border-t border-slate-200/70 dark:border-white/10 pt-4">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Recent meal entries</p>
-                {mealLogs.slice(0, 3).map((log) => (
-                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
-                    {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
+                {mealLogs.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    No meal entries logged yet for this facility.
                   </p>
-                ))}
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
-                {snackLogs.slice(0, 3).map((log) => (
-                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
-                    {format(new Date(log.snack_at), "MMM d, h:mm a")} — {log.snack_description || "Snack pass"}
-                  </p>
-                ))}
+                ) : (
+                  mealLogs.slice(0, 3).map((log) => (
+                    <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
+                      {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
+                    </p>
+                  ))
+                )}
               </div>
             </div>
           </div>
 
         </div>
+        </>
       )}
       </div>
     </div>

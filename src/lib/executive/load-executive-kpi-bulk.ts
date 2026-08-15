@@ -3,6 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { EXEC_KPI_METRICS_VERSION, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import {
+  computeFacilityOccupancyPct,
+  computeFacilityOccupiedResidents,
+  fetchFacilityBedCensusById,
+  isFacilityOccupancyCensusLoaded,
+} from "@/lib/executive/facility-occupancy-census";
 
 type FacilityMini = {
   id: string;
@@ -91,7 +97,6 @@ export async function loadExecutiveKpiBulk(
   };
 
   const [
-    residentsRes,
     invoicesRes,
     incidentsRes,
     medErrorsRes,
@@ -101,14 +106,8 @@ export async function loadExecutiveKpiBulk(
     overdueTasksRes,
     openExceptionsRes,
     activeWatchRes,
+    bedCensusByFacility,
   ] = await Promise.all([
-    scope(
-      supabase
-        .from("residents")
-        .select("facility_id")
-        .is("deleted_at", null)
-        .in("status", ["active", "hospital_hold", "loa"]),
-    ),
     scope(
       supabase
         .from("invoices")
@@ -185,10 +184,10 @@ export async function loadExecutiveKpiBulk(
         .is("deleted_at", null)
         .eq("status", "active"),
     ),
+    fetchFacilityBedCensusById(supabase, facilityIds),
   ]);
 
   const allBatchEntries = [
-    { table: "residents", error: residentsRes.error },
     { table: "invoices", error: invoicesRes.error },
     { table: "incidents", error: incidentsRes.error },
     { table: "medication_errors", error: medErrorsRes.error },
@@ -211,7 +210,6 @@ export async function loadExecutiveKpiBulk(
     throw new Error(`exec KPI bulk batch failed — ${summary}`);
   }
 
-  const residentsByFacility = countRows((residentsRes.data ?? []) as CountByFacilityRow[]);
   const incidentsByFacility = countRows((incidentsRes.data ?? []) as CountByFacilityRow[]);
   const medErrorsByFacility = countRows((medErrorsRes.data ?? []) as CountByFacilityRow[]);
   const deficienciesByFacility = countRows((deficienciesRes.data ?? []) as CountByFacilityRow[]);
@@ -231,9 +229,11 @@ export async function loadExecutiveKpiBulk(
 
   const facilityKpis = new Map<string, ExecKpiPayload>();
   for (const facility of facilities) {
-    const occupiedResidents = residentsByFacility.get(facility.id) ?? 0;
+    const census = bedCensusByFacility.get(facility.id);
+    const occupancyLoaded = isFacilityOccupancyCensusLoaded(facility, census);
+    const occupiedResidents = occupancyLoaded ? computeFacilityOccupiedResidents(facility, census) : 0;
     const licensedBeds = facility.total_licensed_beds ?? 0;
-    const occupancyPct = licensedBeds > 0 ? Math.round((occupiedResidents / licensedBeds) * 1000) / 10 : null;
+    const occupancyPct = occupancyLoaded ? computeFacilityOccupancyPct(facility, census) : null;
 
     facilityKpis.set(facility.id, {
       version: EXEC_KPI_METRICS_VERSION,

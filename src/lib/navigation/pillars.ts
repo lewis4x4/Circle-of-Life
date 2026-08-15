@@ -27,15 +27,16 @@ import {
   ClipboardList,
   Clock,
   CreditCard,
+  Cookie,
   DoorOpen,
+  Eye,
   FileText,
   GraduationCap,
-  Heart,
   Home,
   Hotel,
   Landmark,
   LineChart,
-  MessageCircle,
+  Megaphone,
   MessageSquare,
   Pill,
   Radar,
@@ -104,8 +105,7 @@ export const PILLARS: Pillar[] = [
       { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", icon: UserPlus },
       { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
       { key: "discharge", href: "/admin/discharge", label: "Medication reconciliation", icon: DoorOpen },
-      { key: "family-portal", href: "/admin/family-portal", label: "Family Portal", icon: Heart },
-      { key: "family-messages", href: "/admin/family-messages", label: "Family Messages", icon: MessageCircle },
+      { key: "family-messages", href: "/admin/family-messages", label: "Family notes", icon: Megaphone },
     ],
   },
   {
@@ -169,6 +169,8 @@ export const PILLARS: Pillar[] = [
  * pillar.
  */
 export const AUXILIARY_ROUTES: PillarItem[] = [
+  { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
+  { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie },
   { key: "finance", href: "/admin/finance", label: "Finance hub", icon: Landmark },
   { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
   { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
@@ -203,6 +205,59 @@ export function findActivePillar(pathname: string): Pillar | null {
 /** Flat list of every pillar item — used to seed the ⌘K palette. */
 export function allPillarItems(): Array<PillarItem & { pillar: Pillar }> {
   return PILLARS.flatMap((pillar) => pillar.items.map((item) => ({ ...item, pillar })));
+}
+
+/**
+ * Stable keys for the all-sections jump list when the search field is empty.
+ * Curated office-week teachable flows (2026-08-24) — not a full pillar dump.
+ */
+export const SECTION_JUMP_QUICK_KEYS = [
+  "executive",
+  "residents",
+  "billing",
+  "family-messages",
+  "rounding-live",
+  "snack-pass",
+] as const;
+
+export type SectionJumpQuickKey = (typeof SECTION_JUMP_QUICK_KEYS)[number];
+
+/** Pin labels for office-week Common shortcuts (may differ from left-rail labels). */
+export const SECTION_JUMP_QUICK_LABELS: Partial<Record<SectionJumpQuickKey, string>> = {
+  residents: "Resident roster / census",
+  billing: "Billing",
+};
+
+export type SectionJumpEntry = PillarItem & {
+  pillarLabel?: string;
+  group: "pillar" | "auxiliary";
+};
+
+/** All jump-list destinations (pillar items + auxiliary routes). */
+export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
+  const pillarEntries = pillars.flatMap((pillar) =>
+    pillar.items.map((item) => ({
+      ...item,
+      pillarLabel: pillar.label,
+      group: "pillar" as const,
+    })),
+  );
+  const auxiliaryEntries = AUXILIARY_ROUTES.map((item) => ({
+    ...item,
+    group: "auxiliary" as const,
+  }));
+  return [...pillarEntries, ...auxiliaryEntries];
+}
+
+/** Quick links shown before the operator types in the all-sections jump list. */
+export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
+  const byKey = new Map(allSectionJumpEntries(pillars).map((entry) => [entry.key, entry]));
+  return SECTION_JUMP_QUICK_KEYS.map((key) => byKey.get(key))
+    .filter((entry): entry is SectionJumpEntry => entry != null)
+    .map((entry) => {
+      const quickLabel = SECTION_JUMP_QUICK_LABELS[entry.key as SectionJumpQuickKey];
+      return quickLabel ? { ...entry, label: quickLabel } : entry;
+    });
 }
 
 export const PILLAR_ITEM_CAP = 9;

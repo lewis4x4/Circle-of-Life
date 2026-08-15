@@ -6,6 +6,7 @@ import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
+import { formatReportRunCompletedAt } from "@/lib/reports/reports-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +115,7 @@ export default function ReportHistoryPage() {
                            </div>
                            <div className="flex flex-col gap-2 align-right text-left md:text-right">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Completed</span>
-                              <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">{row.completed_at ? new Date(row.completed_at).toLocaleString() : "—"}</span>
+                              <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide">{formatReportRunCompletedAt(row.completed_at)}</span>
                            </div>
                         </div>
                     </div>

@@ -12,6 +12,19 @@ export default function FacilitySurveyDetailPage() {
   const fid = typeof params.facilityId === "string" ? params.facilityId : Array.isArray(params.facilityId) ? params.facilityId[0] : "";
   const sid = typeof params.surveyId === "string" ? params.surveyId : Array.isArray(params.surveyId) ? params.surveyId[0] : "";
 
+  if (!fid) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-4 p-6 pt-4">
+        <Link href="/admin/facilities" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
+          ← Facilities
+        </Link>
+        <div className="rounded-lg border border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+          No facility in this link — return to the portfolio hub and open Licensing from a facility card.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-6 pt-4">
       <nav className="text-sm text-muted-foreground">
@@ -28,11 +41,13 @@ export default function FacilitySurveyDetailPage() {
         <dl className="grid gap-2 text-sm">
           <div>
             <dt className="text-[13px] font-medium text-muted-foreground">Facility</dt>
-            <dd className="font-mono text-xs">{fid || "—"}</dd>
+            <dd className="font-mono text-xs">{fid}</dd>
           </div>
           <div>
             <dt className="text-[13px] font-medium text-muted-foreground">Survey record</dt>
-            <dd className="font-mono text-xs break-all">{decodeURIComponent(sid || "—")}</dd>
+            <dd className="font-mono text-xs break-all">
+              {sid ? decodeURIComponent(sid) : "No survey id in this link"}
+            </dd>
           </div>
         </dl>
         <p className="mt-3 text-xs text-muted-foreground">

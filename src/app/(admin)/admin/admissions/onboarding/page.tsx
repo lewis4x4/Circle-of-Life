@@ -14,6 +14,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatColLabel } from "@/lib/col-labels";
+import {
+  formatAdmissionsHubMedicaidStage,
+  formatAdmissionsHubRelativeDate,
+} from "@/lib/admissions/admissions-hub-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -48,23 +52,8 @@ function onboardingChecklist(counts: { carePlans: number; medications: number; p
 }
 
 function formatMedicaidStage(stage: string | null) {
-  if (!stage) return "Not set";
+  if (!stage) return formatAdmissionsHubMedicaidStage(stage);
   return formatColLabel(stage);
-}
-
-function formatRelative(date: string | null): string {
-  if (!date) return "—";
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function AdminAdmissionsOnboardingPage() {
@@ -343,7 +332,7 @@ export default function AdminAdmissionsOnboardingPage() {
                   </Link>
                 </div>
                 <div className="text-[12px] text-muted-foreground">
-                  Updated {formatRelative(row.updated_at)}
+                  Updated {formatAdmissionsHubRelativeDate(row.updated_at)}
                 </div>
               </CardContent>
             </Card>

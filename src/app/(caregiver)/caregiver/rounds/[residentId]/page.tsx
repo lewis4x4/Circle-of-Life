@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
+import { CaregiverRoundsEmptyNotice } from "@/components/caregiver/CaregiverRoundsEmptyNotice";
 import { QuickObservationForm } from "@/components/rounding/QuickObservationForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,10 @@ import { queueRoundingCompletion, shouldQueueRoundingRequest } from "@/lib/pwa/r
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { CompletionPayload } from "@/lib/rounding/types";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
+import {
+  describeCaregiverResidentRoundEmptyState,
+  describeLiveBoardCadenceReminder,
+} from "@/lib/rounding/col-discovery-round-cadence";
 
 type TaskApiRow = {
   id: string;
@@ -35,6 +40,7 @@ export default function CaregiverResidentRoundPage() {
   const taskIdFromQuery = searchParams.get("taskId");
 
   const [facilityId, setFacilityId] = useState<string | null>(null);
+  const [facilityName, setFacilityName] = useState<string | null>(null);
   const [residentName, setResidentName] = useState("Resident");
   const [task, setTask] = useState<TaskApiRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +66,7 @@ export default function CaregiverResidentRoundPage() {
       }
 
       setFacilityId(resolved.ctx.facilityId);
+      setFacilityName(resolved.ctx.facilityName);
       const response = await fetch(
         `/api/rounding/tasks?facilityId=${encodeURIComponent(resolved.ctx.facilityId)}&residentId=${encodeURIComponent(residentId)}&limit=20`,
         { cache: "no-store" },
@@ -137,6 +144,20 @@ export default function CaregiverResidentRoundPage() {
 
   const taskQueuedLocally = Boolean(task && roundingSync.queuedTaskIdSet.has(task.id));
 
+  const emptyCopy = useMemo(
+    () =>
+      describeCaregiverResidentRoundEmptyState({
+        facilityName,
+        taskQueuedLocally,
+      }),
+    [facilityName, taskQueuedLocally],
+  );
+
+  const cadenceReminder = useMemo(
+    () => (facilityName && !task && !taskQueuedLocally ? describeLiveBoardCadenceReminder(facilityName) : null),
+    [facilityName, task, taskQueuedLocally],
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -178,20 +199,14 @@ export default function CaregiverResidentRoundPage() {
       ) : null}
 
       {!task || taskQueuedLocally ? (
-        <Card className="border-border bg-card text-card-foreground">
-          <CardContent className="space-y-3 py-6">
-            <p className="text-sm text-muted-foreground">
-              {taskQueuedLocally
-                ? "This round is already queued for sync from this device."
-                : "No active round was found for this resident in the current facility scope."}
-            </p>
-            <Link href="/caregiver/rounds">
-              <Button className="min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
-                Return to live queue
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <CaregiverRoundsEmptyNotice copy={emptyCopy} cadenceReminder={cadenceReminder} />
+          <Link href="/caregiver/rounds">
+            <Button className="min-h-[44px] bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
+              Return to live queue
+            </Button>
+          </Link>
+        </div>
       ) : (
         <QuickObservationForm
           residentName={residentName}

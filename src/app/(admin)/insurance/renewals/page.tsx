@@ -7,10 +7,10 @@ import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { formatInsuranceRenewalTargetDate } from "@/lib/insurance/renewals-display-copy";
 import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_RENEWALS_LIST_SELECT,
@@ -93,7 +93,7 @@ export default function InsuranceRenewalsPage() {
              ) : (
                rows.map((r) => {
                  const inProgress = r.status === "in_progress" || r.status === "upcoming";
-                 const formattedDate = r.target_effective_date ? format(parseISO(r.target_effective_date.length <= 10 ? `${r.target_effective_date}T12:00:00.000Z` : r.target_effective_date), "MMM d, yyyy") : "—";
+                 const formattedDate = formatInsuranceRenewalTargetDate(r.target_effective_date);
                  
                  return (
                    <MotionItem

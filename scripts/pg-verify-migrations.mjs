@@ -141,6 +141,21 @@ async function main() {
       runFile(f, path.join(migrationsDir, f));
     }
 
+    const rpcGrantPosturePath = path.join(root, "supabase", "tests", "rpc_grant_posture.sql");
+    if (fs.existsSync(rpcGrantPosturePath)) {
+      runFile("rpc_grant_posture", rpcGrantPosturePath);
+    }
+
+    const familyOneWayPath = path.join(root, "supabase", "tests", "family_portal_messages_one_way.sql");
+    if (fs.existsSync(familyOneWayPath)) {
+      runFile("family_portal_messages_one_way", familyOneWayPath);
+    }
+
+    const teamSpaceRlsPath = path.join(root, "supabase", "tests", "team_space_rls_no_recursion.sql");
+    if (fs.existsSync(teamSpaceRlsPath)) {
+      runFile("team_space_rls_no_recursion", teamSpaceRlsPath);
+    }
+
     console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s))`);
   } finally {
     cleanup();

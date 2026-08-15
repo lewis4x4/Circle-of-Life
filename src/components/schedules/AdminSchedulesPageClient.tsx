@@ -21,6 +21,7 @@ import {
   fetchSchedulesFromSupabase,
   type ScheduleRow,
 } from "@/lib/schedules/load-schedules";
+import { formatSchedulePublishedAt } from "@/lib/schedules/schedules-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -214,7 +215,7 @@ export function AdminSchedulesPageClient({
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Weekly schedule containers; shift assignments roll up under each published week.</p>
-                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
+                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
                    + Initialize Week
                  </Link>
               </div>
@@ -265,7 +266,7 @@ export function AdminSchedulesPageClient({
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0 font-mono text-[10px] uppercase tracking-wider"
+              className="shrink-0 font-mono text-[10px]"
               disabled={exportingCsv}
               aria-busy={exportingCsv}
               onClick={() => void exportSchedulesCsv()}
@@ -290,7 +291,7 @@ export function AdminSchedulesPageClient({
                            
                            <div className="flex flex-col gap-1">
                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Published</span>
-                             <span className="text-xs text-slate-600 dark:text-slate-400">{row.publishedAt ? formatDateTime(row.publishedAt) : "—"}</span>
+                             <span className="text-xs text-slate-600 dark:text-slate-400">{formatSchedulePublishedAt(row.publishedAt)}</span>
                            </div>
 
                            {row.notes && (
@@ -317,18 +318,6 @@ function formatWeekLabel(isoDate: string): string {
   const parsed = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
 }
 
 function ScheduleStatusBadge({ status }: { status: string }) {

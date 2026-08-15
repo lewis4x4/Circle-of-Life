@@ -16,6 +16,12 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
+import {
+  collectionsFollowUpDateIsPosted,
+  formatCollectionsFollowUpDate,
+  formatCollectionsResidentName,
+} from "@/lib/billing/collections-display-copy";
+
 import { BillingHubNav } from "../billing-hub-nav";
 
 type CollectionRow = {
@@ -127,8 +133,12 @@ export default function AdminCollectionsPage() {
             <div className="relative z-10">
                <MotionList className="space-y-3">
                  {rows.map((r) => {
-                   const name =
-                     `${r.residents?.first_name ?? ""} ${r.residents?.last_name ?? ""}`.trim() || "—";
+                   const name = formatCollectionsResidentName(
+                     r.residents?.first_name,
+                     r.residents?.last_name,
+                   );
+                   const followUpPosted = collectionsFollowUpDateIsPosted(r.follow_up_date);
+                   const followUpLabel = formatCollectionsFollowUpDate(r.follow_up_date);
                    return (
                      <MotionItem key={r.id}>
                        <Link href={`/admin/residents/${r.resident_id}/billing`} className="group flex flex-col md:grid md:grid-cols-12 gap-4 md:items-center p-5 rounded-lg border border-border bg-card shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
@@ -164,13 +174,13 @@ export default function AdminCollectionsPage() {
                           <div className="col-span-2 flex items-center justify-between md:justify-end gap-4 min-w-0">
                             <div className="flex flex-col items-start md:items-end min-w-0">
                               <span className="md:hidden font-bold uppercase tracking-wider text-[9px] text-muted-foreground mb-1 block text-right">Follow-up</span>
-                              {r.follow_up_date ? (
+                              {followUpPosted ? (
                                 <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold tracking-wider text-success bg-success/10 border border-success/20 px-2.5 py-1 rounded-full">
                                   <CalendarClock className="w-3 h-3" />
-                                  {r.follow_up_date}
+                                  {followUpLabel}
                                 </span>
                               ) : (
-                                <span className="text-sm text-muted-foreground">—</span>
+                                <span className="text-sm text-muted-foreground">{followUpLabel}</span>
                               )}
                             </div>
                             

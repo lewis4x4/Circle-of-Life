@@ -31,6 +31,13 @@ import {
   OPERATION_CATEGORY_LABELS,
 } from "@/lib/operations/constants";
 import {
+  formatOperationsTemplateAsset,
+  formatOperationsTemplateAutoCompleteHours,
+  formatOperationsTemplateCompliance,
+  formatOperationsTemplateEstimatedMinutes,
+  formatOperationsTemplateVendor,
+} from "@/lib/admin/operations/operations-templates-display-copy";
+import {
   normalizeEscalationLadder,
   OPERATION_CADENCE_LABELS,
   type OperationTemplateRecord,
@@ -703,11 +710,20 @@ export default function OperationsTemplatesPage() {
                     <MetaItem label="Fallback" value={template.required_role_fallback?.replaceAll("_", " ") || "None"} />
                     <MetaItem label="Priority" value={template.priority} />
                     <MetaItem label="Shift scope" value={template.shift_scope || "Not set"} />
-                    <MetaItem label="Estimated" value={template.estimated_minutes ? `${template.estimated_minutes} min` : "—"} />
-                    <MetaItem label="Compliance" value={template.compliance_requirement || "—"} />
-                    <MetaItem label="Asset" value={template.asset_name || "—"} />
-                    <MetaItem label="Vendor" value={template.vendor_name || "—"} />
-                    <MetaItem label="Auto-complete" value={template.auto_complete_after_hours ? `${template.auto_complete_after_hours}h` : "—"} />
+                    <MetaItem
+                      label="Estimated"
+                      value={formatOperationsTemplateEstimatedMinutes(template.estimated_minutes)}
+                    />
+                    <MetaItem
+                      label="Compliance"
+                      value={formatOperationsTemplateCompliance(template.compliance_requirement)}
+                    />
+                    <MetaItem label="Asset" value={formatOperationsTemplateAsset(template.asset_name)} />
+                    <MetaItem label="Vendor" value={formatOperationsTemplateVendor(template.vendor_name)} />
+                    <MetaItem
+                      label="Auto-complete"
+                      value={formatOperationsTemplateAutoCompleteHours(template.auto_complete_after_hours)}
+                    />
                   </div>
 
                   <div className="flex flex-wrap gap-2">

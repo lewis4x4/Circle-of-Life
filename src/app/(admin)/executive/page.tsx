@@ -14,6 +14,7 @@ const EMPTY_DATA: ExecutiveOverviewData = {
   assuranceHeatMap: [],
   assuranceTrends: [],
   presenceCensus: EMPTY_PRESENCE_CENSUS,
+  occupancyContext: null,
 };
 
 export default async function ExecutiveOverviewPage() {
@@ -28,6 +29,7 @@ export default async function ExecutiveOverviewPage() {
         initialAssuranceHeatMap={EMPTY_DATA.assuranceHeatMap}
         initialAssuranceTrends={EMPTY_DATA.assuranceTrends}
         initialPresenceCensus={EMPTY_DATA.presenceCensus}
+        initialOccupancyContext={EMPTY_DATA.occupancyContext}
         initialHasServerData={false}
       />
     );
@@ -61,6 +63,7 @@ export default async function ExecutiveOverviewPage() {
       initialAssuranceHeatMap={data.assuranceHeatMap}
       initialAssuranceTrends={data.assuranceTrends}
       initialPresenceCensus={data.presenceCensus}
+      initialOccupancyContext={data.occupancyContext}
       initialHasServerData={hasServerData}
     />
   );

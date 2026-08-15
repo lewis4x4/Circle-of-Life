@@ -1,4 +1,10 @@
 import type { ObservationPlanInput, PlanRuleInput } from "@/lib/rounding/types";
+import {
+  extractDiscreteScheduledTime,
+  isDiscreteScheduledDaypartRule,
+  LEGACY_MIGRATION_219_INTERVAL_MINUTES,
+} from "@/lib/rounding/col-discovery-round-cadence";
+import { ROUNDING_PLAN_NO_TIME_COPY } from "@/lib/rounding/rounding-plans-display-copy";
 
 export const MIN_RATIONALE_CHARACTERS = 30;
 export const MIN_INTERVAL_MINUTES = 5;
@@ -31,7 +37,7 @@ export function parseTimeToMinutes(value?: string | null): number | null {
 
 export function formatTimeLabel(value?: string | null): string {
   const minutes = parseTimeToMinutes(value);
-  if (minutes == null) return "—";
+  if (minutes == null) return ROUNDING_PLAN_NO_TIME_COPY;
 
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -48,15 +54,19 @@ export function formatPreviewTimestamp(value: Date): string {
 }
 
 export function getRuleChecksPerDay(rule: PlanRuleInput): number {
+  if (isDiscreteScheduledDaypartRule(rule)) return 1;
+
   const start = parseTimeToMinutes(rule.daypartStart ?? "00:00");
   const end = parseTimeToMinutes(rule.daypartEnd ?? "23:59");
   const intervalMinutes = Number(rule.intervalMinutes ?? 0);
 
   if (start == null || end == null) return 0;
   if (!Number.isFinite(intervalMinutes) || intervalMinutes < MIN_INTERVAL_MINUTES) return 0;
-  if (end < start) return 0;
 
-  return Math.floor((end - start) / intervalMinutes) + 1;
+  const spanMinutes = end < start ? end + 24 * 60 - start : end - start;
+  if (spanMinutes < 0) return 0;
+
+  return Math.floor(spanMinutes / intervalMinutes) + 1;
 }
 
 export function getNextScheduledChecks(
@@ -69,6 +79,23 @@ export function getNextScheduledChecks(
 
   for (const rule of rules) {
     if (rule.active === false) continue;
+    if (isDiscreteScheduledDaypartRule(rule)) {
+      const scheduledTime = rule.requiredFieldsSchema?.scheduled_time;
+      if (typeof scheduledTime !== "string") continue;
+      const minuteOfDay = parseTimeToMinutes(scheduledTime);
+      if (minuteOfDay == null) continue;
+
+      for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
+        const candidate = new Date(now);
+        candidate.setDate(now.getDate() + dayOffset);
+        candidate.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+
+        if (candidate >= now && candidate <= horizon) {
+          checks.push(candidate);
+        }
+      }
+      continue;
+    }
 
     const start = parseTimeToMinutes(rule.daypartStart ?? "00:00");
     const end = parseTimeToMinutes(rule.daypartEnd ?? "23:59");
@@ -76,12 +103,15 @@ export function getNextScheduledChecks(
 
     if (start == null || end == null) continue;
     if (!Number.isFinite(intervalMinutes) || intervalMinutes < MIN_INTERVAL_MINUTES) continue;
-    if (end < start) continue;
+
+    const spanMinutes = end < start ? end + 24 * 60 - start : end - start;
+    if (spanMinutes < 0) continue;
 
     for (let dayOffset = 0; dayOffset <= 1; dayOffset += 1) {
-      for (let minuteOfDay = start; minuteOfDay <= end; minuteOfDay += intervalMinutes) {
+      for (let offset = 0; offset <= spanMinutes; offset += intervalMinutes) {
+        const minuteOfDay = (start + offset) % (24 * 60);
         const candidate = new Date(now);
-        candidate.setDate(now.getDate() + dayOffset);
+        candidate.setDate(now.getDate() + dayOffset + Math.floor((start + offset) / (24 * 60)));
         candidate.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
 
         if (candidate >= now && candidate <= horizon) {
@@ -99,6 +129,12 @@ export function buildPlanSchedulePreview(
   now: Date = new Date(),
 ): PlanSchedulePreview {
   const activeRules = rules.filter((rule) => rule.active !== false);
+  const discreteTimes = activeRules
+    .map((rule) => extractDiscreteScheduledTime(rule))
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => parseTimeToMinutes(value))
+    .filter((value): value is number => value != null);
+
   const windows = activeRules
     .map((rule) => ({
       start: parseTimeToMinutes(rule.daypartStart ?? "00:00"),
@@ -106,8 +142,18 @@ export function buildPlanSchedulePreview(
     }))
     .filter((window): window is { start: number; end: number } => window.start != null && window.end != null);
 
-  const earliestStart = windows.length > 0 ? Math.min(...windows.map((window) => window.start)) : null;
-  const latestEnd = windows.length > 0 ? Math.max(...windows.map((window) => window.end)) : null;
+  const earliestStart =
+    discreteTimes.length > 0
+      ? Math.min(...discreteTimes)
+      : windows.length > 0
+        ? Math.min(...windows.map((window) => window.start))
+        : null;
+  const latestEnd =
+    discreteTimes.length > 0
+      ? Math.max(...discreteTimes)
+      : windows.length > 0
+        ? Math.max(...windows.map((window) => window.end))
+        : null;
   const firstGrace = Number(rules[0]?.graceMinutes ?? 0);
 
   return {
@@ -145,10 +191,20 @@ export function validateRationale(value?: string | null): string | null {
 
 export function validatePlanRule(rule: PlanRuleInput): RuleValidationErrors {
   const errors: RuleValidationErrors = {};
-  const intervalMinutes = Number(rule.intervalMinutes ?? 0);
   const graceMinutes = Number(rule.graceMinutes ?? 0);
 
-  if (
+  if (isDiscreteScheduledDaypartRule(rule)) {
+    if (!Number.isFinite(graceMinutes) || graceMinutes < 0) {
+      errors.graceMinutes = "Grace minutes must be 0 or greater.";
+    }
+    return errors;
+  }
+
+  const intervalMinutes = Number(rule.intervalMinutes ?? 0);
+
+  if (intervalMinutes === LEGACY_MIGRATION_219_INTERVAL_MINUTES) {
+    errors.intervalMinutes = "12-hour (720 minute) facility defaults are retired. Use Jessica discovery-round cadence instead.";
+  } else if (
     !Number.isFinite(intervalMinutes) ||
     intervalMinutes < MIN_INTERVAL_MINUTES ||
     intervalMinutes > MAX_INTERVAL_MINUTES

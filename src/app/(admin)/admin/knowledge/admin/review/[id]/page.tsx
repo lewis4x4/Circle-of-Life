@@ -13,6 +13,7 @@ import {
   fetchDocumentAuditEvents,
 } from "@/features/knowledge/lib/knowledge-api";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
 
 type ReviewDocument = Pick<
   DocumentRow,
@@ -345,7 +346,7 @@ export default function KnowledgeDocumentReviewPage() {
                   </div>
                   <div className="rounded-[8px] border border-border bg-muted/10 p-3">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">Words</div>
-                    <div className="mt-1 text-sm font-medium tabular-nums text-foreground">{document.word_count?.toLocaleString() ?? "—"}</div>
+                    <div className="mt-1 text-sm font-medium tabular-nums text-foreground">{formatDocumentWordCount(document.word_count)}</div>
                   </div>
                   <div className="rounded-[8px] border border-border bg-muted/10 p-3">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">Mime Type</div>

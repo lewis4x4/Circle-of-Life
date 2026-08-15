@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 
+import { AdminEmptyState, AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -30,6 +31,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  formatObservationPlanAcuityDisplay,
+  formatObservationPlanAcuitySegment,
+  formatObservationPlanResidentName,
+  formatObservationPlanRoomLabel,
+} from "@/lib/rounding/observation-plan-display-copy";
+import {
   buildPlanSchedulePreview,
   formatPreviewTimestamp,
   formatTimeLabel,
@@ -41,6 +48,13 @@ import {
   validateRationale,
 } from "@/lib/rounding/observation-plan-validation";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  getColDiscoveryCadenceProfile,
+  resolveColDiscoveryCadenceKey,
+  resolveColDiscoveryDefaultRules,
+  type ColDiscoveryCadenceProfile,
+} from "@/lib/rounding/col-discovery-round-cadence";
+import type { ObservationPlanTemplateOption } from "@/lib/rounding/observation-plan-templates";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { ObservationPlanInput, PlanRuleInput } from "@/lib/rounding/types";
@@ -121,6 +135,12 @@ const SHIFT_OPTIONS: Array<{ value: "all" | NonNullable<PlanRuleInput["shift"]>;
   { value: "custom", label: "Custom" },
 ];
 
+const RESIDENT_SELECT_WITH_BED =
+  "id, first_name, last_name, preferred_name, status, bed_id, acuity_level, acuity_score, beds!residents_bed_id_fkey ( bed_label, rooms ( room_number ) )";
+
+const RESIDENT_SELECT_FALLBACK =
+  "id, first_name, last_name, preferred_name, status, bed_id, acuity_level, acuity_score";
+
 function blankRule(sortOrder = 0): PlanRuleInput {
   return {
     intervalType: "fixed_minutes",
@@ -134,23 +154,46 @@ function blankRule(sortOrder = 0): PlanRuleInput {
   };
 }
 
-function residentName(resident: Pick<ResidentOption, "first_name" | "last_name" | "preferred_name">) {
-  return [resident.preferred_name ?? resident.first_name, resident.last_name].filter(Boolean).join(" ");
+function defaultRulesForNewPlan(facilityName: string): {
+  rules: PlanRuleInput[];
+  cadenceProfile: ColDiscoveryCadenceProfile | null;
+  templateName: string | null;
+} {
+  const discovery = resolveColDiscoveryDefaultRules(facilityName);
+  if (discovery.rules.length > 0) {
+    return {
+      rules: discovery.rules,
+      cadenceProfile: discovery.profile,
+      templateName: discovery.templateName,
+    };
+  }
+
+  if (discovery.profile === "pending") {
+    return {
+      rules: [],
+      cadenceProfile: discovery.profile,
+      templateName: discovery.templateName,
+    };
+  }
+
+  return {
+    rules: [blankRule()],
+    cadenceProfile: discovery.profile,
+    templateName: discovery.templateName,
+  };
 }
 
 function residentRoom(resident: ResidentOption) {
-  return resident.beds?.rooms?.room_number ?? resident.beds?.bed_label ?? "Unassigned";
-}
-
-function residentAcuity(resident: ResidentOption) {
-  if (resident.acuity_score != null) return Number(resident.acuity_score).toLocaleString("en-US");
-  if (resident.acuity_level) return resident.acuity_level.replace("level_", "");
-  return "—";
+  return formatObservationPlanRoomLabel(
+    resident.beds?.rooms?.room_number,
+    resident.beds?.bed_label,
+  );
 }
 
 function residentComboboxLabel(resident: ResidentOption) {
-  const name = residentName(resident) || "Unnamed resident";
-  return `${name} · Room ${residentRoom(resident)} · Acuity ${residentAcuity(resident)}`;
+  const name = formatObservationPlanResidentName(resident);
+  const acuitySegment = formatObservationPlanAcuitySegment(resident.acuity_score, resident.acuity_level);
+  return `${name} · Room ${residentRoom(resident)} · ${acuitySegment}`;
 }
 
 export function ObservationPlanEditor({
@@ -174,19 +217,39 @@ export function ObservationPlanEditor({
   const [draggedRuleIndex, setDraggedRuleIndex] = useState<number | null>(null);
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const [touchedRuleFields, setTouchedRuleFields] = useState<Record<string, true>>({});
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [cadenceProfile, setCadenceProfile] = useState<ColDiscoveryCadenceProfile | null>(null);
+  const [cadenceTemplateName, setCadenceTemplateName] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<ObservationPlanTemplateOption[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [applyingDefault, setApplyingDefault] = useState(false);
   const [residentId, setResidentId] = useState("");
   const [status, setStatus] = useState<PlanStatus>("draft");
   const [sourceType, setSourceType] = useState<SourceType>("manual");
   const [effectiveFrom, setEffectiveFrom] = useState("");
   const [effectiveTo, setEffectiveTo] = useState("");
   const [rationale, setRationale] = useState("");
-  const [rules, setRules] = useState<PlanRuleInput[]>([blankRule()]);
+  const [rules, setRules] = useState<PlanRuleInput[]>([]);
+
+  const cadenceKey = resolveColDiscoveryCadenceKey(facilityName);
+  const isPlantationPending = cadenceKey != null && getColDiscoveryCadenceProfile(cadenceKey) === "pending";
+  const isNewPlan = !planId && !duplicatePlanId;
+  const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? null;
+
+  const applyTemplateRules = useCallback((template: ObservationPlanTemplateOption | null) => {
+    if (!template) return;
+    setRules(template.rules.map((rule, index) => ({ ...rule, sortOrder: index })));
+    setCadenceProfile((template.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? null);
+    setCadenceTemplateName(template.name);
+    setSourceType("care_plan");
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
+    setSaveError(null);
     setStatusMessage(null);
     setSaveAttempted(false);
 
@@ -196,21 +259,41 @@ export function ObservationPlanEditor({
     }
 
     try {
-      const { data: residentRows, error: residentError } = await supabase
+      let residentRows: ResidentOption[] = [];
+
+      const primaryRes = await supabase
         .from("residents")
-        .select(
-          "id, first_name, last_name, preferred_name, status, bed_id, acuity_level, acuity_score, beds ( bed_label, rooms ( room_number ) )",
-        )
+        .select(RESIDENT_SELECT_WITH_BED)
         .eq("facility_id", selectedFacilityId)
         .eq("status", "active")
         .is("deleted_at", null)
         .order("last_name");
 
-      if (residentError) throw residentError;
-      setResidents((residentRows ?? []) as unknown as ResidentOption[]);
+      if (primaryRes.error) {
+        const fallbackRes = await supabase
+          .from("residents")
+          .select(RESIDENT_SELECT_FALLBACK)
+          .eq("facility_id", selectedFacilityId)
+          .eq("status", "active")
+          .is("deleted_at", null)
+          .order("last_name");
+
+        if (fallbackRes.error) throw fallbackRes.error;
+
+        residentRows = (fallbackRes.data ?? []).map((row) => ({
+          ...(row as ResidentOption),
+          beds: null,
+        }));
+      } else {
+        residentRows = (primaryRes.data ?? []) as unknown as ResidentOption[];
+      }
+
+      setResidents(residentRows);
 
       const sourcePlanId = planId ?? duplicatePlanId;
       if (sourcePlanId) {
+        setCadenceProfile(null);
+        setCadenceTemplateName(null);
         const response = await fetch(
           `/api/rounding/plans?planId=${encodeURIComponent(sourcePlanId)}&facilityId=${encodeURIComponent(selectedFacilityId)}`,
           { cache: "no-store" },
@@ -248,22 +331,84 @@ export function ObservationPlanEditor({
             })),
         );
       } else {
+        const templateResponse = await fetch(
+          `/api/rounding/plans/templates?facilityId=${encodeURIComponent(selectedFacilityId)}`,
+          { cache: "no-store" },
+        );
+        const templateJson = (await templateResponse.json()) as {
+          templates?: ObservationPlanTemplateOption[];
+        };
+        const loadedTemplates = templateResponse.ok ? (templateJson.templates ?? []) : [];
+        setTemplates(loadedTemplates);
+
+        const defaults = defaultRulesForNewPlan(facilityName);
+        const initialTemplate =
+          loadedTemplates.find((template) => template.name === defaults.templateName) ??
+          loadedTemplates[0] ??
+          null;
+
+        if (initialTemplate) {
+          setSelectedTemplateId(initialTemplate.id);
+          setCadenceProfile((initialTemplate.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? defaults.cadenceProfile);
+          setCadenceTemplateName(initialTemplate.name);
+          setRules(initialTemplate.rules.map((rule, index) => ({ ...rule, sortOrder: index })));
+        } else {
+          setSelectedTemplateId("");
+          setCadenceProfile(defaults.cadenceProfile);
+          setCadenceTemplateName(defaults.templateName);
+          setRules(defaults.rules);
+        }
+
         setResidentId("");
         setStatus("draft");
-        setSourceType("manual");
+        setSourceType(initialTemplate ? "care_plan" : "manual");
         setEffectiveFrom("");
         setEffectiveTo("");
         setRationale("");
-        setRules([blankRule()]);
       }
     } catch (err) {
-      setError(
+      setLoadError(
         formatLiveDataLoadError(err, "Could not load observation plan form. Confirm facility scope and retry."),
       );
     } finally {
       setLoading(false);
     }
-  }, [duplicatePlanId, planId, selectedFacilityId, supabase]);
+  }, [duplicatePlanId, facilityName, planId, selectedFacilityId, supabase]);
+
+  async function applyDiscoveryDefaultForResident() {
+    if (!selectedFacilityId || !residentId) {
+      setSaveError("Select a resident before applying the discovery default.");
+      return;
+    }
+
+    if (isPlantationPending) {
+      setSaveError("Plantation discovery cadence is pending owner decision.");
+      return;
+    }
+
+    setApplyingDefault(true);
+    setSaveError(null);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch("/api/rounding/plans/apply-discovery-default", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ residentId, facilityId: selectedFacilityId }),
+      });
+      const json = (await response.json()) as { error?: string; planId?: string };
+      if (!response.ok) {
+        throw new Error(json.error ?? "Could not apply discovery-round default");
+      }
+
+      setStatusMessage("Discovery-round default applied for this resident.");
+      router.replace(`/admin/rounding/plans/${json.planId ?? ""}`);
+    } catch (err) {
+      setSaveError(formatLiveDataLoadError(err, "Could not apply discovery-round default. Confirm resident scope and retry."));
+    } finally {
+      setApplyingDefault(false);
+    }
+  }
 
   useEffect(() => {
     void load();
@@ -276,7 +421,7 @@ export function ObservationPlanEditor({
         return {
           id: resident.id,
           label,
-          keywords: `${label} ${residentName(resident)} ${residentRoom(resident)} ${residentAcuity(resident)}`,
+          keywords: `${label} ${formatObservationPlanResidentName(resident)} ${residentRoom(resident)} ${formatObservationPlanAcuityDisplay(resident.acuity_score, resident.acuity_level)}`,
         };
       }),
     [residents],
@@ -302,20 +447,22 @@ export function ObservationPlanEditor({
   );
   const canSave = saveBlockers.length === 0;
   const saveTooltip = saveBlockers.join(" · ");
+  const hasActiveResidents = residents.length > 0;
+  const showEmptyResidentsNotice = !loadError && !loading && !hasActiveResidents;
 
   async function savePlan() {
     setSaveAttempted(true);
     if (!selectedFacilityId) {
-      setError("Select a facility first.");
+      setSaveError("Select a facility first.");
       return;
     }
     if (!canSave) {
-      setError(`Complete required fields: ${saveTooltip}.`);
+      setSaveError(`Complete required fields: ${saveTooltip}.`);
       return;
     }
 
     setSaving(true);
-    setError(null);
+    setSaveError(null);
     setStatusMessage(null);
     try {
       const payload: ObservationPlanInput = {
@@ -347,7 +494,7 @@ export function ObservationPlanEditor({
       setStatusMessage("Observation plan saved.");
       router.replace(`/admin/rounding/plans/${json.planId ?? planId ?? ""}`);
     } catch (err) {
-      setError(
+      setSaveError(
         formatLiveDataLoadError(err, "Could not save observation plan. Confirm required fields and retry."),
       );
     } finally {
@@ -377,6 +524,33 @@ export function ObservationPlanEditor({
   return (
     <TooltipProvider delay={250}>
       <div className="space-y-6">
+        {loadError ? <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} /> : null}
+        {showEmptyResidentsNotice ? (
+          <AdminEmptyState
+            title="No active residents at this facility"
+            description={`The census at ${facilityName} is empty right now. You can still draft cadence rules, but choose a resident once someone is admitted before saving a plan.`}
+          />
+        ) : null}
+        {!loadError && isNewPlan ? (
+          <CadenceDefaultsPanel
+            templates={templates}
+            selectedTemplateId={selectedTemplateId}
+            cadenceProfile={cadenceProfile}
+            cadenceTemplateName={cadenceTemplateName}
+            facilityName={facilityName}
+            isPlantationPending={isPlantationPending}
+            residentSelected={Boolean(residentId)}
+            applyingDefault={applyingDefault}
+            onTemplateChange={(templateId) => {
+              setSelectedTemplateId(templateId);
+              const template = templates.find((entry) => entry.id === templateId) ?? null;
+              applyTemplateRules(template);
+            }}
+            onResetFromTemplate={() => applyTemplateRules(selectedTemplate)}
+            onApplyForResident={() => void applyDiscoveryDefaultForResident()}
+          />
+        ) : null}
+
         <Card className="border-border bg-card shadow-soft">
           <CardHeader>
             <CardTitle>{title}</CardTitle>
@@ -385,7 +559,7 @@ export function ObservationPlanEditor({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
             {statusMessage ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{statusMessage}</p> : null}
 
             <FormSection title="Identity">
@@ -403,7 +577,9 @@ export function ObservationPlanEditor({
                     data-testid="observation-plan-resident"
                   />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {residents.length} active residents at {facilityName} available.
+                    {hasActiveResidents
+                      ? `${residents.length} active residents at ${facilityName} available.`
+                      : `No active residents at ${facilityName} right now.`}
                   </p>
                 </div>
 
@@ -509,6 +685,17 @@ export function ObservationPlanEditor({
               Add rule
             </Button>
           </div>
+
+          {rules.length === 0 ? (
+            <AdminEmptyState
+              title="No cadence rules yet"
+              description={
+                cadenceProfile === "pending"
+                  ? `Plantation discovery cadence is pending owner decision. Add rules manually once Jessica supplies times — Haven will not pre-fill wing or 12-hour schedules.`
+                  : "Add at least one rule to define when checks should occur."
+              }
+            />
+          ) : null}
 
           {rules.map((rule, index) => {
             const currentRuleErrors = ruleErrors[index] ?? {};
@@ -671,7 +858,11 @@ export function ObservationPlanEditor({
           })}
         </div>
 
-        <PlanPreviewCard preview={preview} residentName={selectedResident ? residentName(selectedResident) : null} status={status} />
+        <PlanPreviewCard
+          preview={preview}
+          residentName={selectedResident ? formatObservationPlanResidentName(selectedResident) : null}
+          status={status}
+        />
 
         <div className="flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
           <Button variant="outline" size="lg" className="min-h-11" onClick={() => router.push("/admin/rounding/plans")}>
@@ -748,6 +939,107 @@ export function ObservationPlanEditor({
     setRules((current) => current.filter((_, currentIndex) => currentIndex !== pendingDeleteIndex));
     setPendingDeleteIndex(null);
   }
+}
+
+function CadenceDefaultsPanel({
+  templates,
+  selectedTemplateId,
+  cadenceProfile,
+  cadenceTemplateName,
+  facilityName,
+  isPlantationPending,
+  residentSelected,
+  applyingDefault,
+  onTemplateChange,
+  onResetFromTemplate,
+  onApplyForResident,
+}: {
+  templates: ObservationPlanTemplateOption[];
+  selectedTemplateId: string;
+  cadenceProfile: ColDiscoveryCadenceProfile | null;
+  cadenceTemplateName: string | null;
+  facilityName: string;
+  isPlantationPending: boolean;
+  residentSelected: boolean;
+  applyingDefault: boolean;
+  onTemplateChange: (templateId: string) => void;
+  onResetFromTemplate: () => void;
+  onApplyForResident: () => void;
+}) {
+  if (isPlantationPending) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-card px-4 py-4">
+        <p className="text-[13px] font-semibold text-foreground">
+          {cadenceTemplateName ?? "COL Discovery Rounds (cadence pending)"}
+        </p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+          {facilityName} discovery cadence is pending owner decision. Haven will not apply wing-stagger or 12-hour
+          defaults here — add rules after Jessica confirms times.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border bg-muted/20 px-4 py-4">
+      <div>
+        <p className="text-[13px] font-semibold text-foreground">Facility cadence template</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+          New plans start from Jessica discovery-round times for {facilityName}. Migration 219 12-hour and wing
+          templates are not offered here.
+        </p>
+      </div>
+
+      {templates.length > 0 ? (
+        <FormField
+          id="cadence-template"
+          label="Template"
+          helper="Choose the facility discovery template, then review rules before saving."
+        >
+          <Select value={selectedTemplateId} onValueChange={onTemplateChange}>
+            <SelectTrigger id="cadence-template" className="h-9">
+              <SelectValue placeholder="Select cadence template" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+      ) : (
+        <p className="text-[12px] text-muted-foreground">
+          {cadenceTemplateName
+            ? `Using ${cadenceTemplateName} from Haven defaults.`
+            : "No facility template is configured. Add rules manually."}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button type="button" variant="outline" size="sm" disabled={!selectedTemplateId} onClick={onResetFromTemplate}>
+          Reset rules from template
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!residentSelected || applyingDefault}
+          onClick={onApplyForResident}
+        >
+          {applyingDefault ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Apply discovery default for resident
+        </Button>
+      </div>
+
+      {cadenceProfile && cadenceProfile !== "pending" ? (
+        <p className="text-[12px] text-muted-foreground">
+          Preview below reflects discrete Jessica check times
+          {cadenceProfile === "homewood_two_hour_night" ? " with two-hour overnight checks" : " for day and night"}.
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 function FormSection({ title, children }: { title: string; children: ReactNode }) {

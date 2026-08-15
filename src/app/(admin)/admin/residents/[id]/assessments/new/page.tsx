@@ -16,6 +16,7 @@ import {
   didRiskWorsen,
 } from "@/lib/assessments/scoring";
 import type { AssessmentTemplate, AssessmentTemplateItem } from "@/lib/assessments/types";
+import { formatAssessmentLiveScore } from "@/lib/assessments/assessment-new-display-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 
@@ -362,7 +363,7 @@ export default function AssessmentEntryPage() {
 
                 <div className="flex items-center gap-4 rounded-[8px] border border-border bg-muted px-4 py-3">
                   <div className="text-sm text-muted-foreground">
-                    Score: <span className="tabular-nums text-lg font-semibold text-foreground">{liveTotal ?? "—"}</span>
+                    Score: <span className="tabular-nums text-lg font-semibold text-foreground">{formatAssessmentLiveScore(liveTotal)}</span>
                     <span className="text-muted-foreground"> / {selectedTemplate.score_range_max}</span>
                   </div>
                   {liveRiskLevel && (

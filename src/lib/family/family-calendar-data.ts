@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { FAMILY_CALENDAR_NO_LOCATION } from "@/lib/family/family-portal-copy";
 import type { Database } from "@/types/database";
 
 export type FamilyCalendarEventRow = {
@@ -116,7 +117,7 @@ export async function fetchFamilyCalendarEvents(
     if (facilityName) parts.push(facilityName);
     if (who) parts.push(`Facilitator: ${who}`);
     if (s.notes?.trim()) parts.push(s.notes.trim());
-    const locationLine = parts.length > 0 ? parts.join(" · ") : "Community program";
+    const locationLine = parts.length > 0 ? parts.join(" · ") : FAMILY_CALENDAR_NO_LOCATION;
 
     return {
       id: s.id,

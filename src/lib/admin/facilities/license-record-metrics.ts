@@ -2,6 +2,9 @@ import { parseISO, startOfDay, differenceInCalendarDays } from "date-fns";
 
 export type LicenseStanding = "pending" | "active" | "probation" | "suspended" | "expired";
 
+/** Operator-facing copy when license standing cannot be mapped to a known pillar. */
+export const LICENSE_STANDING_NO_STANDING_COPY = "No standing posted";
+
 export function ahcaExpiryYmd(row: Record<string, unknown>): string | null {
   const ahca = row.ahca_license_expiration ?? row.license_expiration;
   if (typeof ahca === "string" && /^\d{4}-\d{2}-\d{2}$/.test(ahca)) return ahca;
@@ -75,7 +78,7 @@ export function licenseStandingLabel(standing: LicenseStanding): string {
     case "pending":
       return "Pending verification";
     default:
-      return "Unknown";
+      return LICENSE_STANDING_NO_STANDING_COPY;
   }
 }
 

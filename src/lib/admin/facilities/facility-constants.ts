@@ -4,6 +4,9 @@
  * All values must match CHECK constraints in migration 131
  */
 
+import { SURVEY_RESULT_NO_RESULT_COPY } from "@/lib/admin/facilities/survey-result-display-copy";
+import { SURVEY_TYPE_NO_TYPE_COPY } from "@/lib/admin/facilities/survey-type-display-copy";
+
 // ─── Contact Categories ──────────────────────────────────────────────────────
 
 export const CONTACT_CATEGORIES = [
@@ -137,7 +140,7 @@ export type SurveyResult = (typeof SURVEY_RESULTS)[number];
 
 /** Canonical human labels for AHCA-assisted living survey/disposition outcomes stored as snake_case. */
 export function surveyResultDisplayLabel(raw: string | null | undefined): string {
-  if (raw == null || raw.trim() === "") return "—";
+  if (raw == null || raw.trim() === "") return SURVEY_RESULT_NO_RESULT_COPY;
   const key = raw.trim();
   const aliases: Record<string, string> = {
     NO_CITATIONS: "No citations",
@@ -170,7 +173,7 @@ export function surveyResultDisplayLabel(raw: string | null | undefined): string
 
 export function surveyTypeDisplayLabel(raw: string | null | undefined): string {
   const s = (raw ?? "").trim();
-  if (!s) return "—";
+  if (!s) return SURVEY_TYPE_NO_TYPE_COPY;
   const lower = s.toLowerCase();
   const map: Record<string, string> = {
     annual: "Annual inspection",

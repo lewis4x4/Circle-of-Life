@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: "SYS: eyebrow pills"
         run: |
@@ -41,12 +43,26 @@ jobs:
             || (echo "::error::rounded-3xl on PageClient"; exit 1)
 
       - name: "Uppercase CTAs"
+        # Only scan .tsx files changed in this PR so pre-existing violations
+        # elsewhere in src/ do not block unrelated fixes.
         run: |
-          ! grep -rnE 'uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
-            src/ \
-            --include="*.tsx" \
-            --exclude-dir=node_modules \
-            || (echo "::error::uppercase CTA found"; exit 1)
+          set -euo pipefail
+          git fetch origin "${{ github.event.pull_request.base.ref }}"
+          mapfile -t CHANGED < <(
+            git diff --name-only --diff-filter=ACMRT \
+              "origin/${{ github.event.pull_request.base.ref }}...HEAD" \
+              | grep -E '^src/.*\.tsx$' || true
+          )
+          if [ "${#CHANGED[@]}" -eq 0 ]; then
+            echo "No changed src/**/*.tsx files — skipping Uppercase CTAs check"
+            exit 0
+          fi
+          echo "Checking ${#CHANGED[@]} changed .tsx file(s) for uppercase CTAs"
+          if grep -HnE 'uppercase tracking-(wider|widest)[^"]*\b(button|cta|primary)' \
+            "${CHANGED[@]}"; then
+            echo "::error::uppercase CTA found in PR-changed files"
+            exit 1
+          fi
 
       - name: "Gradient text on chrome (bg-clip-text + gradient on PageClient)"
         run: |

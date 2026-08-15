@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import type { FacilityTab } from "@/lib/admin/facilities/facility-constants";
 import { FACILITY_TAB_LABELS } from "@/lib/admin/facilities/facility-constants";
+import { FACILITY_SECONDARY_TAB_NO_VALUE_COPY } from "@/lib/admin/facilities/secondary-tab-metrics-display-copy";
 
 function StripTile({
   label,
@@ -88,9 +89,9 @@ export function FacilitySecondaryTabMetricsStrip({
         value="Focused"
         sub="Overview KPIs stay on Overview tab · detailed metrics render below tabs."
       />
-      <StripTile label={blurbs.a} value="—" sub="See tab grid" valueClassName="text-2xl text-muted-foreground" />
-      <StripTile label={blurbs.b} value="—" sub="See tab grid" valueClassName="text-2xl text-muted-foreground" />
-      <StripTile label={blurbs.c} value="—" sub="See tab grid" valueClassName="text-2xl text-muted-foreground" />
+      <StripTile label={blurbs.a} value={FACILITY_SECONDARY_TAB_NO_VALUE_COPY} sub="See tab grid" valueClassName="text-2xl text-muted-foreground" />
+      <StripTile label={blurbs.b} value={FACILITY_SECONDARY_TAB_NO_VALUE_COPY} sub="See tab grid" valueClassName="text-2xl text-muted-foreground" />
+      <StripTile label={blurbs.c} value={FACILITY_SECONDARY_TAB_NO_VALUE_COPY} sub="See tab grid" valueClassName="text-2xl text-muted-foreground" />
     </div>
   );
 }

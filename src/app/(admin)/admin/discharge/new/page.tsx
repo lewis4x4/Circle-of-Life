@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -25,6 +25,12 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import {
+  formatDischargeNewResidentLabel,
+  formatDischargeNewRoomLabel,
+  formatDischargeNewStartedLabel,
+  getDischargeNewStartedDaysAgo,
+} from "@/lib/discharge/discharge-new-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
@@ -75,10 +81,6 @@ type DraftCardRow = {
   residents: { first_name: string; last_name: string } | null;
 };
 
-function residentLabel(r: Pick<ResidentPickerRow, "first_name" | "last_name">): string {
-  return `${r.last_name}, ${r.first_name}`;
-}
-
 function normalizeBed(row: ResidentPickerRow): ResidentBedNested {
   const b = row.beds;
   if (Array.isArray(b)) return b[0] ?? null;
@@ -87,20 +89,7 @@ function normalizeBed(row: ResidentPickerRow): ResidentBedNested {
 
 function formatRoom(row: ResidentPickerRow): string {
   const bed = normalizeBed(row);
-  const rn = bed?.rooms?.room_number?.trim();
-  if (rn) return rn;
-  const lbl = bed?.bed_label?.trim();
-  if (lbl) return lbl;
-  return "—";
-}
-
-function formatAdmitted(isoDate: string | null | undefined): string {
-  if (!isoDate || !isoDate.trim()) return "—";
-  try {
-    return format(parseISO(isoDate.length > 10 ? isoDate : `${isoDate}T12:00:00`), "MMM d, yyyy");
-  } catch {
-    return "—";
-  }
+  return formatDischargeNewRoomLabel(bed?.rooms?.room_number, bed?.bed_label);
 }
 
 function workflowStepOf5(status: string): number {
@@ -367,12 +356,13 @@ export default function AdminDischargeNewPage() {
     () =>
       residents.map((r) => {
         const room = formatRoom(r);
-        const admitted = formatAdmitted(r.admission_date);
-        const label = `${residentLabel(r)} · Room ${room} · Admitted ${admitted}`;
+        const admitted = formatDischargeNewStartedLabel(r.admission_date);
+        const residentName = formatDischargeNewResidentLabel(r);
+        const label = `${residentName} · Room ${room} · Admitted ${admitted}`;
         return {
           id: r.id,
           label,
-          keywords: `${residentLabel(r)} ${room} ${admitted} ${r.status} ${r.id}`,
+          keywords: `${residentName} ${room} ${admitted} ${r.status} ${r.id}`,
         };
       }),
     [residents],
@@ -639,17 +629,9 @@ export default function AdminDischargeNewPage() {
                 <>
                   <ul className="space-y-3" aria-label="In-progress medication reconciliation drafts">
                     {visibleDrafts.map((row) => {
-                      const rn = row.residents;
-                      const name = rn ? residentLabel({ first_name: rn.first_name, last_name: rn.last_name }) : "Unknown resident";
-                      let startedLabel = "—";
-                      let daysAgo = 0;
-                      try {
-                        const started = parseISO(row.created_at);
-                        startedLabel = format(started, "MMM d, yyyy");
-                        daysAgo = differenceInCalendarDays(new Date(), started);
-                      } catch {
-                        /* ignore */
-                      }
+                      const name = formatDischargeNewResidentLabel(row.residents);
+                      const startedLabel = formatDischargeNewStartedLabel(row.created_at);
+                      const daysAgo = getDischargeNewStartedDaysAgo(row.created_at);
                       const step = workflowStepOf5(row.status);
                       return (
                         <li

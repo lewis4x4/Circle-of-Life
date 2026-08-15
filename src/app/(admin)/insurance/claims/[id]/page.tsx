@@ -10,6 +10,11 @@ import { RecordDetailHeader, RecordDetailSection } from "@/design-system/compone
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
+import {
+  formatInsuranceClaimDateOfLoss,
+  formatInsuranceClaimNumber,
+  formatInsuranceClaimReportedAt,
+} from "@/lib/insurance/claims-display-copy";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -90,7 +95,7 @@ export default function InsuranceClaimDetailPage() {
       <InsuranceHubNav />
       <RecordDetailHeader
         title="Claim"
-        subtitle={`${claim.claim_number ?? "No claim number"} · ${claim.status.replace(/_/g, " ")}`}
+        subtitle={`${formatInsuranceClaimNumber(claim.claim_number)} · ${claim.status.replace(/_/g, " ")}`}
         backLink={{ label: "Back to claims", href: "/admin/insurance/claims" }}
       />
 
@@ -100,11 +105,12 @@ export default function InsuranceClaimDetailPage() {
       >
         <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
-            <span className="text-muted-foreground">Date of loss:</span> {claim.date_of_loss ?? "—"}
+            <span className="text-muted-foreground">Date of loss:</span>{" "}
+            {formatInsuranceClaimDateOfLoss(claim.date_of_loss)}
           </p>
           <p>
             <span className="text-muted-foreground">Reported:</span>{" "}
-            {claim.reported_at ? new Date(claim.reported_at).toLocaleString() : "—"}
+            {formatInsuranceClaimReportedAt(claim.reported_at)}
           </p>
           <p>
             <span className="text-muted-foreground">Reserve:</span>{" "}

@@ -46,6 +46,10 @@ import {
   VendorCategoryBadge,
   vendorStatusUiLabel,
 } from "@/lib/vendors/vendor-category-ui";
+import {
+  formatVendorsTabLastActivityDisplay,
+  formatVendorsTabPhoneDisplay,
+} from "@/lib/facilities/vendors-tab-display-copy";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -673,10 +677,12 @@ function PaidVendorRow(props: {
           {vendor?.primary_contact_name ? (
             <span className="font-medium text-foreground">{vendor.primary_contact_name}</span>
           ) : null}
-          {vendor?.primary_contact_phone ? (
+          {vendor?.primary_contact_phone?.trim() ? (
             <PhoneDialLink phone={vendor.primary_contact_phone} className="text-[12px]" />
           ) : (
-            <span className="text-muted-foreground">—</span>
+            <span className="text-muted-foreground">
+              {formatVendorsTabPhoneDisplay(vendor?.primary_contact_phone)}
+            </span>
           )}
         </div>
       </td>
@@ -703,12 +709,7 @@ function PaidVendorRow(props: {
         </span>
       </td>
       <td className="align-middle px-2 text-right text-[12px] text-muted-foreground">
-        {row.last_invoice_at ?? row.last_payment_at
-          ? new Date((row.last_invoice_at ?? row.last_payment_at)!)
-              .toLocaleDateString(undefined, {
-                dateStyle: "medium",
-              })
-          : "—"}
+        {formatVendorsTabLastActivityDisplay(row.last_invoice_at, row.last_payment_at)}
       </td>
       <td className="align-middle px-1 text-right" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>

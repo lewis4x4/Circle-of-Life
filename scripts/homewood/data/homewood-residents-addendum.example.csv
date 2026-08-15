@@ -1,0 +1,2 @@
+first_name,last_name,preferred_name,date_of_birth,gender,room_number,admit_date,primary_diagnosis,payer_type,emergency_contact_name,emergency_contact_phone,emergency_contact_relationship
+Alex,Example,,1950-06-01,female,16B,2026-05-04,"Example diagnosis text",private_pay,Contact Example,555-0199,daughter

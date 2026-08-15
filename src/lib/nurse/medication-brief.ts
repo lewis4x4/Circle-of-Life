@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
+import { NURSE_WATCHLIST_NO_ROOM_COPY } from "@/lib/nurse/medication-brief-display-copy";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -106,7 +107,7 @@ export async function fetchNurseMedicationBrief(
     watchlistResidents: residentAssurance.highRiskResidents.map((resident) => ({
       id: resident.id,
       name: resident.name,
-      room: "—",
+      room: NURSE_WATCHLIST_NO_ROOM_COPY,
       reason: `${resident.riskTier} risk · score ${resident.score}`,
     })),
   };

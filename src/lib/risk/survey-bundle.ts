@@ -1,3 +1,12 @@
+import {
+  formatSurveyBundlePrintAdministratorName,
+  formatSurveyBundlePrintEntityName,
+  formatSurveyBundlePrintLicenseNumber,
+  formatSurveyBundlePrintLicenseType,
+  formatSurveyBundlePrintPocStatus,
+  formatSurveyBundlePrintPocSubmissionDueDate,
+} from "./survey-bundle-print-display-copy";
+
 export type SurveyBundleFacility = {
   id: string;
   name: string;
@@ -217,9 +226,9 @@ export function surveyBundleToMarkdown(packet: SurveyBundlePacket) {
     "",
     `Generated: ${packet.generatedAt}`,
     `Facility: ${packet.facility.name}`,
-    `Entity: ${packet.facility.entityName ?? "Unknown entity"}`,
-    `Administrator: ${packet.facility.administratorName ?? "Unknown"}`,
-    `License: ${packet.facility.licenseNumber ?? "Missing"} (${packet.facility.alfLicenseType ?? packet.facility.licenseType ?? "unspecified"})`,
+    `Entity: ${formatSurveyBundlePrintEntityName(packet.facility.entityName)}`,
+    `Administrator: ${formatSurveyBundlePrintAdministratorName(packet.facility.administratorName)}`,
+    `License: ${formatSurveyBundlePrintLicenseNumber(packet.facility.licenseNumber)} (${formatSurveyBundlePrintLicenseType(packet.facility.alfLicenseType, packet.facility.licenseType)})`,
     `Licensed beds: ${packet.facility.totalLicensedBeds}`,
     `Packet coverage: ${packet.packetCoveragePct}%`,
     "",
@@ -252,7 +261,7 @@ export function surveyBundleToMarkdown(packet: SurveyBundlePacket) {
   } else {
     for (const deficiency of packet.deficiencies) {
       lines.push(
-        `- ${deficiency.tagNumber} — ${deficiency.tagDescription} | severity=${deficiency.severity} | status=${deficiency.status} | POC=${deficiency.pocStatus ?? "missing"} | due=${deficiency.pocSubmissionDueDate ?? "n/a"}`,
+        `- ${deficiency.tagNumber} — ${deficiency.tagDescription} | severity=${deficiency.severity} | status=${deficiency.status} | POC=${formatSurveyBundlePrintPocStatus(deficiency.pocStatus)} | due=${formatSurveyBundlePrintPocSubmissionDueDate(deficiency.pocSubmissionDueDate)}`,
       );
     }
   }

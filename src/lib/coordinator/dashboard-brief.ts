@@ -1,8 +1,9 @@
 /**
  * Coordinator (Resident Service Coordinator) dashboard brief.
- * Aggregates care plans, assessments, family messages, admissions pipeline.
+ * Aggregates care plans, assessments, family bulletin notes, admissions pipeline.
  */
 
+import { formatCoordinatorDashboardResidentName } from "@/lib/coordinator/dashboard-brief-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -10,7 +11,7 @@ export type CoordinatorDashboardBrief = {
   activeCarePlans: number;
   reviewsDue14d: number;
   pendingAssessments: number;
-  unreadFamilyMessages: number;
+  staffBulletinNotes: number;
   activeAdmissions: number;
   recentConditionChanges: number;
   carePlansDue: Array<{ id: string; residentName: string; reviewDate: string }>;
@@ -45,7 +46,7 @@ export async function fetchCoordinatorDashboardBrief(
     carePlansRes,
     reviewsDueRes,
     assessmentsRes,
-    messagesRes,
+    bulletinRes,
     admissionsRes,
     conditionRes,
     reviewsListRes,
@@ -61,8 +62,8 @@ export async function fetchCoordinatorDashboardBrief(
     f(supabase.from("assessments" as never).select("id", { count: "exact", head: true }))
       .eq("status", "pending")
       .is("deleted_at", null),
-    f(supabase.from("family_messages" as never).select("id", { count: "exact", head: true }))
-      .eq("is_read", false)
+    f(supabase.from("family_portal_messages" as never).select("id", { count: "exact", head: true }))
+      .eq("author_kind", "staff")
       .is("deleted_at", null),
     f(supabase.from("residents" as never).select("id", { count: "exact", head: true }))
       .in("status", ["inquiry", "pending_admission"])
@@ -85,14 +86,13 @@ export async function fetchCoordinatorDashboardBrief(
 
   const carePlansDue = ((reviewsListRes.data ?? []) as ReviewListRow[]).map((review) => ({
     id: review.id,
-    residentName:
-      `${review.residents?.first_name ?? ""} ${review.residents?.last_name ?? ""}`.trim() || "Unknown",
+    residentName: formatCoordinatorDashboardResidentName(review.residents),
     reviewDate: review.next_review_date,
   }));
 
   const pendingAdmissions = ((pendingListRes.data ?? []) as PendingAdmissionRow[]).map((resident) => ({
     id: resident.id,
-    name: `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || "Unknown",
+    name: formatCoordinatorDashboardResidentName(resident),
     daysSinceInquiry: Math.round((Date.now() - new Date(resident.created_at).getTime()) / 86400000),
   }));
 
@@ -100,7 +100,7 @@ export async function fetchCoordinatorDashboardBrief(
     activeCarePlans: (carePlansRes as CountResponse).count ?? 0,
     reviewsDue14d: (reviewsDueRes as CountResponse).count ?? 0,
     pendingAssessments: (assessmentsRes as CountResponse).count ?? 0,
-    unreadFamilyMessages: (messagesRes as CountResponse).count ?? 0,
+    staffBulletinNotes: (bulletinRes as CountResponse).count ?? 0,
     activeAdmissions: (admissionsRes as CountResponse).count ?? 0,
     recentConditionChanges: (conditionRes as CountResponse).count ?? 0,
     carePlansDue,

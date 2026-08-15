@@ -4,6 +4,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { actorCanAccessTargetUser, requireAdminApiActor } from "@/lib/admin/api-auth";
+import {
+  formatUserAuditActingUserEmailDisplay,
+  formatUserAuditActingUserNameDisplay,
+} from "@/lib/admin/users/user-audit-display-copy";
 import type { Database } from "@/types/database";
 import { auditLogQuerySchema } from "@/lib/validation/user-management";
 
@@ -86,13 +90,19 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
       .select("id, email, full_name")
       .in("id", actorIds as string[]);
     for (const p of actorProfiles ?? []) {
-      actorMap[p.id] = { email: p.email, full_name: p.full_name };
+      actorMap[p.id] = {
+        email: formatUserAuditActingUserEmailDisplay(p.email),
+        full_name: formatUserAuditActingUserNameDisplay(p.full_name),
+      };
     }
   }
 
   const data = entries.map((entry) => ({
     ...entry,
-    acting_user: actorMap[entry.acting_user_id] ?? { email: "unknown", full_name: "Unknown" },
+    acting_user: actorMap[entry.acting_user_id] ?? {
+      email: formatUserAuditActingUserEmailDisplay(null),
+      full_name: formatUserAuditActingUserNameDisplay(null),
+    },
   }));
 
   return NextResponse.json({

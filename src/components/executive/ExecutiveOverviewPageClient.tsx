@@ -20,11 +20,13 @@ import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
+  applyFacilityOccupancyMetricHonesty,
   attachFacilityMetrics,
   buildLatestMetricMap,
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
+import { fetchFacilityBedCensusById } from "@/lib/executive/facility-occupancy-census";
 import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
@@ -41,6 +43,14 @@ import {
   fetchPresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
+import { formatExecutiveRevenueMtdCents } from "@/lib/executive/executive-display-copy";
+import {
+  executiveKpiEmptyCopy,
+  executiveKpiStripHelperLine,
+  occupancyLoadedFootnote,
+  type ExecutiveKpiMetricKey,
+  type OccupancyContext,
+} from "@/lib/executive/kpi-tile-copy";
 import { presenceLabel, presenceTone, type ResidencyStatus } from "@/lib/residents/presence";
 import type { StatusPillTone } from "@/components/ui/status-pill";
 import type { Database } from "@/types/database";
@@ -52,6 +62,7 @@ type ExecutiveOverviewPageClientProps = {
   initialAssuranceHeatMap: ResidentAssuranceFacilityRollup[];
   initialAssuranceTrends: ResidentAssuranceFacilityTrendRow[];
   initialPresenceCensus: PresenceCensus;
+  initialOccupancyContext: OccupancyContext | null;
   initialHasServerData: boolean;
 };
 
@@ -62,6 +73,7 @@ export function ExecutiveOverviewPageClient({
   initialAssuranceHeatMap,
   initialAssuranceTrends,
   initialPresenceCensus,
+  initialOccupancyContext,
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
@@ -84,6 +96,7 @@ export function ExecutiveOverviewPageClient({
 
   // Live resident-presence census (in-house vs on-hold) — additive to occupancy.
   const [presenceCensus, setPresenceCensus] = useState<PresenceCensus>(initialPresenceCensus);
+  const [occupancyContext, setOccupancyContext] = useState<OccupancyContext | null>(initialOccupancyContext);
 
   // Skip the first client-side fetch when the server already supplied scoped
   // live data. If the server returned empty arrays, the client retries once;
@@ -138,16 +151,45 @@ export function ExecutiveOverviewPageClient({
       // 3. Fetch Portfolio Facilities
       const { data: facData, error: facErr } = await supabase
         .from("facilities")
-        .select("id, name")
+        .select("id, name, total_licensed_beds")
         .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name", { ascending: true });
         
       if (!facErr && facData && facData.length > 0) {
-        setFacilities(attachFacilityMetrics(facData, facilityMetricData ?? []));
+        const bedCensusByFacility = await fetchFacilityBedCensusById(
+          supabase,
+          facData.map((facility) => facility.id),
+        );
+        setFacilities(
+          applyFacilityOccupancyMetricHonesty(
+            attachFacilityMetrics(facData, facilityMetricData ?? []),
+            bedCensusByFacility,
+            facData,
+          ),
+        );
       } else {
         setFacilities([]);
       }
+
+      let nextPresenceCensus = EMPTY_PRESENCE_CENSUS;
+      try {
+        nextPresenceCensus = await fetchPresenceCensus(supabase, organizationId);
+        setPresenceCensus(nextPresenceCensus);
+      } catch {
+        setPresenceCensus(EMPTY_PRESENCE_CENSUS);
+      }
+
+      const licensedBeds = (facData ?? []).reduce(
+        (sum, facility) => sum + (facility.total_licensed_beds ?? 0),
+        0,
+      );
+      const occupiedResidents = nextPresenceCensus.total;
+      setOccupancyContext(
+        occupiedResidents > 0 && licensedBeds > 0
+          ? { occupiedResidents, licensedBeds }
+          : null,
+      );
 
       const [assuranceRows, assuranceTrendRows] = await Promise.all([
         fetchResidentAssuranceFacilityHeatMap(supabase, organizationId),
@@ -163,14 +205,6 @@ export function ExecutiveOverviewPageClient({
         setAssuranceTrends(assuranceTrendRows);
       } else {
         setAssuranceTrends([]);
-      }
-
-      // Presence census is non-critical: a failure here must not blank the
-      // dashboard, so it is guarded independently of the metrics/alerts path.
-      try {
-        setPresenceCensus(await fetchPresenceCensus(supabase, organizationId));
-      } catch {
-        setPresenceCensus(EMPTY_PRESENCE_CENSUS);
       }
 
     } catch (e) {
@@ -200,7 +234,7 @@ export function ExecutiveOverviewPageClient({
       title: "Finance hub",
       description: "Billed revenue, labor pressure, monthly financials.",
       href: "/admin/finance",
-      stat: formatCur(metrics["rev_mtd"]) ?? "—",
+      stat: formatExecutiveRevenueMtdCents(metrics["rev_mtd"]),
     },
     {
       title: "Insurance & risk",
@@ -236,7 +270,7 @@ export function ExecutiveOverviewPageClient({
     { key: "labor_pct", label: "Labor cost %", format: "pct" as const, trend: "down" as const },
     { key: "inc_rate", label: "Incidents / 1k days", format: "num" as const, trend: null },
     { key: "survey_rd", label: "Survey readiness", format: "pct" as const, trend: null },
-  ];
+  ] as const;
 
   const dashEm = <span className="text-muted-foreground/60 tabular-nums">—</span>;
 
@@ -248,6 +282,43 @@ export function ExecutiveOverviewPageClient({
       formatNum(value);
     return formatted ?? dashEm;
   }
+
+  function renderKpiTileValue(
+    metricKey: ExecutiveKpiMetricKey,
+    value: number | undefined,
+    format: "pct" | "num" | "cur",
+  ): ReactNode {
+    if (!hasMetric(value)) {
+      return (
+        <span className="text-[13px] font-medium leading-snug text-muted-foreground">
+          {executiveKpiEmptyCopy(metricKey)}
+        </span>
+      );
+    }
+    return (
+      <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        {renderMetric(value, format)}
+      </span>
+    );
+  }
+
+  function renderPortfolioMetric(
+    metricKey: ExecutiveKpiMetricKey,
+    value: number | undefined,
+    format: "pct" | "num" | "cur",
+  ): ReactNode {
+    if (!hasMetric(value)) {
+      return (
+        <span className="text-[12px] leading-snug text-muted-foreground">
+          {executiveKpiEmptyCopy(metricKey)}
+        </span>
+      );
+    }
+    return renderMetric(value, format);
+  }
+
+  const loadedKpiCount = KPI_TILES.filter((tile) => hasMetric(metrics[tile.key])).length;
+  const kpiStripHelperLine = executiveKpiStripHelperLine(loadedKpiCount, KPI_TILES.length);
 
   /**
    * "Empty install" detection — an organization is connected and has facilities,
@@ -306,11 +377,14 @@ export function ExecutiveOverviewPageClient({
           assuranceHeatMap={assuranceHeatMap}
           assuranceTrends={assuranceTrends}
           presenceCensus={presenceCensus}
+          occupancyContext={occupancyContext}
           ownerPriorityCards={ownerPriorityCards}
           roleConfig={roleConfig}
           KPI_TILES={KPI_TILES}
           hasMetric={hasMetric}
-          renderMetric={renderMetric}
+          renderKpiTileValue={renderKpiTileValue}
+          renderPortfolioMetric={renderPortfolioMetric}
+          kpiStripHelperLine={kpiStripHelperLine}
           assuranceBandClass={assuranceBandClass}
           assuranceBandText={assuranceBandText}
         />
@@ -701,16 +775,27 @@ type DashboardBodyProps = {
   assuranceHeatMap: ResidentAssuranceFacilityRollup[];
   assuranceTrends: ResidentAssuranceFacilityTrendRow[];
   presenceCensus: PresenceCensus;
+  occupancyContext: OccupancyContext | null;
   ownerPriorityCards: Array<{ title: string; description: string; href: string; stat: string }>;
   roleConfig: ReturnType<typeof getRoleDashboardConfig>;
   KPI_TILES: ReadonlyArray<{
-    key: string;
+    key: ExecutiveKpiMetricKey;
     label: string;
     format: "pct" | "num" | "cur";
     trend: "up" | "down" | null;
   }>;
   hasMetric: (v: number | null | undefined) => v is number;
-  renderMetric: (value: number | undefined, format: "pct" | "num" | "cur") => ReactNode;
+  renderKpiTileValue: (
+    metricKey: ExecutiveKpiMetricKey,
+    value: number | undefined,
+    format: "pct" | "num" | "cur",
+  ) => ReactNode;
+  renderPortfolioMetric: (
+    metricKey: ExecutiveKpiMetricKey,
+    value: number | undefined,
+    format: "pct" | "num" | "cur",
+  ) => ReactNode;
+  kpiStripHelperLine: string;
   assuranceBandClass: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
   assuranceBandText: Record<ResidentAssuranceFacilityRollup["heatBand"], string>;
 };
@@ -722,39 +807,49 @@ function ExecutiveDashboardBody({
   assuranceHeatMap,
   assuranceTrends,
   presenceCensus,
+  occupancyContext,
   ownerPriorityCards,
   roleConfig,
   KPI_TILES,
   hasMetric,
-  renderMetric,
+  renderKpiTileValue,
+  renderPortfolioMetric,
+  kpiStripHelperLine,
   assuranceBandClass,
   assuranceBandText,
 }: DashboardBodyProps) {
+  const occupancyFootnote = occupancyContext ? occupancyLoadedFootnote(occupancyContext) : null;
+
   return (
     <>
       {/* KPI strip — 2/3/5 responsive */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {KPI_TILES.map((tile) => {
-          const value = metrics[tile.key];
-          const present = hasMetric(value);
-          return (
-            <div
-              key={tile.key}
-              className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
-            >
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {tile.label}
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-                  {renderMetric(value, tile.format)}
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          {KPI_TILES.map((tile) => {
+            const value = metrics[tile.key];
+            const present = hasMetric(value);
+            const footnote = tile.key === "occ_pt" && present ? occupancyFootnote : null;
+            return (
+              <div
+                key={tile.key}
+                className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
+              >
+                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {tile.label}
                 </span>
-                {present && tile.trend === "up" && <TrendingUp className="size-3.5 text-success" />}
-                {present && tile.trend === "down" && <TrendingDown className="size-3.5 text-warning" />}
+                <div className="flex items-baseline gap-2">
+                  {renderKpiTileValue(tile.key, value, tile.format)}
+                  {present && tile.trend === "up" && <TrendingUp className="size-3.5 text-success" />}
+                  {present && tile.trend === "down" && <TrendingDown className="size-3.5 text-warning" />}
+                </div>
+                {footnote ? (
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">{footnote}</p>
+                ) : null}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
       </div>
 
       {/* Resident presence — in-house vs on-hold split (additive to Occupancy above) */}
@@ -965,7 +1060,7 @@ function ExecutiveDashboardBody({
                                   : "text-muted-foreground/60",
                               )}
                             >
-                              {renderMetric(occ, "pct")}
+                              {renderPortfolioMetric("occ_pt", occ, "pct")}
                               {hasMetric(occ) && (occGood ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />)}
                             </span>
                           </td>
@@ -980,15 +1075,15 @@ function ExecutiveDashboardBody({
                                   : "text-muted-foreground/60",
                               )}
                             >
-                              {renderMetric(labor, "pct")}
+                              {renderPortfolioMetric("labor_pct", labor, "pct")}
                               {hasMetric(labor) && (laborGood ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />)}
                             </span>
                           </td>
                           <td className="h-9 px-3 text-right tabular-nums text-foreground">
-                            {renderMetric(inc, "num")}
+                            {renderPortfolioMetric("inc_rate", inc, "num")}
                           </td>
                           <td className="h-9 px-3 text-right tabular-nums text-foreground">
-                            {renderMetric(survey, "pct")}
+                            {renderPortfolioMetric("survey_rd", survey, "pct")}
                           </td>
                         </tr>
                       );
@@ -1002,16 +1097,16 @@ function ExecutiveDashboardBody({
                         Enterprise avg
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderMetric(metrics["occ_pt"], "pct")}
+                        {renderPortfolioMetric("occ_pt", metrics["occ_pt"], "pct")}
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderMetric(metrics["labor_pct"], "pct")}
+                        {renderPortfolioMetric("labor_pct", metrics["labor_pct"], "pct")}
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderMetric(metrics["inc_rate"], "num")}
+                        {renderPortfolioMetric("inc_rate", metrics["inc_rate"], "num")}
                       </td>
                       <td className="h-9 px-3 text-right text-[13px] font-semibold tabular-nums text-foreground">
-                        {renderMetric(metrics["survey_rd"], "pct")}
+                        {renderPortfolioMetric("survey_rd", metrics["survey_rd"], "pct")}
                       </td>
                     </tr>
                   </tfoot>

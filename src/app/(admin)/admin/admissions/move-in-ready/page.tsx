@@ -14,6 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatColLabel } from "@/lib/col-labels";
+import { formatAdmissionsHubRelativeDate } from "@/lib/admissions/admissions-hub-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -42,21 +43,6 @@ function admissionReady(row: CaseRow): boolean {
       row.target_move_in_date &&
       row.status !== "cancelled",
   );
-}
-
-function formatRelative(date: string | null): string {
-  if (!date) return "—";
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function AdminMoveInReadyPage() {
@@ -202,7 +188,7 @@ export default function AdminMoveInReadyPage() {
                 <div className="grid gap-3 text-sm sm:grid-cols-2">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">Last updated</div>
-                    <div className="mt-1 text-foreground">{formatRelative(row.updated_at)}</div>
+                    <div className="mt-1 text-foreground">{formatAdmissionsHubRelativeDate(row.updated_at)}</div>
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">Current status</div>

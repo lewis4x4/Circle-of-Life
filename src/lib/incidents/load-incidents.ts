@@ -1,5 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  formatIncidentFollowupDue,
+  formatIncidentOccurredAt,
+  formatIncidentResidentName,
+  INCIDENTS_NO_DATE_POSTED_COPY,
+} from "@/lib/incidents/incidents-display-copy";
 import { classifyFollowupEscalation, isFollowupEscalated } from "@/lib/incidents/followup-escalation";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 import { createClient } from "@/lib/supabase/client";
@@ -165,8 +171,8 @@ export async function fetchIncidentsFromSupabase(
   }
 
   return incidents.map((row) => {
-    const resident = row.resident_id ? residentById.get(row.resident_id) : null;
-    const residentName = resident ? `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() : "Unknown resident";
+    const resident = row.resident_id ? residentById.get(row.resident_id) ?? null : null;
+    const residentName = formatIncidentResidentName(resident);
     const reporter = reporterById.get(row.reported_by);
     const reportedBy = reporter?.full_name?.trim() || "Staff";
     const openFollowups = openFollowupsByIncident.get(row.id) ?? 0;
@@ -205,9 +211,11 @@ export async function fetchIncidentsFromSupabase(
       category: mapDbCategoryToUi(row.category),
       severity: mapDbSeverityToUi(row.severity),
       status,
-      reportedAt: formatOccurredAt(row.occurred_at),
+      reportedAt: formatIncidentOccurredAt(row.occurred_at),
       reportedBy,
-      followupDueStr: dueMs ? formatFollowupDue(new Date(dueMs).toISOString()) : "—",
+      followupDueStr: dueMs
+        ? formatIncidentFollowupDue(new Date(dueMs).toISOString())
+        : INCIDENTS_NO_DATE_POSTED_COPY,
       followupDueMs: dueMs,
       openFollowups,
       overdueFollowups,
@@ -222,7 +230,6 @@ export async function fetchIncidentsFromSupabase(
     } as IncidentRow;
   });
 }
-
 function mapDbSeverityToUi(value: string): IncidentSeverity {
   if (value === "level_2" || value === "level_3" || value === "level_4") return value;
   return "level_1";
@@ -234,16 +241,4 @@ function mapDbCategoryToUi(value: string): IncidentCategory {
   if (value.startsWith("medication_")) return "medication_error";
   if (value.startsWith("behavioral_") || value === "abuse_allegation" || value === "neglect_allegation") return "behavioral";
   return "other";
-}
-
-function formatOccurredAt(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Unknown";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(parsed);
-}
-
-function formatFollowupDue(iso: string): string {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(parsed);
 }

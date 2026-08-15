@@ -19,7 +19,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { formatCents } from "@/lib/finance/format-cents";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +57,23 @@ import {
   type DirectAdmissionSourceValue,
 } from "@/lib/admissions/direct-intake-schema";
 import { digitsOnlyNanp, formatUsPhoneMask } from "@/lib/admissions/phone-us";
+import {
+  formatAdmissionsNewAdmissionSource,
+  formatAdmissionsNewBedMonthlyRate,
+  formatAdmissionsNewDirectDob,
+  formatAdmissionsNewDirectGender,
+  formatAdmissionsNewFacilityName,
+  formatAdmissionsNewInquiryDate,
+  formatAdmissionsNewIntakeSummarySubject,
+  formatAdmissionsNewLastContactDate,
+  formatAdmissionsNewLeadContact,
+  formatAdmissionsNewLeadStage,
+  formatAdmissionsNewPostedDate,
+  formatAdmissionsNewRoomNumber,
+  formatAdmissionsNewTargetMoveIn,
+  formatBuildingTabLicensedBedCount,
+  formatReferralsHubReferralSource,
+} from "@/lib/admissions/admissions-new-display-copy";
 
 const TAB_QUERY = "tab";
 const LEGACY_TAB_QUERY = "origin";
@@ -234,7 +250,7 @@ function formatBedOptionLine(
   roomType: string | null,
   monthlyCents: number | null,
 ) {
-  const price = monthlyCents != null ? `${formatCents(monthlyCents)}/mo` : "—/mo";
+  const price = formatAdmissionsNewBedMonthlyRate(monthlyCents);
   return `${bedTitling(bedLabel)} · Room ${roomNumber} · ${roomTypeShortLabel(roomType)} · ${price}`;
 }
 
@@ -294,31 +310,27 @@ function referralSourceLookup(
 function residentPickerLine(r: ResidentOption, referralSources: ReferralSourceOpt[]): string {
   const nm = `${r.last_name}, ${r.first_name}`;
   const da = dobOrAgeLine(r.date_of_birth);
-  const inq = formatIsoDate(r.created_at.split("T")[0]) ?? "—";
+  const inq = formatAdmissionsNewPostedDate(formatIsoDate(r.created_at.split("T")[0]));
   const srcNm = referralSourceLookup(referralSources, r.referral_source_id);
   const src = srcNm ? ` · ${srcNm}` : "";
   return `${nm} · ${da} · Inquiry ${inq}${src}`;
 }
 
-function formatLeadStage(status: string): string {
-  const t = status.trim().replace(/_/g, " ");
-  if (!t) return "—";
-  return t.replace(/\b\w/g, (ch) => ch.toUpperCase());
-}
-
 /** Combobox row: lead display name · attribution · inquiry date · CRM stage */
 function leadComboboxLine(l: LeadOption, referralSources: ReferralSourceOpt[]): string {
   const name = `${l.last_name}, ${l.first_name}`;
-  const src = referralSourceLookup(referralSources, l.referral_source_id)?.trim() || "Unknown source";
-  const inq = formatIsoDate(l.inquiry_date) ?? "—";
-  const stage = formatLeadStage(l.status);
+  const src = formatReferralsHubReferralSource(
+    referralSourceLookup(referralSources, l.referral_source_id),
+  );
+  const inq = formatAdmissionsNewPostedDate(formatIsoDate(l.inquiry_date));
+  const stage = formatAdmissionsNewLeadStage(l.status);
   return `${name} · ${src} · ${inq} · ${stage}`;
 }
 
 function leadContactLine(l: LeadOption): string {
   const pn = l.preferred_name?.trim();
   if (pn) return pn;
-  return `${l.first_name} ${l.last_name}`.trim() || "—";
+  return formatAdmissionsNewLeadContact(`${l.first_name} ${l.last_name}`);
 }
 
 function residentComboLabel(r: ResidentOption, referralSources: ReferralSourceOpt[]): string {
@@ -655,7 +667,7 @@ function AdmissionsNewInner() {
 
     const mappedBeds: BedOption[] = rawBeds.map((row) => {
       const rr = normalizeRoomJoin(row.rooms);
-      const rn = rr?.room_number?.trim() || "—";
+      const rn = formatAdmissionsNewRoomNumber(rr?.room_number);
       const rt = rr?.room_type ?? "private";
       const cents = schedule
         ? monthlyRentCents(rt, schedule.base_rate_private, schedule.base_rate_semi_private ?? null)
@@ -788,25 +800,21 @@ function AdmissionsNewInner() {
   const selectedLead = useMemo(() => leads.find((l) => l.id === referralLeadId) ?? null, [leads, referralLeadId]);
 
   const intakeSummarySubject = useMemo(() => {
-    if (origin === "inquiry" && residentId) {
-      const r = residents.find((x) => x.id === residentId);
-      return r ? `${r.last_name}, ${r.first_name}` : "—";
-    }
-    if (origin === "lead" && referralLeadId) {
-      const l = leads.find((x) => x.id === referralLeadId);
-      return l ? `${l.last_name}, ${l.first_name}` : "—";
-    }
-    if (origin === "direct") {
-      const n = `${directFirstName.trim()} ${directLastName.trim()}`.trim();
-      return n || "Direct admit";
-    }
-    return "—";
+    const resident = residents.find((x) => x.id === residentId);
+    const lead = leads.find((x) => x.id === referralLeadId);
+    return formatAdmissionsNewIntakeSummarySubject(origin, {
+      residentId,
+      residentLabel: resident ? `${resident.last_name}, ${resident.first_name}` : null,
+      leadId: referralLeadId,
+      leadLabel: lead ? `${lead.last_name}, ${lead.first_name}` : null,
+      directName: `${directFirstName.trim()} ${directLastName.trim()}`,
+    });
   }, [origin, residentId, residents, referralLeadId, leads, directFirstName, directLastName]);
 
   const intakeSummaryMoveIn = useMemo(() => {
     const t = targetMoveIn.trim();
-    if (!t) return "—";
-    return formatQuietIsoForDisplay(t) || formatIsoDate(t) || t;
+    if (!t) return formatAdmissionsNewTargetMoveIn("");
+    return formatQuietIsoForDisplay(t) || formatIsoDate(t) || formatAdmissionsNewTargetMoveIn(t);
   }, [targetMoveIn]);
 
   const facilityTodayIso = useMemo(
@@ -1504,7 +1512,11 @@ function AdmissionsNewInner() {
                         <dl className="grid gap-2 sm:grid-cols-2">
                           <div className="space-y-0.5">
                             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Source</dt>
-                            <dd className="text-foreground">{referralSourceLookup(referralSources, selectedLead.referral_source_id) ?? "—"}</dd>
+                            <dd className="text-foreground">
+                              {formatReferralsHubReferralSource(
+                                referralSourceLookup(referralSources, selectedLead.referral_source_id),
+                              )}
+                            </dd>
                           </div>
                           <div className="space-y-0.5">
                             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Lead contact</dt>
@@ -1512,14 +1524,19 @@ function AdmissionsNewInner() {
                           </div>
                           <div className="space-y-0.5">
                             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Original inquiry</dt>
-                            <dd className="tabular-nums text-foreground">{formatIsoDate(selectedLead.inquiry_date) ?? "—"}</dd>
+                            <dd className="tabular-nums text-foreground">
+                              {formatAdmissionsNewInquiryDate(formatIsoDate(selectedLead.inquiry_date))}
+                            </dd>
                           </div>
                           <div className="space-y-0.5">
                             <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Last contact</dt>
                             <dd className="tabular-nums text-foreground">
-                              {selectedLead.updated_at
-                                ? formatIsoDate(selectedLead.updated_at.slice(0, 10)) ?? selectedLead.updated_at.slice(0, 10)
-                                : "—"}
+                              {formatAdmissionsNewLastContactDate(
+                                selectedLead.updated_at
+                                  ? formatIsoDate(selectedLead.updated_at.slice(0, 10))
+                                  : null,
+                                selectedLead.updated_at?.slice(0, 10),
+                              )}
                             </dd>
                           </div>
                         </dl>
@@ -2121,14 +2138,19 @@ function AdmissionsNewInner() {
           >
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Facility</p>
-              <p className="mt-1 text-[15px] font-semibold text-foreground">{facilityDisplayName ?? "—"}</p>
+              <p className="mt-1 text-[15px] font-semibold text-foreground">
+                {formatAdmissionsNewFacilityName(facilityDisplayName)}
+              </p>
             </div>
             <div className="h-px w-full bg-border" aria-hidden />
             <div className="space-y-1">
               <p className="text-[12px] font-medium text-foreground">Capacity</p>
               <p className="text-[13px] text-muted-foreground">
                 <span className="font-medium text-foreground">{beds.length}</span> open beds ·{" "}
-                <span className="font-medium text-foreground">{facilityPanel?.totalLicensedBeds ?? "—"}</span> licensed
+                <span className="font-medium text-foreground">
+                  {formatBuildingTabLicensedBedCount(facilityPanel?.totalLicensedBeds)}
+                </span>{" "}
+                licensed
               </p>
             </div>
             <div className="space-y-2">
@@ -2251,24 +2273,31 @@ function AdmissionsNewInner() {
                 {[directFirstName.trim(), directLastName.trim()].filter(Boolean).join(" ")}
                 {directNameSuffix.trim() ? ` ${directNameSuffix.trim()}` : ""}, born{" "}
                 <span className="font-mono tabular-nums">
-                  {directDob.trim() ? formatQuietIsoForDisplay(directDob.trim()) : "—"}
+                  {formatAdmissionsNewDirectDob(
+                    directDob.trim() ? formatQuietIsoForDisplay(directDob.trim()) : "",
+                  )}
                 </span>
-                , {directGender ? genderDisplayLabel(directGender) : "—"}
+                , {formatAdmissionsNewDirectGender(directGender ? genderDisplayLabel(directGender) : null)}
               </li>
               <li>
-                <span className="text-foreground">New admission case at</span> {facilityDisplayName ?? "—"}
+                <span className="text-foreground">New admission case at</span>{" "}
+                {formatAdmissionsNewFacilityName(facilityDisplayName)}
               </li>
               <li>
                 <span className="text-foreground">Target move-in:</span>{" "}
                 <span className="font-mono tabular-nums">
-                  {targetMoveIn.trim() ? formatQuietIsoForDisplay(targetMoveIn.trim()) : "—"}
+                  {targetMoveIn.trim()
+                    ? formatQuietIsoForDisplay(targetMoveIn.trim())
+                    : formatAdmissionsNewTargetMoveIn("")}
                 </span>
               </li>
               <li>
                 <span className="text-foreground">Source:</span>{" "}
-                {directAdmissionSource
-                  ? admissionSourceLabel(directAdmissionSource as DirectAdmissionSourceValue)
-                  : "—"}
+                {formatAdmissionsNewAdmissionSource(
+                  directAdmissionSource
+                    ? admissionSourceLabel(directAdmissionSource as DirectAdmissionSourceValue)
+                    : null,
+                )}
               </li>
             </ul>
           </div>

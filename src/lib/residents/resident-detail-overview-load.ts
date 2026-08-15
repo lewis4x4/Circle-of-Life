@@ -7,6 +7,13 @@ import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options"
 import {
   carePlanAnnualReviewDeltaDays,
 } from "@/lib/residents/care-plan-annual-review-window";
+import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
+import {
+  formatResidentOverviewAdmissionLabel,
+  formatResidentOverviewDailyNoteSnippet,
+  formatResidentOverviewDobLabel,
+  formatResidentOverviewVerifiedByStaffLabel,
+} from "@/lib/residents/resident-overview-display-copy";
 import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
 import type { Database } from "@/types/database";
 
@@ -235,20 +242,6 @@ function computeAgeYears(dateOfBirth: string | null, now: Date = new Date()): nu
   return age;
 }
 
-function formatAdmission(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
-}
-
-function formatDob(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(`${value}T12:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(parsed);
-}
-
 const BEHAVIOR_TYPE_LABELS: Record<string, string> = {
   agitation: "Agitation / anxiety",
   wandering: "Wandering / elopement risk",
@@ -354,7 +347,7 @@ export async function loadResidentOverviewDetail(
 
   const firstName = resident.first_name ?? "";
   const lastName = resident.last_name ?? "";
-  const fullName = `${firstName} ${lastName}`.trim() || "Unknown Resident";
+  const fullName = formatLoadResidentsFullName(firstName, lastName);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "NA";
   const acuity = mapAcuity(resident.acuity_level);
   const status = mapResidencyStatus(resident.status);
@@ -517,7 +510,7 @@ export async function loadResidentOverviewDetail(
     id: r.id,
     logDate: r.log_date,
     shift: r.shift,
-    snippet: truncateSnippet(r.general_notes?.trim() || "—", 360),
+    snippet: truncateSnippet(formatResidentOverviewDailyNoteSnippet(r.general_notes), 360),
     loggedByLabel: nameById.get(r.logged_by) ?? "Staff",
   }));
 
@@ -631,8 +624,8 @@ export async function loadResidentOverviewDetail(
     fallRiskRaw: resident.fall_risk_level,
     roomLabel,
     unitName: unitName.length > 0 ? unitName : "No unit linked",
-    admissionLabel: formatAdmission(resident.admission_date),
-    dobLabel: formatDob(resident.date_of_birth),
+    admissionLabel: formatResidentOverviewAdmissionLabel(resident.admission_date),
+    dobLabel: formatResidentOverviewDobLabel(resident.date_of_birth),
     ageYears: computeAgeYears(resident.date_of_birth),
     gender: resident.gender,
     diagnosisRawList,
@@ -650,17 +643,20 @@ export async function loadResidentOverviewDetail(
     primaryPhysicianName: resident.primary_physician_name,
     primaryPhysicianPhone: resident.primary_physician_phone,
     codeStatusVerifiedAt: resident.code_status_verified_at,
-    codeStatusVerifiedByName: resident.code_status_verified_by
-      ? nameById.get(resident.code_status_verified_by) ?? "Unknown staff"
-      : null,
+    codeStatusVerifiedByName: formatResidentOverviewVerifiedByStaffLabel(
+      resident.code_status_verified_by,
+      nameById.get(resident.code_status_verified_by ?? ""),
+    ),
     allergyReviewedAt: resident.allergy_list_reviewed_at,
-    allergyReviewedByName: resident.allergy_list_reviewed_by
-      ? nameById.get(resident.allergy_list_reviewed_by) ?? "Unknown staff"
-      : null,
+    allergyReviewedByName: formatResidentOverviewVerifiedByStaffLabel(
+      resident.allergy_list_reviewed_by,
+      nameById.get(resident.allergy_list_reviewed_by ?? ""),
+    ),
     diagnosesReviewedAt: resident.primary_diagnosis_reviewed_at,
-    diagnosesReviewedByName: resident.primary_diagnosis_reviewed_by
-      ? nameById.get(resident.primary_diagnosis_reviewed_by) ?? "Unknown staff"
-      : null,
+    diagnosesReviewedByName: formatResidentOverviewVerifiedByStaffLabel(
+      resident.primary_diagnosis_reviewed_by,
+      nameById.get(resident.primary_diagnosis_reviewed_by ?? ""),
+    ),
     carePlanVersion: activePlan?.version ?? null,
     carePlanEffectiveDate: activePlan?.effective_date ?? null,
     carePlanAnnualDeltaDays: careAnnualDelta,

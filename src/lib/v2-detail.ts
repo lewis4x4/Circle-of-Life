@@ -1,4 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  formatV2DetailCategory,
+  formatV2DetailDate,
+  formatV2DetailDiagnosis,
+  formatV2DetailResidentTitle,
+  formatV2DetailSeverity,
+  formatV2DetailSourceMetric,
+} from "@/lib/v2/v2-detail-display-copy";
 
 import type { V2ListId } from "./v2-lists";
 
@@ -48,7 +56,6 @@ export async function loadV2Detail(
   if (result.error || !result.data) return null;
   return mapDetail(listId, recordId, result.data);
 }
-
 function mapDetail(
   listId: V2ListId,
   recordId: string,
@@ -60,14 +67,14 @@ function mapDetail(
       return {
         listId,
         recordId,
-        title: ((row.resident_name as string) ?? "").trim() || "Unnamed resident",
+        title: formatV2DetailResidentTitle(row.resident_name as string | null),
         subtitle: (row.facility_name as string) ?? null,
         status: status ? { label: status, tone: residentTone(status) } : null,
         identifiers: [
           { label: "Resident ID", value: recordId },
-          { label: "Diagnosis", value: ((row.primary_diagnosis as string) ?? "—") || "—" },
-          { label: "Discharge", value: formatDate(row.discharge_date) },
-          { label: "Updated", value: formatDate(row.updated_at) },
+          { label: "Diagnosis", value: formatV2DetailDiagnosis(row.primary_diagnosis as string | null) },
+          { label: "Discharge", value: formatV2DetailDate(row.discharge_date) },
+          { label: "Updated", value: formatV2DetailDate(row.updated_at) },
         ],
         source: "live",
       };
@@ -82,9 +89,9 @@ function mapDetail(
         subtitle: ((row.location_description as string) ?? null) ?? (row.facility_name as string) ?? null,
         status: status ? { label: status, tone: incidentTone(status, sev) } : null,
         identifiers: [
-          { label: "Severity", value: sev ?? "—" },
-          { label: "Category", value: ((row.category as string) ?? "—") || "—" },
-          { label: "Occurred", value: formatDate(row.occurred_at) },
+          { label: "Severity", value: formatV2DetailSeverity(sev) },
+          { label: "Category", value: formatV2DetailCategory(row.category as string | null) },
+          { label: "Occurred", value: formatV2DetailDate(row.occurred_at) },
           { label: "AHCA reportable", value: row.ahca_reportable === true ? "Yes" : "No" },
         ],
         source: "live",
@@ -100,10 +107,10 @@ function mapDetail(
         subtitle: ((row.facility_name as string) ?? null) ?? null,
         status: status ? { label: status, tone: alertTone(status, sev) } : null,
         identifiers: [
-          { label: "Severity", value: sev ?? "—" },
-          { label: "Category", value: ((row.category as string) ?? "—") || "—" },
-          { label: "First triggered", value: formatDate(row.first_triggered_at) },
-          { label: "Source metric", value: ((row.source_metric_code as string) ?? "—") || "—" },
+          { label: "Severity", value: formatV2DetailSeverity(sev) },
+          { label: "Category", value: formatV2DetailCategory(row.category as string | null) },
+          { label: "First triggered", value: formatV2DetailDate(row.first_triggered_at) },
+          { label: "Source metric", value: formatV2DetailSourceMetric(row.source_metric_code as string | null) },
         ],
         source: "live",
       };
@@ -117,10 +124,10 @@ function mapDetail(
         subtitle: (row.facility_name as string) ?? null,
         status: status ? { label: status, tone: admissionTone(status) } : null,
         identifiers: [
-          { label: "Move-in target", value: formatDate(row.target_move_in_date) },
-          { label: "Financial cleared", value: formatDate(row.financial_clearance_at) },
-          { label: "Physician orders", value: formatDate(row.physician_orders_received_at) },
-          { label: "Updated", value: formatDate(row.updated_at) },
+          { label: "Move-in target", value: formatV2DetailDate(row.target_move_in_date) },
+          { label: "Financial cleared", value: formatV2DetailDate(row.financial_clearance_at) },
+          { label: "Physician orders", value: formatV2DetailDate(row.physician_orders_received_at) },
+          { label: "Updated", value: formatV2DetailDate(row.updated_at) },
         ],
         source: "live",
       };
@@ -190,14 +197,4 @@ function admissionTone(
     default:
       return "default";
   }
-}
-
-function formatDate(value: unknown): string {
-  if (value == null) return "—";
-  const s = String(value);
-  if (!s) return "—";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toISOString().slice(0, 16).replace("T", " ");
 }

@@ -13,7 +13,15 @@ import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
-import { formatCents } from "@/lib/finance/format-cents";
+import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { formatRiskScore } from "@/lib/risk/risk-display-copy";
+import {
+  formatSurveyBundleAdministratorName,
+  formatSurveyBundleEntityName,
+  formatSurveyBundleLicenseValue,
+  formatSurveyBundlePocResponsibleParty,
+  formatSurveyBundlePocSubmissionDueDate,
+} from "@/lib/risk/survey-bundle-display-copy";
 import {
   surveyBundleToMarkdown,
   type SurveyBundleDocument,
@@ -160,7 +168,7 @@ export default function RiskSurveyBundlePageClient({
             <BundleMetricCard
               icon={Stamp}
               label="Risk score"
-              value={packet.riskSnapshot ? `${packet.riskSnapshot.riskScore}/100` : "—"}
+              value={formatRiskScore(packet.riskSnapshot?.riskScore)}
               detail={packet.riskSnapshot ? packet.riskSnapshot.riskLevel : "Nightly scorer not run"}
               tone={
                 packet.riskSnapshot?.riskLevel === "critical"
@@ -188,15 +196,18 @@ export default function RiskSurveyBundlePageClient({
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <PacketValue label="Facility" value={packet.facility.name} />
-              <PacketValue label="Entity" value={packet.facility.entityName ?? "—"} />
-              <PacketValue label="Administrator" value={packet.facility.administratorName ?? "—"} />
+              <PacketValue label="Entity" value={formatSurveyBundleEntityName(packet.facility.entityName)} />
+              <PacketValue
+                label="Administrator"
+                value={formatSurveyBundleAdministratorName(packet.facility.administratorName)}
+              />
               <PacketValue
                 label="License"
-                value={
-                  packet.facility.licenseNumber
-                    ? `${packet.facility.licenseNumber} · ${packet.facility.alfLicenseType ?? packet.facility.licenseType ?? ""}`
-                    : "—"
-                }
+                value={formatSurveyBundleLicenseValue(
+                  packet.facility.licenseNumber,
+                  packet.facility.alfLicenseType,
+                  packet.facility.licenseType,
+                )}
               />
             </CardContent>
           </Card>
@@ -238,8 +249,12 @@ export default function RiskSurveyBundlePageClient({
                             <td className="py-3 pr-4">{row.severity}</td>
                             <td className="py-3 pr-4">{row.status}</td>
                             <td className="py-3 pr-4">{row.pocStatus ?? "Missing"}</td>
-                            <td className="py-3 pr-4">{row.pocSubmissionDueDate ?? "—"}</td>
-                            <td className="py-3">{row.pocResponsibleParty ?? "—"}</td>
+                            <td className="py-3 pr-4">
+                              {formatSurveyBundlePocSubmissionDueDate(row.pocSubmissionDueDate)}
+                            </td>
+                            <td className="py-3">
+                              {formatSurveyBundlePocResponsibleParty(row.pocResponsibleParty)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -369,7 +384,7 @@ export default function RiskSurveyBundlePageClient({
                           <td className="py-3 pr-4">{policy.carrierName}</td>
                           <td className="py-3 pr-4">{policy.status}</td>
                           <td className="py-3 pr-4">{policy.expirationDate}</td>
-                          <td className="py-3">{policy.premiumCents != null ? formatCents(policy.premiumCents) : "—"}</td>
+                          <td className="py-3">{formatUsdFromCents(policy.premiumCents)}</td>
                         </tr>
                       ))}
                     </tbody>

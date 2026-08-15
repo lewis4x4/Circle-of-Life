@@ -17,6 +17,7 @@ import type {
   V2DashboardPayload,
   V2DashboardTableRow,
 } from "@/lib/v2-dashboards";
+import { formatV2DashboardMetric } from "@/lib/v2-dashboard-display-copy";
 import { V2EmptyOnboarding } from "./V2EmptyOnboarding";
 
 const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
@@ -26,19 +27,13 @@ const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
   "rounding-operations": "/admin/rounding",
 };
 
-function fmtMetric(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return "—";
-  // Show 1 decimal when fractional, integer otherwise.
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
 const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
   { id: "name", header: "Facility", accessor: (r) => r.name, align: "left", sticky: true },
   {
     id: "occupancyPct",
     header: "Occupancy %",
     accessor: (r) => r.occupancyPct,
-    render: (r) => fmtMetric(r.occupancyPct),
+    render: (r) => formatV2DashboardMetric(r.occupancyPct),
     align: "right",
     numeric: true,
     metricKey: "occupancy_pct",
@@ -47,7 +42,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "laborCostPct",
     header: "Labor cost %",
     accessor: (r) => r.laborCostPct,
-    render: (r) => fmtMetric(r.laborCostPct),
+    render: (r) => formatV2DashboardMetric(r.laborCostPct),
     align: "right",
     numeric: true,
     metricKey: "labor_cost_pct",
@@ -56,7 +51,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "openIncidents",
     header: "Open incidents",
     accessor: (r) => r.openIncidents,
-    render: (r) => fmtMetric(r.openIncidents),
+    render: (r) => formatV2DashboardMetric(r.openIncidents),
     align: "right",
     numeric: true,
     metricKey: "open_incidents",
@@ -65,7 +60,7 @@ const COLUMNS: DataTableColumn<V2DashboardTableRow>[] = [
     id: "surveyReadinessPct",
     header: "Survey readiness %",
     accessor: (r) => r.surveyReadinessPct,
-    render: (r) => fmtMetric(r.surveyReadinessPct),
+    render: (r) => formatV2DashboardMetric(r.surveyReadinessPct),
     align: "right",
     numeric: true,
     metricKey: "survey_readiness_pct",

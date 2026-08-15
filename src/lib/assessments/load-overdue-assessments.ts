@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatOverdueAssessmentsResidentLabel } from "@/lib/assessments/overdue-assessments-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -126,9 +127,7 @@ export async function fetchOverdueAssessmentsFromSupabase(
 
   return assessments.map((a) => {
     const rm = resById.get(a.resident_id);
-    const name = rm
-      ? `${rm.first_name ?? ""} ${rm.last_name ?? ""}`.trim() || "Unknown"
-      : "Unknown";
+    const name = formatOverdueAssessmentsResidentLabel(rm);
     const dueMs = parseISODateOnly(a.next_due_date);
     const daysOverdue =
       Number.isNaN(dueMs) || Number.isNaN(todayMs)
@@ -189,9 +188,7 @@ export async function fetchCarePlanReviewsDueFromSupabase(
 
   return plans.map((p) => {
     const rm = resById.get(p.resident_id);
-    const name = rm
-      ? `${rm.first_name ?? ""} ${rm.last_name ?? ""}`.trim() || "Unknown"
-      : "Unknown";
+    const name = formatOverdueAssessmentsResidentLabel(rm);
     const dueMs = parseISODateOnly(p.review_due_date);
     const daysOverdue =
       Number.isNaN(dueMs) || Number.isNaN(todayMs)

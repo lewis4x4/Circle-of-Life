@@ -4,6 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { EmergencyContactRow } from "@/hooks/useFacilityEmergencyContacts";
+import {
+  EMERGENCY_CONTACTS_NO_HOURS_COPY,
+  EMERGENCY_CONTACTS_NO_VERIFICATION_COPY,
+} from "@/lib/admin/facilities/emergency-contacts-display-copy";
 import { countMissingEmergencySlots, type SlotContext } from "@/lib/admin/facilities/emergency-directory";
 
 function Tile({
@@ -54,14 +58,14 @@ export function FacilityEmergencyContactsMetricsStrip({
 
       <Tile
         label="Verified (<90 days)"
-        value="—"
+        value={EMERGENCY_CONTACTS_NO_VERIFICATION_COPY}
         sub="Verification dates are not tracked for these contacts"
         valueClassName="text-muted-foreground text-2xl"
       />
 
       <Tile
         label="24/7 lines confirmed"
-        value="—"
+        value={EMERGENCY_CONTACTS_NO_HOURS_COPY}
         sub="Availability hours are not tracked for these contacts"
         valueClassName="text-muted-foreground text-2xl"
       />

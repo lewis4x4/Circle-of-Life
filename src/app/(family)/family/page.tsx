@@ -3,13 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Banknote, FileText, Loader2, Shield, Heart, ChevronRight } from "lucide-react";
+import { Banknote, FileText, Loader2, Shield, Heart, ChevronRight, Megaphone } from "lucide-react";
 
 import {
   fetchFamilyHomeSnapshot,
   type FamilyFeedItem,
   type FamilyHomeSnapshot,
 } from "@/lib/family/family-feed";
+import { FamilyHomeBulletinBar } from "@/components/family-portal/FamilyHomeBulletinBar";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +42,7 @@ export default function FamilyHomePage() {
         setSnapshot(result.data);
       }
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not load feed.");
+      setLoadError(e instanceof Error ? e.message : "Could not load your updates.");
       setSnapshot(null);
     } finally {
       setLoading(false);
@@ -62,9 +63,13 @@ export default function FamilyHomePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-medium tracking-wide">Opening journal…</p>
+      <div
+        className="flex flex-col items-center justify-center gap-4 py-48 text-muted-foreground"
+        role="status"
+        aria-live="polite"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+        <p className="text-sm font-medium tracking-wide">Loading today&apos;s updates…</p>
       </div>
     );
   }
@@ -73,7 +78,7 @@ export default function FamilyHomePage() {
     return (
       <div className="mx-auto mt-12 max-w-md space-y-4 pb-16 text-center md:pb-0">
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-6 text-sm text-foreground">
-          <Shield className="mx-auto mb-3 h-8 w-8 text-destructive" />
+          <Shield className="mx-auto mb-3 h-8 w-8 text-destructive" aria-hidden="true" />
           <p>{loadError}</p>
         </div>
         <button
@@ -84,7 +89,7 @@ export default function FamilyHomePage() {
           )}
           onClick={() => void load()}
         >
-          Retry Connection
+          Retry
         </button>
       </div>
     );
@@ -96,10 +101,12 @@ export default function FamilyHomePage() {
 
   const initial = snapshot.residentSummary ? snapshot.residentSummary.charAt(0).toUpperCase() : "H";
   const firstName = snapshot.residentSummary ? snapshot.residentSummary.split(" ")[0] : "Resident";
+  const activityItems = snapshot.items.filter(
+    (item) => item.kind !== "note" || item.id !== snapshot.featuredNote?.id,
+  );
 
   return (
     <div className="flex flex-col items-center pb-8">
-      {/* Full bleed cover photo — kept as a warm cue per the family-shell warmth allowance */}
       <div className="absolute inset-x-0 top-0 z-0 h-48 w-full overflow-hidden md:h-64">
         <div className="relative h-full w-full">
           <Image
@@ -114,7 +121,6 @@ export default function FamilyHomePage() {
       </div>
 
       <div className="relative z-10 mt-20 w-full max-w-2xl px-4 md:mt-32">
-        {/* Overlapping avatar — warm split-theme keeps avatar visible above the cover image */}
         <div className="mb-10 text-center">
           <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-border bg-card p-2 md:h-32 md:w-32">
             <div className="flex h-full w-full items-center justify-center rounded-full border border-border">
@@ -128,7 +134,7 @@ export default function FamilyHomePage() {
                 <span className="font-medium text-foreground">{snapshot.residentSummary}</span>
               </h1>
               <p className="mx-auto mb-8 max-w-lg font-serif text-base italic text-muted-foreground md:text-lg">
-                Care Journal
+                Today
               </p>
             </>
           ) : (
@@ -140,10 +146,12 @@ export default function FamilyHomePage() {
             </>
           )}
 
-          {/* Quick glance stats */}
           {snapshot.linkedResidents > 0 && (
             <div className="mx-auto flex w-full max-w-lg flex-wrap justify-center gap-2">
               <StatChip label="Connected" value={snapshot.stats.linkedResidents} />
+              {Number(snapshot.stats.staffNotes) > 0 && (
+                <StatChip label="Team updates" value={snapshot.stats.staffNotes} />
+              )}
               <StatChip label="Recent Clinical" value={snapshot.stats.clinicalWeek} />
               {Number(snapshot.stats.billingOpen) > 0 && (
                 <StatChip label="Open Invoices" value={snapshot.stats.billingOpen} />
@@ -152,31 +160,36 @@ export default function FamilyHomePage() {
           )}
         </div>
 
-        {/* Journal feed */}
-        <div className="mt-10 w-full md:mt-16">
-          <div className="mb-10 flex items-center justify-center">
-            <div className="h-px flex-1 bg-border"></div>
-            <h2 className="px-6 text-center font-serif text-2xl tracking-tight text-foreground md:text-3xl">
-              {firstName}&apos;s Updates
-            </h2>
-            <div className="h-px flex-1 bg-border"></div>
-          </div>
+        {snapshot.linkedResidents > 0 ? (
+          <FamilyHomeBulletinBar featuredNote={snapshot.featuredNote} />
+        ) : null}
 
-          {snapshot.linkedResidents === 0 || snapshot.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <p className="font-serif text-xl italic text-muted-foreground">The journal is quiet right now.</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Updates will flow in gently when your team posts them.
-              </p>
+        {snapshot.linkedResidents > 0 ? (
+          <div className="mt-10 w-full md:mt-16">
+            <div className="mb-10 flex items-center justify-center">
+              <div className="h-px flex-1 bg-border" />
+              <h2 className="px-6 text-center font-serif text-2xl tracking-tight text-foreground md:text-3xl">
+                {firstName}&apos;s activity
+              </h2>
+              <div className="h-px flex-1 bg-border" />
             </div>
-          ) : (
-            <div className="space-y-6 md:space-y-8">
-              {snapshot.items.map((item) => (
-                <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
-              ))}
-            </div>
-          )}
-        </div>
+
+            {activityItems.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+                <p className="text-sm font-medium text-foreground">No other activity yet</p>
+                <p className="mx-auto mt-2 max-w-sm text-xs text-muted-foreground">
+                  Clinical updates and billing notices will appear here when available.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6 md:space-y-8">
+                {activityItems.map((item) => (
+                  <JournalEntryCard key={`${item.kind}-${item.id}`} item={item} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -184,18 +197,29 @@ export default function FamilyHomePage() {
 
 function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
   const isInvoice = item.kind === "invoice";
+  const isNote = item.kind === "note";
   const isClinical = item.badge === "Clinical";
 
   const iconWrapClass = isInvoice
     ? "bg-warning/10 border-warning/30"
-    : isClinical
-      ? "bg-success/10 border-success/30"
-      : "bg-info/10 border-info/30";
+    : isNote
+      ? "bg-primary/10 border-primary/30"
+      : isClinical
+        ? "bg-success/10 border-success/30"
+        : "bg-info/10 border-info/30";
 
-  const iconColorClass = isInvoice ? "text-warning" : isClinical ? "text-success" : "text-info";
+  const iconColorClass = isInvoice
+    ? "text-warning"
+    : isNote
+      ? "text-primary"
+      : isClinical
+        ? "text-success"
+        : "text-info";
 
   const icon = isInvoice ? (
     <Banknote className={cn("h-5 w-5", iconColorClass)} />
+  ) : isNote ? (
+    <Megaphone className={cn("h-5 w-5", iconColorClass)} />
   ) : isClinical ? (
     <Heart className={cn("h-5 w-5", iconColorClass)} />
   ) : (
@@ -238,7 +262,7 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
 
   return (
     <div className="relative w-full">
-      {isInvoice ? (
+      {isInvoice || isNote ? (
         <Link
           href={item.href}
           className="block rounded-lg outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"

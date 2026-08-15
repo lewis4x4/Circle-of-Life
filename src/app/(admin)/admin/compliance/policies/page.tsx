@@ -11,7 +11,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { format, parseISO } from "date-fns";
+import { formatCompliancePolicyPublishedDate } from "@/lib/compliance/policies-display-copy";
 
 type Row = {
   id: string;
@@ -70,7 +70,7 @@ export default function PoliciesListPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/admin/compliance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground")} >
+            <Link href="/admin/compliance/policies/new" className={cn(buttonVariants({ size: "default" }), "h-9 px-4 text-[10px] font-semibold bg-primary hover:bg-primary/90 text-primary-foreground")} >
                + New Policy
             </Link>
           </div>
@@ -127,16 +127,14 @@ export default function PoliciesListPage() {
                            v{r.version}
                          </span>
                          <span className="w-[160px] shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
-                           {r.published_at
-                             ? format(parseISO(r.published_at.length <= 10 ? `${r.published_at}T12:00:00.000Z` : r.published_at), "MMM d, yyyy")
-                             : "—"}
+                           {formatCompliancePolicyPublishedDate(r.published_at)}
                          </span>
                          <div className="w-[88px] shrink-0 flex justify-end">
                            <Link
                              href={`/admin/compliance/policies/${r.id}/edit`}
                              className={cn(
                                buttonVariants({ variant: "outline", size: "sm" }),
-                               "h-7 px-2.5 text-[10px] font-semibold uppercase tracking-wider"
+                               "h-7 px-2.5 text-[10px] font-semibold"
                              )}
                            >
                              Manage

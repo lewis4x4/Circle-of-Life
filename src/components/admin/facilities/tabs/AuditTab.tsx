@@ -14,14 +14,17 @@ import {
 } from "@/lib/admin/facilities/facility-audit-ui";
 import type { FacilityAuditMetricsPayload } from "@/hooks/useFacilityAuditMetrics";
 import { type AuditLogFilters, type FacilityAuditHookRow, useFacilityAuditLog } from "@/hooks/useFacilityAuditLog";
+import {
+  formatAuditTabLastEventRelative,
+  formatAuditTabNewValue,
+  formatAuditTabOldValue,
+} from "@/lib/facilities/audit-tab-display-copy";
 import { cn } from "@/lib/utils";
 import { Loader2, Download, Filter } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatDistanceToNow } from "date-fns";
-
 const LS_VIEWS = "haven:facility-audit-log:saved-view";
 const PER_PAGE = 50;
 
@@ -319,11 +322,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
   const summaryLine = (() => {
     const n = total;
     const m = participants.length;
-    const lastAt = metricsSummary?.last_event_at ? new Date(metricsSummary.last_event_at) : null;
-    const relative =
-      lastAt && !Number.isNaN(lastAt.getTime())
-        ? formatDistanceToNow(lastAt, { addSuffix: true })
-        : "—";
+    const relative = formatAuditTabLastEventRelative(metricsSummary?.last_event_at);
     return `Showing ${n} event${n === 1 ? "" : "s"} from ${m} user${m === 1 ? "" : "s"} · Last event ${relative}`;
   })();
 
@@ -686,8 +685,8 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
                           {entry.field_name ? (
                             <p className="mt-3 text-muted-foreground">
                               <span className="mr-2 font-medium text-foreground">{entry.field_name}:</span>
-                              <span className="text-destructive line-through">{entry.old_value_text ?? "—"}</span> →{" "}
-                              <strong className="font-semibold text-foreground">{entry.new_value_text ?? "—"}</strong>
+                              <span className="text-destructive line-through">{formatAuditTabOldValue(entry.old_value_text)}</span> →{" "}
+                              <strong className="font-semibold text-foreground">{formatAuditTabNewValue(entry.new_value_text)}</strong>
                             </p>
                           ) : (
                             <pre className="mt-3 max-h-48 overflow-auto rounded-md border border-border bg-background p-2 text-[11px] leading-relaxed">

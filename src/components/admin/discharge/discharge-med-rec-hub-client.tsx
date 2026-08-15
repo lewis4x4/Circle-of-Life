@@ -51,6 +51,11 @@ import {
   loadDischargeHubBootstrap,
   type DischargeMedRecHubRow,
 } from "@/lib/discharge/load-discharge-hub-bootstrap";
+import {
+  dischargeMedRecHubKpiTileIsMetric,
+  formatDischargeMedRecHubKpiValue,
+  formatDischargeMedRecResidentName,
+} from "@/lib/discharge/discharge-med-rec-display-copy";
 
 const NEW_MED_REC_PIPELINE_PATH = "/pipeline/discharge-management/new-reconciliation";
 
@@ -335,6 +340,22 @@ export function DischargeMedRecHubClient({
 
   const readyTone: KpiCardTone = readyRows.length > 0 ? "success" : "neutral";
 
+  const planningGapsDisplay = formatDischargeMedRecHubKpiValue(
+    "planning_gaps",
+    planningRows.length,
+    loading,
+  );
+  const pharmacistReviewDisplay = formatDischargeMedRecHubKpiValue(
+    "pharmacist_review",
+    pharmacistRows.length,
+    loading,
+  );
+  const readyToCompleteDisplay = formatDischargeMedRecHubKpiValue(
+    "ready_to_complete",
+    readyRows.length,
+    loading,
+  );
+
   const filteredRows = useMemo(() => {
     if (phaseFilter === "all") return rows;
     return rows.filter(
@@ -485,7 +506,10 @@ export function DischargeMedRecHubClient({
               <Tooltip>
                 <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <KpiCard
-                    value={loading ? "—" : planningRows.length}
+                    value={planningGapsDisplay}
+                    valuePresentation={
+                      dischargeMedRecHubKpiTileIsMetric(planningGapsDisplay) ? "metric" : "message"
+                    }
                     label="Planning gaps"
                     tone={planningTone}
                   />
@@ -497,7 +521,12 @@ export function DischargeMedRecHubClient({
               <Tooltip>
                 <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <KpiCard
-                    value={loading ? "—" : pharmacistRows.length}
+                    value={pharmacistReviewDisplay}
+                    valuePresentation={
+                      dischargeMedRecHubKpiTileIsMetric(pharmacistReviewDisplay)
+                        ? "metric"
+                        : "message"
+                    }
                     label="Sent for external pharmacist review"
                     tone={pharmacistTone}
                   />
@@ -509,7 +538,12 @@ export function DischargeMedRecHubClient({
               <Tooltip>
                 <TooltipTrigger className="w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <KpiCard
-                    value={loading ? "—" : readyRows.length}
+                    value={readyToCompleteDisplay}
+                    valuePresentation={
+                      dischargeMedRecHubKpiTileIsMetric(readyToCompleteDisplay)
+                        ? "metric"
+                        : "message"
+                    }
                     label="Ready to complete"
                     tone={readyTone}
                   />
@@ -638,9 +672,7 @@ export function DischargeMedRecHubClient({
                                 href={detailHref}
                                 className="text-foreground underline-offset-4 hover:underline"
                               >
-                                {r.residents ?
-                                  `${r.residents.first_name} ${r.residents.last_name}`
-                                : "Unknown resident"}
+                                {formatDischargeMedRecResidentName(r.residents)}
                               </Link>
                             </TableCell>
                             <TableCell className="align-top text-[13px] text-muted-foreground">

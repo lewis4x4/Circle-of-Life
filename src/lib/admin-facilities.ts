@@ -1,3 +1,4 @@
+import { formatAdminFacilityOptionNameDisplay } from "@/lib/admin/admin-facilities-display-copy";
 import { createClient } from "@/lib/supabase/client";
 
 type QueryError = { message: string };
@@ -19,5 +20,8 @@ export async function fetchAdminFacilityOptions(): Promise<{ id: string; name: s
   }
 
   const rows = result.data ?? [];
-  return rows.map((row) => ({ id: row.id, name: row.name?.trim() || "Unnamed facility" }));
+  return rows.map((row) => ({
+    id: row.id,
+    name: formatAdminFacilityOptionNameDisplay(row.name),
+  }));
 }

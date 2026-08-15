@@ -37,6 +37,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatAdmissionDetailBedLabel } from "@/lib/admissions/admission-detail-display-copy";
+import { ADMISSIONS_HUB_MISSING_DATE_COPY } from "@/lib/admissions/admissions-hub-display-copy";
 import {
   OVERRIDE_BED_UNASSIGNED as BED_UNASSIGNED,
   OVERRIDE_FORM_PICK as PICK,
@@ -282,7 +284,9 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
   const statusLabel = STATUSES.find((s) => s.value === status)?.label ?? status;
   const acuityLabel = ACUITY.find((a) => a.value === acuity)?.label ?? acuity;
   const bedLabel =
-    bedId === BED_UNASSIGNED ? "Unassigned" : (beds.find((b) => b.id === bedId)?.bed_label ?? "—");
+    bedId === BED_UNASSIGNED
+      ? "Unassigned"
+      : formatAdmissionDetailBedLabel(beds.find((b) => b.id === bedId)?.bed_label);
 
   return (
     <div className="space-y-8">
@@ -644,7 +648,11 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
                     </>
                   ) : null}
                   , {statusLabel} in <strong>{facilityName}</strong> at {acuityLabel}, admission date{" "}
-                  <strong>{admissionDate ? format(parseISO(`${admissionDate}T12:00:00`), "MMMM d, yyyy") : "—"}</strong>
+                  <strong>
+                    {admissionDate
+                      ? format(parseISO(`${admissionDate}T12:00:00`), "MMMM d, yyyy")
+                      : ADMISSIONS_HUB_MISSING_DATE_COPY}
+                  </strong>
                   , bed <strong>{bedLabel}</strong>.
                 </p>
                 <p className="text-muted-foreground">

@@ -12,7 +12,6 @@ import {
   format,
   isSameDay,
   isSameMonth,
-  parseISO,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -26,6 +25,10 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { triggerFileDownload } from "@/lib/csv-export";
 import { buildTransportRequestsIcs } from "@/lib/transportation/transport-requests-ics";
+import {
+  formatTransportationAppointmentTime,
+  formatTransportationDayTripCount,
+} from "@/lib/transportation/transportation-display-copy";
 import { cn } from "@/lib/utils";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 
@@ -42,15 +45,6 @@ type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requ
 
 function formatEnum(s: string) {
   return s.replace(/_/g, " ");
-}
-
-function formatAppointmentTime(t: string | null): string {
-  if (!t) return "—";
-  try {
-    return format(parseISO(`2000-01-01T${t.slice(0, 8)}`), "h:mm a");
-  } catch {
-    return t;
-  }
 }
 
 export default function TransportationWeekCalendarPage() {
@@ -257,7 +251,7 @@ export default function TransportationWeekCalendarPage() {
                 type="button"
                 onClick={() => setCalendarView("week")}
                 className={cn(
-                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "week"
                     ? "bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-300"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
@@ -269,7 +263,7 @@ export default function TransportationWeekCalendarPage() {
                 type="button"
                 onClick={() => setCalendarView("month")}
                 className={cn(
-                  "h-10 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "month"
                     ? "bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-primary-300"
                     : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
@@ -283,7 +277,7 @@ export default function TransportationWeekCalendarPage() {
               onClick={viewMode === "week" ? goThisWeek : goThisMonth}
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                "h-11 rounded-full text-[10px] font-bold",
               )}
             >
               {viewMode === "week" ? "This week" : "This month"}
@@ -292,7 +286,7 @@ export default function TransportationWeekCalendarPage() {
               href="/admin/transportation"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
+                "h-11 rounded-full gap-2 text-[10px] font-bold",
               )}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -352,7 +346,7 @@ export default function TransportationWeekCalendarPage() {
                   disabled={loading}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "default" }),
-                    "h-11 rounded-full gap-2 text-[10px] font-bold uppercase tracking-wider",
+                    "h-11 rounded-full gap-2 text-[10px] font-bold",
                     loading && "pointer-events-none opacity-50",
                   )}
                   aria-label="Download calendar as ICS file"
@@ -362,7 +356,7 @@ export default function TransportationWeekCalendarPage() {
                 </button>
                 <Link
                   href="/admin/transportation/requests/new"
-                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary-600 hover:bg-primary-700 text-white")}
+                  className={cn(buttonVariants({ size: "default" }), "h-11 rounded-full text-[10px] font-bold bg-primary-600 hover:bg-primary-700 text-white")}
                 >
                   + Request
                 </Link>
@@ -401,7 +395,7 @@ export default function TransportationWeekCalendarPage() {
                           n > 0 ? "text-primary-600 dark:text-primary-400" : "text-slate-400",
                         )}
                       >
-                        {n} trip{n === 1 ? "" : "s"}
+                        {formatTransportationDayTripCount(n)}
                       </span>
                     </button>
                   );
@@ -449,7 +443,7 @@ export default function TransportationWeekCalendarPage() {
                             n > 0 ? "text-primary-600 dark:text-primary-400" : "text-slate-400",
                           )}
                         >
-                          {n > 0 ? `${n} trip${n === 1 ? "" : "s"}` : "—"}
+                          {formatTransportationDayTripCount(n)}
                         </span>
                       </button>
                     );
@@ -501,7 +495,7 @@ export default function TransportationWeekCalendarPage() {
                           <div className="flex shrink-0 flex-wrap items-center gap-3 sm:flex-col sm:items-end">
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-100 bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-400">
                               <Clock className="h-3 w-3" />
-                              {formatAppointmentTime(row.appointment_time)}
+                              {formatTransportationAppointmentTime(row.appointment_time)}
                             </span>
                             <span
                               className={cn(

@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatFacilityAccessNameDisplay } from "@/lib/admin/users/facility-access-display-copy";
 
 interface FacilityAccessManagerProps {
   /** Currently selected facility IDs */
@@ -64,7 +65,7 @@ export function FacilityAccessManager({
                     onChange={() => onPrimaryChange(id)}
                     className="h-3.5 w-3.5 text-teal-600"
                   />
-                  <span>{facility?.name ?? "Unknown facility"}</span>
+                  <span>{formatFacilityAccessNameDisplay(facility?.name)}</span>
                   {primaryId === id && (
                     <span className="text-[10px] uppercase tracking-wider font-bold text-teal-600 bg-teal-500/10 px-1.5 py-0.5 rounded">
                       Primary

@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation";
 
 import { SettingsShell } from "@/components/v2/settings/SettingsShell";
+import {
+  formatV2UsersEmailDisplay,
+  formatV2UsersJobTitleDisplay,
+  formatV2UsersLastLoginDisplay,
+  formatV2UsersNameDisplay,
+  formatV2UsersRoleDisplay,
+} from "@/lib/admin/settings/v2-users-display-copy";
 import { uiV2 } from "@/lib/flags";
 import { loadV2Users } from "@/lib/v2-users";
 
@@ -39,14 +46,20 @@ export default async function SettingsUsersPage() {
                 <tbody>
                   {load.rows.map((user) => (
                     <tr key={user.id} className="border-b border-border last:border-b-0">
-                      <td className="px-3 py-2 text-sm text-text-primary">{user.fullName ?? "—"}</td>
-                      <td className="px-3 py-2 text-sm text-text-secondary">{user.email ?? "—"}</td>
+                      <td className="px-3 py-2 text-sm text-text-primary">
+                        {formatV2UsersNameDisplay(user.fullName)}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-text-secondary">
+                        {formatV2UsersEmailDisplay(user.email)}
+                      </td>
                       <td className="px-3 py-2 text-xs">
                         <span className="inline-flex items-center rounded-sm border border-border bg-surface-elevated px-2 py-0.5 font-semibold text-text-primary">
-                          {user.appRole ?? "—"}
+                          {formatV2UsersRoleDisplay(user.appRole)}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-xs text-text-secondary">{user.jobTitle ?? "—"}</td>
+                      <td className="px-3 py-2 text-xs text-text-secondary">
+                        {formatV2UsersJobTitleDisplay(user.jobTitle)}
+                      </td>
                       <td className="px-3 py-2 text-xs">
                         {user.isActive ? (
                           <span className="text-success">active</span>
@@ -55,7 +68,7 @@ export default async function SettingsUsersPage() {
                         )}
                       </td>
                       <td className="px-3 py-2 text-xs text-text-muted">
-                        {user.lastLoginAt ? user.lastLoginAt.replace("T", " ").slice(0, 19) : "—"}
+                        {formatV2UsersLastLoginDisplay(user.lastLoginAt)}
                       </td>
                     </tr>
                   ))}

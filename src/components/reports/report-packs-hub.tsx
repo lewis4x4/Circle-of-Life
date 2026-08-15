@@ -57,6 +57,7 @@ import {
   estimatePdfPages,
   recurrenceRuleForFrequency,
 } from "@/lib/reports/schedule-preview";
+import { formatReportPackCadenceSummary } from "@/lib/reports/reports-display-copy";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -124,29 +125,6 @@ function starterMarker(starterId: string) {
 
 function surveyVisitMarker(desc: string | null | undefined) {
   return desc?.startsWith("[survey_visit_pack]") ?? false;
-}
-
-function cadenceSummary(meta: PackUiMeta | undefined, schedule: ScheduleRow | undefined): string {
-  if (schedule?.next_run_at && schedule.status !== "paused") {
-    const human = recurrenceHuman(schedule.recurrence_rule);
-    return `${human} · ${schedule.timezone}`;
-  }
-  if (meta?.pack_kind === "event_based") {
-    const t = meta.event_trigger ?? "manual_only";
-    const label = EVENT_TRIGGER_OPTIONS.find((o) => o.value === t)?.label ?? "Event";
-    return `${label} · Manual`;
-  }
-  if (schedule?.recurrence_rule) return recurrenceHuman(schedule.recurrence_rule);
-  return "—";
-}
-
-function recurrenceHuman(rule: string): string {
-  const r = rule.trim().toLowerCase();
-  if (r === "daily") return "Daily";
-  if (r === "weekly") return "Weekly";
-  if (r === "monthly") return "Monthly";
-  if (r === "quarterly" || r === "quarter-end") return "Quarterly";
-  return rule.trim() ? rule.charAt(0).toUpperCase() + rule.slice(1).toLowerCase() : "Scheduled";
 }
 
 export function ReportPacksHub() {
@@ -781,7 +759,7 @@ export function ReportPacksHub() {
         pack: p,
         meta,
         sch,
-        cadenceLabel: cadenceSummary(meta, sch),
+        cadenceLabel: formatReportPackCadenceSummary(meta, sch),
         count: countsByPackId.get(p.id) ?? 0,
       };
     });

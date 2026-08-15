@@ -5,6 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Activity, AlertTriangle, ClipboardList, Users } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  formatInfectionControlHubKpiValue,
+  infectionControlHubKpiTileIsMetric,
+} from "@/lib/infection-control/infection-control-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
@@ -71,6 +75,13 @@ export default function AdminInfectionControlHubPage() {
     void load();
   }, [load]);
 
+  const activeInfDisplay = formatInfectionControlHubKpiValue("active_infections", activeInf, loading);
+  const activeOutDisplay = formatInfectionControlHubKpiValue("active_outbreaks", activeOut, loading);
+  const openAlertsDisplay = formatInfectionControlHubKpiValue("open_vital_alerts", openAlerts, loading);
+  const staffOutDisplay = formatInfectionControlHubKpiValue("staff_out_sick", staffOut, loading);
+
+  const kpisReady = !loading;
+
   return (
     <div className="space-y-6 pb-12">
       <div className="space-y-6 max-w-6xl mx-auto">
@@ -105,11 +116,17 @@ export default function AdminInfectionControlHubPage() {
                 </h3>
                 <p
                   className={cn(
-                    "text-4xl font-mono tracking-tighter pb-1",
-                    activeInf > 0 ? "text-destructive" : "text-foreground",
+                    kpisReady && infectionControlHubKpiTileIsMetric(activeInfDisplay)
+                      ? "text-4xl font-mono tracking-tighter pb-1"
+                      : "text-[13px] font-medium leading-snug pb-1",
+                    kpisReady && infectionControlHubKpiTileIsMetric(activeInfDisplay)
+                      ? activeInf > 0
+                        ? "text-destructive"
+                        : "text-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
-                  {loading ? "—" : activeInf}
+                  {activeInfDisplay}
                 </p>
               </div>
             </V2Card>
@@ -136,11 +153,17 @@ export default function AdminInfectionControlHubPage() {
                 </div>
                 <p
                   className={cn(
-                    "text-4xl font-mono tracking-tighter pb-1",
-                    activeOut > 0 ? "text-warning" : "text-foreground",
+                    kpisReady && infectionControlHubKpiTileIsMetric(activeOutDisplay)
+                      ? "text-4xl font-mono tracking-tighter pb-1"
+                      : "text-[13px] font-medium leading-snug pb-1",
+                    kpisReady && infectionControlHubKpiTileIsMetric(activeOutDisplay)
+                      ? activeOut > 0
+                        ? "text-warning"
+                        : "text-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
-                  {loading ? "—" : activeOut}
+                  {activeOutDisplay}
                 </p>
               </div>
             </V2Card>
@@ -154,7 +177,15 @@ export default function AdminInfectionControlHubPage() {
                 <h3 className="text-[10px] tracking-wider uppercase text-info">
                   Open Vital Alerts
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-info pb-1">{loading ? "—" : openAlerts}</p>
+                <p
+                  className={cn(
+                    kpisReady && infectionControlHubKpiTileIsMetric(openAlertsDisplay)
+                      ? "text-4xl font-mono tracking-tighter text-info pb-1"
+                      : "text-[13px] font-medium leading-snug text-muted-foreground pb-1",
+                  )}
+                >
+                  {openAlertsDisplay}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -167,7 +198,15 @@ export default function AdminInfectionControlHubPage() {
                 <h3 className="text-[10px] tracking-wider uppercase text-muted-foreground">
                   Staff Out Sick
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-foreground pb-1">{loading ? "—" : staffOut}</p>
+                <p
+                  className={cn(
+                    kpisReady && infectionControlHubKpiTileIsMetric(staffOutDisplay)
+                      ? "text-4xl font-mono tracking-tighter text-foreground pb-1"
+                      : "text-[13px] font-medium leading-snug text-muted-foreground pb-1",
+                  )}
+                >
+                  {staffOutDisplay}
+                </p>
               </div>
             </V2Card>
           </div>

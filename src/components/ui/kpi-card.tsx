@@ -22,6 +22,8 @@ export type KpiCardProps = {
   tone?: KpiCardTone;
   /** Secondary line (trend deltas, ISO range hints). */
   footnote?: React.ReactNode;
+  /** `message` — one-line empty-state copy at 13px muted (Quiet Operator). */
+  valuePresentation?: "metric" | "message";
   className?: string;
 };
 
@@ -31,6 +33,7 @@ export function KpiCard({
   label,
   tone = "neutral",
   footnote,
+  valuePresentation = "metric",
   className,
 }: KpiCardProps) {
   return (
@@ -40,7 +43,15 @@ export function KpiCard({
         className,
       )}
     >
-      <p className={cn("text-[28px] font-semibold tabular-nums leading-tight tracking-normal", valueToneClass[tone])}>{value}</p>
+      <p
+        className={cn(
+          valuePresentation === "message"
+            ? "text-[13px] font-medium leading-snug text-muted-foreground"
+            : cn("text-[28px] font-semibold tabular-nums leading-tight tracking-normal", valueToneClass[tone]),
+        )}
+      >
+        {value}
+      </p>
       <p className="mt-2 text-[13px] font-normal leading-snug text-muted-foreground tracking-normal">{label}</p>
       {footnote ? <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{footnote}</p> : null}
     </div>

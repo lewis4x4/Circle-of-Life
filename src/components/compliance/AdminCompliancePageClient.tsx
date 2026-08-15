@@ -34,6 +34,15 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { StatuteCitation } from "@/components/ui/StatuteCitation";
+import {
+  complianceFacilityNotSelectedCopy,
+  compliancePocDueLine,
+  complianceScoreEmptyCopy,
+  complianceScoreLoadingCopy,
+  complianceSnapshotTileDisplay,
+  complianceSurveyVisitInactiveCopy,
+  complianceSurveyVisitLoadingCopy,
+} from "@/lib/compliance/compliance-hub-copy";
 
 type DefRow = {
   id: string;
@@ -78,6 +87,7 @@ export function AdminCompliancePageClient({
 
   // Enhanced tier state
   const [complianceScore, setComplianceScore] = useState<{ percentage: number; passed: number; total: number } | null>(null);
+  const [enhancedScoreLoading, setEnhancedScoreLoading] = useState(true);
   const [emergencyItems, setEmergencyItems] = useState<EmergencyItem[]>([]);
   const [reminders, setReminders] = useState<ComplianceReminder[]>([]);
 
@@ -180,9 +190,11 @@ export function AdminCompliancePageClient({
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setComplianceScore(null);
       setEmergencyItems([]);
+      setEnhancedScoreLoading(false);
       return;
     }
 
+    setEnhancedScoreLoading(true);
     try {
       // Load compliance score
       const score = await getComplianceScore(selectedFacilityId);
@@ -191,6 +203,9 @@ export function AdminCompliancePageClient({
       setEmergencyItems(await getEmergencyChecklistPreview(selectedFacilityId));
     } catch (e) {
       console.error("Failed to load enhanced data:", e);
+      setComplianceScore(null);
+    } finally {
+      setEnhancedScoreLoading(false);
     }
   }, [selectedFacilityId]);
 
@@ -240,29 +255,29 @@ export function AdminCompliancePageClient({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono text-foreground")}>
+            <Link href="/admin/compliance/audit-export" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] font-mono text-foreground")}>
               Audit log export
             </Link>
-            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono text-foreground")}>
+            <Link href="/admin/compliance/policies" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-[10px] font-mono text-foreground")}>
               Policy library
             </Link>
-            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-primary-600 hover:bg-primary-700 text-white")}>
+            <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ size: "sm" }), "text-[10px] font-mono bg-primary-600 hover:bg-primary-700 text-white")}>
               Add deficiencies
             </Link>
-            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] uppercase tracking-wider font-mono bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50")}>
+            <Link href="/admin/certifications" className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "text-[10px] font-mono bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50")}>
               Certifications
             </Link>
             {/* Enhanced tier links */}
-            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/rules" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
               Compliance Rules
             </Link>
-            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
               Run Scan
             </Link>
-            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+            <Link href="/admin/compliance/deficiencies/analysis" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
               Analysis
             </Link>
-            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
+            <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] font-mono text-orange-700 dark:text-orange-300")}>
               Emergency Prep
             </Link>
           </div>
@@ -272,7 +287,7 @@ export function AdminCompliancePageClient({
           <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50">
             <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Select a facility</h3>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-              Choose a facility in header to load compliance metrics for that site.
+              {complianceFacilityNotSelectedCopy()}
             </p>
           </div>
         ) : null}
@@ -347,7 +362,7 @@ export function AdminCompliancePageClient({
           <p className="text-sm text-muted-foreground mb-6">Survey citations that still need correction or verification.</p>
 
           {!facilityReady ? (
-            <p className="text-sm text-muted-foreground">Select a facility to list deficiencies.</p>
+            <p className="text-sm text-muted-foreground">{complianceFacilityNotSelectedCopy()}</p>
           ) : defLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : defRows.length === 0 ? (
@@ -370,13 +385,13 @@ export function AdminCompliancePageClient({
                           <Badge variant="outline" className="font-mono text-[9px] uppercase tracking-wider bg-card">Severity {row.severity}</Badge>
                           <span className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{row.status.replace(/_/g, " ")}</span>
                         </div>
-                        <span className="text-sm text-muted-foreground font-medium">POC Due: {row.submission_due_date ?? "—"}</span>
+                        <span className="text-sm text-muted-foreground font-medium">{compliancePocDueLine(row.submission_due_date)}</span>
                       </div>
                     </div>
 
                     <Link
                       href={`/admin/compliance/deficiencies/${row.id}`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] uppercase tracking-wider shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-primary-500 group-hover:text-primary-600 dark:group-hover:text-primary-400")}
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full sm:w-auto font-mono text-[10px] shadow-none bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 group-hover:border-primary-500 group-hover:text-primary-600 dark:group-hover:text-primary-400")}
                     >
                       Manage Finding
                     </Link>
@@ -388,7 +403,7 @@ export function AdminCompliancePageClient({
         </div>
 
         {/* Enhanced Tier: Compliance Score */}
-        {complianceScore && (
+        {facilityReady ? (
           <div className="rounded-lg p-6 border border-border bg-card">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -398,38 +413,46 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Based on latest rule-based scan</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+              <Link href="/admin/compliance/scan" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
                 Run New Scan
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-6 rounded-xl bg-muted text-center">
-                <p className="text-2xl font-bold tabular-nums text-foreground">
-                  {complianceScore.percentage}%
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 uppercase">Pass Rate</p>
-              </div>
-              <div className="p-6 rounded-xl bg-muted text-center">
-                <p className="text-3xl font-bold tabular-nums text-foreground">
-                  {complianceScore.passed}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 uppercase">Rules Passing</p>
-              </div>
-              <div className="p-6 rounded-xl bg-muted text-center">
-                <p className="text-3xl font-bold tabular-nums text-foreground">
-                  {complianceScore.total}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 uppercase">Total Rules</p>
-              </div>
-            </div>
-            <Link href="/admin/compliance/rules" className="mt-4 inline-block text-center w-full">
-              <Button variant="outline" className="w-full">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                View All Rules & Details
-              </Button>
-            </Link>
+            {enhancedScoreLoading ? (
+              <p className="text-sm text-muted-foreground">{complianceScoreLoadingCopy()}</p>
+            ) : complianceScore ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-6 rounded-xl bg-muted text-center">
+                    <p className="text-2xl font-bold tabular-nums text-foreground">
+                      {complianceScore.percentage}%
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 uppercase">Pass Rate</p>
+                  </div>
+                  <div className="p-6 rounded-xl bg-muted text-center">
+                    <p className="text-3xl font-bold tabular-nums text-foreground">
+                      {complianceScore.passed}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 uppercase">Rules Passing</p>
+                  </div>
+                  <div className="p-6 rounded-xl bg-muted text-center">
+                    <p className="text-3xl font-bold tabular-nums text-foreground">
+                      {complianceScore.total}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 uppercase">Total Rules</p>
+                  </div>
+                </div>
+                <Link href="/admin/compliance/rules" className="mt-4 inline-block text-center w-full">
+                  <Button variant="outline" className="w-full">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    View All Rules & Details
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">{complianceScoreEmptyCopy()}</p>
+            )}
           </div>
-        )}
+        ) : null}
 
         {/* Enhanced Tier: Emergency Preparedness */}
         {emergencyItems.length > 0 && (
@@ -452,7 +475,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Next required drills and checks</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] uppercase tracking-wider font-mono text-orange-700 dark:text-orange-300")}>
+              <Link href="/admin/compliance/emergency-preparedness" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-orange-50/30 dark:bg-orange-950/20 text-[10px] font-mono text-orange-700 dark:text-orange-300")}>
                 Manage Checklist
               </Link>
             </div>
@@ -513,7 +536,7 @@ export function AdminCompliancePageClient({
                   <p className="text-sm text-muted-foreground">Action items requiring attention</p>
                 </div>
               </div>
-              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] uppercase tracking-wider font-mono text-primary-700 dark:text-primary-300")}>
+              <Link href="/admin/compliance/deficiencies/new" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "bg-primary-50/30 dark:bg-primary-900/20 text-[10px] font-mono text-primary-700 dark:text-primary-300")}>
                 View All
               </Link>
             </div>
@@ -579,7 +602,7 @@ export function AdminCompliancePageClient({
                 <h3 className="text-lg font-semibold text-foreground">Survey visit mode</h3>
                 <p className="text-xs font-medium text-muted-foreground mb-4">Use bar below header to activate logging while a regulator is on site.</p>
                 <div className="bg-muted p-4 rounded-xl border border-border font-mono text-sm text-foreground">
-                   {snapLoading ? "—" : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : "No active session."}
+                   {snapLoading ? complianceSurveyVisitLoadingCopy() : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : complianceSurveyVisitInactiveCopy()}
                 </div>
               </div>
             </div>
@@ -638,6 +661,7 @@ function Tile({
   hoverColor?: "indigo" | "rose" | "emerald" | "amber" | "slate" | "red" | "orange";
 }) {
   const isDanger = (value ?? 0) > 0 && (hoverColor === "red" || hoverColor === "amber" || hoverColor === "orange");
+  const displayValue = complianceSnapshotTileDisplay(value);
 
   return (
     <Link href={href} className="block h-full group focus-visible:outline-none">
@@ -656,7 +680,7 @@ function Tile({
              </div>
           </div>
           <p className={cn("text-4xl font-mono tracking-tighter pb-1 transition-colors", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400", hoverColor === "indigo" && !isDanger ? "group-hover:text-primary-600 dark:group-hover:text-primary-400" : "")}>
-            {value === null ? "—" : value}
+            {displayValue}
           </p>
         </div>
       </V2Card>

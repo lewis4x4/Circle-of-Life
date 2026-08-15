@@ -14,6 +14,11 @@ import {
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { buttonVariants } from "@/components/ui/button";
 import type { ExecutiveAlertRow } from "@/lib/exec-alerts";
+import {
+  formatExecutiveOfficerCountLabel,
+  formatExecutiveOfficerKpiValue,
+  formatExecutiveRelativeAge,
+} from "@/lib/executive/executive-display-copy";
 import { cn } from "@/lib/utils";
 
 /**
@@ -130,14 +135,7 @@ function severityTone(severity: string): StatusPillTone {
 }
 
 function relativeAge(iso: string | null): string {
-  if (!iso) return "—";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "—";
-  const mins = Math.max(0, Math.round((Date.now() - then) / 60000));
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.round(hrs / 24)}d ago`;
+  return formatExecutiveRelativeAge(iso);
 }
 
 /** Live exec_alerts watchlist with real loading / empty / error states. */
@@ -282,14 +280,14 @@ export function useFacilityNameMap(facilities: Array<{ id: string; name: string 
   }, [facilities]);
 }
 
-/** "3 overdue" / "— overdue" helper for lane stat lines. */
+/** "3 overdue" / "No overdue posted" helper for lane stat lines. */
 export function officerCountLabel(value: number | undefined, noun: string): string {
-  return value == null ? `— ${noun}` : `${value} ${noun}`;
+  return formatExecutiveOfficerCountLabel(value, noun);
 }
 
-/** Tile value string: loading placeholder, em-dash, or the number. */
-export function officerKpiValue(value: number | undefined, loading: boolean): string {
-  return loading ? "…" : value == null ? "—" : String(value);
+/** Tile value string: loading placeholder, named gap, or the number. */
+export function officerKpiValue(value: number | undefined, loading: boolean, metricLabel: string): string {
+  return formatExecutiveOfficerKpiValue(value, loading, metricLabel);
 }
 
 /** Danger/warning tone only when an alarm count is > 0 (0-guard). */

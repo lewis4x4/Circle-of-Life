@@ -13,6 +13,15 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { fetchQualityHubSnapshot } from "@/lib/quality/load-quality-hub";
+import {
+  formatQualityHubMeasureName,
+  formatQualityHubMeasureUnit,
+  formatQualityHubPeriodEnd,
+  formatQualityHubPeriodStart,
+  formatQualityHubPbjRowCount,
+  formatQualityHubResultValue,
+  qualityHubMetricValue,
+} from "@/lib/quality/quality-hub-display-copy";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -57,6 +66,7 @@ export default function AdminQualityHubPage() {
   }, [appRole, user]);
 
   const noFacility = !facilityReady;
+  const metricCtx = { noFacility, loading };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
@@ -93,7 +103,7 @@ export default function AdminQualityHubPage() {
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400">
                  Active Measures
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{noFacility ? "—" : loading ? "—" : measures.length}</p>
+              <p className="text-4xl font-mono tracking-tighter text-primary-600 dark:text-primary-400 pb-1">{qualityHubMetricValue(measures.length, metricCtx)}</p>
             </div>
           </V2Card>
         </div>
@@ -104,7 +114,7 @@ export default function AdminQualityHubPage() {
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                  Latest Snapshot Rows
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{noFacility ? "—" : loading ? "—" : latest.length}</p>
+              <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1">{qualityHubMetricValue(latest.length, metricCtx)}</p>
             </div>
           </V2Card>
         </div>
@@ -115,7 +125,7 @@ export default function AdminQualityHubPage() {
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
                  PBJ Batches
               </h3>
-              <p className="text-4xl font-mono tracking-tighter text-slate-600 dark:text-slate-400 pb-1">{noFacility ? "—" : loading ? "—" : pbjRows.length}</p>
+              <p className="text-4xl font-mono tracking-tighter text-slate-600 dark:text-slate-400 pb-1">{qualityHubMetricValue(pbjRows.length, metricCtx)}</p>
             </div>
           </V2Card>
         </div>
@@ -159,12 +169,12 @@ export default function AdminQualityHubPage() {
               {measures.map((m) => (
                 <MotionItem key={m.id}>
                   <TableRow>
-                    <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">{m.name}</span>
+                    <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">{formatQualityHubMeasureName(m.name)}</span>
                     <span className="flex-1 min-w-0 flex items-center gap-2">
                       <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground truncate">{m.measure_key}</span>
                       {m.domain ? <span className="text-[11px] text-muted-foreground truncate">· {m.domain}</span> : null}
                     </span>
-                    <span className="w-[90px] shrink-0 text-right text-[12px] font-medium text-foreground">{m.unit ?? "—"}</span>
+                    <span className="w-[90px] shrink-0 text-right text-[12px] font-medium text-foreground">{formatQualityHubMeasureUnit(m.unit)}</span>
                   </TableRow>
                 </MotionItem>
               ))}
@@ -197,12 +207,12 @@ export default function AdminQualityHubPage() {
               {latest.map((r) => (
                 <MotionItem key={r.id ?? `${r.quality_measure_id}-${r.period_end}`}>
                   <TableRow>
-                    <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">{r.quality_measures?.name ?? r.quality_measure_id ?? "—"}</span>
+                    <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground truncate">{formatQualityHubMeasureName(r.quality_measures?.name)}</span>
                     <span className="flex-1 min-w-0 text-[11px] text-muted-foreground font-mono tabular-nums truncate">
-                      {r.period_start ?? "—"} → {r.period_end ?? "—"}
+                      {formatQualityHubPeriodStart(r.period_start)} → {formatQualityHubPeriodEnd(r.period_end)}
                     </span>
                     <span className="w-[110px] shrink-0 text-right text-[13px] font-medium text-foreground font-mono tabular-nums">
-                      {r.value_numeric != null ? String(r.value_numeric) : (r.value_text ?? "—")}
+                      {formatQualityHubResultValue(r.value_numeric, r.value_text)}
                     </span>
                   </TableRow>
                 </MotionItem>
@@ -240,7 +250,7 @@ export default function AdminQualityHubPage() {
                   <TableRow>
                     <span className="flex-[2] min-w-0 text-[12px] font-mono text-foreground tabular-nums truncate">{p.period_start} → {p.period_end}</span>
                     <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{p.status.replace(/_/g, " ")}</span>
-                    <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{p.row_count ?? "—"}</span>
+                    <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{formatQualityHubPbjRowCount(p.row_count)}</span>
                     <span className="w-[140px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
                       {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                     </span>

@@ -3,6 +3,7 @@ import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
+import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
 type Body = {
   signature: string;
@@ -197,7 +198,10 @@ export async function POST(
     approvedAt: nowIso,
     approvedBy: {
       id: user.id,
-      name: userProfile.full_name || user.email || "Unknown",
+      name: formatUploadedByProfile({
+        full_name: userProfile.full_name,
+        email: user.email,
+      }),
     },
   });
 }

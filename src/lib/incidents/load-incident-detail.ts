@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { formatIncidentDetailTimestamp } from "@/lib/incidents/incident-detail-display-copy";
 import {
   classifyFollowupEscalation,
   type FollowupEscalationLevel,
@@ -192,19 +193,6 @@ const INCIDENT_COLUMNS = [
   "updated_at",
 ].join(", ");
 
-function formatTs(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
-}
-
 function mapDbStatusToUi(value: string): IncidentStatusUi {
   if (value === "investigating") return "in_review";
   if (value === "resolved" || value === "closed") return "closed";
@@ -374,7 +362,7 @@ export async function loadIncidentDetail(
     id: f.id,
     taskType: f.task_type,
     description: f.description,
-    dueLabel: formatTs(f.due_at),
+    dueLabel: formatIncidentDetailTimestamp(f.due_at),
     statusLabel: f.completed_at ? "Completed" : "Open",
     assignedToId: f.assigned_to,
     assignee: f.assigned_to ? assigneeById.get(f.assigned_to) ?? "Assigned" : "",

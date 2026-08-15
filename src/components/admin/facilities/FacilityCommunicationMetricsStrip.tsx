@@ -2,6 +2,13 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import {
+  communicationStripListingHealthIsResolved,
+  formatCommunicationStripLastChange,
+  formatCommunicationStripLastFamilyNotification,
+  formatCommunicationStripOpenVisitorSessions,
+  resolveCommunicationStripOnlineListingHealth,
+} from "@/lib/facilities/communication-metrics-strip-display-copy";
 
 function StripTile({
   label,
@@ -27,32 +34,6 @@ function StripTile({
   );
 }
 
-function formatNyDateTime(iso: unknown): string {
-  if (typeof iso !== "string") return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("en-US", {
-    timeZone: "America/New_York",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function onlineListingHealth(settings: Record<string, unknown> | null): { value: string; sub: string; warn?: boolean } {
-  if (!settings) {
-    return { value: "—", sub: "Loading profile" };
-  }
-  const g = String(settings.google_business_profile_url ?? "").trim();
-  const y = String(settings.yelp_listing_url ?? "").trim();
-  if (g && y) return { value: "Linked", sub: "Google + Yelp on file" };
-  if (g) return { value: "Partial", sub: "Google only — add Yelp" };
-  if (y) return { value: "Partial", sub: "Yelp only — add Google" };
-  return { value: "Review needed", sub: "No listing URLs on file", warn: true };
-}
-
 export type FacilityCommunicationMetricsStripProps = {
   loading: boolean;
   settings: Record<string, unknown> | null;
@@ -62,31 +43,34 @@ export type FacilityCommunicationMetricsStripProps = {
  * Communications & Policy tab — contextual tiles (notification/visitor telemetry may be wired later).
  */
 export function FacilityCommunicationMetricsStrip({ loading, settings }: FacilityCommunicationMetricsStripProps) {
-  const health = onlineListingHealth(settings);
-  const lastChange = loading ? "—" : formatNyDateTime(settings?.updated_at);
+  const health = resolveCommunicationStripOnlineListingHealth(settings, loading);
+  const healthResolved = communicationStripListingHealthIsResolved(health);
+  const lastFamilyNotification = formatCommunicationStripLastFamilyNotification(loading);
+  const openVisitorSessions = formatCommunicationStripOpenVisitorSessions(loading);
+  const lastChange = formatCommunicationStripLastChange(settings?.updated_at, loading);
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       <StripTile
         label="Last family notification sent"
-        value={loading ? "—" : "—"}
+        value={lastFamilyNotification}
         sub={loading ? "…" : "Notification telemetry pending"}
         valueClassName={loading ? "text-2xl text-muted-foreground animate-pulse" : "text-2xl text-muted-foreground"}
       />
       <StripTile
         label="Open visitor sessions"
-        value={loading ? "—" : "—"}
+        value={openVisitorSessions}
         sub={loading ? "…" : "Visitor session tracking pending"}
         valueClassName={loading ? "text-2xl text-muted-foreground animate-pulse" : "text-2xl text-muted-foreground"}
       />
       <StripTile
         label="Online listing health"
-        value={loading ? "—" : health.value}
+        value={health.value}
         sub={loading ? "…" : health.sub}
         valueClassName={cn(
           loading && "text-2xl text-muted-foreground animate-pulse",
           !loading && health.warn && "text-2xl text-warning",
-          !loading && !health.warn && health.value !== "—" && "text-2xl",
+          !loading && !health.warn && healthResolved && "text-2xl",
         )}
       />
       <StripTile

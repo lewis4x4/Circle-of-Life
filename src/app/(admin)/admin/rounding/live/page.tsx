@@ -4,13 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
-  Building2,
   CheckCircle2,
-  ClipboardList,
   Clock,
   Clock3,
   Eye,
-  LayoutDashboard,
   Play,
   RefreshCw,
   UserRound,
@@ -24,6 +21,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  describeColDiscoveryCadenceForFacility,
+  describeLiveBoardCadenceReminder,
+  describeLiveBoardEmptyState,
+} from "@/lib/rounding/col-discovery-round-cadence";
+import {
+  formatLiveRoundingDueLabel,
+  formatLiveRoundingShiftType,
+} from "@/lib/rounding/live-rounding-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -125,16 +131,6 @@ function statusConfig(status: string) {
   };
 }
 
-function formatDueLabel(value: string) {
-  const dueAt = new Date(value);
-  if (Number.isNaN(dueAt.getTime())) return "Unknown";
-  const diff = dueAt.getTime() - Date.now();
-  const mins = Math.round(Math.abs(diff) / 60000);
-  if (mins < 1) return "Now";
-  if (diff > 0) return `in ${mins}m`;
-  return `${mins}m ago`;
-}
-
 function formatRelativeAgo(ts: number | null, now: number): string {
   if (ts == null) return "just now";
   const seconds = Math.max(0, Math.floor((now - ts) / 1000));
@@ -210,7 +206,7 @@ function deriveBoardState(args: {
 /* -------------------------------------------------------------------------- */
 
 export default function AdminRoundingLivePage() {
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const supabase = useMemo(() => createClient(), []);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [tasks, setTasks] = useState<LiveTaskRow[]>([]);
@@ -226,6 +222,29 @@ export default function AdminRoundingLivePage() {
   const [sequentialIndex, setSequentialIndex] = useState(0);
 
   const loadingRef = useRef(false);
+
+  const facilityName = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return (
+      availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name ?? null
+    );
+  }, [availableFacilities, selectedFacilityId]);
+
+  const emptyCopy = useMemo(
+    () => describeLiveBoardEmptyState(facilityName),
+    [facilityName],
+  );
+
+  const cadenceReminder = useMemo(
+    () => (facilityName ? describeLiveBoardCadenceReminder(facilityName) : null),
+    [facilityName],
+  );
+
+  const cadenceHeadline = useMemo(
+    () =>
+      facilityName ? describeColDiscoveryCadenceForFacility(facilityName).headline : null,
+    [facilityName],
+  );
 
   const load = useCallback(async () => {
     // Prevent overlap from auto-refresh ticks colliding with manual refresh.
@@ -433,6 +452,10 @@ export default function AdminRoundingLivePage() {
 
       <RoundingHubNav />
 
+      {selectedFacilityId && cadenceReminder ? (
+        <LiveBoardCadenceReminder headline={cadenceHeadline} detail={cadenceReminder} />
+      ) : null}
+
       {/*
        * State machine — exactly one branch renders below.
        * Order matters: facility scope dominates, then loading, then error, then empties, then content.
@@ -563,9 +586,11 @@ export default function AdminRoundingLivePage() {
             </div>
           </section>
 
-          {/* Content — task list, no-cycle empty, or filter-empty */}
-          {boardState === "empty_no_cycle" ? (
-            <NoCycleEmptyState />
+          {/* Content — loading, task list, no-cycle empty, or filter-empty */}
+          {boardState === "loading" ? (
+            <LiveBoardLoadingNotice />
+          ) : boardState === "empty_no_cycle" ? (
+            <LiveBoardEmptyNotice copy={emptyCopy} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setStatusFilter("all")} />
           ) : (
@@ -633,7 +658,7 @@ export default function AdminRoundingLivePage() {
                         <p className="mt-0.5 text-[12px] text-muted-foreground">
                           {displayName(task.staff) || "Unassigned"}
                           <span aria-hidden className="px-1.5 text-border">·</span>
-                          {task.shift_assignments?.shift_type ?? "—"} shift
+                          {formatLiveRoundingShiftType(task.shift_assignments?.shift_type)}
                         </p>
                       </div>
 
@@ -647,7 +672,7 @@ export default function AdminRoundingLivePage() {
                               cfg.tone === "default" && "text-foreground",
                             )}
                           >
-                            {formatDueLabel(task.due_at)}
+                            {formatLiveRoundingDueLabel(task.due_at)}
                           </p>
                           <Badge
                             variant="outline"
@@ -847,22 +872,19 @@ function LivePulseDot({ active }: { active: boolean }) {
 /* -------------------------------------------------------------------------- */
 
 function AllFacilitiesInterstitial() {
+  const copy = describeLiveBoardEmptyState(null);
+
   return (
     <section
       aria-label="Facility scope required"
-      className="rounded-lg border border-dashed border-border bg-card p-6"
+      className="rounded-lg border border-dashed border-border bg-muted/20 p-3"
+      role="status"
     >
-      <div className="flex items-start gap-3">
-        <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-semibold text-foreground">
-            Live board operates per facility
-          </p>
-          <p className="text-[13px] text-muted-foreground">
-            Live rounding tasks are facility-scoped. Select a facility from the top bar to continue.
-          </p>
-        </div>
-      </div>
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
+        <span className="font-medium text-foreground">{copy.why}</span>
+        {" — "}
+        {copy.guidance}
+      </p>
     </section>
   );
 }
@@ -899,36 +921,63 @@ function LoadErrorNotice({
   );
 }
 
-function NoCycleEmptyState() {
+function LiveBoardCadenceReminder({
+  headline,
+  detail,
+}: {
+  headline: string | null;
+  detail: string;
+}) {
   return (
     <section
-      aria-label="No active rounding cycle"
-      className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
+      aria-label="Jessica discovery cadence reminder"
+      className="rounded-lg border border-border bg-card px-4 py-3"
     >
-      <Eye className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">
-        No active rounding cycle
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
+        {headline ? (
+          <span className="font-medium text-foreground">{headline}</span>
+        ) : null}
+        {headline ? " — " : null}
+        {detail}
       </p>
-      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        Start a cycle from the Smart Rounding overview to begin tracking checks, or create an
-        observation plan to define rounding cadence.
+    </section>
+  );
+}
+
+function LiveBoardLoadingNotice() {
+  return (
+    <section
+      aria-label="Loading live rounding tasks"
+      className="rounded-lg border border-dashed border-border bg-muted/20 p-3"
+      role="status"
+    >
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
+        Loading live rounding tasks…
       </p>
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+    </section>
+  );
+}
+
+function LiveBoardEmptyNotice({ copy }: { copy: ReturnType<typeof describeLiveBoardEmptyState> }) {
+  return (
+    <section
+      aria-label="No live rounding tasks"
+      className="rounded-lg border border-dashed border-border bg-muted/20 p-3"
+      role="status"
+    >
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
+        <span className="font-medium text-foreground">{copy.why}</span>
+        {" "}
+        {copy.guidance}
+        {" "}
         <Link
           href="/admin/rounding"
-          className={cn(buttonVariants({ variant: "default", size: "sm" }))}
+          className="font-medium text-foreground underline-offset-2 hover:underline"
         >
-          <LayoutDashboard className="size-4" aria-hidden />
-          Go to overview
+          {copy.overviewCta}
         </Link>
-        <Link
-          href="/admin/rounding/plans/new"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-        >
-          <ClipboardList className="size-4" aria-hidden />
-          Create plan
-        </Link>
-      </div>
+        .
+      </p>
     </section>
   );
 }

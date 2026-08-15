@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  CAREGIVER_RESIDENT_NO_ACUITY_COPY,
+  formatCaregiverResidentRoomLabel,
+} from "@/lib/caregiver/resident-detail-display-copy";
 import type { Database } from "@/types/database";
 
 export type CaregiverResidentProfile = {
@@ -32,8 +36,8 @@ export type RiskBanner = {
   tone: "warning" | "danger" | "ok";
 };
 
-function acuityDisplay(level: string | null): string {
-  if (!level) return "—";
+export function acuityDisplay(level: string | null): string {
+  if (!level) return CAREGIVER_RESIDENT_NO_ACUITY_COPY;
   return level.replace("level_", "Level ");
 }
 
@@ -157,7 +161,7 @@ export async function fetchCaregiverResidentProfile(
   if (rErr || !raw) return { ok: false, error: rErr?.message ?? "Resident not found" };
   const r = raw as unknown as ResidentRow;
 
-  let roomLabel = "—";
+  let roomNumber: string | null = null;
   if (r.bed_id) {
     const { data: bedRaw } = await supabase
       .from("beds")
@@ -172,9 +176,10 @@ export async function fetchCaregiverResidentProfile(
         .eq("id", bed.room_id)
         .maybeSingle();
       const room = roomRaw as unknown as RoomRow | null;
-      if (room) roomLabel = `Room ${room.room_number}`;
+      if (room) roomNumber = room.room_number;
     }
   }
+  const roomLabel = formatCaregiverResidentRoomLabel(roomNumber);
 
   const now = new Date();
   const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);

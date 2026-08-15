@@ -171,8 +171,9 @@ Hub files under the route group `(admin)` live at `src/app/(admin)/<segment>/...
 - `/admin/vendors/invoices/[id]`
 - `/admin/vendors/payments`
 - `/admin/vendors/spend`
-- `/admin/family-messages` (Phase 1 — family ↔ staff messaging)
+- `/admin/family-messages` (Phase 1 — staff one-way family bulletin notes)
 - `/admin/family-portal` (Phase 5 Module 21 — `21-family-portal.md` — triage, conferences, consents)
+- `/admin/family` → redirects to `/admin/family-portal` (staff bookmark alias; nested paths preserved)
 
 ### Caregiver shell routes
 

@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  formatMorningHuddleResidentName,
+  formatMorningHuddleStaffName,
+} from "@/lib/office/morning-huddle-display-copy";
 import type { Database } from "@/types/database";
 
 /** Calendar day in America/New_York as YYYY-MM-DD (foundation spec: COL facilities anchor to ET). */
@@ -115,11 +119,6 @@ type ResidentMoveRow = {
   discharge_target_date: string | null;
 };
 
-function personName(p: { first_name: string; last_name: string } | null): string {
-  if (!p) return "Unknown";
-  return `${p.first_name?.trim() ?? ""} ${p.last_name?.trim() ?? ""}`.trim() || "Unknown";
-}
-
 /**
  * Aggregates the per-facility morning briefing from existing tables through the
  * caller's session client — RLS on each source table governs visibility.
@@ -221,7 +220,7 @@ export async function fetchMorningHuddleData(
 
   const residentMoves: HuddleResidentMove[] = [];
   for (const r of movesRes.data ?? []) {
-    const name = personName(r);
+    const name = formatMorningHuddleResidentName(r);
     if (r.admission_date === dateIso) {
       residentMoves.push({ id: `${r.id}-in`, residentName: name, kind: "move_in", date: dateIso });
     }
@@ -249,12 +248,12 @@ export async function fetchMorningHuddleData(
       severity: r.severity,
       status: r.status,
       occurredAt: r.occurred_at,
-      residentName: r.residents ? personName(r.residents) : null,
+      residentName: r.residents ? formatMorningHuddleResidentName(r.residents) : null,
       ahcaReportable: r.ahca_reportable,
     })),
     shiftRoster: (rosterRes.data ?? []).map((r) => ({
       id: r.id,
-      staffName: personName(r.staff),
+      staffName: formatMorningHuddleStaffName(r.staff),
       shiftType: r.shift_type,
       status: r.status,
     })),
@@ -270,7 +269,7 @@ export async function fetchMorningHuddleData(
     })),
     medFlags: (medFlagsRes.data ?? []).map((r) => ({
       id: r.id,
-      residentName: personName(r.residents),
+      residentName: formatMorningHuddleResidentName(r.residents),
       status: r.status,
       scheduledTime: r.scheduled_time,
       reason: r.refusal_reason ?? r.hold_reason ?? r.not_available_reason,

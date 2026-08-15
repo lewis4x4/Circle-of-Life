@@ -146,9 +146,25 @@ const nextConfig: NextConfig = {
         destination: "/admin/family-portal",
         permanent: false,
       },
+      // Staff bookmarks often use /admin/family; canonical hub is /admin/family-portal.
+      {
+        source: "/admin/family/:path*",
+        destination: "/admin/family-portal/:path*",
+        permanent: false,
+      },
+      {
+        source: "/admin/family",
+        destination: "/admin/family-portal",
+        permanent: false,
+      },
       {
         source: "/admin/facilities/:facilityId/emergency-contacts",
         destination: "/admin/facilities/:facilityId?tab=emergency",
+        permanent: false,
+      },
+      {
+        source: "/admin/facilities/:facilityId/surveys",
+        destination: "/admin/facilities/:facilityId?tab=licensing",
         permanent: false,
       },
     ];

@@ -15,13 +15,12 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { formatInsurancePolicyExpirationDate } from "@/lib/insurance/policies-display-copy";
 import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_POLICIES_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import { Constants, type Database } from "@/types/database";
-import { format, parseISO } from "date-fns";
-
 type PolicyRow = Database["public"]["Tables"]["insurance_policies"]["Row"];
 type EntityMini = { id: string; name: string };
 
@@ -182,7 +181,7 @@ export default function InsurancePoliciesPage() {
               <MotionList className="space-y-1 mt-2">
                 {rows.map((r) => {
                   const isActive = r.status === "active";
-                  const formattedDate = r.expiration_date ? format(parseISO(r.expiration_date.length <= 10 ? `${r.expiration_date}T12:00:00.000Z` : r.expiration_date), "MMM d, yyyy") : "—";
+                  const formattedDate = formatInsurancePolicyExpirationDate(r.expiration_date);
 
                   return (
                     <MotionItem key={r.id}>

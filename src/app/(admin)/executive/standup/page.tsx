@@ -27,21 +27,10 @@ import {
   type StandupMetricRow,
   type StandupSectionKey,
 } from "@/lib/executive/standup";
+import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
 import type { Database } from "@/types/database";
 
-const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function formatMetricValue(metric: StandupMetricRow): string {
-  if (metric.valueText?.trim()) return metric.valueText.trim();
-  if (metric.valueNumeric == null) return "Manual / future feed";
-  if (metric.valueType === "currency") return USD.format(metric.valueNumeric / 100);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
-}
-
 function sourceBadgeClass(metric: StandupMetricRow): string {
-  if (metric.sourceMode === "auto") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (metric.sourceMode === "forecast") return "border-primary-200 bg-primary-50 text-primary-700";
   if (metric.sourceMode === "hybrid") return "border-amber-200 bg-amber-50 text-amber-700";
   return "border-slate-200 bg-slate-50 text-slate-700";
@@ -196,14 +185,14 @@ export default function ExecutiveStandupPage() {
               </Button>
               <Link
                 href="/admin/executive/standup/history"
-                className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold uppercase tracking-wider text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 History
               </Link>
               {draftStatus ? (
                 <Link
                   href={`/admin/executive/standup/${weekOf}`}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-4 text-xs font-semibold uppercase tracking-wider text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/15"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-primary-200 bg-primary-50 px-4 text-xs font-semibold text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/15"
                 >
                   Open draft
                 </Link>
@@ -232,14 +221,16 @@ export default function ExecutiveStandupPage() {
                 return <Skeleton key={`standup-kpi-${index}`} className="h-[140px] rounded-lg" />;
               }
               const metric = totalRow?.metrics[metricKey as string];
+              const metricLabel =
+                metric?.label ?? STANDUP_METRIC_DEFINITIONS.find((definition) => definition.key === metricKey)?.label ?? "Metric";
               return (
                 <Card key={metricKey as string} className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                   <CardHeader className="pb-3">
                     <CardDescription className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
-                      {metric?.label ?? "Metric"}
+                      {metricLabel}
                     </CardDescription>
                     <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">
-                      {metric ? formatMetricValue(metric) : "—"}
+                      {formatStandupMetricValue(metric, metricLabel)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -276,11 +267,11 @@ export default function ExecutiveStandupPage() {
                       <CardDescription>{facility.topConcern}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm text-slate-600 dark:text-zinc-300">
-                      <div className="flex items-center justify-between"><span>Census</span><span className="font-semibold">{formatMetricValue(facility.metrics.current_total_census)}</span></div>
-                      <div className="flex items-center justify-between"><span>Current AR</span><span className="font-semibold">{formatMetricValue(facility.metrics.current_ar_cents)}</span></div>
-                      <div className="flex items-center justify-between"><span>Open beds</span><span className="font-semibold">{formatMetricValue(facility.metrics.total_beds_open)}</span></div>
-                      <div className="flex items-center justify-between"><span>Hospital / rehab</span><span className="font-semibold">{formatMetricValue(facility.metrics.hospital_and_rehab_total)}</span></div>
-                      <div className="flex items-center justify-between"><span>Overtime</span><span className="font-semibold">{formatMetricValue(facility.metrics.overtime_hours)}</span></div>
+                      <div className="flex items-center justify-between"><span>Census</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.current_total_census)}</span></div>
+                      <div className="flex items-center justify-between"><span>Current AR</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.current_ar_cents)}</span></div>
+                      <div className="flex items-center justify-between"><span>Open beds</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.total_beds_open)}</span></div>
+                      <div className="flex items-center justify-between"><span>Hospital / rehab</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.hospital_and_rehab_total)}</span></div>
+                      <div className="flex items-center justify-between"><span>Overtime</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.overtime_hours)}</span></div>
                       <div className="pt-2">
                         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Why red</div>
                         <ul className="mt-2 space-y-1 text-xs">
@@ -387,14 +378,14 @@ export default function ExecutiveStandupPage() {
                             <td key={`${facility.facilityName}-${definition.key}`} className="px-3 py-3 align-top">
                               {metric ? (
                                 <div className="space-y-2">
-                                  <div className="font-semibold text-slate-900 dark:text-white">{formatMetricValue(metric)}</div>
+                                  <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(metric)}</div>
                                   <div className="flex flex-wrap gap-1.5">
                                     <Badge variant="outline" className={sourceBadgeClass(metric)}>{metric.sourceMode}</Badge>
                                     <Badge variant="outline" className={confidenceBadgeClass(metric)}>{metric.confidenceBand}</Badge>
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-slate-400">—</span>
+                                <span className="text-slate-400">{formatStandupMetricValue(undefined, definition.label)}</span>
                               )}
                             </td>
                           );

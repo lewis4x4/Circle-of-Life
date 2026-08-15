@@ -1,8 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Loader2, MessageCircle, Send, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ClipboardList, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -11,15 +11,43 @@ import type {
   StaffMessageRow,
   StaffMessageThread,
 } from "@/lib/admin/family-messages-data";
+import {
+  FAMILY_BULLETIN_EMPTY_DESCRIPTION,
+  FAMILY_BULLETIN_EMPTY_TITLE,
+  FAMILY_BULLETIN_PAGE_DESCRIPTION,
+  FAMILY_BULLETIN_PAGE_TITLE,
+  FAMILY_BULLETIN_RESIDENT_EMPTY_DESCRIPTION,
+  FAMILY_BULLETIN_RESIDENT_EMPTY_TITLE,
+} from "@/lib/admin/family-messages-copy";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
   fetchStaffMessageThreads,
   fetchStaffMessagesForResident,
   postStaffMessage,
-  familyDeliveryMethodOptions,
 } from "@/lib/admin/family-messages-data";
+import { formatFamilyDeliveryMethod } from "@/lib/family/family-portal-notes-display";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { FamilyPortalUpdateLog } from "@/components/family-portal/FamilyPortalUpdateLog";
+import { StaffFamilyBulletinSection } from "@/components/family-portal/StaffFamilyBulletinSection";
+
+function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
+  return [...messages]
+    .reverse()
+    .map((message) => ({
+      id: message.id,
+      body: message.body,
+      timestamp: message.createdAt,
+      authorLabel:
+        message.authorKind === "staff"
+          ? message.authorName
+          : `${message.authorName} (legacy)`,
+      deliveryMethod:
+        message.authorKind === "staff" ? message.deliveryMethod : undefined,
+      familyAcknowledgedAt: message.familyAcknowledgedAt,
+      variant: message.authorKind,
+    }));
+}
 
 export default function StaffFamilyMessagesPage() {
   const { user } = useHavenAuth();
@@ -29,6 +57,7 @@ export default function StaffFamilyMessagesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedResidentId, setSelectedResidentId] = useState<string | null>(null);
+  const [composeResidentId, setComposeResidentId] = useState("");
   const [messages, setMessages] = useState<StaffMessageRow[]>([]);
   const [residentName, setResidentName] = useState("");
   const [msgLoading, setMsgLoading] = useState(false);
@@ -36,20 +65,19 @@ export default function StaffFamilyMessagesPage() {
 
   const [draft, setDraft] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<FamilyDeliveryMethod>("portal_only");
-  const [sending, setSending] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const [threadFilter, setThreadFilter] = useState<"all" | "triage" | "family_replied">("all");
-  const [threadActionLoading, setThreadActionLoading] = useState<string | null>(null);
-  const [threadActionError, setThreadActionError] = useState<string | null>(null);
-  const [threadActionMessage, setThreadActionMessage] = useState<string | null>(null);
+  const [posting, setPosting] = useState(false);
+  const [residentFilter, setResidentFilter] = useState<"all" | "triage">("all");
+  const [triageActionLoading, setTriageActionLoading] = useState<string | null>(null);
+  const [triageActionError, setTriageActionError] = useState<string | null>(null);
+  const [triageActionMessage, setTriageActionMessage] = useState<string | null>(null);
   const requestedFilter = searchParams.get("filter");
 
   useEffect(() => {
-    if (requestedFilter === "triage" || requestedFilter === "family_replied") {
-      setThreadFilter(requestedFilter);
+    if (requestedFilter === "triage") {
+      setResidentFilter("triage");
       return;
     }
-    setThreadFilter("all");
+    setResidentFilter("all");
   }, [requestedFilter]);
 
   const loadThreads = useCallback(async () => {
@@ -61,14 +89,15 @@ export default function StaffFamilyMessagesPage() {
       if (!result.ok) setError(result.error);
       else setThreads(result.threads);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load threads");
+      setError(err instanceof Error ? err.message : "Failed to load bulletin notes");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const openThread = useCallback(async (residentId: string) => {
+  const openResidentLog = useCallback(async (residentId: string) => {
     setSelectedResidentId(residentId);
+    setComposeResidentId(residentId);
     setMsgLoading(true);
     setMsgError(null);
     try {
@@ -81,45 +110,44 @@ export default function StaffFamilyMessagesPage() {
         setResidentName(result.residentName);
       }
     } catch (err) {
-      setMsgError(err instanceof Error ? err.message : "Failed to load messages");
+      setMsgError(err instanceof Error ? err.message : "Failed to load posted updates");
     } finally {
       setMsgLoading(false);
     }
   }, []);
 
-  const handleSend = useCallback(async () => {
-    if (!selectedResidentId || !draft.trim() || sending) return;
-    setSending(true);
+  const activeComposeResidentId = selectedResidentId ?? composeResidentId;
+
+  const handlePost = useCallback(async () => {
+    if (!activeComposeResidentId || !draft.trim() || posting) return;
+    setPosting(true);
+    setMsgError(null);
     try {
       const supabase = createClient();
-      const result = await postStaffMessage(supabase, selectedResidentId, draft, deliveryMethod);
+      const result = await postStaffMessage(supabase, activeComposeResidentId, draft, deliveryMethod);
       if (!result.ok) {
         setMsgError(result.error);
       } else {
         setDraft("");
-        await openThread(selectedResidentId);
+        if (selectedResidentId) {
+          await openResidentLog(selectedResidentId);
+        }
+        await loadThreads();
       }
     } catch (err) {
-      setMsgError(err instanceof Error ? err.message : "Failed to send message");
+      setMsgError(err instanceof Error ? err.message : "Failed to post bulletin note");
     } finally {
-      setSending(false);
+      setPosting(false);
     }
-  }, [selectedResidentId, draft, deliveryMethod, sending, openThread]);
-
-  useEffect(() => { void loadThreads(); }, [loadThreads]);
+  }, [activeComposeResidentId, draft, deliveryMethod, posting, openResidentLog, selectedResidentId, loadThreads]);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+    void loadThreads();
+  }, [loadThreads]);
 
   const visibleThreads = threads.filter((thread) => {
-    if (threadFilter === "triage") {
+    if (residentFilter === "triage") {
       return thread.triageStatus === "pending_review" || thread.triageStatus === "in_review";
-    }
-    if (threadFilter === "family_replied") {
-      return thread.unreadHint;
     }
     return true;
   });
@@ -127,42 +155,56 @@ export default function StaffFamilyMessagesPage() {
     ? threads.find((thread) => thread.residentId === selectedResidentId) ?? null
     : null;
 
-  const updateThreadTriageStatus = useCallback(async (
-    triageItemId: string,
-    triageStatus: "in_review" | "resolved" | "false_positive",
-    successMessage: string,
-  ) => {
-    setThreadActionLoading(triageItemId);
-    setThreadActionError(null);
-    setThreadActionMessage(null);
-    try {
-      const supabase = createClient();
-      if (!user?.id) {
-        setThreadActionError("You must be signed in to update triage.");
-        return;
+  const composeThread = useMemo(
+    () => threads.find((thread) => thread.residentId === activeComposeResidentId) ?? null,
+    [activeComposeResidentId, threads],
+  );
+
+  const updateThreadTriageStatus = useCallback(
+    async (
+      triageItemId: string,
+      triageStatus: "in_review" | "resolved" | "false_positive",
+      successMessage: string,
+    ) => {
+      setTriageActionLoading(triageItemId);
+      setTriageActionError(null);
+      setTriageActionMessage(null);
+      try {
+        const supabase = createClient();
+        if (!user?.id) {
+          setTriageActionError("You must be signed in to update triage.");
+          return;
+        }
+        const { error: updateError } = await supabase
+          .from("family_message_triage_items")
+          .update({
+            triage_status: triageStatus,
+            reviewed_at:
+              triageStatus === "resolved" || triageStatus === "false_positive"
+                ? new Date().toISOString()
+                : null,
+            reviewed_by:
+              triageStatus === "resolved" || triageStatus === "false_positive"
+                ? user.id
+                : null,
+            updated_at: new Date().toISOString(),
+            updated_by: user.id,
+          })
+          .eq("id", triageItemId);
+        if (updateError) throw updateError;
+        setTriageActionMessage(successMessage);
+        await loadThreads();
+        if (selectedResidentId) {
+          await openResidentLog(selectedResidentId);
+        }
+      } catch (err) {
+        setTriageActionError(err instanceof Error ? err.message : "Could not update triage.");
+      } finally {
+        setTriageActionLoading(null);
       }
-      const { error } = await supabase
-        .from("family_message_triage_items")
-        .update({
-          triage_status: triageStatus,
-          reviewed_at: triageStatus === "resolved" || triageStatus === "false_positive" ? new Date().toISOString() : null,
-          reviewed_by: triageStatus === "resolved" || triageStatus === "false_positive" ? user.id : null,
-          updated_at: new Date().toISOString(),
-          updated_by: user.id,
-        })
-        .eq("id", triageItemId);
-      if (error) throw error;
-      setThreadActionMessage(successMessage);
-      await loadThreads();
-      if (selectedResidentId) {
-        await openThread(selectedResidentId);
-      }
-    } catch (err) {
-      setThreadActionError(err instanceof Error ? err.message : "Could not update triage.");
-    } finally {
-      setThreadActionLoading(null);
-    }
-  }, [loadThreads, openThread, selectedResidentId, user?.id]);
+    },
+    [loadThreads, openResidentLog, selectedResidentId, user?.id],
+  );
 
   if (loading) {
     return (
@@ -174,83 +216,76 @@ export default function StaffFamilyMessagesPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-3xl rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex flex-col items-center gap-4 mt-20">
-         <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
-            <span className="font-bold">!</span>
-         </div>
-         {error}
-         <Button variant="outline" size="sm" onClick={() => { void loadThreads(); }}>Try Again</Button>
+      <div className="mx-auto mt-20 flex max-w-3xl flex-col items-center gap-4 rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm font-medium text-rose-700 dark:text-rose-400">
+        {error}
+        <Button variant="outline" size="sm" onClick={() => { void loadThreads(); }}>
+          Try again
+        </Button>
       </div>
     );
   }
 
   if (selectedResidentId) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6 pb-12">
-        {/* Thread Header */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-center justify-between bg-card p-6 md:p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-           <div className="flex items-center gap-6">
-             <button
-               onClick={() => {
-                 setSelectedResidentId(null);
-                 setMessages([]);
-                 void loadThreads();
-               }}
-               className="w-12 h-12 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 transition-colors shrink-0 text-slate-500 hover:text-slate-900 dark:hover:text-white group tap-responsive"
-               aria-label="Back to threads"
-             >
-               <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-             </button>
-             <div>
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-500/10 border border-primary-100 dark:border-primary-500/20 text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 mb-2">
-                   Active Thread
-               </div>
-               <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-slate-900 dark:text-white">
-                 {residentName}
-               </h2>
-               {selectedThread?.triageStatus ? (
-                 <div className="mt-3 flex flex-wrap gap-2">
-                   <span className={cn(
-                     "inline-flex items-center px-3 py-1 rounded-full border shadow-inner text-[10px] font-bold uppercase tracking-wider",
-                     selectedThread.triageStatus === "pending_review"
-                       ? "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400"
-                       : selectedThread.triageStatus === "in_review"
-                         ? "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
-                         : selectedThread.triageStatus === "resolved"
-                           ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-300"
-                           : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-300",
-                   )}>
-                     {selectedThread.triageStatus.replace(/_/g, " ")}
-                   </span>
-                   {selectedThread.triageKeywords.map((keyword) => (
-                     <span
-                       key={keyword}
-                       className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider"
-                     >
-                       {keyword}
-                     </span>
-                   ))}
-                 </div>
-               ) : null}
-             </div>
-           </div>
+      <div className="mx-auto max-w-3xl space-y-6 pb-12">
+        <div className="mt-4 flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedResidentId(null);
+                setMessages([]);
+                void loadThreads();
+              }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="Back to bulletin notes"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <p className="text-xs text-muted-foreground">Family portal bulletin log</p>
+              <h2 className="text-2xl font-medium tracking-tight text-foreground">
+                {residentName}
+              </h2>
+              {selectedThread?.triageStatus ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs",
+                      selectedThread.triageStatus === "pending_review"
+                        ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                        : selectedThread.triageStatus === "in_review"
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          : selectedThread.triageStatus === "resolved"
+                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                            : "border-border bg-muted text-muted-foreground",
+                    )}
+                  >
+                    Triage: {selectedThread.triageStatus.replace(/_/g, " ")}
+                  </span>
+                  {selectedThread.triageKeywords.map((keyword) => (
+                    <span
+                      key={keyword}
+                      className="inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-xs text-rose-700 dark:text-rose-300"
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
 
-        {threadActionError ? (
-          <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex items-center gap-4 ">
-            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
-              <span className="font-bold">!</span>
-            </div>
-            {threadActionError}
-          </div>
+        {triageActionError ? (
+          <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {triageActionError}
+          </p>
         ) : null}
-        {threadActionMessage ? (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-6 text-sm text-emerald-700 dark:text-emerald-300 font-medium tracking-wide flex items-center gap-4 ">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
-              <span className="font-bold">✓</span>
-            </div>
-            {threadActionMessage}
-          </div>
+        {triageActionMessage ? (
+          <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+            {triageActionMessage}
+          </p>
         ) : null}
 
         {selectedThread?.triageItemId ? (
@@ -259,8 +294,17 @@ export default function StaffFamilyMessagesPage() {
               type="button"
               variant="outline"
               size="sm"
-              disabled={threadActionLoading === selectedThread.triageItemId || selectedThread.triageStatus === "in_review"}
-              onClick={() => void updateThreadTriageStatus(selectedThread.triageItemId as string, "in_review", "Thread triage moved to in review.")}
+              disabled={
+                triageActionLoading === selectedThread.triageItemId ||
+                selectedThread.triageStatus === "in_review"
+              }
+              onClick={() =>
+                void updateThreadTriageStatus(
+                  selectedThread.triageItemId as string,
+                  "in_review",
+                  "Triage moved to in review.",
+                )
+              }
             >
               In review
             </Button>
@@ -268,8 +312,17 @@ export default function StaffFamilyMessagesPage() {
               type="button"
               variant="outline"
               size="sm"
-              disabled={threadActionLoading === selectedThread.triageItemId || selectedThread.triageStatus === "resolved"}
-              onClick={() => void updateThreadTriageStatus(selectedThread.triageItemId as string, "resolved", "Thread triage resolved.")}
+              disabled={
+                triageActionLoading === selectedThread.triageItemId ||
+                selectedThread.triageStatus === "resolved"
+              }
+              onClick={() =>
+                void updateThreadTriageStatus(
+                  selectedThread.triageItemId as string,
+                  "resolved",
+                  "Triage resolved.",
+                )
+              }
             >
               Resolve
             </Button>
@@ -277,260 +330,204 @@ export default function StaffFamilyMessagesPage() {
               type="button"
               variant="outline"
               size="sm"
-              disabled={threadActionLoading === selectedThread.triageItemId || selectedThread.triageStatus === "false_positive"}
-              onClick={() => void updateThreadTriageStatus(selectedThread.triageItemId as string, "false_positive", "Thread triage marked false positive.")}
+              disabled={
+                triageActionLoading === selectedThread.triageItemId ||
+                selectedThread.triageStatus === "false_positive"
+              }
+              onClick={() =>
+                void updateThreadTriageStatus(
+                  selectedThread.triageItemId as string,
+                  "false_positive",
+                  "Triage marked false positive.",
+                )
+              }
             >
               False positive
             </Button>
           </div>
         ) : null}
 
-        {/* Messages Body */}
-        {msgLoading ? (
-          <div className="flex items-center justify-center py-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-          </div>
-        ) : msgError ? (
-          <div className="mx-auto rounded-lg border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-700 dark:text-rose-400 font-medium tracking-wide flex flex-col items-center gap-4">
-             <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30">
-                <span className="font-bold">!</span>
-             </div>
-             {msgError}
-             <Button variant="outline" size="sm" onClick={() => { void openThread(selectedResidentId); }}>Retry</Button>
-          </div>
-        ) : (
-          <>
-          <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm overflow-hidden flex flex-col h-[65vh]">
-             
-             {/* Feed */}
-             <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
-                {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                    <MessageCircle className="h-12 w-12 text-slate-300 dark:text-white/10 mb-4" />
-                    <p className="text-sm font-medium text-slate-500 dark:text-zinc-500">No messages yet. Start the conversation.</p>
-                  </div>
-                ) : (
-                  messages.map((m) => {
-                    const isStaff = m.authorKind === "staff";
-                    return (
-                      <div key={m.id} className={`flex ${isStaff ? "justify-end" : "justify-start"}`}>
-                        <div
-                          className={cn(
-                             "max-w-[85%] md:max-w-[70%] rounded-lg px-6 py-4 text-sm shadow-sm",
-                             isStaff 
-                               ? "bg-primary-600 text-white rounded-br-sm" 
-                               : "bg-white text-slate-900 border border-slate-200/60 dark:bg-white/5 dark:border-white/10 dark:text-white rounded-bl-sm"
-                          )}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                             <p className={cn("text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-primary-200" : "text-slate-500 dark:text-zinc-400")}>
-                               {m.authorName} <span className="opacity-50 mx-1">•</span> {m.createdAt}
-                             </p>
-                          </div>
-                          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{m.body}</p>
-                          {m.authorKind === "staff" ? (
-                            <p className={cn("mt-2 text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-primary-200" : "text-slate-500") }>
-                              {m.deliveryMethod.replace(/_/g, " ")}
-                            </p>
-                          ) : null}
-                          {m.familyAcknowledgedAt ? (
-                            <p className={cn("mt-1 text-[10px] font-bold uppercase tracking-wider", isStaff ? "text-emerald-200" : "text-emerald-600 dark:text-emerald-300") }>
-                              Family acknowledged {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(m.familyAcknowledgedAt))}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={bottomRef} />
-             </div>
+        <StaffFamilyBulletinSection
+          residentId={selectedResidentId}
+          lastPostedAtIso={selectedThread?.lastMessageAtIso ?? null}
+          draft={draft}
+          deliveryMethod={deliveryMethod}
+          posting={posting}
+          error={msgError}
+          onDraftChange={setDraft}
+          onDeliveryMethodChange={setDeliveryMethod}
+          onPost={() => { void handlePost(); }}
+        />
 
-             {/* Composer */}
-             <div className="p-4 md:p-6 bg-slate-50/50 border-t border-slate-200/50 dark:border-white/5 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Delivery</label>
-                  <select
-                    value={deliveryMethod}
-                    onChange={(event) => setDeliveryMethod(event.target.value as FamilyDeliveryMethod)}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-white/10"
-                  >
-                    {familyDeliveryMethodOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex gap-3 items-end">
-                <textarea
-                  placeholder="Type your reply to the family..."
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  maxLength={8000}
-                  rows={1}
-                  style={{ minHeight: "56px" }}
-                  className="flex-1 resize-none rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-6 py-4 text-[15px] shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-ring dark:text-zinc-100 placeholder:text-slate-400"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey || e.shiftKey)) {
-                      e.preventDefault();
-                      void handleSend();
-                    }
-                  }}
-                />
-                <button
-                  onClick={() => { void handleSend(); }}
-                  disabled={!draft.trim() || sending}
-                  className="h-14 w-14 rounded-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center shrink-0 shadow-md transition-all tap-responsive disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5" />}
-                </button>
-             </div>
-             </div>
-          </div>
-          <div className="flex justify-end px-4">
-             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">{draft.length}/8000 · Cmd+Enter to send</p>
-          </div>
-          </>
+        {msgLoading ? (
+          <FamilyPortalUpdateLog items={[]} loading listLabel="Posted bulletin notes" />
+        ) : (
+          <FamilyPortalUpdateLog
+            items={bulletinItemsFromMessages(messages)}
+            emptyTitle={FAMILY_BULLETIN_RESIDENT_EMPTY_TITLE}
+            emptyDescription={FAMILY_BULLETIN_RESIDENT_EMPTY_DESCRIPTION}
+            listLabel="Posted bulletin notes"
+          />
         )}
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 pb-12 w-full">
-      {/* ─── MOONSHOT HEADER ─── */}
-      <div className="flex flex-col gap-6 bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
-         <div className="space-y-2">
-           
-           <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-              Direct Messages
-           </h1>
-           <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400">
-             Conversations with families about their residents.
-           </p>
-         </div>
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-12">
+      <div className="mt-4 rounded-lg border border-border bg-card p-8 shadow-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {FAMILY_BULLETIN_PAGE_TITLE}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          {FAMILY_BULLETIN_PAGE_DESCRIPTION}
+        </p>
       </div>
 
+      <StaffFamilyBulletinSection
+        residentId={composeResidentId}
+        onResidentChange={(residentId) => {
+          setComposeResidentId(residentId);
+          setMsgError(null);
+        }}
+        lastPostedAtIso={composeThread?.lastMessageAtIso ?? null}
+        draft={draft}
+        deliveryMethod={deliveryMethod}
+        posting={posting}
+        error={msgError}
+        onDraftChange={setDraft}
+        onDeliveryMethodChange={setDeliveryMethod}
+        onPost={() => { void handlePost(); }}
+      />
+
       {threads.length === 0 ? (
-         <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm overflow-hidden p-20 flex flex-col items-center text-center">
-            <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500 mb-6 opacity-80" />
-            <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Inbox Zero</h3>
-            <p className="text-sm font-medium text-slate-500 dark:text-zinc-500 max-w-sm">No family conversations currently require attention.</p>
-         </div>
+        <div
+          className="rounded-lg border border-dashed border-border bg-muted/20 p-16 text-center"
+          role="status"
+        >
+          <ClipboardList className="mx-auto mb-4 h-10 w-10 text-muted-foreground" aria-hidden="true" />
+          <h2 className="text-lg font-medium text-foreground">{FAMILY_BULLETIN_EMPTY_TITLE}</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+            {FAMILY_BULLETIN_EMPTY_DESCRIPTION}
+          </p>
+        </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-200/50 dark:border-white/10 pb-4 px-2">
-            <MessageCircle className="h-5 w-5 text-primary-500" />
-            <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">
-              Active Threads
-            </h3>
-            {threadFilter !== "all" ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-primary-500/10 text-primary-600 border-primary-500/20 dark:text-primary-400 text-[10px] font-bold uppercase tracking-wider">
-                {visibleThreads.length} visible
+          <div className="flex flex-wrap items-center gap-2 px-1">
+            <h2 className="text-lg font-medium text-foreground">Posted bulletin notes</h2>
+            {residentFilter !== "all" ? (
+              <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                {visibleThreads.length} shown
               </span>
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 px-2">
+          <div className="flex flex-wrap items-center gap-2 px-1">
             {[
               { key: "all", label: `All (${threads.length})` },
-              { key: "triage", label: `Triage (${threads.filter((t) => t.triageStatus === "pending_review" || t.triageStatus === "in_review").length})` },
-              { key: "family_replied", label: `Family replied (${threads.filter((t) => t.unreadHint).length})` },
+              {
+                key: "triage",
+                label: `Needs review (${threads.filter((thread) => thread.triageStatus === "pending_review" || thread.triageStatus === "in_review").length})`,
+              },
             ].map((option) => (
               <button
                 key={option.key}
                 type="button"
-                onClick={() => setThreadFilter(option.key as "all" | "triage" | "family_replied")}
+                onClick={() => setResidentFilter(option.key as "all" | "triage")}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                  threadFilter === option.key
-                    ? "bg-primary-600 text-white"
-                    : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/20 dark:text-zinc-300 dark:hover:bg-black/30",
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  residentFilter === option.key
+                    ? "border-border bg-muted text-foreground"
+                    : "border-transparent bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
                 {option.label}
               </button>
             ))}
           </div>
-          {threadFilter !== "all" ? (
-            <div className="flex flex-wrap items-center gap-2 px-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-primary-500/10 text-primary-600 border-primary-500/20 dark:text-primary-400 text-[10px] font-bold uppercase tracking-wider">
-                Thread filter: {threadFilter === "family_replied" ? "family replied" : threadFilter}
+
+          {residentFilter !== "all" ? (
+            <div className="flex flex-wrap items-center gap-2 px-1">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                Filter: {residentFilter}
               </span>
-              <Link href="/admin/family-messages" className={cn("rounded-lg px-2 py-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors")}>
-                Clear thread filter
+              <Link
+                href="/admin/family-messages"
+                className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                Clear filter
               </Link>
             </div>
           ) : null}
 
           <MotionList className="grid gap-4 sm:grid-cols-2">
             {visibleThreads.length === 0 ? (
-              <div className="col-span-full rounded-lg border border-slate-200/60 bg-card p-10 text-center text-sm text-slate-500 shadow-sm dark:border-white/5 dark:text-zinc-400">
-                No threads match this filter.
+              <div className="col-span-full rounded-lg border border-border bg-card p-10 text-center text-sm text-muted-foreground">
+                No residents match this filter.
               </div>
-            ) : visibleThreads.map((t) => (
-              <MotionItem key={t.residentId}>
-                <div
-                  className="group cursor-pointer tap-responsive rounded-lg bg-card border border-slate-200/50 dark:border-white/5 shadow-sm hover:shadow-xl dark:hover:bg-white/[0.03] transition-all duration-300 p-6 md:p-8"
-                  onClick={() => { void openThread(t.residentId); }}
-                >
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="space-y-1">
-                      <h3 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors tracking-tight">
-                        {t.residentName}
-                      </h3>
-                      <p className="text-sm font-mono text-slate-500 dark:text-zinc-500">{t.roomLabel}</p>
+            ) : (
+              visibleThreads.map((thread) => (
+                <MotionItem key={thread.residentId}>
+                  <button
+                    type="button"
+                    className="group w-full rounded-lg border border-border bg-card p-6 text-left shadow-sm transition-colors hover:bg-muted/40"
+                    onClick={() => { void openResidentLog(thread.residentId); }}
+                  >
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-semibold tracking-tight text-foreground group-hover:text-primary">
+                          {thread.residentName}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{thread.roomLabel}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {thread.lastMessageAt}
+                        </span>
+                        {thread.triageStatus === "pending_review" ? (
+                          <span className="rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-xs text-rose-700 dark:text-rose-300">
+                            Needs review
+                          </span>
+                        ) : thread.triageStatus === "in_review" ? (
+                          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs text-amber-700 dark:text-amber-300">
+                            In review
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                        {t.lastMessageAt}
-                      </span>
-                      {t.unreadHint && (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                          Family replied
-                        </span>
-                      )}
-                      {t.triageStatus === "pending_review" ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider">
-                          Triage pending
-                        </span>
-                      ) : t.triageStatus === "in_review" ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full border shadow-inner bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider">
-                          Triage in review
-                        </span>
+
+                    <div className="rounded-md border border-border/70 bg-muted/20 p-4">
+                      <p className="line-clamp-3 text-sm leading-relaxed text-foreground">
+                        {thread.lastMessageBody}
+                      </p>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {formatFamilyDeliveryMethod(thread.latestDeliveryMethod)}
+                      </p>
+                      {thread.latestFamilyAcknowledgedAt ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Family viewed{" "}
+                          {new Intl.DateTimeFormat("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          }).format(new Date(thread.latestFamilyAcknowledgedAt))}
+                        </p>
+                      ) : null}
+                      {thread.triageKeywords.length > 0 ? (
+                        <p className="mt-2 text-xs text-rose-700 dark:text-rose-300">
+                          {thread.triageKeywords.join(", ")}
+                        </p>
                       ) : null}
                     </div>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-5 shadow-sm border border-slate-100 dark:border-white/5">
-                    <p className="text-[15px] text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
-                      <span className="font-bold text-slate-900 dark:text-white mr-2 opacity-80 uppercase tracking-wider text-[10px]">
-                        {t.lastAuthorKind === "staff" ? "You" : "Family"}
-                      </span>
-                      {t.lastMessageBody}
+
+                    <p className="mt-4 text-xs text-muted-foreground">
+                      {thread.messageCount} bulletin note{thread.messageCount !== 1 ? "s" : ""}
                     </p>
-                    <p className="mt-3 text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                      Delivery: {t.latestDeliveryMethod.replace(/_/g, " ")}
-                    </p>
-                    {t.latestFamilyAcknowledgedAt ? (
-                      <p className="mt-1 text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                        Ack: {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(t.latestFamilyAcknowledgedAt))}
-                      </p>
-                    ) : null}
-                    {t.triageKeywords.length > 0 ? (
-                      <p className="mt-3 text-[11px] font-mono uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                        {t.triageKeywords.join(", ")}
-                      </p>
-                    ) : null}
-                  </div>
-                  
-                  <div className="mt-5 flex items-center gap-2">
-                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                       {t.messageCount} Message{t.messageCount !== 1 ? "s" : ""}
-                     </div>
-                  </div>
-                </div>
-              </MotionItem>
-            ))}
+                  </button>
+                </MotionItem>
+              ))
+            )}
           </MotionList>
         </div>
       )}

@@ -5,47 +5,30 @@ import { Building2, Loader2, Search } from "lucide-react";
 import { useFacilities } from "@/hooks/useFacilities";
 import { FacilityCard } from "@/components/admin/facilities/FacilityCard";
 import { PortfolioFacilityComparison } from "@/components/admin/facilities/PortfolioFacilityComparison";
-import { cn } from "@/lib/utils";
+import { KpiCard } from "@/components/ui/kpi-card";
 import {
-  portfolioOccupancyKpiTextClass,
-  portfolioOccupancyPercent,
-} from "@/lib/admin/facilities/portfolio-metrics";
+  buildPortfolioStripTotals,
+  portfolioKpiStripHelperLine,
+  portfolioStripFacilityCountEmptyCopy,
+  portfolioStripLicensedBedsEmptyCopy,
+  portfolioStripOccupiedBedsEmptyCopy,
+  portfolioStripPortfolioOccupancyDisplay,
+  portfolioStripPortfolioOccupancyEmptyCopy,
+} from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 
 export default function FacilitiesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const { facilities, isLoading, error } = useFacilities({ search, status });
 
-  const totals = useMemo(() => {
-    let licensedSum = 0;
-    let occupiedSum = 0;
-    const comparison: { id: string; name: string; occupancyPct: number }[] = [];
+  const totals = useMemo(() => buildPortfolioStripTotals(facilities), [facilities]);
 
-    for (const f of facilities) {
-      const lic = typeof f.total_licensed_beds === "number" ? f.total_licensed_beds : (f.licensed_beds ?? 0);
-      const occ = f.occupancy_count ?? f.current_occupancy ?? 0;
-      const phy = f.total_beds ?? 0;
-      licensedSum += lic;
-      occupiedSum += occ;
+  const facilityCountEmptyCopy = portfolioStripFacilityCountEmptyCopy(totals.facilityCount);
+  const licensedBedsEmptyCopy = portfolioStripLicensedBedsEmptyCopy(totals);
+  const occupiedBedsEmptyCopy = portfolioStripOccupiedBedsEmptyCopy(totals);
+  const portfolioOccupancyEmptyCopy = portfolioStripPortfolioOccupancyEmptyCopy(totals);
 
-      comparison.push({
-        id: f.id,
-        name: f.name,
-        occupancyPct: portfolioOccupancyPercent(occ, phy, lic),
-      });
-    }
-
-    const portfolioPctRounded = licensedSum > 0 ? Math.min(100, Math.round((occupiedSum / licensedSum) * 100)) : 0;
-
-    return {
-      facilityCount: facilities.length,
-      licensedSum,
-      occupiedSum,
-      portfolioPctRounded,
-      comparison,
-      portfolioPctToneClass: portfolioOccupancyKpiTextClass(portfolioPctRounded),
-    };
-  }, [facilities]);
+  const kpiStripHelperLine = portfolioKpiStripHelperLine(totals);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-16">
@@ -58,17 +41,45 @@ export default function FacilitiesPage() {
         </header>
 
         {!isLoading && facilities.length > 0 && (
-          <div className="rounded-lg border border-border bg-card px-8 py-6">
-            <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
-              <PortfolioMetricFigure label="Facilities" value={totals.facilityCount} />
-              <PortfolioMetricFigure label="Licensed beds" value={totals.licensedSum} />
-              <PortfolioMetricFigure label="Occupied beds" value={totals.occupiedSum} />
-              <PortfolioMetricFigure
-                label="Portfolio occupancy"
-                value={`${totals.portfolioPctRounded}%`}
-                valueClassName={totals.portfolioPctToneClass}
-              />
+          <div className="flex flex-col gap-2">
+            <div className="rounded-lg border border-border bg-card px-8 py-6">
+              <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
+                <KpiCard
+                  value={facilityCountEmptyCopy ?? totals.facilityCount}
+                  valuePresentation={facilityCountEmptyCopy != null ? "message" : "metric"}
+                  label="Facilities"
+                  className="border-0 bg-transparent px-0 py-0 shadow-none ring-0"
+                />
+                <KpiCard
+                  value={licensedBedsEmptyCopy ?? totals.licensedSum}
+                  valuePresentation={licensedBedsEmptyCopy != null ? "message" : "metric"}
+                  label="Licensed beds"
+                  className="border-0 bg-transparent px-0 py-0 shadow-none ring-0"
+                />
+                <KpiCard
+                  value={occupiedBedsEmptyCopy ?? totals.occupiedSum}
+                  valuePresentation={occupiedBedsEmptyCopy != null ? "message" : "metric"}
+                  label="Occupied beds"
+                  className="border-0 bg-transparent px-0 py-0 shadow-none ring-0"
+                />
+                <KpiCard
+                  value={portfolioStripPortfolioOccupancyDisplay(totals)}
+                  valuePresentation={portfolioOccupancyEmptyCopy != null ? "message" : "metric"}
+                  label="Portfolio occupancy"
+                  tone={
+                    portfolioOccupancyEmptyCopy == null && totals.portfolioPctRounded != null
+                      ? totals.portfolioPctRounded < 60
+                        ? "warning"
+                        : totals.portfolioPctRounded < 90
+                          ? "success"
+                          : "neutral"
+                      : "neutral"
+                  }
+                  className="border-0 bg-transparent px-0 py-0 shadow-none ring-0"
+                />
+              </div>
             </div>
+            <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
           </div>
         )}
 
@@ -131,25 +142,6 @@ export default function FacilitiesPage() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function PortfolioMetricFigure({
-  label,
-  value,
-  valueClassName,
-}: {
-  label: string;
-  value: string | number;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className={cn("text-[28px] font-semibold leading-none tabular-nums tracking-tight", valueClassName ?? "text-foreground")}>
-        {value}
-      </span>
-      <span className="text-[13px] text-muted-foreground">{label}</span>
     </div>
   );
 }

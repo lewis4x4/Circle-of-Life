@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { formatV2ThresholdFacilityName } from "@/lib/v2/v2-thresholds-display-copy";
 
 import type { V2ThresholdLoad, V2ThresholdRow } from "./v2-thresholds-types";
 
@@ -41,7 +42,7 @@ export async function loadV2Thresholds(): Promise<V2ThresholdLoad> {
 
   const facilities = (facilitiesResult.data ?? []).map((row) => ({
     id: row.id,
-    name: (row.name ?? "").trim() || "Unnamed facility",
+    name: formatV2ThresholdFacilityName(row.name),
     organizationId: row.organization_id,
   }));
 
@@ -49,7 +50,7 @@ export async function loadV2Thresholds(): Promise<V2ThresholdLoad> {
 
   const thresholds: V2ThresholdRow[] = (thresholdsResult.data ?? []).map((row) => ({
     facilityId: row.facility_id,
-    facilityName: facilityNameById.get(row.facility_id) ?? "—",
+    facilityName: formatV2ThresholdFacilityName(facilityNameById.get(row.facility_id)),
     organizationId: row.organization_id,
     metricKey: row.metric_key,
     targetValue: Number(row.target_value),

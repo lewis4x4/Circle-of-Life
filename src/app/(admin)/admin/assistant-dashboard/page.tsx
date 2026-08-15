@@ -5,6 +5,16 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminAssistantDashboardBrief, type AdminAssistantDashboardBrief } from "@/lib/admin-assistant/dashboard-brief";
+import {
+  FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL,
+  FAMILY_BULLETIN_DASHBOARD_RECENT_EMPTY_DESCRIPTION,
+  FAMILY_BULLETIN_DASHBOARD_RECENT_EMPTY_TITLE,
+  FAMILY_BULLETIN_DASHBOARD_RECENT_SECTION_TITLE,
+  FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL,
+  FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE,
+  FAMILY_BULLETIN_DASHBOARD_TILE_TITLE,
+} from "@/lib/admin/family-bulletin-dashboard-copy";
+import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
 import { Users, FileText, MessageSquare, Truck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +53,7 @@ export default function AssistantDashboardPage() {
             Admin Assistant Dashboard
           </h1>
           <p className="text-muted-foreground font-medium tracking-wide mt-2">
-            Census, documents, messages, and daily operations overview
+            Census, documents, family portal notes, and daily operations overview
           </p>
         </div>
       </div>
@@ -52,37 +62,45 @@ export default function AssistantDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Census" value={brief.censusCount} icon={Users} urgency="normal" subLabel="Active residents" href="/admin/residents" />
         <StatCard title="Pending Docs" value={brief.pendingDocs} icon={FileText} urgency={brief.pendingDocs > 0 ? "critical" : "normal"} subLabel={brief.pendingDocs > 0 ? "Awaiting action" : "All processed"} href="/admin/knowledge/admin" />
-        <StatCard title="Unread Messages" value={brief.unreadMessages} icon={MessageSquare} urgency={brief.unreadMessages > 0 ? "critical" : "normal"} subLabel={brief.unreadMessages > 0 ? "Needs response" : "All read"} href="/admin/family-messages" />
+        <StatCard
+          title={FAMILY_BULLETIN_DASHBOARD_TILE_TITLE}
+          value={brief.staffBulletinNotes}
+          icon={MessageSquare}
+          urgency="normal"
+          subLabel={brief.staffBulletinNotes > 0 ? FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE : FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL}
+          href="/admin/family-messages"
+        />
         <StatCard title="Transport Today" value={brief.transportationToday} icon={Truck} urgency="normal" subLabel="Scheduled trips" href="/admin/transportation" />
       </div>
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Resident Directory" href="/admin/residents" />
-        <ActionTile label="Family Messages" href="/admin/family-messages" />
+        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-messages" />
         <ActionTile label="Staff Directory" href="/admin/staff" />
         <ActionTile label="Transportation" href="/admin/transportation" />
       </div>
 
-      {/* Messages Section */}
+      {/* Bulletin notes */}
       <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
-          <MessageSquare className="w-5 h-5 text-info" /> Recent Messages
+        <h3 className="text-xl font-semibold tracking-tight text-foreground mb-2 flex items-center gap-3">
+          <MessageSquare className="w-5 h-5 text-info" /> {FAMILY_BULLETIN_DASHBOARD_RECENT_SECTION_TITLE}
         </h3>
-        {brief.recentMessages.length === 0 ? (
+        <p className="text-sm text-muted-foreground mb-4">{FAMILY_BULLETIN_ONE_WAY_HELPER}</p>
+        {brief.recentBulletinNotes.length === 0 ? (
           <div className="text-center p-8 border-2 border-dashed border-border rounded-[var(--radius)]">
-            <p className="text-sm font-medium text-muted-foreground">No unread messages.</p>
+            <p className="text-sm font-semibold text-foreground">{FAMILY_BULLETIN_DASHBOARD_RECENT_EMPTY_TITLE}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-2">{FAMILY_BULLETIN_DASHBOARD_RECENT_EMPTY_DESCRIPTION}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {brief.recentMessages.map((m) => (
-              <div key={m.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
+            {brief.recentBulletinNotes.map((note) => (
+              <div key={note.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
                 <div className="min-w-0">
-                  <span className="text-[15px] font-semibold text-foreground">{m.from}</span>
-                  <span className="text-xs font-medium text-muted-foreground ml-2 truncate">{m.preview}</span>
+                  <span className="text-[15px] font-semibold text-foreground truncate block">{note.preview}</span>
                 </div>
                 <span className="text-xs font-medium text-muted-foreground shrink-0 ml-4">
-                  {new Date(m.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
               </div>
             ))}

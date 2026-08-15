@@ -7,6 +7,12 @@ import {
   summarizePresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
+import {
+  computeFacilityOccupancyPct,
+  computeFacilityOccupiedResidents,
+  fetchFacilityBedCensusById,
+  isFacilityOccupancyCensusLoaded,
+} from "@/lib/executive/facility-occupancy-census";
 
 /** Versioned payload shape for `exec_kpi_snapshots.metrics` when persisted by cron (Module 24). */
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
@@ -210,6 +216,7 @@ export async function fetchExecutiveKpiSnapshot(
     overdueTasksRes,
     openExceptionsRes,
     activeWatchRes,
+    bedCensusByFacility,
   ] = await Promise.all([
     residentsQuery,
     invoicesOpenQuery,
@@ -221,6 +228,7 @@ export async function fetchExecutiveKpiSnapshot(
     overdueTasksQuery,
     openExceptionsQuery,
     activeWatchQuery,
+    facilityScoped ? fetchFacilityBedCensusById(supabase, facilityIds) : Promise.resolve(new Map()),
   ]);
 
   const batchErrors = [
@@ -241,9 +249,21 @@ export async function fetchExecutiveKpiSnapshot(
 
   const licensedBeds = facilities.reduce((sum, f) => sum + (f.total_licensed_beds ?? 0), 0);
   const presence = summarizePresenceCensus(residentsRes.data ?? []);
-  const occupiedResidents = presence.total;
-  const occupancyPct =
-    licensedBeds > 0 ? Math.round((occupiedResidents / licensedBeds) * 1000) / 10 : null;
+  const facility = facilityScoped ? facilities[0] : null;
+  const facilityCensus = facility ? bedCensusByFacility.get(facility.id) : undefined;
+  const occupancyLoaded = facility ? isFacilityOccupancyCensusLoaded(facility, facilityCensus) : true;
+  const occupiedResidents = facilityScoped && facility
+    ? occupancyLoaded
+      ? computeFacilityOccupiedResidents(facility, facilityCensus)
+      : 0
+    : presence.total;
+  const occupancyPct = facilityScoped && facility
+    ? occupancyLoaded
+      ? computeFacilityOccupancyPct(facility, facilityCensus)
+      : null
+    : licensedBeds > 0
+      ? Math.round((occupiedResidents / licensedBeds) * 1000) / 10
+      : null;
 
   const invoiceRows = invoicesOpenRes.data ?? [];
   const openInvoicesCount = invoiceRows.length;

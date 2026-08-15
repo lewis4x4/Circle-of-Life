@@ -11,6 +11,7 @@ import {
   type ActivityProviderMethod,
   type AdminActivitySession,
 } from "@/lib/admin/activity-sessions-data";
+import { formatActivitySessionTimeRange } from "@/lib/activities/activities-session-time-copy";
 
 function formatStamp(iso: string | null): string {
   if (!iso) return "Unconfirmed";
@@ -126,7 +127,7 @@ export default function AdminActivitiesPage() {
                   <td className="px-[13px] py-2 whitespace-nowrap tabular-nums">{session.sessionDate}</td>
                   <td className="px-[13px] py-2">
                     <div className="font-medium text-foreground">{session.activityName}</div>
-                    <div className="text-[12px] text-muted-foreground tabular-nums">{session.startTime ?? "—"} → {session.endTime ?? "—"}</div>
+                    <div className="text-[12px] text-muted-foreground tabular-nums">{formatActivitySessionTimeRange(session.startTime, session.endTime)}</div>
                     {session.cancelled ? <div className="mt-1 text-[12px] font-medium text-warning">Cancelled</div> : null}
                   </td>
                   <td className="px-[13px] py-2">{session.facilityName}</td>

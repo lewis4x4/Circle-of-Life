@@ -1,8 +1,16 @@
 # Homewood Resident Import — CSV Schema
 
-The resident-import script (`scripts/homewood/import-residents.mjs`) reads `scripts/homewood/data/homewood-residents.csv` plus the restored one-row Karen Coone addendum at `scripts/homewood/data/homewood-residents-karen-coone.csv`, then creates one resident plus related rows per effective CSV row.
+The resident-import script (`scripts/homewood/import-residents.mjs`) reads `scripts/homewood/data/homewood-residents.csv` (gitignored) and optionally a second addendum CSV via `HOMEWOOD_ADDENDUM_CSV_PATH` or `--addendum=`. It creates one resident plus related rows per effective CSV row.
 
-The real main CSV is **gitignored**. Only the `.example` file and the Karen Coone addendum are committed. Real resident data must never be committed unless the owner explicitly approves that specific source artifact.
+**Never commit real resident CSVs, provenance dumps, or import logs.** Committed example stubs:
+
+- `homewood-residents.csv.example` — sample roster shape
+- `homewood-residents-addendum.example.csv` — optional second-file shape
+- `homewood-residents.PROVENANCE.example.md` — provenance note shape
+- `homewood-ar-room-overrides.example.json` — A/R room correction shape
+- `docs/homewood/IMPORT_LOG.md` / `RESIDENT_IMPORT_LOG.md` — example log shape
+
+Real import logs are written to `test-results/homewood-import/` (gitignored).
 
 ## Columns
 
@@ -66,8 +74,17 @@ npm run homewood:import-residents:dry-run
 npm run homewood:import-residents
 ```
 
-Both commands write `docs/homewood/IMPORT_LOG.md` summarizing per-row outcome. The log includes resident names — the user reviews it locally; only `.example`-derived logs should be committed.
+Both commands write `test-results/homewood-import/import-residents-log.md` (gitignored). Review locally; never commit real import logs.
+
+Optional addendum:
+
+```bash
+cp scripts/homewood/data/homewood-residents-addendum.example.csv \
+   scripts/homewood/data/homewood-residents-addendum.csv
+export HOMEWOOD_ADDENDUM_CSV_PATH=scripts/homewood/data/homewood-residents-addendum.csv
+npm run homewood:import-residents:dry-run
+```
 
 ## Re-runs
 
-Re-running the script is safe. Existing residents (matched by the idempotency key) are updated in place; new rows are inserted; orphans are not deleted. If a resident identity appears in both the main roster and the addendum, the main roster row is retained and the addendum duplicate is skipped with a source warning. If a roster correction is needed, edit the CSV and re-run; rows that match an existing resident will UPDATE, not duplicate.
+Re-running the script is safe. Existing residents (matched by the idempotency key) are updated in place; new rows are inserted; orphans are not deleted. If a resident identity appears in both the main roster and an addendum, the main roster row is retained and the addendum duplicate is skipped with a source warning. If a roster correction is needed, edit the CSV and re-run; rows that match an existing resident will UPDATE, not duplicate.

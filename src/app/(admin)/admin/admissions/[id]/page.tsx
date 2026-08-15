@@ -19,6 +19,16 @@ import {
   RecordDetailHeader,
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
+import { formatAdmissionsHubTargetMoveInDateValue } from "@/lib/admissions/admissions-hub-display-copy";
+import {
+  formatAdmissionDetailBedLabel,
+  formatAdmissionDetailChecklistReceivedAt,
+  formatAdmissionDetailCents,
+  formatAdmissionDetailEffectiveDate,
+  formatAdmissionDetailForm1823LatestUpdated,
+  formatAdmissionDetailReferralLeadName,
+  formatAdmissionDetailTimestamp,
+} from "@/lib/admissions/admission-detail-display-copy";
 
 type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
@@ -81,21 +91,8 @@ function formatStatus(s: string) {
   return formatColLabel(s);
 }
 
-function formatTs(iso: string | null) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
-
 function formatCents(value: number | null | undefined) {
-  if (typeof value !== "number" || Number.isNaN(value)) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value / 100);
+  return formatAdmissionDetailCents(value);
 }
 
 function admissionReadinessChecklist(
@@ -575,25 +572,25 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Target Move-In</dt>
-                    <dd className="text-base font-semibold text-foreground">{row.target_move_in_date ?? "—"}</dd>
+                    <dd className="text-base font-semibold text-foreground">{formatAdmissionsHubTargetMoveInDateValue(row.target_move_in_date)}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Referral Lead</dt>
                     <dd className="text-sm font-medium text-foreground">
-                      {row.referral_leads ? `${row.referral_leads.first_name} ${row.referral_leads.last_name}` : "—"}
+                      {formatAdmissionDetailReferralLeadName(row.referral_leads)}
                     </dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Bed</dt>
-                    <dd className="text-sm font-medium text-foreground">{row.beds?.bed_label ?? "—"}</dd>
+                    <dd className="text-sm font-medium text-foreground">{formatAdmissionDetailBedLabel(row.beds?.bed_label)}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Financial Clearance</dt>
-                    <dd className="text-sm font-mono text-foreground">{formatTs(row.financial_clearance_at)}</dd>
+                    <dd className="text-sm font-mono text-foreground">{formatAdmissionDetailTimestamp(row.financial_clearance_at)}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Physician Orders</dt>
-                    <dd className="text-sm font-mono text-foreground">{formatTs(row.physician_orders_received_at)}</dd>
+                    <dd className="text-sm font-mono text-foreground">{formatAdmissionDetailTimestamp(row.physician_orders_received_at)}</dd>
                   </div>
                   <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Medicaid Pipeline Tracking</dt>
@@ -677,7 +674,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     </dd>
                   </div>
                   <div className="sm:col-span-2 flex items-center justify-end text-[10px] text-muted-foreground uppercase tracking-wider font-mono mt-2">
-                    Updated: {formatTs(row.updated_at)}
+                    Updated: {formatAdmissionDetailTimestamp(row.updated_at)}
                   </div>
                 </dl>
               </RecordDetailSection>
@@ -802,9 +799,9 @@ export default function AdminAdmissionCaseDetailPage() {
                   </label>
                   <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                     <div>
-                      Latest record updated: {form1823Record ? formatTs(form1823Record.updated_at) : "—"}
+                      Latest record updated: {formatAdmissionDetailForm1823LatestUpdated(form1823Record)}
                       {" · "}
-                      Checklist received: {form1823ChecklistItem?.received_at ? formatTs(form1823ChecklistItem.received_at) : "—"}
+                      Checklist received: {formatAdmissionDetailChecklistReceivedAt(form1823ChecklistItem?.received_at)}
                     </div>
                     <Button
                       type="button"
@@ -1080,7 +1077,7 @@ export default function AdminAdmissionCaseDetailPage() {
                                       </div>
                                      <div className="flex flex-col">
                                          <span className="sm:hidden text-[9px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Effective</span>
-                                         <span className="text-sm font-medium text-foreground flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {t.effective_date ?? "—"}</span>
+                                         <span className="text-sm font-medium text-foreground flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /> {formatAdmissionDetailEffectiveDate(t.effective_date)}</span>
                                       </div>
                                       <div className="sm:col-span-4 flex justify-end">
                                         <Button type="button" variant="outline" size="sm" onClick={() => startEditingRateTerm(t)}>

@@ -13,6 +13,10 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import {
+  formatVendorContractExpirationDate,
+  formatVendorContractVendorName,
+} from "@/lib/vendors/contracts-display-copy";
+import {
   VENDOR_CONTRACTS_LIST_SELECT,
   VENDOR_HUB_LIST_LIMIT,
 } from "@/lib/admin/hub-list-limits";
@@ -98,13 +102,13 @@ export default function VendorContractsListPage() {
                       {r.title}
                     </span>
                     <span className="w-[140px] shrink-0 text-[12px] text-muted-foreground truncate">
-                      {r.vendor_name ?? "—"}
+                      {formatVendorContractVendorName(r.vendor_name)}
                     </span>
                     <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
                       {r.effective_date}
                     </span>
                     <span className="w-[110px] shrink-0 font-mono text-[12px] text-muted-foreground tabular-nums">
-                      {r.expiration_date ?? "—"}
+                      {formatVendorContractExpirationDate(r.expiration_date)}
                     </span>
                     <span className="w-[110px] shrink-0 text-right font-mono text-[13px] font-medium text-foreground tabular-nums">
                       {formatUsdFromCents(r.total_value_cents)}

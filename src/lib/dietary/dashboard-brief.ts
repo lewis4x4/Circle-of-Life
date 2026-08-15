@@ -3,6 +3,7 @@
  * Census, special diets, meals today, diet changes in the last 48h.
  */
 
+import { formatDietaryDashboardBriefResidentName } from "@/lib/dietary/dashboard-brief-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -76,8 +77,7 @@ export async function fetchDietaryDashboardBrief(
 
   const recentDietChanges = ((recentChangesRes.data ?? []) as RecentDietChangeRow[]).map((dietChange) => ({
     id: dietChange.id,
-    residentName:
-      `${dietChange.residents?.first_name ?? ""} ${dietChange.residents?.last_name ?? ""}`.trim() || "Unknown",
+    residentName: formatDietaryDashboardBriefResidentName(dietChange.residents),
     changeType: dietChange.diet_type ?? "Diet update",
     changedAt: dietChange.updated_at,
   }));

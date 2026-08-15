@@ -11,6 +11,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { formatReputationListingLabel } from "@/lib/reputation/reputation-display-copy";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
 import { YELP_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/yelp-fusion";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -425,7 +426,7 @@ export default function AdminReputationHubPage() {
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
                  <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">Connected listings and reply workflow for the selected facility.</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
-                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
+                   <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-600 border-none whitespace-nowrap")} >
                      + Connect Listing
                    </Link>
                  </div>
@@ -479,7 +480,7 @@ export default function AdminReputationHubPage() {
                     </div>
                     <div className="mb-4">
                       <p className="text-sm font-medium text-foreground mb-1">
-                        {row.reputation_accounts?.label ?? "Unknown Listing"}
+                        {formatReputationListingLabel(row.reputation_accounts?.label)}
                       </p>
                       <label className="sr-only" htmlFor={`draft-reply-${row.id}`}>
                         Reply draft

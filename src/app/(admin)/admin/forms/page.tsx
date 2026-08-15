@@ -27,6 +27,7 @@ import {
   type QueryResult,
   type SubmissionStatus,
 } from "@/lib/office/internal-forms";
+import { formatAdminFormFieldValue } from "@/lib/admin/forms/forms-display-copy";
 import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -556,7 +557,7 @@ export default function AdminInternalFormsPage() {
                                     {fieldLabel(key)}
                                   </dt>
                                   <dd className="text-sm text-foreground whitespace-pre-wrap break-words">
-                                    {value || "—"}
+                                    {formatAdminFormFieldValue(value)}
                                   </dd>
                                 </div>
                               ))}

@@ -15,6 +15,11 @@ import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import {
+  formatScheduleAssignmentStaffDisplayName,
+  formatScheduleAssignmentStaffLabel,
+} from "@/lib/schedules/schedule-assignment-display-copy";
+import { formatSchedulePublishedSubtitle } from "@/lib/schedules/schedules-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -171,10 +176,7 @@ export default function AdminScheduleWeekDetailPage() {
 
       const nameById = new Map<string, string>();
       for (const s of staffRes.data ?? []) {
-        const first = s.first_name?.trim() ?? "";
-        const last = s.last_name?.trim() ?? "";
-        const name = `${first} ${last}`.trim() || "Staff member";
-        nameById.set(s.id, name);
+        nameById.set(s.id, formatScheduleAssignmentStaffLabel(s));
       }
 
       setRows(
@@ -184,7 +186,7 @@ export default function AdminScheduleWeekDetailPage() {
           shiftType: a.shift_type,
           shiftClassification: a.shift_classification,
           status: a.status,
-          staffName: nameById.get(a.staff_id) ?? "Unknown staff",
+          staffName: formatScheduleAssignmentStaffDisplayName(nameById.get(a.staff_id)),
           notes: a.notes,
         })),
       );
@@ -210,12 +212,12 @@ export default function AdminScheduleWeekDetailPage() {
       const nameById = new Map<string, string>();
       for (const a of rawAssignments) {
         const ui = rows.find((r) => r.id === a.id);
-        nameById.set(a.staff_id, ui?.staffName ?? "Unknown staff");
+        nameById.set(a.staff_id, formatScheduleAssignmentStaffDisplayName(ui?.staffName));
       }
 
       const exportRows: ShiftExportRow[] = rawAssignments.map((row) => ({
         ...row,
-        staff_display_name: nameById.get(row.staff_id) ?? "Unknown staff",
+        staff_display_name: formatScheduleAssignmentStaffDisplayName(nameById.get(row.staff_id)),
       }));
 
       const csv = buildShiftAssignmentsCsv(exportRows);
@@ -235,9 +237,7 @@ export default function AdminScheduleWeekDetailPage() {
       <RecordDetailHeader
         title={schedule ? weekLabel : "Schedule week"}
         subtitle={
-          schedule
-            ? `Published: ${schedule.published_at ? formatDateTime(schedule.published_at) : "—"}${schedule.notes ? ` · ${schedule.notes}` : ""}`
-            : undefined
+          schedule ? formatSchedulePublishedSubtitle(schedule.published_at, schedule.notes) : undefined
         }
         statusChips={schedule ? <ScheduleStatusBadge status={schedule.status} /> : undefined}
         backLink={{ label: "Schedule weeks", href: "/admin/schedules" }}
@@ -335,18 +335,6 @@ function formatWeekLabel(isoDate: string): string {
   const parsed = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) return isoDate;
   return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
 }
 
 function formatIsoDate(isoDate: string): string {

@@ -1,3 +1,5 @@
+import { WORKSPACE_FILE_NO_SIZE_COPY } from "./workspace-files-display-copy";
+
 export const WORKSPACE_FILES_BUCKET = "workspace-files";
 
 export type WorkspaceFileRow = {
@@ -28,7 +30,7 @@ export function sanitizeFilename(name: string): string {
 }
 
 export function formatBytes(bytes: number | null): string {
-  if (bytes == null) return "—";
+  if (bytes == null) return WORKSPACE_FILE_NO_SIZE_COPY;
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;

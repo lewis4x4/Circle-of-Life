@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
+import { formatPeriodClosedAt } from "@/lib/finance/finance-period-close-display-copy";
 import { loadPeriodCloseData, type PeriodRow } from "@/lib/finance/load-period-close-data";
 import type { EntityMini } from "@/lib/finance/load-trial-balance-data";
 
@@ -319,15 +320,7 @@ export default function FinancePeriodClosePageClient({
                     </TableCell>
                     <TableCell>{r.status}</TableCell>
                     <TableCell className="text-slate-600 dark:text-slate-400">
-                      {r.closed_at
-                        ? new Intl.DateTimeFormat("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          }).format(new Date(r.closed_at))
-                        : "—"}
+                      {formatPeriodClosedAt(r.closed_at)}
                     </TableCell>
                   </TableRow>
                 ))}

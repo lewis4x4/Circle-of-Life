@@ -57,6 +57,7 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatThresholdsTabLastChangedSuffix } from "@/lib/facilities/thresholds-tab-display-copy";
 import { cn } from "@/lib/utils";
 
 type AuditFacilityRow = {
@@ -554,9 +555,12 @@ export function ThresholdsTab({
         </Button>
         <p className="text-xs text-muted-foreground">
           Last changed{" "}
-          {latestSaved
-            ? `${formatDistanceToNow(new Date(latestSaved.updated_at), { addSuffix: true })} by ${latestSaved.updated_by_display ?? "—"}`
-            : "—"}
+          {formatThresholdsTabLastChangedSuffix(
+            latestSaved,
+            latestSaved
+              ? formatDistanceToNow(new Date(latestSaved.updated_at), { addSuffix: true })
+              : "",
+          )}
         </p>
       </div>
 

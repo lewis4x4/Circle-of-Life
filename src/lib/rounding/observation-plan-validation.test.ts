@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { ROUNDING_PLAN_NO_TIME_COPY } from "./rounding-plans-display-copy";
 import {
   buildPlanSchedulePreview,
+  formatTimeLabel,
   getObservationPlanSaveBlockers,
   getRuleChecksPerDay,
   validateEffectiveWindow,
@@ -19,6 +21,23 @@ const BASE_RULE: PlanRuleInput = {
   active: true,
   sortOrder: 0,
 };
+
+describe("formatTimeLabel", () => {
+  it("names missing or unparseable HH:MM gaps", () => {
+    expect(formatTimeLabel(null)).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel(undefined)).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel("")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel("not-a-time")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatTimeLabel("25:00")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+  });
+
+  it("formats posted HH:MM with en-US hour and minute", () => {
+    const formatted = formatTimeLabel("07:30");
+    expect(formatted).not.toBe(ROUNDING_PLAN_NO_TIME_COPY);
+    expect(formatted).toMatch(/\d/);
+    expect(formatted).toMatch(/30/);
+  });
+});
 
 describe("observation plan effective window validation", () => {
   it("allows an open-ended plan", () => {
@@ -80,6 +99,27 @@ describe("observation plan rule validation", () => {
       "Grace minutes must be less than interval minutes.",
     );
     expect(validatePlanRule({ ...BASE_RULE, intervalMinutes: 30, graceMinutes: 29 })).toEqual({});
+  });
+
+  it("rejects legacy migration 219 12-hour facility defaults", () => {
+    expect(validatePlanRule({ ...BASE_RULE, intervalMinutes: 720 }).intervalMinutes).toBe(
+      "12-hour (720 minute) facility defaults are retired. Use Jessica discovery-round cadence instead.",
+    );
+  });
+
+  it("computes overnight interval checks for Homewood two-hour night cadence", () => {
+    const homewoodNightRule: PlanRuleInput = {
+      intervalType: "fixed_minutes",
+      intervalMinutes: 120,
+      shift: "night",
+      daypartStart: "18:00",
+      daypartEnd: "06:00",
+      graceMinutes: 30,
+      active: true,
+      sortOrder: 0,
+    };
+
+    expect(getRuleChecksPerDay(homewoodNightRule)).toBe(7);
   });
 });
 

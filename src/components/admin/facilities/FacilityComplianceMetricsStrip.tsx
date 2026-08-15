@@ -14,6 +14,11 @@ import {
   daysBetweenTodayAndRenewal,
   ahcaExpiryYmd,
 } from "@/lib/admin/facilities/license-record-metrics";
+import {
+  complianceStripDaysToRenewalIsMissing,
+  formatComplianceStripDaysToRenewal,
+  formatComplianceStripRenewalLead,
+} from "@/lib/facilities/licensing-tab-display-copy";
 
 interface FacilityComplianceMetricsStripProps {
   facility: FacilityDetailRow;
@@ -35,14 +40,9 @@ export function FacilityComplianceMetricsStrip({ facility }: FacilityComplianceM
       ? Math.max(0, Math.round(facility.open_survey_deficiencies_count))
       : 0;
 
-  const renewalLead =
-    daysRenew === null
-      ? "—"
-      : daysRenew < 0
-        ? "Past due"
-        : daysRenew === 0
-          ? "Today"
-          : `In ${daysRenew} day${daysRenew === 1 ? "" : "s"}`;
+  const renewalLead = formatComplianceStripRenewalLead(daysRenew);
+  const daysRenewLabel = formatComplianceStripDaysToRenewal(daysRenew);
+  const daysRenewMissing = complianceStripDaysToRenewalIsMissing(daysRenew);
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -56,9 +56,13 @@ export function FacilityComplianceMetricsStrip({ facility }: FacilityComplianceM
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Days to renewal</p>
         <p
-          className={cn("mt-2 text-3xl font-semibold tabular-nums", renewalCountdownAccentClass(daysRenew))}
+          className={cn(
+            "mt-2 font-semibold tabular-nums",
+            daysRenewMissing ? "text-lg leading-snug text-muted-foreground" : "text-3xl",
+            !daysRenewMissing && renewalCountdownAccentClass(daysRenew),
+          )}
         >
-          {daysRenew !== null ? daysRenew : "—"}
+          {daysRenewLabel}
         </p>
         <p className="mt-1 text-[12px] text-muted-foreground">{renewalLead}</p>
       </div>

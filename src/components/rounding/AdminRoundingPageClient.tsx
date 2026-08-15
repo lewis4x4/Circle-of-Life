@@ -8,7 +8,6 @@ import {
   Building2,
   ClipboardList,
   Eye,
-  Play,
   Plus,
   RefreshCw,
   Shield,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { RoundingHubNav } from "@/app/(admin)/admin/rounding/rounding-hub-nav";
+import { DiscoveryCadenceApplyPanel } from "@/components/rounding/DiscoveryCadenceApplyPanel";
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { KPITile, type KPITileTone } from "@/design-system/components/KPITile";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
   type RoundingOverviewSummary,
   type RoundingTaskRow,
 } from "@/lib/rounding/load-rounding-overview";
+import { formatLiveRoundingTimeOfDay } from "@/lib/rounding/live-rounding-display-copy";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -98,18 +99,6 @@ function formatShortDate(now: Date = new Date()): string {
     day: "numeric",
     timeZone: NEW_YORK_TZ,
   }).format(now);
-}
-
-function formatTimeOfDay(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: NEW_YORK_TZ,
-    }).format(new Date(iso));
-  } catch {
-    return "—";
-  }
 }
 
 function deriveStripState(args: {
@@ -248,6 +237,10 @@ export function AdminRoundingPageClient({
         <AllFacilitiesInterstitial />
       ) : (
         <>
+          {facilityName ? (
+            <DiscoveryCadenceApplyPanel facilityId={selectedFacilityId} facilityName={facilityName} />
+          ) : null}
+
           {errorMessage ? <LoadErrorNotice message={errorMessage} onRetry={() => void load()} /> : null}
           {!errorMessage && emptyNotice ? <EmptyStateNotice /> : null}
 
@@ -354,16 +347,9 @@ function StatusStrip({
             <span className="text-muted-foreground">{dateLabel}</span>
           </p>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            Start one to begin tracking checks against your active observation plans.
+            Apply Jessica discovery rounds above to create plans and open the live board.
           </p>
         </div>
-        <Link
-          href="/admin/rounding/live"
-          className={cn(buttonVariants({ variant: "default", size: "default" }), "shrink-0")}
-        >
-          <Play className="size-4" aria-hidden />
-          Start rounds
-        </Link>
       </div>
     );
   }
@@ -522,7 +508,7 @@ function RecentActivityPanel({ tasks }: { tasks: TaskRow[] }) {
                   <p className={cn("text-[12px]", toneTextClass(status.tone))}>{status.label}</p>
                 </div>
                 <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
-                  {formatTimeOfDay(task.due_at)}
+                  {formatLiveRoundingTimeOfDay(task.due_at)}
                 </span>
               </li>
             );
@@ -778,25 +764,22 @@ function AllFacilitiesInterstitial() {
 }
 
 function EmptyStateNotice() {
-  // Structured content avoids fragile string-split injection of the inline link.
   return (
     <div
-      className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+      className="rounded-lg border border-dashed border-border bg-muted/20 p-3"
       role="status"
     >
-      <div className="flex min-w-0 items-start gap-2">
-        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
-        <p className="text-[13px] leading-relaxed text-foreground">
-          No active rounding cycle. Start one to begin tracking checks, or{" "}
-          <Link
-            href="/admin/rounding/plans/new"
-            className="font-medium underline-offset-2 hover:underline"
-          >
-            create an observation plan
-          </Link>{" "}
-          to define rounding cadence.
-        </p>
-      </div>
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
+        No rounding tasks in the last 24 hours. Apply Jessica discovery rounds above to start a live
+        cycle, or{" "}
+        <Link
+          href="/admin/rounding/plans/new"
+          className="font-medium text-foreground underline-offset-2 hover:underline"
+        >
+          create a custom observation plan
+        </Link>
+        .
+      </p>
     </div>
   );
 }

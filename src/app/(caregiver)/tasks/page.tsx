@@ -7,6 +7,7 @@ import { CheckCircle2, Clock3, Loader2, UserRound } from "lucide-react";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { formatCaregiverTasksShiftBucket } from "@/lib/caregiver/tasks-display-copy";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
@@ -222,7 +223,7 @@ export default function CaregiverTasksPage() {
           <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="muted" />
           <MetricPill label="No ADL yet today" value={String(metrics.noPass)} tone="danger" />
           <MetricPill label="ADL passes today" value={String(metrics.totalAdl)} tone="success" />
-          <MetricPill label="Shift bucket" value={ctx ? currentShiftForTimezone(ctx.timeZone) : "—"} tone="muted" />
+          <MetricPill label="Shift bucket" value={formatCaregiverTasksShiftBucket(ctx?.timeZone)} tone="muted" />
         </div>
       </div>
 

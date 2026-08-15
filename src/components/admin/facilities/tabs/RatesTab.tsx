@@ -14,7 +14,13 @@ import {
   isRateCurrentForYmd,
   isRoomBoardRateType,
 } from "@/lib/admin/facilities/rate-schedule-metrics";
-import { formatUsdMonthlyFromCents, formatUsdCurrencyFromCents } from "@/lib/format/usd-monthly";
+import {
+  formatRatesTabEditorDisplay,
+  formatRatesTabLastChangedSuffix,
+  formatRatesTabOccupiedCountDisplay,
+  formatRatesTabPublishedRateDisplay,
+  formatRatesTabRoomCountDisplay,
+} from "@/lib/facilities/rates-tab-display-copy";
 import { labelFirstMonthlyBillingCycle } from "@/lib/admin/facilities/first-billing-cycle-label";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,13 +93,6 @@ function statusBadge(
     );
   }
   return <Badge variant="outline" className="font-normal text-muted-foreground">Superseded</Badge>;
-}
-
-function formatPublishedRate(rateType: string, cents: number): string {
-  if (rateType.includes("daily")) {
-    return `${formatUsdCurrencyFromCents(cents)} / day`;
-  }
-  return formatUsdMonthlyFromCents(cents);
 }
 
 export function RatesTab({
@@ -211,9 +210,7 @@ export function RatesTab({
       }
     }
     if (!bestAt) return null;
-    const by =
-      bestBy && bestBy.length > 8 ? `${bestBy.slice(0, 8)}…` : bestBy && bestBy.length > 0 ? bestBy : "—";
-    return { at: bestAt, by };
+    return { at: bestAt, by: formatRatesTabEditorDisplay(bestBy) };
   };
 
   if (isLoading) {
@@ -282,12 +279,19 @@ export function RatesTab({
                       <p className="text-sm font-medium text-foreground">
                         {RATE_TYPE_LABELS[roomType as keyof typeof RATE_TYPE_LABELS] ?? roomType}{" "}
                         <span className="text-muted-foreground"> · </span>
-                        <span className="tabular-nums text-muted-foreground">— rooms</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatRatesTabRoomCountDisplay(null)}
+                        </span>
                         <span className="text-muted-foreground"> · </span>
-                        <span className="tabular-nums text-muted-foreground">— occupied</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatRatesTabOccupiedCountDisplay(null)}
+                        </span>
                         <span className="text-muted-foreground"> · </span>
                         <span className="font-semibold tabular-nums text-foreground">
-                          {current ? formatPublishedRate(roomType, current.amount_cents) : "—"}
+                          {formatRatesTabPublishedRateDisplay(
+                            roomType,
+                            current?.amount_cents ?? null,
+                          )}
                         </span>
                       </p>
                       {current ? (
@@ -341,7 +345,7 @@ export function RatesTab({
                                     <span className="tabular-nums text-muted-foreground">{end}</span>
                                   </TableCell>
                                   <TableCell className="text-right font-medium tabular-nums">
-                                    {formatPublishedRate(rate.rate_type, rate.amount_cents)}
+                                    {formatRatesTabPublishedRateDisplay(rate.rate_type, rate.amount_cents)}
                                   </TableCell>
                                   <TableCell>
                                     {statusBadge(status, {
@@ -383,13 +387,12 @@ export function RatesTab({
                       </div>
 
                       <p className="text-[12px] text-muted-foreground border-t border-border pt-3">
-                        {touch ? (
-                          <>
-                            Last changed{" "}
-                            {formatInTimeZone(parseISO(touch.at), tz, "MMM d, yyyy · h:mm a")} by {touch.by}
-                          </>
-                        ) : (
-                          <>Last changed —</>
+                        Last changed{" "}
+                        {formatRatesTabLastChangedSuffix(
+                          touch,
+                          touch
+                            ? formatInTimeZone(parseISO(touch.at), tz, "MMM d, yyyy · h:mm a")
+                            : "",
                         )}
                       </p>
                     </div>
@@ -433,7 +436,7 @@ export function RatesTab({
                     {RATE_TYPE_LABELS[t as keyof typeof RATE_TYPE_LABELS] ?? t}
                   </span>
                   <span className="text-sm tabular-nums text-muted-foreground">
-                    {cur ? formatPublishedRate(t, cur.amount_cents) : "—"}
+                    {formatRatesTabPublishedRateDisplay(t, cur?.amount_cents ?? null)}
                   </span>
                 </li>
               );
