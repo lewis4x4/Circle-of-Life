@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import type { DocumentVaultCategoryKey } from "@/lib/admin/facilities/document-vault-taxonomy";
+import { formatDocumentsTabUploaderDisplay } from "@/lib/facilities/documents-tab-display-copy";
 import { lruGet, lruSet } from "@/hooks/internal/lru-cache";
 
 export interface FacilityDocumentHookRow {
@@ -40,7 +41,7 @@ interface DocumentsResponse {
 function normalize(doc: FacilityDocumentHookRow): FacilityDocumentHookRow {
   return {
     ...doc,
-    uploaded_by_display: doc.uploaded_by_display ?? "Unknown",
+    uploaded_by_display: formatDocumentsTabUploaderDisplay(doc.uploaded_by_display),
   };
 }
 
