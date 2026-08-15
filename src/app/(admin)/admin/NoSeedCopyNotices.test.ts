@@ -12,6 +12,7 @@ const APP_VISIBLE_NOTICE_SOURCES = [
   "src/app/(admin)/executive/cfo/page.tsx",
   "src/app/(admin)/executive/coo/page.tsx",
   "src/components/incidents/AdminIncidentsPageClient.tsx",
+  "src/lib/incidents/incidents-board-copy.ts",
   "src/components/v2/W1DashboardClient.tsx",
   "src/components/v2/W2ListClient.tsx",
   "src/components/v2/W3AnalyticsClient.tsx",

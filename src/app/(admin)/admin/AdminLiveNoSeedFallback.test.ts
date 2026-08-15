@@ -49,14 +49,15 @@ describe("admin live surfaces seeded fallback removal", () => {
 
   it("keeps explicit empty live states instead of sample roster or incident rows", () => {
     const residentsSource = readSource("src/components/residents/AdminResidentsPageClient.tsx");
-    const incidentsSource = readSource("src/components/incidents/AdminIncidentsPageClient.tsx");
+    const incidentsClientSource = readSource("src/components/incidents/AdminIncidentsPageClient.tsx");
+    const incidentsCopySource = readSource("src/lib/incidents/incidents-board-copy.ts");
     const clinicalDeskSource = readSource("src/app/(admin)/assessments/overdue/page.tsx");
 
     expect(residentsSource).toContain("Live resident roster returned no residents");
     expect(residentsSource).toContain("setRows(liveRows)");
     expect(residentsSource).toContain("!error && filteredRows.length > 0");
-    expect(incidentsSource).toContain("setRows(liveRows)");
-    expect(incidentsSource).toContain("No live incident records returned for this scope");
+    expect(incidentsClientSource).toContain("setRows(liveRows)");
+    expect(incidentsCopySource).toContain("No live incident records returned for this scope");
     expect(clinicalDeskSource).toContain("No overdue assessments.");
     expect(clinicalDeskSource).toContain("No drafts awaiting review.");
     expect(clinicalDeskSource).toContain("No cross-facility fallback query is run.");

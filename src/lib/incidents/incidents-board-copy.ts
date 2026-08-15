@@ -16,7 +16,7 @@ export function adminIncidentsKanbanColumnEmptyHelper(): string {
 
 /** When a facility is selected but the live query returned zero rows. */
 export function adminIncidentsGlobalEmptyNotice(): string {
-  return "No live incident records for this scope. Fallback incident cards are not shown.";
+  return "No live incident records returned for this scope. No fallback incident cards are not shown.";
 }
 
 /** When the header facility selector has no valid site — avoids a broken-looking board. */
