@@ -29,6 +29,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   formatReferralsHubOutreachWeek,
   formatReferralsHubReferralSource,
+  formatReferralsHubTourScheduledFor,
+  REFERRALS_HUB_NO_TOUR_TIME_COPY,
   referralsHubKpiTileValue,
   type ReferralsHubKpiContext,
 } from "@/lib/referrals/referrals-hub-display-copy";
@@ -581,7 +583,7 @@ export function AdminReferralsPageClient({
                       <div className="text-[12px] font-medium capitalize text-muted-foreground">{formatStatus(row.status)}</div>
                     </div>
                     <div className="text-[12px] text-muted-foreground tabular-nums">
-                      {row.tour_scheduled_for ? new Date(row.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}
+                      {formatReferralsHubTourScheduledFor(row.tour_scheduled_for)}
                     </div>
                   </div>
                 </Link>
@@ -1024,11 +1026,20 @@ export function AdminReferralsPageClient({
                             <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
                               {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                             </span>
-                            {r.tour_scheduled_for ? (
-                              <span className="text-[12px] text-primary tabular-nums">
-                                Tour {new Date(r.tour_scheduled_for).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                              </span>
-                            ) : null}
+                            {(() => {
+                              const tourLabel = formatReferralsHubTourScheduledFor(r.tour_scheduled_for);
+                              const hasTourTime = tourLabel !== REFERRALS_HUB_NO_TOUR_TIME_COPY;
+                              return (
+                                <span
+                                  className={cn(
+                                    "text-[12px] tabular-nums",
+                                    hasTourTime ? "text-primary" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {hasTourTime ? `Tour ${tourLabel}` : tourLabel}
+                                </span>
+                              );
+                            })()}
                             {linkedAdmissionCaseId ? (
                               <span className="text-[12px] text-amber-700 dark:text-amber-300">
                                 {handoffPhase === "blocked"

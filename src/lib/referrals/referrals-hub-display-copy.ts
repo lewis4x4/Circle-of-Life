@@ -63,3 +63,15 @@ export function formatReferralsHubReferralSource(
   if (!sourceName || !sourceName.trim()) return "No source posted";
   return sourceName;
 }
+
+export const REFERRALS_HUB_NO_TOUR_TIME_COPY = "No tour time posted";
+
+/** Tour scheduled timestamp on hub rows — never invents a tour time. */
+export function formatReferralsHubTourScheduledFor(
+  tourScheduledFor: string | null | undefined,
+): string {
+  if (!tourScheduledFor || !tourScheduledFor.trim()) return REFERRALS_HUB_NO_TOUR_TIME_COPY;
+  const d = new Date(tourScheduledFor);
+  if (Number.isNaN(d.getTime())) return REFERRALS_HUB_NO_TOUR_TIME_COPY;
+  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
