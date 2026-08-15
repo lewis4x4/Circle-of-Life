@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { formatBedAvailabilityRoomNumber } from "@/lib/facilities/bed-availability-display-copy";
+import { createClient } from "@/lib/supabase/client";
 
 export type FacilityBedAvailabilityRow = {
   id: string;
@@ -76,7 +77,7 @@ export function useFacilityBedAvailability(
           .map((row) => ({
             id: row.id,
             room_id: row.room_id,
-            room_number: roomById.get(row.room_id) ?? "—",
+            room_number: formatBedAvailabilityRoomNumber(roomById.get(row.room_id)),
             bed_label: row.bed_label,
             status: row.status,
             current_resident_id: row.current_resident_id,
