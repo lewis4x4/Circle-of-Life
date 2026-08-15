@@ -15,6 +15,7 @@ import {
   portfolioStripKpiIsLoaded,
   portfolioStripLicensedBedsEmptyCopy,
   portfolioStripOccupiedBedsEmptyCopy,
+  portfolioStripPortfolioOccupancyDisplay,
   portfolioStripPortfolioOccupancyEmptyCopy,
   type PortfolioComparisonEntry,
 } from "./portfolio-hub-kpi-copy";
@@ -135,7 +136,7 @@ describe("portfolioStripKpiEmptyCopy", () => {
   it("names each portfolio strip gap", () => {
     expect(portfolioStripKpiEmptyCopy("licensed_beds")).toBe("Licensed beds not on file");
     expect(portfolioStripKpiEmptyCopy("occupied_beds")).toBe("Census not loaded yet");
-    expect(portfolioStripKpiEmptyCopy("portfolio_occupancy")).toBe("No occupancy loaded");
+    expect(portfolioStripKpiEmptyCopy("portfolio_occupancy")).toBe("No occupancy posted");
   });
 });
 
@@ -171,7 +172,42 @@ describe("portfolio strip empty-copy guards", () => {
       }),
     ]);
     expect(portfolioStripPortfolioOccupancyEmptyCopy(loaded)).toBeNull();
-    expect(portfolioStripPortfolioOccupancyEmptyCopy(emptyTotals)).toBe("No occupancy loaded");
+    expect(portfolioStripPortfolioOccupancyEmptyCopy(emptyTotals)).toBe("No occupancy posted");
+  });
+});
+
+describe("portfolioStripPortfolioOccupancyDisplay", () => {
+  it("names the gap when portfolio occupancy pct is missing", () => {
+    const emptyTotals = buildPortfolioStripTotals([
+      facility({ id: "1", name: "Oakridge", total_beds: 0, occupancy_count: 0 }),
+    ]);
+    expect(portfolioStripPortfolioOccupancyDisplay(emptyTotals)).toBe("No occupancy posted");
+  });
+
+  it("shows 0% when census is loaded with zero occupied beds", () => {
+    const zeroTotals = buildPortfolioStripTotals([
+      facility({
+        id: "1",
+        name: "Oakridge",
+        total_licensed_beds: 52,
+        total_beds: 48,
+        occupancy_count: 0,
+      }),
+    ]);
+    expect(portfolioStripPortfolioOccupancyDisplay(zeroTotals)).toBe("0%");
+  });
+
+  it("shows rounded pct when portfolio occupancy is posted", () => {
+    const loadedTotals = buildPortfolioStripTotals([
+      facility({
+        id: "1",
+        name: "Oakridge",
+        total_licensed_beds: 52,
+        total_beds: 48,
+        occupancy_count: 44,
+      }),
+    ]);
+    expect(portfolioStripPortfolioOccupancyDisplay(loadedTotals)).toBe("85%");
   });
 });
 
