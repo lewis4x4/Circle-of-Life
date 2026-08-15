@@ -75,6 +75,7 @@ import {
   formatBuildingTabLicensedBedCount,
   formatReferralsHubReferralSource,
 } from "@/lib/admissions/admissions-new-display-copy";
+import { buildingTabLicensedBedCountIsMissing } from "@/lib/facilities/building-tab-display-copy";
 
 const TAB_QUERY = "tab";
 const LEGACY_TAB_QUERY = "origin";
@@ -2148,8 +2149,10 @@ function AdmissionsNewInner() {
                 <span className="font-medium text-foreground">{beds.length}</span> open beds ·{" "}
                 <span className="font-medium text-foreground">
                   {formatBuildingTabLicensedBedCount(facilityPanel?.totalLicensedBeds)}
-                </span>{" "}
-                licensed
+                  {!buildingTabLicensedBedCountIsMissing(facilityPanel?.totalLicensedBeds)
+                    ? " licensed"
+                    : null}
+                </span>
               </p>
             </div>
             <div className="space-y-2">
