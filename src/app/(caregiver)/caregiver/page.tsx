@@ -218,7 +218,9 @@ export default function CaregiverHomePage() {
           />
         </div>
 
-        <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
+        {!boardIsEmpty && (
+          <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
+        )}
       </div>
 
       {/* Row 2: Quick actions + alerts */}
