@@ -12,6 +12,47 @@ export const STAFF_DETAIL_NO_EMERGENCY_PHONE_COPY = "No emergency phone posted";
 export const STAFF_DETAIL_NO_MAX_HOURS_COPY = "No max hours posted";
 export const STAFF_DETAIL_NO_RATE_COPY = "No rate posted";
 export const STAFF_DETAIL_NO_UPDATE_TIMESTAMP_COPY = "No update timestamp posted";
+export const STAFF_DETAIL_NO_HIRE_DATE_COPY = "No hire date posted";
+export const STAFF_DETAIL_NO_ISSUE_DATE_COPY = "No issue date posted";
+export const STAFF_DETAIL_NO_EXPIRATION_DATE_COPY = "No expiration date posted";
+export const STAFF_DETAIL_NO_TERMINATION_DATE_COPY = "No termination date posted";
+
+const STAFF_DETAIL_DATE_ONLY_FORMAT: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+};
+
+/** Shared date-only formatter — noon UTC parse; missing / blank / unparseable → explicit empty copy. */
+export function formatStaffDetailDateOnly(
+  iso: string | null | undefined,
+  emptyCopy: string,
+): string {
+  if (!iso || !iso.trim()) return emptyCopy;
+  const parsed = new Date(`${iso.trim()}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return emptyCopy;
+  return new Intl.DateTimeFormat("en-US", STAFF_DETAIL_DATE_ONLY_FORMAT).format(parsed);
+}
+
+/** Hire date on the employment section when unset or unparseable. */
+export function formatStaffDetailHireDate(iso: string | null | undefined): string {
+  return formatStaffDetailDateOnly(iso, STAFF_DETAIL_NO_HIRE_DATE_COPY);
+}
+
+/** Certification issue date when unset or unparseable. */
+export function formatStaffDetailCertIssueDate(iso: string | null | undefined): string {
+  return formatStaffDetailDateOnly(iso, STAFF_DETAIL_NO_ISSUE_DATE_COPY);
+}
+
+/** Certification expiration date when unset or unparseable. */
+export function formatStaffDetailCertExpirationDate(iso: string | null | undefined): string {
+  return formatStaffDetailDateOnly(iso, STAFF_DETAIL_NO_EXPIRATION_DATE_COPY);
+}
+
+/** Termination date when present but blank or unparseable — never an em dash. */
+export function formatStaffDetailTerminationDate(iso: string | null | undefined): string {
+  return formatStaffDetailDateOnly(iso, STAFF_DETAIL_NO_TERMINATION_DATE_COPY);
+}
 
 /** Primary phone on the staff detail contact section when unset or blank. */
 export function formatStaffDetailPhone(phone: string | null | undefined): string {

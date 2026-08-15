@@ -6,18 +6,27 @@ import {
   STAFF_DETAIL_NO_EMERGENCY_NAME_COPY,
   STAFF_DETAIL_NO_EMERGENCY_PHONE_COPY,
   STAFF_DETAIL_NO_EMERGENCY_RELATIONSHIP_COPY,
+  STAFF_DETAIL_NO_EXPIRATION_DATE_COPY,
+  STAFF_DETAIL_NO_HIRE_DATE_COPY,
+  STAFF_DETAIL_NO_ISSUE_DATE_COPY,
   STAFF_DETAIL_NO_MAX_HOURS_COPY,
   STAFF_DETAIL_NO_PHONE_COPY,
   STAFF_DETAIL_NO_RATE_COPY,
+  STAFF_DETAIL_NO_TERMINATION_DATE_COPY,
   STAFF_DETAIL_NO_UPDATE_TIMESTAMP_COPY,
   formatStaffDetailAltPhone,
+  formatStaffDetailCertExpirationDate,
+  formatStaffDetailCertIssueDate,
+  formatStaffDetailDateOnly,
   formatStaffDetailEmail,
   formatStaffDetailEmergencyName,
   formatStaffDetailEmergencyPhone,
   formatStaffDetailEmergencyRelationship,
+  formatStaffDetailHireDate,
   formatStaffDetailMaxHours,
   formatStaffDetailPhone,
   formatStaffDetailRateCents,
+  formatStaffDetailTerminationDate,
   formatStaffDetailUpdatedAt,
 } from "./staff-detail-display-copy";
 
@@ -135,6 +144,89 @@ describe("formatStaffDetailUpdatedAt", () => {
 
   it("formats a posted timestamp", () => {
     const formatted = formatStaffDetailUpdatedAt("2026-04-08T15:30:00.000Z");
+    expect(formatted).toMatch(/Apr/);
+    expect(formatted).toMatch(/2026/);
+  });
+});
+
+describe("formatStaffDetailDateOnly", () => {
+  const emptyCopy = "No date posted";
+
+  it("names missing / blank / unparseable values instead of an em dash", () => {
+    expect(formatStaffDetailDateOnly(null, emptyCopy)).toBe(emptyCopy);
+    expect(formatStaffDetailDateOnly("", emptyCopy)).toBe(emptyCopy);
+    expect(formatStaffDetailDateOnly("   ", emptyCopy)).toBe(emptyCopy);
+    expect(formatStaffDetailDateOnly("not-a-date", emptyCopy)).toBe(emptyCopy);
+    expect(formatStaffDetailDateOnly(null, emptyCopy)).not.toBe(EM_DASH);
+  });
+
+  it("formats a posted ISO date", () => {
+    const formatted = formatStaffDetailDateOnly("2026-04-08", emptyCopy);
+    expect(formatted).toMatch(/Apr/);
+    expect(formatted).toMatch(/2026/);
+    expect(formatted).not.toBe(emptyCopy);
+  });
+});
+
+describe("formatStaffDetailHireDate", () => {
+  it("names a missing hire date instead of an em dash", () => {
+    expect(formatStaffDetailHireDate(null)).toBe(STAFF_DETAIL_NO_HIRE_DATE_COPY);
+    expect(formatStaffDetailHireDate("")).toBe(STAFF_DETAIL_NO_HIRE_DATE_COPY);
+    expect(formatStaffDetailHireDate("   ")).toBe(STAFF_DETAIL_NO_HIRE_DATE_COPY);
+    expect(formatStaffDetailHireDate("not-a-date")).toBe(STAFF_DETAIL_NO_HIRE_DATE_COPY);
+    expect(formatStaffDetailHireDate(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats a posted hire date", () => {
+    const formatted = formatStaffDetailHireDate("2026-04-08");
+    expect(formatted).toMatch(/Apr/);
+    expect(formatted).toMatch(/2026/);
+  });
+});
+
+describe("formatStaffDetailCertIssueDate", () => {
+  it("names a missing issue date instead of an em dash", () => {
+    expect(formatStaffDetailCertIssueDate(null)).toBe(STAFF_DETAIL_NO_ISSUE_DATE_COPY);
+    expect(formatStaffDetailCertIssueDate("")).toBe(STAFF_DETAIL_NO_ISSUE_DATE_COPY);
+    expect(formatStaffDetailCertIssueDate("   ")).toBe(STAFF_DETAIL_NO_ISSUE_DATE_COPY);
+    expect(formatStaffDetailCertIssueDate("not-a-date")).toBe(STAFF_DETAIL_NO_ISSUE_DATE_COPY);
+    expect(formatStaffDetailCertIssueDate(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats a posted issue date", () => {
+    const formatted = formatStaffDetailCertIssueDate("2026-04-08");
+    expect(formatted).toMatch(/Apr/);
+    expect(formatted).toMatch(/2026/);
+  });
+});
+
+describe("formatStaffDetailCertExpirationDate", () => {
+  it("names a missing expiration date instead of an em dash", () => {
+    expect(formatStaffDetailCertExpirationDate(null)).toBe(STAFF_DETAIL_NO_EXPIRATION_DATE_COPY);
+    expect(formatStaffDetailCertExpirationDate("")).toBe(STAFF_DETAIL_NO_EXPIRATION_DATE_COPY);
+    expect(formatStaffDetailCertExpirationDate("   ")).toBe(STAFF_DETAIL_NO_EXPIRATION_DATE_COPY);
+    expect(formatStaffDetailCertExpirationDate("not-a-date")).toBe(STAFF_DETAIL_NO_EXPIRATION_DATE_COPY);
+    expect(formatStaffDetailCertExpirationDate(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats a posted expiration date", () => {
+    const formatted = formatStaffDetailCertExpirationDate("2026-04-08");
+    expect(formatted).toMatch(/Apr/);
+    expect(formatted).toMatch(/2026/);
+  });
+});
+
+describe("formatStaffDetailTerminationDate", () => {
+  it("names a missing or unparseable termination date instead of an em dash", () => {
+    expect(formatStaffDetailTerminationDate(null)).toBe(STAFF_DETAIL_NO_TERMINATION_DATE_COPY);
+    expect(formatStaffDetailTerminationDate("")).toBe(STAFF_DETAIL_NO_TERMINATION_DATE_COPY);
+    expect(formatStaffDetailTerminationDate("   ")).toBe(STAFF_DETAIL_NO_TERMINATION_DATE_COPY);
+    expect(formatStaffDetailTerminationDate("not-a-date")).toBe(STAFF_DETAIL_NO_TERMINATION_DATE_COPY);
+    expect(formatStaffDetailTerminationDate(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats a posted termination date", () => {
+    const formatted = formatStaffDetailTerminationDate("2026-04-08");
     expect(formatted).toMatch(/Apr/);
     expect(formatted).toMatch(/2026/);
   });
