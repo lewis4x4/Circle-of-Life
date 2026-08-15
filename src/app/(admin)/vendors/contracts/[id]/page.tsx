@@ -8,6 +8,7 @@ import { RecordDetailHeader, RecordDetailSection } from "@/design-system/compone
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { formatVendorContractExpirationDate } from "@/lib/vendors/contracts-display-copy";
 import type { Database } from "@/types/database";
 
 type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
@@ -95,7 +96,7 @@ export default function VendorContractDetailPage() {
               description={`Effective ${contract.effective_date}`}
             >
               <div className="space-y-1 text-sm">
-                <p>Expires: {contract.expiration_date ?? "—"}</p>
+                <p>Expires: {formatVendorContractExpirationDate(contract.expiration_date)}</p>
                 <p>Auto-renew: {contract.auto_renew ? "Yes" : "No"}</p>
                 <p>
                   Total value:{" "}
