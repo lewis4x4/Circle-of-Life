@@ -3,6 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import {
+  formatVendorsStripCoiCurrentDisplay,
+  formatVendorsStripContractsExpiringDisplay,
+  vendorsStripCoiCurrentIsMissing,
+  vendorsStripContractsExpiringIsMissing,
+} from "@/lib/facilities/vendors-strip-display-copy";
 
 export type FacilityVendorStripKpi = {
   canonical_vendor_count: number;
@@ -56,22 +62,32 @@ export function FacilityVendorsMetricsStrip(props: {
       ? `${migration_residue_count} imported row${migration_residue_count === 1 ? "" : "s"} need cleanup`
       : "No launch-import placeholders";
 
+  /** Not wired until `vendor_facilities.coi_*` schema lands. */
+  const coiCurrentCount: number | undefined = undefined;
+  /** Not wired until vendor contracts backlog is tied in. */
+  const contractsExpiringCount: number | undefined = undefined;
+
+  const coiCurrentDisplay = formatVendorsStripCoiCurrentDisplay(coiCurrentCount);
+  const contractsExpiringDisplay = formatVendorsStripContractsExpiringDisplay(contractsExpiringCount);
+  const coiCurrentMissing = vendorsStripCoiCurrentIsMissing(coiCurrentCount);
+  const contractsExpiringMissing = vendorsStripContractsExpiringIsMissing(contractsExpiringCount);
+
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       <StripTile label="Total vendors linked" value={canonical_vendor_count} sub={residueSub} />
 
       <StripTile
         label="COIs current"
-        value="—"
+        value={coiCurrentDisplay}
         sub="Expired · schema wiring pending (`vendor_facilities.coi_*`)"
-        valueClassName="text-2xl text-muted-foreground"
+        valueClassName={coiCurrentMissing ? "text-2xl text-muted-foreground" : undefined}
       />
 
       <StripTile
         label="Contracts expiring (next 90 days)"
-        value="—"
+        value={contractsExpiringDisplay}
         sub="Tie-in to vendor contracts backlog"
-        valueClassName="text-2xl text-muted-foreground"
+        valueClassName={contractsExpiringMissing ? "text-2xl text-muted-foreground" : undefined}
       />
 
       <StripTile
