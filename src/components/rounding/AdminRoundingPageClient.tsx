@@ -28,6 +28,7 @@ import {
   type RoundingOverviewSummary,
   type RoundingTaskRow,
 } from "@/lib/rounding/load-rounding-overview";
+import { formatLiveRoundingTimeOfDay } from "@/lib/rounding/live-rounding-display-copy";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -98,18 +99,6 @@ function formatShortDate(now: Date = new Date()): string {
     day: "numeric",
     timeZone: NEW_YORK_TZ,
   }).format(now);
-}
-
-function formatTimeOfDay(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: NEW_YORK_TZ,
-    }).format(new Date(iso));
-  } catch {
-    return "—";
-  }
 }
 
 function deriveStripState(args: {
@@ -519,7 +508,7 @@ function RecentActivityPanel({ tasks }: { tasks: TaskRow[] }) {
                   <p className={cn("text-[12px]", toneTextClass(status.tone))}>{status.label}</p>
                 </div>
                 <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
-                  {formatTimeOfDay(task.due_at)}
+                  {formatLiveRoundingTimeOfDay(task.due_at)}
                 </span>
               </li>
             );

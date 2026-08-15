@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   LIVE_ROUNDING_NO_DUE_DATE_COPY,
   LIVE_ROUNDING_NO_SHIFT_TYPE_COPY,
+  LIVE_ROUNDING_NO_TIME_COPY,
   formatLiveRoundingDueLabel,
   formatLiveRoundingShiftType,
+  formatLiveRoundingTimeOfDay,
 } from "./live-rounding-display-copy";
 
 const EM_DASH = "—";
@@ -59,5 +61,30 @@ describe("formatLiveRoundingDueLabel", () => {
     expect(formatLiveRoundingDueLabel("2026-08-15T11:50:00.000Z", now)).not.toBe(
       LIVE_ROUNDING_NO_DUE_DATE_COPY,
     );
+  });
+});
+
+describe("formatLiveRoundingTimeOfDay", () => {
+  it("names a missing due-at clock time instead of Unknown or an em dash", () => {
+    expect(formatLiveRoundingTimeOfDay(null)).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay(undefined)).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay("")).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay("   ")).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay(EM_DASH)).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay("Unknown")).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay("not-a-date")).toBe(LIVE_ROUNDING_NO_TIME_COPY);
+    expect(formatLiveRoundingTimeOfDay(null)).not.toBe("Unknown");
+    expect(formatLiveRoundingTimeOfDay(null)).not.toBe(EM_DASH);
+  });
+
+  it("formats parseable due-at timestamps as hour:minute in America/New_York", () => {
+    const formatted = formatLiveRoundingTimeOfDay("2026-08-15T16:30:00.000Z");
+    const expected = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/New_York",
+    }).format(new Date("2026-08-15T16:30:00.000Z"));
+    expect(formatted).toBe(expected);
+    expect(formatted).not.toBe(LIVE_ROUNDING_NO_TIME_COPY);
   });
 });
