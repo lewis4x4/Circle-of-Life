@@ -18,6 +18,8 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
+import { formatBillingRateSurchargeCents } from "@/lib/billing/rates-display-copy";
+
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
 
@@ -214,7 +216,7 @@ export default function AdminBillingRatesPage() {
                                   {label}
                                 </p>
                                 <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                                  {typeof cents === "number" ? billingCurrency.format(cents / 100) : "—"}
+                                  {formatBillingRateSurchargeCents(cents)}
                                 </p>
                               </div>
                             );
