@@ -1,4 +1,7 @@
-import { formatSurveyBundlePrintEntityName } from "./survey-bundle-print-display-copy";
+import {
+  formatSurveyBundlePrintAdministratorName,
+  formatSurveyBundlePrintEntityName,
+} from "./survey-bundle-print-display-copy";
 
 export type SurveyBundleFacility = {
   id: string;
@@ -220,7 +223,7 @@ export function surveyBundleToMarkdown(packet: SurveyBundlePacket) {
     `Generated: ${packet.generatedAt}`,
     `Facility: ${packet.facility.name}`,
     `Entity: ${formatSurveyBundlePrintEntityName(packet.facility.entityName)}`,
-    `Administrator: ${packet.facility.administratorName ?? "Unknown"}`,
+    `Administrator: ${formatSurveyBundlePrintAdministratorName(packet.facility.administratorName)}`,
     `License: ${packet.facility.licenseNumber ?? "Missing"} (${packet.facility.alfLicenseType ?? packet.facility.licenseType ?? "unspecified"})`,
     `Licensed beds: ${packet.facility.totalLicensedBeds}`,
     `Packet coverage: ${packet.packetCoveragePct}%`,
