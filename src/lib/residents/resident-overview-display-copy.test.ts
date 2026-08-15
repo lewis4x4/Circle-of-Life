@@ -5,6 +5,7 @@ import {
   RESIDENT_OVERVIEW_NO_GENDER_COPY,
   RESIDENT_OVERVIEW_NO_STAFF_COPY,
   formatResidentOverviewAdmissionLabel,
+  formatResidentOverviewDobLabel,
   formatResidentOverviewGenderLabel,
   formatResidentOverviewVerifiedByStaffLabel,
 } from "./resident-overview-display-copy";
@@ -65,6 +66,29 @@ describe("formatResidentOverviewAdmissionLabel", () => {
   it("names an unparseable admission date value", () => {
     expect(formatResidentOverviewAdmissionLabel("not-a-date")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
     expect(formatResidentOverviewAdmissionLabel("2026-13-40")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+  });
+});
+
+describe("formatResidentOverviewDobLabel", () => {
+  it("formats a parseable date of birth with long month", () => {
+    expect(formatResidentOverviewDobLabel("2026-01-15")).toBe("January 15, 2026");
+    expect(formatResidentOverviewDobLabel("  2026-01-15  ")).toBe("January 15, 2026");
+  });
+
+  it("names a missing date of birth gap instead of a silent em dash", () => {
+    expect(formatResidentOverviewDobLabel(null)).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel(undefined)).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel("")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel("   ")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel("—")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel("Unknown")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel("unknown")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel(null)).not.toBe("—");
+  });
+
+  it("names an unparseable date of birth value", () => {
+    expect(formatResidentOverviewDobLabel("not-a-date")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
+    expect(formatResidentOverviewDobLabel("2026-13-40")).toBe(RESIDENT_OVERVIEW_NO_DATE_COPY);
   });
 });
 
