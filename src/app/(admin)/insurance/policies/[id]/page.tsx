@@ -10,6 +10,7 @@ import { RecordDetailHeader, RecordDetailSection } from "@/design-system/compone
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
+import { formatInsuranceClaimDateOfLoss } from "@/lib/insurance/claims-display-copy";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -235,7 +236,7 @@ export default function InsurancePolicyDetailPage() {
               <tbody>
                 {claims.map((c) => (
                   <tr key={c.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4">{c.date_of_loss ?? "—"}</td>
+                    <td className="py-2 pr-4">{formatInsuranceClaimDateOfLoss(c.date_of_loss)}</td>
                     <td className="py-2 pr-4">{c.status.replace(/_/g, " ")}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.reserve_cents)}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.paid_cents)}</td>
