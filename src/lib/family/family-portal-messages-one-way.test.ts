@@ -21,6 +21,12 @@ const staffBulletinSectionPath = path.join(
   "src/components/family-portal/StaffFamilyBulletinSection.tsx",
 );
 const familyFeedPath = path.join(repoRoot, "src/lib/family/family-feed.ts");
+const familyHomePath = path.join(repoRoot, "src/app/(family)/family/page.tsx");
+const familyHomeBulletinPath = path.join(
+  repoRoot,
+  "src/components/family-portal/FamilyHomeBulletinBar.tsx",
+);
+const familyPortalCopyPath = path.join(repoRoot, "src/lib/family/family-portal-copy.ts");
 const staffComposerPath = path.join(
   repoRoot,
   "src/components/family-portal/StaffFamilyNoteComposer.tsx",
@@ -103,13 +109,30 @@ describe("family home feed surfaces staff bulletin notes", () => {
     expect(source).toMatch(/featuredNote/);
   });
 
-  it("family home page spotlights the latest staff note before the journal feed", () => {
-    const homePath = path.join(repoRoot, "src/app/(family)/family/page.tsx");
-    const source = fs.readFileSync(homePath, "utf8");
-    expect(source).toMatch(/FeaturedStaffNote/);
+  it("family home page leads with the bulletin bar and has no composer", () => {
+    const source = fs.readFileSync(familyHomePath, "utf8");
+    expect(source).toMatch(/FamilyHomeBulletinBar/);
     expect(source).toMatch(/featuredNote/);
     expect(source).not.toMatch(/postFamilyMessage/);
+    expect(source).not.toMatch(/textarea/);
     expect(source).not.toMatch(/Send/);
+    expect(source).not.toMatch(/journal is quiet/i);
+    expect(source).not.toMatch(/start the conversation/i);
+  });
+
+  it("family home bulletin bar uses calm empty copy and one-way helper", () => {
+    const bulletinSource = fs.readFileSync(familyHomeBulletinPath, "utf8");
+    const copySource = fs.readFileSync(familyPortalCopyPath, "utf8");
+
+    expect(bulletinSource).toMatch(/FAMILY_HOME_BULLETIN_HELPER/);
+    expect(bulletinSource).toMatch(/FAMILY_HOME_BULLETIN_EMPTY_TITLE/);
+    expect(bulletinSource).toMatch(/Last posted/);
+    expect(bulletinSource).not.toMatch(/textarea/);
+    expect(bulletinSource).not.toMatch(/type a reply/i);
+
+    expect(copySource).toMatch(/No notes posted yet/);
+    expect(copySource).toMatch(/cannot reply in Haven/i);
+    expect(copySource).not.toMatch(/start the conversation/i);
   });
 });
 
