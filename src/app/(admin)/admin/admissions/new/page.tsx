@@ -320,7 +320,9 @@ function residentPickerLine(r: ResidentOption, referralSources: ReferralSourceOp
 /** Combobox row: lead display name · attribution · inquiry date · CRM stage */
 function leadComboboxLine(l: LeadOption, referralSources: ReferralSourceOpt[]): string {
   const name = `${l.last_name}, ${l.first_name}`;
-  const src = referralSourceLookup(referralSources, l.referral_source_id)?.trim() || "Unknown source";
+  const src = formatReferralsHubReferralSource(
+    referralSourceLookup(referralSources, l.referral_source_id),
+  );
   const inq = formatAdmissionsNewPostedDate(formatIsoDate(l.inquiry_date));
   const stage = formatAdmissionsNewLeadStage(l.status);
   return `${name} · ${src} · ${inq} · ${stage}`;

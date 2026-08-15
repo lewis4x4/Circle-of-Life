@@ -56,12 +56,18 @@ export function formatReferralsHubOutreachWeek(
   return performedForWeek;
 }
 
+const LEGACY_EMPTY_REFERRAL_SOURCE_LABELS = new Set(["unknown", "unknown source"]);
+
 /** Referral source on a pipeline row — never invents a source name. */
 export function formatReferralsHubReferralSource(
   sourceName: string | null | undefined,
 ): string {
   if (!sourceName || !sourceName.trim()) return "No source posted";
-  return sourceName;
+  const trimmed = sourceName.trim();
+  if (trimmed === "—" || LEGACY_EMPTY_REFERRAL_SOURCE_LABELS.has(trimmed.toLowerCase())) {
+    return "No source posted";
+  }
+  return trimmed;
 }
 
 export const REFERRALS_HUB_NO_TOUR_TIME_COPY = "No tour time posted";
