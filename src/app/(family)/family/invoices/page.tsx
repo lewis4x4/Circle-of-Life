@@ -10,6 +10,14 @@ import {
   invoiceStatusBadgeClass,
   type FamilyBillingContext,
 } from "@/lib/family/family-billing-data";
+import {
+  FAMILY_INVOICES_EMPTY_DESCRIPTION,
+  FAMILY_INVOICES_EMPTY_TITLE,
+  FAMILY_INVOICES_LOADING,
+  FAMILY_INVOICES_PAGE_DESCRIPTION,
+  FAMILY_INVOICES_PAGE_TITLE,
+  FAMILY_INVOICES_RETRY,
+} from "@/lib/family/family-portal-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { fetchFamilyLinkedResidentSummary } from "@/lib/family/family-linked-residents";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
@@ -81,7 +89,7 @@ export default function FamilyInvoicesPage() {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Loading invoices…
+        {FAMILY_INVOICES_LOADING}
       </div>
     );
   }
@@ -100,7 +108,7 @@ export default function FamilyInvoicesPage() {
           )}
           onClick={() => void load()}
         >
-          Retry
+          {FAMILY_INVOICES_RETRY}
         </button>
       </div>
     );
@@ -112,8 +120,8 @@ export default function FamilyInvoicesPage() {
     <div className="space-y-4 pb-16 md:pb-0">
       <FamilySectionIntro
         active="billing"
-        title="Invoices"
-        description="Every visible statement in one place, with due dates and current balances."
+        title={FAMILY_INVOICES_PAGE_TITLE}
+        description={FAMILY_INVOICES_PAGE_DESCRIPTION}
         residentSummary={residentSummary || undefined}
       />
       <Link
@@ -142,9 +150,10 @@ export default function FamilyInvoicesPage() {
         </div>
         <div className="space-y-3">
           {data.invoices.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              No invoices are visible right now, or your current family access does not include billing records.
-            </p>
+            <div className="rounded-lg border border-border bg-card p-8 text-center">
+              <p className="font-medium text-foreground">{FAMILY_INVOICES_EMPTY_TITLE}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{FAMILY_INVOICES_EMPTY_DESCRIPTION}</p>
+            </div>
           ) : (
             data.invoices.map((inv) => (
               <div

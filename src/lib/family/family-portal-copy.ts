@@ -67,3 +67,52 @@ export const FAMILY_CARE_PLAN_READ_ONLY_BADGE = "Read-only";
 export const FAMILY_CARE_PLAN_NOT_POSTED = "Not posted";
 
 export const FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK = "Linked resident";
+
+/** Read-only billing summary at /family/billing — statements and posted payments visible to this account. */
+
+export const FAMILY_BILLING_PAGE_TITLE = "Billing";
+
+export const FAMILY_BILLING_PAGE_DESCRIPTION =
+  "Read-only view of statements posted for your family account.";
+
+export const FAMILY_BILLING_LOADING = "Loading billing…";
+
+export const FAMILY_BILLING_RETRY = "Retry";
+
+export const FAMILY_BILLING_NO_PAYMENT = "No payment posted";
+
+export const FAMILY_BILLING_EMPTY_INVOICES_TITLE = "No invoices posted yet";
+
+export const FAMILY_BILLING_EMPTY_INVOICES_DESCRIPTION =
+  "When the business office posts a statement, it will appear here.";
+
+/** Full invoice list at /family/invoices. */
+
+export const FAMILY_INVOICES_PAGE_TITLE = "Invoices";
+
+export const FAMILY_INVOICES_PAGE_DESCRIPTION =
+  "Every statement posted for your family account, with due dates and balances.";
+
+export const FAMILY_INVOICES_LOADING = "Loading invoices…";
+
+export const FAMILY_INVOICES_RETRY = "Retry";
+
+export const FAMILY_INVOICES_EMPTY_TITLE = FAMILY_BILLING_EMPTY_INVOICES_TITLE;
+
+export const FAMILY_INVOICES_EMPTY_DESCRIPTION = FAMILY_BILLING_EMPTY_INVOICES_DESCRIPTION;
+
+/** Payment history at /family/payments — review only, no pay-in-app. */
+
+export const FAMILY_PAYMENTS_PAGE_TITLE = "Payments";
+
+export const FAMILY_PAYMENTS_PAGE_DESCRIPTION =
+  "Posted payments visible for linked residents. This page is for review only.";
+
+export const FAMILY_PAYMENTS_LOADING = "Loading payments…";
+
+export const FAMILY_PAYMENTS_RETRY = "Retry";
+
+export const FAMILY_PAYMENTS_EMPTY_TITLE = "No payments posted yet";
+
+export const FAMILY_PAYMENTS_EMPTY_DESCRIPTION =
+  "When the business office posts a payment, it will appear here.";
