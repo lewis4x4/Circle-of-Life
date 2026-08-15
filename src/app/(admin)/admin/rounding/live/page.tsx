@@ -26,6 +26,7 @@ import {
   describeLiveBoardCadenceReminder,
   describeLiveBoardEmptyState,
 } from "@/lib/rounding/col-discovery-round-cadence";
+import { formatLiveRoundingShiftType } from "@/lib/rounding/live-rounding-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -664,7 +665,7 @@ export default function AdminRoundingLivePage() {
                         <p className="mt-0.5 text-[12px] text-muted-foreground">
                           {displayName(task.staff) || "Unassigned"}
                           <span aria-hidden className="px-1.5 text-border">·</span>
-                          {task.shift_assignments?.shift_type ?? "—"} shift
+                          {formatLiveRoundingShiftType(task.shift_assignments?.shift_type)}
                         </p>
                       </div>
 
