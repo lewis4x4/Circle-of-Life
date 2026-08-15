@@ -6,6 +6,7 @@ import {
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY,
+  SURVEY_BUNDLE_PRINT_NO_POC_COPY,
 } from "./survey-bundle-print-display-copy";
 import { buildSurveyBundlePacket, surveyBundleToMarkdown } from "./survey-bundle";
 
@@ -151,7 +152,7 @@ describe("surveyBundleToMarkdown license line", () => {
   });
 });
 
-function deficiencyPacket(pocSubmissionDueDate: string | null) {
+function deficiencyPacket(pocSubmissionDueDate: string | null, pocStatus: string | null = null) {
   return buildSurveyBundlePacket({
     facility: {
       id: "facility-001",
@@ -175,7 +176,7 @@ function deficiencyPacket(pocSubmissionDueDate: string | null) {
         surveyDate: "2026-01-15",
         followUpSurveyDate: null,
         verifiedAt: null,
-        pocStatus: null,
+        pocStatus,
         pocResponsibleParty: null,
         pocSubmissionDueDate,
         pocCompletionTargetDate: null,
@@ -206,5 +207,25 @@ describe("surveyBundleToMarkdown deficiency due line", () => {
     const markdown = surveyBundleToMarkdown(deficiencyPacket("2026-01-15"));
     expect(markdown).toContain("due=2026-01-15");
     expect(markdown).not.toContain(`due=${SURVEY_BUNDLE_PRINT_NO_DATE_COPY}`);
+  });
+});
+
+describe("surveyBundleToMarkdown deficiency POC line", () => {
+  it("names a missing POC status with the print gap copy", () => {
+    const markdown = surveyBundleToMarkdown(deficiencyPacket(null, null));
+    expect(markdown).toContain(`POC=${SURVEY_BUNDLE_PRINT_NO_POC_COPY}`);
+    expect(markdown).not.toContain("POC=missing");
+  });
+
+  it("names a blank or em-dash POC status with the print gap copy", () => {
+    expect(surveyBundleToMarkdown(deficiencyPacket(null, ""))).toContain(`POC=${SURVEY_BUNDLE_PRINT_NO_POC_COPY}`);
+    expect(surveyBundleToMarkdown(deficiencyPacket(null, "   "))).toContain(`POC=${SURVEY_BUNDLE_PRINT_NO_POC_COPY}`);
+    expect(surveyBundleToMarkdown(deficiencyPacket(null, EM_DASH))).toContain(`POC=${SURVEY_BUNDLE_PRINT_NO_POC_COPY}`);
+  });
+
+  it("keeps a posted POC status", () => {
+    const markdown = surveyBundleToMarkdown(deficiencyPacket(null, "draft"));
+    expect(markdown).toContain("POC=draft");
+    expect(markdown).not.toContain(`POC=${SURVEY_BUNDLE_PRINT_NO_POC_COPY}`);
   });
 });

@@ -11,11 +11,20 @@ export const SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY = "No administrator poste
 export const SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY = "No license posted";
 export const SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY = "No license type posted";
 export const SURVEY_BUNDLE_PRINT_NO_RISK_COPY = "No risk posted";
+export const SURVEY_BUNDLE_PRINT_NO_POC_COPY = "No POC posted";
 
 function isBlankOrEmDash(value: string | null | undefined): boolean {
   if (value == null) return true;
   const trimmed = value.trim();
   return trimmed === "" || trimmed === EM_DASH;
+}
+
+/** POC status on a deficiency row when unset, blank, or em dash. */
+export function formatSurveyBundlePrintPocStatus(
+  pocStatus: string | null | undefined,
+): string {
+  if (isBlankOrEmDash(pocStatus)) return SURVEY_BUNDLE_PRINT_NO_POC_COPY;
+  return pocStatus!.trim();
 }
 
 /** POC submission due date on a deficiency row when unset, blank, or em dash. */
