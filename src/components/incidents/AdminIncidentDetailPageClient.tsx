@@ -42,6 +42,7 @@ import {
 import {
   formatIncidentDetailInjuryBodyLocation,
   formatIncidentDetailInjuryDescription,
+  formatIncidentDetailInjurySeverity,
 } from "@/lib/incidents/incident-detail-display-copy";
 import { buildIncidentOpenObligations } from "@/lib/incidents/workflow-obligations";
 
@@ -612,7 +613,10 @@ export function AdminIncidentDetailPageClient({
                 label="Description"
                 value={formatIncidentDetailInjuryDescription(incident.injury_description)}
               />
-              <DetailRow label="Severity" value={incident.injury_severity ? formatSnake(incident.injury_severity) : "—"} />
+              <DetailRow
+                label="Severity"
+                value={formatIncidentDetailInjurySeverity(incident.injury_severity)}
+              />
               <DetailRow
                 label="Body location"
                 value={formatIncidentDetailInjuryBodyLocation(incident.injury_body_location)}
