@@ -33,6 +33,7 @@ import {
   vaultCategoryExpirationRequired,
 } from "@/lib/admin/facilities/document-vault-taxonomy";
 import { useFacilityDocuments, type FacilityDocumentHookRow } from "@/hooks/useFacilityDocuments";
+import { formatDocumentsTabUploaderDisplay } from "@/lib/facilities/documents-tab-display-copy";
 import { cn } from "@/lib/utils";
 
 interface DocumentsTabProps {
@@ -506,7 +507,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
 
                   <p className="mt-2 border-t border-border pt-2 text-[12px] text-muted-foreground">
                     Uploaded {new Date(doc.uploaded_at).toLocaleDateString()} by{" "}
-                    {doc.uploaded_by_display ?? "Unknown"}
+                    {formatDocumentsTabUploaderDisplay(doc.uploaded_by_display)}
                   </p>
 
                 </div>
