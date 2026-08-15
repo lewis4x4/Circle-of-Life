@@ -17,6 +17,7 @@ import {
   buildPayrollLinesCsvVendorHandoff,
   type PayrollExportLineRow,
 } from "@/lib/payroll/payroll-export-csv";
+import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { payPeriodClockBoundsUtc } from "@/lib/payroll/pay-period-bounds";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -44,11 +45,6 @@ function toExportRows(lines: LineWithStaff[]): PayrollExportLineRow[] {
         ? (line.payload as Record<string, unknown>)
         : null,
   }));
-}
-
-function formatCents(cents: number | null) {
-  if (cents === null || Number.isNaN(cents)) return "—";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 }
 
 export default function AdminPayrollBatchDetailPage() {
@@ -518,7 +514,7 @@ export default function AdminPayrollBatchDetailPage() {
                           {line.line_kind}
                         </span>
                       </div>
-                      <span className="tabular-nums font-mono">{formatCents(line.amount_cents)}</span>
+                      <span className="tabular-nums font-mono">{formatUsdFromCents(line.amount_cents)}</span>
                     </li>
                   );
                 })}
