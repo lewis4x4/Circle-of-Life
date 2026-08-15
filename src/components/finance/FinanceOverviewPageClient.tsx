@@ -6,6 +6,10 @@ import { Landmark } from "lucide-react";
 import { FinanceHubNav } from "@/app/(admin)/finance/finance-hub-nav";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
+import {
+  financeOverviewKpiTileValue,
+  type FinanceOverviewKpiContext,
+} from "@/lib/finance/finance-overview-display-copy";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -25,6 +29,8 @@ export default function AdminFinanceHubPageClient({
   unpostedInvoices,
   initialError,
 }: FinanceOverviewPageClientProps) {
+  const kpiCtx: FinanceOverviewKpiContext = { loadFailed: Boolean(initialError) };
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
@@ -69,31 +75,31 @@ export default function AdminFinanceHubPageClient({
                 <p className="text-[10px] text-muted-foreground">Leadership drill-ins for GL truth, period status, and posting confidence.</p>
               </div>
               <div className="flex flex-col gap-1 text-[11px] overflow-y-auto flex-1">
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/chart-of-accounts">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/chart-of-accounts">
                   Chart of accounts
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/journal-entries">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/journal-entries">
                   Journal entries
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/ledger">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/ledger">
                   Posted ledger (read-only)
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/trial-balance">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/trial-balance">
                   Trial balance
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/posting-rules">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/posting-rules">
                   GL posting rules
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/period-close">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/period-close">
                   Period close
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/forecast">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/forecast">
                   Forecast
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/budget">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/budget">
                   Budget vs actual
                 </Link>
-                <Link className="text-primary-600 dark:text-primary-400 font-mono uppercase tracking-wider hover:text-primary-500 transition-colors" href="/admin/finance/gl-settings">
+                <Link className="text-primary-600 dark:text-primary-400 font-mono hover:text-primary-500 transition-colors" href="/admin/finance/gl-settings">
                   GL settings
                 </Link>
               </div>
@@ -108,7 +114,9 @@ export default function AdminFinanceHubPageClient({
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Posted Entries (30d)
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter pb-1">{postedCount ?? "—"}</p>
+                <p className="text-4xl font-mono tracking-tighter pb-1">
+                  {financeOverviewKpiTileValue("posted_count", postedCount, kpiCtx)}
+                </p>
               </div>
             </V2Card>
           </div>
@@ -122,9 +130,11 @@ export default function AdminFinanceHubPageClient({
                    Unposted Invoices
                 </h3>
                 <div>
-                  <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">{unpostedInvoices ?? "—"}</p>
+                  <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">
+                    {financeOverviewKpiTileValue("unposted_invoices", unpostedInvoices, kpiCtx)}
+                  </p>
                   {unpostedInvoices != null && unpostedInvoices > 0 && (
-                    <Link className="mt-1 block text-[10px] uppercase font-mono tracking-wider text-amber-600/80 hover:text-amber-600 dark:text-amber-400/80 dark:hover:text-amber-400 underline-offset-4 hover:underline" href="/admin/billing/invoices">
+                    <Link className="mt-1 block text-[10px] font-mono text-amber-600/80 hover:text-amber-600 dark:text-amber-400/80 dark:hover:text-amber-400 underline-offset-4 hover:underline" href="/admin/billing/invoices">
                       Review Invoices →
                     </Link>
                   )}
@@ -163,7 +173,7 @@ export default function AdminFinanceHubPageClient({
                       href="/admin/billing/invoices"
                       className={cn(
                         buttonVariants({ variant: "default", size: "sm" }),
-                        "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono uppercase tracking-wider text-[9px] shadow-sm",
+                        "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono text-[9px] shadow-sm",
                       )}
                     >
                       Open invoices
@@ -186,7 +196,7 @@ export default function AdminFinanceHubPageClient({
                 <p className="text-sm text-muted-foreground">Period close status is managed under Period close from live finance records.</p>
                 <Link
                   href="/admin/finance/period-close"
-                  className="mt-3 inline-block text-[11px] font-mono uppercase tracking-wider text-primary-600 dark:text-primary-400 hover:underline"
+                  className="mt-3 inline-block text-[11px] font-mono text-primary-600 dark:text-primary-400 hover:underline"
                 >
                   Open period close →
                 </Link>
