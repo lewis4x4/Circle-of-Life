@@ -5,19 +5,24 @@ import { FORMAT_USD_NO_AMOUNT_POSTED_COPY } from "@/lib/insurance/format-money";
 import {
   EXECUTIVE_NO_COMPLETENESS_POSTED_COPY,
   EXECUTIVE_NO_CONFIDENCE_POSTED_COPY,
+  EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY,
+  EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY,
   EXECUTIVE_NO_LEAGUE_SCORE_POSTED_COPY,
   EXECUTIVE_NO_OCCUPANCY_POSTED_COPY,
   EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY,
   EXECUTIVE_NO_RISK_SCORE_POSTED_COPY,
+  formatExecutiveArOutstandingCents,
   formatExecutiveCompletenessPct,
   formatExecutiveConfidenceBand,
   formatExecutiveLeagueScore,
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPct,
   formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOpenIncidentCount,
   formatExecutivePacketStatus,
   formatExecutiveRevenueMtdCents,
   formatExecutiveRiskScore,
+  formatExecutiveSurveyDeficiencyCount,
 } from "./executive-display-copy";
 
 describe("formatExecutiveOccupancyPct", () => {
@@ -115,5 +120,38 @@ describe("formatExecutiveRevenueMtdCents", () => {
 
   it("keeps real zero as $0.00", () => {
     expect(formatExecutiveRevenueMtdCents(0)).toBe("$0.00");
+  });
+});
+
+describe("formatExecutiveArOutstandingCents", () => {
+  it("names the gap when AR is missing", () => {
+    expect(formatExecutiveArOutstandingCents(null)).toBe(FORMAT_USD_NO_AMOUNT_POSTED_COPY);
+    expect(formatExecutiveArOutstandingCents(undefined)).toBe(FORMAT_USD_NO_AMOUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as $0.00", () => {
+    expect(formatExecutiveArOutstandingCents(0)).toBe("$0.00");
+  });
+});
+
+describe("formatExecutiveSurveyDeficiencyCount", () => {
+  it("names the gap when deficiency count is missing", () => {
+    expect(formatExecutiveSurveyDeficiencyCount(null)).toBe(EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY);
+    expect(formatExecutiveSurveyDeficiencyCount(undefined)).toBe(EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveSurveyDeficiencyCount(0)).toBe("0");
+  });
+});
+
+describe("formatExecutiveOpenIncidentCount", () => {
+  it("names the gap when incident count is missing", () => {
+    expect(formatExecutiveOpenIncidentCount(null)).toBe(EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY);
+    expect(formatExecutiveOpenIncidentCount(undefined)).toBe(EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY);
+  });
+
+  it("keeps real zero as 0", () => {
+    expect(formatExecutiveOpenIncidentCount(0)).toBe("0");
   });
 });
