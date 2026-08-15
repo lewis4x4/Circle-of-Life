@@ -5,10 +5,12 @@ import {
   SURVEY_BUNDLE_PRINT_NO_DATE_COPY,
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
+  SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY,
   SURVEY_BUNDLE_PRINT_NO_RISK_COPY,
   formatSurveyBundlePrintAdministratorName,
   formatSurveyBundlePrintEntityName,
   formatSurveyBundlePrintLicenseNumber,
+  formatSurveyBundlePrintLicenseType,
   formatSurveyBundlePrintPocSubmissionDueDate,
   formatSurveyBundlePrintRiskScore,
 } from "./survey-bundle-print-display-copy";
@@ -78,6 +80,31 @@ describe("formatSurveyBundlePrintLicenseNumber", () => {
   it("returns posted license numbers trimmed", () => {
     expect(formatSurveyBundlePrintLicenseNumber("ALF-001")).toBe("ALF-001");
     expect(formatSurveyBundlePrintLicenseNumber("  ALF-001  ")).toBe("ALF-001");
+  });
+});
+
+describe("formatSurveyBundlePrintLicenseType", () => {
+  it("names a missing license type instead of unspecified", () => {
+    expect(formatSurveyBundlePrintLicenseType(null, null)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType(undefined, undefined)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType("", "")).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType("   ", "   ")).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType(EM_DASH, EM_DASH)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType(null, EM_DASH)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType(EM_DASH, null)).toBe(SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY);
+    expect(formatSurveyBundlePrintLicenseType(null, null)).not.toBe("unspecified");
+  });
+
+  it("prefers alfLicenseType over licenseType", () => {
+    expect(formatSurveyBundlePrintLicenseType("standard", "limited")).toBe("standard");
+    expect(formatSurveyBundlePrintLicenseType("  standard  ", "limited")).toBe("standard");
+    expect(formatSurveyBundlePrintLicenseType("", "limited")).toBe("limited");
+    expect(formatSurveyBundlePrintLicenseType(EM_DASH, "limited")).toBe("limited");
+  });
+
+  it("falls back to licenseType when alfLicenseType is missing", () => {
+    expect(formatSurveyBundlePrintLicenseType(null, "limited")).toBe("limited");
+    expect(formatSurveyBundlePrintLicenseType(null, "  limited  ")).toBe("limited");
   });
 });
 

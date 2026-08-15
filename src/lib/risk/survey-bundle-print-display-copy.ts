@@ -9,6 +9,7 @@ export const SURVEY_BUNDLE_PRINT_NO_DATE_COPY = "No date posted";
 export const SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY = "No entity posted";
 export const SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY = "No administrator posted";
 export const SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY = "No license posted";
+export const SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY = "No license type posted";
 export const SURVEY_BUNDLE_PRINT_NO_RISK_COPY = "No risk posted";
 
 function isBlankOrEmDash(value: string | null | undefined): boolean {
@@ -45,6 +46,16 @@ export function formatSurveyBundlePrintLicenseNumber(
 ): string {
   if (isBlankOrEmDash(licenseNumber)) return SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY;
   return licenseNumber!.trim();
+}
+
+/** Facility license type on the print packet — prefers alfLicenseType, then licenseType. */
+export function formatSurveyBundlePrintLicenseType(
+  alfLicenseType: string | null | undefined,
+  licenseType: string | null | undefined,
+): string {
+  if (!isBlankOrEmDash(alfLicenseType)) return alfLicenseType!.trim();
+  if (!isBlankOrEmDash(licenseType)) return licenseType!.trim();
+  return SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY;
 }
 
 function isFiniteRiskScore(value: number | null | undefined): value is number {

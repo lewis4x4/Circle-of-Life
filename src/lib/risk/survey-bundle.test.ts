@@ -4,6 +4,7 @@ import {
   SURVEY_BUNDLE_PRINT_NO_ADMINISTRATOR_COPY,
   SURVEY_BUNDLE_PRINT_NO_ENTITY_COPY,
   SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY,
+  SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY,
 } from "./survey-bundle-print-display-copy";
 import { buildSurveyBundlePacket, surveyBundleToMarkdown } from "./survey-bundle";
 
@@ -13,6 +14,8 @@ function minimalPacket(
   entityName: string | null,
   administratorName: string | null = null,
   licenseNumber: string | null = null,
+  licenseType: string | null = null,
+  alfLicenseType: string | null = null,
 ) {
   return buildSurveyBundlePacket({
     facility: {
@@ -22,8 +25,8 @@ function minimalPacket(
       entityName,
       administratorName,
       licenseNumber,
-      licenseType: null,
-      alfLicenseType: null,
+      licenseType,
+      alfLicenseType,
       totalLicensedBeds: 0,
     },
     riskSnapshot: null,
@@ -83,24 +86,66 @@ describe("surveyBundleToMarkdown administrator line", () => {
 describe("surveyBundleToMarkdown license line", () => {
   it("names a missing license number with the print gap copy", () => {
     const markdown = surveyBundleToMarkdown(minimalPacket(null, null, null));
-    expect(markdown).toContain(`License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`);
+    expect(markdown).toContain(
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
     expect(markdown).not.toContain("License: Missing");
+    expect(markdown).not.toContain("unspecified");
   });
 
   it("names a blank or em-dash license number with the print gap copy", () => {
     expect(surveyBundleToMarkdown(minimalPacket(null, null, ""))).toContain(
-      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`,
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
     );
     expect(surveyBundleToMarkdown(minimalPacket(null, null, "   "))).toContain(
-      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`,
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
     );
     expect(surveyBundleToMarkdown(minimalPacket(null, null, EM_DASH))).toContain(
-      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (unspecified)`,
+      `License: ${SURVEY_BUNDLE_PRINT_NO_LICENSE_COPY} (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
     );
   });
 
   it("keeps a posted license number", () => {
     const markdown = surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001"));
-    expect(markdown).toContain("License: ALF-001 (unspecified)");
+    expect(markdown).toContain(
+      `License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
+  });
+
+  it("names a missing license type with the print gap copy", () => {
+    const markdown = surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", null, null));
+    expect(markdown).toContain(`License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`);
+    expect(markdown).not.toContain("unspecified");
+  });
+
+  it("names a blank or em-dash license type with the print gap copy", () => {
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", "", null))).toContain(
+      `License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", "   ", null))).toContain(
+      `License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", EM_DASH, null))).toContain(
+      `License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", null, ""))).toContain(
+      `License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
+    expect(surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", null, EM_DASH))).toContain(
+      `License: ALF-001 (${SURVEY_BUNDLE_PRINT_NO_LICENSE_TYPE_COPY})`,
+    );
+  });
+
+  it("prefers alfLicenseType over licenseType", () => {
+    const markdown = surveyBundleToMarkdown(
+      minimalPacket(null, null, "ALF-001", "limited", "standard"),
+    );
+    expect(markdown).toContain("License: ALF-001 (standard)");
+    expect(markdown).not.toContain("limited");
+  });
+
+  it("falls back to licenseType when alfLicenseType is missing", () => {
+    const markdown = surveyBundleToMarkdown(minimalPacket(null, null, "ALF-001", "limited", null));
+    expect(markdown).toContain("License: ALF-001 (limited)");
   });
 });

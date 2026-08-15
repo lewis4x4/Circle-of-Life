@@ -2,6 +2,7 @@ import {
   formatSurveyBundlePrintAdministratorName,
   formatSurveyBundlePrintEntityName,
   formatSurveyBundlePrintLicenseNumber,
+  formatSurveyBundlePrintLicenseType,
 } from "./survey-bundle-print-display-copy";
 
 export type SurveyBundleFacility = {
@@ -225,7 +226,7 @@ export function surveyBundleToMarkdown(packet: SurveyBundlePacket) {
     `Facility: ${packet.facility.name}`,
     `Entity: ${formatSurveyBundlePrintEntityName(packet.facility.entityName)}`,
     `Administrator: ${formatSurveyBundlePrintAdministratorName(packet.facility.administratorName)}`,
-    `License: ${formatSurveyBundlePrintLicenseNumber(packet.facility.licenseNumber)} (${packet.facility.alfLicenseType ?? packet.facility.licenseType ?? "unspecified"})`,
+    `License: ${formatSurveyBundlePrintLicenseNumber(packet.facility.licenseNumber)} (${formatSurveyBundlePrintLicenseType(packet.facility.alfLicenseType, packet.facility.licenseType)})`,
     `Licensed beds: ${packet.facility.totalLicensedBeds}`,
     `Packet coverage: ${packet.packetCoveragePct}%`,
     "",
