@@ -61,3 +61,23 @@ export function formatCaregiverEmarRoomLabel(input: {
   const bedLabel = input.bedLabel?.trim();
   return bedLabel ? `${roomNumber}-${bedLabel}` : roomNumber;
 }
+
+/**
+ * Normalize a census room label for caregiver queue rows.
+ * Bridges legacy "—" labels from shared resident fetches.
+ */
+export function caregiverDisplayRoomLabel(roomLabel?: string | null): string {
+  const trimmed = roomLabel?.trim();
+  if (!trimmed || trimmed === "—") return CAREGIVER_EMAR_NO_ROOM_LABEL;
+  return trimmed;
+}
+
+/** Title when no PRN doses need an effectiveness reassessment. */
+export function caregiverPrnFollowupEmptyNoticeTitle(): string {
+  return "No pending PRN reassessments.";
+}
+
+/** Helper line under the PRN follow-up empty state. */
+export function caregiverPrnFollowupEmptyNoticeHelper(): string {
+  return "The list fills from documented PRN doses that still need an effectiveness reassessment.";
+}

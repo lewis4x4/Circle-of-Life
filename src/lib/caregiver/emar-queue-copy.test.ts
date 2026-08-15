@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   CAREGIVER_EMAR_NO_ROOM_LABEL,
+  caregiverDisplayRoomLabel,
   caregiverEmarEmptyNoticeHelper,
   caregiverEmarEmptyNoticeTitle,
   caregiverEmarMetricDisplay,
   caregiverEmarMetricEmptyCopy,
+  caregiverPrnFollowupEmptyNoticeHelper,
+  caregiverPrnFollowupEmptyNoticeTitle,
   formatCaregiverEmarRoomLabel,
 } from "./emar-queue-copy";
 
@@ -68,5 +71,27 @@ describe("caregiverEmarEmptyNotice", () => {
   it("explains an empty pass window in one title and helper line", () => {
     expect(caregiverEmarEmptyNoticeTitle()).toBe("No doses in this pass window");
     expect(caregiverEmarEmptyNoticeHelper()).toContain("active medications with scheduled times");
+  });
+});
+
+describe("caregiverDisplayRoomLabel", () => {
+  it("returns explicit copy instead of a silent dash", () => {
+    expect(caregiverDisplayRoomLabel(null)).toBe(CAREGIVER_EMAR_NO_ROOM_LABEL);
+    expect(caregiverDisplayRoomLabel(undefined)).toBe(CAREGIVER_EMAR_NO_ROOM_LABEL);
+    expect(caregiverDisplayRoomLabel("")).toBe(CAREGIVER_EMAR_NO_ROOM_LABEL);
+    expect(caregiverDisplayRoomLabel("   ")).toBe(CAREGIVER_EMAR_NO_ROOM_LABEL);
+    expect(caregiverDisplayRoomLabel("—")).toBe(CAREGIVER_EMAR_NO_ROOM_LABEL);
+  });
+
+  it("keeps a real room label from census", () => {
+    expect(caregiverDisplayRoomLabel("204-A")).toBe("204-A");
+    expect(caregiverDisplayRoomLabel(" 204 ")).toBe("204");
+  });
+});
+
+describe("caregiverPrnFollowupEmptyNotice", () => {
+  it("explains an empty PRN follow-up list in one title and helper line", () => {
+    expect(caregiverPrnFollowupEmptyNoticeTitle()).toBe("No pending PRN reassessments.");
+    expect(caregiverPrnFollowupEmptyNoticeHelper()).toContain("documented PRN doses");
   });
 });
