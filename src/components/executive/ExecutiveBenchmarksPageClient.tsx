@@ -20,6 +20,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import {
+  formatExecutiveOccupancyBarLabel,
+  formatExecutiveOccupancyPct,
+} from "@/lib/executive/executive-display-copy";
 import type { CrossOperatorBenchmarkSettingRow, ExecutiveBenchmarksData } from "@/lib/executive/load-benchmark-data";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -607,7 +611,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                       <TableRow className="bg-muted/40">
                         <TableCell className="font-medium">Organization (portfolio)</TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {compareData.orgKpi.census.occupancyPct ?? "—"}
+                          {formatExecutiveOccupancyPct(compareData.orgKpi.census.occupancyPct)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {compareData.orgKpi.census.occupiedResidents} / {compareData.orgKpi.census.licensedBeds}
@@ -626,7 +630,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                         <TableRow key={f.id}>
                           <TableCell className="font-medium">{f.name}</TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {f.kpi.census.occupancyPct ?? "—"}
+                            {formatExecutiveOccupancyPct(f.kpi.census.occupancyPct)}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {f.kpi.census.occupiedResidents} / {f.kpi.census.licensedBeds}
@@ -686,9 +690,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
                               <CohortBarRow
                                 key={`occ-${idx}`}
                                 label={s.label}
-                                display={
-                                  occ != null && Number.isFinite(occ) ? `${occ.toFixed(1)}%` : "—"
-                                }
+                                display={formatExecutiveOccupancyBarLabel(occ)}
                                 widthPct={w}
                               />
                             );

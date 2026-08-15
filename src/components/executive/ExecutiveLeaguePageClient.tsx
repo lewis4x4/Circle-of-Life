@@ -15,6 +15,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { downloadBlobFromUrl } from "@/lib/download-blob";
 import type { BoardPacketSummary, LeagueFacilityRow } from "@/lib/executive/league";
 import type { ExecutiveLeagueData } from "@/lib/executive/load-league-data";
+import {
+  formatExecutiveCompletenessPct,
+  formatExecutiveConfidenceBand,
+  formatExecutiveLastSavedAt,
+  formatExecutiveLeagueScore,
+  formatExecutiveOccupancyPctWithSuffix,
+  formatExecutivePacketDate,
+  formatExecutivePacketStatus,
+  formatExecutiveRiskScore,
+} from "@/lib/executive/executive-display-copy";
 import { formatCents } from "@/lib/finance/format-cents";
 
 type ExecutiveLeaguePageClientProps = {
@@ -168,7 +178,7 @@ export default function ExecutiveLeaguePageClient({
             <LeagueMetricCard
               icon={MessageSquare}
               label="Portfolio average"
-              value={summary.averageLeagueScore != null ? `${summary.averageLeagueScore}/100` : "—"}
+              value={formatExecutiveLeagueScore(summary.averageLeagueScore)}
               detail={summary.leadingFacility ? `Leader: ${summary.leadingFacility.facilityName}` : "No facility rows"}
               tone={summary.averageLeagueScore != null && summary.averageLeagueScore >= 80 ? "emerald" : "indigo"}
             />
@@ -192,7 +202,7 @@ export default function ExecutiveLeaguePageClient({
               value={boardSummary.weekOf ?? "None"}
               detail={
                 boardSummary.weekOf
-                  ? `${boardSummary.confidenceBand ?? "n/a"} confidence · ${Math.round(boardSummary.completenessPct ?? 0)}% complete`
+                  ? `${formatExecutiveConfidenceBand(boardSummary.confidenceBand)} · ${formatExecutiveCompletenessPct(boardSummary.completenessPct)} complete`
                   : "No published standup packet yet"
               }
               tone={boardSummary.weekOf ? "indigo" : "amber"}
@@ -232,10 +242,10 @@ export default function ExecutiveLeaguePageClient({
                           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{row.leagueLabel}</div>
                         </td>
                         <td className="py-3 pr-4">
-                          <div className="tabular-nums">{row.riskScore != null ? `${row.riskScore}/100` : "—"}</div>
+                          <div className="tabular-nums">{formatExecutiveRiskScore(row.riskScore)}</div>
                           <div className="text-xs capitalize text-muted-foreground">{row.riskLevel ?? "no nightly score"}</div>
                         </td>
-                        <td className="py-3 pr-4 tabular-nums">{row.occupancyPct != null ? `${row.occupancyPct}%` : "—"}</td>
+                        <td className="py-3 pr-4 tabular-nums">{formatExecutiveOccupancyPctWithSuffix(row.occupancyPct)}</td>
                         <td className="py-3 pr-4">
                           <div className="tabular-nums">{formatCents(row.totalBalanceDueCents)}</div>
                           <div className="text-xs text-muted-foreground">{row.openInvoicesCount} open invoice(s)</div>
@@ -261,14 +271,14 @@ export default function ExecutiveLeaguePageClient({
               </CardHeader>
               <CardContent className="space-y-4">
                 <LeagueValue label="Published week" value={boardSummary.weekOf ?? "Not published"} />
-                <LeagueValue label="Packet status" value={boardSummary.status ?? "—"} />
-                <LeagueValue label="Confidence" value={boardSummary.confidenceBand ?? "—"} />
+                <LeagueValue label="Packet status" value={formatExecutivePacketStatus(boardSummary.status)} />
+                <LeagueValue label="Confidence" value={formatExecutiveConfidenceBand(boardSummary.confidenceBand)} />
                 <LeagueValue
                   label="Completeness"
-                  value={boardSummary.completenessPct != null ? `${Math.round(boardSummary.completenessPct)}%` : "—"}
+                  value={formatExecutiveCompletenessPct(boardSummary.completenessPct)}
                 />
                 <LeagueValue label="Saved board packets" value={String(boardSummary.savedPacketCount)} />
-                <LeagueValue label="Last saved" value={boardSummary.lastSavedAt ? new Date(boardSummary.lastSavedAt).toLocaleString() : "—"} />
+                <LeagueValue label="Last saved" value={formatExecutiveLastSavedAt(boardSummary.lastSavedAt)} />
               </CardContent>
             </Card>
           </div>
@@ -304,7 +314,7 @@ export default function ExecutiveLeaguePageClient({
                       <td className="py-3 pr-4 tabular-nums">{row.activePolicies}</td>
                       <td className="py-3 pr-4 tabular-nums">{row.expiringPolicies60d}</td>
                       <td className="py-3 pr-4 tabular-nums">{row.pendingRenewals}</td>
-                      <td className="py-3 pr-4">{row.latestPacketAt ? new Date(row.latestPacketAt).toLocaleDateString() : "—"}</td>
+                      <td className="py-3 pr-4">{formatExecutivePacketDate(row.latestPacketAt)}</td>
                       <td className="py-3">{row.primaryConcern}</td>
                     </tr>
                   ))}
