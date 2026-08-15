@@ -4,6 +4,7 @@
  */
 
 export const OPERATIONS_NO_FACILITY_COPY = "No facility posted";
+export const OPERATIONS_NO_MISSED_AT_COPY = "No time posted";
 
 const EM_DASH = "—";
 const LEGACY_UNKNOWN = "Unknown";
@@ -24,6 +25,11 @@ function isBlankEmDashOrLegacyFacilityName(value: string): boolean {
   );
 }
 
+function isBlankOrEmDash(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed === "" || trimmed === EM_DASH;
+}
+
 /** Facility name on an operation task when the join is missing, blank, em dash, or legacy generic copy. */
 export function formatOperationsFacilityName(name: string | null | undefined): string {
   if (name == null) return OPERATIONS_NO_FACILITY_COPY;
@@ -32,4 +38,14 @@ export function formatOperationsFacilityName(name: string | null | undefined): s
     return OPERATIONS_NO_FACILITY_COPY;
   }
   return trimmed;
+}
+
+/** Missed-at timestamp on an operation task when the value is missing, blank, em dash, or unparseable. */
+export function formatOperationsMissedAt(iso: string | null | undefined): string {
+  if (iso == null) return OPERATIONS_NO_MISSED_AT_COPY;
+  const trimmed = iso.trim();
+  if (isBlankOrEmDash(trimmed)) return OPERATIONS_NO_MISSED_AT_COPY;
+  const date = new Date(trimmed);
+  if (Number.isNaN(date.getTime())) return OPERATIONS_NO_MISSED_AT_COPY;
+  return date.toLocaleString();
 }

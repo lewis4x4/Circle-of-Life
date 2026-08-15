@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatOperationsMissedAt } from "@/lib/operations/operations-display-copy";
 
 type TaskInstance = {
   id: string;
@@ -326,7 +327,7 @@ export default function MissedTasksPage() {
                 </div>
                 <div>
                   <div className="text-muted-foreground">Missed At</div>
-                  <div>{selectedTask.missed_at ? new Date(selectedTask.missed_at).toLocaleString() : "—"}</div>
+                  <div>{formatOperationsMissedAt(selectedTask.missed_at)}</div>
                 </div>
               </div>
               {selectedTask.due_at && (
