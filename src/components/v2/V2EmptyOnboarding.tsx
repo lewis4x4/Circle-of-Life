@@ -17,14 +17,14 @@ const STEPS_BY_DASHBOARD: Record<V2DashboardId, readonly Step[]> = {
   "command-center": [
     {
       title: "Run the executive KPI snapshot",
-      body: "Generates open alerts, eMAR variance, falls, survey window, active admits, and family-message backlog from live operational data.",
+      body: "Generates open alerts, eMAR variance, falls, survey window, active admits, and family bulletin coverage from live operational data.",
       href: "/admin/executive/settings",
       cta: "Open snapshot settings",
     },
     {
       title: "Wire eMAR + incident feeds",
       body: "Connect the eMAR variance + incident streams so the triage queue, alerts, and action queue populate.",
-      href: "/admin/admin/medications",
+      href: "/admin/medications",
       cta: "Open medications",
     },
     {
@@ -64,13 +64,13 @@ const STEPS_BY_DASHBOARD: Record<V2DashboardId, readonly Step[]> = {
     {
       title: "Generate the first quality measure run",
       body: "Computes eMAR variance, falls per 1k bed-days, pressure injuries, readmissions, care plans on time, and infection rate.",
-      href: "/admin/quality/measures",
-      cta: "Open quality measures",
+      href: "/admin/quality",
+      cta: "Open quality hub",
     },
     {
       title: "Connect incident + infection data",
       body: "Quality metrics derive from the incident queue + infection-control log. Confirm those feeds before reviewing trends.",
-      href: "/admin/admin/infection-control",
+      href: "/admin/infection-control",
       cta: "Open infection control",
     },
     {
@@ -84,19 +84,19 @@ const STEPS_BY_DASHBOARD: Record<V2DashboardId, readonly Step[]> = {
     {
       title: "Enable rounding for one facility",
       body: "Activates round cadence tracking, watch load, escalation pipeline, and integrity flags for the selected facility.",
-      href: "/admin/admin/rounding",
+      href: "/admin/rounding",
       cta: "Open rounding hub",
     },
     {
       title: "Configure round templates",
       body: "Set the question packs and expected cadence per unit. Rounds inherit these and surface on the round-cadence panel.",
-      href: "/admin/admin/rounding/plans",
+      href: "/admin/rounding/plans",
       cta: "Open plans",
     },
     {
       title: "Run the first integrity scan",
       body: "Surfaces late-entry rounds, missing evidence, and acknowledgement gaps. Populates the integrity score KPI.",
-      href: "/admin/admin/rounding/integrity",
+      href: "/admin/rounding/integrity",
       cta: "Open integrity",
     },
   ],
@@ -126,8 +126,8 @@ export function V2EmptyOnboarding({ dashboardId, facilityCount }: V2EmptyOnboard
         </h2>
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           {facilityCount > 0
-            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. Once the underlying jobs run, this dashboard fills in automatically.`
-            : "Add a facility to start collecting operational data. Once it's in scope, the underlying jobs will populate this dashboard."}
+            ? `${facilityCount} ${facilityCount === 1 ? "facility is" : "facilities are"} in scope. KPI tiles stay labeled "No value posted" until the jobs below finish — not silent blanks.`
+            : "No facilities in scope yet. Add a facility, then complete the steps below so snapshot jobs can populate this dashboard."}
         </p>
       </div>
 
