@@ -170,7 +170,7 @@ export const PILLARS: Pillar[] = [
  */
 export const AUXILIARY_ROUTES: PillarItem[] = [
   { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
-  { key: "snack-pass", href: "/admin/dietary", label: "Snack pass", icon: Cookie },
+  { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie },
   { key: "finance", href: "/admin/finance", label: "Finance hub", icon: Landmark },
   { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
   { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
@@ -255,7 +255,7 @@ export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS): SectionJum
   return SECTION_JUMP_QUICK_KEYS.map((key) => byKey.get(key))
     .filter((entry): entry is SectionJumpEntry => entry != null)
     .map((entry) => {
-      const quickLabel = SECTION_JUMP_QUICK_LABELS[entry.key];
+      const quickLabel = SECTION_JUMP_QUICK_LABELS[entry.key as SectionJumpQuickKey];
       return quickLabel ? { ...entry, label: quickLabel } : entry;
     });
 }

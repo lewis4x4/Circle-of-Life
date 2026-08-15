@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Utensils } from "lucide-react";
+import { Utensils, Cookie } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -41,6 +41,11 @@ const MEAL_STATUS_LABELS: Record<MealLogStatus, string> = {
   out_of_facility: "Out of facility",
   not_observed: "Not observed",
 };
+
+export const SNACK_PASS_SECTION_ID = "snack-pass";
+
+export const SNACK_PASS_HELPER_COPY =
+  "Record when the snack round happened and who passed it. Facility-level only — time and passer, no snack contents or resident counts.";
 
 const DIET_ORDER_STATUS_FILTERS: { value: "all" | DietOrderStatus; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -175,6 +180,7 @@ export function AdminDietaryPageClient({
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
+  const snackPassSectionRef = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<DietRow[]>(initialBootstrap.rows);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialLoadError);
@@ -314,6 +320,16 @@ export function AdminDietaryPageClient({
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
+  useEffect(() => {
+    if (!facilityReady || typeof window === "undefined") return;
+    if (window.location.hash !== `#${SNACK_PASS_SECTION_ID}`) return;
+    const section = snackPassSectionRef.current;
+    if (!section) return;
+    requestAnimationFrame(() => {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [facilityReady]);
+
   const saveMealLog = useCallback(async () => {
     if (!facilityReady || !selectedFacilityId || !organizationId || !mealForm.resident_id) return;
     setSavingMeal(true);
@@ -350,6 +366,12 @@ export function AdminDietaryPageClient({
     setSavingSnack(true);
     setError(null);
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        throw new Error("Sign in to log a snack pass.");
+      }
       const snackAt = new Date(snackForm.snack_at);
       if (Number.isNaN(snackAt.getTime())) {
         throw new Error("Snack time is required.");
@@ -358,8 +380,10 @@ export function AdminDietaryPageClient({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
         snack_at: snackAt.toISOString(),
+        passed_by_user_id: user.id,
       }) as never);
       if (insertErr) throw insertErr;
+      setSnackForm({ snack_at: new Date().toISOString().slice(0, 16) });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save snack log.");
@@ -458,7 +482,74 @@ export function AdminDietaryPageClient({
       )}
 
       {facilityReady && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <>
+          <section
+            id={SNACK_PASS_SECTION_ID}
+            ref={snackPassSectionRef}
+            aria-labelledby="snack-pass-heading"
+            className="scroll-mt-24 rounded-lg border border-primary-200/70 bg-primary-50/40 p-6 shadow-sm dark:border-primary-500/20 dark:bg-primary-950/20"
+          >
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-4 lg:max-w-xl">
+                <div className="space-y-2">
+                  <h2
+                    id="snack-pass-heading"
+                    className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-2"
+                  >
+                    <Cookie className="h-5 w-5 text-primary-600 dark:text-primary-400" aria-hidden />
+                    Snack pass
+                  </h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{SNACK_PASS_HELPER_COPY}</p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <label className="flex flex-1 flex-col gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    Pass time
+                    <input
+                      type="datetime-local"
+                      value={snackForm.snack_at}
+                      onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                      aria-label="Snack pass time"
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    size="default"
+                    disabled={savingSnack}
+                    className="h-10 shrink-0 rounded-lg px-6 font-semibold"
+                    onClick={() => void saveSnackLog()}
+                  >
+                    {savingSnack ? "Saving…" : "Log snack pass"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="w-full lg:max-w-md">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-3">
+                  Recent snack passes
+                </p>
+                {loading ? (
+                  <p className="text-xs text-muted-foreground">Loading…</p>
+                ) : snackLogs.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                    No snack passes logged yet for this facility.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {snackLogs.slice(0, 5).map((log) => (
+                      <li key={log.id} className="rounded-lg border border-slate-200/70 bg-white px-3 py-2 text-xs text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                        <span className="font-medium">{format(new Date(log.snack_at), "MMM d, h:mm a")}</span>
+                        <span className="text-muted-foreground"> · Snack passed — </span>
+                        <span>{log.user_profiles?.full_name?.trim() || "Staff"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* ACTION QUEUE: Dietary Risk Board */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
@@ -638,7 +729,7 @@ export function AdminDietaryPageClient({
             </div>
 
             <div className="mt-6 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 space-y-5">
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Meal / snack log</h3>
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Meal log</h3>
               <div className="space-y-3 text-xs">
                 <select
                   value={mealForm.resident_id}
@@ -700,40 +791,25 @@ export function AdminDietaryPageClient({
                 </Button>
               </div>
 
-              <div className="space-y-3 text-xs border-t border-slate-200/70 dark:border-white/10 pt-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                  Snack passed
-                </p>
-                <input
-                  type="datetime-local"
-                  value={snackForm.snack_at}
-                  onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  aria-label="Snack pass time"
-                />
-                <Button type="button" size="sm" disabled={savingSnack} onClick={() => void saveSnackLog()}>
-                  {savingSnack ? "Saving…" : "Log snack passed"}
-                </Button>
-              </div>
-
               <div className="space-y-2 border-t border-slate-200/70 dark:border-white/10 pt-4">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Recent meal entries</p>
-                {mealLogs.slice(0, 3).map((log) => (
-                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
-                    {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
+                {mealLogs.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    No meal entries logged yet for this facility.
                   </p>
-                ))}
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pt-2">Recent snack passes</p>
-                {snackLogs.slice(0, 3).map((log) => (
-                  <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
-                    {format(new Date(log.snack_at), "MMM d, h:mm a")} — Snack passed — {log.user_profiles?.full_name?.trim() || "Staff"}
-                  </p>
-                ))}
+                ) : (
+                  mealLogs.slice(0, 3).map((log) => (
+                    <p key={log.id} className="text-xs text-slate-600 dark:text-slate-300">
+                      {log.meal_date} {log.meal_type}: {`${log.residents?.first_name ?? ""} ${log.residents?.last_name ?? ""}`.trim() || "Resident"} — {MEAL_STATUS_LABELS[log.status]}
+                    </p>
+                  ))
+                )}
               </div>
             </div>
           </div>
 
         </div>
+        </>
       )}
       </div>
     </div>
