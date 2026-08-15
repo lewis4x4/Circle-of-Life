@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import {
+  formatMedicationPrescriber,
+  formatMedicationStrength,
+} from "@/lib/clinical/medications-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import {
@@ -155,7 +159,9 @@ export default function AdminResidentMedicationsPage() {
                                 <ShieldAlert className="absolute -top-2 -left-2 lg:static lg:mb-1 w-4 h-4 text-destructive" />
                               )}
                               <span className="font-semibold text-base text-foreground tracking-tight leading-tight">{m.medication_name}</span>
-                              <span className="text-xs font-medium text-muted-foreground mt-1">{m.strength ?? "—"}</span>
+                              <span className="text-xs font-medium text-muted-foreground mt-1">
+                                {formatMedicationStrength(m.strength)}
+                              </span>
                             </div>
 
                             <div className="flex flex-col">
@@ -177,7 +183,9 @@ export default function AdminResidentMedicationsPage() {
 
                             <div className="flex flex-col">
                               <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Prescriber</span>
-                              <span className="text-xs font-medium text-muted-foreground">{m.prescriber_name ?? "—"}</span>
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {formatMedicationPrescriber(m.prescriber_name)}
+                              </span>
                             </div>
 
                             <div className="flex flex-col lg:items-end">
