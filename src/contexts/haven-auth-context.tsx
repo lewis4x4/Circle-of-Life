@@ -44,8 +44,10 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
+  const loadGenerationRef = useRef(0);
 
   const load = useCallback(async () => {
+    const generation = loadGenerationRef.current;
     setLoading(true);
     try {
       // Derive identity from the locally cached session instead of paying a
@@ -54,6 +56,8 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       const sessionRes = await withSupabaseAuthLockRetry(() => supabase.auth.getSession());
       const session = sessionRes.data.session;
       const user = session?.user ?? null;
+
+      if (generation !== loadGenerationRef.current) return;
 
       setUser(user);
       setSession(session ?? null);
@@ -77,6 +81,8 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", user.id)
         .is("deleted_at", null)
         .maybeSingle();
+
+      if (generation !== loadGenerationRef.current) return;
 
       if (profileError) {
         const errObj = profileError as unknown as Record<string, unknown>;
@@ -119,6 +125,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
     } catch (error) {
+      if (generation !== loadGenerationRef.current) return;
       console.error("[HavenAuth] Failed to resolve browser session", error);
       clearClientRoleContext(supabase);
       setSession(null);
@@ -129,7 +136,9 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       setFullName(null);
       setAvatarUrl(null);
     } finally {
-      setLoading(false);
+      if (generation === loadGenerationRef.current) {
+        setLoading(false);
+      }
     }
   }, [supabase]);
 
@@ -150,9 +159,10 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
+      loadGenerationRef.current += 1;
       clearClientRoleContext(supabase);
       queueMicrotask(() => {
-        void safeLoad();
+        void load();
       });
     });
     return () => subscription.unsubscribe();
