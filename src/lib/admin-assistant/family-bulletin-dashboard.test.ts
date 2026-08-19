@@ -15,8 +15,10 @@ const readSource = (relativePath: string) =>
 
 const assistantBriefPath = "src/lib/admin-assistant/dashboard-brief.ts";
 const coordinatorBriefPath = "src/lib/coordinator/dashboard-brief.ts";
-const assistantPagePath = "src/app/(admin)/admin/assistant-dashboard/page.tsx";
-const coordinatorPagePath = "src/app/(admin)/admin/coordinator-dashboard/page.tsx";
+const assistantPagePath = "src/components/admin-assistant/AssistantDashboardPageClient.tsx";
+const coordinatorPagePath = "src/components/coordinator/CoordinatorDashboardPageClient.tsx";
+const assistantServerPagePath = "src/app/(admin)/admin/assistant-dashboard/page.tsx";
+const coordinatorServerPagePath = "src/app/(admin)/admin/coordinator-dashboard/page.tsx";
 const routingPath = "src/lib/auth/dashboard-routing.ts";
 
 const forbiddenInboxCopy = [
@@ -70,6 +72,29 @@ describe("assistant and coordinator dashboard bulletin tile copy", () => {
     const assistantSource = readSource(assistantPagePath);
     expect(assistantSource).toMatch(/FAMILY_BULLETIN_DASHBOARD_RECENT_EMPTY_TITLE/);
     expect(assistantSource).toMatch(/FAMILY_BULLETIN_DASHBOARD_RECENT_EMPTY_DESCRIPTION/);
+  });
+});
+
+describe("assistant and coordinator dashboard named loading", () => {
+  it("shows named loading copy instead of a silent skeleton-only gate", () => {
+    const assistantSource = readSource(assistantPagePath);
+    expect(assistantSource).toMatch(/ADMIN_ASSISTANT_DASHBOARD_LOADING_HEADLINE/);
+    expect(assistantSource).toMatch(/formatAdminAssistantDashboardKpiValue/);
+    expect(assistantSource).not.toMatch(/if \(isLoading\) return <LoadingSkeleton/);
+
+    const coordinatorSource = readSource(coordinatorPagePath);
+    expect(coordinatorSource).toMatch(/COORDINATOR_DASHBOARD_LOADING_HEADLINE/);
+    expect(coordinatorSource).toMatch(/formatCoordinatorDashboardKpiValue/);
+    expect(coordinatorSource).not.toMatch(/if \(isLoading\) return <LoadingSkeleton/);
+  });
+
+  it("server pages prefetch the brief for first paint", () => {
+    for (const relativePath of [assistantServerPagePath, coordinatorServerPagePath]) {
+      const source = readSource(relativePath);
+      expect(source).toMatch(/fetchAdminAssistantDashboardBrief|fetchCoordinatorDashboardBrief/);
+      expect(source).toMatch(/initialBrief/);
+      expect(source).toMatch(/createClient\(\)/);
+    }
   });
 });
 

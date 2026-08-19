@@ -3,9 +3,12 @@
  * Aggregates care plans, assessments, family bulletin notes, admissions pipeline.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { formatCoordinatorDashboardResidentName } from "@/lib/coordinator/dashboard-brief-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 export type CoordinatorDashboardBrief = {
   activeCarePlans: number;
@@ -34,8 +37,8 @@ type PendingAdmissionRow = {
 
 export async function fetchCoordinatorDashboardBrief(
   facilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
 ): Promise<CoordinatorDashboardBrief> {
-  const supabase = createClient();
 
   const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;

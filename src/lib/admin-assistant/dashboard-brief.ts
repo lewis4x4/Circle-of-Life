@@ -4,9 +4,12 @@
  * NO clinical data, NO financial data.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { formatFamilyBulletinDashboardPreview } from "@/lib/admin/family-bulletin-dashboard-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 export type AdminAssistantDashboardBrief = {
   censusCount: number;
@@ -30,8 +33,8 @@ type RecentBulletinRow = {
 
 export async function fetchAdminAssistantDashboardBrief(
   facilityId: string | null,
+  supabase: SupabaseClient<Database> = createClient(),
 ): Promise<AdminAssistantDashboardBrief> {
-  const supabase = createClient();
 
   const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
