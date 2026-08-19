@@ -22,7 +22,7 @@ permissions:
 jobs:
   enable-pitr:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       # Public Haven project ref (also in AGENTS.md). Do not take
       # vars.SUPABASE_PROJECT_REF — a mismatched secret would 403 billing.
@@ -37,6 +37,7 @@ jobs:
           import json
           import os
           import sys
+          import time
           import urllib.error
           import urllib.request
 
@@ -94,24 +95,53 @@ jobs:
                   selected = selected.get("selected_addons") or []
               return selected if isinstance(selected, list) else []
 
+          def variant_id(value):
+              if isinstance(value, dict):
+                  return str(value.get("id") or value.get("name") or "").strip()
+              return str(value or "").strip()
+
+          def inspect_addons(payload):
+              compute = None
+              pitr_present = False
+              for item in selected_addons(payload):
+                  if not isinstance(item, dict):
+                      continue
+                  kind = str(item.get("type") or item.get("addon_type") or "")
+                  item_variant = variant_id(item.get("variant") or item.get("addon_variant"))
+                  print("-", kind or "(unknown)", item_variant or "(none)")
+                  if kind == "pitr" or item_variant.startswith("pitr_"):
+                      pitr_present = True
+                  if "compute" in kind or item_variant.startswith("ci_"):
+                      compute = item_variant or kind
+              return compute, pitr_present
+
+          def apply_addon(body, label, attempts=6, wait_s=130):
+              last = (None, {})
+              for attempt in range(1, attempts + 1):
+                  code, payload = api("PATCH", f"projects/{ref}/billing/addons", body)
+                  last = (code, payload)
+                  msg = payload.get("message") if isinstance(payload, dict) else ""
+                  print(f"{label} PATCH attempt {attempt} -> {code}")
+                  if msg:
+                      print(f"  {label} message:", str(msg)[:240])
+                  if code < 400:
+                      return last
+                  retryable = code in {429, 400} and any(
+                      token in str(msg).lower()
+                      for token in ("try again", "not in a healthy state", "still processing")
+                  )
+                  if not retryable or attempt == attempts:
+                      return last
+                  print(f"Waiting {wait_s}s before retry...")
+                  time.sleep(wait_s)
+              return last
+
           code, addons = api("GET", f"projects/{ref}/billing/addons")
           print(f"GET addons -> {code}")
           if isinstance(addons, dict) and addons.get("message"):
               print("addons message:", str(addons.get("message"))[:240])
 
-          compute = None
-          pitr_present = False
-          for item in selected_addons(addons):
-              if not isinstance(item, dict):
-                  continue
-              kind = str(item.get("type") or item.get("addon_type") or "")
-              item_variant = str(item.get("variant") or item.get("addon_variant") or "")
-              print("-", kind or "(unknown)", item_variant or "(none)")
-              if kind == "pitr" or item_variant.startswith("pitr_"):
-                  pitr_present = True
-              if "compute" in kind or item_variant.startswith("ci_"):
-                  compute = item_variant or kind
-
+          compute, pitr_present = inspect_addons(addons)
           large_enough = {
               "ci_small",
               "ci_medium",
@@ -128,23 +158,12 @@ jobs:
           if not pitr_present:
               if compute not in large_enough:
                   print("Upgrading compute to ci_small so PITR can be enabled...")
-                  ccode, cbody = api(
-                      "PATCH",
-                      f"projects/{ref}/billing/addons",
+                  apply_addon(
                       {"addon_type": "compute_instance", "addon_variant": "ci_small"},
+                      "compute",
                   )
-                  print(f"Compute PATCH -> {ccode}")
-                  if isinstance(cbody, dict) and cbody.get("message"):
-                      print("compute message:", str(cbody.get("message"))[:240])
               print(f"Enabling PITR {variant}...")
-              pcode, pbody = api(
-                  "PATCH",
-                  f"projects/{ref}/billing/addons",
-                  {"addon_type": "pitr", "addon_variant": variant},
-              )
-              print(f"PITR PATCH -> {pcode}")
-              if isinstance(pbody, dict) and pbody.get("message"):
-                  print("pitr message:", str(pbody.get("message"))[:240])
+              apply_addon({"addon_type": "pitr", "addon_variant": variant}, "pitr")
           else:
               print("PITR add-on already present.")
 
