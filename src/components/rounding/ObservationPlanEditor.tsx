@@ -155,6 +155,26 @@ function residentComboboxLabel(resident: ResidentOption) {
   return `${name} · Room ${residentRoom(resident)} · ${acuitySegment}`;
 }
 
+function observationPlanAddRuleHelperCopy(rules: PlanRuleInput[]): string {
+  if (rules.length > 0) {
+    return "Add rule copies the last check so you can change the time. Haven will not invent a 7am–7pm hourly cadence.";
+  }
+
+  return "Haven will not invent a 7am–7pm hourly cadence or pre-fill times. Add each check manually.";
+}
+
+function observationPlanEmptyRulesDescription(cadenceProfile: ColDiscoveryCadenceProfile | null): string {
+  if (cadenceProfile === "pending") {
+    return "Plantation discovery cadence is pending owner decision. Add rules manually once Jessica supplies times — Haven will not pre-fill wing or 12-hour schedules.";
+  }
+
+  if (cadenceProfile === null) {
+    return "This facility is not on the COL Jessica discovery-round schedule. Add checks manually — Haven will not invent a 7am–7pm hourly window or pre-fill times.";
+  }
+
+  return "Add at least one rule to define when checks should occur.";
+}
+
 export function ObservationPlanEditor({
   planId,
   duplicatePlanId,
@@ -630,31 +650,32 @@ export function ObservationPlanEditor({
         </Card>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-foreground">Rules</h2>
               <p className="text-sm text-muted-foreground">Configure interval, daypart, and grace.</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setRules((current) => [...current, createObservationPlanRuleForAdd(current, current.length)])
-              }
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Add rule
-            </Button>
+            <div className="flex max-w-sm flex-col items-end gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setRules((current) => [...current, createObservationPlanRuleForAdd(current, current.length)])
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add rule
+              </Button>
+              <p className="text-[12px] leading-relaxed text-right text-muted-foreground">
+                {observationPlanAddRuleHelperCopy(rules)}
+              </p>
+            </div>
           </div>
 
           {rules.length === 0 ? (
             <AdminEmptyState
               title="No cadence rules yet"
-              description={
-                cadenceProfile === "pending"
-                  ? `Plantation discovery cadence is pending owner decision. Add rules manually once Jessica supplies times — Haven will not pre-fill wing or 12-hour schedules.`
-                  : "Add at least one rule to define when checks should occur."
-              }
+              description={observationPlanEmptyRulesDescription(cadenceProfile)}
             />
           ) : null}
 

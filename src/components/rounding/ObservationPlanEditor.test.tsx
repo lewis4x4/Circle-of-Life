@@ -172,6 +172,9 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
     expect(await screen.findByText("Facility cadence template")).toBeTruthy();
     expect(screen.getByDisplayValue("06:00")).toBeTruthy();
     expect(screen.getByText("COL Discovery Rounds — Day + Night")).toBeTruthy();
+    expect(
+      screen.getByText(/Add rule copies the last check so you can change the time\. Haven will not invent a 7am–7pm hourly cadence\./),
+    ).toBeTruthy();
   });
 
   it("Add rule on Jessica plans copies the last rule instead of inventing hourly 7am–7pm", async () => {
@@ -209,6 +212,9 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
     render(<ObservationPlanEditor title="Create observation plan" />);
 
     expect(await screen.findByText("No cadence rules yet")).toBeTruthy();
+    expect(
+      screen.getByText(/Haven will not invent a 7am–7pm hourly cadence or pre-fill times\. Add each check manually\./),
+    ).toBeTruthy();
     expect(screen.queryByLabelText(/Daypart start/i)).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Add rule" }));
@@ -228,6 +234,32 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
       active: true,
       sortOrder: 0,
     })).toBe(false);
+  });
+
+  it("shows honest empty copy for unknown facilities without inventing defaults", async () => {
+    facilityStoreState.selectedFacilityId = "facility-unknown";
+    facilityStoreState.availableFacilities = [{ id: "facility-unknown", name: "Unknown Site" }];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/rounding/plans/templates")) {
+          return new Response(JSON.stringify({ templates: [] }), { status: 200 });
+        }
+        return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+      }),
+    );
+
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText("No cadence rules yet")).toBeTruthy();
+    expect(
+      screen.getByText(/not on the COL Jessica discovery-round schedule\. Add checks manually — Haven will not invent a 7am–7pm hourly window or pre-fill times\./),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Haven will not invent a 7am–7pm hourly cadence or pre-fill times\. Add each check manually\./),
+    ).toBeTruthy();
   });
 
   it("still rejects legacy migration 219 12-hour interval defaults", () => {
