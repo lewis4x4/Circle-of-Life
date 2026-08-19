@@ -476,3 +476,15 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Verify** | Live guard includes `manager`; `anon` cannot execute the projection. Extended `migrations:verify:remote` probes for snack_logs + Command Center + discovery RPC — **49/49 PASS**. |
 | **Gate artifact** | `test-results/agent-gates/2026-08-19T19-42-45-834Z-schema-drift-310-316-repair.json` |
 | **Next** | PITR (Track A A5), then Homewood import/UAT. Next free DDL: **`317`**. |
+
+---
+
+## RECORD — Track A A5 PITR re-probe (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `track-a-a5-pitr-reprobe` |
+| **Mission alignment** | `risk` — daily physical backups are current; point-in-time restore is still off, so PHI production remains blocked. |
+| **Evidence** | `npx supabase backups list --project-ref manfqmasfqppukpobpld -o json` → `pitr_enabled: false`, `walg_enabled: true`, latest completed backup `2026-08-19T12:37:20.957Z`. |
+| **Owner action** | Enable PITR in Supabase Dashboard → Database → Backups on `manfqmasfqppukpobpld`. Agent cannot enable it from CLI. |
+| **Docs** | [PHASE1-ENV-CONFIRMATION.md](./specs/PHASE1-ENV-CONFIRMATION.md), [PHASE1-EXECUTION-LOG.md](./specs/PHASE1-EXECUTION-LOG.md) PH1-OA04, [COL-GO-LIVE-READINESS-CHECKLIST.md](./specs/COL-GO-LIVE-READINESS-CHECKLIST.md). |

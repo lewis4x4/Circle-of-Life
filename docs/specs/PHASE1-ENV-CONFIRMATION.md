@@ -52,7 +52,7 @@ Command: `supabase migration list`
 |-------|--------|-------|
 | Pro plan | Billing / subscription | ✅ Owner-confirmed 2026-05-11 |
 | BAA before PHI | Compliance / legal | ✅ Owner-confirmed 2026-05-11 |
-| PITR enabled | Database settings / backups | ☐ Still needs dashboard confirmation |
+| PITR enabled | Database settings / backups | ☐ Still off — re-probed 2026-08-19: `supabase backups list --project-ref manfqmasfqppukpobpld -o json` reports `pitr_enabled: false`, `walg_enabled: true`, completed physical backups through 2026-08-19. Dashboard toggle required; CLI cannot enable PITR. |
 
 ---
 
