@@ -1,0 +1,146 @@
+name: Enable Supabase PITR
+
+# One-shot ops job: apply the PITR add-on on the Haven project using the
+# repo Management API token. Does not print secrets. Idempotent if PITR is
+# already on. Compute smaller than Small is upgraded first (PITR requirement).
+
+on:
+  workflow_dispatch:
+    inputs:
+      pitr_variant:
+        description: PITR retention add-on variant
+        type: choice
+        options:
+          - pitr_7
+          - pitr_14
+          - pitr_28
+        default: pitr_7
+
+permissions:
+  contents: read
+
+jobs:
+  enable-pitr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF || 'manfqmasfqppukpobpld' }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PITR_VARIANT: ${{ inputs.pitr_variant || 'pitr_7' }}
+    steps:
+      - name: Apply PITR add-on
+        shell: python3
+        run: |
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+          ref = os.environ.get("SUPABASE_PROJECT_REF", "").strip()
+          variant = os.environ.get("PITR_VARIANT", "pitr_7").strip() or "pitr_7"
+          if not token:
+              print("SUPABASE_ACCESS_TOKEN is missing", file=sys.stderr)
+              sys.exit(1)
+          if not ref:
+              print("SUPABASE_PROJECT_REF is missing", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Project ref: {ref}")
+          print(f"Requested PITR variant: {variant}")
+
+          def api(method, path, body=None):
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(
+                  f"https://api.supabase.com/v1/{path}",
+                  data=data,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      raw = resp.read().decode()
+                      code = resp.status
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode()
+                  code = exc.code
+              try:
+                  parsed = json.loads(raw) if raw else {}
+              except json.JSONDecodeError:
+                  parsed = {"raw": raw[:400]}
+              return code, parsed
+
+          def selected_addons(payload):
+              selected = payload.get("selected_addons") or payload.get("addons") or []
+              if isinstance(selected, dict):
+                  selected = selected.get("selected_addons") or []
+              return selected if isinstance(selected, list) else []
+
+          code, addons = api("GET", f"projects/{ref}/billing/addons")
+          print(f"GET addons -> {code}")
+          if isinstance(addons, dict) and addons.get("message"):
+              print("addons message:", str(addons.get("message"))[:240])
+
+          compute = None
+          pitr_present = False
+          for item in selected_addons(addons):
+              if not isinstance(item, dict):
+                  continue
+              kind = str(item.get("type") or item.get("addon_type") or "")
+              item_variant = str(item.get("variant") or item.get("addon_variant") or "")
+              print("-", kind or "(unknown)", item_variant or "(none)")
+              if kind == "pitr" or item_variant.startswith("pitr_"):
+                  pitr_present = True
+              if "compute" in kind or item_variant.startswith("ci_"):
+                  compute = item_variant or kind
+
+          large_enough = {
+              "ci_small",
+              "ci_medium",
+              "ci_large",
+              "ci_xlarge",
+              "ci_2xlarge",
+              "ci_4xlarge",
+              "ci_8xlarge",
+              "ci_12xlarge",
+              "ci_16xlarge",
+          }
+          print("Current compute variant:", compute or "none")
+
+          if not pitr_present:
+              if compute not in large_enough:
+                  print("Upgrading compute to ci_small so PITR can be enabled...")
+                  ccode, cbody = api(
+                      "PATCH",
+                      f"projects/{ref}/billing/addons",
+                      {"addon_type": "compute_instance", "addon_variant": "ci_small"},
+                  )
+                  print(f"Compute PATCH -> {ccode}")
+                  if isinstance(cbody, dict) and cbody.get("message"):
+                      print("compute message:", str(cbody.get("message"))[:240])
+              print(f"Enabling PITR {variant}...")
+              pcode, pbody = api(
+                  "PATCH",
+                  f"projects/{ref}/billing/addons",
+                  {"addon_type": "pitr", "addon_variant": variant},
+              )
+              print(f"PITR PATCH -> {pcode}")
+              if isinstance(pbody, dict) and pbody.get("message"):
+                  print("pitr message:", str(pbody.get("message"))[:240])
+          else:
+              print("PITR add-on already present.")
+
+          bcode, backups = api("GET", f"projects/{ref}/database/backups")
+          print(f"GET backups -> {bcode}")
+          print("pitr_enabled:", backups.get("pitr_enabled") if isinstance(backups, dict) else None)
+          print("walg_enabled:", backups.get("walg_enabled") if isinstance(backups, dict) else None)
+          if isinstance(backups, dict) and backups.get("message"):
+              print("backups message:", str(backups.get("message"))[:240])
+          if not isinstance(backups, dict) or backups.get("pitr_enabled") is not True:
+              print("PITR is still off after apply", file=sys.stderr)
+              sys.exit(1)
+          print("PITR enable confirmed.")
