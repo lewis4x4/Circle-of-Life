@@ -24,7 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF || 'manfqmasfqppukpobpld' }}
+      # Public Haven project ref (also in AGENTS.md). Do not take
+      # vars.SUPABASE_PROJECT_REF — a mismatched secret would 403 billing.
+      SUPABASE_PROJECT_REF: manfqmasfqppukpobpld
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PITR_VARIANT: ${{ inputs.pitr_variant || 'pitr_7' }}
     steps:
@@ -73,6 +75,14 @@ jobs:
                   parsed = json.loads(raw) if raw else {}
               except json.JSONDecodeError:
                   parsed = {"raw": raw[:400]}
+              if code >= 400:
+                  msg = parsed.get("message") if isinstance(parsed, dict) else None
+                  raw_prefix = parsed.get("raw") if isinstance(parsed, dict) else None
+                  print(f"{method} {path} -> {code} keys={list(parsed)[:8] if isinstance(parsed, dict) else type(parsed).__name__}")
+                  if msg:
+                      print("  message:", str(msg)[:240])
+                  if raw_prefix:
+                      print("  raw:", str(raw_prefix)[:240])
               return code, parsed
 
           def selected_addons(payload):
