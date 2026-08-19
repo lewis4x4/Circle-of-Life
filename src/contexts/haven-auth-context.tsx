@@ -37,7 +37,9 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [appRole, setAppRole] = useState<string>("facility_admin");
+  // Empty until session/profile hydration resolves — avoids flashing a default
+  // role home label (for example Facility Admin) before the real role is known.
+  const [appRole, setAppRole] = useState<string>("");
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);

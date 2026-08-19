@@ -8,7 +8,7 @@ import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserC
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
-import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { formatRoleHomeSubtitle, getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useDashboardSnapshotCache } from "@/stores/dashboard-snapshot-cache";
 import { cn } from "@/lib/utils";
 
@@ -334,6 +334,11 @@ export function AdminDashboardPageClient({
     assurance.openIntegrityFlags +
     assurance.criticalSafetyResidents;
   const adminConfig = getRoleDashboardConfig(appRole);
+  const roleHomeSubtitle = formatRoleHomeSubtitle(
+    authLoading,
+    appRole,
+    "clear urgent facility actions, then blocked workflows, then resident watchlist.",
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -350,7 +355,7 @@ export function AdminDashboardPageClient({
             {scopeLabel}
           </p>
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            {adminConfig.roleLabel} home — clear urgent facility actions, then blocked workflows, then resident watchlist.
+            {roleHomeSubtitle}
           </p>
         </div>
 
