@@ -52,7 +52,7 @@ Command: `supabase migration list`
 |-------|--------|-------|
 | Pro plan | Billing / subscription | ✅ Owner-confirmed 2026-05-11 |
 | BAA before PHI | Compliance / legal | ✅ Owner-confirmed 2026-05-11 |
-| PITR enabled | Database settings / backups | ☐ Still off — re-probed 2026-08-19: `supabase backups list --project-ref manfqmasfqppukpobpld -o json` reports `pitr_enabled: false`, `walg_enabled: true`, completed physical backups through 2026-08-19. Dashboard toggle required; CLI cannot enable PITR. |
+| PITR enabled | Database settings / backups | ✅ Enabled 2026-08-19 — GitHub Action [Enable Supabase PITR](https://github.com/lewis4x4/Circle-of-Life/actions/runs/32296769927) applied `pitr_7` after upgrading compute to `ci_small`. CLI confirm: `pitr_enabled: true`. |
 
 ---
 
@@ -64,4 +64,4 @@ Command: `supabase migration list`
 | PH1-P02 | **PASS (2026-04-21)** | `supabase migration list` — **001–193** local/remote parity after **`193`** pushed (re-verify remote after each migration PR) |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |
-| PH1-P06 | — | Dashboard: Pro / BAA / PITR |
+| PH1-P06 | **PASS** — Pro + BAA (2026-05-11); PITR `pitr_7` on `ci_small` (2026-08-19) | — |

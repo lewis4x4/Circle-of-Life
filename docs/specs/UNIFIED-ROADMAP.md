@@ -24,7 +24,7 @@
 
 | Track | Scope | Status | Authoritative doc |
 |-------|-------|--------|-------------------|
-| **A** | Phase 1 acceptance closeout (auth, RLS, UAT, Pro/BAA/PITR, waivers) | **OPEN — blocking PHI production.** A1+A2 done (2026-04-09); A3 UAT depth, A4 env/seed, A5 Pro/BAA/PITR, A6 waiver review remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
+| **A** | Phase 1 acceptance closeout (auth, RLS, UAT, Pro/BAA/PITR, waivers) | **OPEN — A5 PITR now PASS (2026-08-19).** Remaining: A3 §B–§E depth UAT, A4 seed/env, A6 waivers, RLS-02 when a second facility is in play | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
 | **B** | Platform hardening (CI, observability, Sentry) | Closed (engineering) 2026-04-09; ongoing work is operational | README §Track B |
 | **C** | Workflow hardening (Edge functions, lifecycle runbooks) | Closed (engineering) 2026-04-09; per-project deploy/crons are ops | [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) |
 | **D** | Phase 6 completion pass + Enhanced backlog | Core D1–D10 + Enhanced D12–D84 shipped; D85+ optional per owner priority | [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md), [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |

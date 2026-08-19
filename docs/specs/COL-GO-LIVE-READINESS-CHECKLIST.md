@@ -11,7 +11,7 @@
 | Facility Launch Gate 2 | **BLOCKED** | Score 68/100. Blockers: data completeness under 95%, stale GL/property docs need routing/approval, rounds contradiction lacks owner, readiness below 90 target. |
 | Supabase Pro plan | **CONFIRMED** | Owner confirmed 2026-05-11. |
 | Supabase BAA | **CONFIRMED** | Owner confirmed 2026-05-11. |
-| Supabase PITR / backup posture | **PARTIAL — BACKUPS ON, PITR OFF** | Re-probed 2026-08-19: daily physical backups completed through 2026-08-19; `walg_enabled: true`; **`pitr_enabled: false`**. Enable PITR in Dashboard → Database → Backups before PHI production reliance. CLI cannot flip this. |
+| Supabase PITR / backup posture | **PASS — PITR ON** | Enabled 2026-08-19 (`pitr_7` + `ci_small`). CLI: `pitr_enabled: true`, `walg_enabled: true`. Evidence: GitHub Action run 32296769927. |
 | Jessica encrypted email test | **CONFIRMED** | Received 2026-05-12 from `jessicamurphy@circleoflifecommunities.com` via GoDaddy Advanced Email Security / `cloud-protect.net`; one-time-code reader flow worked; message expires in 30 days. |
 | QuickMAR upload/import | **WAITING / FUTURE BUILD** | Samples received: `Brian MAR.xlsx` and `PatientMAR.pdf` (QuickMAR/eMAR PDF, 6 pages, text-extractable). Build path: upload/dropbox → parse → review queue → approved write with provenance. |
 | User roles/access | **OPEN TONIGHT** | Need named users, roles, facility access, and least-privilege review. Facility Launch export shows M4 Employees / Users / Roles remains 25%. |

@@ -486,7 +486,7 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Segment** | `track-a-a5-pitr-reprobe` |
 | **Mission alignment** | `risk` — daily physical backups are current; point-in-time restore is still off, so PHI production remains blocked. |
 | **Evidence** | `npx supabase backups list --project-ref manfqmasfqppukpobpld -o json` → `pitr_enabled: false`, `walg_enabled: true`, latest completed backup `2026-08-19T12:37:20.957Z`. |
-| **Follow-up** | `.github/workflows/enable-pitr.yml` added so the repo `SUPABASE_ACCESS_TOKEN` can apply `pitr_7` (and `ci_small` if compute is below the PITR minimum). Dispatch after that workflow is on `main`. |
+| **Follow-up** | **Closed 2026-08-19.** Workflow [Enable Supabase PITR](https://github.com/lewis4x4/Circle-of-Life/actions/runs/32296769927) applied `ci_small` then `pitr_7`. CLI re-probe: `pitr_enabled: true`. PH1-OA04 / PH1-P06 **PASS**. |
 | **Docs** | [PHASE1-ENV-CONFIRMATION.md](./specs/PHASE1-ENV-CONFIRMATION.md), [PHASE1-EXECUTION-LOG.md](./specs/PHASE1-EXECUTION-LOG.md) PH1-OA04, [COL-GO-LIVE-READINESS-CHECKLIST.md](./specs/COL-GO-LIVE-READINESS-CHECKLIST.md). |
 
 ---
@@ -503,6 +503,17 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Preflight** | Not GO. Remaining blockers: care plans, four staff emails, invite acceptance / password set, then `homewood:verify-auth`. |
 | **Next** | Dispatch PITR workflow; Phase 1 auth smoke; care-plan load when source exists. |
 | **Gate artifact** | `test-results/agent-gates/2026-08-19T19-56-15-550Z-homewood-roster-auth.json` |
+
+---
+
+## RECORD — track-a-a5-pitr-enabled (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `track-a-a5-pitr-enabled` |
+| **Mission alignment** | `pass` — point-in-time recovery is on for the Haven production database before further PHI reliance. |
+| **Evidence** | Action run `32296769927` success; `pitr PATCH attempt 1 -> 200`; `npx supabase backups list --project-ref manfqmasfqppukpobpld -o json` → `pitr_enabled: true`, compute `ci_small`. |
+| **Docs** | PH1-P06 / PH1-OA04 PASS; PHASE1-ENV-CONFIRMATION; COL-GO-LIVE-READINESS-CHECKLIST. |
 
 ---
 
