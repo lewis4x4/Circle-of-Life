@@ -165,18 +165,28 @@ async function main() {
     process.exit(1);
   }
 
-  // Pre-flight: every staff row must have a real email. No placeholder
-  // domain hack — without an email we can't send an invite.
+  // Rows without email cannot be invited. Skip them and continue so the
+  // rest of the roster still gets links; record SKIP-NO-EMAIL in the log.
   const noEmail = staffRows.filter((s) => !s.email || s.email.trim() === "");
   if (noEmail.length > 0) {
-    console.error(`[homewood:provision-staff] FAIL: ${noEmail.length} staff rows have no email; can't send an invite.`);
-    for (const s of noEmail) console.error(`  - ${s.id}  ${s.first_name} ${s.last_name}  (${s.staff_role})`);
-    console.error("  Populate staff.email for these rows before re-running.");
-    process.exit(1);
+    console.warn(`[homewood:provision-staff] SKIP: ${noEmail.length} staff rows have no email and will not be invited.`);
+    for (const s of noEmail) console.warn(`  - ${s.id}  (${s.staff_role})`);
   }
 
   const results = [];
-  for (const staff of staffRows) {
+  for (const staff of noEmail) {
+    results.push({
+      staff_id: staff.id,
+      name: `${staff.first_name} ${staff.last_name}`,
+      email: "",
+      staff_role: staff.staff_role,
+      app_role: STAFF_ROLE_TO_APP_ROLE[staff.staff_role],
+      action: "SKIP-NO-EMAIL",
+      reason: "staff.email is empty; populate before a later invite pass",
+    });
+  }
+
+  for (const staff of staffRows.filter((s) => s.email && s.email.trim() !== "")) {
     const fullName = `${staff.first_name} ${staff.last_name}`;
     const email = staff.email.trim();
     const appRole = STAFF_ROLE_TO_APP_ROLE[staff.staff_role];

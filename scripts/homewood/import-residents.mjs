@@ -434,6 +434,7 @@ async function main() {
         organization_id: organizationId,
         payer_type: row.payer_type,
         is_primary: true,
+        effective_date: row.admit_date || new Date().toISOString().slice(0, 10),
       });
       if (perr) {
         await cleanupOnFail(`resident_payers insert error: ${safeMessage(perr)}`);

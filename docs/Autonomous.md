@@ -56,7 +56,7 @@
 - **Parallel (non-code) priorities:** Track **A3–A6** in [TRACK-A-CLOSEOUT-ROADMAP.md](./specs/TRACK-A-CLOSEOUT-ROADMAP.md) (owner UAT, Pro/BAA/PITR).
 - **Strategic sequence (AGENTS.md):** After Track A closeout and owner direction — **Module 25: Resident Assurance Engine** (`docs/specs/25-resident-assurance-engine.md`).
 
-**Repo migration number:** **`121`** is the next free migration file after **`120`** (`120_col_multi_facility_demo_seed.sql`). *(If you see “225” elsewhere, treat it as non-canonical; this repo uses sequential `NNN_*.sql` under `supabase/migrations/`.)*
+**Repo migration number:** **`317`** is the next free migration file after **`316`** (`316_admin_command_center_manager_access.sql`). Treat UNIFIED-ROADMAP §1 and the migrations folder as canonical if an older doc still says `121` / `207` / `308`.
 
 ---
 
@@ -72,7 +72,7 @@
 
 ## BUILD conventions (this repo)
 
-- **Migrations:** Next file = **`121_*.sql`** until README is updated again.
+- **Migrations:** Next file = **`317_*.sql`**.
 - **RLS:** `haven.organization_id()`, `haven.has_facility_access()`, etc., before new table policies.
 - **TypeScript:** Avoid `as any`; prefer typed Supabase `Database` helpers.
 - **Fallbacks:** Non-blocking UX for empty data; no silent clinical automation without sign-off.
@@ -486,5 +486,20 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Segment** | `track-a-a5-pitr-reprobe` |
 | **Mission alignment** | `risk` — daily physical backups are current; point-in-time restore is still off, so PHI production remains blocked. |
 | **Evidence** | `npx supabase backups list --project-ref manfqmasfqppukpobpld -o json` → `pitr_enabled: false`, `walg_enabled: true`, latest completed backup `2026-08-19T12:37:20.957Z`. |
-| **Owner action** | Enable PITR in Supabase Dashboard → Database → Backups on `manfqmasfqppukpobpld`. Agent cannot enable it from CLI. |
+| **Follow-up** | `.github/workflows/enable-pitr.yml` added so the repo `SUPABASE_ACCESS_TOKEN` can apply `pitr_7` (and `ci_small` if compute is below the PITR minimum). Dispatch after that workflow is on `main`. |
 | **Docs** | [PHASE1-ENV-CONFIRMATION.md](./specs/PHASE1-ENV-CONFIRMATION.md), [PHASE1-EXECUTION-LOG.md](./specs/PHASE1-EXECUTION-LOG.md) PH1-OA04, [COL-GO-LIVE-READINESS-CHECKLIST.md](./specs/COL-GO-LIVE-READINESS-CHECKLIST.md). |
+
+---
+
+## RECORD — homewood-roster-auth (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `homewood-roster-auth` |
+| **Mission alignment** | `risk` — Homewood roster and staff invites are live, but preflight stays NO-GO until care plans exist and the four email-less admin rows can be invited. No clinical automation. |
+| **Residents** | Dry-run 32 DRY-OK. Write 1: 31 UPDATED + 1 PARTIAL (payer `effective_date`). Import now sets `resident_payers.effective_date` from admit date. Write 2: **32 UPDATED**. Live cohort 33 active residents (one extra historical row). |
+| **Staff** | Provision no longer aborts the whole run on missing email. **16 INVITED** (redirect `https://circleoflifealf.netlify.app/login`); **4 SKIP-NO-EMAIL** (duplicate administrator / assistant_administrator rows). `staff.user_id` linked 16; `user_facility_access` granted. |
+| **Audit** | `npm run homewood:audit` — CRITICAL categories with rows = **1** (`residents_no_active_care_plan`, 33). HIGH = 4 unlinked staff. No care-plan import source in repo; do not invent plans. |
+| **Preflight** | Not GO. Remaining blockers: care plans, four staff emails, invite acceptance / password set, then `homewood:verify-auth`. |
+| **Next** | Dispatch PITR workflow; Phase 1 auth smoke; care-plan load when source exists. |
+| **Gate artifact** | `test-results/agent-gates/2026-08-19T19-56-15-550Z-homewood-roster-auth.json` |
