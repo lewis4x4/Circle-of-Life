@@ -59,6 +59,7 @@ describe("formatExecutiveOccupancyPct", () => {
 
   it("formats posted occupancy values", () => {
     expect(formatExecutiveOccupancyPct(87.5)).toBe("87.5");
+    expect(formatExecutiveOccupancyPct(92)).toBe("92.0");
   });
 });
 
@@ -77,8 +78,8 @@ describe("formatExecutiveOccupancyBarLabel", () => {
     expect(formatExecutiveOccupancyBarLabel(82.456)).toBe("82.5%");
   });
 
-  it("keeps real zero as 0.0%", () => {
-    expect(formatExecutiveOccupancyBarLabel(0)).toBe("0.0%");
+  it("keeps real zero as 0%", () => {
+    expect(formatExecutiveOccupancyBarLabel(0)).toBe("0%");
   });
 });
 

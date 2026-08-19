@@ -98,7 +98,7 @@ describe("facilityPortfolioOccupancyPct", () => {
           occupancy_count: 44,
         }),
       ),
-    ).toBe(92);
+    ).toBe(91.7);
   });
 });
 
@@ -125,7 +125,7 @@ describe("buildPortfolioStripTotals", () => {
     expect(totals.licensedLoaded).toBe(true);
     expect(totals.occupiedSum).toBe(44);
     expect(totals.occupiedLoaded).toBe(true);
-    expect(totals.portfolioPctRounded).toBe(85);
+    expect(totals.portfolioPctRounded).toBe(84.6);
     expect(totals.portfolioPctLoaded).toBe(true);
     expect(totals.comparison[0].occupancyLoaded).toBe(true);
     expect(totals.comparison[1].occupancyLoaded).toBe(false);
@@ -207,7 +207,7 @@ describe("portfolioStripPortfolioOccupancyDisplay", () => {
         occupancy_count: 44,
       }),
     ]);
-    expect(portfolioStripPortfolioOccupancyDisplay(loadedTotals)).toBe("85%");
+    expect(portfolioStripPortfolioOccupancyDisplay(loadedTotals)).toBe("84.6%");
   });
 });
 

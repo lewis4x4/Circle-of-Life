@@ -13,6 +13,7 @@ import {
   fetchFacilityBedCensusById,
   isFacilityOccupancyCensusLoaded,
 } from "@/lib/executive/facility-occupancy-census";
+import { computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
 
 /** Versioned payload shape for `exec_kpi_snapshots.metrics` when persisted by cron (Module 24). */
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
@@ -262,7 +263,7 @@ export async function fetchExecutiveKpiSnapshot(
       ? computeFacilityOccupancyPct(facility, facilityCensus)
       : null
     : licensedBeds > 0
-      ? Math.round((occupiedResidents / licensedBeds) * 1000) / 10
+      ? computePortfolioOccupancyPct(occupiedResidents, licensedBeds)
       : null;
 
   const invoiceRows = invoicesOpenRes.data ?? [];
