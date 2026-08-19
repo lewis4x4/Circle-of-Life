@@ -110,6 +110,20 @@ export async function actorCanAccessFacility(actor: AdminApiActor, facilityId: s
   });
 }
 
+/** Shared service-role guard: 404 when the actor cannot see the facility. */
+export async function requireFacilityAccess(
+  actor: AdminApiActor,
+  facilityId: string,
+): Promise<{ ok: true } | { response: NextResponse }> {
+  const allowed = await actorCanAccessFacility(actor, facilityId);
+  if (!allowed) {
+    return {
+      response: NextResponse.json({ error: "Facility not found" }, { status: 404 }),
+    };
+  }
+  return { ok: true };
+}
+
 export async function actorCanAccessTargetUser(actor: AdminApiActor, targetUserId: string) {
   if (actorHasOrgWideFacilityScope(actor)) {
     const { data } = await actor.admin

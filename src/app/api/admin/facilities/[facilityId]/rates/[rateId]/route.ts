@@ -5,49 +5,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  requireAdminApiActor,
+  requireFacilityAccess,
+} from "@/lib/admin/api-auth";
+import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
 import { patchRateVersionSchema } from "@/lib/validation/facility-admin";
 
 const uuidSchema = z.string().uuid();
-
-import { asUntypedAdmin } from "@/lib/admin/facilities/untyped-admin";
 
 interface RouteContext {
   params: Promise<{ facilityId: string; rateId: string }>;
 }
 
-async function getActor() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = createServiceRoleClient();
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  return profile ? { ...profile, admin } : null;
-}
-
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
-  const actor = await getActor();
-  if (!actor) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-
-  if (!["owner", "org_admin"].includes(actor.app_role)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-  }
+  const auth = await requireAdminApiActor({ allowedRoles: ["owner", "org_admin"] });
+  if ("response" in auth) return auth.response;
+  const { actor } = auth;
 
   const { facilityId, rateId } = await ctx.params;
 
   if (!uuidSchema.safeParse(facilityId).success || !uuidSchema.safeParse(rateId).success) {
     return NextResponse.json({ error: "Invalid facility or rate id" }, { status: 400 });
   }
+
+  const facilityGate = await requireFacilityAccess(actor, facilityId);
+  if ("response" in facilityGate) return facilityGate.response;
 
   let body: unknown;
   try {
