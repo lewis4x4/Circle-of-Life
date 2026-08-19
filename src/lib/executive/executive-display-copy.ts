@@ -6,8 +6,13 @@
 import type { PresenceCensus } from "@/lib/executive/presence-census";
 import type { StandupMetricRow } from "@/lib/executive/standup";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import {
+  PORTFOLIO_OCCUPANCY_NO_POSTED_COPY,
+  formatPortfolioOccupancyPctDisplay,
+  formatPortfolioOccupancyPctValue,
+} from "@/lib/occupancy/portfolio-occupancy-display";
 
-export const EXECUTIVE_NO_OCCUPANCY_POSTED_COPY = "No occupancy posted";
+export const EXECUTIVE_NO_OCCUPANCY_POSTED_COPY = PORTFOLIO_OCCUPANCY_NO_POSTED_COPY;
 export const EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY = "No in-house count posted";
 export const EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY = "No hospital count posted";
 export const EXECUTIVE_NO_LEAVE_COUNT_POSTED_COPY = "No leave count posted";
@@ -34,22 +39,19 @@ export function isFiniteExecutiveMetric(value: number | null | undefined): value
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** Table occupancy — raw number when posted (0 stays 0); explicit gap copy when missing. */
+/** Table occupancy — one decimal when posted (0 stays 0); explicit gap copy when missing. */
 export function formatExecutiveOccupancyPct(value: number | null | undefined): string {
-  if (!isFiniteExecutiveMetric(value)) return EXECUTIVE_NO_OCCUPANCY_POSTED_COPY;
-  return String(value);
+  return formatPortfolioOccupancyPctValue(value);
 }
 
-/** Occupancy with % suffix — 0% when posted as zero; explicit gap copy when missing. */
+/** Occupancy with % suffix — shared portfolio formatter (Executive + Facilities parity). */
 export function formatExecutiveOccupancyPctWithSuffix(value: number | null | undefined): string {
-  if (!isFiniteExecutiveMetric(value)) return EXECUTIVE_NO_OCCUPANCY_POSTED_COPY;
-  return `${value}%`;
+  return formatPortfolioOccupancyPctDisplay(value);
 }
 
-/** Bar chart occupancy — one decimal + % when posted. */
+/** Bar chart occupancy — same display rule as portfolio KPI strip. */
 export function formatExecutiveOccupancyBarLabel(value: number | null | undefined): string {
-  if (!isFiniteExecutiveMetric(value)) return EXECUTIVE_NO_OCCUPANCY_POSTED_COPY;
-  return `${value.toFixed(1)}%`;
+  return formatPortfolioOccupancyPctDisplay(value);
 }
 
 export function formatExecutivePacketStatus(value: string | null | undefined): string {

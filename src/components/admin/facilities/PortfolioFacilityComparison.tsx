@@ -9,6 +9,7 @@ import {
   portfolioComparisonOccupancyEmptyCopy,
   type PortfolioComparisonEntry,
 } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
+import { formatPortfolioOccupancyPctDisplay } from "@/lib/occupancy/portfolio-occupancy-display";
 
 type PortfolioFacilityComparisonProps = {
   entries: PortfolioComparisonEntry[];
@@ -65,16 +66,17 @@ export function PortfolioFacilityComparison({ entries, className }: PortfolioFac
 
       <ul className="space-y-4">
         {sorted.map((f) => {
-          const pct = Math.min(100, Math.max(0, Math.round(f.occupancyPct)));
-          const barClass = pct > 0 ? portfolioOccupancyBarClass(pct) : "";
+          const pct = f.occupancyLoaded ? Math.min(100, Math.max(0, f.occupancyPct)) : 0;
+          const barWidthPct = f.occupancyLoaded ? Math.round(pct) : 0;
+          const barClass = barWidthPct > 0 ? portfolioOccupancyBarClass(barWidthPct) : "";
           const emptyCopy = f.occupancyLoaded ? null : portfolioComparisonOccupancyEmptyCopy();
 
           return (
             <li key={f.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(140px,1fr)_4fr_auto] sm:items-center sm:gap-4">
               <span className="truncate text-sm font-medium text-foreground">{f.name}</span>
               <div className="relative h-2 w-full min-w-[120px] overflow-hidden rounded-full border border-border/60 bg-muted/40">
-                {f.occupancyLoaded && pct > 0 ? (
-                  <div className={cn("h-full rounded-full transition-all", barClass)} style={{ width: `${pct}%` }} />
+                {f.occupancyLoaded && barWidthPct > 0 ? (
+                  <div className={cn("h-full rounded-full transition-all", barClass)} style={{ width: `${barWidthPct}%` }} />
                 ) : null}
               </div>
               <span
@@ -85,7 +87,7 @@ export function PortfolioFacilityComparison({ entries, className }: PortfolioFac
                     : "tabular-nums font-semibold text-muted-foreground",
                 )}
               >
-                {emptyCopy ?? `${pct}%`}
+                {emptyCopy ?? formatPortfolioOccupancyPctDisplay(pct)}
               </span>
             </li>
           );

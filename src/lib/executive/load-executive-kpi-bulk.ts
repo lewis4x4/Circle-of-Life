@@ -9,6 +9,7 @@ import {
   fetchFacilityBedCensusById,
   isFacilityOccupancyCensusLoaded,
 } from "@/lib/executive/facility-occupancy-census";
+import { computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
 
 type FacilityMini = {
   id: string;
@@ -276,7 +277,7 @@ export async function loadExecutiveKpiBulk(
   );
   orgKpi.census.occupancyPct =
     orgKpi.census.licensedBeds > 0
-      ? Math.round((orgKpi.census.occupiedResidents / orgKpi.census.licensedBeds) * 1000) / 10
+      ? computePortfolioOccupancyPct(orgKpi.census.occupiedResidents, orgKpi.census.licensedBeds)
       : null;
   orgKpi.financial.openInvoicesCount = invoiceRows.length;
   orgKpi.financial.totalBalanceDueCents = invoiceRows.reduce((sum, row) => sum + (row.balance_due ?? 0), 0);

@@ -2,6 +2,8 @@
  * Facilities portfolio aggregates — Quiet Operator KPI + occupancy semantics.
  */
 
+import { computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
+
 /** Survey readiness % from `risk_score_snapshots.summary_json` (0–100 when present). */
 export function pickSurveyReadinessPct(summaryJson: unknown): number | null {
   if (!summaryJson || typeof summaryJson !== "object") return null;
@@ -24,8 +26,7 @@ export function occupancyDenominator(phyBedsTracked: number, licensedBeds: numbe
 
 export function portfolioOccupancyPercent(occupied: number, phyBeds: number, licensedBeds: number): number {
   const d = occupancyDenominator(phyBeds, licensedBeds);
-  if (d <= 0 || occupied <= 0) return 0;
-  return Math.min(100, Math.max(0, Math.round((occupied / d) * 100)));
+  return computePortfolioOccupancyPct(occupied, d);
 }
 
 /** KPI strip — 0 muted, &lt;60 warning, 60–89 success, ≥90 info. */

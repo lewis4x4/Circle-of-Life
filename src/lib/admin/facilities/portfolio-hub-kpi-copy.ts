@@ -5,6 +5,8 @@
 
 import type { FacilityRow } from "@/types/facility";
 
+import { computePortfolioOccupancyPct, formatPortfolioOccupancyPctDisplay } from "@/lib/occupancy/portfolio-occupancy-display";
+
 import { portfolioOccupancyPercent } from "./portfolio-metrics";
 
 export type PortfolioStripKpiKey =
@@ -120,7 +122,7 @@ export function buildPortfolioStripTotals(facilities: FacilityRow[]): PortfolioS
   let portfolioPctRounded: number | null = null;
   let portfolioPctLoaded = false;
   if (licensedLoaded && licensedSum > 0 && occupiedLoaded) {
-    portfolioPctRounded = Math.min(100, Math.round((occupiedSum / licensedSum) * 100));
+    portfolioPctRounded = computePortfolioOccupancyPct(occupiedSum, licensedSum);
     portfolioPctLoaded = true;
   }
 
@@ -165,7 +167,7 @@ export function portfolioStripPortfolioOccupancyEmptyCopy(totals: PortfolioStrip
 export function portfolioStripPortfolioOccupancyDisplay(totals: PortfolioStripTotals): string {
   const emptyCopy = portfolioStripPortfolioOccupancyEmptyCopy(totals);
   if (emptyCopy != null) return emptyCopy;
-  return `${totals.portfolioPctRounded}%`;
+  return formatPortfolioOccupancyPctDisplay(totals.portfolioPctRounded);
 }
 
 export function portfolioStripKpiIsLoaded(key: PortfolioStripKpiKey, totals: PortfolioStripTotals): boolean {
