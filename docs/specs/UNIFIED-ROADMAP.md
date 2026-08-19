@@ -10,11 +10,12 @@
 
 ---
 
-## 1. Current position (2026-06-12)
+## 1. Current position (2026-08-19)
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`307` (`307_michelle_bed_hold_medicaid_catalog.sql`) — **next free migration: `308`** |
+| Repo migrations | `001`–`316` (`316_admin_command_center_manager_access.sql`) — **next free migration: `317`** |
+| Remote tracking | `310`–`316` recorded on `manfqmasfqppukpobpld` (2026-08-19). Live Command Center projection is the `315`/`316` definition (manager allowlist). Repair SQL: `scripts/repair-remote-schema-migrations-310-316.sql`. |
 | README "current state" drift | Reconcile `docs/specs/README.md` when the next DDL segment ships; treat **this file + the migrations folder** as current |
 | Pilot | Oakridge ALF live pilot; Homewood Lodge launch workstream in repo (`docs/homewood/`) |
 | Production | Netlify auto-publish from `main` only |
@@ -34,7 +35,7 @@
 
 1. **Track A blocks PHI production.** New Track F surfaces can be built and demoed, but no production PHI until A5 (Pro/BAA/PITR) and remaining UAT rows close.
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
-3. New DDL takes the next free migration number (currently `307`) and updates this file.
+3. New DDL takes the next free migration number (currently `317`) and updates this file.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
 
 ---

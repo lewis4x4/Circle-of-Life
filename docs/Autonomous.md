@@ -462,3 +462,17 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Mission alignment** | **pass** — reduces operator wait and preserves role, facility, RLS, audit, and PHI boundaries; AI remains outside clinical judgment and this change adds no clinical automation. |
 | **Gate artifact** | `test-results/agent-gates/2026-08-14T01-58-10-515Z-NAV-PERF-2026-08-13.json` |
 | **Deferred** | Track A owner depth UAT and Pro/BAA/PITR remain human gates. |
+
+---
+
+## RECORD — schema-drift-310-316-repair (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `schema-drift-310-316-repair` |
+| **Mission alignment** | `pass` — restores Command Center manager access and migration tracking so operators see the same RLS-governed projection the repo already shipped; no clinical automation. |
+| **Probe** | Remote `schema_migrations` had `308`/`309`/`314` named as Command Center files while live `admin_command_center_projection` was still the pre-manager guard (`owner, org_admin, facility_admin` only). `310`–`313`/`315`–`316` were local-only. Snack columns, discovery RPCs, and team-space helper policies were already live. |
+| **Repair** | Applied `315` then `316` then `308` (anon revoke after `CREATE OR REPLACE`). Recorded `310`–`313`/`315`–`316` and renamed `308`/`309`/`314` to match local stems via `scripts/repair-remote-schema-migrations-310-316.sql`. |
+| **Verify** | Live guard includes `manager`; `anon` cannot execute the projection. Extended `migrations:verify:remote` probes for snack_logs + Command Center + discovery RPC — **49/49 PASS**. |
+| **Gate artifact** | `test-results/agent-gates/2026-08-19T19-42-45-834Z-schema-drift-310-316-repair.json` |
+| **Next** | PITR (Track A A5), then Homewood import/UAT. Next free DDL: **`317`**. |

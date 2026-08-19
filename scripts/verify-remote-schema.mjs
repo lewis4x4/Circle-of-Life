@@ -129,6 +129,20 @@ const PROBES = [
     migration: "275",
     args: { p_query: "__schema_probe__", p_limit: 1 },
   },
+  { kind: "column", table: "snack_logs", column: "snack_at", migration: "311" },
+  { kind: "column", table: "snack_logs", column: "passed_by_user_id", migration: "311" },
+  {
+    kind: "rpc",
+    name: "admin_command_center_projection",
+    migration: "315",
+    args: { p_facility_id: null },
+  },
+  {
+    kind: "rpc",
+    name: "apply_col_discovery_round_observation_plan",
+    migration: "310",
+    args: { p_resident_id: NIL_UUID },
+  },
 ];
 
 async function probeColumn(table, column) {
