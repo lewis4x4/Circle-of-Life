@@ -29,8 +29,9 @@ jobs:
       PITR_VARIANT: ${{ inputs.pitr_variant || 'pitr_7' }}
     steps:
       - name: Apply PITR add-on
-        shell: python3
+        shell: bash
         run: |
+          python3 <<'PY'
           import json
           import os
           import sys
@@ -144,3 +145,4 @@ jobs:
               print("PITR is still off after apply", file=sys.stderr)
               sys.exit(1)
           print("PITR enable confirmed.")
+          PY

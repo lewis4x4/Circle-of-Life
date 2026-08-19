@@ -506,6 +506,17 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 
 ---
 
+## RECORD — phase1-auth-smoke-partial (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `phase1-auth-smoke-partial` |
+| **Mission alignment** | `risk` — two of four pilot roles authenticated on production; facility_admin and family timed out at login so PH1-A04 is not closed. |
+| **Evidence** | `BASE_URL=https://circleoflifealf.netlify.app npm run demo:auth-smoke:real` at 2026-08-19T20:00:08Z. Owner + caregiver `login_ok` / `shell_route_ok` / `cross_shell_ok`. Jessica + Linda `waitForURL` 15s timeout. |
+| **Docs** | [PHASE1-EXECUTION-LOG.md](./specs/PHASE1-EXECUTION-LOG.md) PH1-A04 / PH1-P04 / PH1-OA02 / PH1-OA03 set PARTIAL. |
+
+---
+
 ## RECORD — docs-index-317 (2026-08-19)
 
 | Field | Value |
