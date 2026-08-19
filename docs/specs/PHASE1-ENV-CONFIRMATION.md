@@ -2,11 +2,11 @@
 
 **Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
 
-**Last run (repo/CLI):** 2026-04-21 — `npm run migrations:check`: **193** migration files **001–193** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **194**).
+**Last run (repo/CLI):** 2026-08-19 — `npm run migrations:check`: **319** files covering sequence **`001`–`316`** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **`317`**). Timestamped Homewood files (`20260514*`) are present and replay-mitigated.
 
-**Last run (remote):** Re-run `supabase migration list` after **`193`** (`supabase db push`). Re-run after each migration-adding PR before release.
+**Last run (remote):** Tracking repaired through **`316`** on 2026-08-19. Re-run `npm run migrations:verify:remote` after each remote apply. Do not use `db push` blindly on this project.
 
-**Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md) — **27 function folders present** (2026-04-21). **`npm run demo:ops-status`** checks a **core** set of deployed slugs are **ACTIVE** on the linked project; confirm **`process-referral-hl7-inbound`** separately if you rely on Module 22 HL7 processing.
+**Edge Functions:** Inventory and secrets: [`supabase/functions/README.md`](../../supabase/functions/README.md) — **37** function folders present (2026-08-19). **`npm run demo:ops-status`** checks a **core** set of deployed slugs are **ACTIVE** on the linked project; confirm **`process-referral-hl7-inbound`** separately if you rely on Module 22 HL7 processing.
 
 ---
 
@@ -28,9 +28,9 @@ Command: `supabase migration list`
 
 **Canonical ops flow:** [PHASE1-OPS-VERIFICATION-RUNBOOK.md](./PHASE1-OPS-VERIFICATION-RUNBOOK.md)
 
-**Local repo (file count / sequence):** **PASS** — `migrations:check` reports **001–193** (2026-04-21).
+**Local repo (file count / sequence):** **PASS** — sequence **001–316**, next free **317** (2026-08-19).
 
-**Remote (target Supabase project):** Apply **`193`** then confirm parity **001–193** (`manfqmasfqppukpobpld`). If a pull adds `194+`, run `supabase db push` (or CI) until this command shows parity again.
+**Remote (target Supabase project):** Tracking + Command Center projection repaired through **`316`** on 2026-08-19. Re-verify with `npm run migrations:verify:remote` after any remote apply.
 
 ---
 

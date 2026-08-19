@@ -503,3 +503,13 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Preflight** | Not GO. Remaining blockers: care plans, four staff emails, invite acceptance / password set, then `homewood:verify-auth`. |
 | **Next** | Dispatch PITR workflow; Phase 1 auth smoke; care-plan load when source exists. |
 | **Gate artifact** | `test-results/agent-gates/2026-08-19T19-56-15-550Z-homewood-roster-auth.json` |
+
+---
+
+## RECORD — docs-index-317 (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `docs-index-317` |
+| **Mission alignment** | `pass` — index-only; no schema or clinical behavior change. |
+| **BUILD** | README / UNIFIED-ROADMAP / PHASE1-ENV-CONFIRMATION now say next free DDL **`317`**, remote tracking through **`316`**, Track F **built except F4-1**, 37 Edge Function folders. |
