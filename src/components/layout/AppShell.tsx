@@ -72,7 +72,7 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
-import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
 import {
   PILLARS,
   REPORT_INCIDENT_HREF,
@@ -166,6 +166,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   } = useHavenAuth();
   const currentUserId = user?.id ?? null;
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
+  const resolvedRoleLabel = useMemo(
+    () => getResolvedRoleLabel(authLoading, appRole),
+    [authLoading, appRole],
+  );
   const resolveRouteHref = useCallback(
     (href: string) => (href === "/admin" ? roleConfig.route : href),
     [roleConfig.route],
@@ -779,7 +783,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
             <UserMenu
               fullName={fullName}
               email={sessionEmail}
-              roleLabel={roleConfig.roleLabel}
+              roleLabel={resolvedRoleLabel}
               organizationId={organizationId}
               orgName={orgName}
               avatarUrl={avatarUrl}
@@ -793,7 +797,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
             <UserMenuSheet
               fullName={fullName}
               email={sessionEmail}
-              roleLabel={roleConfig.roleLabel}
+              roleLabel={resolvedRoleLabel}
               organizationId={organizationId}
               orgName={orgName}
               avatarUrl={avatarUrl}

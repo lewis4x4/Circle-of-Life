@@ -255,6 +255,39 @@ export function getRoleDashboardConfig(role: string): DashboardConfig {
   return DASHBOARD_CONFIGS[role] ?? DEFAULT_CONFIG;
 }
 
+/** Named loading gap for role-home chrome (Quiet Operator: no silent em-dash). */
+export const ROLE_HOME_LOADING_LEAD = "Loading role home";
+
+/** True once auth hydration finished and the session role maps to a dashboard config. */
+export function isRoleHomeLabelReady(authLoading: boolean, role: string): boolean {
+  return !authLoading && Boolean(role) && role in DASHBOARD_CONFIGS;
+}
+
+/** Lead phrase for role-home subtitles and nav ("Owner home", etc.). */
+export function getRoleHomeLead(authLoading: boolean, role: string): string {
+  if (!isRoleHomeLabelReady(authLoading, role)) {
+    return ROLE_HOME_LOADING_LEAD;
+  }
+  return `${DASHBOARD_CONFIGS[role].roleLabel} home`;
+}
+
+/** Full role-home subtitle with trailing Quiet Operator clause. */
+export function formatRoleHomeSubtitle(
+  authLoading: boolean,
+  role: string,
+  trailingClause: string,
+): string {
+  return `${getRoleHomeLead(authLoading, role)} — ${trailingClause}`;
+}
+
+/** Human-facing role label for shell chrome; neutral while auth is loading. */
+export function getResolvedRoleLabel(authLoading: boolean, role: string): string {
+  if (!isRoleHomeLabelReady(authLoading, role)) {
+    return "Loading role";
+  }
+  return DASHBOARD_CONFIGS[role].roleLabel;
+}
+
 /** Returns which shell a role should use. */
 export function getShellForRole(role: string): "admin" | "caregiver" | "family" | "med-tech" | "dietary" {
   return DASHBOARD_CONFIGS[role]?.shell ?? "admin";

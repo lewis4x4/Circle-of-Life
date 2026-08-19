@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { formatRoleHomeSubtitle } from "@/lib/auth/dashboard-routing";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
   applyFacilityOccupancyMetricHonesty,
@@ -77,9 +78,14 @@ export function ExecutiveOverviewPageClient({
   initialHasServerData,
 }: ExecutiveOverviewPageClientProps) {
   const supabase = useMemo(() => createClient(), []);
-  const { organizationId, appRole } = useHavenAuth();
+  const { organizationId, appRole, loading: authLoading } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const roleConfig = getRoleDashboardConfig(appRole as AppRole);
+  const roleHomeSubtitle = formatRoleHomeSubtitle(
+    authLoading,
+    appRole,
+    "portfolio movement, exception pressure, leadership decisions only.",
+  );
   const [, setLoading] = useState(!initialHasServerData);
   const [, setError] = useState<string | null>(null);
 
@@ -359,7 +365,7 @@ export function ExecutiveOverviewPageClient({
             Enterprise portfolio overview
           </p>
           <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-            {roleConfig.roleLabel} home — portfolio movement, exception pressure, leadership decisions only.
+            {roleHomeSubtitle}
           </p>
         </div>
         <div className="hidden md:block">

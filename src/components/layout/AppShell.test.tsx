@@ -9,6 +9,17 @@ import { AppShell } from "./AppShell";
 const pushMock = vi.fn();
 const refreshMock = vi.fn();
 
+const authMock = vi.hoisted(() => ({
+  email: "operator@example.com",
+  appRole: "owner",
+  user: { id: "user-1" },
+  organizationId: "org-1",
+  orgName: "Test Org",
+  fullName: "Test Operator",
+  avatarUrl: null as string | null,
+  loading: false,
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/executive",
   useRouter: () => ({ push: pushMock, replace: vi.fn(), refresh: refreshMock }),
@@ -32,16 +43,7 @@ vi.mock("next/dynamic", () => ({
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
-  useHavenAuth: () => ({
-    email: "operator@example.com",
-    appRole: "owner",
-    user: { id: "user-1" },
-    organizationId: "org-1",
-    orgName: "Test Org",
-    fullName: "Test Operator",
-    avatarUrl: null,
-    loading: false,
-  }),
+  useHavenAuth: () => authMock,
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => {
@@ -122,6 +124,18 @@ function renderAppShell() {
 describe("AppShell all-sections jump list", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    authMock.loading = false;
+    authMock.appRole = "owner";
+    authMock.user = { id: "user-1" };
+  });
+
+  it("does not render a mismatched role label in chrome while auth is loading", () => {
+    authMock.loading = true;
+    authMock.appRole = "facility_admin";
+
+    renderAppShell();
+
+    expect(screen.queryByText(/Facility Admin/i)).not.toBeInTheDocument();
   });
 
   it("opens on /admin/executive without crashing and shows common destinations", async () => {
