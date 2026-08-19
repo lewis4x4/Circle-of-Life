@@ -37,6 +37,11 @@ export const LEGACY_MIGRATION_219_TEMPLATE_NAMES = [
 /** Migration 219 facility-default interval — blocked on new plans and templates. */
 export const LEGACY_MIGRATION_219_INTERVAL_MINUTES = 720;
 
+/** Retired migration-219 clinical daypart window — must not seed Add rule or unknown-facility defaults. */
+export const LEGACY_MIGRATION_219_DAYPART_START = "07:00";
+export const LEGACY_MIGRATION_219_DAYPART_END = "19:00";
+export const LEGACY_MIGRATION_219_HOURLY_INTERVAL_MINUTES = 60;
+
 export function resolveColDiscoveryCadenceKey(facilityName: string): ColDiscoveryCadenceKey | null {
   const normalized = facilityName.trim().toLowerCase();
   for (const [key, name] of Object.entries(COL_DISCOVERY_FACILITY_NAMES)) {
@@ -166,6 +171,47 @@ export type ColDiscoveryPresetRule = {
 
 export function isLegacyMigration219TemplateName(name: string): boolean {
   return (LEGACY_MIGRATION_219_TEMPLATE_NAMES as readonly string[]).includes(name);
+}
+
+/** True when a rule matches the retired migration-219 hourly 7am–7pm clinical window. */
+export function isLegacyMigration219HourlyWindow(rule: PlanRuleInput): boolean {
+  return (
+    rule.intervalType === "fixed_minutes" &&
+    rule.intervalMinutes === LEGACY_MIGRATION_219_HOURLY_INTERVAL_MINUTES &&
+    (rule.daypartStart ?? LEGACY_MIGRATION_219_DAYPART_START) === LEGACY_MIGRATION_219_DAYPART_START &&
+    (rule.daypartEnd ?? LEGACY_MIGRATION_219_DAYPART_END) === LEGACY_MIGRATION_219_DAYPART_END
+  );
+}
+
+/**
+ * Append a rule from Add rule without inventing migration-219 hourly 7am–7pm defaults.
+ * Copies the last active rule when one exists; otherwise returns an empty shell for manual entry.
+ */
+export function createObservationPlanRuleForAdd(
+  existingRules: PlanRuleInput[],
+  sortOrder: number,
+): PlanRuleInput {
+  const lastActive = [...existingRules].reverse().find((rule) => rule.active !== false);
+  if (lastActive) {
+    const rest = { ...lastActive };
+    delete rest.id;
+    return {
+      ...rest,
+      sortOrder,
+      active: true,
+    };
+  }
+
+  return {
+    intervalType: "daypart",
+    intervalMinutes: null,
+    daypartStart: null,
+    daypartEnd: null,
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+    graceMinutes: COL_DISCOVERY_ROUND_GRACE_MINUTES,
+    active: true,
+    sortOrder,
+  };
 }
 
 export function presetRuleToPlanRule(record: ColDiscoveryPresetRule, index = 0): PlanRuleInput {

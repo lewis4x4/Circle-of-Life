@@ -4,12 +4,14 @@ import {
   buildColDiscoveryPresetDefinition,
   buildColDiscoveryRoundRules,
   COL_DISCOVERY_DAY_TIMES,
+  createObservationPlanRuleForAdd,
   deriveCaregiverRoundsQueueState,
   describeCaregiverResidentRoundEmptyState,
   describeCaregiverRoundsEmptyState,
   describeColDiscoveryCadenceForFacility,
   describeLiveBoardCadenceReminder,
   describeLiveBoardEmptyState,
+  isLegacyMigration219HourlyWindow,
   resolveColDiscoveryDefaultRules,
   COL_DISCOVERY_FACILITY_NAMES,
   COL_DISCOVERY_HOMWOOD_NIGHT_INTERVAL_MINUTES,
@@ -19,6 +21,9 @@ import {
   extractDiscreteScheduledTime,
   getColDiscoveryCadenceProfile,
   isLegacyMigration219PresetDefinition,
+  LEGACY_MIGRATION_219_DAYPART_END,
+  LEGACY_MIGRATION_219_DAYPART_START,
+  LEGACY_MIGRATION_219_HOURLY_INTERVAL_MINUTES,
   LEGACY_MIGRATION_219_TEMPLATE_NAMES,
   resolveColDiscoveryCadenceKey,
 } from "./col-discovery-round-cadence";
@@ -116,6 +121,53 @@ describe("COL discovery round cadence — owner decision 2026-08-14", () => {
     const plantation = resolveColDiscoveryDefaultRules(COL_DISCOVERY_FACILITY_NAMES.plantation);
     expect(plantation.templateName).toBe(COL_DISCOVERY_TEMPLATE_NAMES.pending);
     expect(plantation.rules).toEqual([]);
+  });
+
+  it("does not invent migration-219 hourly 7am–7pm defaults for unknown facilities", () => {
+    const unknown = resolveColDiscoveryDefaultRules("Unknown Site");
+    expect(unknown.profile).toBeNull();
+    expect(unknown.templateName).toBeNull();
+    expect(unknown.rules).toEqual([]);
+  });
+
+  it("flags the retired migration-219 hourly clinical window", () => {
+    expect(
+      isLegacyMigration219HourlyWindow({
+        intervalType: "fixed_minutes",
+        intervalMinutes: LEGACY_MIGRATION_219_HOURLY_INTERVAL_MINUTES,
+        daypartStart: LEGACY_MIGRATION_219_DAYPART_START,
+        daypartEnd: LEGACY_MIGRATION_219_DAYPART_END,
+        active: true,
+        sortOrder: 0,
+      }),
+    ).toBe(true);
+
+    expect(
+      isLegacyMigration219HourlyWindow({
+        intervalType: "daypart",
+        intervalMinutes: null,
+        daypartStart: "06:00",
+        daypartEnd: "06:05",
+        active: true,
+        sortOrder: 0,
+      }),
+    ).toBe(false);
+  });
+
+  it("createObservationPlanRuleForAdd copies the last active rule or returns an empty shell", () => {
+    const jessicaRule = buildColDiscoveryRoundRules("standard_day_night")[0]!;
+    const addedFromJessica = createObservationPlanRuleForAdd([jessicaRule], 1);
+
+    expect(addedFromJessica.sortOrder).toBe(1);
+    expect(addedFromJessica.daypartStart).toBe(jessicaRule.daypartStart);
+    expect(addedFromJessica.daypartEnd).toBe(jessicaRule.daypartEnd);
+    expect(isLegacyMigration219HourlyWindow(addedFromJessica)).toBe(false);
+
+    const emptyShell = createObservationPlanRuleForAdd([], 0);
+    expect(emptyShell.daypartStart).toBeNull();
+    expect(emptyShell.daypartEnd).toBeNull();
+    expect(emptyShell.intervalMinutes).toBeNull();
+    expect(isLegacyMigration219HourlyWindow(emptyShell)).toBe(false);
   });
 
   it("describes Jessica cadence in plain English for configured facilities", () => {

@@ -49,6 +49,7 @@ import {
 } from "@/lib/rounding/observation-plan-validation";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
+  createObservationPlanRuleForAdd,
   getColDiscoveryCadenceProfile,
   resolveColDiscoveryCadenceKey,
   resolveColDiscoveryDefaultRules,
@@ -141,48 +142,6 @@ const RESIDENT_SELECT_WITH_BED =
 const RESIDENT_SELECT_FALLBACK =
   "id, first_name, last_name, preferred_name, status, bed_id, acuity_level, acuity_score";
 
-function blankRule(sortOrder = 0): PlanRuleInput {
-  return {
-    intervalType: "fixed_minutes",
-    intervalMinutes: 60,
-    daypartStart: "07:00",
-    daypartEnd: "19:00",
-    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-    graceMinutes: 15,
-    active: true,
-    sortOrder,
-  };
-}
-
-function defaultRulesForNewPlan(facilityName: string): {
-  rules: PlanRuleInput[];
-  cadenceProfile: ColDiscoveryCadenceProfile | null;
-  templateName: string | null;
-} {
-  const discovery = resolveColDiscoveryDefaultRules(facilityName);
-  if (discovery.rules.length > 0) {
-    return {
-      rules: discovery.rules,
-      cadenceProfile: discovery.profile,
-      templateName: discovery.templateName,
-    };
-  }
-
-  if (discovery.profile === "pending") {
-    return {
-      rules: [],
-      cadenceProfile: discovery.profile,
-      templateName: discovery.templateName,
-    };
-  }
-
-  return {
-    rules: [blankRule()],
-    cadenceProfile: discovery.profile,
-    templateName: discovery.templateName,
-  };
-}
-
 function residentRoom(resident: ResidentOption) {
   return formatObservationPlanRoomLabel(
     resident.beds?.rooms?.room_number,
@@ -194,6 +153,26 @@ function residentComboboxLabel(resident: ResidentOption) {
   const name = formatObservationPlanResidentName(resident);
   const acuitySegment = formatObservationPlanAcuitySegment(resident.acuity_score, resident.acuity_level);
   return `${name} · Room ${residentRoom(resident)} · ${acuitySegment}`;
+}
+
+function observationPlanAddRuleHelperCopy(rules: PlanRuleInput[]): string {
+  if (rules.length > 0) {
+    return "Add rule copies the last check so you can change the time. Haven will not invent a 7am–7pm hourly cadence.";
+  }
+
+  return "Haven will not invent a 7am–7pm hourly cadence or pre-fill times. Add each check manually.";
+}
+
+function observationPlanEmptyRulesDescription(cadenceProfile: ColDiscoveryCadenceProfile | null): string {
+  if (cadenceProfile === "pending") {
+    return "Plantation discovery cadence is pending owner decision. Add rules manually once Jessica supplies times — Haven will not pre-fill wing or 12-hour schedules.";
+  }
+
+  if (cadenceProfile === null) {
+    return "This facility is not on the COL Jessica discovery-round schedule. Add checks manually — Haven will not invent a 7am–7pm hourly window or pre-fill times.";
+  }
+
+  return "Add at least one rule to define when checks should occur.";
 }
 
 export function ObservationPlanEditor({
@@ -341,20 +320,20 @@ export function ObservationPlanEditor({
         const loadedTemplates = templateResponse.ok ? (templateJson.templates ?? []) : [];
         setTemplates(loadedTemplates);
 
-        const defaults = defaultRulesForNewPlan(facilityName);
+        const defaults = resolveColDiscoveryDefaultRules(facilityName);
+        const matchedTemplate =
+          loadedTemplates.find((template) => template.name === defaults.templateName) ?? null;
         const initialTemplate =
-          loadedTemplates.find((template) => template.name === defaults.templateName) ??
-          loadedTemplates[0] ??
-          null;
+          matchedTemplate ?? (defaults.rules.length > 0 ? (loadedTemplates[0] ?? null) : null);
 
         if (initialTemplate) {
           setSelectedTemplateId(initialTemplate.id);
-          setCadenceProfile((initialTemplate.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? defaults.cadenceProfile);
+          setCadenceProfile((initialTemplate.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? defaults.profile);
           setCadenceTemplateName(initialTemplate.name);
           setRules(initialTemplate.rules.map((rule, index) => ({ ...rule, sortOrder: index })));
         } else {
           setSelectedTemplateId("");
-          setCadenceProfile(defaults.cadenceProfile);
+          setCadenceProfile(defaults.profile);
           setCadenceTemplateName(defaults.templateName);
           setRules(defaults.rules);
         }
@@ -671,29 +650,32 @@ export function ObservationPlanEditor({
         </Card>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-foreground">Rules</h2>
               <p className="text-sm text-muted-foreground">Configure interval, daypart, and grace.</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setRules((current) => [...current, blankRule(current.length)])}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Add rule
-            </Button>
+            <div className="flex max-w-sm flex-col items-end gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setRules((current) => [...current, createObservationPlanRuleForAdd(current, current.length)])
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add rule
+              </Button>
+              <p className="text-[12px] leading-relaxed text-right text-muted-foreground">
+                {observationPlanAddRuleHelperCopy(rules)}
+              </p>
+            </div>
           </div>
 
           {rules.length === 0 ? (
             <AdminEmptyState
               title="No cadence rules yet"
-              description={
-                cadenceProfile === "pending"
-                  ? `Plantation discovery cadence is pending owner decision. Add rules manually once Jessica supplies times — Haven will not pre-fill wing or 12-hour schedules.`
-                  : "Add at least one rule to define when checks should occur."
-              }
+              description={observationPlanEmptyRulesDescription(cadenceProfile)}
             />
           ) : null}
 
@@ -785,7 +767,7 @@ export function ObservationPlanEditor({
                       min={5}
                       max={1440}
                       step={5}
-                      value={rule.intervalMinutes ?? 60}
+                      value={rule.intervalMinutes ?? ""}
                       aria-invalid={showIntervalError}
                       onBlur={() => markRuleTouched(ruleKey, "intervalMinutes")}
                       onChange={(event) => updateRule(index, { intervalMinutes: Number(event.target.value) })}
@@ -796,7 +778,7 @@ export function ObservationPlanEditor({
                     <Input
                       id={`daypart-start-${index}`}
                       type="time"
-                      value={rule.daypartStart ?? "07:00"}
+                      value={rule.daypartStart ?? ""}
                       onChange={(event) => updateRule(index, { daypartStart: event.target.value })}
                     />
                   </FormField>
@@ -805,7 +787,7 @@ export function ObservationPlanEditor({
                     <Input
                       id={`daypart-end-${index}`}
                       type="time"
-                      value={rule.daypartEnd ?? "19:00"}
+                      value={rule.daypartEnd ?? ""}
                       onChange={(event) => updateRule(index, { daypartEnd: event.target.value })}
                     />
                   </FormField>
