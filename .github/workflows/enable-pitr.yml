@@ -62,6 +62,9 @@ jobs:
                   headers={
                       "Authorization": f"Bearer {token}",
                       "Content-Type": "application/json",
+                      "Accept": "application/json",
+                      # Cloudflare 1010 blocks default Python-urllib UA.
+                      "User-Agent": "supabase-cli/2.101.0",
                   },
               )
               try:
