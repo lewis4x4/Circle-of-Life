@@ -49,6 +49,7 @@ import {
 } from "@/lib/rounding/observation-plan-validation";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
+  createObservationPlanRuleForAdd,
   getColDiscoveryCadenceProfile,
   resolveColDiscoveryCadenceKey,
   resolveColDiscoveryDefaultRules,
@@ -140,48 +141,6 @@ const RESIDENT_SELECT_WITH_BED =
 
 const RESIDENT_SELECT_FALLBACK =
   "id, first_name, last_name, preferred_name, status, bed_id, acuity_level, acuity_score";
-
-function blankRule(sortOrder = 0): PlanRuleInput {
-  return {
-    intervalType: "fixed_minutes",
-    intervalMinutes: 60,
-    daypartStart: "07:00",
-    daypartEnd: "19:00",
-    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-    graceMinutes: 15,
-    active: true,
-    sortOrder,
-  };
-}
-
-function defaultRulesForNewPlan(facilityName: string): {
-  rules: PlanRuleInput[];
-  cadenceProfile: ColDiscoveryCadenceProfile | null;
-  templateName: string | null;
-} {
-  const discovery = resolveColDiscoveryDefaultRules(facilityName);
-  if (discovery.rules.length > 0) {
-    return {
-      rules: discovery.rules,
-      cadenceProfile: discovery.profile,
-      templateName: discovery.templateName,
-    };
-  }
-
-  if (discovery.profile === "pending") {
-    return {
-      rules: [],
-      cadenceProfile: discovery.profile,
-      templateName: discovery.templateName,
-    };
-  }
-
-  return {
-    rules: [blankRule()],
-    cadenceProfile: discovery.profile,
-    templateName: discovery.templateName,
-  };
-}
 
 function residentRoom(resident: ResidentOption) {
   return formatObservationPlanRoomLabel(
@@ -341,20 +300,20 @@ export function ObservationPlanEditor({
         const loadedTemplates = templateResponse.ok ? (templateJson.templates ?? []) : [];
         setTemplates(loadedTemplates);
 
-        const defaults = defaultRulesForNewPlan(facilityName);
+        const defaults = resolveColDiscoveryDefaultRules(facilityName);
+        const matchedTemplate =
+          loadedTemplates.find((template) => template.name === defaults.templateName) ?? null;
         const initialTemplate =
-          loadedTemplates.find((template) => template.name === defaults.templateName) ??
-          loadedTemplates[0] ??
-          null;
+          matchedTemplate ?? (defaults.rules.length > 0 ? (loadedTemplates[0] ?? null) : null);
 
         if (initialTemplate) {
           setSelectedTemplateId(initialTemplate.id);
-          setCadenceProfile((initialTemplate.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? defaults.cadenceProfile);
+          setCadenceProfile((initialTemplate.cadenceProfile as ColDiscoveryCadenceProfile | null) ?? defaults.profile);
           setCadenceTemplateName(initialTemplate.name);
           setRules(initialTemplate.rules.map((rule, index) => ({ ...rule, sortOrder: index })));
         } else {
           setSelectedTemplateId("");
-          setCadenceProfile(defaults.cadenceProfile);
+          setCadenceProfile(defaults.profile);
           setCadenceTemplateName(defaults.templateName);
           setRules(defaults.rules);
         }
@@ -679,7 +638,9 @@ export function ObservationPlanEditor({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setRules((current) => [...current, blankRule(current.length)])}
+              onClick={() =>
+                setRules((current) => [...current, createObservationPlanRuleForAdd(current, current.length)])
+              }
             >
               <Plus className="mr-1 h-4 w-4" />
               Add rule
@@ -785,7 +746,7 @@ export function ObservationPlanEditor({
                       min={5}
                       max={1440}
                       step={5}
-                      value={rule.intervalMinutes ?? 60}
+                      value={rule.intervalMinutes ?? ""}
                       aria-invalid={showIntervalError}
                       onBlur={() => markRuleTouched(ruleKey, "intervalMinutes")}
                       onChange={(event) => updateRule(index, { intervalMinutes: Number(event.target.value) })}
@@ -796,7 +757,7 @@ export function ObservationPlanEditor({
                     <Input
                       id={`daypart-start-${index}`}
                       type="time"
-                      value={rule.daypartStart ?? "07:00"}
+                      value={rule.daypartStart ?? ""}
                       onChange={(event) => updateRule(index, { daypartStart: event.target.value })}
                     />
                   </FormField>
@@ -805,7 +766,7 @@ export function ObservationPlanEditor({
                     <Input
                       id={`daypart-end-${index}`}
                       type="time"
-                      value={rule.daypartEnd ?? "19:00"}
+                      value={rule.daypartEnd ?? ""}
                       onChange={(event) => updateRule(index, { daypartEnd: event.target.value })}
                     />
                   </FormField>

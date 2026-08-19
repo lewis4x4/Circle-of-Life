@@ -1,20 +1,28 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import {
+  COL_DISCOVERY_FACILITY_NAMES,
+  isLegacyMigration219HourlyWindow,
+} from "@/lib/rounding/col-discovery-round-cadence";
+import { validatePlanRule } from "@/lib/rounding/observation-plan-validation";
+
 import { ObservationPlanEditor } from "./ObservationPlanEditor";
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
+
+const facilityStoreState = {
+  selectedFacilityId: "facility-1",
+  availableFacilities: [{ id: "facility-1", name: "Oakridge ALF" }],
+};
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, push: mockPush }),
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({
-    selectedFacilityId: "facility-1",
-    availableFacilities: [{ id: "facility-1", name: "Oakridge ALF" }],
-  }),
+  useFacilityStore: () => facilityStoreState,
 }));
 
 const residentsSelectMock = vi.fn();
@@ -47,6 +55,9 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  facilityStoreState.selectedFacilityId = "facility-1";
+  facilityStoreState.availableFacilities = [{ id: "facility-1", name: "Oakridge ALF" }];
+
   residentsSelectMock.mockImplementation(() => ({
     eq: residentsEqMock,
     is: residentsIsMock,
@@ -161,6 +172,76 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
     expect(await screen.findByText("Facility cadence template")).toBeTruthy();
     expect(screen.getByDisplayValue("06:00")).toBeTruthy();
     expect(screen.getByText("COL Discovery Rounds — Day + Night")).toBeTruthy();
+  });
+
+  it("Add rule on Jessica plans copies the last rule instead of inventing hourly 7am–7pm", async () => {
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    await screen.findByDisplayValue("06:00");
+
+    fireEvent.click(screen.getByRole("button", { name: "Add rule" }));
+
+    const daypartStarts = screen.getAllByLabelText(/Daypart start/i).map((input) => (input as HTMLInputElement).value);
+    const daypartEnds = screen.getAllByLabelText(/Daypart end/i).map((input) => (input as HTMLInputElement).value);
+    const intervalInputs = screen.getAllByLabelText(/Interval minutes/i).map((input) => (input as HTMLInputElement).value);
+
+    expect(daypartStarts).not.toContain("07:00");
+    expect(daypartEnds).not.toContain("19:00");
+    expect(intervalInputs.filter((value) => value === "60")).toHaveLength(0);
+    expect(daypartStarts.filter((value) => value === "06:00").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("starts Plantation plans with no rules and Add rule does not invent hourly 7am–7pm", async () => {
+    facilityStoreState.selectedFacilityId = "facility-5";
+    facilityStoreState.availableFacilities = [{ id: "facility-5", name: COL_DISCOVERY_FACILITY_NAMES.plantation }];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/rounding/plans/templates")) {
+          return new Response(JSON.stringify({ templates: [] }), { status: 200 });
+        }
+        return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+      }),
+    );
+
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText("No cadence rules yet")).toBeTruthy();
+    expect(screen.queryByLabelText(/Daypart start/i)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add rule" }));
+
+    const daypartStart = screen.getByLabelText(/Daypart start/i) as HTMLInputElement;
+    const daypartEnd = screen.getByLabelText(/Daypart end/i) as HTMLInputElement;
+    const intervalMinutes = screen.getByLabelText(/Interval minutes/i) as HTMLInputElement;
+
+    expect(daypartStart.value).toBe("");
+    expect(daypartEnd.value).toBe("");
+    expect(intervalMinutes.value).toBe("");
+    expect(isLegacyMigration219HourlyWindow({
+      intervalType: "daypart",
+      intervalMinutes: intervalMinutes.value ? Number(intervalMinutes.value) : null,
+      daypartStart: daypartStart.value || null,
+      daypartEnd: daypartEnd.value || null,
+      active: true,
+      sortOrder: 0,
+    })).toBe(false);
+  });
+
+  it("still rejects legacy migration 219 12-hour interval defaults", () => {
+    expect(
+      validatePlanRule({
+        intervalType: "fixed_minutes",
+        intervalMinutes: 720,
+        daypartStart: "07:00",
+        daypartEnd: "19:00",
+        graceMinutes: 15,
+        active: true,
+        sortOrder: 0,
+      }).intervalMinutes,
+    ).toBe("12-hour (720 minute) facility defaults are retired. Use Jessica discovery-round cadence instead.");
   });
 
   it("disables apply-discovery-default until a resident is selected", async () => {
