@@ -5,6 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Utensils, Cookie } from "lucide-react";
 
+import {
+  formatSnackPassLoggedAtEt,
+  nowSnackPassDatetimeLocal,
+  snackPassDatetimeLocalToUtcIso,
+} from "@/lib/dietary/snack-pass-time";
+
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
@@ -195,7 +201,7 @@ export function AdminDietaryPageClient({
     notes: "",
   });
   const [snackForm, setSnackForm] = useState({
-    snack_at: new Date().toISOString().slice(0, 16),
+    snack_at: nowSnackPassDatetimeLocal(),
   });
 
   const applyBootstrap = useCallback((bootstrap: DietaryHubBootstrap) => {
@@ -366,18 +372,20 @@ export function AdminDietaryPageClient({
       if (!user?.id) {
         throw new Error("Sign in to log a snack pass.");
       }
-      const snackAt = new Date(snackForm.snack_at);
-      if (Number.isNaN(snackAt.getTime())) {
+      let snackAtIso: string;
+      try {
+        snackAtIso = snackPassDatetimeLocalToUtcIso(snackForm.snack_at);
+      } catch {
         throw new Error("Snack time is required.");
       }
       const { error: insertErr } = await supabase.from("snack_logs" as never).insert(({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
-        snack_at: snackAt.toISOString(),
+        snack_at: snackAtIso,
         passed_by_user_id: user.id,
       }) as never);
       if (insertErr) throw insertErr;
-      setSnackForm({ snack_at: new Date().toISOString().slice(0, 16) });
+      setSnackForm({ snack_at: nowSnackPassDatetimeLocal() });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save snack log.");
@@ -497,13 +505,13 @@ export function AdminDietaryPageClient({
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <label className="flex flex-1 flex-col gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
-                    Pass time
+                    Pass time (ET)
                     <input
                       type="datetime-local"
                       value={snackForm.snack_at}
                       onChange={(e) => setSnackForm((prev) => ({ ...prev, snack_at: e.target.value }))}
                       className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
-                      aria-label="Snack pass time"
+                      aria-label="Snack pass time (Eastern Time)"
                     />
                   </label>
                   <Button
@@ -532,7 +540,7 @@ export function AdminDietaryPageClient({
                   <ul className="space-y-2">
                     {snackLogs.slice(0, 5).map((log) => (
                       <li key={log.id} className="rounded-lg border border-slate-200/70 bg-white px-3 py-2 text-xs text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-                        <span className="font-medium">{format(new Date(log.snack_at), "MMM d, h:mm a")}</span>
+                        <span className="font-medium">{formatSnackPassLoggedAtEt(log.snack_at)} ET</span>
                         <span className="text-muted-foreground"> · Snack passed — </span>
                         <span>{log.user_profiles?.full_name?.trim() || "Staff"}</span>
                       </li>

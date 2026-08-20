@@ -50,7 +50,9 @@ describe("snack log scope (COL time + passer only)", () => {
     expect(dietaryClientSource).not.toContain("Meal / snack log");
     expect(dietaryClientSource).toContain("Log snack pass");
     expect(dietaryClientSource).toContain("Snack passed —");
-    expect(dietaryClientSource).toMatch(/snack_at:\s*snackAt\.toISOString\(\)/);
+    expect(dietaryClientSource).toMatch(/snack_at:\s*snackAtIso/);
+    expect(dietaryClientSource).toContain("nowSnackPassDatetimeLocal");
+    expect(dietaryClientSource).toContain("snackPassDatetimeLocalToUtcIso");
     expect(dietaryClientSource).toMatch(/passed_by_user_id:\s*user\.id/);
   });
 
