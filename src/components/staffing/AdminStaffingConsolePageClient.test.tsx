@@ -191,4 +191,63 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.getByText("0.0")).toBeInTheDocument();
     expect(screen.queryByText("No ratio posted")).not.toBeInTheDocument();
   });
+
+  it("defaults attendance Occurred at to Eastern wall clock with ET label", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-20T20:06:00.000Z"));
+
+    try {
+      render(<AdminStaffingConsolePageClient {...loadedProps} />);
+
+      const occurredAtInput = screen.getByLabelText(/^occurred at \(et\)$/i);
+      expect(occurredAtInput).toHaveValue("2026-08-20T16:06");
+      expect(occurredAtInput).not.toHaveValue("2026-08-20T20:06");
+      expect(new Date("2026-08-20T20:06:00.000Z").toISOString().slice(0, 16)).toBe("2026-08-20T20:06");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("persists attendance occurred_at from Eastern datetime-local without a 4-hour shift", async () => {
+    const user = userEvent.setup();
+    const insertMock = vi.fn().mockReturnValue({ error: null });
+    const fromMock = vi.fn((table: string) => {
+      if (table === "facilities") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              is: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: { organization_id: "org-1" },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "staff_attendance_events") {
+        return { insert: insertMock };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    mocks.createClientMock.mockReturnValue({
+      from: fromMock,
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
+    });
+
+    render(<AdminStaffingConsolePageClient {...loadedProps} />);
+
+    await user.selectOptions(screen.getByLabelText(/^staff member$/i), "staff-1");
+    await user.clear(screen.getByLabelText(/^occurred at \(et\)$/i));
+    await user.type(screen.getByLabelText(/^occurred at \(et\)$/i), "2026-08-20T16:06");
+    await user.click(screen.getByRole("button", { name: /save attendance event/i }));
+
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        occurred_at: "2026-08-20T20:06:00.000Z",
+      }),
+    );
+  });
 });
