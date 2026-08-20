@@ -81,7 +81,7 @@ describe("executive role dashboards — no seeded fallback", () => {
 
   it("shared officer-dashboard module carries no seeded facility data", () => {
     const source = readSource("src/components/executive/officer-dashboard.tsx");
-    for (const forbidden of ["Oakridge", "Plantation", "Cedar Park", "TempForce", "MetricCardMoonshot"]) {
+    for (const forbidden of ["Oakridge", "Plantation", "Cedar Park", "TempForce", "MetricCardMoonshot", "wiring in progress"]) {
       expect(source, `officer-dashboard still contains ${forbidden}`).not.toContain(forbidden);
     }
   });
