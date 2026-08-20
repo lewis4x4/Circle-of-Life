@@ -19,6 +19,8 @@ export type ResidentRow = {
   /** Empty when the bed is not linked to a named unit row (UI omits instead of printing "Unassigned"). */
   unit: string;
   acuity: Acuity;
+  /** Raw `residents.acuity_level` — null when acuity was never posted. */
+  acuityLevel: string | null;
   adlStatus: AdlStatus;
   status: ResidencyStatus;
   careSummary: string;
@@ -116,6 +118,7 @@ export async function fetchResidentsFromSupabase(
       room: room?.room_number ? `${room.room_number}${bed?.bed_label ? `-${bed.bed_label}` : ""}` : "No bed linked",
       unit: (unit?.name ?? "").trim(),
       acuity,
+      acuityLevel: resident.acuity_level,
       adlStatus: mapAdlStatusFromAcuity(acuity),
       status,
       careSummary: "",
