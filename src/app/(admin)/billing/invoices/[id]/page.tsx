@@ -13,6 +13,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
 import { postInvoiceToGl } from "@/lib/finance/post-to-gl";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
@@ -237,7 +238,7 @@ export default function AdminInvoiceDetailPage() {
       <BillingHubNav />
 
       <RecordDetailHeader
-        title={invoice.invoice_number}
+        title={formatInvoiceRowNumberForDisplay(invoice)}
         subtitle={`${residentName} · Period ${formatDate(invoice.period_start)} – ${formatDate(invoice.period_end)}`}
         statusChips={
           <>

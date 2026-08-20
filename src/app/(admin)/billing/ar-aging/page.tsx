@@ -32,6 +32,10 @@ import {
   formatArAgingBucketCents,
   formatArAgingInvoiceCountCaption,
 } from "@/lib/billing/ar-aging-display-copy";
+import {
+  BILLING_LEDGER_INVOICE_COLUMN_LABEL,
+  formatInvoiceRowNumberForDisplay,
+} from "@/lib/billing/invoices-display-copy";
 import { ninetyPlusRiskShareClass } from "@/lib/billing/billing-ar-semantics";
 import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 
@@ -70,6 +74,7 @@ type RawInv = {
   resident_id: string;
   facility_id: string;
   due_date: string;
+  invoice_date: string;
   balance_due: number;
   status: string;
   payer_type: string | null;
@@ -210,7 +215,7 @@ function AdminArAgingPageContent() {
       let invQ = supabase
         .from("invoices" as never)
         .select(
-          "id, resident_id, facility_id, due_date, balance_due, status, payer_type, invoice_number, deleted_at",
+          "id, resident_id, facility_id, due_date, invoice_date, balance_due, status, payer_type, invoice_number, deleted_at",
         )
         .is("deleted_at", null)
         .gt("balance_due", 0)
@@ -442,7 +447,7 @@ function AdminArAgingPageContent() {
       "Resident id",
       "Resident",
       "Facility",
-      "Invoice #",
+      BILLING_LEDGER_INVOICE_COLUMN_LABEL,
       "Due date",
       "Payer type",
       "Current_0_30_cents",
@@ -487,7 +492,7 @@ function AdminArAgingPageContent() {
             inv.resident_id,
             inv.residentName,
             inv.facilityName,
-            inv.invoice_number,
+            formatInvoiceRowNumberForDisplay(inv),
             inv.due_date.slice(0, 10),
             inv.payer_type ?? "",
             String(b0),
@@ -932,7 +937,7 @@ function AdminArAgingPageContent() {
                                 <li key={inv.id} className="flex flex-wrap justify-between gap-2 tabular-nums">
                                   <span>
                                     <Link href={`/admin/billing/invoices/${inv.id}`} className="text-primary underline">
-                                      {inv.invoice_number}
+                                      {formatInvoiceRowNumberForDisplay(inv)}
                                     </Link>{" "}
                                     <span className="text-muted-foreground">due {inv.due_date.slice(0, 10)}</span>
                                   </span>
@@ -969,7 +974,7 @@ function AdminArAgingPageContent() {
                   <tr key={inv.id} className="border-b border-border hover:bg-muted/20">
                     <td className="px-3 py-2">
                       <Link href={`/admin/billing/invoices/${inv.id}`} className="font-medium text-primary underline">
-                        {inv.invoice_number}
+                        {formatInvoiceRowNumberForDisplay(inv)}
                       </Link>
                     </td>
                     <td className="px-3 py-2">{inv.residentName}</td>

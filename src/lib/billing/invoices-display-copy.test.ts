@@ -5,6 +5,7 @@ import {
   INVOICE_NO_UPDATED_AT_COPY,
   INVOICE_NUMBER_MISSING_COPY,
   formatInvoiceNumberForDisplay,
+  formatInvoiceRowNumberForDisplay,
   formatUpdatedAt,
 } from "./invoices-display-copy";
 
@@ -49,6 +50,29 @@ describe("formatInvoiceNumberForDisplay", () => {
     expect(formatInvoiceNumberForDisplay("")).toBe(INVOICE_NUMBER_MISSING_COPY);
     expect(formatInvoiceNumberForDisplay("   ")).toBe(INVOICE_NUMBER_MISSING_COPY);
     expect(formatInvoiceNumberForDisplay("")).not.toBe(EM_DASH);
+  });
+});
+
+describe("formatInvoiceRowNumberForDisplay", () => {
+  it("formats internal persist keys from a loaded invoice row", () => {
+    const formatted = formatInvoiceRowNumberForDisplay({
+      id: "b5000000-0000-0000-0000-0000000000a1",
+      invoice_number: "00000000-2026-08-c0000000-0000-0000-0000-0000000000a1",
+      invoice_date: "2026-08-01",
+    });
+
+    expect(formatted).toBe("Invoice Aug 2026 · …00a1");
+    expect(formatted).not.toContain("00000000-2026-08");
+  });
+
+  it("passes through human-posted invoice numbers from a loaded row", () => {
+    expect(
+      formatInvoiceRowNumberForDisplay({
+        id: "b5000000-0000-0000-0000-000000000001",
+        invoice_number: "INV-1001",
+        invoice_date: "2026-03-01",
+      }),
+    ).toBe("INV-1001");
   });
 });
 

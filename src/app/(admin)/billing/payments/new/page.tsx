@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -38,6 +39,7 @@ type ResidentOption = { id: string; name: string };
 type InvoiceOption = {
   id: string;
   invoice_number: string;
+  invoice_date: string;
   balance_due: number;
   amount_paid: number | null;
   status: string;
@@ -153,7 +155,7 @@ export default function AdminNewPaymentPage() {
         const { data, error: err } = (await supabase
           .from("invoices" as never)
           .select(
-            "id, invoice_number, balance_due, amount_paid, status, period_start, period_end",
+            "id, invoice_number, invoice_date, balance_due, amount_paid, status, period_start, period_end",
           )
           .eq("resident_id", rid)
           .is("deleted_at", null)
@@ -312,7 +314,7 @@ export default function AdminNewPaymentPage() {
             <CardDescription>
               {billingCurrency.format(amountCents / 100)} applied
               {selectedInvoice
-                ? ` to ${selectedInvoice.invoice_number}`
+                ? ` to ${formatInvoiceRowNumberForDisplay(selectedInvoice)}`
                 : " (unapplied)"}
               .
             </CardDescription>
@@ -436,7 +438,7 @@ export default function AdminNewPaymentPage() {
                       <option value="">Unapplied payment</option>
                       {invoices.map((inv) => (
                         <option key={inv.id} value={inv.id}>
-                          {inv.invoice_number} — Balance{" "}
+                          {formatInvoiceRowNumberForDisplay(inv)} — Balance{" "}
                           {billingCurrency.format(inv.balance_due / 100)} (
                           {formatDate(inv.period_start)} –{" "}
                           {formatDate(inv.period_end)})
