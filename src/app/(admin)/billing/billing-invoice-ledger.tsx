@@ -89,6 +89,7 @@ import {
   type PayerTypeUi,
 } from "@/lib/billing/load-invoices";
 import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
+import { BILLING_LEDGER_INVOICE_COLUMN_LABEL } from "@/lib/billing/invoices-display-copy";
 
 import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
 
@@ -230,7 +231,7 @@ function facilityBillingShortLabel(fullName: string): string {
 
 function downloadInvoiceLedgerCsv(rows: BillingRow[], filename: string, facilityLookup: Map<string, string>) {
   const header = [
-    "Invoice #",
+    BILLING_LEDGER_INVOICE_COLUMN_LABEL,
     "Resident",
     "Facility",
     "Payer",
@@ -1593,7 +1594,7 @@ function BillingInvoiceLedgerInner({
                       />
                     </TableHead>
                     <TableHead className="text-[12px] font-medium normal-case tracking-normal text-muted-foreground">
-                      Invoice #
+                      {BILLING_LEDGER_INVOICE_COLUMN_LABEL}
                     </TableHead>
                     {showFacilityHubColumn ? (
                       <TableHead className="text-[12px] font-medium normal-case tracking-normal text-muted-foreground">
@@ -1877,7 +1878,7 @@ function BillingInvoiceLedgerInner({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-[12px] font-medium normal-case tracking-normal text-muted-foreground">
-                      Invoice #
+                      {BILLING_LEDGER_INVOICE_COLUMN_LABEL}
                     </TableHead>
                     <TableHead className="text-[12px] font-medium normal-case tracking-normal text-muted-foreground">
                       Resident

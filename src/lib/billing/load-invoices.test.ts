@@ -109,6 +109,40 @@ describe("load-invoices", () => {
     ]);
   });
 
+  it("formats internal persist keys for operator-facing invoice numbers", async () => {
+    const supabase = makeSupabaseStub(
+      {
+        data: [
+          {
+            id: "b5000000-0000-0000-0000-0000000000a1",
+            resident_id: "c0000000-0000-0000-0000-0000000000a1",
+            facility_id: "00000000-0000-0000-0002-000000000001",
+            invoice_number: "00000000-2026-08-c0000000-0000-0000-0000-0000000000a1",
+            status: "sent",
+            balance_due: 0,
+            total: 0,
+            adjustments: 0,
+            invoice_date: "2026-08-01",
+            due_date: "2026-08-15",
+            updated_at: "2026-08-01T12:00:00Z",
+            payer_type: "private_pay",
+            deleted_at: null,
+            residents: { first_name: "Alex", last_name: "Morgan" },
+          },
+        ],
+        error: null,
+      },
+      [],
+    );
+
+    const rows = await fetchInvoicesFromSupabase(null, null, supabase as never);
+
+    expect(rows[0]?.invoiceNumber).toBe("Invoice Aug 2026 · …00a1");
+    expect(rows[0]?.invoiceNumber).not.toContain("00000000-2026-08");
+    expect(rows[0]?.amountDueCents).toBe(0);
+    expect(rows[0]?.totalCents).toBe(0);
+  });
+
   it("skips invalid facility and resident filters", async () => {
     const calls: Array<[string, string, unknown]> = [];
     const supabase = makeSupabaseStub({ data: [], error: null }, calls);
