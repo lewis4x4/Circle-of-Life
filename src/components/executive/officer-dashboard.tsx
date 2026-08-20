@@ -261,13 +261,13 @@ export function OfficerLinkOutPanel({
   );
 }
 
-/** Honest, on-brand "not yet wired" state for a tab that has no live content yet. */
-export function OfficerEmptyTab({ tab, domain }: { tab: string; domain: string }) {
+/** Quiet note when a role board exposes fewer pills than the full nav catalog. */
+export function OfficerLiveViewsNotice({ count }: { count: number }) {
+  const label = count === 1 ? "view" : "views";
   return (
-    <AdminEmptyState
-      title={`${tab} — wiring in progress`}
-      description={`This tab will surface live ${domain} data, scoped to your selected facility. Building it out now.`}
-    />
+    <p className="text-[12px] text-muted-foreground" data-testid="officer-live-views-notice">
+      {count} live {label} on this board
+    </p>
   );
 }
 

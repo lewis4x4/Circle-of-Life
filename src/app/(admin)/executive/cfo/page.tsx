@@ -7,12 +7,12 @@ import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import {
   HavenInsightPanel,
   OfficerAlertsPanel,
-  OfficerEmptyTab,
   OfficerHeader,
   OfficerKpiStrip,
   OfficerKpiTile,
   OfficerLanes,
   OfficerLinkOutPanel,
+  OfficerLiveViewsNotice,
   officerAlarmTone,
   useFacilityNameMap,
   type OfficerLane,
@@ -26,24 +26,8 @@ import {
   formatExecutiveOpenInvoiceCount,
 } from "@/lib/executive/executive-display-copy";
 
-const CFO_TABS = [
-  "Overview",
-  "Revenue Cycle",
-  "Labor Economics",
-  "Cash & Liquidity",
-  "Capex & Debt",
-  "Budget Variance",
-  "Scenarios",
-  "Haven Insight",
-];
-
-const TAB_DOMAIN: Record<string, string> = {
-  "Revenue Cycle": "resident billing, payer mix, and AR aging",
-  "Labor Economics": "payroll, agency, and overtime economics",
-  "Cash & Liquidity": "cash, collections, and payments",
-  "Capex & Debt": "capex projects and the debt schedule",
-  "Budget Variance": "budget-vs-actual ledger",
-};
+/** Pills with live pane content on the CFO board (stub tabs are hidden for training-week click-around). */
+export const CFO_LIVE_TABS = ["Overview", "Scenarios", "Haven Insight"] as const;
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -102,7 +86,7 @@ export default function CfoDashboardPage() {
           activeTopNav="finance"
           activePillMenu={tab}
           onPillMenuChange={setTab}
-          customPillTabs={CFO_TABS}
+          customPillTabs={[...CFO_LIVE_TABS]}
         />
       </div>
 
@@ -112,6 +96,7 @@ export default function CfoDashboardPage() {
       />
 
       <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
+        <OfficerLiveViewsNotice count={CFO_LIVE_TABS.length} />
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={refetch} /> : null}
 
         <OfficerKpiStrip>
@@ -144,9 +129,7 @@ export default function CfoDashboardPage() {
           />
         ) : tab === "Haven Insight" ? (
           <HavenInsightPanel domain="finance" />
-        ) : (
-          <OfficerEmptyTab tab={tab} domain={TAB_DOMAIN[tab] ?? "finance"} />
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -111,10 +111,18 @@ export function ExecutiveNavV2({
   className,
 }: ExecutiveNavV2Props) {
   const tabs = customPillTabs ?? (pillMenuTabs as unknown as string[]);
+  const routeLinkedPills = customPillTabs == null;
   return (
     <div className={cn("flex flex-col gap-0", className)}>
       {showTopNav && <TopNavigation activeTab={activeTopNav} onTabChange={onTopNavChange} />}
-      {showPillMenu && <PillMenu activeTab={activePillMenu} onTabChange={onPillMenuChange} tabs={tabs} />}
+      {showPillMenu && (
+        <PillMenu
+          activeTab={activePillMenu}
+          onTabChange={onPillMenuChange}
+          tabs={tabs}
+          routeLinkedPills={routeLinkedPills}
+        />
+      )}
     </div>
   );
 }
@@ -179,14 +187,16 @@ interface PillMenuProps {
   activeTab: string;
   onTabChange?: (tab: string) => void;
   tabs: string[];
+  /** When false, pills switch local tab state only (role boards with customPillTabs). */
+  routeLinkedPills?: boolean;
 }
 
-function PillMenu({ activeTab, onTabChange, tabs }: PillMenuProps) {
+function PillMenu({ activeTab, onTabChange, tabs, routeLinkedPills = true }: PillMenuProps) {
   return (
     // Solid bg-card container with semantic border; rounded-[var(--radius)] matches Dashboard 10px
     <div className="flex flex-wrap items-center bg-card border border-border rounded-[var(--radius)] px-1 py-1 gap-1">
       {tabs.map((tab) => {
-        const href = PILL_LINKS[tab];
+        const href = routeLinkedPills ? PILL_LINKS[tab] : undefined;
         const isActive = activeTab === tab;
         // Active: solid bg-secondary + 2px brand-primary left accent bar
         const cls = cn(

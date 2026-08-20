@@ -7,11 +7,11 @@ import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
 import {
   HavenInsightPanel,
   OfficerAlertsPanel,
-  OfficerEmptyTab,
   OfficerHeader,
   OfficerKpiStrip,
   OfficerKpiTile,
   OfficerLanes,
+  OfficerLiveViewsNotice,
   officerAlarmTone,
   officerCountLabel,
   officerKpiValue,
@@ -21,27 +21,8 @@ import {
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 
-const COO_TABS = [
-  "Operations Hub",
-  "Staffing",
-  "Maintenance",
-  "Dining",
-  "Satisfaction",
-  "Move Ops",
-  "Vendors",
-  "Readiness",
-  "Haven Insight",
-];
-
-const TAB_DOMAIN: Record<string, string> = {
-  Staffing: "staffing ratios, shift coverage, and credential expirations",
-  Maintenance: "work orders and preventive maintenance",
-  Dining: "diet orders, meal service, and refusals",
-  Satisfaction: "reputation reviews and family satisfaction",
-  "Move Ops": "the admissions pipeline and move-in / move-out operations",
-  Vendors: "vendor contracts, insurance compliance, and spend",
-  Readiness: "survey readiness and emergency preparedness",
-};
+/** Pills with live pane content on the COO board (stub tabs are hidden for training-week click-around). */
+export const COO_LIVE_TABS = ["Operations Hub", "Haven Insight"] as const;
 
 export default function CooDashboardPage() {
   const [tab, setTab] = useState("Operations Hub");
@@ -95,7 +76,7 @@ export default function CooDashboardPage() {
           activeTopNav="clinical"
           activePillMenu={tab}
           onPillMenuChange={setTab}
-          customPillTabs={COO_TABS}
+          customPillTabs={[...COO_LIVE_TABS]}
         />
       </div>
 
@@ -105,6 +86,7 @@ export default function CooDashboardPage() {
       />
 
       <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
+        <OfficerLiveViewsNotice count={COO_LIVE_TABS.length} />
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={refetch} /> : null}
 
         <OfficerKpiStrip>
@@ -129,9 +111,7 @@ export default function CooDashboardPage() {
           </>
         ) : tab === "Haven Insight" ? (
           <HavenInsightPanel domain="operations" />
-        ) : (
-          <OfficerEmptyTab tab={tab} domain={TAB_DOMAIN[tab] ?? "operations"} />
-        )}
+        ) : null}
       </div>
     </div>
   );
