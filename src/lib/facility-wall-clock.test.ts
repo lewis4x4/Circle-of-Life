@@ -5,6 +5,7 @@ import {
   facilityDatetimeLocalToUtcIso,
   formatFacilityTimestampEt,
   nowFacilityDatetimeLocal,
+  utcIsoToFacilityDatetimeLocal,
 } from "@/lib/facility-wall-clock";
 
 describe("facility wall clock (America/New_York)", () => {
@@ -19,6 +20,12 @@ describe("facility wall clock (America/New_York)", () => {
 
   it("persists Eastern datetime-local without a 4-hour shift", () => {
     expect(facilityDatetimeLocalToUtcIso("2026-08-20T16:06")).toBe("2026-08-20T20:06:00.000Z");
+  });
+
+  it("hydrates datetime-local from stored UTC ISO in Eastern wall clock, not UTC ISO slice", () => {
+    expect(utcIsoToFacilityDatetimeLocal("2026-08-20T20:06:00.000Z")).toBe("2026-08-20T16:06");
+    expect(utcIsoToFacilityDatetimeLocal("2026-08-20T20:06:00.000Z")).not.toBe("2026-08-20T20:06");
+    expect(fourOhSixPmEt.toISOString().slice(0, 16)).toBe("2026-08-20T20:06");
   });
 
   it("formats stored timestamps in Eastern with operator-friendly copy", () => {

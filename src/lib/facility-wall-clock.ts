@@ -13,6 +13,18 @@ export function nowFacilityDatetimeLocal(
   return formatInTimeZone(now, timeZone, "yyyy-MM-dd'T'HH:mm");
 }
 
+/** Hydrate `<input type="datetime-local">` from stored UTC ISO (not UTC ISO slice). */
+export function utcIsoToFacilityDatetimeLocal(
+  iso: string,
+  timeZone: string = FACILITY_OPERATOR_TZ,
+): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error("iso must be a valid timestamp");
+  }
+  return formatInTimeZone(d, timeZone, "yyyy-MM-dd'T'HH:mm");
+}
+
 /** Parse facility-local datetime-local value to UTC ISO for timestamptz columns. */
 export function facilityDatetimeLocalToUtcIso(
   datetimeLocal: string,

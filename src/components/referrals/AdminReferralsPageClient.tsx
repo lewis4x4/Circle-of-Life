@@ -25,6 +25,10 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import {
+  facilityDatetimeLocalToUtcIso,
+  nowFacilityDatetimeLocal,
+} from "@/lib/facility-wall-clock";
 import { Badge } from "@/components/ui/badge";
 import {
   formatReferralsHubOutreachWeek,
@@ -214,7 +218,7 @@ export function AdminReferralsPageClient({
   );
   const [activityType, setActivityType] = useState("provider_visit");
   const [activityStatus, setActivityStatus] = useState("planned");
-  const [scheduledFor, setScheduledFor] = useState(() => new Date().toISOString().slice(0, 16));
+  const [scheduledFor, setScheduledFor] = useState(() => nowFacilityDatetimeLocal());
   const [partnerName, setPartnerName] = useState("");
   const [activityNotes, setActivityNotes] = useState("");
   const [savingActivity, setSavingActivity] = useState(false);
@@ -643,7 +647,7 @@ export function AdminReferralsPageClient({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="crm-activity-datetime" className="text-[13px]">
-                  Scheduled date and time
+                  Scheduled date and time (ET)
                 </Label>
                 <Input
                   id="crm-activity-datetime"
@@ -1105,7 +1109,8 @@ async function createOutreachActivity(input: {
     const userId = authRes.data.user?.id;
     if (!userId) throw new Error("Sign in required.");
 
-    const weekStart = new Date(scheduledFor || new Date().toISOString());
+    const scheduledUtcIso = scheduledFor ? facilityDatetimeLocalToUtcIso(scheduledFor) : null;
+    const weekStart = new Date(scheduledUtcIso ?? new Date().toISOString());
     const day = weekStart.getDay();
     const offset = day === 0 ? -6 : 1 - day;
     weekStart.setDate(weekStart.getDate() + offset);
@@ -1119,7 +1124,7 @@ async function createOutreachActivity(input: {
         owner_user_id: userId,
         activity_type: activityType,
         status: activityStatus,
-        scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+        scheduled_for: scheduledUtcIso,
         performed_for_week: weekStart.toISOString().slice(0, 10),
         external_partner_name: partnerName.trim() || null,
         notes: activityNotes.trim() || null,
