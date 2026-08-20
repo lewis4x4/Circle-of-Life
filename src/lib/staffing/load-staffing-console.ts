@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 
+import {
+  buildDedupedStaffPickerOptions,
+  STAFF_DIRECTORY_IDENTITY_SELECT,
+  type StaffDirectorySourceRow,
+} from "@/lib/staff/load-staff";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatStaffingConsoleExpiredCertStaffName } from "@/lib/staffing/staffing-console-display-copy";
@@ -107,8 +112,6 @@ type SupabaseStaffGapMini = {
   id: string;
   staff_role: string;
 };
-
-type StaffOptionRow = { id: string; first_name: string; last_name: string };
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
@@ -289,13 +292,11 @@ export async function fetchStaffOptions(
   if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return [];
   const res = (await supabase
     .from("staff" as never)
-    .select("id, first_name, last_name")
+    .select(STAFF_DIRECTORY_IDENTITY_SELECT)
     .eq("facility_id", selectedFacilityId)
-    .eq("employment_status", "active")
-    .is("deleted_at", null)
-    .order("last_name", { ascending: true })) as unknown as QueryResult<StaffOptionRow>;
+    .is("deleted_at", null)) as unknown as QueryResult<StaffDirectorySourceRow>;
   if (res.error) throw res.error;
-  return (res.data ?? []).map((row) => ({ id: row.id, label: `${row.first_name} ${row.last_name}`.trim() }));
+  return buildDedupedStaffPickerOptions(res.data ?? []);
 }
 
 export async function fetchStaffRequisitions(

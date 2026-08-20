@@ -7,6 +7,7 @@ const NY_TZ = "America/New_York";
 
 export const STAFFING_TAB_NO_ROSTER_DATE_COPY = "No roster date posted";
 export const STAFFING_TAB_NO_ADMINISTRATOR_COPY = "No administrator posted";
+export const STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT = "Unique people on the active roster";
 
 /** Roster update date on the staffing tab when unset, blank, or unparseable. */
 export function formatStaffingTabRosterDate(iso: string | null | undefined): string {

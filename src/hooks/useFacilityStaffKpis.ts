@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import {
+  countUniqueActiveStaffDirectoryRecords,
+  STAFF_DIRECTORY_IDENTITY_SELECT,
+  type StaffDirectorySourceRow,
+} from "@/lib/staff/load-staff";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -70,9 +75,8 @@ export function useFacilityStaffKpis(facilityId: string | undefined, enabled: bo
       const [staffActiveRes, rosterFreshRes, certsRes, bgRes] = await Promise.all([
         supabase
           .from("staff" as never)
-          .select("id", { count: "exact", head: true })
+          .select(STAFF_DIRECTORY_IDENTITY_SELECT)
           .eq("facility_id", facilityId)
-          .eq("employment_status", "active")
           .is("deleted_at", null),
         supabase
           .from("staff" as never)
@@ -100,7 +104,8 @@ export function useFacilityStaffKpis(facilityId: string | undefined, enabled: bo
       if (certsRes.error) throw certsRes.error;
       if (bgRes.error) throw bgRes.error;
 
-      const activeStaff = typeof staffActiveRes.count === "number" ? staffActiveRes.count : 0;
+      const staffRows = (staffActiveRes.data ?? []) as StaffDirectorySourceRow[];
+      const activeStaff = countUniqueActiveStaffDirectoryRecords(staffRows);
 
       const freshRow = rosterFreshRes.data as { updated_at?: string; updated_by?: string | null } | null;
       let rosterUpdatedByDisplayName: string | null = null;

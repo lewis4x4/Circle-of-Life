@@ -5,6 +5,7 @@
 
 export const STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY = "Not tracked";
 export const STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY = "Coverage not computed yet";
+export const STAFF_STRIP_ACTIVE_STAFF_SUBCOPY = "Unique people · live roster";
 
 export type StaffStripCoverageGapMainValue = string | number;
 
