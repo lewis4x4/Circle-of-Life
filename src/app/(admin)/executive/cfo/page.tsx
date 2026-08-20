@@ -4,6 +4,12 @@ import { useState } from "react";
 
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
+import { Card, CardContent } from "@/components/ui/card";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import {
   HavenInsightPanel,
   OfficerAlertsPanel,
@@ -33,13 +39,27 @@ const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
 
 export default function CfoDashboardPage() {
   const [tab, setTab] = useState("Overview");
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const { kpis, alerts, facilities, loading, error, refetch } = useExecRoleKpis(selectedFacilityId);
   const facilityNameById = useFacilityNameMap(facilities);
 
   const scopeLabel = selectedFacilityId
     ? facilityNameById.get(selectedFacilityId) ?? "the selected facility"
-    : "all facilities";
+    : "all facilities in your organization";
+  const subtitle = selectedFacilityId
+    ? `This facility — CFO finance board for ${scopeLabel}, not a portfolio roll-up.`
+    : `CFO finance board — ${scopeLabel}, not the enterprise portfolio roll-up.`;
+
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: kpis != null,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error,
+  });
 
   const arCents = kpis?.financial.totalBalanceDueCents;
   const occupancyPct = kpis?.census.occupancyPct;
@@ -90,14 +110,20 @@ export default function CfoDashboardPage() {
         />
       </div>
 
-      <OfficerHeader
-        title="Chief Financial Officer"
-        subtitle={`Live finance command center — ${scopeLabel}.`}
-      />
+      <OfficerHeader title="Chief Financial Officer" subtitle={subtitle} />
 
       <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
         <OfficerLiveViewsNotice count={CFO_LIVE_TABS.length} />
-        {error ? <AdminLiveDataFallbackNotice message={error} onRetry={refetch} /> : null}
+
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
+          <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={refetch} />
+        ) : null}
 
         <OfficerKpiStrip>
           <OfficerKpiTile label="Total AR outstanding" value={arValue} />
@@ -116,7 +142,7 @@ export default function CfoDashboardPage() {
               alerts={alerts}
               facilityNameById={facilityNameById}
               loading={loading}
-              error={error}
+              error={fetchErrorBannerMessage}
               onRetry={refetch}
             />
           </>
