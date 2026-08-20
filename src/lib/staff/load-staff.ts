@@ -24,13 +24,103 @@ export type StaffRow = {
 
 type SupabaseStaffRow = {
   id: string;
+  facility_id: string;
+  user_id: string | null;
   first_name: string;
   last_name: string;
+  email: string | null;
   staff_role: string;
   employment_status: string;
   photo_url: string | null;
+  updated_at: string;
   deleted_at: string | null;
 };
+
+export type StaffDirectorySourceRow = Pick<
+  SupabaseStaffRow,
+  | "id"
+  | "facility_id"
+  | "user_id"
+  | "first_name"
+  | "last_name"
+  | "email"
+  | "staff_role"
+  | "employment_status"
+  | "photo_url"
+  | "updated_at"
+  | "deleted_at"
+>;
+
+function normalizeStaffEmail(email: string | null | undefined): string | null {
+  const trimmed = email?.trim().toLowerCase();
+  return trimmed ? trimmed : null;
+}
+
+function normalizeStaffPersonName(firstName: string, lastName: string): string {
+  return `${firstName.trim().toLowerCase()} ${lastName.trim().toLowerCase()}`.trim();
+}
+
+/** True when two roster source rows represent the same person in the directory. */
+export function isSameStaffDirectoryPerson(
+  left: StaffDirectorySourceRow,
+  right: StaffDirectorySourceRow,
+): boolean {
+  if (left.user_id && right.user_id && left.user_id === right.user_id) {
+    return true;
+  }
+
+  const leftEmail = normalizeStaffEmail(left.email);
+  const rightEmail = normalizeStaffEmail(right.email);
+  if (leftEmail && rightEmail && leftEmail === rightEmail) {
+    return true;
+  }
+
+  if (left.facility_id === right.facility_id) {
+    const leftName = normalizeStaffPersonName(left.first_name, left.last_name);
+    const rightName = normalizeStaffPersonName(right.first_name, right.last_name);
+    if (leftName.length > 0 && leftName === rightName) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function staffDirectoryRetentionScore(row: StaffDirectorySourceRow): number {
+  let score = 0;
+  if (row.user_id) score += 100;
+  if (normalizeStaffEmail(row.email)) score += 50;
+  if (row.employment_status === "active") score += 20;
+  if (row.employment_status === "on_leave") score += 10;
+  return score;
+}
+
+/** Prefer linked auth, contactable rows, and active employment when imports overlap. */
+export function pickPreferredStaffDirectoryRecord<T extends StaffDirectorySourceRow>(
+  existing: T,
+  candidate: T,
+): T {
+  const existingScore = staffDirectoryRetentionScore(existing);
+  const candidateScore = staffDirectoryRetentionScore(candidate);
+  if (candidateScore !== existingScore) {
+    return candidateScore > existingScore ? candidate : existing;
+  }
+  return candidate.updated_at >= existing.updated_at ? candidate : existing;
+}
+
+/** Collapse duplicate staff rows so the Team directory shows each person once. */
+export function dedupeStaffDirectoryRecords<T extends StaffDirectorySourceRow>(rows: T[]): T[] {
+  const kept: T[] = [];
+  for (const row of rows) {
+    const matchIndex = kept.findIndex((existing) => isSameStaffDirectoryPerson(existing, row));
+    if (matchIndex === -1) {
+      kept.push(row);
+      continue;
+    }
+    kept[matchIndex] = pickPreferredStaffDirectoryRecord(kept[matchIndex], row);
+  }
+  return kept;
+}
 
 type SupabaseCertRow = {
   staff_id: string;
@@ -54,7 +144,9 @@ export async function fetchStaffFromSupabase(
 ): Promise<StaffRow[]> {
   let staffQuery = supabase
     .from("staff" as never)
-    .select("id, first_name, last_name, staff_role, employment_status, photo_url, deleted_at")
+    .select(
+      "id, facility_id, user_id, first_name, last_name, email, staff_role, employment_status, photo_url, updated_at, deleted_at",
+    )
     .is("deleted_at", null)
     .limit(300);
 
@@ -63,13 +155,15 @@ export async function fetchStaffFromSupabase(
   }
 
   const staffResult = (await staffQuery) as unknown as QueryResult<SupabaseStaffRow>;
-  const staffList = staffResult.data ?? [];
+  const rawStaffList = staffResult.data ?? [];
   if (staffResult.error) {
     throw staffResult.error;
   }
-  if (staffList.length === 0) {
+  if (rawStaffList.length === 0) {
     return [];
   }
+
+  const staffList = dedupeStaffDirectoryRecords(rawStaffList);
 
   const staffIds = staffList.map((s) => s.id);
   const today = new Date().toISOString().slice(0, 10);
