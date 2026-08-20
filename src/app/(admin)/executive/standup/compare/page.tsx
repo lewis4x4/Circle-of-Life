@@ -19,14 +19,18 @@ import {
   type StandupSectionKey,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import {
+  resolveExecutiveStandupFetchErrorBannerMessage,
+  resolveExecutiveStandupOrganizationGapMessage,
+} from "@/lib/executive/standup-page-state";
 import { formatStandupMetricDelta, formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
 
 export default function ExecutiveStandupComparePage() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
-  const { organizationId } = useHavenAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { organizationId, loading: authLoading } = useHavenAuth();
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [historyRows, setHistoryRows] = useState<Array<{ weekOf: string; id: string }>>([]);
   const [leftDetail, setLeftDetail] = useState<StandupSnapshotDetail | null>(null);
   const [rightDetail, setRightDetail] = useState<StandupSnapshotDetail | null>(null);
@@ -35,11 +39,36 @@ export default function ExecutiveStandupComparePage() {
   const fromWeek = searchParams.get("from") ?? "";
   const toWeek = searchParams.get("to") ?? "";
 
+  const hasOrgScopedPackData = historyRows.length > 0 || comparison != null;
+  const organizationGapMessage = resolveExecutiveStandupOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedPackData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveStandupFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    if (authLoading) {
+      return;
+    }
+
+    if (!organizationId) {
+      setHistoryRows([]);
+      setLeftDetail(null);
+      setRightDetail(null);
+      setComparison(null);
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const history = await fetchStandupHistory(supabase, organizationId, 52);
       setHistoryRows(history.map((row) => ({ id: row.id, weekOf: row.weekOf })));
 
@@ -47,7 +76,7 @@ export default function ExecutiveStandupComparePage() {
         setLeftDetail(null);
         setRightDetail(null);
         setComparison(null);
-        setLoading(false);
+        setFetching(false);
         return;
       }
 
@@ -67,11 +96,11 @@ export default function ExecutiveStandupComparePage() {
       setLeftDetail(null);
       setRightDetail(null);
       setComparison(null);
-      setError(loadError instanceof Error ? loadError.message : "Could not load standup comparison.");
+      setFetchError(loadError instanceof Error ? loadError.message : "Could not load standup comparison.");
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [fromWeek, organizationId, supabase, toWeek]);
+  }, [authLoading, fromWeek, organizationId, supabase, toWeek]);
 
   useEffect(() => {
     void load();
@@ -121,9 +150,15 @@ export default function ExecutiveStandupComparePage() {
           </div>
         </header>
 
-        {error ? (
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
           <Card className="border-rose-200 bg-rose-50/70 dark:border-rose-500/20 dark:bg-rose-500/10">
-            <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{error}</CardContent>
+            <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{fetchErrorBannerMessage}</CardContent>
           </Card>
         ) : null}
 

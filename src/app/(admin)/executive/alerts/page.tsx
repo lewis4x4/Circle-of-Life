@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Clock, MapPin, CheckCircle2 } from "lucide-react";
 
@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { fetchExecutiveAlerts, acknowledgeExecutiveAlert, type ExecutiveAlertRow } from "@/lib/exec-alerts";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { cn } from "@/lib/utils";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -26,33 +30,50 @@ interface AlertWithFacility extends ExecutiveAlertRow {
 }
 
 export default function ExecutiveAlertsPage() {
-  const supabase = createClient();
-  const { user, organizationId, appRole } = useHavenAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   const roleConfig = getRoleDashboardConfig(appRole as AppRole);
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ExecutiveAlertRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    if (authLoading) {
+      return;
+    }
+
+    if (!organizationId) {
+      setRows([]);
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        setRows([]);
-        return;
-      }
       const data = await fetchExecutiveAlerts(supabase, organizationId, selectedFacilityId, 100);
       setRows(data);
     } catch (e) {
       setRows([]);
-      setError(e instanceof Error ? e.message : "Unable to load alerts.");
+      setFetchError(e instanceof Error ? e.message : "Unable to load alerts.");
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [supabase, selectedFacilityId, organizationId]);
+  }, [authLoading, supabase, selectedFacilityId, organizationId]);
 
   useEffect(() => {
     void load();
@@ -60,16 +81,16 @@ export default function ExecutiveAlertsPage() {
 
   async function onAck(alert: ExecutiveAlertRow) {
     setBusyId(alert.id);
-    setError(null);
+    setFetchError(null);
     try {
       if (!user) {
-        setError("Sign in required.");
+        setFetchError("Sign in required.");
         return;
       }
       await acknowledgeExecutiveAlert(supabase, alert.id, user.id);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Acknowledge failed.");
+      setFetchError(e instanceof Error ? e.message : "Acknowledge failed.");
     } finally {
       setBusyId(null);
     }
@@ -134,11 +155,17 @@ export default function ExecutiveAlertsPage() {
           ))}
         </div>
 
-        {error && (
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
+            {fetchErrorBannerMessage}
           </p>
-        )}
+        ) : null}
 
         {/* Action Center Dash */}
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={50}>

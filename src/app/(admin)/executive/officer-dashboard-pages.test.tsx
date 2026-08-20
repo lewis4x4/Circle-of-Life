@@ -34,6 +34,13 @@ vi.mock("@/hooks/useFacilityStore", () => ({
   useFacilityStore: () => ({ selectedFacilityId: null }),
 }));
 
+vi.mock("@/contexts/haven-auth-context", () => ({
+  useHavenAuth: () => ({
+    organizationId: "org-anon-1",
+    loading: false,
+  }),
+}));
+
 vi.mock("@/hooks/useExecRoleKpis", () => ({
   useExecRoleKpis: () => ({
     kpis: zeroKpis,

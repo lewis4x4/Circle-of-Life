@@ -45,6 +45,20 @@ export function useExecRoleKpis(
   const metricInsertReloadDebouncerRef = useRef<ReturnType<typeof createReloadDebouncer> | null>(null);
 
   const load = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!authOrgId) {
+      setKpis(null);
+      setAlerts([]);
+      setFacilities([]);
+      setError(null);
+      setIsDemo(false);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setIsDemo(false);
@@ -53,9 +67,6 @@ export function useExecRoleKpis(
     const facId = facilityId ?? null;
 
     try {
-      if (!authOrgId) {
-        throw new Error("Organization missing on profile.");
-      }
       const organizationId = authOrgId;
 
       const [kpiResult, alertsResult, facilitiesResult] = await Promise.all([
@@ -84,7 +95,7 @@ export function useExecRoleKpis(
     } finally {
       setLoading(false);
     }
-  }, [facilityId, authOrgId]);
+  }, [authLoading, facilityId, authOrgId]);
 
   useEffect(() => {
     if (!enabled) return;
