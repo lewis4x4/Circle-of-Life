@@ -258,6 +258,26 @@ export function getRoleDashboardConfig(role: string): DashboardConfig {
 /** Named loading gap for role-home chrome (Quiet Operator: no silent em-dash). */
 export const ROLE_HOME_LOADING_LEAD = "Loading role home";
 
+/** Route-level gate while auth resolves before a role home paints. */
+export const ROLE_HOME_CHECKING_MESSAGE = "Checking your role home";
+
+/** Audience labels for role-home bounce copy on restricted dashboards. */
+export const ADMIN_ASSISTANT_ROLE_HOME_AUDIENCE = "administrative assistants";
+export const COORDINATOR_ROLE_HOME_AUDIENCE = "coordinators";
+
+/** True when the session role's configured home matches the route being guarded. */
+export function isRoleHomeRouteMatch(role: string, expectedRoute: string): boolean {
+  return getRoleDashboardConfig(role).route === expectedRoute;
+}
+
+/** Named bounce when a user opens another role's home (Quiet Operator: no silent redirect). */
+export function formatRoleHomeBounceMessage(
+  homeAudienceLabel: string,
+  visitorRoleLabel: string,
+): string {
+  return `This home is for ${homeAudienceLabel} — opening ${visitorRoleLabel} home…`;
+}
+
 /** True once auth hydration finished and the session role maps to a dashboard config. */
 export function isRoleHomeLabelReady(authLoading: boolean, role: string): boolean {
   return !authLoading && Boolean(role) && role in DASHBOARD_CONFIGS;

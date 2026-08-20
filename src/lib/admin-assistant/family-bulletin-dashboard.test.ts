@@ -19,6 +19,9 @@ const assistantPagePath = "src/components/admin-assistant/AssistantDashboardPage
 const coordinatorPagePath = "src/components/coordinator/CoordinatorDashboardPageClient.tsx";
 const assistantServerPagePath = "src/app/(admin)/admin/assistant-dashboard/page.tsx";
 const coordinatorServerPagePath = "src/app/(admin)/admin/coordinator-dashboard/page.tsx";
+const assistantLoadingPath = "src/app/(admin)/admin/assistant-dashboard/loading.tsx";
+const coordinatorLoadingPath = "src/app/(admin)/admin/coordinator-dashboard/loading.tsx";
+const roleHomeGatePath = "src/components/auth/role-home-page-gate.tsx";
 const routingPath = "src/lib/auth/dashboard-routing.ts";
 
 const forbiddenInboxCopy = [
@@ -95,6 +98,27 @@ describe("assistant and coordinator dashboard named loading", () => {
       expect(source).toMatch(/initialBrief/);
       expect(source).toMatch(/createClient\(\)/);
     }
+  });
+
+  it("does not leave wrong-role visitors on a silent skeleton before redirect", () => {
+    for (const relativePath of [assistantServerPagePath, coordinatorServerPagePath]) {
+      const source = readSource(relativePath);
+      expect(source).toMatch(/RoleHomePageGate/);
+      expect(source).toMatch(/RoleHomeRouteLoading/);
+      expect(source).toMatch(/ROLE_HOME_CHECKING_MESSAGE/);
+      expect(source).not.toMatch(/AdminRouteLoading/);
+    }
+
+    for (const relativePath of [assistantLoadingPath, coordinatorLoadingPath]) {
+      const source = readSource(relativePath);
+      expect(source).toMatch(/RoleHomeRouteLoading/);
+      expect(source).toMatch(/ROLE_HOME_CHECKING_MESSAGE/);
+    }
+
+    const gateSource = readSource(roleHomeGatePath);
+    expect(gateSource).toMatch(/formatRoleHomeBounceMessage/);
+    expect(gateSource).toMatch(/router\.replace/);
+    expect(gateSource).not.toMatch(/admin-route-loading/);
   });
 });
 
