@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 
 import CfoDashboardPage, { CFO_LIVE_TABS } from "./cfo/page";
 import CooDashboardPage, { COO_LIVE_TABS } from "./coo/page";
@@ -30,8 +30,11 @@ const zeroKpis: ExecKpiPayload = {
   },
 };
 
+let mockSelectedFacilityId: string | null = null;
+let mockKpis: ExecKpiPayload = zeroKpis;
+
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({ selectedFacilityId: null }),
+  useFacilityStore: () => ({ selectedFacilityId: mockSelectedFacilityId }),
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -43,9 +46,11 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 
 vi.mock("@/hooks/useExecRoleKpis", () => ({
   useExecRoleKpis: () => ({
-    kpis: zeroKpis,
+    kpis: mockKpis,
     alerts: [],
-    facilities: [],
+    facilities: mockSelectedFacilityId
+      ? [{ id: mockSelectedFacilityId, name: "Site Alpha", total_licensed_beds: 52 }]
+      : [],
     loading: false,
     error: null,
     isDemo: false,
@@ -76,6 +81,11 @@ function expectNoStubCopy(container: HTMLElement) {
 }
 
 describe("officer dashboard pages — training-week click paths", () => {
+  beforeEach(() => {
+    mockSelectedFacilityId = null;
+    mockKpis = zeroKpis;
+  });
+
   it("removes stub copy from officer-dashboard and role page sources", () => {
     for (const sourcePath of [
       "src/components/executive/officer-dashboard.tsx",
@@ -116,6 +126,34 @@ describe("officer dashboard pages — training-week click paths", () => {
 
     await user.click(screen.getByRole("button", { name: "Haven Insight" }));
     expect(screen.getByRole("link", { name: /Open Haven Insight/i })).toHaveAttribute("href", "/admin/executive/nlq");
+  });
+
+  it("CFO occupancy tile labels portfolio scope when no facility is selected", () => {
+    mockSelectedFacilityId = null;
+    mockKpis = {
+      ...zeroKpis,
+      census: { occupiedResidents: 33, licensedBeds: 258, occupancyPct: 12.8 },
+    };
+
+    render(<CfoDashboardPage />);
+
+    expect(screen.getByText("Portfolio occupancy")).toBeInTheDocument();
+    expect(screen.getByText("12.8%")).toBeInTheDocument();
+    expect(screen.queryByText("This facility occupancy")).not.toBeInTheDocument();
+  });
+
+  it("CFO occupancy tile labels this-facility scope when header selects a facility", () => {
+    mockSelectedFacilityId = "00000000-0000-4000-8000-000000000001";
+    mockKpis = {
+      ...zeroKpis,
+      census: { occupiedResidents: 48, licensedBeds: 52, occupancyPct: 91.7 },
+    };
+
+    render(<CfoDashboardPage />);
+
+    expect(screen.getByText("This facility occupancy")).toBeInTheDocument();
+    expect(screen.getByText("91.7%")).toBeInTheDocument();
+    expect(screen.queryByText("Portfolio occupancy")).not.toBeInTheDocument();
   });
 
   it("COO board exposes only live pills and never renders stub panes", async () => {
