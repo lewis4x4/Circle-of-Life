@@ -24,6 +24,7 @@ import {
   formatExecutiveCertsExpiringCount,
   formatExecutiveCompletenessPct,
   formatExecutiveConfidenceBand,
+  formatExecutiveFacilityCensusStripLine,
   formatExecutiveHospitalCount,
   formatExecutiveInHouseCount,
   formatExecutiveLastGeneratedAt,
@@ -92,6 +93,38 @@ describe("formatExecutiveOccPtPctWithSuffix", () => {
   it("converts occ_pt fraction to portfolio one-decimal percent", () => {
     expect(formatExecutiveOccPtPctWithSuffix(0.128)).toBe("12.8%");
     expect(formatExecutiveOccPtPctWithSuffix(0.92)).toBe("92.0%");
+  });
+});
+
+describe("formatExecutiveFacilityCensusStripLine", () => {
+  it("names the gap when bed census is not loaded", () => {
+    expect(
+      formatExecutiveFacilityCensusStripLine({
+        occupiedResidents: 0,
+        licensedBeds: 52,
+        occupancyPct: null,
+      }),
+    ).toBe("Census not loaded yet");
+  });
+
+  it("shows posted-empty as zero beds and zero percent", () => {
+    expect(
+      formatExecutiveFacilityCensusStripLine({
+        occupiedResidents: 0,
+        licensedBeds: 52,
+        occupancyPct: 0,
+      }),
+    ).toBe("0/52 beds · 0%");
+  });
+
+  it("formats loaded census with one decimal for non-zero occupancy", () => {
+    expect(
+      formatExecutiveFacilityCensusStripLine({
+        occupiedResidents: 33,
+        licensedBeds: 52,
+        occupancyPct: 63.5,
+      }),
+    ).toBe("33/52 beds · 63.5%");
   });
 });
 

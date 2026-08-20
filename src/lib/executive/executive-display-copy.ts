@@ -3,6 +3,7 @@
  * Copy reflects real data gaps — never fabricates occupancy, revenue, or confidence.
  */
 
+import { portfolioStripKpiEmptyCopy } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import type { PresenceCensus } from "@/lib/executive/presence-census";
 import type { StandupMetricRow } from "@/lib/executive/standup";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
@@ -57,6 +58,20 @@ export function formatExecutiveOccupancyBarLabel(value: number | null | undefine
 /** Executive overview `occ_pt` snapshot metric (0–1 fraction) → portfolio % display. */
 export function formatExecutiveOccPtPctWithSuffix(occPt: number): string {
   return formatPortfolioOccupancyPctDisplay(occPt * 100);
+}
+
+export type ExecutiveFacilityCensusStripInput = {
+  occupiedResidents: number;
+  licensedBeds: number;
+  occupancyPct: number | null;
+};
+
+/** Facility drill-down Live KPI census line — portfolio loaded vs unloaded semantics. */
+export function formatExecutiveFacilityCensusStripLine(census: ExecutiveFacilityCensusStripInput): string {
+  if (census.occupancyPct == null) {
+    return portfolioStripKpiEmptyCopy("occupied_beds");
+  }
+  return `${census.occupiedResidents}/${census.licensedBeds} beds · ${formatPortfolioOccupancyPctDisplay(census.occupancyPct)}`;
 }
 
 export function formatExecutivePacketStatus(value: string | null | undefined): string {

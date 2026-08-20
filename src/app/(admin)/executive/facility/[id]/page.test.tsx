@@ -129,6 +129,46 @@ describe("ExecutiveFacilityDetailPage auth hydration", () => {
   });
 });
 
+describe("ExecutiveFacilityDetailPage census strip", () => {
+  beforeEach(() => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    fetchExecutiveKpiSnapshotMock.mockReset();
+  });
+
+  it("names the census gap when bed grid is not loaded", async () => {
+    fetchExecutiveKpiSnapshotMock.mockResolvedValue({
+      census: { occupiedResidents: 0, licensedBeds: 52, occupancyPct: null, presence: null },
+      financial: { openInvoicesCount: 0, totalBalanceDueCents: 0 },
+      clinical: { openIncidents: 0, medicationErrorsMtd: 0 },
+      compliance: { openSurveyDeficiencies: 0 },
+      workforce: { certificationsExpiring30d: 0 },
+      infection: { activeOutbreaks: 0 },
+    });
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    expect(await screen.findByText("Census: Census not loaded yet")).toBeInTheDocument();
+    expect(screen.queryByText(/Census: 0\/52 beds/)).not.toBeInTheDocument();
+  });
+
+  it("shows posted-empty census as zero beds and zero percent", async () => {
+    fetchExecutiveKpiSnapshotMock.mockResolvedValue({
+      census: { occupiedResidents: 0, licensedBeds: 52, occupancyPct: 0, presence: null },
+      financial: { openInvoicesCount: 0, totalBalanceDueCents: 0 },
+      clinical: { openIncidents: 0, medicationErrorsMtd: 0 },
+      compliance: { openSurveyDeficiencies: 0 },
+      workforce: { certificationsExpiring30d: 0 },
+      infection: { activeOutbreaks: 0 },
+    });
+
+    render(<ExecutiveFacilityDetailPage />);
+
+    expect(await screen.findByText("Census: 0/52 beds · 0%")).toBeInTheDocument();
+    expect(screen.queryByText("Census not loaded yet")).not.toBeInTheDocument();
+  });
+});
+
 describe("ExecutiveFacilityDetailPage fetch failures", () => {
   it("surfaces real fetch errors in the rose banner after auth resolves", async () => {
     authMock.loading = false;
