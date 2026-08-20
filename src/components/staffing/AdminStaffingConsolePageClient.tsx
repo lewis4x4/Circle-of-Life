@@ -25,6 +25,10 @@ import {
 } from "@/lib/staffing/load-staffing-console";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  formatStaffingConsoleCurrentRatioMainValue,
+  staffingConsoleCurrentRatioMainIsNumeric,
+} from "@/lib/staffing/staffing-console-display-copy";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -264,6 +268,8 @@ export function AdminStaffingConsolePageClient({
 
   const latestVisibleSnapshot = visibleSnapshots[0] ?? null;
   const currentRatio = latestVisibleSnapshot?.ratio ?? null;
+  const currentRatioMainValue = formatStaffingConsoleCurrentRatioMainValue(currentRatio);
+  const currentRatioMainIsNumeric = staffingConsoleCurrentRatioMainIsNumeric(currentRatioMainValue);
   const requiredRatio = latestVisibleSnapshot?.requiredRatio ?? null;
   const ratioDelta =
     currentRatio != null && requiredRatio != null
@@ -403,8 +409,17 @@ export function AdminStaffingConsolePageClient({
             Current ratio
           </div>
           <div className="mt-4 flex items-end gap-3">
-            <span className={cn("text-3xl font-semibold tabular-nums", ratioCardTone)}>
-              {currentRatio != null ? currentRatio.toFixed(1) : "--"}
+            <span
+              className={cn(
+                currentRatioMainIsNumeric
+                  ? "text-3xl font-semibold tabular-nums"
+                  : "text-lg font-semibold leading-snug",
+                ratioCardTone,
+              )}
+            >
+              {currentRatioMainIsNumeric
+                ? currentRatioMainValue.toFixed(1)
+                : currentRatioMainValue}
             </span>
             <span className="pb-1 text-sm text-muted-foreground">
               {requiredRatio != null ? `required ${requiredRatio.toFixed(1)}` : "no live snapshot"}

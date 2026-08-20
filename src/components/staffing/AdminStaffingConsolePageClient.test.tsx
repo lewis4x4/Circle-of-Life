@@ -153,4 +153,42 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.getByText(/attendance logging blocked/i)).toBeInTheDocument();
     expect(screen.getByText(/once the active staff directory syncs/i)).toBeInTheDocument();
   });
+
+  it("names the current ratio gap instead of a dash glyph when no snapshot is in scope", () => {
+    render(
+      <AdminStaffingConsolePageClient
+        {...loadedProps}
+        initialSnapshots={[]}
+      />,
+    );
+
+    expect(screen.getByText("No ratio posted")).toBeInTheDocument();
+    expect(screen.getByText("no live snapshot")).toBeInTheDocument();
+    expect(screen.queryByText("--")).not.toBeInTheDocument();
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+    expect(screen.queryByText("–")).not.toBeInTheDocument();
+  });
+
+  it("keeps a posted zero ratio numeric on the current ratio tile", () => {
+    render(
+      <AdminStaffingConsolePageClient
+        {...loadedProps}
+        initialSnapshots={[
+          {
+            id: "snap-zero",
+            snapshotAt: "2026-05-26T12:00:00.000Z",
+            shift: "Day",
+            residentsPresent: 0,
+            staffOnDuty: 5,
+            ratio: 0,
+            requiredRatio: 6.0,
+            isCompliant: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("0.0")).toBeInTheDocument();
+    expect(screen.queryByText("No ratio posted")).not.toBeInTheDocument();
+  });
 });
