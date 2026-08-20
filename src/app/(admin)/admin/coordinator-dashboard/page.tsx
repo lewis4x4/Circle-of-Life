@@ -2,10 +2,14 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { RoleHomePageGate, RoleHomeRouteLoading } from "@/components/auth/role-home-page-gate";
 import { CoordinatorDashboardPageClient } from "@/components/coordinator/CoordinatorDashboardPageClient";
-import AdminRouteLoading from "@/components/layout/admin-route-loading";
 import { fetchCoordinatorDashboardBrief } from "@/lib/coordinator/dashboard-brief";
-import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import {
+  COORDINATOR_ROLE_HOME_AUDIENCE,
+  getRoleDashboardConfig,
+  ROLE_HOME_CHECKING_MESSAGE,
+} from "@/lib/auth/dashboard-routing";
 import {
   SELECTED_FACILITY_COOKIE,
   parseSelectedFacilityCookieValue,
@@ -13,9 +17,13 @@ import {
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import { createClient } from "@/lib/supabase/server";
 
+const COORDINATOR_DASHBOARD_ROUTE = "/admin/coordinator-dashboard";
+
 export default function CoordinatorDashboardPage() {
   return (
-    <Suspense fallback={<AdminRouteLoading inset={false} />}>
+    <Suspense
+      fallback={<RoleHomeRouteLoading message={`${ROLE_HOME_CHECKING_MESSAGE}…`} />}
+    >
       <CoordinatorDashboardData />
     </Suspense>
   );
@@ -26,7 +34,7 @@ async function CoordinatorDashboardData() {
 
   if (roleContext.ok) {
     const config = getRoleDashboardConfig(roleContext.ctx.appRole);
-    if (config.route !== "/admin/coordinator-dashboard") {
+    if (config.route !== COORDINATOR_DASHBOARD_ROUTE) {
       redirect(config.route);
     }
   }
@@ -48,10 +56,15 @@ async function CoordinatorDashboardData() {
   }
 
   return (
-    <CoordinatorDashboardPageClient
-      initialBrief={initialBrief}
-      initialError={initialError}
-      initialFacilityId={initialFacilityId}
-    />
+    <RoleHomePageGate
+      expectedRoute={COORDINATOR_DASHBOARD_ROUTE}
+      homeAudienceLabel={COORDINATOR_ROLE_HOME_AUDIENCE}
+    >
+      <CoordinatorDashboardPageClient
+        initialBrief={initialBrief}
+        initialError={initialError}
+        initialFacilityId={initialFacilityId}
+      />
+    </RoleHomePageGate>
   );
 }
