@@ -73,10 +73,43 @@ describe("fetchResidentsFromSupabase", () => {
       room: "101-A",
       unit: "East Wing",
       acuity: 2,
+      acuityLevel: "level_2",
       adlStatus: "assisted",
       status: "active",
       updatedAtIso: "2026-05-01T12:00:00.000Z",
     });
     expect(resident.careSummary).toBe("");
+  });
+
+  it("preserves null acuity_level so roster cells can name the gap", async () => {
+    const residentsQuery = createResidentQuery({
+      data: [
+        {
+          id: "resident-2",
+          first_name: "Test",
+          last_name: "Resident",
+          facility_id: "00000000-0000-0000-0000-000000000001",
+          status: "active",
+          acuity_level: null,
+          updated_at: null,
+          deleted_at: null,
+          beds: [],
+        },
+      ],
+      error: null,
+    });
+
+    const supabase = {
+      from: vi.fn(() => residentsQuery),
+    };
+
+    const [resident] = await fetchResidentsFromSupabase(
+      "00000000-0000-0000-0000-000000000001",
+      supabase as never,
+    );
+
+    expect(resident.acuityLevel).toBeNull();
+    expect(resident.acuity).toBe(1);
+    expect(resident.adlStatus).toBe("independent");
   });
 });

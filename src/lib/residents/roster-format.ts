@@ -1,5 +1,11 @@
-import { RESIDENT_ROSTER_NO_ACUITY_COPY, RESIDENT_ROSTER_NO_DATE_COPY } from "./roster-display-copy";
-import type { ResidentRow } from "./load-residents";
+import {
+  RESIDENT_ROSTER_NO_ACUITY_COPY,
+  RESIDENT_ROSTER_NO_ADL_COPY,
+  RESIDENT_ROSTER_NO_DATE_COPY,
+} from "./roster-display-copy";
+import type { Acuity, AdlStatus, ResidentRow } from "./load-residents";
+
+type ResidentRosterMetricCellTone = "muted" | "warning" | "danger" | "gap";
 
 /**
  * Compact relative timestamps for roster "Updated" column (America/New_York oriented display).
@@ -63,11 +69,65 @@ export function formatResidentRosterUpdatedAt(iso: string | null): string {
   return monthDay;
 }
 
+export type ResidentRosterMetricCell = {
+  label: string;
+  tone: ResidentRosterMetricCellTone;
+};
+
+function isResidentRosterAcuityPosted(acuityLevel: string | null | undefined): boolean {
+  return acuityLevel != null && acuityLevel.trim().length > 0;
+}
+
+/** Acuity column — posted levels stay labeled; missing data names the gap. */
+export function formatResidentRosterAcuityCell(
+  acuityLevel: string | null | undefined,
+  acuity: Acuity,
+): ResidentRosterMetricCell {
+  if (!isResidentRosterAcuityPosted(acuityLevel)) {
+    return { label: RESIDENT_ROSTER_NO_ACUITY_COPY, tone: "gap" };
+  }
+  if (acuity === 3) return { label: `Acuity ${acuity}`, tone: "danger" };
+  if (acuity === 2) return { label: `Acuity ${acuity}`, tone: "warning" };
+  return { label: `Acuity ${acuity}`, tone: "muted" };
+}
+
+/** ADL column — inferred from posted acuity; missing acuity names the ADL gap. */
+export function formatResidentRosterAdlCell(
+  acuityLevel: string | null | undefined,
+  status: AdlStatus,
+): ResidentRosterMetricCell {
+  if (!isResidentRosterAcuityPosted(acuityLevel)) {
+    return { label: RESIDENT_ROSTER_NO_ADL_COPY, tone: "gap" };
+  }
+  if (status === "assisted") return { label: "Partial assist", tone: "warning" };
+  if (status === "dependent") return { label: "Total assist", tone: "danger" };
+  return { label: "Independent", tone: "muted" };
+}
+
+/** CSV / export label for acuity — never a silent em dash. */
+export function formatResidentRosterAcuityExport(
+  acuityLevel: string | null | undefined,
+  acuity: Acuity,
+): string {
+  if (!isResidentRosterAcuityPosted(acuityLevel)) return RESIDENT_ROSTER_NO_ACUITY_COPY;
+  return String(acuity);
+}
+
+/** CSV / export label for ADL — never a silent em dash. */
+export function formatResidentRosterAdlExport(
+  acuityLevel: string | null | undefined,
+  status: AdlStatus,
+): string {
+  if (!isResidentRosterAcuityPosted(acuityLevel)) return RESIDENT_ROSTER_NO_ADL_COPY;
+  return status;
+}
+
 /** Group header average acuity; names empty groups instead of a silent em dash. */
 export function averageAcuity(rows: ResidentRow[]): string {
-  if (rows.length === 0) return RESIDENT_ROSTER_NO_ACUITY_COPY;
-  const sum = rows.reduce((acc, r) => acc + r.acuity, 0);
-  return (sum / rows.length).toFixed(1);
+  const posted = rows.filter((row) => isResidentRosterAcuityPosted(row.acuityLevel));
+  if (posted.length === 0) return RESIDENT_ROSTER_NO_ACUITY_COPY;
+  const sum = posted.reduce((acc, row) => acc + row.acuity, 0);
+  return (sum / posted.length).toFixed(1);
 }
 
 /** Deterministic accent for avatar dot / initials background (HSL). */

@@ -45,10 +45,15 @@ import type { ResidentRosterMetrics } from "@/lib/residents/resident-roster-metr
 import { presenceLabel, presenceTone } from "@/lib/residents/presence";
 import {
   averageAcuity,
+  formatResidentRosterAcuityCell,
+  formatResidentRosterAcuityExport,
+  formatResidentRosterAdlCell,
+  formatResidentRosterAdlExport,
   formatResidentRosterUpdatedAt,
   rosterAvatarAccentFromId,
   truncateCareNoteSubtitle,
 } from "@/lib/residents/roster-format";
+import { RESIDENT_ROSTER_NO_ACUITY_COPY } from "@/lib/residents/roster-display-copy";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_FILTERS = {
@@ -103,7 +108,12 @@ function readCollapsedStorage(): string[] {
 
 function groupLabelForRow(mode: ResidentRosterGroupBy, row: ResidentRow): string {
   if (mode === "unit") return row.unit.trim().length > 0 ? row.unit : "No unit on file";
-  if (mode === "acuity") return `Acuity ${row.acuity}`;
+  if (mode === "acuity") {
+    if (row.acuityLevel == null || row.acuityLevel.trim().length === 0) {
+      return RESIDENT_ROSTER_NO_ACUITY_COPY;
+    }
+    return `Acuity ${row.acuity}`;
+  }
   if (mode === "status") return presenceLabel(row.status);
   return "";
 }
@@ -156,8 +166,8 @@ function buildResidentsCsv(rows: ResidentRow[]): string {
       r.name,
       r.room,
       r.unit,
-      String(r.acuity),
-      r.adlStatus,
+      formatResidentRosterAcuityExport(r.acuityLevel, r.acuity),
+      formatResidentRosterAdlExport(r.acuityLevel, r.adlStatus),
       r.status,
       r.updatedAtIso ?? "",
     ].map((c) => escapeCsvField(c)),
@@ -165,24 +175,20 @@ function buildResidentsCsv(rows: ResidentRow[]): string {
   return ["\ufeff", header.join(","), ...lines.map((x) => x.join(","))].join("\r\n");
 }
 
-function AcuityCell({ acuity }: { acuity: Acuity }) {
-  if (acuity >= 4) {
-    return <StatusPill tone="danger">Acuity {acuity}</StatusPill>;
+function AcuityCell({ acuityLevel, acuity }: { acuityLevel: string | null; acuity: Acuity }) {
+  const cell = formatResidentRosterAcuityCell(acuityLevel, acuity);
+  if (cell.tone === "gap") {
+    return <span className="text-muted-foreground">{cell.label}</span>;
   }
-  if (acuity === 3) {
-    return <StatusPill tone="warning">Acuity {acuity}</StatusPill>;
-  }
-  return <span className="text-muted-foreground">—</span>;
+  return <StatusPill tone={cell.tone}>{cell.label}</StatusPill>;
 }
 
-function AdlCell({ status }: { status: AdlStatus }) {
-  if (status === "assisted") {
-    return <StatusPill tone="warning">Partial assist</StatusPill>;
+function AdlCell({ acuityLevel, status }: { acuityLevel: string | null; status: AdlStatus }) {
+  const cell = formatResidentRosterAdlCell(acuityLevel, status);
+  if (cell.tone === "gap") {
+    return <span className="text-muted-foreground">{cell.label}</span>;
   }
-  if (status === "dependent") {
-    return <StatusPill tone="danger">Total assist</StatusPill>;
-  }
-  return <span className="text-muted-foreground">—</span>;
+  return <StatusPill tone={cell.tone}>{cell.label}</StatusPill>;
 }
 
 function ResidentStatusCell({ status }: { status: ResidencyStatus }) {
@@ -339,11 +345,19 @@ export function AdminResidentsPageClient({
           row.unit.toLowerCase().includes(loweredSearch);
         const matchesAcuity =
           effectiveAcuity === "all" ||
-          (effectiveAcuity === "watchlist" ? row.acuity === 2 || row.acuity === 3 : String(row.acuity) === effectiveAcuity);
+          (row.acuityLevel != null &&
+            row.acuityLevel.trim().length > 0 &&
+            (effectiveAcuity === "watchlist"
+              ? row.acuity === 2 || row.acuity === 3
+              : String(row.acuity) === effectiveAcuity));
         const matchesUnit =
           effectiveUnit === "all" ||
           (effectiveUnit === "__no_unit__" ? row.unit.trim().length === 0 : row.unit === effectiveUnit);
-        const matchesAdl = effectiveAdl === "all" || row.adlStatus === effectiveAdl;
+        const matchesAdl =
+          effectiveAdl === "all" ||
+          (row.acuityLevel != null &&
+            row.acuityLevel.trim().length > 0 &&
+            row.adlStatus === effectiveAdl);
         const matchesStatus =
           effectiveStatus === "all" ||
           (effectiveStatus === "away" ? row.status === "hospital" || row.status === "loa" : row.status === effectiveStatus);
@@ -596,11 +610,11 @@ export function AdminResidentsPageClient({
       </div>
 
       <div className="flex-1">
-        <AcuityCell acuity={resident.acuity} />
+        <AcuityCell acuityLevel={resident.acuityLevel} acuity={resident.acuity} />
       </div>
 
       <div className="flex-1">
-        <AdlCell status={resident.adlStatus} />
+        <AdlCell acuityLevel={resident.acuityLevel} status={resident.adlStatus} />
       </div>
 
       <div className="flex-1">
