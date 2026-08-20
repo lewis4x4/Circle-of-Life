@@ -32,6 +32,8 @@ import {
 } from "@/lib/admin/facilities/facility-constants";
 import { formatFacilityDetailSubtitle } from "@/lib/admin/facilities/format-facility-metadata";
 import { AUDIT_RETENTION_COPY, FACILITY_AUDIT_TAB_HELPER } from "@/lib/admin/facilities/facility-audit-ui";
+import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
+import { ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 const TABS = FACILITY_TABS.map((id) => ({
   id,
   label: FACILITY_TAB_LABELS[id],
@@ -175,11 +177,7 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
   );
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <NamedAdminRouteLoading message={ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE} />;
   }
 
   if (error || !facility) {
@@ -436,13 +434,7 @@ function FacilityRouteResolver() {
 
 export default function FacilityDetailPage() {
   return (
-      <Suspense
-      fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      }
-    >
+    <Suspense fallback={<NamedAdminRouteLoading message={ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE} />}>
       <FacilityRouteResolver />
     </Suspense>
   );
