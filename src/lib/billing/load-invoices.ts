@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { formatUpdatedAt } from "@/lib/billing/invoices-display-copy";
+import { formatInvoiceNumberForDisplay, formatUpdatedAt } from "@/lib/billing/invoices-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -87,7 +87,10 @@ export async function fetchInvoicesFromSupabase(
     return {
       id: inv.id,
       residentId: inv.resident_id,
-      invoiceNumber: inv.invoice_number,
+      invoiceNumber: formatInvoiceNumberForDisplay(inv.invoice_number, {
+        invoiceDateIso: inv.invoice_date?.slice(0, 10) ?? "",
+        invoiceId: inv.id,
+      }),
       residentName,
       payerType: mapDbPayerTypeToUi(inv.payer_type),
       status: mapDbInvoiceStatusToUi(inv.status),
