@@ -111,6 +111,15 @@ describe("<AdminStaffingConsolePageClient />", () => {
     vi.clearAllMocks();
   });
 
+  it("shows named loading copy while staffing data refetches", () => {
+    mocks.useFacilityStoreMock.mockReturnValue({ selectedFacilityId: "22222222-2222-2222-2222-222222222222" });
+
+    render(<AdminStaffingConsolePageClient {...loadedProps} />);
+
+    expect(screen.getByText("Loading staffing…")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /workforce command/i })).not.toBeInTheDocument();
+  });
+
   it("renders the operational staffing console with flat lists and action controls", async () => {
     const user = userEvent.setup();
     render(<AdminStaffingConsolePageClient {...loadedProps} />);

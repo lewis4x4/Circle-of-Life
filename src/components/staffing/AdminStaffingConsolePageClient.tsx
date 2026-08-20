@@ -38,7 +38,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
-import { Skeleton } from "@/components/ui/skeleton";
+import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
+import { ADMIN_STAFFING_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { AdminEmptyState, AdminErrorState } from "@/components/common/admin-list-patterns";
 
 type ComplianceFilter = "all" | "non_compliant" | "compliant";
@@ -248,17 +249,7 @@ export function AdminStaffingConsolePageClient({
   }, [supabase, visibleSnapshots]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6 pt-2">
-        <Skeleton className="h-10 w-64 mb-6" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Skeleton className="h-[140px] rounded-2xl" />
-          <Skeleton className="h-[140px] rounded-2xl" />
-          <Skeleton className="h-[140px] rounded-2xl" />
-        </div>
-        <Skeleton className="h-[400px] w-full rounded-2xl mt-6" />
-      </div>
-    );
+    return <NamedAdminRouteLoading message={ADMIN_STAFFING_ROUTE_LOADING_MESSAGE} />;
   }
 
   if (error) {
