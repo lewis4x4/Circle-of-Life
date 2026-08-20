@@ -45,6 +45,7 @@ function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
 
   const f = raw as unknown as ListApi;
   const occ = typeof f.occupancy_count === "number" ? f.occupancy_count : 0;
+  const totalBeds = typeof f.total_beds === "number" ? f.total_beds : undefined;
   const licensedCapacity = typeof f.total_licensed_beds === "number" ? f.total_licensed_beds : 0;
 
   let occupancy_pct_norm: number | null = null;
@@ -55,6 +56,8 @@ function normalizeListRow(raw: Record<string, unknown>): FacilityRow {
 
   return {
     ...(f as unknown as FacilityRow),
+    ...(totalBeds !== undefined ? { total_beds: totalBeds } : {}),
+    occupancy_count: typeof f.occupancy_count === "number" ? f.occupancy_count : occ,
     current_occupancy: occ,
     licensed_beds: licensedCapacity,
     occupancy_pct: occupancy_pct_norm,

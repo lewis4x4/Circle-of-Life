@@ -81,7 +81,8 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   const { data: beds } = await untypedAdmin
     .from("beds")
     .select("current_resident_id")
-    .eq("facility_id", facilityId);
+    .eq("facility_id", facilityId)
+    .is("deleted_at", null);
 
   const typedBeds = (beds ?? []) as unknown as Array<{ current_resident_id: string | null }>;
   let occupancy_count = 0;
