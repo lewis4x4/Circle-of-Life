@@ -9,6 +9,11 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
 import { formatRoleHomeSubtitle, getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import {
+  isExecutiveOrganizationGapError,
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { useDashboardSnapshotCache } from "@/stores/dashboard-snapshot-cache";
 import { cn } from "@/lib/utils";
 
@@ -37,12 +42,27 @@ export function AdminDashboardPageClient({
 }: AdminDashboardPageClientProps) {
   const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
-  const { appRole, loading: authLoading } = useHavenAuth();
+  const { appRole, organizationId, loading: authLoading } = useHavenAuth();
   const getFreshSnapshot = useDashboardSnapshotCache((s) => s.getFresh);
   const setSnapshotCache = useDashboardSnapshotCache((s) => s.setEntry);
   const [snapshot, setSnapshot] = useState<AdminDashboardSnapshot | null>(initialSnapshot);
-  const [isLoading, setIsLoading] = useState(initialSnapshot == null && initialError == null);
-  const [error, setError] = useState<string | null>(initialError);
+  const initialFetchError =
+    initialError && !isExecutiveOrganizationGapError(initialError) ? initialError : null;
+  const [isLoading, setIsLoading] = useState(
+    initialSnapshot == null && initialFetchError == null && !isExecutiveOrganizationGapError(initialError),
+  );
+  const [error, setError] = useState<string | null>(initialFetchError);
+
+  const hasOrgScopedData = snapshot != null;
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error,
+  });
 
   // Prime the cross-nav cache with the server-rendered snapshot so clicks away
   // and back hit the cache instead of refetching.
@@ -114,7 +134,7 @@ export function AdminDashboardPageClient({
     void load();
   }, [load]);
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
@@ -132,7 +152,23 @@ export function AdminDashboardPageClient({
     );
   }
 
-  if (error || !snapshot) {
+  if (organizationGapMessage) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-[20px] font-semibold tracking-tight text-foreground">Command center</h1>
+          <p className="text-[13px] text-muted-foreground">
+            {formatRoleHomeSubtitle(false, appRole, "operational triage for your scope.")}
+          </p>
+        </div>
+        <div className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 p-4 text-sm text-muted-foreground">
+          {organizationGapMessage}
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchErrorBannerMessage || !snapshot) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-soft">
@@ -145,7 +181,7 @@ export function AdminDashboardPageClient({
                 Triage unavailable
               </h2>
               <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                {error ?? "Unable to load operational queues. Please retry."}
+                {fetchErrorBannerMessage ?? "Unable to load operational queues. Please retry."}
               </p>
               <button
                 onClick={() => void load()}
