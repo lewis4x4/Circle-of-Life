@@ -9,6 +9,7 @@ import {
 import {
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOccPtPctWithSuffix,
 } from "@/lib/executive/executive-display-copy";
 import { portfolioStripPortfolioOccupancyDisplay } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import type { PortfolioStripTotals } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
@@ -50,6 +51,11 @@ describe("executive and facilities portfolio occupancy display parity", () => {
     const posted = computePortfolioOccupancyPct(33, 258);
     expect(formatExecutiveOccupancyPctWithSuffix(posted)).toBe(formatPortfolioOccupancyPctDisplay(posted));
     expect(formatExecutiveOccupancyBarLabel(posted)).toBe(formatPortfolioOccupancyPctDisplay(posted));
+  });
+
+  it("renders the same posted zero for executive occ_pt and facilities portfolio display", () => {
+    expect(formatExecutiveOccPtPctWithSuffix(0)).toBe(formatPortfolioOccupancyPctDisplay(0));
+    expect(formatExecutiveOccPtPctWithSuffix(0)).not.toBe("0.0%");
   });
 
   it("names the same gap when occupancy is unloaded", () => {
