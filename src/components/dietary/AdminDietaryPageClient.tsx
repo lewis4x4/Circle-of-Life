@@ -10,6 +10,7 @@ import {
   nowSnackPassDatetimeLocal,
   snackPassDatetimeLocalToUtcIso,
 } from "@/lib/dietary/snack-pass-time";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -194,7 +195,7 @@ export function AdminDietaryPageClient({
   const [savingSnack, setSavingSnack] = useState(false);
   const [mealForm, setMealForm] = useState({
     resident_id: initialBootstrap.residents[0]?.id ?? "",
-    meal_date: new Date().toISOString().slice(0, 10),
+    meal_date: todayFacilityDateIso(),
     meal_type: "lunch" as MealLogType,
     status: "ate" as MealLogStatus,
     intake_percent: "100",
@@ -753,12 +754,16 @@ export function AdminDietaryPageClient({
                   ))}
                 </select>
                 <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="date"
-                    value={mealForm.meal_date}
-                    onChange={(e) => setMealForm((prev) => ({ ...prev, meal_date: e.target.value }))}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
-                  />
+                  <label className="flex flex-col gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    Meal date (ET)
+                    <input
+                      type="date"
+                      value={mealForm.meal_date}
+                      onChange={(e) => setMealForm((prev) => ({ ...prev, meal_date: e.target.value }))}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                      aria-label="Meal date (Eastern Time)"
+                    />
+                  </label>
                   <select
                     value={mealForm.meal_type}
                     onChange={(e) => setMealForm((prev) => ({ ...prev, meal_type: e.target.value as MealLogType }))}

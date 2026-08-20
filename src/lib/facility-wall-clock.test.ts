@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   FACILITY_OPERATOR_TZ,
+  facilityDateIsoDaysFromToday,
   facilityDatetimeLocalToUtcIso,
   formatFacilityTimestampEt,
   nowFacilityDatetimeLocal,
+  todayFacilityDateIso,
   utcIsoToFacilityDatetimeLocal,
 } from "@/lib/facility-wall-clock";
 
@@ -34,5 +36,19 @@ describe("facility wall clock (America/New_York)", () => {
 
   it("anchors to COL facility timezone constant", () => {
     expect(FACILITY_OPERATOR_TZ).toBe("America/New_York");
+  });
+
+  /** 8:05 PM Eastern on 2026-08-20 (EDT, UTC−4) — after the UTC date rolls to tomorrow. */
+  const eightOhFivePmEt = new Date("2026-08-20T20:05:00-04:00");
+
+  it("defaults date-only today to Eastern calendar date, not UTC ISO slice", () => {
+    expect(todayFacilityDateIso(eightOhFivePmEt)).toBe("2026-08-20");
+    expect(todayFacilityDateIso(eightOhFivePmEt)).not.toBe("2026-08-21");
+    expect(eightOhFivePmEt.toISOString().slice(0, 10)).toBe("2026-08-21");
+  });
+
+  it("offsets date-only windows on the Eastern calendar", () => {
+    expect(facilityDateIsoDaysFromToday(1, eightOhFivePmEt)).toBe("2026-08-21");
+    expect(facilityDateIsoDaysFromToday(2, eightOhFivePmEt)).toBe("2026-08-22");
   });
 });

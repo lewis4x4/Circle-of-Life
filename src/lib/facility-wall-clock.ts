@@ -1,9 +1,28 @@
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import { addDays } from "date-fns";
+import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 
 /** COL operator wall clock — foundation spec anchors facilities to Eastern. */
 export const FACILITY_OPERATOR_TZ = "America/New_York";
 
 const DATETIME_LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+/** Date-only `<input type="date">` default: Eastern calendar date (not UTC ISO slice). */
+export function todayFacilityDateIso(
+  now: Date = new Date(),
+  timeZone: string = FACILITY_OPERATOR_TZ,
+): string {
+  return formatInTimeZone(now, timeZone, "yyyy-MM-dd");
+}
+
+/** Eastern calendar date offset from today (e.g. +1 = tomorrow, +2 = end of next-shift window). */
+export function facilityDateIsoDaysFromToday(
+  dayOffset: number,
+  now: Date = new Date(),
+  timeZone: string = FACILITY_OPERATOR_TZ,
+): string {
+  const zonedNow = toZonedTime(now, timeZone);
+  return formatInTimeZone(addDays(zonedNow, dayOffset), timeZone, "yyyy-MM-dd");
+}
 
 /** `<input type="datetime-local">` default: current facility-local wall clock (not UTC ISO slice). */
 export function nowFacilityDatetimeLocal(

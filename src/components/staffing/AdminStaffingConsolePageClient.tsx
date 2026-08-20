@@ -674,13 +674,14 @@ export function AdminStaffingConsolePageClient({
               </label>
             </div>
             <label className="grid gap-1.5 text-sm font-medium">
-              Target hire date
+              Target hire date (ET)
               <input
                 type="date"
                 className={fieldClass}
                 value={requisitionTargetHireDate}
                 onChange={(e) => setRequisitionTargetHireDate(e.target.value)}
                 disabled={requisitionLocked || requisitionSaving}
+                aria-label="Target hire date (Eastern Time)"
               />
             </label>
             <Button
