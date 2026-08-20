@@ -265,6 +265,20 @@ export const ROLE_HOME_CHECKING_MESSAGE = "Checking your role home";
 export const ADMIN_ASSISTANT_ROLE_HOME_AUDIENCE = "administrative assistants";
 export const COORDINATOR_ROLE_HOME_AUDIENCE = "coordinators";
 
+/** Routes guarded by RoleHomePageGate (named checking + bounce, no silent redirect). */
+export const ROLE_HOME_GUARDED_ROUTES = [
+  "/admin/assistant-dashboard",
+  "/admin/coordinator-dashboard",
+] as const;
+
+/** True when a pathname targets a role-home dashboard (exact or nested). */
+export function isRoleHomePathname(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return ROLE_HOME_GUARDED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
 /** True when the session role's configured home matches the route being guarded. */
 export function isRoleHomeRouteMatch(role: string, expectedRoute: string): boolean {
   return getRoleDashboardConfig(role).route === expectedRoute;

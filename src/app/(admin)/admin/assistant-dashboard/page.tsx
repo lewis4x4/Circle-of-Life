@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { RoleHomePageGate, RoleHomeRouteLoading } from "@/components/auth/role-home-page-gate";
 import { AssistantDashboardPageClient } from "@/components/admin-assistant/AssistantDashboardPageClient";
@@ -21,11 +20,16 @@ const ASSISTANT_DASHBOARD_ROUTE = "/admin/assistant-dashboard";
 
 export default function AssistantDashboardPage() {
   return (
-    <Suspense
-      fallback={<RoleHomeRouteLoading message={`${ROLE_HOME_CHECKING_MESSAGE}…`} />}
+    <RoleHomePageGate
+      expectedRoute={ASSISTANT_DASHBOARD_ROUTE}
+      homeAudienceLabel={ADMIN_ASSISTANT_ROLE_HOME_AUDIENCE}
     >
-      <AssistantDashboardData />
-    </Suspense>
+      <Suspense
+        fallback={<RoleHomeRouteLoading message={`${ROLE_HOME_CHECKING_MESSAGE}…`} />}
+      >
+        <AssistantDashboardData />
+      </Suspense>
+    </RoleHomePageGate>
   );
 }
 
@@ -35,7 +39,7 @@ async function AssistantDashboardData() {
   if (roleContext.ok) {
     const config = getRoleDashboardConfig(roleContext.ctx.appRole);
     if (config.route !== ASSISTANT_DASHBOARD_ROUTE) {
-      redirect(config.route);
+      return null;
     }
   }
 
@@ -56,15 +60,10 @@ async function AssistantDashboardData() {
   }
 
   return (
-    <RoleHomePageGate
-      expectedRoute={ASSISTANT_DASHBOARD_ROUTE}
-      homeAudienceLabel={ADMIN_ASSISTANT_ROLE_HOME_AUDIENCE}
-    >
-      <AssistantDashboardPageClient
-        initialBrief={initialBrief}
-        initialError={initialError}
-        initialFacilityId={initialFacilityId}
-      />
-    </RoleHomePageGate>
+    <AssistantDashboardPageClient
+      initialBrief={initialBrief}
+      initialError={initialError}
+      initialFacilityId={initialFacilityId}
+    />
   );
 }

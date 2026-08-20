@@ -107,6 +107,8 @@ describe("assistant and coordinator dashboard named loading", () => {
       expect(source).toMatch(/RoleHomeRouteLoading/);
       expect(source).toMatch(/ROLE_HOME_CHECKING_MESSAGE/);
       expect(source).not.toMatch(/AdminRouteLoading/);
+      expect(source).not.toMatch(/\bredirect\s*\(/);
+      expect(source.indexOf("<RoleHomePageGate")).toBeLessThan(source.indexOf("<Suspense"));
     }
 
     for (const relativePath of [assistantLoadingPath, coordinatorLoadingPath]) {
@@ -114,6 +116,9 @@ describe("assistant and coordinator dashboard named loading", () => {
       expect(source).toMatch(/RoleHomeRouteLoading/);
       expect(source).toMatch(/ROLE_HOME_CHECKING_MESSAGE/);
     }
+
+    const adminLoadingSource = readSource("src/app/(admin)/admin/loading.tsx");
+    expect(adminLoadingSource).toMatch(/admin-role-route-loading/);
 
     const gateSource = readSource(roleHomeGatePath);
     expect(gateSource).toMatch(/formatRoleHomeBounceMessage/);
