@@ -13,8 +13,14 @@ import {
   resolveRequiredRoleContext,
 } from "@/lib/admin/facilities/facility-required-staff-roles";
 import {
+  dedupeStaffDirectoryRecords,
+  STAFF_DIRECTORY_IDENTITY_SELECT,
+  type StaffDirectorySourceRow,
+} from "@/lib/staff/load-staff";
+import {
   formatStaffingTabAdministratorName,
   formatStaffingTabRosterDate,
+  STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT,
 } from "@/lib/facilities/staffing-tab-display-copy";
 import type { FacilityDetailRow } from "@/types/facility";
 import type { FacilityStaffKpiPayload } from "@/hooks/useFacilityStaffKpis";
@@ -29,11 +35,7 @@ interface StaffingTabProps {
   };
 }
 
-type StaffSummaryRow = {
-  id: string;
-  staff_role: string;
-  employment_status: string;
-};
+type StaffSummaryRow = StaffDirectorySourceRow;
 
 function freshnessDays(iso: string | null): number | null {
   if (!iso) return null;
@@ -122,13 +124,13 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
       const supabase = createClient();
       const { data, error: queryError } = await supabase
         .from("staff" as never)
-        .select("id, staff_role, employment_status")
+        .select(STAFF_DIRECTORY_IDENTITY_SELECT)
         .eq("facility_id", facilityId)
         .is("deleted_at", null)
         .order("staff_role", { ascending: true });
 
       if (queryError) throw queryError;
-      setStaffRows((data ?? []) as unknown as StaffSummaryRow[]);
+      setStaffRows(dedupeStaffDirectoryRecords((data ?? []) as StaffSummaryRow[]));
     } catch (err) {
       setStaffRows([]);
       setStaffError(err instanceof Error ? err.message : "Failed to load staff summary");
@@ -214,6 +216,9 @@ export function StaffingTab({ facilityId, facility, staffKpis }: StaffingTabProp
             <p className="mt-1 text-[13px] font-medium tabular-nums text-foreground">
               {staffLoading ? "Loading…" : staffRows.filter((r) => r.employment_status === "active").length}
             </p>
+            {!staffLoading ? (
+              <p className="mt-0.5 text-[12px] text-muted-foreground">{STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT}</p>
+            ) : null}
           </div>
           <div>
             <FieldLabel>Ratio rule set</FieldLabel>

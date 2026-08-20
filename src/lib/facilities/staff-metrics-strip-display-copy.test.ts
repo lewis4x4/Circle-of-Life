@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  STAFF_STRIP_ACTIVE_STAFF_SUBCOPY,
   STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY,
   STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY,
   formatStaffStripCoverageGapMainValue,
@@ -64,5 +65,12 @@ describe("staffStripCoverageGapMainIsNumeric", () => {
     expect(staffStripCoverageGapMainIsNumeric(4)).toBe(true);
     expect(staffStripCoverageGapMainIsNumeric(STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY)).toBe(false);
     expect(staffStripCoverageGapMainIsNumeric(STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY)).toBe(false);
+  });
+});
+
+describe("STAFF_STRIP_ACTIVE_STAFF_SUBCOPY", () => {
+  it("reads as unique people rather than raw row counts", () => {
+    expect(STAFF_STRIP_ACTIVE_STAFF_SUBCOPY.toLowerCase()).toContain("unique");
+    expect(STAFF_STRIP_ACTIVE_STAFF_SUBCOPY.toLowerCase()).toContain("people");
   });
 });

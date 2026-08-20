@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDedupedStaffPickerOptions,
+  countUniqueActiveStaffDirectoryRecords,
   dedupeStaffDirectoryRecords,
   isSameStaffDirectoryPerson,
   pickPreferredStaffDirectoryRecord,
@@ -158,5 +160,92 @@ describe("pickPreferredStaffDirectoryRecord", () => {
     });
 
     expect(pickPreferredStaffDirectoryRecord(older, newer).id).toBe(newer.id);
+  });
+});
+
+describe("countUniqueActiveStaffDirectoryRecords", () => {
+  it("counts one active person when two rows share the same user id", () => {
+    const count = countUniqueActiveStaffDirectoryRecords([
+      row({
+        id: "66666666-6666-4666-8666-666666666601",
+        user_id: USER_ONE,
+        employment_status: "active",
+      }),
+      row({
+        id: "66666666-6666-4666-8666-666666666602",
+        user_id: USER_ONE,
+        employment_status: "active",
+      }),
+    ]);
+
+    expect(count).toBe(1);
+  });
+
+  it("counts one active person when seed and import rows overlap at one facility by name", () => {
+    const count = countUniqueActiveStaffDirectoryRecords([
+      row({
+        id: "77777777-7777-4777-8777-777777777701",
+        first_name: "Sample",
+        last_name: "Admin",
+        employment_status: "active",
+      }),
+      row({
+        id: "77777777-7777-4777-8777-777777777702",
+        first_name: "Sample",
+        last_name: "Admin",
+        email: "sample.admin@example.com",
+        employment_status: "active",
+      }),
+    ]);
+
+    expect(count).toBe(1);
+  });
+
+  it("keeps two distinct active people separate", () => {
+    const count = countUniqueActiveStaffDirectoryRecords([
+      row({ id: "88888888-8888-4888-8888-888888888801", first_name: "Alpha", last_name: "One" }),
+      row({ id: "88888888-8888-4888-8888-888888888802", first_name: "Beta", last_name: "Two" }),
+    ]);
+
+    expect(count).toBe(2);
+  });
+
+  it("keeps a posted zero when no active people remain after dedupe", () => {
+    const count = countUniqueActiveStaffDirectoryRecords([
+      row({
+        id: "99999999-9999-4999-8999-999999999901",
+        user_id: USER_ONE,
+        employment_status: "on_leave",
+      }),
+      row({
+        id: "99999999-9999-4999-8999-999999999902",
+        user_id: USER_ONE,
+        employment_status: "terminated",
+      }),
+    ]);
+
+    expect(count).toBe(0);
+  });
+});
+
+describe("buildDedupedStaffPickerOptions", () => {
+  it("returns one picker option when duplicate active rows share a user id", () => {
+    const options = buildDedupedStaffPickerOptions([
+      row({
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01",
+        user_id: USER_ONE,
+        first_name: "Sample",
+        last_name: "Picker",
+      }),
+      row({
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02",
+        user_id: USER_ONE,
+        first_name: "Sample",
+        last_name: "Picker",
+      }),
+    ]);
+
+    expect(options).toHaveLength(1);
+    expect(options[0]?.label).toBe("Sample Picker");
   });
 });

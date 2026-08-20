@@ -6,6 +6,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   formatStaffStripCoverageGapMainValue,
+  STAFF_STRIP_ACTIVE_STAFF_SUBCOPY,
   staffStripCoverageGapMainIsNotTracked,
   staffStripCoverageGapMainIsNumeric,
 } from "@/lib/facilities/staff-metrics-strip-display-copy";
@@ -88,7 +89,7 @@ export function FacilityStaffMetricsStrip(props: {
         </p>
       ) : null}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StripTile label="Active staff" value={kpi.activeStaff} sub="Live roster · Workforce module" />
+        <StripTile label="Active staff" value={kpi.activeStaff} sub={STAFF_STRIP_ACTIVE_STAFF_SUBCOPY} />
         <StripTile
           label="Coverage gap (next 7 days)"
           value={coverageGapMain}

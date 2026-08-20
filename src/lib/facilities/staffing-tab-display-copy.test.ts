@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT,
   STAFFING_TAB_NO_ADMINISTRATOR_COPY,
   STAFFING_TAB_NO_ROSTER_DATE_COPY,
   formatStaffingTabAdministratorName,
@@ -37,5 +38,12 @@ describe("formatStaffingTabAdministratorName", () => {
 
   it("returns a posted administrator name", () => {
     expect(formatStaffingTabAdministratorName("Supervisor A")).toBe("Supervisor A");
+  });
+});
+
+describe("STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT", () => {
+  it("reads as unique people rather than raw row counts", () => {
+    expect(STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT.toLowerCase()).toContain("unique");
+    expect(STAFFING_TAB_ACTIVE_STAFF_COUNT_HINT.toLowerCase()).toContain("people");
   });
 });

@@ -122,6 +122,27 @@ export function dedupeStaffDirectoryRecords<T extends StaffDirectorySourceRow>(r
   return kept;
 }
 
+export const STAFF_DIRECTORY_IDENTITY_SELECT =
+  "id, facility_id, user_id, first_name, last_name, email, staff_role, employment_status, updated_at, deleted_at";
+
+/** Count unique active people after collapsing duplicate roster rows. */
+export function countUniqueActiveStaffDirectoryRecords(rows: StaffDirectorySourceRow[]): number {
+  return dedupeStaffDirectoryRecords(rows).filter((row) => row.employment_status === "active").length;
+}
+
+/** One picker option per person; prefers linked auth and contactable rows when imports overlap. */
+export function buildDedupedStaffPickerOptions(
+  rows: StaffDirectorySourceRow[],
+): { id: string; label: string }[] {
+  return dedupeStaffDirectoryRecords(rows)
+    .filter((row) => row.employment_status === "active")
+    .map((row) => {
+      const label = `${row.first_name?.trim() ?? ""} ${row.last_name?.trim() ?? ""}`.trim();
+      return { id: row.id, label: label || "Staff member" };
+    })
+    .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: "base" }));
+}
+
 type SupabaseCertRow = {
   staff_id: string;
   status: string;
