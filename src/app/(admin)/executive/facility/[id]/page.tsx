@@ -24,6 +24,7 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import { formatExecutiveFacilityCensusStripLine } from "@/lib/executive/executive-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -35,10 +36,7 @@ function KpiStrip(props: { kpi: ExecKpiPayload }) {
   const { kpi } = props;
   return (
     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-      <span>
-        Census: {kpi.census.occupiedResidents}/{kpi.census.licensedBeds} beds
-        {kpi.census.occupancyPct != null ? ` · ${kpi.census.occupancyPct}%` : ""}
-      </span>
+      <span>Census: {formatExecutiveFacilityCensusStripLine(kpi.census)}</span>
       {kpi.census.presence ? <span>Presence: {presenceSummaryText(kpi.census.presence)}</span> : null}
       <span>
         AR: {kpi.financial.openInvoicesCount} open · {money.format(kpi.financial.totalBalanceDueCents / 100)}
