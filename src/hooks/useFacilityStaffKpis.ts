@@ -13,6 +13,8 @@ export type FacilityStaffKpiPayload = {
   bgChecksExpiringLt30: number;
   rosterUpdatedAt: string | null;
   rosterUpdatedByDisplayName: string | null;
+  /** Shift coverage gaps in the next 7 days; null until the coverage engine posts counts. */
+  coverageGapNext7Days: number | null;
 };
 
 const EMPTY: FacilityStaffKpiPayload = {
@@ -23,6 +25,7 @@ const EMPTY: FacilityStaffKpiPayload = {
   bgChecksExpiringLt30: 0,
   rosterUpdatedAt: null,
   rosterUpdatedByDisplayName: null,
+  coverageGapNext7Days: null,
 };
 
 function todayIsoDate(): string {
@@ -137,6 +140,7 @@ export function useFacilityStaffKpis(facilityId: string | undefined, enabled: bo
         bgChecksExpiringLt30,
         rosterUpdatedAt,
         rosterUpdatedByDisplayName,
+        coverageGapNext7Days: null,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load staffing KPIs");

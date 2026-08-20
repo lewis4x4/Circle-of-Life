@@ -4,8 +4,13 @@ import React from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import type { FacilityDetailRow } from "@/types/facility";
+import {
+  formatStaffStripCoverageGapMainValue,
+  staffStripCoverageGapMainIsNotTracked,
+  staffStripCoverageGapMainIsNumeric,
+} from "@/lib/facilities/staff-metrics-strip-display-copy";
 import type { FacilityStaffKpiPayload } from "@/hooks/useFacilityStaffKpis";
+import type { FacilityDetailRow } from "@/types/facility";
 
 function StripTile({
   label,
@@ -48,11 +53,17 @@ export function FacilityStaffMetricsStrip(props: {
   }
 
   const ratioReady = Boolean(facility.facility_ratio_rule_set_id);
+  const coverageGapMainValue = formatStaffStripCoverageGapMainValue(
+    ratioReady,
+    kpi.coverageGapNext7Days,
+  );
+  const coverageGapMainIsNotTracked = staffStripCoverageGapMainIsNotTracked(coverageGapMainValue);
+  const coverageGapMainIsNumeric = staffStripCoverageGapMainIsNumeric(coverageGapMainValue);
 
-  const coverageGapMain = ratioReady ? (
-    <>—</>
+  const coverageGapMain = coverageGapMainIsNotTracked ? (
+    <span className="text-lg font-semibold text-warning">{coverageGapMainValue}</span>
   ) : (
-    <span className="text-lg font-semibold text-warning">Not tracked</span>
+    coverageGapMainValue
   );
 
   const coverageGapSub = ratioReady ? (
@@ -82,7 +93,11 @@ export function FacilityStaffMetricsStrip(props: {
           label="Coverage gap (next 7 days)"
           value={coverageGapMain}
           sub={coverageGapSub}
-          valueClassName={ratioReady ? "text-2xl text-muted-foreground" : undefined}
+          valueClassName={
+            !coverageGapMainIsNotTracked && !coverageGapMainIsNumeric
+              ? "text-lg text-muted-foreground"
+              : undefined
+          }
         />
         <StripTile
           label="Certifications"
