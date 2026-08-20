@@ -101,4 +101,28 @@ describe("AdminNewCollectionActivityPage facility derivation", () => {
 
     vi.unstubAllGlobals();
   });
+
+  it("formats internal persist keys in the invoice picker", async () => {
+    mocks.searchParams = new URLSearchParams({ residentId: "r-a" });
+    mocks.client = makeClient({
+      residentsList: [{ id: "r-a", first_name: "Amy", last_name: "Active" }],
+      residentSingle: null,
+      invoicesList: [
+        {
+          id: "b5000000-0000-0000-0000-0000000000a1",
+          invoice_number: "00000000-2026-08-c0000000-0000-0000-0000-0000000000a1",
+          invoice_date: "2026-08-01",
+          balance_due: 2500,
+          status: "overdue",
+          period_start: "2026-08-01",
+          period_end: "2026-08-31",
+        },
+      ],
+    });
+
+    render(<AdminNewCollectionActivityPage />);
+
+    expect(await screen.findByRole("option", { name: /Invoice Aug 2026 · …00a1/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /00000000-2026-08/ })).toBeNull();
+  });
 });

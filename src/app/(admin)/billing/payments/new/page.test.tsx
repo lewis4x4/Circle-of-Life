@@ -99,4 +99,31 @@ describe("AdminNewPaymentPage prefill reconciliation", () => {
     expect(screen.getByRole("option", { name: /INV-OPEN/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /inv-closed/i })).toBeNull();
   });
+
+  it("formats internal persist keys in the invoice picker", async () => {
+    mocks.searchParams = new URLSearchParams({ residentId: "r-a" });
+    mocks.client = makeClient({
+      residentsList: [
+        { id: "r-a", first_name: "Amy", last_name: "Active", facility_id: "11111111-1111-1111-1111-111111111111" },
+      ],
+      residentSingle: null,
+      invoicesList: [
+        {
+          id: "b5000000-0000-0000-0000-0000000000a1",
+          invoice_number: "00000000-2026-08-c0000000-0000-0000-0000-0000000000a1",
+          invoice_date: "2026-08-01",
+          balance_due: 0,
+          amount_paid: 0,
+          status: "sent",
+          period_start: "2026-08-01",
+          period_end: "2026-08-31",
+        },
+      ],
+    });
+
+    render(<AdminNewPaymentPage />);
+
+    expect(await screen.findByRole("option", { name: /Invoice Aug 2026 · …00a1/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /00000000-2026-08/ })).toBeNull();
+  });
 });

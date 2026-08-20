@@ -45,6 +45,20 @@ function formatInternalInvoiceLabel(opts: {
   return `Invoice · …${suffix}`;
 }
 
+export type InvoiceRowNumberInput = {
+  invoice_number: string;
+  id: string;
+  invoice_date?: string | null;
+};
+
+/** Operator-facing label for a loaded invoice row (detail, AR aging, payment/collection pickers). */
+export function formatInvoiceRowNumberForDisplay(inv: InvoiceRowNumberInput): string {
+  return formatInvoiceNumberForDisplay(inv.invoice_number, {
+    invoiceDateIso: inv.invoice_date?.slice(0, 10) ?? "",
+    invoiceId: inv.id,
+  });
+}
+
 /** Operator-facing invoice number for billing ledgers — never leak internal persist keys. */
 export function formatInvoiceNumberForDisplay(
   invoiceNumber: string,

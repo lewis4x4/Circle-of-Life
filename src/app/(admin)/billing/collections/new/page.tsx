@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
@@ -36,6 +37,7 @@ type ResidentOption = { id: string; name: string };
 type InvoiceOption = {
   id: string;
   invoice_number: string;
+  invoice_date: string;
   balance_due: number;
   status: string;
   period_start: string;
@@ -149,7 +151,7 @@ export default function AdminNewCollectionActivityPage() {
         // resident's invoices from the prefill.
         const { data, error: err } = (await supabase
           .from("invoices" as never)
-          .select("id, invoice_number, balance_due, status, period_start, period_end")
+          .select("id, invoice_number, invoice_date, balance_due, status, period_start, period_end")
           .eq("resident_id", rid)
           .is("deleted_at", null)
           .in("status", ["draft", "sent", "partial", "overdue"])
@@ -364,7 +366,7 @@ export default function AdminNewCollectionActivityPage() {
                     <option value="">Not linked to a specific invoice</option>
                     {invoices.map((inv) => (
                       <option key={inv.id} value={inv.id}>
-                        {inv.invoice_number} — Balance {billingCurrency.format(inv.balance_due / 100)} (
+                        {formatInvoiceRowNumberForDisplay(inv)} — Balance {billingCurrency.format(inv.balance_due / 100)} (
                         {formatDate(inv.period_start)} – {formatDate(inv.period_end)})
                       </option>
                     ))}
