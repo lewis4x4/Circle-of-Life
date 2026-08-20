@@ -26,6 +26,11 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
+  facilityDatetimeLocalToUtcIso,
+  formatFacilityTimestampEt,
+  nowFacilityDatetimeLocal,
+} from "@/lib/facility-wall-clock";
+import {
   formatStaffingConsoleCurrentRatioMainValue,
   staffingConsoleCurrentRatioMainIsNumeric,
 } from "@/lib/staffing/staffing-console-display-copy";
@@ -118,7 +123,7 @@ export function AdminStaffingConsolePageClient({
   const [attendanceRows, setAttendanceRows] = useState<AttendanceEventRow[]>(initialAttendance);
   const [attendanceStaffId, setAttendanceStaffId] = useState("");
   const [attendanceEventType, setAttendanceEventType] = useState("callout");
-  const [attendanceOccurredAt, setAttendanceOccurredAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [attendanceOccurredAt, setAttendanceOccurredAt] = useState(() => nowFacilityDatetimeLocal());
   const [attendanceReason, setAttendanceReason] = useState("");
   const [attendanceSaving, setAttendanceSaving] = useState(false);
   const [requisitionTitle, setRequisitionTitle] = useState("");
@@ -533,7 +538,7 @@ export function AdminStaffingConsolePageClient({
                 </select>
               </label>
               <label className="grid gap-1.5 text-sm font-medium">
-                Occurred at
+                Occurred at (ET)
                 <input
                   type="datetime-local"
                   className={fieldClass}
@@ -604,7 +609,7 @@ export function AdminStaffingConsolePageClient({
                         <Badge variant="outline" className="capitalize">
                           {row.event_type.replace(/_/g, " ")}
                         </Badge>
-                        <span>{new Date(row.occurred_at).toLocaleString()}</span>
+                        <span>{formatFacilityTimestampEt(row.occurred_at)} ET</span>
                       </div>
                       {row.reason ? <p className="mt-2 text-sm text-muted-foreground">{row.reason}</p> : null}
                     </div>
@@ -970,7 +975,7 @@ async function createAttendanceEvent(input: {
         facility_id: selectedFacilityId,
         organization_id: facilityRes.data.organization_id,
         event_type: attendanceEventType,
-        occurred_at: new Date(attendanceOccurredAt).toISOString(),
+        occurred_at: facilityDatetimeLocalToUtcIso(attendanceOccurredAt),
         reason: attendanceReason.trim() || null,
         created_by: userId,
         updated_by: userId,
