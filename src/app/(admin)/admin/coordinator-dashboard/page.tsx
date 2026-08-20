@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { RoleHomePageGate, RoleHomeRouteLoading } from "@/components/auth/role-home-page-gate";
 import { CoordinatorDashboardPageClient } from "@/components/coordinator/CoordinatorDashboardPageClient";
@@ -21,11 +20,16 @@ const COORDINATOR_DASHBOARD_ROUTE = "/admin/coordinator-dashboard";
 
 export default function CoordinatorDashboardPage() {
   return (
-    <Suspense
-      fallback={<RoleHomeRouteLoading message={`${ROLE_HOME_CHECKING_MESSAGE}…`} />}
+    <RoleHomePageGate
+      expectedRoute={COORDINATOR_DASHBOARD_ROUTE}
+      homeAudienceLabel={COORDINATOR_ROLE_HOME_AUDIENCE}
     >
-      <CoordinatorDashboardData />
-    </Suspense>
+      <Suspense
+        fallback={<RoleHomeRouteLoading message={`${ROLE_HOME_CHECKING_MESSAGE}…`} />}
+      >
+        <CoordinatorDashboardData />
+      </Suspense>
+    </RoleHomePageGate>
   );
 }
 
@@ -35,7 +39,7 @@ async function CoordinatorDashboardData() {
   if (roleContext.ok) {
     const config = getRoleDashboardConfig(roleContext.ctx.appRole);
     if (config.route !== COORDINATOR_DASHBOARD_ROUTE) {
-      redirect(config.route);
+      return null;
     }
   }
 
@@ -56,15 +60,10 @@ async function CoordinatorDashboardData() {
   }
 
   return (
-    <RoleHomePageGate
-      expectedRoute={COORDINATOR_DASHBOARD_ROUTE}
-      homeAudienceLabel={COORDINATOR_ROLE_HOME_AUDIENCE}
-    >
-      <CoordinatorDashboardPageClient
-        initialBrief={initialBrief}
-        initialError={initialError}
-        initialFacilityId={initialFacilityId}
-      />
-    </RoleHomePageGate>
+    <CoordinatorDashboardPageClient
+      initialBrief={initialBrief}
+      initialError={initialError}
+      initialFacilityId={initialFacilityId}
+    />
   );
 }

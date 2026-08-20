@@ -10,6 +10,7 @@ import {
   getResolvedRoleLabel,
   getRoleHomeLead,
   isRoleHomeLabelReady,
+  isRoleHomePathname,
   isRoleHomeRouteMatch,
 } from "./dashboard-routing";
 
@@ -63,5 +64,12 @@ describe("role home chrome helpers", () => {
 
   it("names the route-level role-home checking gap", () => {
     expect(ROLE_HOME_CHECKING_MESSAGE).toBe("Checking your role home");
+  });
+
+  it("detects role-home dashboard pathnames for loading boundaries", () => {
+    expect(isRoleHomePathname("/admin/assistant-dashboard")).toBe(true);
+    expect(isRoleHomePathname("/admin/coordinator-dashboard")).toBe(true);
+    expect(isRoleHomePathname("/admin/staff")).toBe(false);
+    expect(isRoleHomePathname(null)).toBe(false);
   });
 });
