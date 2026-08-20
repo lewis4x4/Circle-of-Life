@@ -12,6 +12,11 @@ import type { KPITileProps } from "@/design-system/components/KPITile";
 import type { PanelProps } from "@/design-system/components/Panel";
 import type { ThresholdMap } from "@/design-system/components/DataTable";
 
+import {
+  V2_DASHBOARD_FAMILY_PORTAL_NOTES_LABEL,
+  V2_DASHBOARD_KPI_GAP_VALUES,
+} from "./v2/v2-dashboard-kpi-display-copy";
+
 export type V2DashboardId =
   | "command-center"
   | "executive-intelligence"
@@ -29,7 +34,7 @@ export const V2_DASHBOARD_IDS: readonly V2DashboardId[] = [
  *
  * Numeric metrics are nullable: the live view (`haven.vw_v2_facility_rollup`)
  * returns NULL where source aggregates aren't populated yet. UI renders NULL as
- * "—" so consumers see honest gaps instead of fake numbers.
+ * named Quiet Operator gaps instead of fake numbers or silent em dashes.
  */
 export type V2DashboardTableRow = {
   id: string;
@@ -79,7 +84,7 @@ const KPI_LABELS: Record<
     "Falls (7d)",
     "Survey window",
     "Active admits",
-    "Family msgs awaiting reply",
+    V2_DASHBOARD_FAMILY_PORTAL_NOTES_LABEL,
   ],
   "executive-intelligence": [
     "Occupancy",
@@ -157,11 +162,13 @@ const TITLES: Record<V2DashboardId, { title: string; subtitle: string }> = {
 };
 
 function buildKpis(
+  id: V2DashboardId,
   labels: readonly [string, string, string, string, string, string],
 ): V2DashboardPayload["kpis"] {
-  return labels.map((label) => ({
+  const gapValues = V2_DASHBOARD_KPI_GAP_VALUES[id];
+  return labels.map((label, index) => ({
     label,
-    value: "—",
+    value: gapValues[index],
     info: LIVE_SOURCE_PENDING,
   })) as V2DashboardPayload["kpis"];
 }
@@ -182,7 +189,7 @@ function buildPayload(id: V2DashboardId): V2DashboardPayload {
     title: TITLES[id].title,
     subtitle: TITLES[id].subtitle,
     generatedAt: "",
-    kpis: buildKpis(KPI_LABELS[id]),
+    kpis: buildKpis(id, KPI_LABELS[id]),
     panels: buildPanels(PANEL_TITLES[id]),
     alerts: [],
     actionQueue: [],
