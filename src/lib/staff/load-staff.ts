@@ -75,6 +75,13 @@ export function isSameStaffDirectoryPerson(
     return true;
   }
 
+  if (left.user_id && right.user_id && left.user_id !== right.user_id) {
+    return false;
+  }
+  if (leftEmail && rightEmail && leftEmail !== rightEmail) {
+    return false;
+  }
+
   if (left.facility_id === right.facility_id) {
     const leftName = normalizeStaffPersonName(left.first_name, left.last_name);
     const rightName = normalizeStaffPersonName(right.first_name, right.last_name);
