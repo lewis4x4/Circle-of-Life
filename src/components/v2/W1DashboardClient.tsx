@@ -18,6 +18,7 @@ import type {
   V2DashboardTableRow,
 } from "@/lib/v2-dashboards";
 import { formatV2DashboardMetric } from "@/lib/v2-dashboard-display-copy";
+import { isV2DashboardShellKpiGapValue } from "@/lib/v2/v2-dashboard-kpi-display-copy";
 import { V2EmptyOnboarding } from "./V2EmptyOnboarding";
 
 const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
@@ -124,13 +125,12 @@ export function W1DashboardClient({
       ? <span>{sourceNote}.</span>
       : undefined;
 
-  // "Empty install" — the underlying jobs haven't run yet, so every KPI is
-  // the seeded "—" placeholder, the alerts/action-queue/table arrays are
-  // empty, and the panels carry neutral "live source pending" subtitles.
-  // Render an onboarding card instead of the empty
-  // dashboard chrome so the page tells the operator what to do next.
+  // "Empty install" — snapshot jobs haven't run yet, so every KPI still carries
+  // named shell gap copy, the alerts/action-queue/table arrays are empty, and
+  // the panels carry neutral "live source pending" subtitles. Render onboarding
+  // instead of empty dashboard chrome so the operator knows what to do next.
   const shellAvailableFacilities = useFacilityStore((s) => s.availableFacilities);
-  const allKpisEmpty = payload.kpis.every((k) => k.value === "—" || k.value == null || k.value === "");
+  const allKpisEmpty = payload.kpis.every((k) => isV2DashboardShellKpiGapValue(k.value));
   const allTableRowsEmpty = payload.tableRows.length === 0;
   const allAlertsEmpty = payload.alerts.length === 0;
   const allActionsEmpty = payload.actionQueue.length === 0;
