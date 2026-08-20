@@ -24,6 +24,7 @@ import {
   formatExecutiveCertsExpiringCount,
   formatExecutiveOccupancyPctWithSuffix,
   formatExecutiveOpenInvoiceCount,
+  resolveOfficerOccupancyTileLabel,
 } from "@/lib/executive/executive-display-copy";
 
 /** Pills with live pane content on the CFO board (stub tabs are hidden for training-week click-around). */
@@ -41,12 +42,14 @@ export default function CfoDashboardPage() {
     ? facilityNameById.get(selectedFacilityId) ?? "the selected facility"
     : "all facilities";
 
+  const facilityScoped = Boolean(selectedFacilityId);
   const arCents = kpis?.financial.totalBalanceDueCents;
   const occupancyPct = kpis?.census.occupancyPct;
   const openInvoices = kpis?.financial.openInvoicesCount;
   const certsExpiring = kpis?.workforce.certificationsExpiring30d;
 
   const arValue = loading ? "…" : formatExecutiveArOutstandingCents(arCents);
+  const occupancyLabel = resolveOfficerOccupancyTileLabel(facilityScoped);
   const occValue = loading ? "…" : formatExecutiveOccupancyPctWithSuffix(occupancyPct);
   const invoicesValue = loading ? "…" : formatExecutiveOpenInvoiceCount(openInvoices);
   const certsValue = loading ? "…" : formatExecutiveCertsExpiringCount(certsExpiring);
@@ -101,7 +104,7 @@ export default function CfoDashboardPage() {
 
         <OfficerKpiStrip>
           <OfficerKpiTile label="Total AR outstanding" value={arValue} />
-          <OfficerKpiTile label="Portfolio occupancy" value={occValue} />
+          <OfficerKpiTile label={occupancyLabel} value={occValue} />
           <OfficerKpiTile label="Open invoices" value={invoicesValue} />
           <OfficerKpiTile label="Certs expiring 30d" value={certsValue} tone={officerAlarmTone(certsExpiring, "warning")} />
         </OfficerKpiStrip>

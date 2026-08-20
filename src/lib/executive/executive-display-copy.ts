@@ -49,6 +49,14 @@ export function formatExecutiveOccupancyPctWithSuffix(value: number | null | und
   return formatPortfolioOccupancyPctDisplay(value);
 }
 
+/**
+ * Officer KPI strip occupancy label — must match header facility scope (same as other CFO/COO KPIs).
+ * Portfolio when no facility is selected; this facility when header scopes the board.
+ */
+export function resolveOfficerOccupancyTileLabel(facilityScoped: boolean): string {
+  return facilityScoped ? "This facility occupancy" : "Portfolio occupancy";
+}
+
 /** Bar chart occupancy — same display rule as portfolio KPI strip. */
 export function formatExecutiveOccupancyBarLabel(value: number | null | undefined): string {
   return formatPortfolioOccupancyPctDisplay(value);
