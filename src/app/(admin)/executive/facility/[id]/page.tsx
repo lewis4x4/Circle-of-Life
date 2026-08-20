@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Building2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, TriangleAlert } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,10 @@ import {
   type ResidentAssuranceCommandBrief,
   type ResidentAssuranceFacilityTrendRow,
 } from "@/lib/resident-assurance/command-center-brief";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -54,10 +58,10 @@ export default function ExecutiveFacilityDetailPage() {
   const rawId = typeof params.id === "string" ? params.id : "";
   const facilityId = UUID_RE.test(rawId) ? rawId : "";
   const supabase = createClient();
-  const { organizationId } = useHavenAuth();
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [entityId, setEntityId] = useState<string | null>(null);
   const [entityName, setEntityName] = useState<string | null>(null);
@@ -66,20 +70,35 @@ export default function ExecutiveFacilityDetailPage() {
   const [assurance, setAssurance] = useState<ResidentAssuranceCommandBrief | null>(null);
   const [assuranceTrend, setAssuranceTrend] = useState<ResidentAssuranceFacilityTrendRow | null>(null);
 
+  const hasOrgScopedData = Boolean(facilityName || kpi);
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
+    if (authLoading) return;
+
     if (!facilityId) {
-      setError("Invalid facility id.");
-      setLoading(false);
+      setFetchError("Invalid facility id.");
+      setFetching(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    if (!organizationId) {
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        return;
-      }
 
       const { data: fac, error: fErr } = await supabase
         .from("facilities")
@@ -90,7 +109,7 @@ export default function ExecutiveFacilityDetailPage() {
 
       if (fErr) throw fErr;
       if (!fac || fac.organization_id !== organizationId) {
-        setError("Facility not found or not in your organization.");
+        setFetchError("Facility not found or not in your organization.");
         setFacilityName(null);
         setEntityId(null);
         setEntityName(null);
@@ -119,16 +138,16 @@ export default function ExecutiveFacilityDetailPage() {
       setAssurance(assuranceResult);
       setAssuranceTrend(assuranceTrendRows.find((row) => row.facilityId === facilityId) ?? null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to load facility.");
+      setFetchError(e instanceof Error ? e.message : "Unable to load facility.");
       setFacilityName(null);
       setKpi(null);
       setTcor(null);
       setAssurance(null);
       setAssuranceTrend(null);
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [supabase, facilityId, organizationId]);
+  }, [authLoading, supabase, facilityId, organizationId]);
 
   useEffect(() => {
     void load();
@@ -162,7 +181,7 @@ export default function ExecutiveFacilityDetailPage() {
               {loading ? <Skeleton className="inline-block h-8 w-56" /> : facilityName ?? "Facility"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Facility drill-down (Module 24) — same KPI engine as the command center, scoped to this site.
+              This facility — live KPIs from the same engine as the executive overview, not a portfolio roll-up.
             </p>
             {entityName ? (
               <p className="mt-1 text-xs text-muted-foreground">
@@ -181,19 +200,28 @@ export default function ExecutiveFacilityDetailPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
 
-      {loading && !error && (
+      {fetchErrorBannerMessage ? (
+        <Card className="border-rose-200 bg-rose-50/70 dark:border-rose-500/20 dark:bg-rose-500/10">
+          <CardContent className="flex items-start gap-3 p-4 text-sm text-rose-700 dark:text-rose-300">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{fetchErrorBannerMessage}</span>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {loading && !fetchErrorBannerMessage && !organizationGapMessage && (
         <div className="space-y-3">
           <Skeleton className="h-40 w-full" />
         </div>
       )}
 
-      {!loading && !error && kpi && (
+      {!loading && !fetchErrorBannerMessage && !organizationGapMessage && kpi && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Live KPIs</CardTitle>
@@ -207,7 +235,7 @@ export default function ExecutiveFacilityDetailPage() {
         </Card>
       )}
 
-      {!loading && !error && assurance && (
+      {!loading && !fetchErrorBannerMessage && !organizationGapMessage && assurance && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Smart rounding</CardTitle>
@@ -241,7 +269,7 @@ export default function ExecutiveFacilityDetailPage() {
         </Card>
       )}
 
-      {!loading && !error && assuranceTrend && (
+      {!loading && !fetchErrorBannerMessage && !organizationGapMessage && assuranceTrend && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Smart rounding trend</CardTitle>
@@ -282,7 +310,7 @@ export default function ExecutiveFacilityDetailPage() {
         </Card>
       )}
 
-      {!loading && !error && tcor && (
+      {!loading && !fetchErrorBannerMessage && !organizationGapMessage && tcor && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Insurance (TCoR)</CardTitle>
@@ -306,7 +334,7 @@ export default function ExecutiveFacilityDetailPage() {
         </Card>
       )}
 
-      {!loading && !error && (
+      {!loading && !fetchErrorBannerMessage && !organizationGapMessage && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Quick links</CardTitle>

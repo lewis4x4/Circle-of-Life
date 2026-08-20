@@ -20,6 +20,13 @@ import {
   type OfficerLane,
 } from "@/components/executive/officer-dashboard";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import {
   formatExecutiveArOutstandingCents,
   formatExecutiveOccupancyPctWithSuffix,
@@ -93,8 +100,20 @@ export default function CeoDashboardPageClient({
   initialError,
 }: CeoDashboardPageClientProps) {
   const [tab, setTab] = useState("CEO View");
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const kpis = initialKpis;
   const displayAlerts = initialAlerts;
+
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: kpis != null,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError: initialError,
+  });
+  const showKpiSkeleton = authLoading && kpis == null;
 
   const occupancyPct = kpis?.census.occupancyPct;
   const deficiencies = kpis?.compliance.openSurveyDeficiencies;
@@ -148,41 +167,56 @@ export default function CeoDashboardPageClient({
       <OfficerHeader title="Chief Executive Officer" subtitle="Enterprise growth & risk — all facilities." />
 
       <div className="flex flex-col gap-6 px-6 py-8 sm:px-12">
-        {initialError ? (
-          <AdminLiveDataFallbackNotice message={initialError} onRetry={() => window.location.reload()} />
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
         ) : null}
 
-        <OfficerKpiStrip>
-          <OfficerKpiTile label="Portfolio occupancy" value={occValue} />
-          <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
-          <OfficerKpiTile label="Total AR outstanding" value={arValue} />
-          <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
-        </OfficerKpiStrip>
+        {fetchErrorBannerMessage ? (
+          <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => window.location.reload()} />
+        ) : null}
 
-        {tab === "CEO View" ? (
+        {showKpiSkeleton ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+          </div>
+        ) : (
+          <OfficerKpiStrip>
+            <OfficerKpiTile label="Portfolio occupancy" value={occValue} />
+            <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
+            <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+            <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
+          </OfficerKpiStrip>
+        )}
+
+        {!showKpiSkeleton && tab === "CEO View" ? (
           <>
             <OfficerLanes lanes={lanes} subheading="Leadership decisions and portfolio drill-ins." />
             <CeoAlertsWatchlist alerts={displayAlerts} />
           </>
-        ) : tab === "Alerts" ? (
+        ) : !showKpiSkeleton && tab === "Alerts" ? (
           <CeoAlertsWatchlist alerts={displayAlerts} />
-        ) : tab === "Reports" ? (
+        ) : !showKpiSkeleton && tab === "Reports" ? (
           <OfficerLinkOutPanel
             title="Executive reports"
             description="Portfolio KPI exports (CSV / print) and the board-packet archive."
             href="/admin/executive/reports"
             cta="Open reports"
           />
-        ) : tab === "Benchmarks" ? (
+        ) : !showKpiSkeleton && tab === "Benchmarks" ? (
           <OfficerLinkOutPanel
             title="Portfolio benchmarks"
             description="Facility-vs-facility comparison across occupancy, labor, incidents, and survey readiness."
             href="/admin/executive/benchmarks"
             cta="Open benchmarks"
           />
-        ) : (
+        ) : !showKpiSkeleton ? (
           <HavenInsightPanel domain="portfolio" />
-        )}
+        ) : null}
       </div>
     </div>
   );
