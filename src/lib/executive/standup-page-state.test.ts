@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   EXECUTIVE_STANDUP_NO_ORGANIZATION_ON_PROFILE_COPY,
   hasExecutiveStandupOrgScopedPackData,
+  isExecutiveStandupOrganizationGapError,
   resolveExecutiveStandupFetchErrorBannerMessage,
   resolveExecutiveStandupOrganizationGapMessage,
 } from "./standup-page-state";
@@ -66,14 +67,29 @@ describe("resolveExecutiveStandupOrganizationGapMessage", () => {
   });
 });
 
+describe("isExecutiveStandupOrganizationGapError", () => {
+  it("recognizes quiet and legacy organization gap strings", () => {
+    expect(isExecutiveStandupOrganizationGapError(EXECUTIVE_STANDUP_NO_ORGANIZATION_ON_PROFILE_COPY)).toBe(true);
+    expect(isExecutiveStandupOrganizationGapError("Organization missing on profile.")).toBe(true);
+    expect(isExecutiveStandupOrganizationGapError("Could not load executive standup.")).toBe(false);
+  });
+});
+
 describe("resolveExecutiveStandupFetchErrorBannerMessage", () => {
-  it("suppresses the legacy org crash string when the pack already loaded", () => {
+  it("suppresses quiet org gap copy from the crash banner", () => {
     expect(
       resolveExecutiveStandupFetchErrorBannerMessage({
         authLoading: false,
-        organizationId: null,
+        fetchError: EXECUTIVE_STANDUP_NO_ORGANIZATION_ON_PROFILE_COPY,
+      }),
+    ).toBeNull();
+  });
+
+  it("suppresses the legacy org crash string", () => {
+    expect(
+      resolveExecutiveStandupFetchErrorBannerMessage({
+        authLoading: false,
         fetchError: "Organization missing on profile.",
-        hasOrgScopedPackData: true,
       }),
     ).toBeNull();
   });
@@ -82,9 +98,7 @@ describe("resolveExecutiveStandupFetchErrorBannerMessage", () => {
     expect(
       resolveExecutiveStandupFetchErrorBannerMessage({
         authLoading: false,
-        organizationId: "org-1",
         fetchError: "Could not load executive standup.",
-        hasOrgScopedPackData: true,
       }),
     ).toBe("Could not load executive standup.");
   });
@@ -93,9 +107,7 @@ describe("resolveExecutiveStandupFetchErrorBannerMessage", () => {
     expect(
       resolveExecutiveStandupFetchErrorBannerMessage({
         authLoading: true,
-        organizationId: null,
         fetchError: "Organization missing on profile.",
-        hasOrgScopedPackData: false,
       }),
     ).toBeNull();
   });

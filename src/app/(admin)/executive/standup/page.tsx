@@ -56,7 +56,7 @@ export default function ExecutiveStandupPage() {
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
   const loadGenerationRef = useRef(0);
 
-  const [fetching, setFetching] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [live, setLive] = useState<ExecutiveStandupLive | null>(null);
@@ -79,18 +79,22 @@ export default function ExecutiveStandupPage() {
   });
   const fetchErrorBannerMessage = resolveExecutiveStandupFetchErrorBannerMessage({
     authLoading,
-    organizationId,
     fetchError: actionError ?? fetchError,
-    hasOrgScopedPackData,
   });
-  const loading = authLoading || fetching;
+  const awaitingInitialPackLoad = !authLoading && Boolean(organizationId) && live == null && fetchError == null;
+  const loading = authLoading || fetching || awaitingInitialPackLoad;
 
   const load = useCallback(async () => {
-    if (authLoading || !organizationId) return;
+    if (authLoading) return;
+    if (!organizationId) {
+      setFetching(false);
+      return;
+    }
 
     const generation = ++loadGenerationRef.current;
     setFetching(true);
     setFetchError(null);
+    setActionError(null);
     try {
       const [liveData, snapshot, previousPublished] = await Promise.all([
         fetchExecutiveStandupLive(supabase, organizationId, selectedFacilityId),
@@ -154,7 +158,6 @@ export default function ExecutiveStandupPage() {
       return;
     }
     if (!organizationId) {
-      setActionError("No organization on this profile");
       return;
     }
     setCreatingDraft(true);

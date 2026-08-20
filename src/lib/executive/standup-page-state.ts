@@ -3,6 +3,16 @@ import type { ExecutiveStandupLive } from "@/lib/executive/standup";
 /** Quiet Operator named gap when auth resolved but the profile has no organization. */
 export const EXECUTIVE_STANDUP_NO_ORGANIZATION_ON_PROFILE_COPY = "No organization on this profile";
 
+const EXECUTIVE_STANDUP_LEGACY_ORGANIZATION_ERROR_COPY = "Organization missing on profile.";
+
+export function isExecutiveStandupOrganizationGapError(message: string | null | undefined): boolean {
+  if (!message) return false;
+  return (
+    message === EXECUTIVE_STANDUP_NO_ORGANIZATION_ON_PROFILE_COPY ||
+    message === EXECUTIVE_STANDUP_LEGACY_ORGANIZATION_ERROR_COPY
+  );
+}
+
 export function hasExecutiveStandupOrgScopedPackData(live: ExecutiveStandupLive | null): boolean {
   return (live?.facilities?.length ?? 0) > 0;
 }
@@ -26,18 +36,10 @@ export function resolveExecutiveStandupOrganizationGapMessage(options: {
 /** Red crash banner is reserved for fetch/action failures — not org gaps. */
 export function resolveExecutiveStandupFetchErrorBannerMessage(options: {
   authLoading: boolean;
-  organizationId: string | null;
   fetchError: string | null;
-  hasOrgScopedPackData: boolean;
 }): string | null {
   if (options.authLoading) return null;
   if (!options.fetchError) return null;
-  if (
-    !options.organizationId &&
-    options.hasOrgScopedPackData &&
-    options.fetchError === "Organization missing on profile."
-  ) {
-    return null;
-  }
+  if (isExecutiveStandupOrganizationGapError(options.fetchError)) return null;
   return options.fetchError;
 }
