@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, FileSpreadsheet, RefreshCw, MessageSquare, TriangleAlert } from "lucide-react";
 
@@ -28,6 +28,11 @@ import {
   type StandupSectionKey,
 } from "@/lib/executive/standup";
 import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import {
+  hasExecutiveStandupOrgScopedPackData,
+  resolveExecutiveStandupFetchErrorBannerMessage,
+  resolveExecutiveStandupOrganizationGapMessage,
+} from "@/lib/executive/standup-page-state";
 import type { Database } from "@/types/database";
 
 function sourceBadgeClass(metric: StandupMetricRow): string {
@@ -44,14 +49,16 @@ function confidenceBadgeClass(metric: StandupMetricRow): string {
 
 export default function ExecutiveStandupPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { user, organizationId, appRole } = useHavenAuth();
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
   const canCreateDraft = canCreateDraftFinance(role);
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
+  const loadGenerationRef = useRef(0);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [live, setLive] = useState<ExecutiveStandupLive | null>(null);
   const [actions, setActions] = useState<StandupFacilityAction[]>([]);
   const [draftStatus, setDraftStatus] = useState<{
@@ -64,20 +71,38 @@ export default function ExecutiveStandupPage() {
   const [creatingDraft, setCreatingDraft] = useState(false);
 
   const weekOf = currentStandupWeekOf();
+  const hasOrgScopedPackData = hasExecutiveStandupOrgScopedPackData(live);
+  const organizationGapMessage = resolveExecutiveStandupOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedPackData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveStandupFetchErrorBannerMessage({
+    authLoading,
+    fetchError: actionError ?? fetchError,
+  });
+  const awaitingInitialPackLoad = !authLoading && Boolean(organizationId) && live == null && fetchError == null;
+  const loading = authLoading || fetching || awaitingInitialPackLoad;
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (!organizationId) {
-        throw new Error("Organization missing on profile.");
-      }
+    if (authLoading) return;
+    if (!organizationId) {
+      setFetching(false);
+      return;
+    }
 
+    const generation = ++loadGenerationRef.current;
+    setFetching(true);
+    setFetchError(null);
+    setActionError(null);
+    try {
       const [liveData, snapshot, previousPublished] = await Promise.all([
         fetchExecutiveStandupLive(supabase, organizationId, selectedFacilityId),
         fetchStandupSnapshotForWeek(supabase, organizationId, weekOf),
         fetchPreviousPublishedStandupSnapshotDetail(supabase, organizationId, weekOf),
       ]);
+
+      if (generation !== loadGenerationRef.current) return;
 
       setLive(liveData);
       setActions(buildStandupActionEngine(liveData.facilities, previousPublished?.facilities ?? null));
@@ -93,14 +118,17 @@ export default function ExecutiveStandupPage() {
           : null,
       );
     } catch (loadError) {
+      if (generation !== loadGenerationRef.current) return;
       setLive(null);
       setActions([]);
       setDraftStatus(null);
-      setError(loadError instanceof Error ? loadError.message : "Could not load executive standup.");
+      setFetchError(loadError instanceof Error ? loadError.message : "Could not load executive standup.");
     } finally {
-      setLoading(false);
+      if (generation === loadGenerationRef.current) {
+        setFetching(false);
+      }
     }
-  }, [organizationId, selectedFacilityId, supabase, weekOf]);
+  }, [authLoading, organizationId, selectedFacilityId, supabase, weekOf]);
 
   useEffect(() => {
     void load();
@@ -126,21 +154,19 @@ export default function ExecutiveStandupPage() {
 
   async function onGenerateDraft() {
     if (!user?.id) {
-      setError("Sign in required.");
+      setActionError("Sign in required.");
+      return;
+    }
+    if (!organizationId) {
       return;
     }
     setCreatingDraft(true);
-    setError(null);
+    setActionError(null);
     try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
-      if (!user?.id) {
-        setError("Sign in required.");
-        return;
-      }
       await generateExecutiveStandupDraft(supabase, organizationId, user.id, selectedFacilityId);
       await load();
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Could not create standup draft.");
+      setActionError(createError instanceof Error ? createError.message : "Could not create standup draft.");
     } finally {
       setCreatingDraft(false);
     }
@@ -205,11 +231,17 @@ export default function ExecutiveStandupPage() {
           </div>
         </header>
 
-        {error ? (
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
           <Card className="border-rose-200 bg-rose-50/70 dark:border-rose-500/20 dark:bg-rose-500/10">
             <CardContent className="flex items-start gap-3 p-4 text-sm text-rose-700 dark:text-rose-300">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{error}</span>
+              <span>{fetchErrorBannerMessage}</span>
             </CardContent>
           </Card>
         ) : null}
