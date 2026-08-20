@@ -54,6 +54,11 @@ export function formatExecutiveOccupancyBarLabel(value: number | null | undefine
   return formatPortfolioOccupancyPctDisplay(value);
 }
 
+/** Executive overview `occ_pt` snapshot metric (0–1 fraction) → portfolio % display. */
+export function formatExecutiveOccPtPctWithSuffix(occPt: number): string {
+  return formatPortfolioOccupancyPctDisplay(occPt * 100);
+}
+
 export function formatExecutivePacketStatus(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_PACKET_STATUS_POSTED_COPY;
   return value;

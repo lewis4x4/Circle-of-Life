@@ -44,7 +44,10 @@ import {
   fetchPresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
-import { formatExecutiveRevenueMtdCents } from "@/lib/executive/executive-display-copy";
+import {
+  formatExecutiveOccPtPctWithSuffix,
+  formatExecutiveRevenueMtdCents,
+} from "@/lib/executive/executive-display-copy";
 import {
   executiveKpiEmptyCopy,
   executiveKpiStripHelperLine,
@@ -289,6 +292,10 @@ export function ExecutiveOverviewPageClient({
     return formatted ?? dashEm;
   }
 
+  function renderPostedOccupancy(value: number): string {
+    return formatExecutiveOccPtPctWithSuffix(value);
+  }
+
   function renderKpiTileValue(
     metricKey: ExecutiveKpiMetricKey,
     value: number | undefined,
@@ -298,6 +305,13 @@ export function ExecutiveOverviewPageClient({
       return (
         <span className="text-[13px] font-medium leading-snug text-muted-foreground">
           {executiveKpiEmptyCopy(metricKey)}
+        </span>
+      );
+    }
+    if (metricKey === "occ_pt") {
+      return (
+        <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+          {renderPostedOccupancy(value)}
         </span>
       );
     }
@@ -319,6 +333,9 @@ export function ExecutiveOverviewPageClient({
           {executiveKpiEmptyCopy(metricKey)}
         </span>
       );
+    }
+    if (metricKey === "occ_pt") {
+      return renderPostedOccupancy(value);
     }
     return renderMetric(value, format);
   }

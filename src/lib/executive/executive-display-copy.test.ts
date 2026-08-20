@@ -32,6 +32,7 @@ import {
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPct,
   formatExecutiveOccupancyPctWithSuffix,
+  formatExecutiveOccPtPctWithSuffix,
   formatExecutiveOfficerCountLabel,
   formatExecutiveOfficerKpiValue,
   formatExecutiveOnLeaveCount,
@@ -80,6 +81,17 @@ describe("formatExecutiveOccupancyBarLabel", () => {
 
   it("keeps real zero as 0%", () => {
     expect(formatExecutiveOccupancyBarLabel(0)).toBe("0%");
+  });
+});
+
+describe("formatExecutiveOccPtPctWithSuffix", () => {
+  it("matches portfolio display for posted zero occupancy", () => {
+    expect(formatExecutiveOccPtPctWithSuffix(0)).toBe("0%");
+  });
+
+  it("converts occ_pt fraction to portfolio one-decimal percent", () => {
+    expect(formatExecutiveOccPtPctWithSuffix(0.128)).toBe("12.8%");
+    expect(formatExecutiveOccPtPctWithSuffix(0.92)).toBe("92.0%");
   });
 });
 

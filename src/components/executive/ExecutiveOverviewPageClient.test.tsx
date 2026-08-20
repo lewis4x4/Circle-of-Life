@@ -76,3 +76,29 @@ describe("ExecutiveOverviewPageClient role-home subtitle", () => {
     expect(screen.queryByText(/Facility Admin home/)).not.toBeInTheDocument();
   });
 });
+
+describe("ExecutiveOverviewPageClient portfolio occupancy display", () => {
+  it("renders posted zero occupancy as 0% in the portfolio table, not 0.0%", () => {
+    authMock.loading = false;
+    authMock.appRole = "owner";
+    authMock.organizationId = "org-1";
+
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ occ_pt: 0 }}
+        initialFacilities={[
+          {
+            id: "homewood",
+            name: "Homewood Lodge ALF",
+            metrics: { occ_pt: 0 },
+          },
+        ]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
+  });
+});
