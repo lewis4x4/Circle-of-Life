@@ -14,6 +14,10 @@ import { fetchPresenceCensus, presenceSummaryText, type PresenceCensus } from "@
 import { cn } from "@/lib/utils";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
 import { formatFacilityOverviewEmail } from "@/lib/facilities/overview-tab-display-copy";
+import {
+  overviewTabOccupancyDisplay,
+  overviewTabOccupancyPctValue,
+} from "@/lib/facilities/overview-tab-occupancy-display";
 import { formatStaffingTabAdministratorName } from "@/lib/facilities/staffing-tab-display-copy";
 
 interface OverviewTabProps {
@@ -152,8 +156,8 @@ export function OverviewTab({
     facility.total_licensed_beds ?? facility.licensed_beds ?? facility.total_beds ?? 0;
   const denomBeds =
     licensedBeds > 0 ? licensedBeds : beds.length > 0 ? beds.length : licensedBeds;
-  const occupancyPct =
-    denomBeds > 0 ? Math.min(100, Math.max(0, Math.round((occupiedBeds / denomBeds) * 100))) : 0;
+  const occupancyPctValue = overviewTabOccupancyPctValue(facility, beds.length, occupiedBeds, denomBeds);
+  const occupancyDisplay = overviewTabOccupancyDisplay(facility, beds.length, occupiedBeds, denomBeds);
 
   const standupSubtitle = [
     `${bedSummary.private} private open`,
@@ -185,7 +189,9 @@ export function OverviewTab({
             <div className="flex justify-between text-sm">
               <span className="text-[13px] text-muted-foreground">Occupancy</span>
               <span className="font-medium tabular-nums text-foreground">
-                <span className={cn(portfolioOccupancyKpiTextClass(occupancyPct))}>{occupancyPct}%</span>
+                <span className={cn(portfolioOccupancyKpiTextClass(occupancyPctValue ?? 0))}>
+                  {occupancyDisplay}
+                </span>
                 <span className="text-muted-foreground"> · </span>
                 <span>
                   {occupiedBeds} of {denomBeds} beds occupied
