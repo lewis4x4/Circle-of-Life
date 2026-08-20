@@ -139,7 +139,11 @@ export async function GET(request: NextRequest) {
   if (facilityIds.length > 0) {
     const orgId = actor.organization_id!;
     const [bedsRes, alertsRes, incRes, admRes, riskRes] = await Promise.all([
-      untypedAdmin.from("beds").select("facility_id, current_resident_id").in("facility_id", facilityIds),
+      untypedAdmin
+        .from("beds")
+        .select("facility_id, current_resident_id")
+        .in("facility_id", facilityIds)
+        .is("deleted_at", null),
       untypedAdmin
         .from("facility_operational_thresholds")
         .select("facility_id")

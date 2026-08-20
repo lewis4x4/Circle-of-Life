@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   facilityOccupancyDenominator,
   facilityOccupiedCount,
+  facilityPortfolioOccupancyPct,
   portfolioFacilityCardFieldEmptyCopy,
 } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import { portfolioLaborCostTextClass } from "@/lib/admin/facilities/portfolio-metrics";
@@ -61,12 +62,13 @@ function LaborMtdCell({ facility }: { facility: FacilityRow }) {
 }
 
 export function FacilityCard({ facility }: FacilityCardProps) {
-  const occupancyEmptyCopy = portfolioFacilityCardFieldEmptyCopy("occupancy", facility);
-  const surveyEmptyCopy = portfolioFacilityCardFieldEmptyCopy("survey_readiness", facility);
-  const locationEmptyCopy = portfolioFacilityCardFieldEmptyCopy("location", facility);
-
   const occupiedBeds = facilityOccupiedCount(facility);
   const totalForGauge = facilityOccupancyDenominator(facility);
+  const occupancyPct = facilityPortfolioOccupancyPct(facility);
+  const occupancyEmptyCopy =
+    occupancyPct != null ? null : portfolioFacilityCardFieldEmptyCopy("occupancy", facility);
+  const surveyEmptyCopy = portfolioFacilityCardFieldEmptyCopy("survey_readiness", facility);
+  const locationEmptyCopy = portfolioFacilityCardFieldEmptyCopy("location", facility);
 
   const administratorDisplay = facility.administrator_name?.trim() || "";
   const hasAdministrator = administratorDisplay.length > 0;

@@ -1,5 +1,5 @@
 import type { FacilityDetailRow } from "@/types/facility";
-import { facilityOccupancyLoaded } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
+import { facilityPortfolioCensusLoaded } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import {
   computePortfolioOccupancyPct,
   formatPortfolioOccupancyPctDisplay,
@@ -12,7 +12,7 @@ export function overviewTabOccupancyPctValue(
   occupiedBeds: number,
   denomBeds: number,
 ): number | null {
-  const censusLoaded = facilityOccupancyLoaded(facility) || bedsLoadedCount > 0;
+  const censusLoaded = facilityPortfolioCensusLoaded(facility, bedsLoadedCount);
   if (!censusLoaded) return null;
   return computePortfolioOccupancyPct(occupiedBeds, denomBeds);
 }

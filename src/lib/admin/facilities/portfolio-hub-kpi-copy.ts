@@ -38,11 +38,24 @@ export function facilityLicensedBedsOnFile(facility: FacilityRow): number | null
   return null;
 }
 
-/** Bed census is loaded when the bed grid exists or occupied count is non-zero. */
+/**
+ * Bed census is loaded when the bed grid has rows (including posted-empty zero occupancy)
+ * or occupied count is non-zero. Overview may pass a live bed-grid count when row totals
+ * are stale — portfolio list API should keep `total_beds` in sync with the same query.
+ */
+export function facilityPortfolioCensusLoaded(
+  facility: FacilityRow,
+  bedGridCount?: number,
+): boolean {
+  const grid =
+    bedGridCount != null && bedGridCount > 0 ? bedGridCount : (facility.total_beds ?? 0);
+  const occ = facilityOccupiedCount(facility);
+  return grid > 0 || occ > 0;
+}
+
+/** Portfolio hub + executive bed-census loaded signal (no live bed-grid override). */
 export function facilityOccupancyLoaded(facility: FacilityRow): boolean {
-  const phy = facility.total_beds ?? 0;
-  const occ = facility.occupancy_count ?? facility.current_occupancy ?? 0;
-  return phy > 0 || occ > 0;
+  return facilityPortfolioCensusLoaded(facility);
 }
 
 export function facilityOccupiedCount(facility: FacilityRow): number {
@@ -190,7 +203,7 @@ export function portfolioFacilityCardFieldEmptyCopy(
 ): string | null {
   switch (key) {
     case "occupancy":
-      return facilityOccupancyLoaded(facility) ? null : CARD_EMPTY_COPY.occupancy;
+      return facilityPortfolioOccupancyPct(facility) != null ? null : CARD_EMPTY_COPY.occupancy;
     case "survey_readiness":
       if (
         facility.survey_readiness_pct != null &&
@@ -242,10 +255,10 @@ export function portfolioComparisonHelperLine(entries: PortfolioComparisonEntry[
   if (entries.length === 0) return null;
   const loadedCount = entries.filter((e) => e.occupancyLoaded).length;
   if (loadedCount === 0) {
-    return "Occupancy bars appear when bed census is loaded per site.";
+    return "Occupancy bars appear when bed census is posted per site.";
   }
   if (loadedCount < entries.length) {
-    return `${loadedCount} of ${entries.length} facilities have census loaded — others name the gap inline.`;
+    return `${loadedCount} of ${entries.length} facilities have census posted — a site at 0% is loaded, not missing. Others name the gap inline.`;
   }
   return null;
 }
