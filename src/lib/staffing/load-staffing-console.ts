@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 
 import {
+  facilityDateIsoDaysFromToday,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
+import {
   buildDedupedStaffPickerOptions,
   STAFF_DIRECTORY_IDENTITY_SELECT,
   type StaffDirectorySourceRow,
@@ -148,7 +152,7 @@ export async function fetchExpiredCertificationWarnings(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<CertWarning[]> {
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayFacilityDateIso();
 
   let certsQuery = supabase
     .from("staff_certifications" as never)
@@ -206,10 +210,8 @@ export async function fetchShiftAssignmentGaps(
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<ShiftGap[]> {
   const now = new Date();
-  const todayIso = now.toISOString().slice(0, 10);
-  const inTwoDays = new Date(now);
-  inTwoDays.setDate(inTwoDays.getDate() + 2);
-  const endDateIso = inTwoDays.toISOString().slice(0, 10);
+  const todayIso = todayFacilityDateIso(now);
+  const endDateIso = facilityDateIsoDaysFromToday(2, now);
 
   let shiftsQuery = supabase
     .from("shift_assignments" as never)
@@ -267,12 +269,9 @@ export async function fetchShiftAssignmentGaps(
   });
 }
 
-function formatShiftDateLabel(shiftDate: string): string {
-  const today = new Date();
-  const currentDate = today.toISOString().slice(0, 10);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowIso = tomorrow.toISOString().slice(0, 10);
+function formatShiftDateLabel(shiftDate: string, now: Date = new Date()): string {
+  const currentDate = todayFacilityDateIso(now);
+  const tomorrowIso = facilityDateIsoDaysFromToday(1, now);
   if (shiftDate === currentDate) return "Today";
   if (shiftDate === tomorrowIso) return "Tomorrow";
   return format(new Date(`${shiftDate}T12:00:00`), "MMM d");
