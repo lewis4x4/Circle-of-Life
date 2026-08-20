@@ -22,6 +22,10 @@ import {
   formatReferralDetailPhone,
   formatReferralDetailTimestamp,
 } from "@/lib/admissions/referral-detail-display-copy";
+import {
+  facilityDatetimeLocalToUtcIso,
+  utcIsoToFacilityDatetimeLocal,
+} from "@/lib/facility-wall-clock";
 
 type LeadDetail = Database["public"]["Tables"]["referral_leads"]["Row"] & {
   referral_sources: { name: string } | null;
@@ -112,10 +116,10 @@ export default function AdminReferralLeadDetailPage() {
       setStatusDraft((leadRow?.status as EditableLeadStatus | undefined) ?? "new");
       setNotesDraft(leadRow?.notes ?? "");
       setTourScheduledDraft(
-        leadRow?.tour_scheduled_for ? new Date(leadRow.tour_scheduled_for).toISOString().slice(0, 16) : "",
+        leadRow?.tour_scheduled_for ? utcIsoToFacilityDatetimeLocal(leadRow.tour_scheduled_for) : "",
       );
       setTourCompletedDraft(
-        leadRow?.tour_completed_at ? new Date(leadRow.tour_completed_at).toISOString().slice(0, 16) : "",
+        leadRow?.tour_completed_at ? utcIsoToFacilityDatetimeLocal(leadRow.tour_completed_at) : "",
       );
       if (leadRow) {
         const { data: admissionCase } = await supabase
@@ -337,20 +341,22 @@ export default function AdminReferralLeadDetailPage() {
             <div className="space-y-4 text-sm">
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour scheduled for</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour scheduled for (ET)</span>
                   <input
                     type="datetime-local"
                     value={tourScheduledDraft}
                     onChange={(event) => setTourScheduledDraft(event.target.value)}
+                    aria-label="Tour scheduled for (Eastern Time)"
                     className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour completed at</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour completed at (ET)</span>
                   <input
                     type="datetime-local"
                     value={tourCompletedDraft}
                     onChange={(event) => setTourCompletedDraft(event.target.value)}
+                    aria-label="Tour completed at (Eastern Time)"
                     className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </label>
@@ -362,8 +368,12 @@ export default function AdminReferralLeadDetailPage() {
                   disabled={actionLoading === "status"}
                   onClick={() =>
                     void (() => {
-                      const scheduledIso = tourScheduledDraft ? new Date(tourScheduledDraft).toISOString() : null;
-                      const completedIso = tourCompletedDraft ? new Date(tourCompletedDraft).toISOString() : null;
+                      const scheduledIso = tourScheduledDraft
+                        ? facilityDatetimeLocalToUtcIso(tourScheduledDraft)
+                        : null;
+                      const completedIso = tourCompletedDraft
+                        ? facilityDatetimeLocalToUtcIso(tourCompletedDraft)
+                        : null;
                       const nextStatus = syncTourStatus(statusDraft, scheduledIso, completedIso);
                       return updateLead(
                         {
