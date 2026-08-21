@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ExecutiveSettingsPage, { EXECUTIVE_SETTINGS_LOADING_MESSAGE } from "@/app/(admin)/executive/settings/page";
@@ -26,14 +26,19 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: () => ({
-      select: () => ({
+      select: (columns: string) => ({
         eq: () => ({
           eq: () => ({
             is: () => ({
-              maybeSingle: async () => ({
-                data: supabaseMock.loadData,
-                error: supabaseMock.loadError ? { message: supabaseMock.loadError } : null,
-              }),
+              maybeSingle: async () => {
+                if (columns.includes("default_date_range") && supabaseMock.loadError) {
+                  return { data: null, error: { message: supabaseMock.loadError } };
+                }
+                return {
+                  data: supabaseMock.loadData ?? { id: "cfg-anon-1" },
+                  error: null,
+                };
+              },
             }),
           }),
         }),
@@ -118,5 +123,43 @@ describe("ExecutiveSettingsPage auth hydration", () => {
     expect(screen.queryByText(/later slice/i)).not.toBeInTheDocument();
     expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+  });
+
+  it("clears stale save banners when auth resolves without an organization", async () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    authMock.user = { id: "user-anon-1" };
+    supabaseMock.loadData = {
+      id: "cfg-anon-1",
+      default_date_range: "mtd",
+      widgets: [],
+    };
+
+    const { rerender } = render(<ExecutiveSettingsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Saved.")).toBeInTheDocument();
+
+    authMock.organizationId = null;
+    rerender(<ExecutiveSettingsPage />);
+
+    expect(screen.getByText("No organization on this profile")).toBeInTheDocument();
+    expect(screen.queryByText("Saved.")).not.toBeInTheDocument();
+  });
+
+  it("clears the fetch error banner after a successful save", async () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    authMock.user = { id: "user-anon-1" };
+    supabaseMock.loadError = "Could not load executive settings.";
+    supabaseMock.loadData = null;
+
+    render(<ExecutiveSettingsPage />);
+    expect(await screen.findByText("Could not load executive settings.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Saved.")).toBeInTheDocument();
+    expect(screen.queryByText("Could not load executive settings.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
   });
 });
