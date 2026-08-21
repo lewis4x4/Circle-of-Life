@@ -89,7 +89,7 @@ async function runScoreQuery(
     .limit(200);
 
   if (error) return { data: null, error };
-  return { data: (data ?? []) as RawScoreRow[], error: null };
+  return { data: (data ?? []) as unknown as RawScoreRow[], error: null };
 }
 
 export async function fetchSafetyBoardScores(
