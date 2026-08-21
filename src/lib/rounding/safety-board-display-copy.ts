@@ -6,6 +6,19 @@
 import { caregiverDisplayRoomLabel } from "@/lib/caregiver/emar-queue-copy";
 
 export const SAFETY_BOARD_NO_FACILITY_COPY = "No facility posted";
+/** Header/subtitle scope when a facility id is selected but the name has not resolved. */
+export const SAFETY_BOARD_NO_FACILITY_SCOPE_COPY = "No facility name posted";
+
+/** Page header and empty-state facility label — never fabricates "selected facility". */
+export function resolveSafetyBoardFacilityScopeLabel(
+  selectedFacilityId: string | null,
+  selectedFacilityName: string | null | undefined,
+): string {
+  if (!selectedFacilityId) return SAFETY_BOARD_NO_FACILITY_SCOPE_COPY;
+  const trimmed = selectedFacilityName?.trim();
+  if (trimmed) return trimmed;
+  return SAFETY_BOARD_NO_FACILITY_SCOPE_COPY;
+}
 export const SAFETY_BOARD_NO_ROOM_COPY = "No room posted";
 export const SAFETY_BOARD_NO_OBSERVATION_COMPLIANCE_COPY = "No observation compliance posted";
 export const SAFETY_BOARD_NO_INCIDENT_RECENCY_COPY = "No incident recency posted";
