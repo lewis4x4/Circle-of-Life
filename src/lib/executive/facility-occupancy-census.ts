@@ -43,7 +43,8 @@ export async function fetchFacilityBedCensusById(
   const { data, error } = await supabase
     .from("beds")
     .select("facility_id, current_resident_id")
-    .in("facility_id", facilityIds);
+    .in("facility_id", facilityIds)
+    .is("deleted_at", null);
 
   if (error) throw new Error(error.message);
   return aggregateBedCensusByFacility((data ?? []) as BedRow[]);
