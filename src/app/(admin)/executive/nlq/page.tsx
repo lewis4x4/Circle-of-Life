@@ -20,6 +20,12 @@ import { HavenInsightChart, type ChartSpec } from "@/components/haven-insight/Ha
 import { ConversationSidebar } from "@/components/haven-insight/ConversationSidebar";
 import { InsightFeedback } from "@/components/haven-insight/InsightFeedback";
 import { HavenErrorBoundary } from "@/components/common/HavenErrorBoundary";
+import { Card, CardContent } from "@/components/ui/card";
+import { resolveExecutiveOrganizationGapMessage } from "@/lib/executive/executive-auth-page-state";
+import {
+  EXECUTIVE_HAVEN_INSIGHT_EMPTY_STATE_HELPER,
+  EXECUTIVE_HAVEN_INSIGHT_ROUTE_LOADING_MESSAGE,
+} from "@/lib/executive/haven-insight-page-copy";
 import type { Database } from "@/types/database";
 
 // ── Types ──
@@ -213,6 +219,12 @@ export default function ExecutiveNlqPage() {
   const sendAbortRef = useRef<AbortController | null>(null);
   const syncedSessionRef = useRef<string | null>(null);
   const loadingRef = useRef(false);
+
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: messages.length > 0,
+  });
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -639,8 +651,15 @@ export default function ExecutiveNlqPage() {
 
   if (authLoading) {
     return (
-      <div className="relative min-h-dvh w-full flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      <div
+        className="relative flex min-h-dvh w-full items-center justify-center"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          {EXECUTIVE_HAVEN_INSIGHT_ROUTE_LOADING_MESSAGE}
+        </div>
       </div>
     );
   }
@@ -651,6 +670,18 @@ export default function ExecutiveNlqPage() {
         <div className="text-center p-12">
           <p className="text-warning text-sm font-medium">Haven Insight is available to organization owners and org admins.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (organizationGapMessage) {
+    return (
+      <div className="relative flex min-h-dvh w-full items-center justify-center p-6">
+        <Card className="max-w-lg rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-center text-sm text-muted-foreground">
+            {organizationGapMessage}
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -684,6 +715,9 @@ export default function ExecutiveNlqPage() {
               <div className="mx-auto flex w-full max-w-2xl flex-col justify-center py-16">
                 <h2 className="text-sm font-medium text-foreground">Ask Haven about your portfolio.</h2>
                 <p className="max-w-md text-sm text-muted-foreground">Spans occupancy · revenue · incidents · compliance · staffing · any portfolio metric.</p>
+                <p className="mt-1 max-w-md text-[12px] text-muted-foreground">
+                  {EXECUTIVE_HAVEN_INSIGHT_EMPTY_STATE_HELPER}
+                </p>
                 <p className="mb-2 mt-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Try a question</p>
                 <ul className="grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2">
                   {SUGGESTED_QUESTIONS.map((q) => (
