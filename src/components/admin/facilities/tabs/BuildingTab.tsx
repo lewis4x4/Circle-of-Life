@@ -29,6 +29,18 @@ import {
 import { cn } from "@/lib/utils";
 import { PhoneLink } from "@/components/common/phone-link";
 import {
+  BUILDING_TAB_NO_CEMP_STATUS_COPY,
+  BUILDING_TAB_NO_ELOPEMENT_DRILL_COPY,
+  BUILDING_TAB_NO_GENERATOR_CIRCUITS_COPY,
+  BUILDING_TAB_NO_GENERATOR_MANUFACTURER_COPY,
+  BUILDING_TAB_NO_GENERATOR_PM_TECHNICIAN_COPY,
+  BUILDING_TAB_NO_GENERATOR_TANK_RUNTIME_COPY,
+  BUILDING_TAB_NO_NEXT_SPRINKLER_INSPECTION_COPY,
+  BUILDING_TAB_NO_SECURE_UNIT_COPY,
+  BUILDING_TAB_NO_SPRINKLER_COVERAGE_COPY,
+  BUILDING_TAB_NO_SPRINKLER_INSPECTION_COPY,
+  BUILDING_TAB_NO_SPRINKLER_SYSTEM_TYPE_COPY,
+  BUILDING_TAB_NO_STORM_HARDENING_COPY,
   buildingTabLicensedBedCountIsMissing,
   formatBuildingTabLicensedBedCount,
 } from "@/lib/facilities/building-tab-display-copy";
@@ -142,11 +154,11 @@ function BuildingSection({
   );
 }
 
-function ScaffoldRow({ label }: { label: string }) {
+function ScaffoldRow({ label, valueCopy }: { label: string; valueCopy: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/60 py-2 last:border-b-0">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm tabular-nums text-muted-foreground">—</span>
+      <span className="text-sm text-muted-foreground">{valueCopy}</span>
     </div>
   );
 }
@@ -421,10 +433,22 @@ export function BuildingTab({
 
       <BuildingSection title="Sprinkler system" auditUpdatedAt={auditStamp}>
         <p className="mb-3 text-[13px] text-muted-foreground">{sprinklerCoverageSentence(merged.fire_suppression_type)}</p>
-        <ScaffoldRow label="Dedicated coverage selector (full / partial / none)" />
-        <ScaffoldRow label="System type (wet / dry / pre-action / deluge)" />
-        <ScaffoldRow label="Last sprinkler inspection date + vault link" />
-        <ScaffoldRow label="Next sprinkler inspection due" />
+        <ScaffoldRow
+          label="Dedicated coverage selector (full / partial / none)"
+          valueCopy={BUILDING_TAB_NO_SPRINKLER_COVERAGE_COPY}
+        />
+        <ScaffoldRow
+          label="System type (wet / dry / pre-action / deluge)"
+          valueCopy={BUILDING_TAB_NO_SPRINKLER_SYSTEM_TYPE_COPY}
+        />
+        <ScaffoldRow
+          label="Last sprinkler inspection date + vault link"
+          valueCopy={BUILDING_TAB_NO_SPRINKLER_INSPECTION_COPY}
+        />
+        <ScaffoldRow
+          label="Next sprinkler inspection due"
+          valueCopy={BUILDING_TAB_NO_NEXT_SPRINKLER_INSPECTION_COPY}
+        />
         <p className="mt-2 text-[12px] text-muted-foreground">
           Granular sprinkler columns ship in schema sprint — suppression enum fields remain authoritative until then.
         </p>
@@ -558,10 +582,22 @@ export function BuildingTab({
             </div>
           </div>
           <div className="mt-6 space-y-1">
-            <ScaffoldRow label="Manufacturer / model (structured)" />
-            <ScaffoldRow label="Fuel tank size (gal) · runtime @ full load (hrs)" />
-            <ScaffoldRow label="Covered circuits selector" />
-            <ScaffoldRow label="Last PM service technician-of-record" />
+            <ScaffoldRow
+              label="Manufacturer / model (structured)"
+              valueCopy={BUILDING_TAB_NO_GENERATOR_MANUFACTURER_COPY}
+            />
+            <ScaffoldRow
+              label="Fuel tank size (gal) · runtime @ full load (hrs)"
+              valueCopy={BUILDING_TAB_NO_GENERATOR_TANK_RUNTIME_COPY}
+            />
+            <ScaffoldRow
+              label="Covered circuits selector"
+              valueCopy={BUILDING_TAB_NO_GENERATOR_CIRCUITS_COPY}
+            />
+            <ScaffoldRow
+              label="Last PM service technician-of-record"
+              valueCopy={BUILDING_TAB_NO_GENERATOR_PM_TECHNICIAN_COPY}
+            />
           </div>
         </div>
       </BuildingSection>
@@ -660,8 +696,8 @@ export function BuildingTab({
               onChange={(e) => touchDraft((d) => ({ ...d, perimeter_description: e.target.value }))}
             />
           </label>
-          <ScaffoldRow label="Secure unit Y/N · secure bed count" />
-          <ScaffoldRow label="Last elopement drill · cadence" />
+          <ScaffoldRow label="Secure unit Y/N · secure bed count" valueCopy={BUILDING_TAB_NO_SECURE_UNIT_COPY} />
+          <ScaffoldRow label="Last elopement drill · cadence" valueCopy={BUILDING_TAB_NO_ELOPEMENT_DRILL_COPY} />
         </div>
       </BuildingSection>
 
@@ -673,13 +709,19 @@ export function BuildingTab({
           </a>{" "}
           for AHCA Rule 59A-36 readiness framing.
         </p>
-        <ScaffoldRow label="CEMP filed with county OEM · approved · expires" />
+        <ScaffoldRow
+          label="CEMP filed with county OEM · approved · expires"
+          valueCopy={BUILDING_TAB_NO_CEMP_STATUS_COPY}
+        />
         <div className="py-2">
           <Link href={docsHref} className="text-sm text-primary hover:underline">
             Upload / locate CEMP PDF in Document Vault (storm preparedness category)
           </Link>
         </div>
-        <ScaffoldRow label="Impact-rated openings · shutter system · evacuation contract vendor" />
+        <ScaffoldRow
+          label="Impact-rated openings · shutter system · evacuation contract vendor"
+          valueCopy={BUILDING_TAB_NO_STORM_HARDENING_COPY}
+        />
         <label className="mt-4 block text-sm text-foreground">
           Evacuation partner facility
           <input
