@@ -12,6 +12,9 @@ import {
   isRoleHomeLabelReady,
   isRoleHomePathname,
   isRoleHomeRouteMatch,
+  resolveHavenBrandAriaLabel,
+  resolveQuietRoleHomeSubtitle,
+  resolveQuietRoleLabel,
 } from "./dashboard-routing";
 
 describe("role home chrome helpers", () => {
@@ -39,6 +42,26 @@ describe("role home chrome helpers", () => {
     expect(
       formatRoleHomeSubtitle(false, "owner", "portfolio movement only."),
     ).toBe("Owner home — portfolio movement only.");
+  });
+
+  it("omits quiet flagship subtitles until role home is ready unless a lead is held", () => {
+    expect(
+      resolveQuietRoleHomeSubtitle(true, "facility_admin", "portfolio movement only.", null),
+    ).toBeNull();
+    expect(
+      resolveQuietRoleHomeSubtitle(true, "owner", "portfolio movement only.", "Owner home"),
+    ).toBe("Owner home — portfolio movement only.");
+    expect(
+      resolveQuietRoleHomeSubtitle(false, "owner", "portfolio movement only.", null),
+    ).toBe("Owner home — portfolio movement only.");
+  });
+
+  it("holds quiet shell role labels and brand aria across hydration", () => {
+    expect(resolveQuietRoleLabel(true, "owner", null)).toBeNull();
+    expect(resolveQuietRoleLabel(true, "owner", "Owner")).toBe("Owner");
+    expect(resolveQuietRoleLabel(false, "owner", null)).toBe("Owner");
+    expect(resolveHavenBrandAriaLabel(null)).toBe("Haven");
+    expect(resolveHavenBrandAriaLabel("Owner")).toBe("Haven — go to owner home");
   });
 
   it("returns a neutral role label for shell chrome while auth is loading", () => {

@@ -18,8 +18,8 @@ import { cn } from "@/lib/utils";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { formatRoleHomeSubtitle } from "@/lib/auth/dashboard-routing";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import {
   applyFacilityOccupancyMetricHonesty,
   attachFacilityMetrics,
@@ -91,9 +91,8 @@ export function ExecutiveOverviewPageClient({
   const { organizationId, appRole, loading: authLoading } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const roleConfig = getRoleDashboardConfig(appRole as AppRole);
-  const roleHomeSubtitle = formatRoleHomeSubtitle(
-    authLoading,
-    appRole,
+  const { resolveSubtitle } = useHeldRoleHomeChrome(authLoading, appRole);
+  const roleHomeSubtitle = resolveSubtitle(
     "portfolio movement, exception pressure, leadership decisions only.",
   );
   const [, setLoading] = useState(!initialHasServerData);
@@ -411,9 +410,11 @@ export function ExecutiveOverviewPageClient({
           <p className="mt-1 text-[13px] text-muted-foreground">
             Enterprise portfolio overview
           </p>
-          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-            {roleHomeSubtitle}
-          </p>
+          {roleHomeSubtitle ? (
+            <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+              {roleHomeSubtitle}
+            </p>
+          ) : null}
         </div>
         <div className="hidden md:block">
           <ExecutiveHubNav />

@@ -314,12 +314,53 @@ export function formatRoleHomeSubtitle(
   return `${getRoleHomeLead(authLoading, role)} — ${trailingClause}`;
 }
 
+/**
+ * Quiet Operator subtitle while auth hydrates: hold the last resolved lead, or omit
+ * the loading gap so operators never see "Loading role home" flash on flagship surfaces.
+ */
+export function resolveQuietRoleHomeSubtitle(
+  authLoading: boolean,
+  role: string,
+  trailingClause: string,
+  heldLead: string | null,
+): string | null {
+  if (isRoleHomeLabelReady(authLoading, role)) {
+    return formatRoleHomeSubtitle(false, role, trailingClause);
+  }
+  if (heldLead) {
+    return `${heldLead} — ${trailingClause}`;
+  }
+  return null;
+}
+
 /** Human-facing role label for shell chrome; neutral while auth is loading. */
 export function getResolvedRoleLabel(authLoading: boolean, role: string): string {
   if (!isRoleHomeLabelReady(authLoading, role)) {
     return "Loading role";
   }
   return DASHBOARD_CONFIGS[role].roleLabel;
+}
+
+/**
+ * Quiet Operator shell role pill: hold the last resolved label, or omit while auth hydrates.
+ */
+export function resolveQuietRoleLabel(
+  authLoading: boolean,
+  role: string,
+  heldLabel: string | null,
+): string | null {
+  if (isRoleHomeLabelReady(authLoading, role)) {
+    return getResolvedRoleLabel(false, role);
+  }
+  return heldLabel;
+}
+
+/** Haven brand link aria-label — quiet "Haven" until a role label is known or held. */
+export function resolveHavenBrandAriaLabel(roleLabel: string | null): string {
+  if (!roleLabel) {
+    return "Haven";
+  }
+  return `Haven — go to ${roleLabel.toLowerCase()} home`;
 }
 
 /** Returns which shell a role should use. */
