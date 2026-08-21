@@ -13,6 +13,8 @@ const flagshipLoadingPaths = [
   "src/app/(admin)/admin/billing/loading.tsx",
   "src/app/(admin)/admin/facilities/[facilityId]/loading.tsx",
   "src/app/(admin)/admin/family-messages/loading.tsx",
+  "src/app/(admin)/admin/residents/loading.tsx",
+  "src/app/(admin)/residents/loading.tsx",
 ] as const;
 
 describe("flagship admin route named loading", () => {
@@ -28,6 +30,20 @@ describe("flagship admin route named loading", () => {
     expect(readSource(flagshipLoadingPaths[2])).toContain("ADMIN_BILLING_ROUTE_LOADING_MESSAGE");
     expect(readSource(flagshipLoadingPaths[3])).toContain("ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE");
     expect(readSource(flagshipLoadingPaths[4])).toContain("ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE");
+    expect(readSource(flagshipLoadingPaths[5])).toContain("ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE");
+    expect(readSource(flagshipLoadingPaths[6])).toContain("ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE");
+  });
+
+  it("names residents roster Suspense and client refetch gaps instead of silent skeletons", () => {
+    const pageSource = readSource("src/app/(admin)/residents/page.tsx");
+    expect(pageSource).toMatch(/NamedAdminRouteLoading/);
+    expect(pageSource).toMatch(/ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE/);
+    expect(pageSource).not.toMatch(/@\/components\/layout\/admin-route-loading/);
+
+    const clientSource = readSource("src/components/residents/AdminResidentsPageClient.tsx");
+    expect(clientSource).toMatch(/NamedAdminRouteLoading/);
+    expect(clientSource).toMatch(/ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE/);
+    expect(clientSource).not.toMatch(/AdminTableLoadingState/);
   });
 
   it("names staffing client refetch gaps instead of silent skeletons", () => {

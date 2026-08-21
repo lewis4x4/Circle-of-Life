@@ -11,8 +11,8 @@ import {
   AdminFilterBar,
   AdminLiveDataFallbackNotice,
   AdminOperationalListPanel,
-  AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { KpiCard, type KpiCardTone } from "@/components/ui/kpi-card";
 import {
@@ -26,6 +26,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
@@ -861,7 +862,7 @@ export function AdminResidentsPageClient({
         }}
       />
 
-      {isLoading ? <AdminTableLoadingState /> : null}
+      {isLoading ? <NamedAdminRouteLoading message={ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE} /> : null}
       {!isLoading && error ? (
         <AdminLiveDataFallbackNotice message={error} onRetry={() => void loadResidents()} />
       ) : null}
