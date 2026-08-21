@@ -10,7 +10,10 @@ import {
   fireNextDueAccent,
   generatorTestAccent,
 } from "@/lib/admin/facilities/building-metrics-kpi";
-import { BUILDING_TAB_NO_CEMP_STATUS_COPY } from "@/lib/facilities/building-tab-display-copy";
+import {
+  BUILDING_TAB_NO_CEMP_STATUS_COPY,
+  BUILDING_TAB_NO_COUNTY_OEM_STATUS_HELPER_COPY,
+} from "@/lib/facilities/building-tab-display-copy";
 import { formatLicensingTabYmdDate } from "@/lib/facilities/licensing-tab-display-copy";
 
 const BUILDING_STRIP_TZ = "America/New_York";
@@ -102,7 +105,7 @@ export function FacilityBuildingMetricsStrip({
         <p className="text-[13px] text-muted-foreground">CEMP status</p>
         <p className="mt-2 text-lg font-semibold text-muted-foreground leading-tight">{BUILDING_TAB_NO_CEMP_STATUS_COPY}</p>
         <p className="mt-1 text-[12px] text-muted-foreground">
-          County OEM fields ship in schema sprint —{" "}
+          {BUILDING_TAB_NO_COUNTY_OEM_STATUS_HELPER_COPY} —{" "}
           <Link href={`/admin/facilities/${facilityId}?tab=documents`} className="text-primary hover:underline">
             store CEMP PDF
           </Link>

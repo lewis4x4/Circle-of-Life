@@ -29,18 +29,24 @@ import {
 import { cn } from "@/lib/utils";
 import { PhoneLink } from "@/components/common/phone-link";
 import {
+  BUILDING_TAB_AGGREGATE_AUDIT_FOOTNOTE_COPY,
+  BUILDING_TAB_NO_96_HOUR_READINESS_COPY,
   BUILDING_TAB_NO_CEMP_STATUS_COPY,
+  BUILDING_TAB_NO_COMMON_AREA_SQFT_COPY,
   BUILDING_TAB_NO_ELOPEMENT_DRILL_COPY,
   BUILDING_TAB_NO_GENERATOR_CIRCUITS_COPY,
   BUILDING_TAB_NO_GENERATOR_MANUFACTURER_COPY,
   BUILDING_TAB_NO_GENERATOR_PM_TECHNICIAN_COPY,
   BUILDING_TAB_NO_GENERATOR_TANK_RUNTIME_COPY,
   BUILDING_TAB_NO_NEXT_SPRINKLER_INSPECTION_COPY,
+  BUILDING_TAB_NO_RESIDENT_ROOM_COUNT_COPY,
+  BUILDING_TAB_NO_SECTION_AUDIT_TRAIL_COPY,
   BUILDING_TAB_NO_SECURE_UNIT_COPY,
   BUILDING_TAB_NO_SPRINKLER_COVERAGE_COPY,
   BUILDING_TAB_NO_SPRINKLER_INSPECTION_COPY,
   BUILDING_TAB_NO_SPRINKLER_SYSTEM_TYPE_COPY,
   BUILDING_TAB_NO_STORM_HARDENING_COPY,
+  BUILDING_TAB_SPRINKLER_DETAIL_FOOTNOTE_COPY,
   buildingTabLicensedBedCountIsMissing,
   formatBuildingTabLicensedBedCount,
 } from "@/lib/facilities/building-tab-display-copy";
@@ -122,15 +128,13 @@ function sprinklerCoverageSentence(v: BuildingProfileInput["fire_suppression_typ
 function SectionAuditFooter({ updatedAt }: { updatedAt?: string | null }) {
   if (!updatedAt || typeof updatedAt !== "string") {
     return (
-      <p className="mt-4 text-[12px] text-muted-foreground">
-        Audit trail per subsection pending facility audit_log slices — launch sprint.
-      </p>
+      <p className="mt-4 text-[12px] text-muted-foreground">{BUILDING_TAB_NO_SECTION_AUDIT_TRAIL_COPY}</p>
     );
   }
   const iso = new Date(updatedAt).toISOString();
   return (
     <p className="mt-4 text-[12px] text-muted-foreground">
-      Last saved {iso.replace(".000Z", "Z")} · Building profile record (aggregate until sectional audit ships).
+      Last saved {iso.replace(".000Z", "Z")} · {BUILDING_TAB_AGGREGATE_AUDIT_FOOTNOTE_COPY}
     </p>
   );
 }
@@ -324,7 +328,9 @@ export function BuildingTab({
           </label>
           <div className="text-sm text-foreground">
             <span className="block">Resident rooms (count)</span>
-            <p className="mt-3 text-[13px] text-muted-foreground tabular-nums">— schema sprint</p>
+            <p className="mt-3 text-[13px] text-muted-foreground tabular-nums">
+              {BUILDING_TAB_NO_RESIDENT_ROOM_COUNT_COPY}
+            </p>
           </div>
           <div className="text-sm text-foreground">
             <span className="block">Licensed beds</span>
@@ -346,7 +352,9 @@ export function BuildingTab({
           </div>
           <div className="text-sm text-foreground">
             <span className="block">Common area sq ft</span>
-            <p className="mt-3 text-[13px] text-muted-foreground tabular-nums">— schema sprint</p>
+            <p className="mt-3 text-[13px] text-muted-foreground tabular-nums">
+              {BUILDING_TAB_NO_COMMON_AREA_SQFT_COPY}
+            </p>
           </div>
         </div>
       </BuildingSection>
@@ -449,9 +457,7 @@ export function BuildingTab({
           label="Next sprinkler inspection due"
           valueCopy={BUILDING_TAB_NO_NEXT_SPRINKLER_INSPECTION_COPY}
         />
-        <p className="mt-2 text-[12px] text-muted-foreground">
-          Granular sprinkler columns ship in schema sprint — suppression enum fields remain authoritative until then.
-        </p>
+        <p className="mt-2 text-[12px] text-muted-foreground">{BUILDING_TAB_SPRINKLER_DETAIL_FOOTNOTE_COPY}</p>
       </BuildingSection>
 
       <BuildingSection title="Emergency power / Generator (AHCA Rule 59A-36 framing)" auditUpdatedAt={auditStamp}>
@@ -529,8 +535,7 @@ export function BuildingTab({
               />
             </label>
             <div className="sm:col-span-2 rounded-md border border-border/80 bg-muted/10 px-3 py-2 text-[13px] text-muted-foreground">
-              AHCA Rule 59A-36.025 96-hour readiness: indicator scaffold only — computation deferred to compliance-rules
-              engine sprint (TODO: runtime × tank vs licensed beds).
+              {BUILDING_TAB_NO_96_HOUR_READINESS_COPY}
             </div>
             <div className="sm:col-span-2">
               <label className="text-sm text-foreground">
