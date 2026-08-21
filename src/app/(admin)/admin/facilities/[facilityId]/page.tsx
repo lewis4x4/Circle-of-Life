@@ -32,6 +32,7 @@ import {
 } from "@/lib/admin/facilities/facility-constants";
 import { formatFacilityDetailSubtitle } from "@/lib/admin/facilities/format-facility-metadata";
 import { AUDIT_RETENTION_COPY, FACILITY_AUDIT_TAB_HELPER } from "@/lib/admin/facilities/facility-audit-ui";
+import { BUILDING_TAB_HELPER } from "@/lib/facilities/building-tab-display-copy";
 import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 const TABS = FACILITY_TABS.map((id) => ({
@@ -398,6 +399,9 @@ function FacilityDetailInner({ facilityId }: { facilityId: string }) {
           ) : null}
           {activeTab === "audit" ? (
             <p className="max-w-3xl text-sm text-muted-foreground">{FACILITY_AUDIT_TAB_HELPER}</p>
+          ) : null}
+          {activeTab === "building" ? (
+            <p className="max-w-3xl text-sm text-muted-foreground">{BUILDING_TAB_HELPER}</p>
           ) : null}
         </div>
       ) : null}
