@@ -19,6 +19,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
@@ -83,9 +84,7 @@ export default function AdminNewCollectionActivityPage() {
   const [residentId, setResidentId] = useState(() => requestedResidentId);
   const [invoiceId, setInvoiceId] = useState(() => requestedInvoiceId);
   const [activityType, setActivityType] = useState<string>("phone_call");
-  const [activityDate, setActivityDate] = useState(
-    () => new Date().toISOString().slice(0, 10),
-  );
+  const [activityDate, setActivityDate] = useState(() => todayFacilityDateIso());
   const [description, setDescription] = useState("");
   const [outcome, setOutcome] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
@@ -391,13 +390,15 @@ export default function AdminNewCollectionActivityPage() {
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Activity date
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="activity-date">
+                  Activity date (ET)
                 </label>
                 <Input
+                  id="activity-date"
                   type="date"
                   value={activityDate}
                   onChange={(e) => setActivityDate(e.target.value)}
+                  aria-label="Activity date (Eastern Time)"
                   required
                 />
               </div>
@@ -426,13 +427,15 @@ export default function AdminNewCollectionActivityPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Next follow-up date
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="follow-up-date">
+                  Next follow-up date (ET)
                 </label>
                 <Input
+                  id="follow-up-date"
                   type="date"
                   value={followUpDate}
                   onChange={(e) => setFollowUpDate(e.target.value)}
+                  aria-label="Next follow-up date (Eastern Time)"
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
