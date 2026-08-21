@@ -48,7 +48,6 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 vi.mock("@/lib/executive/standup", () => ({
-  buildStandupImportCommand: () => "npm run standup:import -- --org org-anon-1",
   buildStandupPdfUrl: (weekOf: string) => `/api/executive/standup/${weekOf}/pdf`,
   currentStandupWeekOf: () => "2026-04-07",
   fetchStandupHistory: vi.fn(),
@@ -65,6 +64,8 @@ describe("ExecutiveStandupHistoryPage auth hydration", () => {
     queryMock.data = undefined;
     queryMock.isFetching = false;
     queryMock.error = null;
+    authMock.loading = false;
+    authMock.organizationId = null;
     authMock.user = null;
     authMock.appRole = "owner";
   });
@@ -98,6 +99,40 @@ describe("ExecutiveStandupHistoryPage auth hydration", () => {
 
     expect(screen.getByText("Could not load standup history.")).toBeInTheDocument();
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+  });
+
+  it("shows named loading copy while standup history is fetching", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    queryMock.isFetching = true;
+
+    render(<ExecutiveStandupHistoryPage />);
+
+    expect(screen.getByText("Loading standup history…")).toBeInTheDocument();
+    expect(screen.queryByText("Historical Import Runbook")).not.toBeInTheDocument();
+    expect(screen.queryByText("Recent import jobs")).not.toBeInTheDocument();
+  });
+
+  it("does not render developer import runbook or secret env var names", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    queryMock.isFetching = false;
+    queryMock.data = {
+      rows: [],
+      importJobs: [],
+      importJobsError: null,
+    };
+
+    render(<ExecutiveStandupHistoryPage />);
+
+    expect(screen.queryByText("Historical Import Runbook")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Slice 3/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Copy import command")).not.toBeInTheDocument();
+    expect(screen.queryByText("Workbook path")).not.toBeInTheDocument();
+    expect(screen.queryByText(/SUPABASE_SERVICE_ROLE_KEY/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/HAVEN_ORGANIZATION_ID/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\/Users\//i)).not.toBeInTheDocument();
+    expect(screen.getByText("No standup weeks yet")).toBeInTheDocument();
   });
 
   it("suppresses the org gap when standup weeks are already on screen", () => {
