@@ -1,13 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Settings2 } from "lucide-react";
 
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -21,28 +26,53 @@ const RANGE_OPTIONS: { value: DateRange; label: string }[] = [
   { value: "last_90", label: "Last 90 days" },
 ];
 
+export const EXECUTIVE_SETTINGS_LOADING_MESSAGE = "Loading executive settings…";
+
 export default function ExecutiveSettingsPage() {
-  const supabase = createClient();
-  const { user, organizationId } = useHavenAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const [range, setRange] = useState<DateRange>("mtd");
-  const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [savedOk, setSavedOk] = useState(false);
+  const [hasOrgScopedData, setHasOrgScopedData] = useState(false);
+
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    if (authLoading) {
+      return;
+    }
+
+    if (!organizationId) {
+      setHasOrgScopedData(false);
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    if (!user) {
+      setHasOrgScopedData(false);
+      setFetchError("Sign in required.");
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     setSavedOk(false);
     try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        return;
-      }
-      if (!user) {
-        setError("Sign in required.");
-        return;
-      }
       const { data, error: qErr } = await supabase
         .from("exec_dashboard_configs")
         .select("id, default_date_range, widgets")
@@ -52,37 +82,35 @@ export default function ExecutiveSettingsPage() {
         .maybeSingle();
 
       if (qErr) {
-        setError(qErr.message);
+        setHasOrgScopedData(false);
+        setFetchError(qErr.message);
         return;
       }
       if (data?.default_date_range) {
         setRange(data.default_date_range as DateRange);
       }
+      setHasOrgScopedData(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to load settings.");
+      setHasOrgScopedData(false);
+      setFetchError(e instanceof Error ? e.message : "Unable to load settings.");
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [supabase, organizationId, user]);
+  }, [authLoading, supabase, organizationId, user]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function onSave() {
+    if (!organizationId || !user) {
+      return;
+    }
+
     setSaving(true);
-    setError(null);
+    setSaveError(null);
     setSavedOk(false);
     try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        return;
-      }
-      if (!user) {
-        setError("Sign in required.");
-        return;
-      }
-
       const { data: existing, error: findErr } = await supabase
         .from("exec_dashboard_configs")
         .select("id")
@@ -92,7 +120,7 @@ export default function ExecutiveSettingsPage() {
         .maybeSingle();
 
       if (findErr) {
-        setError(findErr.message);
+        setSaveError(findErr.message);
         return;
       }
 
@@ -104,7 +132,7 @@ export default function ExecutiveSettingsPage() {
           .update({ default_date_range: range, updated_at: now })
           .eq("id", existing.id);
         if (upErr) {
-          setError(upErr.message);
+          setSaveError(upErr.message);
           return;
         }
       } else {
@@ -115,13 +143,14 @@ export default function ExecutiveSettingsPage() {
           widgets: [],
         });
         if (insErr) {
-          setError(insErr.message);
+          setSaveError(insErr.message);
           return;
         }
       }
+      setHasOrgScopedData(true);
       setSavedOk(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed.");
+      setSaveError(e instanceof Error ? e.message : "Save failed.");
     } finally {
       setSaving(false);
     }
@@ -136,49 +165,65 @@ export default function ExecutiveSettingsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Executive settings</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Per-user dashboard defaults stored in `exec_dashboard_configs` (widget layout follows in a later slice).
+            Personal dashboard date-range defaults — your preset when executive KPI views load.
           </p>
         </div>
       </div>
 
-      {error && (
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => void load()} />
+      ) : null}
+
+      {saveError ? (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
+          {saveError}
         </p>
-      )}
-      {savedOk && (
+      ) : null}
+
+      {savedOk ? (
         <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
           Saved.
         </p>
-      )}
+      ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Default period</CardTitle>
-          <CardDescription>Used when comparing KPIs and snapshots (rolling implementation).</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 max-w-md">
-          <div className="space-y-2">
-            <Label htmlFor="exec-range">Date range preset</Label>
-            <select
-              id="exec-range"
-              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-              value={range}
-              disabled={loading}
-              onChange={(e) => setRange(e.target.value as DateRange)}
-            >
-              {RANGE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Button type="button" onClick={() => void onSave()} disabled={loading || saving}>
-            {saving ? "Saving…" : "Save"}
-          </Button>
-        </CardContent>
-      </Card>
+      {loading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {EXECUTIVE_SETTINGS_LOADING_MESSAGE}
+        </p>
+      ) : organizationGapMessage ? null : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Default period</CardTitle>
+            <CardDescription>Applied when you compare KPIs and snapshots across executive views.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 max-w-md">
+            <div className="space-y-2">
+              <Label htmlFor="exec-range">Date range preset</Label>
+              <select
+                id="exec-range"
+                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                value={range}
+                onChange={(e) => setRange(e.target.value as DateRange)}
+              >
+                {RANGE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button type="button" onClick={() => void onSave()} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
