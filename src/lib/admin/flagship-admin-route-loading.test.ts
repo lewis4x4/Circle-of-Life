@@ -12,6 +12,7 @@ const flagshipLoadingPaths = [
   "src/app/(admin)/admin/dietary/loading.tsx",
   "src/app/(admin)/admin/billing/loading.tsx",
   "src/app/(admin)/admin/facilities/[facilityId]/loading.tsx",
+  "src/app/(admin)/admin/family-messages/loading.tsx",
 ] as const;
 
 describe("flagship admin route named loading", () => {
@@ -26,6 +27,7 @@ describe("flagship admin route named loading", () => {
     expect(readSource(flagshipLoadingPaths[1])).toContain("ADMIN_DIETARY_ROUTE_LOADING_MESSAGE");
     expect(readSource(flagshipLoadingPaths[2])).toContain("ADMIN_BILLING_ROUTE_LOADING_MESSAGE");
     expect(readSource(flagshipLoadingPaths[3])).toContain("ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE");
+    expect(readSource(flagshipLoadingPaths[4])).toContain("ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE");
   });
 
   it("names staffing client refetch gaps instead of silent skeletons", () => {
@@ -41,5 +43,16 @@ describe("flagship admin route named loading", () => {
     expect(source).toMatch(/ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE/);
     expect(source).not.toMatch(/Loader2 className="h-8 w-8 animate-spin text-primary"/);
     expect(source).toMatch(/Suspense fallback={<NamedAdminRouteLoading message={ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE} \/>}/);
+  });
+
+  it("names family notes client fetch gaps instead of a spinner-only shell", () => {
+    const source = readSource("src/app/(admin)/admin/family-messages/page.tsx");
+    expect(source).toMatch(/NamedAdminRouteLoading/);
+    expect(source).toMatch(/ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE/);
+    expect(source).not.toMatch(/Loader2 className="h-8 w-8 animate-spin text-primary-500"/);
+    expect(source).toMatch(/FAMILY_BULLETIN_PAGE_TITLE/);
+    expect(source).toMatch(/FAMILY_BULLETIN_PAGE_DESCRIPTION/);
+    expect(source).not.toMatch(/Unread messages/i);
+    expect(source).not.toMatch(/Needs response/i);
   });
 });

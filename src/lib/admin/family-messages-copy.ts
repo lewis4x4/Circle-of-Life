@@ -15,3 +15,5 @@ export const FAMILY_BULLETIN_RESIDENT_EMPTY_TITLE = "No updates posted yet";
 
 export const FAMILY_BULLETIN_RESIDENT_EMPTY_DESCRIPTION =
   "Post the first bulletin note for this resident's family portal.";
+
+export const FAMILY_BULLETIN_RESIDENT_LOG_LOADING_MESSAGE = "Loading posted bulletin notes…";

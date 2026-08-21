@@ -71,6 +71,9 @@ describe("family portal messages one-way policy", () => {
     expect(source).toMatch(/StaffFamilyBulletinSection/);
     expect(source).toMatch(/FamilyPortalUpdateLog/);
     expect(source).toMatch(/FAMILY_BULLETIN_EMPTY_TITLE/);
+    expect(source).toMatch(/NamedAdminRouteLoading/);
+    expect(source).toMatch(/ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE/);
+    expect(source).not.toMatch(/Loader2 className="h-8 w-8 animate-spin text-primary-500"/);
     expect(source).not.toMatch(/Start the conversation/i);
     expect(source).not.toMatch(/family replied/i);
     expect(source).not.toMatch(/Inbox Zero/i);
