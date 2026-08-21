@@ -4,13 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, History, Loader2, MessageSquare, Upload } from "lucide-react";
+import { History, Loader2, MessageSquare } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { downloadBlobFromUrl } from "@/lib/download-blob";
@@ -21,7 +20,6 @@ import {
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
 import {
-  buildStandupImportCommand,
   buildStandupPdfUrl,
   currentStandupWeekOf,
   fetchStandupHistory,
@@ -50,9 +48,6 @@ export default function ExecutiveStandupHistoryPage() {
   const canCreateDraft = canCreateDraftFinance(appRole as Database["public"]["Enums"]["app_role"]);
   const [error, setError] = useState<string | null>(null);
   const [creatingDraft, setCreatingDraft] = useState(false);
-  const [clipboardError, setClipboardError] = useState<string | null>(null);
-  const [workbookPath, setWorkbookPath] = useState("/Users/brianlewis/Downloads/2026 Standup Call Log.xlsx");
-  const [copiedImport, setCopiedImport] = useState(false);
   const [downloadingPdfWeek, setDownloadingPdfWeek] = useState<string | null>(null);
   const [compareFromWeek, setCompareFromWeek] = useState("");
   const [compareToWeek, setCompareToWeek] = useState("");
@@ -115,19 +110,7 @@ export default function ExecutiveStandupHistoryPage() {
     authLoading,
     fetchError: rawFetchError,
   });
-  // Clipboard failures and the query's soft import-jobs error share one slot.
-  const importJobsError = clipboardError ?? data?.importJobsError ?? null;
-
-  async function onCopyImportCommand() {
-    try {
-      await navigator.clipboard.writeText(buildStandupImportCommand(workbookPath, organizationId));
-      setCopiedImport(true);
-      setClipboardError(null);
-      window.setTimeout(() => setCopiedImport(false), 1800);
-    } catch {
-      setClipboardError("Clipboard write failed. Copy the import command manually.");
-    }
-  }
+  const importJobsError = data?.importJobsError ?? null;
 
   async function onGenerateDraft() {
     if (!organizationId || !user?.id) {
@@ -222,7 +205,9 @@ export default function ExecutiveStandupHistoryPage() {
           <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle>No standup weeks yet</CardTitle>
-              <CardDescription>Generate the first weekly draft from the standup pack page.</CardDescription>
+              <CardDescription>
+                Published weekly standup packs will appear here. Generate the first draft when your organization is ready to start the archive.
+              </CardDescription>
             </CardHeader>
             {canCreateDraft ? (
               <CardContent>
@@ -351,48 +336,11 @@ export default function ExecutiveStandupHistoryPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Upload className="h-4 w-4" />
-                    Historical Import Runbook
-                  </CardTitle>
-                  <CardDescription>
-                    Slice 3 imports the legacy workbook into the standup archive. Run the importer locally, then refresh this page to verify the imported weeks.
-                  </CardDescription>
-                </div>
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
-                  Historical continuity
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Workbook path</div>
-                <Input value={workbookPath} onChange={(event) => setWorkbookPath(event.target.value)} spellCheck={false} />
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-relaxed text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
-                {buildStandupImportCommand(workbookPath, organizationId)}
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button type="button" variant="outline" onClick={() => void onCopyImportCommand()}>
-                  {copiedImport ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                  {copiedImport ? "Copied import command" : "Copy import command"}
-                </Button>
-                <p className="text-sm text-slate-500 dark:text-zinc-400">
-                  Imports publish each workbook week into the immutable standup archive with spreadsheet lineage and low-confidence tags.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
+        {!loading && organizationId ? (
           <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <CardHeader>
               <CardTitle className="text-lg">Recent import jobs</CardTitle>
-              <CardDescription>Use this to confirm the workbook has been backfilled and to spot failed import attempts quickly.</CardDescription>
+              <CardDescription>Confirm historical backfill completed and spot failed import attempts quickly.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {importJobsError ? (
@@ -447,7 +395,7 @@ export default function ExecutiveStandupHistoryPage() {
               )}
             </CardContent>
           </Card>
-        </div>
+        ) : null}
       </div>
     </div>
   );
