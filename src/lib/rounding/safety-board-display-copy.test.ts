@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   SAFETY_BOARD_NO_FACILITY_COPY,
+  SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
   SAFETY_BOARD_NO_INCIDENT_RECENCY_COPY,
   SAFETY_BOARD_NO_MEDICATION_ADHERENCE_COPY,
   SAFETY_BOARD_NO_OBSERVATION_COMPLIANCE_COPY,
@@ -13,9 +14,30 @@ import {
   formatSafetyBoardObservationCompliance,
   formatSafetyBoardRoomNumber,
   formatSafetyBoardScoreTrendEmpty,
+  resolveSafetyBoardFacilityScopeLabel,
 } from "./safety-board-display-copy";
 
 const EM_DASH = "—";
+
+describe("resolveSafetyBoardFacilityScopeLabel", () => {
+  it("names a missing facility scope instead of a fake selected-facility label", () => {
+    expect(resolveSafetyBoardFacilityScopeLabel(null, null)).toBe(
+      SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
+    );
+    expect(resolveSafetyBoardFacilityScopeLabel("fac-anon-1", undefined)).toBe(
+      SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
+    );
+    expect(resolveSafetyBoardFacilityScopeLabel("fac-anon-1", "   ")).toBe(
+      SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
+    );
+  });
+
+  it("returns a resolved facility name for the header subtitle", () => {
+    expect(resolveSafetyBoardFacilityScopeLabel("fac-anon-1", "Anon Facility A")).toBe(
+      "Anon Facility A",
+    );
+  });
+});
 
 describe("formatSafetyBoardFacilityName", () => {
   it("names a missing facility instead of an em dash", () => {

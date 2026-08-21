@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AlertTriangle,
   Building2,
+  Loader2,
   Minus,
   RefreshCw,
   Shield,
@@ -31,7 +32,16 @@ import {
   formatSafetyBoardObservationCompliance,
   formatSafetyBoardRoomNumber,
   formatSafetyBoardScoreTrendEmpty,
+  resolveSafetyBoardFacilityScopeLabel,
 } from "@/lib/rounding/safety-board-display-copy";
+import {
+  deriveSafetyBoardState,
+  formatSafetyBoardPageSubtitle,
+  resolveSafetyBoardFetchErrorBannerMessage,
+  resolveSafetyBoardOrganizationGapMessage,
+  type SafetyBoardLoadState,
+  type SafetyBoardState,
+} from "@/lib/rounding/safety-board-page-state";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -56,9 +66,9 @@ interface ScoreRow {
   facilities?: { name: string } | null;
 }
 
-type LoadState = "idle" | "loading" | "ready" | "error";
+type LoadState = SafetyBoardLoadState;
 
-type BoardState = "no_facility" | "loading" | "error" | "empty" | "populated";
+type BoardState = SafetyBoardState;
 
 type Tone = "default" | "warning" | "danger";
 
@@ -74,15 +84,13 @@ function resolveTierTone(tier: RiskTier, count: number): Tone {
 }
 
 function deriveBoardState(args: {
+  authLoading: boolean;
+  organizationId: string | null;
   loadState: LoadState;
   hasFacility: boolean;
   rowCount: number;
 }): BoardState {
-  if (!args.hasFacility) return "no_facility";
-  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
-  if (args.loadState === "error") return "error";
-  if (args.rowCount === 0) return "empty";
-  return "populated";
+  return deriveSafetyBoardState(args);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -92,15 +100,18 @@ function deriveBoardState(args: {
 export default function SafetyScoresPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScopeLabel = resolveSafetyBoardFacilityScopeLabel(
+    selectedFacilityId,
+    selectedFacility?.name,
+  );
+  const pageSubtitle = formatSafetyBoardPageSubtitle(facilityScopeLabel);
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
-  const { organizationId } = useHavenAuth();
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const [rows, setRows] = useState<ScoreRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoadState("loading");
     setErrorMessage(null);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
@@ -109,9 +120,21 @@ export default function SafetyScoresPage() {
       return;
     }
 
-    try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
+    if (authLoading) {
+      setRows([]);
+      setLoadState("idle");
+      return;
+    }
 
+    if (!organizationId) {
+      setRows([]);
+      setLoadState("ready");
+      return;
+    }
+
+    setLoadState("loading");
+
+    try {
       const { data, error } = await supabase
         .from("resident_safety_scores")
         .select("*, residents(first_name, last_name, room_number), facilities(name)")
@@ -131,7 +154,7 @@ export default function SafetyScoresPage() {
       setRows([]);
       setLoadState("error");
     }
-  }, [organizationId, supabase, selectedFacilityId]);
+  }, [authLoading, organizationId, supabase, selectedFacilityId]);
 
   useEffect(() => {
     void load();
@@ -144,16 +167,32 @@ export default function SafetyScoresPage() {
   }, [rows]);
 
   const boardState = deriveBoardState({
+    authLoading,
+    organizationId,
     loadState,
     hasFacility: Boolean(selectedFacilityId),
     rowCount: rows.length,
   });
 
+  const organizationGapMessage = resolveSafetyBoardOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveSafetyBoardFetchErrorBannerMessage({
+    authLoading,
+    fetchError: errorMessage,
+  });
+  const refreshDisabled =
+    boardState === "auth_loading" ||
+    boardState === "loading" ||
+    loadState === "loading";
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Resident safety scores"
-        subtitle={`Composite safety scores updated daily from observation compliance, incident recency, and medication adherence at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <Button
             type="button"
@@ -162,10 +201,10 @@ export default function SafetyScoresPage() {
             onClick={() => void load()}
             aria-label="Refresh safety scores"
             title="Refresh"
-            disabled={loadState === "loading"}
+            disabled={refreshDisabled}
           >
             <RefreshCw
-              className={cn("size-4", loadState === "loading" && "animate-spin")}
+              className={cn("size-4", refreshDisabled && "animate-spin")}
               aria-hidden
             />
           </Button>
@@ -176,9 +215,13 @@ export default function SafetyScoresPage() {
 
       {boardState === "no_facility" ? (
         <AllFacilitiesInterstitial />
-      ) : boardState === "error" ? (
+      ) : organizationGapMessage ? (
+        <OrganizationGapNotice message={organizationGapMessage} />
+      ) : boardState === "auth_loading" || boardState === "loading" ? (
+        <LoadingNotice />
+      ) : fetchErrorBannerMessage ? (
         <LoadErrorNotice
-          message={errorMessage ?? "Could not load safety scores."}
+          message={fetchErrorBannerMessage}
           onRetry={() => void load()}
         />
       ) : (
@@ -214,7 +257,7 @@ export default function SafetyScoresPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoScoresEmptyState facilityName={facilityName} />
+            <NoScoresEmptyState facilityName={facilityScopeLabel} />
           ) : (
             <section
               aria-label="Resident safety score table"
@@ -342,6 +385,31 @@ function TierCard({
 /* -------------------------------------------------------------------------- */
 /*  Notices + empty states                                                    */
 /* -------------------------------------------------------------------------- */
+
+function OrganizationGapNotice({ message }: { message: string }) {
+  return (
+    <section
+      aria-label="Organization scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <p className="text-[13px] text-muted-foreground">{message}</p>
+    </section>
+  );
+}
+
+function LoadingNotice() {
+  return (
+    <section
+      aria-label="Loading safety scores"
+      className="rounded-lg border border-border bg-card p-6"
+    >
+      <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Loading safety scores…
+      </div>
+    </section>
+  );
+}
 
 function AllFacilitiesInterstitial() {
   return (
