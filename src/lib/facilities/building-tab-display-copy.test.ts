@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BUILDING_TAB_AGGREGATE_AUDIT_FOOTNOTE_COPY,
+  BUILDING_TAB_CONSTRUCTION_GAP_COPIES,
   BUILDING_TAB_HELPER,
+  BUILDING_TAB_NO_96_HOUR_READINESS_COPY,
   BUILDING_TAB_NO_CEMP_STATUS_COPY,
+  BUILDING_TAB_NO_COMMON_AREA_SQFT_COPY,
+  BUILDING_TAB_NO_COUNTY_OEM_STATUS_HELPER_COPY,
   BUILDING_TAB_NO_ELOPEMENT_DRILL_COPY,
   BUILDING_TAB_NO_GENERATOR_MANUFACTURER_COPY,
   BUILDING_TAB_NO_LICENSED_BED_COUNT_COPY,
+  BUILDING_TAB_NO_RESIDENT_ROOM_COUNT_COPY,
+  BUILDING_TAB_NO_SECTION_AUDIT_TRAIL_COPY,
   BUILDING_TAB_NO_SECURE_UNIT_COPY,
   BUILDING_TAB_NO_SPRINKLER_COVERAGE_COPY,
   BUILDING_TAB_NO_SPRINKLER_SYSTEM_TYPE_COPY,
   BUILDING_TAB_NO_STORM_HARDENING_COPY,
   BUILDING_TAB_SCAFFOLD_GAP_COPIES,
+  BUILDING_TAB_SPRINKLER_DETAIL_FOOTNOTE_COPY,
   buildingTabLicensedBedCountIsMissing,
   formatBuildingTabLicensedBedCount,
   formatBuildingTabScaffoldValue,
@@ -22,6 +30,32 @@ describe("BUILDING_TAB_HELPER", () => {
   it("explains named gaps without implying the tab is complete", () => {
     expect(BUILDING_TAB_HELPER).toMatch(/not captured yet/i);
     expect(BUILDING_TAB_HELPER).toMatch(/not silent blanks/i);
+  });
+});
+
+describe("BUILDING_TAB_CONSTRUCTION_GAP_COPIES", () => {
+  it("names uncaptured construction metrics instead of an em dash", () => {
+    expect(BUILDING_TAB_CONSTRUCTION_GAP_COPIES).toHaveLength(2);
+    expect(BUILDING_TAB_NO_RESIDENT_ROOM_COUNT_COPY).toBe("No resident-room count posted");
+    expect(BUILDING_TAB_NO_COMMON_AREA_SQFT_COPY).toBe("No common-area square footage posted");
+    for (const gap of BUILDING_TAB_CONSTRUCTION_GAP_COPIES) {
+      expect(gap).toMatch(/^No .+ posted$/);
+      expect(gap).not.toBe(EM_DASH);
+    }
+  });
+});
+
+describe("building tab operator footnotes", () => {
+  it("states 96-hour readiness is not computed without engine or TODO jargon", () => {
+    expect(BUILDING_TAB_NO_96_HOUR_READINESS_COPY).toMatch(/not computed/i);
+    expect(BUILDING_TAB_NO_96_HOUR_READINESS_COPY).not.toMatch(/TODO|sprint|deferred|scaffold/i);
+  });
+
+  it("names audit and sprinkler helper gaps without sprint jargon", () => {
+    expect(BUILDING_TAB_NO_SECTION_AUDIT_TRAIL_COPY).toMatch(/^No .+ posted yet\.$/);
+    expect(BUILDING_TAB_AGGREGATE_AUDIT_FOOTNOTE_COPY).not.toMatch(/ships|sprint/i);
+    expect(BUILDING_TAB_SPRINKLER_DETAIL_FOOTNOTE_COPY).not.toMatch(/sprint|schema/i);
+    expect(BUILDING_TAB_NO_COUNTY_OEM_STATUS_HELPER_COPY).not.toMatch(/sprint|schema/i);
   });
 });
 
