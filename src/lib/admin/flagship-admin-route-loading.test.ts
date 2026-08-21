@@ -15,6 +15,7 @@ const flagshipLoadingPaths = [
   "src/app/(admin)/admin/family-messages/loading.tsx",
   "src/app/(admin)/admin/residents/loading.tsx",
   "src/app/(admin)/residents/loading.tsx",
+  "src/app/(admin)/admin/rounding/loading.tsx",
 ] as const;
 
 describe("flagship admin route named loading", () => {
@@ -32,6 +33,7 @@ describe("flagship admin route named loading", () => {
     expect(readSource(flagshipLoadingPaths[4])).toContain("ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE");
     expect(readSource(flagshipLoadingPaths[5])).toContain("ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE");
     expect(readSource(flagshipLoadingPaths[6])).toContain("ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE");
+    expect(readSource(flagshipLoadingPaths[7])).toContain("ADMIN_ROUNDING_ROUTE_LOADING_MESSAGE");
   });
 
   it("names residents roster Suspense and client refetch gaps instead of silent skeletons", () => {

@@ -31,6 +31,15 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  deriveInsightsBoardState,
+  formatInsightsBoardPageSubtitle,
+  resolveInsightsBoardFetchErrorBannerMessage,
+  resolveInsightsBoardOrganizationGapMessage,
+  type InsightsBoardLoadState,
+  type InsightsBoardState,
+} from "@/lib/rounding/insights-board-page-state";
+import { resolveSafetyBoardFacilityScopeLabel } from "@/lib/rounding/safety-board-display-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -58,15 +67,9 @@ interface InsightRow {
   facilities?: { name: string } | null;
 }
 
-type LoadState = "idle" | "loading" | "ready" | "error";
+type LoadState = InsightsBoardLoadState;
 
-type BoardState =
-  | "no_facility"
-  | "loading"
-  | "error"
-  | "empty"
-  | "empty_filtered"
-  | "populated";
+type BoardState = InsightsBoardState;
 
 type Tone = "default" | "warning" | "danger";
 
@@ -115,18 +118,14 @@ function resolveNewTone(count: number): Tone {
 }
 
 function deriveBoardState(args: {
+  authLoading: boolean;
+  organizationId: string | null;
   loadState: LoadState;
   hasFacility: boolean;
-  rowCount: number;
+  visibleRowCount: number;
   filterApplied: boolean;
 }): BoardState {
-  if (!args.hasFacility) return "no_facility";
-  if (args.loadState === "loading" || args.loadState === "idle") return "loading";
-  if (args.loadState === "error") return "error";
-  if (args.rowCount === 0) {
-    return args.filterApplied ? "empty_filtered" : "empty";
-  }
-  return "populated";
+  return deriveInsightsBoardState(args);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -136,9 +135,12 @@ function deriveBoardState(args: {
 export default function InsightsPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScopeLabel = resolveSafetyBoardFacilityScopeLabel(
+    selectedFacilityId,
+    selectedFacility?.name,
+  );
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
-  const { organizationId } = useHavenAuth();
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const [rows, setRows] = useState<InsightRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -147,7 +149,6 @@ export default function InsightsPage() {
   const [runMessage, setRunMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoadState("loading");
     setErrorMessage(null);
 
     if (!selectedFacilityId || !isBrowserSupabaseConfigured()) {
@@ -156,9 +157,21 @@ export default function InsightsPage() {
       return;
     }
 
-    try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
+    if (authLoading) {
+      setRows([]);
+      setLoadState("idle");
+      return;
+    }
 
+    if (!organizationId) {
+      setRows([]);
+      setLoadState("ready");
+      return;
+    }
+
+    setLoadState("loading");
+
+    try {
       const query = supabase
         .from("resident_safety_insights")
         .select("*, residents(first_name, last_name), facilities(name)")
@@ -179,7 +192,7 @@ export default function InsightsPage() {
       setRows([]);
       setLoadState("error");
     }
-  }, [organizationId, supabase, selectedFacilityId]);
+  }, [authLoading, organizationId, supabase, selectedFacilityId]);
 
   useEffect(() => {
     void load();
@@ -249,17 +262,37 @@ export default function InsightsPage() {
   }, [filter, rows]);
 
   const boardState = deriveBoardState({
+    authLoading,
+    organizationId,
     loadState,
     hasFacility: Boolean(selectedFacilityId),
-    rowCount: visibleRows.length,
+    visibleRowCount: visibleRows.length,
     filterApplied: filter !== "all",
   });
+
+  const organizationGapMessage = resolveInsightsBoardOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveInsightsBoardFetchErrorBannerMessage({
+    authLoading,
+    fetchError: errorMessage,
+  });
+  const pageSubtitle = formatInsightsBoardPageSubtitle(facilityScopeLabel, {
+    dataReady: loadState === "ready",
+    insightCycleStarted: rows.length > 0,
+  });
+  const refreshDisabled =
+    boardState === "auth_loading" ||
+    boardState === "loading" ||
+    loadState === "loading";
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Insights"
-        subtitle={`Clinical pattern detection, anomaly review, and early warnings across rounding activity at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <>
             <Button
@@ -267,7 +300,7 @@ export default function InsightsPage() {
               variant="default"
               size="default"
               onClick={() => void runAnalysis()}
-              disabled={!selectedFacilityId || running}
+              disabled={!selectedFacilityId || running || refreshDisabled}
             >
               {running ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -283,10 +316,10 @@ export default function InsightsPage() {
               onClick={() => void load()}
               aria-label="Refresh insights"
               title="Refresh"
-              disabled={loadState === "loading"}
+              disabled={refreshDisabled}
             >
               <RefreshCw
-                className={cn("size-4", loadState === "loading" && "animate-spin")}
+                className={cn("size-4", refreshDisabled && "animate-spin")}
                 aria-hidden
               />
             </Button>
@@ -298,9 +331,13 @@ export default function InsightsPage() {
 
       {boardState === "no_facility" ? (
         <AllFacilitiesInterstitial />
-      ) : boardState === "error" ? (
+      ) : organizationGapMessage ? (
+        <OrganizationGapNotice message={organizationGapMessage} />
+      ) : boardState === "auth_loading" || boardState === "loading" ? (
+        <LoadingNotice />
+      ) : fetchErrorBannerMessage ? (
         <LoadErrorNotice
-          message={errorMessage ?? "Could not load Smart rounding insights."}
+          message={fetchErrorBannerMessage}
           onRetry={() => void load()}
         />
       ) : (
@@ -384,7 +421,7 @@ export default function InsightsPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoInsightsEmptyState facilityName={facilityName} />
+            <NoInsightsEmptyState facilityName={facilityScopeLabel} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
@@ -547,6 +584,31 @@ function InfoBanner({
         <X className="size-3.5" aria-hidden />
       </button>
     </div>
+  );
+}
+
+function OrganizationGapNotice({ message }: { message: string }) {
+  return (
+    <section
+      aria-label="Organization scope required"
+      className="rounded-lg border border-dashed border-border bg-card p-6"
+    >
+      <p className="text-[13px] text-muted-foreground">{message}</p>
+    </section>
+  );
+}
+
+function LoadingNotice() {
+  return (
+    <section
+      aria-label="Loading insights"
+      className="rounded-lg border border-border bg-card p-6"
+    >
+      <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Loading insights…
+      </div>
+    </section>
   );
 }
 
