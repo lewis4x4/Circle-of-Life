@@ -25,6 +25,10 @@ export const SAFETY_BOARD_NO_INCIDENT_RECENCY_COPY = "No incident recency posted
 export const SAFETY_BOARD_NO_MEDICATION_ADHERENCE_COPY = "No medication adherence posted";
 export const SAFETY_BOARD_NO_SCORE_TREND_COPY = "No score trend posted";
 
+/** Rose retry banner — facility scope is already selected; do not ask to confirm it. */
+export const SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY =
+  "Could not load safety scores. Try again, or contact support if this persists.";
+
 /** Facility name on a safety board row when the join is unset or blank. */
 export function formatSafetyBoardFacilityName(name: string | null | undefined): string {
   if (!name || !name.trim()) return SAFETY_BOARD_NO_FACILITY_COPY;

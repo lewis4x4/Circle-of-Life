@@ -6,10 +6,12 @@ import {
 import {
   deriveSafetyBoardState,
   formatSafetyBoardPageSubtitle,
+  formatSafetyBoardUnexpectedFetchError,
   resolveSafetyBoardFetchErrorBannerMessage,
   resolveSafetyBoardOrganizationGapMessage,
   SAFETY_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
 } from "./safety-board-page-state";
+import { SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY } from "./safety-board-display-copy";
 
 describe("deriveSafetyBoardState", () => {
   it("requires facility scope before any load state", () => {
@@ -136,9 +138,9 @@ describe("resolveSafetyBoardFetchErrorBannerMessage", () => {
     expect(
       resolveSafetyBoardFetchErrorBannerMessage({
         authLoading: false,
-        fetchError: "Could not load safety scores. Confirm facility scope and retry.",
+        fetchError: SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY,
       }),
-    ).toBe("Could not load safety scores. Confirm facility scope and retry.");
+    ).toBe(SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY);
   });
 
   it("never surfaces the legacy organization crash string", () => {
@@ -148,6 +150,13 @@ describe("resolveSafetyBoardFetchErrorBannerMessage", () => {
         fetchError: "Organization missing on profile.",
       }),
     ).toBeNull();
+  });
+});
+
+describe("formatSafetyBoardUnexpectedFetchError", () => {
+  it("does not ask the operator to confirm facility scope", () => {
+    expect(formatSafetyBoardUnexpectedFetchError()).toBe(SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY);
+    expect(formatSafetyBoardUnexpectedFetchError()).not.toContain("Confirm facility scope");
   });
 });
 
