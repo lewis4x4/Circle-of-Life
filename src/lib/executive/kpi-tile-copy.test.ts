@@ -17,15 +17,53 @@ describe("executiveKpiEmptyCopy", () => {
 });
 
 describe("occupancyLoadedFootnote", () => {
-  it("explains loaded census vs licensed beds", () => {
-    expect(occupancyLoadedFootnote({ occupiedResidents: 33, licensedBeds: 258 })).toBe(
-      "33 in census · 258 licensed beds",
-    );
+  it("explains loaded census vs licensed beds when every facility is posted", () => {
+    expect(
+      occupancyLoadedFootnote({
+        occupiedResidents: 33,
+        licensedBeds: 258,
+        occupancyPct: 12.8,
+        allFacilitiesPosted: true,
+        postedFacilityCount: 5,
+        totalFacilityCount: 5,
+      }),
+    ).toBe("33 in census · 258 licensed beds");
+  });
+
+  it("names partial census scope instead of mixing unloaded licensed beds", () => {
+    expect(
+      occupancyLoadedFootnote({
+        occupiedResidents: 83,
+        licensedBeds: 100,
+        occupancyPct: 83,
+        allFacilitiesPosted: false,
+        postedFacilityCount: 2,
+        totalFacilityCount: 5,
+      }),
+    ).toBe("2 of 5 facilities have census posted — occupancy uses posted census only.");
   });
 
   it("returns null when census context is incomplete", () => {
-    expect(occupancyLoadedFootnote({ occupiedResidents: 0, licensedBeds: 258 })).toBeNull();
-    expect(occupancyLoadedFootnote({ occupiedResidents: 33, licensedBeds: 0 })).toBeNull();
+    expect(
+      occupancyLoadedFootnote({
+        occupiedResidents: 0,
+        licensedBeds: 258,
+        occupancyPct: 0,
+        allFacilitiesPosted: true,
+        postedFacilityCount: 5,
+        totalFacilityCount: 5,
+      }),
+    ).toBeNull();
+    expect(
+      occupancyLoadedFootnote({
+        occupiedResidents: 33,
+        licensedBeds: 0,
+        occupancyPct: null,
+        allFacilitiesPosted: false,
+        postedFacilityCount: 0,
+        totalFacilityCount: 5,
+      }),
+    ).toBeNull();
   });
 });
 

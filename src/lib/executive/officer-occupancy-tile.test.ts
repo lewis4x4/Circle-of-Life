@@ -4,39 +4,59 @@ import {
   formatExecutiveOccupancyPctWithSuffix,
   resolveOfficerOccupancyTileLabel,
 } from "@/lib/executive/executive-display-copy";
-import { computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
+import { aggregatePortfolioOccupancy, computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
 
 describe("resolveOfficerOccupancyTileLabel", () => {
-  it("names portfolio scope when the board is not facility-scoped", () => {
-    expect(resolveOfficerOccupancyTileLabel(false)).toBe("Portfolio occupancy");
+  it("uses portfolio label when every facility has posted census", () => {
+    expect(
+      resolveOfficerOccupancyTileLabel(false, {
+        allFacilitiesPosted: true,
+        postedFacilityCount: 5,
+        totalFacilityCount: 5,
+      }),
+    ).toBe("Portfolio occupancy");
   });
 
-  it("names this-facility scope when the header selects a facility", () => {
+  it("uses posted-sites label when census is partial", () => {
+    expect(
+      resolveOfficerOccupancyTileLabel(false, {
+        allFacilitiesPosted: false,
+        postedFacilityCount: 2,
+        totalFacilityCount: 5,
+      }),
+    ).toBe("Posted-sites occupancy");
+  });
+
+  it("uses this-facility label when header scopes one site", () => {
     expect(resolveOfficerOccupancyTileLabel(true)).toBe("This facility occupancy");
   });
 });
 
 describe("officer occupancy tile scope alignment", () => {
-  const portfolioPct = computePortfolioOccupancyPct(33, 258);
-  const facilityPct = 91.7;
+  const portfolioPct = computePortfolioOccupancyPct(33, 100);
+  const facilityPct = computePortfolioOccupancyPct(33, 40);
 
-  it("portfolio label cannot pair with a facility-only percent", () => {
-    const label = resolveOfficerOccupancyTileLabel(false);
+  it("keeps portfolio and facility values distinct", () => {
+    const label = resolveOfficerOccupancyTileLabel(false, {
+      allFacilitiesPosted: true,
+      postedFacilityCount: 5,
+      totalFacilityCount: 5,
+    });
     const value = formatExecutiveOccupancyPctWithSuffix(portfolioPct);
 
     expect(label).toBe("Portfolio occupancy");
-    expect(value).toBe("12.8%");
+    expect(value).toBe("33.0%");
     expect(value).not.toBe(formatExecutiveOccupancyPctWithSuffix(facilityPct));
   });
 
-  it("this-facility label cannot pair with a portfolio percent badge", () => {
-    const label = resolveOfficerOccupancyTileLabel(true);
-    const value = formatExecutiveOccupancyPctWithSuffix(facilityPct);
-
-    expect(label).toBe("This facility occupancy");
-    expect(label).not.toBe("Portfolio occupancy");
-    expect(value).toBe("91.7%");
-    expect(value).not.toBe(formatExecutiveOccupancyPctWithSuffix(portfolioPct));
+  it("labels partial portfolio occupancy as posted-sites-only", () => {
+    const partial = aggregatePortfolioOccupancy([
+      { censusPosted: true, occupied: 33, denominatorBeds: 100 },
+      { censusPosted: false, occupied: 0, denominatorBeds: 0 },
+    ]);
+    const label = resolveOfficerOccupancyTileLabel(false, partial);
+    expect(label).toBe("Posted-sites occupancy");
+    expect(formatExecutiveOccupancyPctWithSuffix(partial.occupancyPct)).toBe("33.0%");
   });
 
   it("posted-empty stays 0% and unloaded stays a named gap in both scopes", () => {
