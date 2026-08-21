@@ -98,7 +98,8 @@ import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { IdentityBlock } from "@/components/ui/identity-block";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
-import { getRoleDashboardConfig, getRoleHomeLead, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
 
@@ -124,9 +125,15 @@ type AdminNavGroup = {
   items: AdminNavItem[];
 };
 
-function getRoleHomeLabel(appRole: string, roleLabel: string, authLoading: boolean): string {
+function getRoleHomeLabel(
+  appRole: string,
+  roleLabel: string,
+  authLoading: boolean,
+  heldLead: string | null = null,
+): string {
   if (authLoading || !appRole) {
-    return getRoleHomeLead(authLoading, appRole);
+    if (heldLead) return heldLead;
+    return "";
   }
   switch (appRole) {
     case "admin_assistant":
@@ -187,10 +194,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const facilityRefreshRequestRef = useRef(0);
   const currentUserIdRef = useRef<string | null>(currentUserId);
   const roleConfig = useMemo(() => getRoleDashboardConfig(appRole), [appRole]);
-  const resolvedRoleLabel = useMemo(
-    () => getResolvedRoleLabel(authLoading, appRole),
-    [authLoading, appRole],
-  );
+  const { shellRoleLabel, brandAriaLabel, heldLead } = useHeldRoleHomeChrome(authLoading, appRole);
   const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
   const [signingOut, setSigningOut] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -474,7 +478,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     const homeItem: AdminNavItem = {
       key: "role-home",
       href: roleConfig.route,
-      label: getRoleHomeLabel(appRole, roleConfig.roleLabel, authLoading),
+      label: getRoleHomeLabel(appRole, roleConfig.roleLabel, authLoading, heldLead),
       enabled: true,
       icon: House,
     };
@@ -500,6 +504,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     allNavGroups,
     authLoading,
     appRole,
+    heldLead,
     roleConfig.roleLabel,
     roleConfig.route,
     roleConfig.visibleGroups,
@@ -601,20 +606,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const renderBrand = () => (
     <HavenShellBrandLink
       href={roleConfig.route}
-      aria-label={
-        authLoading || !appRole
-          ? "Haven — loading role home"
-          : `Haven — go to ${resolvedRoleLabel.toLowerCase()} home`
-      }
+      aria-label={brandAriaLabel}
       className={cn(
         "flex h-14 w-full shrink-0 border-b border-border px-4",
         "haven-chrome-fg transition-opacity hover:opacity-90",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
       )}
     >
-      <span className="haven-chrome-fg-muted ml-auto rounded border border-[hsl(var(--chrome-foreground)/0.2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider">
-        {resolvedRoleLabel}
-      </span>
+      {shellRoleLabel ? (
+        <span className="haven-chrome-fg-muted ml-auto rounded border border-[hsl(var(--chrome-foreground)/0.2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider">
+          {shellRoleLabel}
+        </span>
+      ) : null}
     </HavenShellBrandLink>
   );
 
