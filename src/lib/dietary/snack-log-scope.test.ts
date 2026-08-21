@@ -49,6 +49,8 @@ describe("snack log scope (COL time + passer only)", () => {
     expect(dietaryClientSource).not.toContain("Snack notes");
     expect(dietaryClientSource).not.toContain("Meal / snack log");
     expect(dietaryClientSource).toContain("Log snack pass");
+    expect(dietaryClientSource).toContain("formatSnackPassPasserDisplay");
+    expect(dietaryClientSource).not.toMatch(/\|\| ["']Staff["']/);
     expect(dietaryClientSource).toContain("Snack passed —");
     expect(dietaryClientSource).toMatch(/snack_at:\s*snackAtIso/);
     expect(dietaryClientSource).toContain("nowSnackPassDatetimeLocal");
@@ -62,6 +64,9 @@ describe("snack log scope (COL time + passer only)", () => {
     expect(SNACK_PASS_HELPER_COPY).toMatch(/time and passer/i);
     expect(dietaryClientSource).toContain(`id={SNACK_PASS_SECTION_ID}`);
     expect(dietaryClientSource).toContain("No snack passes logged yet for this facility.");
+    expect(dietaryClientSource).toContain("SNACK_PASS_LIST_LOADING_MESSAGE");
+    expect(dietaryClientSource).toContain("snackPassRecentPreviewFootnote");
+    expect(dietaryClientSource).not.toContain("snackLogs.slice(0, 5)");
     expect(dietaryClientSource.indexOf("Snack pass")).toBeLessThan(
       dietaryClientSource.indexOf("Attention Queue"),
     );

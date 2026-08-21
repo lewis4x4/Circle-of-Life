@@ -6,6 +6,12 @@ import { format } from "date-fns";
 import { Utensils, Cookie } from "lucide-react";
 
 import {
+  SNACK_PASS_LIST_LOADING_MESSAGE,
+  formatSnackPassPasserDisplay,
+  snackPassRecentPreviewFootnote,
+  snackPassRecentPreviewRows,
+} from "@/lib/dietary/snack-pass-display-copy";
+import {
   formatSnackPassLoggedAtEt,
   nowSnackPassDatetimeLocal,
   snackPassDatetimeLocalToUtcIso,
@@ -395,6 +401,8 @@ export function AdminDietaryPageClient({
     }
   }, [facilityReady, organizationId, selectedFacilityId, snackForm, supabase, load]);
 
+  const snackPreviewFootnote = snackPassRecentPreviewFootnote(snackLogs.length);
+
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
@@ -532,21 +540,28 @@ export function AdminDietaryPageClient({
                   Recent snack passes
                 </p>
                 {loading ? (
-                  <p className="text-xs text-muted-foreground">Loading…</p>
+                  <p className="text-xs text-muted-foreground">{SNACK_PASS_LIST_LOADING_MESSAGE}</p>
                 ) : snackLogs.length === 0 ? (
                   <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
                     No snack passes logged yet for this facility.
                   </p>
                 ) : (
-                  <ul className="space-y-2">
-                    {snackLogs.slice(0, 5).map((log) => (
-                      <li key={log.id} className="rounded-lg border border-slate-200/70 bg-white px-3 py-2 text-xs text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
-                        <span className="font-medium">{formatSnackPassLoggedAtEt(log.snack_at)} ET</span>
-                        <span className="text-muted-foreground"> · Snack passed — </span>
-                        <span>{log.user_profiles?.full_name?.trim() || "Staff"}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul className="space-y-2">
+                      {snackPassRecentPreviewRows(snackLogs).map((log) => (
+                        <li key={log.id} className="rounded-lg border border-slate-200/70 bg-white px-3 py-2 text-xs text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                          <span className="font-medium">{formatSnackPassLoggedAtEt(log.snack_at)} ET</span>
+                          <span className="text-muted-foreground"> · Snack passed — </span>
+                          <span>{formatSnackPassPasserDisplay(log.user_profiles?.full_name)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {snackPreviewFootnote ? (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {snackPreviewFootnote}
+                      </p>
+                    ) : null}
+                  </>
                 )}
               </div>
             </div>
