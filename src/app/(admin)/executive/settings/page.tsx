@@ -165,7 +165,7 @@ export default function ExecutiveSettingsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Executive settings</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Your personal dashboard defaults — choose the date range preset used when you open executive KPI views.
+            Personal dashboard date-range defaults — your preset when executive KPI views load.
           </p>
         </div>
       </div>

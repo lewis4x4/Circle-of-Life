@@ -96,7 +96,7 @@ describe("ExecutiveSettingsPage auth hydration", () => {
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
   });
 
-  it("renders populated settings when org context is present", async () => {
+  it("shows operator subtitle and settings form for an owner with org (no org-missing leak)", async () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
     authMock.user = { id: "user-anon-1" };
@@ -111,10 +111,12 @@ describe("ExecutiveSettingsPage auth hydration", () => {
     expect(await screen.findByLabelText("Date range preset")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
     expect(
-      screen.getByText("Your personal dashboard defaults — choose the date range preset used when you open executive KPI views."),
+      screen.getByText("Personal dashboard date-range defaults — your preset when executive KPI views load."),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/Per-user dashboard defaults stored in/i)).not.toBeInTheDocument();
     expect(screen.queryByText("exec_dashboard_configs")).not.toBeInTheDocument();
     expect(screen.queryByText(/later slice/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
   });
 });
