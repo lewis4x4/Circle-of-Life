@@ -6,18 +6,37 @@
 import { caregiverDisplayRoomLabel } from "@/lib/caregiver/emar-queue-copy";
 
 export const SAFETY_BOARD_NO_FACILITY_COPY = "No facility posted";
-/** Header/subtitle scope when a facility id is selected but the name has not resolved. */
+/** Stand-alone gap when a facility id is selected but the name has not resolved. */
 export const SAFETY_BOARD_NO_FACILITY_SCOPE_COPY = "No facility name posted";
 
-/** Page header and empty-state facility label — never fabricates "selected facility". */
-export function resolveSafetyBoardFacilityScopeLabel(
+export type SafetyBoardFacilityScope =
+  | { kind: "unscoped" }
+  | { kind: "named"; name: string }
+  | { kind: "missing_name" };
+
+/** Page header and empty-state facility scope — never fabricates a facility name. */
+export function resolveSafetyBoardFacilityScope(
   selectedFacilityId: string | null,
   selectedFacilityName: string | null | undefined,
-): string {
-  if (!selectedFacilityId) return SAFETY_BOARD_NO_FACILITY_SCOPE_COPY;
+): SafetyBoardFacilityScope {
+  if (!selectedFacilityId) return { kind: "unscoped" };
   const trimmed = selectedFacilityName?.trim();
-  if (trimmed) return trimmed;
-  return SAFETY_BOARD_NO_FACILITY_SCOPE_COPY;
+  if (trimmed) return { kind: "named", name: trimmed };
+  return { kind: "missing_name" };
+}
+
+/** Empty-state title when a facility is scoped but no scores exist yet. */
+export function formatSafetyBoardNoScoresEmptyTitle(scope: SafetyBoardFacilityScope): string {
+  if (scope.kind === "named") return `No safety scores at ${scope.name}`;
+  if (scope.kind === "missing_name") return "No safety scores posted";
+  return "No safety scores posted";
+}
+
+/** Empty-state title when a facility is scoped but no insights exist yet. */
+export function formatInsightsBoardNoInsightsEmptyTitle(scope: SafetyBoardFacilityScope): string {
+  if (scope.kind === "named") return `No rounding activity insights at ${scope.name}`;
+  if (scope.kind === "missing_name") return "No rounding activity insights posted";
+  return "No rounding activity insights posted";
 }
 export const SAFETY_BOARD_NO_ROOM_COPY = "No room posted";
 export const SAFETY_BOARD_NO_OBSERVATION_COMPLIANCE_COPY = "No observation compliance posted";

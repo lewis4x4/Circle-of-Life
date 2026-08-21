@@ -168,16 +168,31 @@ describe("InsightsPage auth hydration", () => {
     expect(screen.queryByText(/No insight cycle has started/)).not.toBeInTheDocument();
   });
 
-  it("uses named facility-gap copy in the subtitle when the facility name has not resolved", () => {
+  it("uses stand-alone missing-name gap copy when the facility name has not resolved", async () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
+    facilityMock.availableFacilities = [];
+    supabaseMock.rows = [];
+
+    render(<InsightsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No rounding activity insights posted")).toBeInTheDocument();
+    });
+    expect(screen.getAllByText(/No facility name posted/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/at No facility name posted/)).not.toBeInTheDocument();
+  });
+
+  it("uses top-bar filter copy in the subtitle when no facility is selected", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    facilityMock.selectedFacilityId = null;
     facilityMock.availableFacilities = [];
 
     render(<InsightsPage />);
 
-    expect(
-      screen.getByText(/Clinical pattern detection.*No facility name posted/),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/selected facility/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Insights are per facility.*top-bar facility filter/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/at No facility name posted/)).not.toBeInTheDocument();
+    expect(screen.getByText("Insights operate per facility")).toBeInTheDocument();
   });
 });

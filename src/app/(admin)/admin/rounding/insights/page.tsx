@@ -39,7 +39,11 @@ import {
   type InsightsBoardLoadState,
   type InsightsBoardState,
 } from "@/lib/rounding/insights-board-page-state";
-import { resolveSafetyBoardFacilityScopeLabel } from "@/lib/rounding/safety-board-display-copy";
+import {
+  formatInsightsBoardNoInsightsEmptyTitle,
+  resolveSafetyBoardFacilityScope,
+  SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
+} from "@/lib/rounding/safety-board-display-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -135,7 +139,7 @@ function deriveBoardState(args: {
 export default function InsightsPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityScopeLabel = resolveSafetyBoardFacilityScopeLabel(
+  const facilityScope = resolveSafetyBoardFacilityScope(
     selectedFacilityId,
     selectedFacility?.name,
   );
@@ -279,7 +283,7 @@ export default function InsightsPage() {
     authLoading,
     fetchError: errorMessage,
   });
-  const pageSubtitle = formatInsightsBoardPageSubtitle(facilityScopeLabel, {
+  const pageSubtitle = formatInsightsBoardPageSubtitle(facilityScope, {
     dataReady: loadState === "ready",
     insightCycleStarted: rows.length > 0,
   });
@@ -421,7 +425,7 @@ export default function InsightsPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoInsightsEmptyState facilityName={facilityScopeLabel} />
+            <NoInsightsEmptyState facilityScope={facilityScope} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
@@ -625,7 +629,7 @@ function AllFacilitiesInterstitial() {
             Insights operate per facility
           </p>
           <p className="text-[13px] text-muted-foreground">
-            Smart rounding insights are facility-scoped. Select a facility from the top bar to continue.
+            Insights are per facility. Use the top-bar facility filter to select a site.
           </p>
         </div>
       </div>
@@ -665,17 +669,25 @@ function LoadErrorNotice({
   );
 }
 
-function NoInsightsEmptyState({ facilityName }: { facilityName: string }) {
+function NoInsightsEmptyState({
+  facilityScope,
+}: {
+  facilityScope: ReturnType<typeof resolveSafetyBoardFacilityScope>;
+}) {
+  const title = formatInsightsBoardNoInsightsEmptyTitle(facilityScope);
+  const body =
+    facilityScope.kind === "missing_name"
+      ? `${SAFETY_BOARD_NO_FACILITY_SCOPE_COPY}. No rounding activity insights are available for this facility yet.`
+      : "No rounding activity insights are available for this facility yet.";
+
   return (
     <section
       aria-label="No AI insights"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <Brain className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No rounding activity insights at {facilityName}</p>
-      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        No rounding activity insights are available for this facility yet.
-      </p>
+      <p className="mt-3 text-sm font-semibold text-foreground">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">{body}</p>
     </section>
   );
 }
