@@ -58,6 +58,8 @@ export default function ExecutiveSettingsPage() {
     if (!organizationId) {
       setHasOrgScopedData(false);
       setFetchError(null);
+      setSaveError(null);
+      setSavedOk(false);
       setFetching(false);
       return;
     }
@@ -65,12 +67,15 @@ export default function ExecutiveSettingsPage() {
     if (!user) {
       setHasOrgScopedData(false);
       setFetchError("Sign in required.");
+      setSaveError(null);
+      setSavedOk(false);
       setFetching(false);
       return;
     }
 
     setFetching(true);
     setFetchError(null);
+    setSaveError(null);
     setSavedOk(false);
     try {
       const { data, error: qErr } = await supabase
@@ -148,6 +153,7 @@ export default function ExecutiveSettingsPage() {
         }
       }
       setHasOrgScopedData(true);
+      setFetchError(null);
       setSavedOk(true);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Save failed.");
