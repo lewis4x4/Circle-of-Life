@@ -3,6 +3,10 @@
  * Copy reflects real data gaps — never fabricates values or readiness scores.
  */
 
+import type { PortfolioOccupancyAggregate } from "@/lib/occupancy/portfolio-occupancy-display";
+import { portfolioOccupancyScopeFootnote } from "@/lib/occupancy/portfolio-occupancy-display";
+import type { PortfolioOccupancyScope } from "@/lib/occupancy/portfolio-occupancy-display";
+
 export type ExecutiveKpiMetricKey =
   | "occ_pt"
   | "rev_mtd"
@@ -13,7 +17,8 @@ export type ExecutiveKpiMetricKey =
 export type OccupancyContext = {
   occupiedResidents: number;
   licensedBeds: number;
-};
+  occupancyPct: number | null;
+} & PortfolioOccupancyScope;
 
 const EMPTY_COPY: Record<ExecutiveKpiMetricKey, string> = {
   occ_pt: "No census loaded yet",
@@ -28,8 +33,32 @@ export function executiveKpiEmptyCopy(metricKey: ExecutiveKpiMetricKey): string 
   return EMPTY_COPY[metricKey];
 }
 
-/** Short qualifier when occupancy is present but looks low vs licensed capacity. */
+export function buildOccupancyContextFromPortfolioAggregate(
+  portfolioOccupancy: PortfolioOccupancyAggregate,
+  allLicensedBeds: number,
+): OccupancyContext | null {
+  if (portfolioOccupancy.postedFacilityCount === 0) return null;
+  return {
+    occupiedResidents: portfolioOccupancy.postedOccupiedSum,
+    licensedBeds: portfolioOccupancy.allFacilitiesPosted
+      ? allLicensedBeds
+      : portfolioOccupancy.postedDenominatorBeds,
+    occupancyPct: portfolioOccupancy.occupancyPct,
+    allFacilitiesPosted: portfolioOccupancy.allFacilitiesPosted,
+    postedFacilityCount: portfolioOccupancy.postedFacilityCount,
+    totalFacilityCount: portfolioOccupancy.totalFacilityCount,
+  };
+}
+
+export function occupancyContextOccPtFraction(context: OccupancyContext | null): number | undefined {
+  if (!context || context.occupancyPct == null) return undefined;
+  return context.occupancyPct / 100;
+}
+
+/** Short qualifier when occupancy is present — scopes partial census honestly. */
 export function occupancyLoadedFootnote(context: OccupancyContext): string | null {
+  const scopeFootnote = portfolioOccupancyScopeFootnote(context);
+  if (scopeFootnote) return scopeFootnote;
   const { occupiedResidents, licensedBeds } = context;
   if (occupiedResidents <= 0 || licensedBeds <= 0) return null;
   return `${occupiedResidents} in census · ${licensedBeds} licensed beds`;

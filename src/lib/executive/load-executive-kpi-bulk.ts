@@ -6,10 +6,10 @@ import { EXEC_KPI_METRICS_VERSION, type ExecKpiPayload } from "@/lib/exec-kpi-sn
 import {
   computeFacilityOccupancyPct,
   computeFacilityOccupiedResidents,
+  computePortfolioOccupancyFromBedCensus,
   fetchFacilityBedCensusById,
   isFacilityOccupancyCensusLoaded,
 } from "@/lib/executive/facility-occupancy-census";
-import { computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
 
 type FacilityMini = {
   id: string;
@@ -270,15 +270,17 @@ export async function loadExecutiveKpiBulk(
   }
 
   const orgKpi = emptyKpi();
-  orgKpi.census.licensedBeds = facilities.reduce((sum, facility) => sum + (facility.total_licensed_beds ?? 0), 0);
-  orgKpi.census.occupiedResidents = Array.from(facilityKpis.values()).reduce(
-    (sum, kpi) => sum + kpi.census.occupiedResidents,
-    0,
-  );
-  orgKpi.census.occupancyPct =
-    orgKpi.census.licensedBeds > 0
-      ? computePortfolioOccupancyPct(orgKpi.census.occupiedResidents, orgKpi.census.licensedBeds)
-      : null;
+  const portfolioOccupancy = computePortfolioOccupancyFromBedCensus(facilities, bedCensusByFacility);
+  orgKpi.census.licensedBeds = portfolioOccupancy.allFacilitiesPosted
+    ? facilities.reduce((sum, facility) => sum + (facility.total_licensed_beds ?? 0), 0)
+    : portfolioOccupancy.postedDenominatorBeds;
+  orgKpi.census.occupiedResidents = portfolioOccupancy.postedOccupiedSum;
+  orgKpi.census.occupancyPct = portfolioOccupancy.occupancyPct;
+  orgKpi.census.occupancyScope = {
+    allFacilitiesPosted: portfolioOccupancy.allFacilitiesPosted,
+    postedFacilityCount: portfolioOccupancy.postedFacilityCount,
+    totalFacilityCount: portfolioOccupancy.totalFacilityCount,
+  };
   orgKpi.financial.openInvoicesCount = invoiceRows.length;
   orgKpi.financial.totalBalanceDueCents = invoiceRows.reduce((sum, row) => sum + (row.balance_due ?? 0), 0);
   orgKpi.clinical.openIncidents = (incidentsRes.data ?? []).length;

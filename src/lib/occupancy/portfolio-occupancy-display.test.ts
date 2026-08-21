@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PORTFOLIO_OCCUPANCY_FULL_LABEL,
   PORTFOLIO_OCCUPANCY_NO_POSTED_COPY,
+  PORTFOLIO_OCCUPANCY_POSTED_SITES_LABEL,
+  aggregatePortfolioOccupancy,
   computePortfolioOccupancyPct,
   formatPortfolioOccupancyPctDisplay,
   formatPortfolioOccupancyPctValue,
+  portfolioOccupancyScopeFootnote,
+  resolvePortfolioOccupancyHeadlineLabel,
 } from "./portfolio-occupancy-display";
 import {
   formatExecutiveOccupancyBarLabel,
@@ -21,6 +26,102 @@ describe("computePortfolioOccupancyPct", () => {
 
   it("rounds non-integer ratios to one decimal percent", () => {
     expect(computePortfolioOccupancyPct(33, 258)).toBe(12.8);
+  });
+});
+
+describe("aggregatePortfolioOccupancy", () => {
+  const postedSite = (occupied: number, denominatorBeds: number) => ({
+    censusPosted: true,
+    occupied,
+    denominatorBeds,
+  });
+
+  const missingSite = () => ({
+    censusPosted: false,
+    occupied: 0,
+    denominatorBeds: 0,
+  });
+
+  it("names the gap when no facilities have posted census", () => {
+    const result = aggregatePortfolioOccupancy([
+      missingSite(),
+      missingSite(),
+      missingSite(),
+    ]);
+    expect(result.occupancyPct).toBeNull();
+    expect(result.postedFacilityCount).toBe(0);
+    expect(result.totalFacilityCount).toBe(3);
+    expect(result.allFacilitiesPosted).toBe(false);
+  });
+
+  it("scopes the denominator to posted sites when census is partial (2 of 5 posted)", () => {
+    const result = aggregatePortfolioOccupancy([
+      postedSite(45, 50),
+      postedSite(38, 50),
+      missingSite(),
+      missingSite(),
+      missingSite(),
+    ]);
+    expect(result.postedFacilityCount).toBe(2);
+    expect(result.totalFacilityCount).toBe(5);
+    expect(result.allFacilitiesPosted).toBe(false);
+    expect(result.postedOccupiedSum).toBe(83);
+    expect(result.postedDenominatorBeds).toBe(100);
+    expect(result.occupancyPct).toBe(83);
+  });
+
+  it("uses the full portfolio when every facility has posted census", () => {
+    const result = aggregatePortfolioOccupancy([
+      postedSite(40, 50),
+      postedSite(30, 50),
+      postedSite(0, 50),
+    ]);
+    expect(result.allFacilitiesPosted).toBe(true);
+    expect(result.occupancyPct).toBe(46.7);
+  });
+
+  it("keeps posted-empty sites at 0% when all facilities are posted", () => {
+    const result = aggregatePortfolioOccupancy([postedSite(0, 50), postedSite(0, 40)]);
+    expect(result.allFacilitiesPosted).toBe(true);
+    expect(result.occupancyPct).toBe(0);
+  });
+});
+
+describe("resolvePortfolioOccupancyHeadlineLabel", () => {
+  it("uses portfolio label when every facility is posted", () => {
+    expect(resolvePortfolioOccupancyHeadlineLabel({ allFacilitiesPosted: true })).toBe(
+      PORTFOLIO_OCCUPANCY_FULL_LABEL,
+    );
+  });
+
+  it("uses posted-sites label when census is partial", () => {
+    expect(resolvePortfolioOccupancyHeadlineLabel({ allFacilitiesPosted: false })).toBe(
+      PORTFOLIO_OCCUPANCY_POSTED_SITES_LABEL,
+    );
+  });
+});
+
+describe("portfolioOccupancyScopeFootnote", () => {
+  it("explains partial census scope with posted vs total counts", () => {
+    expect(
+      portfolioOccupancyScopeFootnote({
+        allFacilitiesPosted: false,
+        postedFacilityCount: 2,
+        totalFacilityCount: 5,
+      }),
+    ).toBe(
+      "2 of 5 facilities have census posted — occupancy uses posted census only.",
+    );
+  });
+
+  it("returns null when every facility has census posted", () => {
+    expect(
+      portfolioOccupancyScopeFootnote({
+        allFacilitiesPosted: true,
+        postedFacilityCount: 5,
+        totalFacilityCount: 5,
+      }),
+    ).toBeNull();
   });
 });
 
@@ -69,6 +170,8 @@ describe("executive and facilities portfolio occupancy display parity", () => {
       occupiedLoaded: false,
       portfolioPctRounded: null,
       portfolioPctLoaded: false,
+      postedFacilityCount: 0,
+      allFacilitiesPosted: false,
       comparison: [],
     };
     expect(portfolioStripPortfolioOccupancyDisplay(unloadedTotals)).toBe(PORTFOLIO_OCCUPANCY_NO_POSTED_COPY);

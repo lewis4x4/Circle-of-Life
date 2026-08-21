@@ -17,6 +17,8 @@ import {
   portfolioStripLicensedBedsEmptyCopy,
   portfolioStripOccupiedBedsEmptyCopy,
   portfolioStripPortfolioOccupancyDisplay,
+  portfolioStripPortfolioOccupancyFootnote,
+  portfolioStripPortfolioOccupancyLabel,
   portfolioStripPortfolioOccupancyEmptyCopy,
   type PortfolioComparisonEntry,
 } from "./portfolio-hub-kpi-copy";
@@ -154,10 +156,41 @@ describe("buildPortfolioStripTotals", () => {
     expect(totals.licensedLoaded).toBe(true);
     expect(totals.occupiedSum).toBe(44);
     expect(totals.occupiedLoaded).toBe(true);
-    expect(totals.portfolioPctRounded).toBe(84.6);
+    expect(totals.portfolioPctRounded).toBe(91.7);
     expect(totals.portfolioPctLoaded).toBe(true);
+    expect(totals.allFacilitiesPosted).toBe(false);
+    expect(totals.postedFacilityCount).toBe(1);
     expect(totals.comparison[0].occupancyLoaded).toBe(true);
     expect(totals.comparison[1].occupancyLoaded).toBe(false);
+  });
+});
+
+describe("buildPortfolioStripTotals partial census honesty", () => {
+  it("uses posted-site beds only when 2 of 5 facilities have census", () => {
+    const site = (id: string, posted: boolean) =>
+      facility({
+        id,
+        name: `Site ${id}`,
+        total_licensed_beds: 50,
+        total_beds: posted ? 50 : 0,
+        occupancy_count: posted ? 40 : 0,
+      });
+
+    const totals = buildPortfolioStripTotals([
+      site("a", true),
+      site("b", true),
+      site("c", false),
+      site("d", false),
+      site("e", false),
+    ]);
+
+    expect(totals.postedFacilityCount).toBe(2);
+    expect(totals.allFacilitiesPosted).toBe(false);
+    expect(totals.portfolioPctRounded).toBe(80);
+    expect(portfolioStripPortfolioOccupancyLabel(totals)).toBe("Posted-sites occupancy");
+    expect(portfolioStripPortfolioOccupancyFootnote(totals)).toBe(
+      "2 of 5 facilities have census posted — occupancy uses posted census only.",
+    );
   });
 });
 
@@ -236,7 +269,7 @@ describe("portfolioStripPortfolioOccupancyDisplay", () => {
         occupancy_count: 44,
       }),
     ]);
-    expect(portfolioStripPortfolioOccupancyDisplay(loadedTotals)).toBe("84.6%");
+    expect(portfolioStripPortfolioOccupancyDisplay(loadedTotals)).toBe("91.7%");
   });
 });
 

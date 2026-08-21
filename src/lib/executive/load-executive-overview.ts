@@ -7,7 +7,14 @@ import {
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
-import { fetchFacilityBedCensusById } from "@/lib/executive/facility-occupancy-census";
+import {
+  computePortfolioOccupancyFromBedCensus,
+  fetchFacilityBedCensusById,
+} from "@/lib/executive/facility-occupancy-census";
+import {
+  buildOccupancyContextFromPortfolioAggregate,
+  type OccupancyContext,
+} from "@/lib/executive/kpi-tile-copy";
 import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
@@ -23,7 +30,6 @@ import {
   fetchPresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
-import type { OccupancyContext } from "@/lib/executive/kpi-tile-copy";
 import type { Database } from "@/types/database";
 
 export type ExecutiveOverviewData = {
@@ -135,11 +141,16 @@ export async function loadExecutiveOverview(
     (sum, facility) => sum + ((facility as { total_licensed_beds?: number | null }).total_licensed_beds ?? 0),
     0,
   );
-  const occupiedResidents = presenceCensus.total;
-  const occupancyContext =
-    occupiedResidents > 0 && licensedBeds > 0
-      ? { occupiedResidents, licensedBeds }
+  const portfolioOccupancy =
+    facilityRows.length > 0
+      ? computePortfolioOccupancyFromBedCensus(
+          facilityRows as Array<{ id: string; total_licensed_beds?: number | null }>,
+          bedCensusByFacility,
+        )
       : null;
+  const occupancyContext = portfolioOccupancy
+    ? buildOccupancyContextFromPortfolioAggregate(portfolioOccupancy, licensedBeds)
+    : null;
 
   const facilitiesWithMetrics = applyFacilityOccupancyMetricHonesty(
     attachFacilityMetrics(facilityRows, facilitySnapshotRows as MetricSnapshotRow[]),

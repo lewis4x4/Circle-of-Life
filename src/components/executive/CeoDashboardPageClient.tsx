@@ -32,6 +32,8 @@ import {
   formatExecutiveOccupancyPctWithSuffix,
   formatExecutiveOpenIncidentCount,
   formatExecutiveSurveyDeficiencyCount,
+  executivePortfolioOccupancyFootnote,
+  resolveOfficerOccupancyTileLabel,
 } from "@/lib/executive/executive-display-copy";
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
@@ -116,11 +118,14 @@ export default function CeoDashboardPageClient({
   const showKpiSkeleton = authLoading && kpis == null;
 
   const occupancyPct = kpis?.census.occupancyPct;
+  const occupancyScope = kpis?.census.occupancyScope;
   const deficiencies = kpis?.compliance.openSurveyDeficiencies;
   const arCents = kpis?.financial.totalBalanceDueCents;
   const openIncidents = kpis?.clinical.openIncidents;
 
   const occValue = formatExecutiveOccupancyPctWithSuffix(occupancyPct);
+  const occupancyLabel = resolveOfficerOccupancyTileLabel(false, occupancyScope);
+  const occupancyFootnote = executivePortfolioOccupancyFootnote(occupancyScope);
   const deficienciesValue = formatExecutiveSurveyDeficiencyCount(deficiencies);
   const arValue = formatExecutiveArOutstandingCents(arCents);
   const incidentsValue = formatExecutiveOpenIncidentCount(openIncidents);
@@ -185,12 +190,17 @@ export default function CeoDashboardPageClient({
             <Skeleton className="h-24 rounded-lg" />
           </div>
         ) : (
-          <OfficerKpiStrip>
-            <OfficerKpiTile label="Portfolio occupancy" value={occValue} />
-            <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
-            <OfficerKpiTile label="Total AR outstanding" value={arValue} />
-            <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
-          </OfficerKpiStrip>
+          <div className="flex flex-col gap-2">
+            <OfficerKpiStrip>
+              <OfficerKpiTile label={occupancyLabel} value={occValue} />
+              <OfficerKpiTile label="Open deficiencies" value={deficienciesValue} tone={officerAlarmTone(deficiencies, "warning")} />
+              <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+              <OfficerKpiTile label="Open incidents" value={incidentsValue} tone={officerAlarmTone(openIncidents, "danger")} />
+            </OfficerKpiStrip>
+            {occupancyFootnote ? (
+              <p className="text-[12px] leading-relaxed text-muted-foreground">{occupancyFootnote}</p>
+            ) : null}
+          </div>
         )}
 
         {!showKpiSkeleton && tab === "CEO View" ? (

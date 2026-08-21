@@ -14,6 +14,8 @@ import {
   portfolioStripOccupiedBedsEmptyCopy,
   portfolioStripPortfolioOccupancyDisplay,
   portfolioStripPortfolioOccupancyEmptyCopy,
+  portfolioStripPortfolioOccupancyFootnote,
+  portfolioStripPortfolioOccupancyLabel,
 } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 
 export default function FacilitiesPage() {
@@ -27,6 +29,8 @@ export default function FacilitiesPage() {
   const licensedBedsEmptyCopy = portfolioStripLicensedBedsEmptyCopy(totals);
   const occupiedBedsEmptyCopy = portfolioStripOccupiedBedsEmptyCopy(totals);
   const portfolioOccupancyEmptyCopy = portfolioStripPortfolioOccupancyEmptyCopy(totals);
+  const portfolioOccupancyLabel = portfolioStripPortfolioOccupancyLabel(totals);
+  const portfolioOccupancyFootnote = portfolioStripPortfolioOccupancyFootnote(totals);
 
   const kpiStripHelperLine = portfolioKpiStripHelperLine(totals);
 
@@ -65,7 +69,7 @@ export default function FacilitiesPage() {
                 <KpiCard
                   value={portfolioStripPortfolioOccupancyDisplay(totals)}
                   valuePresentation={portfolioOccupancyEmptyCopy != null ? "message" : "metric"}
-                  label="Portfolio occupancy"
+                  label={portfolioOccupancyLabel}
                   tone={
                     portfolioOccupancyEmptyCopy == null && totals.portfolioPctRounded != null
                       ? totals.portfolioPctRounded < 60
@@ -80,6 +84,9 @@ export default function FacilitiesPage() {
               </div>
             </div>
             <p className="text-[12px] leading-relaxed text-muted-foreground">{kpiStripHelperLine}</p>
+            {portfolioOccupancyFootnote ? (
+              <p className="text-[12px] leading-relaxed text-muted-foreground">{portfolioOccupancyFootnote}</p>
+            ) : null}
           </div>
         )}
 

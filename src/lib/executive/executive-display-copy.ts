@@ -11,6 +11,9 @@ import {
   PORTFOLIO_OCCUPANCY_NO_POSTED_COPY,
   formatPortfolioOccupancyPctDisplay,
   formatPortfolioOccupancyPctValue,
+  portfolioOccupancyScopeFootnote,
+  resolvePortfolioOccupancyHeadlineLabel,
+  type PortfolioOccupancyScope,
 } from "@/lib/occupancy/portfolio-occupancy-display";
 
 export const EXECUTIVE_NO_OCCUPANCY_POSTED_COPY = PORTFOLIO_OCCUPANCY_NO_POSTED_COPY;
@@ -51,11 +54,31 @@ export function formatExecutiveOccupancyPctWithSuffix(value: number | null | und
 }
 
 /**
- * Officer KPI strip occupancy label — must match header facility scope (same as other CFO/COO KPIs).
- * Portfolio when no facility is selected; this facility when header scopes the board.
+ * Officer KPI strip occupancy label — must match header facility scope and census scope.
  */
-export function resolveOfficerOccupancyTileLabel(facilityScoped: boolean): string {
-  return facilityScoped ? "This facility occupancy" : "Portfolio occupancy";
+export function resolveOfficerOccupancyTileLabel(
+  facilityScoped: boolean,
+  occupancyScope?: PortfolioOccupancyScope | null,
+): string {
+  return resolvePortfolioOccupancyHeadlineLabel({
+    facilityScoped,
+    allFacilitiesPosted: occupancyScope?.allFacilitiesPosted ?? true,
+  });
+}
+
+export function resolveExecutiveOccupancyTileLabel(
+  occupancyScope?: PortfolioOccupancyScope | null,
+): string {
+  return resolvePortfolioOccupancyHeadlineLabel({
+    allFacilitiesPosted: occupancyScope?.allFacilitiesPosted ?? true,
+  });
+}
+
+export function executivePortfolioOccupancyFootnote(
+  occupancyScope?: PortfolioOccupancyScope | null,
+): string | null {
+  if (!occupancyScope) return null;
+  return portfolioOccupancyScopeFootnote(occupancyScope);
 }
 
 /** Bar chart occupancy — same display rule as portfolio KPI strip. */

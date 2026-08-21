@@ -10,10 +10,11 @@ import {
 import {
   computeFacilityOccupancyPct,
   computeFacilityOccupiedResidents,
+  computePortfolioOccupancyFromBedCensus,
   fetchFacilityBedCensusById,
   isFacilityOccupancyCensusLoaded,
 } from "@/lib/executive/facility-occupancy-census";
-import { computePortfolioOccupancyPct } from "@/lib/occupancy/portfolio-occupancy-display";
+import type { PortfolioOccupancyScope } from "@/lib/occupancy/portfolio-occupancy-display";
 
 /** Versioned payload shape for `exec_kpi_snapshots.metrics` when persisted by cron (Module 24). */
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
@@ -24,6 +25,8 @@ export type ExecKpiPayload = {
     occupiedResidents: number;
     licensedBeds: number;
     occupancyPct: number | null;
+    /** When partial census is posted, scopes the portfolio headline to posted sites only. */
+    occupancyScope?: PortfolioOccupancyScope;
     /**
      * In-house vs on-hold split of the occupied population (additive — the
      * denominator is unchanged and `presence.total === occupiedResidents`).
@@ -229,7 +232,7 @@ export async function fetchExecutiveKpiSnapshot(
     overdueTasksQuery,
     openExceptionsQuery,
     activeWatchQuery,
-    facilityScoped ? fetchFacilityBedCensusById(supabase, facilityIds) : Promise.resolve(new Map()),
+    fetchFacilityBedCensusById(supabase, facilityIds),
   ]);
 
   const batchErrors = [
@@ -253,18 +256,28 @@ export async function fetchExecutiveKpiSnapshot(
   const facility = facilityScoped ? facilities[0] : null;
   const facilityCensus = facility ? bedCensusByFacility.get(facility.id) : undefined;
   const occupancyLoaded = facility ? isFacilityOccupancyCensusLoaded(facility, facilityCensus) : true;
-  const occupiedResidents = facilityScoped && facility
-    ? occupancyLoaded
-      ? computeFacilityOccupiedResidents(facility, facilityCensus)
-      : 0
-    : presence.total;
-  const occupancyPct = facilityScoped && facility
-    ? occupancyLoaded
-      ? computeFacilityOccupancyPct(facility, facilityCensus)
-      : null
-    : licensedBeds > 0
-      ? computePortfolioOccupancyPct(occupiedResidents, licensedBeds)
-      : null;
+
+  let occupiedResidents: number;
+  let occupancyPct: number | null;
+  let occupancyScope: PortfolioOccupancyScope | undefined;
+  let censusLicensedBeds = licensedBeds;
+
+  if (facilityScoped && facility) {
+    occupiedResidents = occupancyLoaded ? computeFacilityOccupiedResidents(facility, facilityCensus) : 0;
+    occupancyPct = occupancyLoaded ? computeFacilityOccupancyPct(facility, facilityCensus) : null;
+  } else {
+    const portfolioOccupancy = computePortfolioOccupancyFromBedCensus(facilities, bedCensusByFacility);
+    occupiedResidents = portfolioOccupancy.postedOccupiedSum;
+    occupancyPct = portfolioOccupancy.occupancyPct;
+    censusLicensedBeds = portfolioOccupancy.allFacilitiesPosted
+      ? licensedBeds
+      : portfolioOccupancy.postedDenominatorBeds;
+    occupancyScope = {
+      allFacilitiesPosted: portfolioOccupancy.allFacilitiesPosted,
+      postedFacilityCount: portfolioOccupancy.postedFacilityCount,
+      totalFacilityCount: portfolioOccupancy.totalFacilityCount,
+    };
+  }
 
   const invoiceRows = invoicesOpenRes.data ?? [];
   const openInvoicesCount = invoiceRows.length;
@@ -274,8 +287,9 @@ export async function fetchExecutiveKpiSnapshot(
     version: EXEC_KPI_METRICS_VERSION,
     census: {
       occupiedResidents,
-      licensedBeds,
+      licensedBeds: censusLicensedBeds,
       occupancyPct,
+      occupancyScope,
       presence,
     },
     financial: {

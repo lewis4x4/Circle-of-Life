@@ -1,10 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
+  facilityOccupancyDenominator,
   facilityOccupiedCount,
   facilityPortfolioOccupancyPct,
   facilityOccupancyLoaded,
 } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
+import {
+  aggregatePortfolioOccupancy,
+  type PortfolioOccupancyAggregate,
+} from "@/lib/occupancy/portfolio-occupancy-display";
 import type { FacilityRow } from "@/types/facility";
 import type { Database } from "@/types/database";
 
@@ -93,4 +98,23 @@ export function facilityOccPtMetricValue(
   const pct = computeFacilityOccupancyPct(facility, census);
   if (pct == null) return undefined;
   return pct / 100;
+}
+
+/** Portfolio headline aggregate from live bed census — never mixes unloaded sites into the denominator. */
+export function computePortfolioOccupancyFromBedCensus(
+  facilities: FacilityLicensedRow[],
+  bedCensusByFacility: Map<string, FacilityBedCensus>,
+): PortfolioOccupancyAggregate {
+  return aggregatePortfolioOccupancy(
+    facilities.map((facility) => {
+      const census = bedCensusByFacility.get(facility.id);
+      const loaded = isFacilityOccupancyCensusLoaded(facility, census);
+      const row = facilityRowFromBedCensus(facility, census);
+      return {
+        censusPosted: loaded,
+        occupied: loaded ? facilityOccupiedCount(row) : 0,
+        denominatorBeds: loaded ? facilityOccupancyDenominator(row) : 0,
+      };
+    }),
+  );
 }

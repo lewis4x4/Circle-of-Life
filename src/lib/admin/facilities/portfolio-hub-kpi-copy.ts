@@ -5,7 +5,7 @@
 
 import type { FacilityRow } from "@/types/facility";
 
-import { computePortfolioOccupancyPct, formatPortfolioOccupancyPctDisplay } from "@/lib/occupancy/portfolio-occupancy-display";
+import { aggregatePortfolioOccupancy, formatPortfolioOccupancyPctDisplay, portfolioOccupancyScopeFootnote, resolvePortfolioOccupancyHeadlineLabel } from "@/lib/occupancy/portfolio-occupancy-display";
 
 import { portfolioOccupancyPercent } from "./portfolio-metrics";
 
@@ -100,6 +100,8 @@ export type PortfolioStripTotals = {
   occupiedLoaded: boolean;
   portfolioPctRounded: number | null;
   portfolioPctLoaded: boolean;
+  postedFacilityCount: number;
+  allFacilitiesPosted: boolean;
   comparison: PortfolioComparisonEntry[];
 };
 
@@ -109,7 +111,9 @@ export function buildPortfolioStripTotals(facilities: FacilityRow[]): PortfolioS
   let licensedLoaded = false;
   let occupiedSum = 0;
   let occupiedLoaded = false;
+  let postedFacilityCount = 0;
   const comparison: PortfolioComparisonEntry[] = [];
+  const occupancySlices = [];
 
   for (const facility of facilities) {
     const lic = facilityLicensedBedsOnFile(facility);
@@ -118,10 +122,18 @@ export function buildPortfolioStripTotals(facilities: FacilityRow[]): PortfolioS
       licensedLoaded = true;
     }
 
-    if (facilityOccupancyLoaded(facility)) {
+    const censusPosted = facilityOccupancyLoaded(facility);
+    if (censusPosted) {
+      postedFacilityCount += 1;
       occupiedSum += facilityOccupiedCount(facility);
       occupiedLoaded = true;
     }
+
+    occupancySlices.push({
+      censusPosted,
+      occupied: censusPosted ? facilityOccupiedCount(facility) : 0,
+      denominatorBeds: censusPosted ? facilityOccupancyDenominator(facility) : 0,
+    });
 
     const occupancyPct = facilityPortfolioOccupancyPct(facility);
     comparison.push({
@@ -132,12 +144,9 @@ export function buildPortfolioStripTotals(facilities: FacilityRow[]): PortfolioS
     });
   }
 
-  let portfolioPctRounded: number | null = null;
-  let portfolioPctLoaded = false;
-  if (licensedLoaded && licensedSum > 0 && occupiedLoaded) {
-    portfolioPctRounded = computePortfolioOccupancyPct(occupiedSum, licensedSum);
-    portfolioPctLoaded = true;
-  }
+  const portfolioAggregate = aggregatePortfolioOccupancy(occupancySlices);
+  const allFacilitiesPosted =
+    facilities.length > 0 && postedFacilityCount === facilities.length;
 
   return {
     facilityCount: facilities.length,
@@ -145,8 +154,10 @@ export function buildPortfolioStripTotals(facilities: FacilityRow[]): PortfolioS
     licensedLoaded,
     occupiedSum,
     occupiedLoaded,
-    portfolioPctRounded,
-    portfolioPctLoaded,
+    portfolioPctRounded: portfolioAggregate.occupancyPct,
+    portfolioPctLoaded: portfolioAggregate.occupancyPct != null,
+    postedFacilityCount,
+    allFacilitiesPosted,
     comparison,
   };
 }
@@ -181,6 +192,18 @@ export function portfolioStripPortfolioOccupancyDisplay(totals: PortfolioStripTo
   const emptyCopy = portfolioStripPortfolioOccupancyEmptyCopy(totals);
   if (emptyCopy != null) return emptyCopy;
   return formatPortfolioOccupancyPctDisplay(totals.portfolioPctRounded);
+}
+
+export function portfolioStripPortfolioOccupancyLabel(totals: PortfolioStripTotals): string {
+  return resolvePortfolioOccupancyHeadlineLabel({ allFacilitiesPosted: totals.allFacilitiesPosted });
+}
+
+export function portfolioStripPortfolioOccupancyFootnote(totals: PortfolioStripTotals): string | null {
+  return portfolioOccupancyScopeFootnote({
+    allFacilitiesPosted: totals.allFacilitiesPosted,
+    postedFacilityCount: totals.postedFacilityCount,
+    totalFacilityCount: totals.facilityCount,
+  });
 }
 
 export function portfolioStripKpiIsLoaded(key: PortfolioStripKpiKey, totals: PortfolioStripTotals): boolean {

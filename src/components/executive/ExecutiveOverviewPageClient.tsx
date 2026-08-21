@@ -27,7 +27,11 @@ import {
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
-import { fetchFacilityBedCensusById } from "@/lib/executive/facility-occupancy-census";
+import {
+  computePortfolioOccupancyFromBedCensus,
+  fetchFacilityBedCensusById,
+  type FacilityBedCensus,
+} from "@/lib/executive/facility-occupancy-census";
 import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
@@ -47,8 +51,11 @@ import {
 import {
   formatExecutiveOccPtPctWithSuffix,
   formatExecutiveRevenueMtdCents,
+  resolveExecutiveOccupancyTileLabel,
 } from "@/lib/executive/executive-display-copy";
 import {
+  buildOccupancyContextFromPortfolioAggregate,
+  occupancyContextOccPtFraction,
   executiveKpiEmptyCopy,
   executiveKpiStripHelperLine,
   occupancyLoadedFootnote,
@@ -165,8 +172,9 @@ export function ExecutiveOverviewPageClient({
         .is("deleted_at", null)
         .order("name", { ascending: true });
         
+      let bedCensusByFacility: Map<string, FacilityBedCensus> = new Map();
       if (!facErr && facData && facData.length > 0) {
-        const bedCensusByFacility = await fetchFacilityBedCensusById(
+        bedCensusByFacility = await fetchFacilityBedCensusById(
           supabase,
           facData.map((facility) => facility.id),
         );
@@ -193,10 +201,13 @@ export function ExecutiveOverviewPageClient({
         (sum, facility) => sum + (facility.total_licensed_beds ?? 0),
         0,
       );
-      const occupiedResidents = nextPresenceCensus.total;
+      const portfolioOccupancy =
+        facData && facData.length > 0
+          ? computePortfolioOccupancyFromBedCensus(facData, bedCensusByFacility)
+          : null;
       setOccupancyContext(
-        occupiedResidents > 0 && licensedBeds > 0
-          ? { occupiedResidents, licensedBeds }
+        portfolioOccupancy
+          ? buildOccupancyContextFromPortfolioAggregate(portfolioOccupancy, licensedBeds)
           : null,
       );
 
@@ -301,6 +312,16 @@ export function ExecutiveOverviewPageClient({
     value: number | undefined,
     format: "pct" | "num" | "cur",
   ): ReactNode {
+    if (metricKey === "occ_pt") {
+      const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
+      if (portfolioOcc !== undefined) {
+        return (
+          <span className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+            {renderPostedOccupancy(portfolioOcc)}
+          </span>
+        );
+      }
+    }
     if (!hasMetric(value)) {
       return (
         <span className="text-[13px] font-medium leading-snug text-muted-foreground">
@@ -327,6 +348,12 @@ export function ExecutiveOverviewPageClient({
     value: number | undefined,
     format: "pct" | "num" | "cur",
   ): ReactNode {
+    if (metricKey === "occ_pt") {
+      const portfolioOcc = occupancyContextOccPtFraction(occupancyContext);
+      if (portfolioOcc !== undefined) {
+        return renderPostedOccupancy(portfolioOcc);
+      }
+    }
     if (!hasMetric(value)) {
       return (
         <span className="text-[12px] leading-snug text-muted-foreground">
@@ -850,15 +877,21 @@ function ExecutiveDashboardBody({
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {KPI_TILES.map((tile) => {
             const value = metrics[tile.key];
-            const present = hasMetric(value);
-            const footnote = tile.key === "occ_pt" && present ? occupancyFootnote : null;
+            const present =
+              tile.key === "occ_pt"
+                ? occupancyContextOccPtFraction(occupancyContext) !== undefined || hasMetric(value)
+                : hasMetric(value);
+            const footnote =
+              tile.key === "occ_pt" && occupancyContext?.occupancyPct != null ? occupancyFootnote : null;
             return (
               <div
                 key={tile.key}
                 className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
               >
                 <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {tile.label}
+                  {tile.key === "occ_pt"
+                    ? resolveExecutiveOccupancyTileLabel(occupancyContext)
+                    : tile.label}
                 </span>
                 <div className="flex items-baseline gap-2">
                   {renderKpiTileValue(tile.key, value, tile.format)}
