@@ -3,6 +3,7 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import { SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY } from "@/lib/rounding/safety-board-display-copy";
 
 export {
   EXECUTIVE_NO_ORGANIZATION_ON_PROFILE_COPY as SAFETY_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
@@ -46,4 +47,8 @@ export function resolveSafetyBoardOrganizationGapMessage(options: {
 
 export function formatSafetyBoardPageSubtitle(facilityScopeLabel: string): string {
   return `Composite safety scores updated daily from observation compliance, incident recency, and medication adherence at ${facilityScopeLabel}.`;
+}
+
+export function formatSafetyBoardUnexpectedFetchError(): string {
+  return SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY;
 }

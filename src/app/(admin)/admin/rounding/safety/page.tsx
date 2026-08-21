@@ -35,8 +35,13 @@ import {
   resolveSafetyBoardFacilityScopeLabel,
 } from "@/lib/rounding/safety-board-display-copy";
 import {
+  fetchSafetyBoardScores,
+  type SafetyBoardScoreRow,
+} from "@/lib/rounding/safety-board-fetch";
+import {
   deriveSafetyBoardState,
   formatSafetyBoardPageSubtitle,
+  formatSafetyBoardUnexpectedFetchError,
   resolveSafetyBoardFetchErrorBannerMessage,
   resolveSafetyBoardOrganizationGapMessage,
   type SafetyBoardLoadState,
@@ -52,19 +57,7 @@ import { cn } from "@/lib/utils";
 
 type RiskTier = "low" | "moderate" | "high" | "critical";
 
-interface ScoreRow {
-  id: string;
-  resident_id: string;
-  facility_id: string;
-  score: number;
-  risk_tier: RiskTier;
-  component_scores: Record<string, number>;
-  previous_score: number | null;
-  score_delta: number | null;
-  computed_at: string;
-  residents?: { first_name: string; last_name: string; room_number: string | null } | null;
-  facilities?: { name: string } | null;
-}
+type ScoreRow = SafetyBoardScoreRow;
 
 type LoadState = SafetyBoardLoadState;
 
@@ -135,21 +128,20 @@ export default function SafetyScoresPage() {
     setLoadState("loading");
 
     try {
-      const { data, error } = await supabase
-        .from("resident_safety_scores")
-        .select("*, residents(first_name, last_name, room_number), facilities(name)")
-        .eq("organization_id", organizationId)
-        .eq("facility_id", selectedFacilityId)
-        .is("deleted_at", null)
-        .order("score", { ascending: true })
-        .limit(200);
+      const outcome = await fetchSafetyBoardScores(supabase, {
+        organizationId,
+        facilityId: selectedFacilityId,
+      });
 
-      if (error) throw error;
-      setRows((data ?? []) as ScoreRow[]);
+      if (outcome.kind === "unexpected_error") {
+        throw outcome.error;
+      }
+
+      setRows(outcome.rows);
       setLoadState("ready");
     } catch (err) {
       setErrorMessage(
-        formatLiveDataLoadError(err, "Could not load safety scores. Confirm facility scope and retry."),
+        formatLiveDataLoadError(err, formatSafetyBoardUnexpectedFetchError()),
       );
       setRows([]);
       setLoadState("error");

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import SafetyScoresPage from "@/app/(admin)/admin/rounding/safety/page";
+import { SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY } from "@/lib/rounding/safety-board-display-copy";
 
 const authMock = vi.hoisted(() => ({
   loading: true,
@@ -14,9 +15,12 @@ const facilityMock = vi.hoisted(() => ({
   availableFacilities: [] as Array<{ id: string; name: string }>,
 }));
 
-const supabaseMock = vi.hoisted(() => ({
-  queryError: null as { message: string } | null,
-  rows: [] as Array<Record<string, unknown>>,
+const fetchMock = vi.hoisted(() => ({
+  outcome: {
+    kind: "success" as "success" | "unexpected_error",
+    rows: [] as Array<Record<string, unknown>>,
+    error: null as { message: string } | null,
+  },
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -33,28 +37,20 @@ vi.mock("@/hooks/useFacilityStore", () => ({
   }),
 }));
 
-function buildQuery() {
-  const chain = {
-    eq: vi.fn(() => chain),
-    is: vi.fn(() => chain),
-    order: vi.fn(() => chain),
-    limit: vi.fn(async () => ({
-      data: supabaseMock.rows,
-      error: supabaseMock.queryError,
-    })),
-  };
-  return chain;
-}
+vi.mock("@/lib/rounding/safety-board-fetch", () => ({
+  fetchSafetyBoardScores: vi.fn(async () => {
+    if (fetchMock.outcome.kind === "unexpected_error") {
+      return { kind: "unexpected_error", error: fetchMock.outcome.error };
+    }
+    return { kind: "success", rows: fetchMock.outcome.rows };
+  }),
+}));
 
 vi.mock("@/lib/supabase/client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/supabase/client")>();
   return {
     ...actual,
-    createClient: () => ({
-      from: vi.fn(() => ({
-        select: vi.fn(() => buildQuery()),
-      })),
-    }),
+    createClient: () => ({}),
     isBrowserSupabaseConfigured: () => true,
   };
 });
@@ -69,8 +65,7 @@ describe("SafetyScoresPage auth hydration", () => {
     authMock.organizationId = "org-anon-1";
     facilityMock.selectedFacilityId = "fac-anon-1";
     facilityMock.availableFacilities = [{ id: "fac-anon-1", name: "Anon Facility A" }];
-    supabaseMock.queryError = null;
-    supabaseMock.rows = [];
+    fetchMock.outcome = { kind: "success", rows: [], error: null };
   });
 
   it("does not show the legacy org crash banner while auth is hydrating", async () => {
@@ -80,7 +75,7 @@ describe("SafetyScoresPage auth hydration", () => {
     render(<SafetyScoresPage />);
 
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByText("Could not load safety scores. Confirm facility scope and retry.")).not.toBeInTheDocument();
+    expect(screen.queryByText(SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Loading safety scores")).toBeInTheDocument();
   });
 
@@ -94,28 +89,31 @@ describe("SafetyScoresPage auth hydration", () => {
       expect(screen.getByText("No organization on this profile")).toBeInTheDocument();
     });
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByText("Could not load safety scores. Confirm facility scope and retry.")).not.toBeInTheDocument();
+    expect(screen.queryByText(SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY)).not.toBeInTheDocument();
   });
 
-  it("surfaces real fetch failures after auth resolves", async () => {
+  it("surfaces unexpected fetch failures after auth resolves", async () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
-    supabaseMock.queryError = { message: "permission denied for table resident_safety_scores" };
+    fetchMock.outcome = {
+      kind: "unexpected_error",
+      rows: [],
+      error: { message: "permission denied for table resident_safety_scores" },
+    };
 
     render(<SafetyScoresPage />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Could not load safety scores. Confirm facility scope and retry."),
-      ).toBeInTheDocument();
+      expect(screen.getByText(SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY)).toBeInTheDocument();
     });
     expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confirm facility scope and retry")).not.toBeInTheDocument();
   });
 
-  it("keeps the named empty board when the query succeeds with zero rows", async () => {
+  it("keeps the named empty board when recoverable fetch issues resolve to zero rows", async () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
-    supabaseMock.rows = [];
+    fetchMock.outcome = { kind: "success", rows: [], error: null };
 
     render(<SafetyScoresPage />);
 
@@ -123,30 +121,35 @@ describe("SafetyScoresPage auth hydration", () => {
       expect(screen.getByText("No safety scores at Anon Facility A")).toBeInTheDocument();
     });
     expect(screen.getByLabelText("Critical risk: 0")).toBeInTheDocument();
+    expect(screen.queryByText(SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY)).not.toBeInTheDocument();
   });
 
   it("renders populated score rows without resident names in fixtures", async () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
-    supabaseMock.rows = [
-      {
-        id: "score-anon-1",
-        resident_id: "res-anon-1",
-        facility_id: "fac-anon-1",
-        score: 42,
-        risk_tier: "moderate",
-        component_scores: {
-          observation_compliance: 80,
-          incident_recency: 1,
-          medication_adherence: 90,
+    fetchMock.outcome = {
+      kind: "success",
+      rows: [
+        {
+          id: "score-anon-1",
+          resident_id: "res-anon-1",
+          facility_id: "fac-anon-1",
+          score: 42,
+          risk_tier: "moderate",
+          component_scores: {
+            observation_compliance: 80,
+            incident_recency: 1,
+            medication_adherence: 90,
+          },
+          previous_score: 40,
+          score_delta: 2,
+          computed_at: "2026-08-21T12:00:00.000Z",
+          residents: { first_name: "Resident", last_name: "One", room_number: "101" },
+          facilities: { name: "Anon Facility A" },
         },
-        previous_score: 40,
-        score_delta: 2,
-        computed_at: "2026-08-21T12:00:00.000Z",
-        residents: { first_name: "Resident", last_name: "One", room_number: "101" },
-        facilities: { name: "Anon Facility A" },
-      },
-    ];
+      ],
+      error: null,
+    };
 
     render(<SafetyScoresPage />);
 
