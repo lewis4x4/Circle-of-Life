@@ -6,6 +6,7 @@ import {
   ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE,
   ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE,
   ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE,
+  ADMIN_ROUNDING_ROUTE_LOADING_MESSAGE,
   ADMIN_STAFFING_ROUTE_LOADING_MESSAGE,
 } from "./named-admin-route-loading-copy";
 
@@ -17,5 +18,6 @@ describe("named admin route loading copy", () => {
     expect(ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE).toBe("Loading facility overview…");
     expect(ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE).toBe("Loading family notes…");
     expect(ADMIN_RESIDENTS_ROUTE_LOADING_MESSAGE).toBe("Loading residents…");
+    expect(ADMIN_ROUNDING_ROUTE_LOADING_MESSAGE).toBe("Loading rounding…");
   });
 });
