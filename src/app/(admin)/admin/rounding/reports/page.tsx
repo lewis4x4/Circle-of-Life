@@ -27,6 +27,11 @@ import {
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  defaultRoundingReportLast7Days,
+  roundingReportRangeForPreset,
+  type DateRangePreset,
+} from "@/lib/rounding/rounding-reports-date-range";
 import { formatRoundingReportKpiValue } from "@/lib/rounding/rounding-reports-display-copy";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -61,7 +66,6 @@ type LoadState = "idle" | "loading" | "ready" | "error";
 type BoardState = "no_facility" | "loading" | "error" | "empty" | "populated";
 
 type Tone = "default" | "success" | "warning" | "danger";
-type DateRangePreset = "last_7" | "last_30" | "this_month" | "last_month" | "quarter_to_date" | "custom";
 type ReportType = "completion_rate" | "missed_checks" | "late_documentation" | "resident_history" | "caregiver_activity";
 
 const EMPTY_SUMMARY: ReportSummary = {
@@ -102,40 +106,6 @@ const REPORT_TYPES: Array<{ value: ReportType; label: string; supported: boolean
   { value: "resident_history", label: "Per-resident rounding history", supported: false, format: "PDF" },
   { value: "caregiver_activity", label: "Per-caregiver activity report", supported: false, format: "CSV" },
 ];
-
-function isoDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function defaultLast7Days() {
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(end.getDate() - 6);
-  return { from: isoDate(start), to: isoDate(end) };
-}
-
-function rangeForPreset(preset: DateRangePreset) {
-  const today = new Date();
-  if (preset === "last_30") {
-    const start = new Date(today);
-    start.setDate(today.getDate() - 29);
-    return { from: isoDate(start), to: isoDate(today) };
-  }
-  if (preset === "this_month") {
-    return { from: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), to: isoDate(today) };
-  }
-  if (preset === "last_month") {
-    return {
-      from: isoDate(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
-      to: isoDate(new Date(today.getFullYear(), today.getMonth(), 0)),
-    };
-  }
-  if (preset === "quarter_to_date") {
-    const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
-    return { from: isoDate(new Date(today.getFullYear(), quarterStartMonth, 1)), to: isoDate(today) };
-  }
-  return defaultLast7Days();
-}
 
 function dateStartIso(value: string) {
   return new Date(`${value}T00:00:00`).toISOString();
@@ -195,7 +165,7 @@ export default function AdminRoundingReportsPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
   const facilityName = selectedFacility?.name ?? "selected facility";
-  const initialRange = useMemo(() => defaultLast7Days(), []);
+  const initialRange = useMemo(() => defaultRoundingReportLast7Days(), []);
   const [preset, setPreset] = useState<DateRangePreset>("last_7");
   const [reportType, setReportType] = useState<ReportType>("completion_rate");
   const [from, setFrom] = useState(initialRange.from);
@@ -311,7 +281,7 @@ export default function AdminRoundingReportsPage() {
   function handlePresetChange(value: DateRangePreset) {
     setPreset(value);
     if (value === "custom") return;
-    const next = rangeForPreset(value);
+    const next = roundingReportRangeForPreset(value);
     setFrom(next.from);
     setTo(next.to);
   }
@@ -409,8 +379,18 @@ export default function AdminRoundingReportsPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <DateField id="report-from" label="From" value={from} onChange={(value) => { setFrom(value); setPreset("custom"); }} />
-              <DateField id="report-to" label="To" value={to} onChange={(value) => { setTo(value); setPreset("custom"); }} />
+              <DateField
+                id="report-from"
+                label="From (ET)"
+                value={from}
+                onChange={(value) => { setFrom(value); setPreset("custom"); }}
+              />
+              <DateField
+                id="report-to"
+                label="To (ET)"
+                value={to}
+                onChange={(value) => { setTo(value); setPreset("custom"); }}
+              />
               <div className="flex items-end lg:col-span-4">
                 <Button type="button" onClick={() => void load()} disabled={loadState === "loading"}>
                   {loadState === "loading" ? <RefreshCw className="size-4 animate-spin" aria-hidden /> : <FileBarChart className="size-4" aria-hidden />}
