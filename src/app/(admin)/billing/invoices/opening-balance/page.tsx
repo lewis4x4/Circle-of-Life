@@ -18,14 +18,15 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { BILLABLE_RESIDENT_STATUSES } from "@/lib/billing/generate-monthly-invoices";
+import { formatCents } from "@/lib/finance/format-cents";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BillingHubNav } from "../../billing-hub-nav";
-import { billingCurrency } from "../../billing-invoice-ledger";
 
 type ResidentOption = { id: string; name: string; organizationId: string };
 
 /**
- * BH-5 — Opening balance / July AR entry for Michelle.
+ * BH-5 — Opening balance entry for a selected facility/resident.
  * Creates a draft invoice via haven_create_invoice_with_line_items so balances
  * land in the real AR ledger (not launch-intake JSON).
  */
@@ -36,11 +37,11 @@ export default function AdminOpeningBalancePage() {
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [residentId, setResidentId] = useState("");
   const [amountDollars, setAmountDollars] = useState("");
-  const [periodStart, setPeriodStart] = useState("2026-07-01");
-  const [dueDate, setDueDate] = useState("2026-07-05");
+  const [periodStart, setPeriodStart] = useState(() => todayFacilityDateIso());
+  const [dueDate, setDueDate] = useState("");
   const [payerType, setPayerType] = useState("private_pay");
   const [payerName, setPayerName] = useState("Responsible party");
-  const [notes, setNotes] = useState("Opening balance from July 2026 AR report");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +134,7 @@ export default function AdminOpeningBalancePage() {
         p_line_items: [
           {
             line_type: "room_and_board",
-            description: "Opening balance (AR import)",
+            description: "Opening balance",
             quantity: 1,
             unit_price: cents,
             total: cents,
@@ -152,7 +153,7 @@ export default function AdminOpeningBalancePage() {
         return;
       }
       setSuccess(
-        `Created opening balance ${billingCurrency.format(cents / 100)} — invoice ${invoiceNumber}.`,
+        `Created opening balance ${formatCents(cents)} — invoice ${invoiceNumber}.`,
       );
       setAmountDollars("");
     } catch (err) {
@@ -177,11 +178,11 @@ export default function AdminOpeningBalancePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Opening balance (AR entry)</CardTitle>
+          <CardTitle>Opening balance</CardTitle>
           <CardDescription>
-            Enter a resident&apos;s outstanding balance from the July 2026 AR report (or any
-            opening balance). Creates a draft invoice in Haven so aging and payments work against
-            the real ledger.
+            Record a resident&apos;s outstanding balance carried into Haven for the selected
+            facility. Creates a draft invoice so aging, collections, and payments work against the
+            real ledger.
           </CardDescription>
           <p className="text-sm text-muted-foreground">
             This records prior AR already owed — not a new monthly room-and-board invoice. Use{" "}
@@ -250,7 +251,7 @@ export default function AdminOpeningBalancePage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1.5 text-sm">
-                  <span className="font-medium">Period start</span>
+                  <span className="font-medium">Period start (ET)</span>
                   <Input
                     type="date"
                     value={periodStart}
@@ -259,7 +260,7 @@ export default function AdminOpeningBalancePage() {
                   />
                 </label>
                 <label className="block space-y-1.5 text-sm">
-                  <span className="font-medium">Due date</span>
+                  <span className="font-medium">Due date (ET)</span>
                   <Input
                     type="date"
                     value={dueDate}
@@ -292,7 +293,11 @@ export default function AdminOpeningBalancePage() {
 
               <label className="block space-y-1.5 text-sm">
                 <span className="font-medium">Notes</span>
-                <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <Input
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Optional"
+                />
               </label>
 
               <Button type="submit" disabled={saving}>
