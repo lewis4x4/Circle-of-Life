@@ -126,4 +126,24 @@ describe("AdminNewPaymentPage prefill reconciliation", () => {
     expect(await screen.findByRole("option", { name: /Invoice Aug 2026 · …00a1/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /00000000-2026-08/ })).toBeNull();
   });
+
+  it("defaults payment date to Eastern calendar today after 8pm ET, not UTC ISO slice", () => {
+    /** 8:05 PM Eastern on 2026-08-20 (EDT, UTC−4) — after the UTC date rolls to tomorrow. */
+    const eightOhFivePmEt = new Date("2026-08-20T20:05:00-04:00");
+    vi.useFakeTimers();
+    vi.setSystemTime(eightOhFivePmEt);
+
+    try {
+      mocks.searchParams = new URLSearchParams("");
+      mocks.client = makeClient({ residentsList: [], residentSingle: null, invoicesList: [] });
+      render(<AdminNewPaymentPage />);
+
+      const paymentDateInput = screen.getByLabelText(/^payment date \(eastern time\)$/i);
+      expect(paymentDateInput).toHaveValue("2026-08-20");
+      expect(paymentDateInput).not.toHaveValue("2026-08-21");
+      expect(eightOhFivePmEt.toISOString().slice(0, 10)).toBe("2026-08-21");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

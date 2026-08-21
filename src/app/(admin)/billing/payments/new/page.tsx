@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -88,9 +89,7 @@ export default function AdminNewPaymentPage() {
   const [invoiceId, setInvoiceId] = useState(() => requestedInvoiceId);
   const [amountDollars, setAmountDollars] = useState(() => requestedAmount);
   const [paymentMethod, setPaymentMethod] = useState("check");
-  const [paymentDate, setPaymentDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [paymentDate, setPaymentDate] = useState(() => todayFacilityDateIso());
   const [referenceNumber, setReferenceNumber] = useState("");
   const [payerName, setPayerName] = useState("");
   const [notes, setNotes] = useState("");
@@ -509,12 +508,13 @@ export default function AdminNewPaymentPage() {
             {/* Payment date */}
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Payment date <span className="text-red-500">*</span>
+                Payment date (ET) <span className="text-red-500">*</span>
               </label>
               <Input
                 type="date"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
+                aria-label="Payment date (Eastern Time)"
               />
             </div>
 

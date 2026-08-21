@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { dollarsToCents, dollarsToCentsOrZero, requiredPositiveCents } from "@/lib/money/dollars-to-cents";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -24,7 +25,7 @@ export default function AdminNewRateSchedulePage() {
   const { selectedFacilityId } = useFacilityStore();
 
   const [name, setName] = useState("");
-  const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [effectiveDate, setEffectiveDate] = useState(() => todayFacilityDateIso());
   const [basePrivate, setBasePrivate] = useState("");
   const [baseSemi, setBaseSemi] = useState("");
   const [careL1, setCareL1] = useState("0");
@@ -179,13 +180,14 @@ export default function AdminNewRateSchedulePage() {
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="eff">
-                Effective date
+                Effective date (ET)
               </label>
               <Input
                 id="eff"
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
+                aria-label="Effective date (Eastern Time)"
                 required
               />
             </div>
