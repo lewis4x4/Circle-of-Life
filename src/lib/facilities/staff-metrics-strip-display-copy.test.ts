@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   STAFF_STRIP_ACTIVE_STAFF_SUBCOPY,
+  STAFF_STRIP_COVERAGE_CONFIGURE_RATIO_SUBCOPY,
   STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY,
   STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY,
+  STAFF_STRIP_COVERAGE_POSTED_COUNT_SUBCOPY,
+  STAFF_STRIP_COVERAGE_POSTED_ZERO_SUBCOPY,
   formatStaffStripCoverageGapMainValue,
+  formatStaffStripCoverageGapSubcopy,
+  staffStripCoverageGapMainIsNotComputed,
   staffStripCoverageGapMainIsNotTracked,
   staffStripCoverageGapMainIsNumeric,
 } from "./staff-metrics-strip-display-copy";
@@ -23,6 +28,7 @@ describe("formatStaffStripCoverageGapMainValue", () => {
     expect(formatStaffStripCoverageGapMainValue(true, null)).toBe(STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY);
     expect(formatStaffStripCoverageGapMainValue(true, undefined)).toBe(STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY);
     expect(formatStaffStripCoverageGapMainValue(true, null)).not.toBe(EM_DASH);
+    expect(STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY).toMatch(/^No .+ posted yet$/);
   });
 
   it("keeps a posted zero as numeric zero", () => {
@@ -65,6 +71,35 @@ describe("staffStripCoverageGapMainIsNumeric", () => {
     expect(staffStripCoverageGapMainIsNumeric(4)).toBe(true);
     expect(staffStripCoverageGapMainIsNumeric(STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY)).toBe(false);
     expect(staffStripCoverageGapMainIsNumeric(STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY)).toBe(false);
+  });
+});
+
+describe("staffStripCoverageGapMainIsNotComputed", () => {
+  it("flags the not-computed copy", () => {
+    expect(staffStripCoverageGapMainIsNotComputed(STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY)).toBe(true);
+    expect(staffStripCoverageGapMainIsNotComputed(STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY)).toBe(false);
+    expect(staffStripCoverageGapMainIsNotComputed(0)).toBe(false);
+  });
+});
+
+describe("formatStaffStripCoverageGapSubcopy", () => {
+  it("keeps the configure-ratio path when ratio rules are missing", () => {
+    expect(formatStaffStripCoverageGapSubcopy(false, null)).toBe(STAFF_STRIP_COVERAGE_CONFIGURE_RATIO_SUBCOPY);
+    expect(formatStaffStripCoverageGapSubcopy(false, 0)).toBe(STAFF_STRIP_COVERAGE_CONFIGURE_RATIO_SUBCOPY);
+  });
+
+  it("omits subtitle when ratio is ready but coverage counts are not posted", () => {
+    expect(formatStaffStripCoverageGapSubcopy(true, null)).toBeNull();
+    expect(formatStaffStripCoverageGapSubcopy(true, undefined)).toBeNull();
+  });
+
+  it("names a posted zero without inventing a gap count", () => {
+    expect(formatStaffStripCoverageGapSubcopy(true, 0)).toBe(STAFF_STRIP_COVERAGE_POSTED_ZERO_SUBCOPY);
+  });
+
+  it("names a posted non-zero count without sprint jargon", () => {
+    expect(formatStaffStripCoverageGapSubcopy(true, 2)).toBe(STAFF_STRIP_COVERAGE_POSTED_COUNT_SUBCOPY);
+    expect(formatStaffStripCoverageGapSubcopy(true, 2)).not.toMatch(/sprint|engine/i);
   });
 });
 

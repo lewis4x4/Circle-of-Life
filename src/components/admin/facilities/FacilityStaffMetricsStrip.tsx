@@ -6,6 +6,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   formatStaffStripCoverageGapMainValue,
+  formatStaffStripCoverageGapSubcopy,
   STAFF_STRIP_ACTIVE_STAFF_SUBCOPY,
   staffStripCoverageGapMainIsNotTracked,
   staffStripCoverageGapMainIsNumeric,
@@ -67,16 +68,19 @@ export function FacilityStaffMetricsStrip(props: {
     coverageGapMainValue
   );
 
-  const coverageGapSub = ratioReady ? (
-    <span>Coverage engine — launching sprint</span>
-  ) : (
-    <span>
-      Configure a ratio rule set to compute shift coverage vs Rule 59A-36 —{" "}
-      <Link href="/admin/staffing" className="font-medium text-foreground underline-offset-4 hover:underline">
-        Configure →
-      </Link>
-    </span>
-  );
+  const coverageGapSubcopy = formatStaffStripCoverageGapSubcopy(ratioReady, kpi.coverageGapNext7Days);
+  const coverageGapSub = coverageGapSubcopy ? (
+    ratioReady ? (
+      <span>{coverageGapSubcopy}</span>
+    ) : (
+      <span>
+        {coverageGapSubcopy} —{" "}
+        <Link href="/admin/staffing" className="font-medium text-foreground underline-offset-4 hover:underline">
+          Configure →
+        </Link>
+      </span>
+    )
+  ) : null;
 
   const certsLine = `${kpi.certsCurrent} / ${kpi.certsExpiring} / ${kpi.certsExpired}`;
   const bgLine = kpi.bgChecksExpiringLt30;
