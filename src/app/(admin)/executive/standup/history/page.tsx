@@ -17,6 +17,10 @@ import { downloadBlobFromUrl } from "@/lib/download-blob";
 import { canCreateDraftFinance } from "@/lib/finance/load-finance-context";
 import type { Database } from "@/types/database";
 import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
+import {
   buildStandupImportCommand,
   buildStandupPdfUrl,
   currentStandupWeekOf,
@@ -95,16 +99,22 @@ export default function ExecutiveStandupHistoryPage() {
   // Single loading state: auth resolving or the (enabled) query in flight
   // (covers initial load and explicit Refresh, matching the old load()).
   const loading = authLoading || (!!organizationId && isFetching);
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : error
-        ? error
-        : queryError
-          ? queryError instanceof Error
-            ? queryError.message
-            : "Could not load standup history."
-          : null;
+  const rawFetchError =
+    error ??
+    (queryError
+      ? queryError instanceof Error
+        ? queryError.message
+        : "Could not load standup history."
+      : null);
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError: rawFetchError,
+  });
   // Clipboard failures and the query's soft import-jobs error share one slot.
   const importJobsError = clipboardError ?? data?.importJobsError ?? null;
 
@@ -189,9 +199,15 @@ export default function ExecutiveStandupHistoryPage() {
           </div>
         </header>
 
-        {loadError ? (
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
           <Card className="border-rose-200 bg-rose-50/70 dark:border-rose-500/20 dark:bg-rose-500/10">
-            <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{loadError}</CardContent>
+            <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{fetchErrorBannerMessage}</CardContent>
           </Card>
         ) : null}
 

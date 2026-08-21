@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSpreadsheet, MessageSquare } from "lucide-react";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { SourceReadinessCallout } from "@/components/common/source-readiness-callout";
 import { ExecutiveHubNav } from "../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,10 @@ import {
   formatExecutiveOnLeaveCount,
 } from "@/lib/executive/executive-display-copy";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { EXECUTIVE_REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -248,14 +253,16 @@ export default function ExecutiveSavedReportsPage() {
   // Spinner while auth resolves or the (enabled) query is in flight, matching
   // the page's previous single loading state.
   const loading = authLoading || (canManage && isPending);
-  const loadError =
-    !authLoading && !orgId
-      ? "Organization missing on profile."
-      : error
-        ? error
-        : queryError
-          ? queryError.message
-          : null;
+  const rawFetchError = error ?? (queryError ? queryError.message : null);
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId: orgId,
+    hasOrgScopedData: rows.length > 0 || facilities.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError: rawFetchError,
+  });
 
   function invalidateReports() {
     void queryClient.invalidateQueries({ queryKey: ["executive", "saved-reports", orgId] });
@@ -515,6 +522,9 @@ export default function ExecutiveSavedReportsPage() {
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Named report definitions; export CSV or open a printable report (save as PDF from the browser).
             </p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Organization portfolio — saved definitions and exports roll up all facilities in your organization, not a single-facility board view.
+            </p>
           </div>
         </div>
         {canManage && (
@@ -534,11 +544,18 @@ export default function ExecutiveSavedReportsPage() {
 
       <SourceReadinessCallout copy={EXECUTIVE_REPORTING_SOURCE_READINESS} />
 
-      {loadError && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {loadError}
-        </p>
-      )}
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice
+          message={fetchErrorBannerMessage}
+          onRetry={() => void queryClient.invalidateQueries({ queryKey: ["executive", "saved-reports", orgId] })}
+        />
+      ) : null}
 
       {!canManage && !loading && (
         <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300">
