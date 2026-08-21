@@ -1,5 +1,3 @@
-import { Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import {
   FamilyPortalNoteEntry,
@@ -14,6 +12,7 @@ export type FamilyPortalUpdateLogItem = Omit<
 export type FamilyPortalUpdateLogProps = {
   items: FamilyPortalUpdateLogItem[];
   loading?: boolean;
+  loadingMessage?: string;
   emptyTitle?: string;
   emptyDescription?: string;
   listLabel?: string;
@@ -23,6 +22,7 @@ export type FamilyPortalUpdateLogProps = {
 export function FamilyPortalUpdateLog({
   items,
   loading = false,
+  loadingMessage = "Loading posted updates…",
   emptyTitle = "No updates yet",
   emptyDescription = "Posted notes will appear here in date order.",
   listLabel = "Posted updates",
@@ -32,13 +32,15 @@ export function FamilyPortalUpdateLog({
     return (
       <div
         className={cn(
-          "flex items-center justify-center py-16 text-muted-foreground",
+          "flex min-h-[12rem] items-center justify-center px-6 py-16",
           className,
         )}
         role="status"
         aria-live="polite"
       >
-        <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+        <p className="max-w-md text-center text-sm font-medium text-muted-foreground">
+          {loadingMessage}
+        </p>
       </div>
     );
   }

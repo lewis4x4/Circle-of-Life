@@ -2,7 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ClipboardList, Loader2 } from "lucide-react";
+import { ArrowLeft, ClipboardList } from "lucide-react";
+import { NamedAdminRouteLoading } from "@/components/layout/named-admin-route-loading";
 import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,9 @@ import {
   FAMILY_BULLETIN_PAGE_TITLE,
   FAMILY_BULLETIN_RESIDENT_EMPTY_DESCRIPTION,
   FAMILY_BULLETIN_RESIDENT_EMPTY_TITLE,
+  FAMILY_BULLETIN_RESIDENT_LOG_LOADING_MESSAGE,
 } from "@/lib/admin/family-messages-copy";
+import { ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -207,11 +210,7 @@ export default function StaffFamilyMessagesPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-40">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-      </div>
-    );
+    return <NamedAdminRouteLoading message={ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE} />;
   }
 
   if (error) {
@@ -360,7 +359,12 @@ export default function StaffFamilyMessagesPage() {
         />
 
         {msgLoading ? (
-          <FamilyPortalUpdateLog items={[]} loading listLabel="Posted bulletin notes" />
+          <FamilyPortalUpdateLog
+            items={[]}
+            loading
+            loadingMessage={FAMILY_BULLETIN_RESIDENT_LOG_LOADING_MESSAGE}
+            listLabel="Posted bulletin notes"
+          />
         ) : (
           <FamilyPortalUpdateLog
             items={bulletinItemsFromMessages(messages)}

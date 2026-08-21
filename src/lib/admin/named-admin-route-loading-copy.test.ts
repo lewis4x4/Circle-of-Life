@@ -4,6 +4,7 @@ import {
   ADMIN_BILLING_ROUTE_LOADING_MESSAGE,
   ADMIN_DIETARY_ROUTE_LOADING_MESSAGE,
   ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE,
+  ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE,
   ADMIN_STAFFING_ROUTE_LOADING_MESSAGE,
 } from "./named-admin-route-loading-copy";
 
@@ -13,5 +14,6 @@ describe("named admin route loading copy", () => {
     expect(ADMIN_DIETARY_ROUTE_LOADING_MESSAGE).toBe("Loading dietary…");
     expect(ADMIN_BILLING_ROUTE_LOADING_MESSAGE).toBe("Loading billing…");
     expect(ADMIN_FACILITY_OVERVIEW_ROUTE_LOADING_MESSAGE).toBe("Loading facility overview…");
+    expect(ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE).toBe("Loading family notes…");
   });
 });
