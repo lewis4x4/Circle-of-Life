@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs -- hold-last role-home chrome across auth hydration without a loading flash */
 import { useCallback, useRef } from "react";
 
 import {
@@ -22,15 +23,17 @@ export function useHeldRoleHomeChrome(authLoading: boolean, appRole: string) {
     heldRoleLabelRef.current = getResolvedRoleLabel(false, appRole);
   }
 
+  const heldLead = heldLeadRef.current;
+  const heldRoleLabel = heldRoleLabelRef.current;
+
   const resolveSubtitle = useCallback(
     (trailingClause: string) =>
-      resolveQuietRoleHomeSubtitle(authLoading, appRole, trailingClause, heldLeadRef.current),
-    [authLoading, appRole],
+      resolveQuietRoleHomeSubtitle(authLoading, appRole, trailingClause, heldLead),
+    [authLoading, appRole, heldLead],
   );
 
-  const shellRoleLabel = resolveQuietRoleLabel(authLoading, appRole, heldRoleLabelRef.current);
+  const shellRoleLabel = resolveQuietRoleLabel(authLoading, appRole, heldRoleLabel);
   const brandAriaLabel = resolveHavenBrandAriaLabel(shellRoleLabel);
-  const heldLead = heldLeadRef.current;
 
   return { resolveSubtitle, shellRoleLabel, brandAriaLabel, heldLead };
 }
