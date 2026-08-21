@@ -1,8 +1,12 @@
+import fs from "node:fs";
+import path from "node:path";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminNewCollectionActivityPage from "./page";
+
+const pageSource = fs.readFileSync(path.resolve(import.meta.dirname, "./page.tsx"), "utf8");
 
 type AnyRow = Record<string, unknown>;
 
@@ -124,5 +128,36 @@ describe("AdminNewCollectionActivityPage facility derivation", () => {
 
     expect(await screen.findByRole("option", { name: /Invoice Aug 2026 · …00a1/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /00000000-2026-08/ })).toBeNull();
+  });
+
+  it("defaults activity date to Eastern calendar today after 8pm ET, not UTC ISO slice", () => {
+    /** 8:05 PM Eastern on 2026-08-20 (EDT, UTC−4) — after the UTC date rolls to tomorrow. */
+    const eightOhFivePmEt = new Date("2026-08-20T20:05:00-04:00");
+    vi.useFakeTimers();
+    vi.setSystemTime(eightOhFivePmEt);
+
+    try {
+      mocks.searchParams = new URLSearchParams("");
+      mocks.client = makeClient({ residentsList: [], residentSingle: null, invoicesList: [] });
+      render(<AdminNewCollectionActivityPage />);
+
+      const activityDateInput = screen.getByLabelText(/^activity date \(eastern time\)$/i);
+      expect(activityDateInput).toHaveValue("2026-08-20");
+      expect(activityDateInput).not.toHaveValue("2026-08-21");
+      expect(eightOhFivePmEt.toISOString().slice(0, 10)).toBe("2026-08-21");
+
+      const followUpDateInput = screen.getByLabelText(/^next follow-up date \(eastern time\)$/i);
+      expect(followUpDateInput).toHaveValue("");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not default activity date from a UTC ISO slice", () => {
+    expect(pageSource).toContain("todayFacilityDateIso()");
+    expect(pageSource).toContain("Activity date (ET)");
+    expect(pageSource).toContain("Next follow-up date (ET)");
+    expect(pageSource).not.toMatch(/setActivityDate[\s\S]*toISOString\(\)\.slice\(0,\s*10\)/);
+    expect(pageSource).not.toMatch(/useState\(\s*\(\)\s*=>\s*new Date\(\)\.toISOString\(\)\.slice\(0,\s*10\)/);
   });
 });
