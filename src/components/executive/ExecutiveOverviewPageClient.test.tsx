@@ -102,3 +102,64 @@ describe("ExecutiveOverviewPageClient portfolio occupancy display", () => {
     expect(screen.queryByText("0.0%")).not.toBeInTheDocument();
   });
 });
+
+describe("ExecutiveOverviewPageClient missing KPI gaps", () => {
+  it("names missing KPI gaps in the strip instead of a silent em dash", () => {
+    authMock.loading = false;
+    authMock.appRole = "owner";
+    authMock.organizationId = "org-1";
+
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ rev_mtd: 125000 }}
+        initialFacilities={[
+          {
+            id: "site-a",
+            name: "Site Alpha",
+            metrics: { rev_mtd: 125000 },
+          },
+        ]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getAllByText("No census loaded yet").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("No payroll loaded this period").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("No incident rate yet").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("No survey on file").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+  });
+
+  it("keeps numeric zero as 0% for posted occupancy in the KPI strip", () => {
+    authMock.loading = false;
+    authMock.appRole = "owner";
+    authMock.organizationId = "org-1";
+
+    render(
+      <ExecutiveOverviewPageClient
+        {...emptyProps}
+        initialMetrics={{ occ_pt: 0 }}
+        initialOccupancyContext={{
+          occupiedResidents: 0,
+          licensedBeds: 50,
+          occupancyPct: 0,
+          allFacilitiesPosted: true,
+          postedFacilityCount: 1,
+          totalFacilityCount: 1,
+        }}
+        initialFacilities={[
+          {
+            id: "site-a",
+            name: "Site Alpha",
+            metrics: { occ_pt: 0 },
+          },
+        ]}
+        initialHasServerData
+      />,
+    );
+
+    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("—")).not.toBeInTheDocument();
+  });
+});
