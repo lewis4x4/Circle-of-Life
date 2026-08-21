@@ -10,6 +10,7 @@ import {
   resolveInsightsBoardOrganizationGapMessage,
   INSIGHTS_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
 } from "./insights-board-page-state";
+import { SAFETY_BOARD_NO_FACILITY_SCOPE_COPY } from "./safety-board-display-copy";
 
 describe("deriveInsightsBoardState", () => {
   it("requires facility scope before any load state", () => {
@@ -174,40 +175,74 @@ describe("resolveInsightsBoardFetchErrorBannerMessage", () => {
 describe("formatInsightsBoardPageSubtitle", () => {
   it("names an unstarted insight cycle when data is ready with zero rows", () => {
     expect(
-      formatInsightsBoardPageSubtitle("Anon Facility A", {
-        dataReady: true,
-        insightCycleStarted: false,
-      }),
+      formatInsightsBoardPageSubtitle(
+        { kind: "named", name: "Anon Facility A" },
+        {
+          dataReady: true,
+          insightCycleStarted: false,
+        },
+      ),
     ).toContain("No insight cycle has started at Anon Facility A yet");
   });
 
   it("uses live activity copy when insights exist", () => {
     expect(
-      formatInsightsBoardPageSubtitle("Anon Facility A", {
-        dataReady: true,
-        insightCycleStarted: true,
-      }),
+      formatInsightsBoardPageSubtitle(
+        { kind: "named", name: "Anon Facility A" },
+        {
+          dataReady: true,
+          insightCycleStarted: true,
+        },
+      ),
     ).toContain("Clinical pattern detection");
     expect(
-      formatInsightsBoardPageSubtitle("Anon Facility A", {
-        dataReady: true,
-        insightCycleStarted: true,
-      }),
+      formatInsightsBoardPageSubtitle(
+        { kind: "named", name: "Anon Facility A" },
+        {
+          dataReady: true,
+          insightCycleStarted: true,
+        },
+      ),
     ).toContain("Anon Facility A");
   });
 
   it("keeps activity copy while data is still loading", () => {
     expect(
-      formatInsightsBoardPageSubtitle("Anon Facility A", {
-        dataReady: false,
-        insightCycleStarted: false,
-      }),
+      formatInsightsBoardPageSubtitle(
+        { kind: "named", name: "Anon Facility A" },
+        {
+          dataReady: false,
+          insightCycleStarted: false,
+        },
+      ),
     ).toContain("Clinical pattern detection");
     expect(
-      formatInsightsBoardPageSubtitle("Anon Facility A", {
-        dataReady: false,
-        insightCycleStarted: false,
-      }),
+      formatInsightsBoardPageSubtitle(
+        { kind: "named", name: "Anon Facility A" },
+        {
+          dataReady: false,
+          insightCycleStarted: false,
+        },
+      ),
     ).not.toContain("No insight cycle has started");
+  });
+
+  it("uses top-bar filter copy when no facility is selected", () => {
+    const subtitle = formatInsightsBoardPageSubtitle(
+      { kind: "unscoped" },
+      { dataReady: true, insightCycleStarted: false },
+    );
+    expect(subtitle).toContain("per facility");
+    expect(subtitle).toContain("top-bar facility filter");
+    expect(subtitle).not.toContain("at No facility name posted");
+  });
+
+  it("uses a stand-alone missing-name gap instead of at-facility interpolation", () => {
+    const subtitle = formatInsightsBoardPageSubtitle(
+      { kind: "missing_name" },
+      { dataReady: true, insightCycleStarted: false },
+    );
+    expect(subtitle).toContain(SAFETY_BOARD_NO_FACILITY_SCOPE_COPY);
+    expect(subtitle).not.toContain("at No facility name posted");
   });
 });

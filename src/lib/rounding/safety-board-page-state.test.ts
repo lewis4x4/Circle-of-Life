@@ -11,7 +11,7 @@ import {
   resolveSafetyBoardOrganizationGapMessage,
   SAFETY_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
 } from "./safety-board-page-state";
-import { SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY } from "./safety-board-display-copy";
+import { SAFETY_BOARD_NO_FACILITY_SCOPE_COPY, SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY } from "./safety-board-display-copy";
 
 describe("deriveSafetyBoardState", () => {
   it("requires facility scope before any load state", () => {
@@ -161,10 +161,24 @@ describe("formatSafetyBoardUnexpectedFetchError", () => {
 });
 
 describe("formatSafetyBoardPageSubtitle", () => {
-  it("uses the resolved facility scope label in the subtitle", () => {
-    expect(formatSafetyBoardPageSubtitle("No facility name posted")).toContain(
-      "No facility name posted",
+  it("uses top-bar filter copy when no facility is selected", () => {
+    const subtitle = formatSafetyBoardPageSubtitle({ kind: "unscoped" });
+    expect(subtitle).toContain("per facility");
+    expect(subtitle).toContain("top-bar facility filter");
+    expect(subtitle).not.toContain("at No facility name posted");
+    expect(subtitle).not.toMatch(/\bat\b/);
+  });
+
+  it("uses at-facility copy when the facility name is resolved", () => {
+    expect(formatSafetyBoardPageSubtitle({ kind: "named", name: "Anon Facility A" })).toContain(
+      "at Anon Facility A",
     );
-    expect(formatSafetyBoardPageSubtitle("Anon Facility A")).toContain("Anon Facility A");
+  });
+
+  it("uses a stand-alone missing-name gap instead of at-facility interpolation", () => {
+    const subtitle = formatSafetyBoardPageSubtitle({ kind: "missing_name" });
+    expect(subtitle).toContain(SAFETY_BOARD_NO_FACILITY_SCOPE_COPY);
+    expect(subtitle).not.toContain("at No facility name posted");
+    expect(subtitle).not.toMatch(/\bat No facility name posted\b/);
   });
 });

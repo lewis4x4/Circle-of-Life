@@ -3,7 +3,11 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
-import { SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY } from "@/lib/rounding/safety-board-display-copy";
+import {
+  SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
+  SAFETY_BOARD_UNEXPECTED_FETCH_ERROR_COPY,
+  type SafetyBoardFacilityScope,
+} from "@/lib/rounding/safety-board-display-copy";
 
 export {
   EXECUTIVE_NO_ORGANIZATION_ON_PROFILE_COPY as SAFETY_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
@@ -45,8 +49,18 @@ export function resolveSafetyBoardOrganizationGapMessage(options: {
   return resolveExecutiveOrganizationGapMessage(options);
 }
 
-export function formatSafetyBoardPageSubtitle(facilityScopeLabel: string): string {
-  return `Composite safety scores updated daily from observation compliance, incident recency, and medication adherence at ${facilityScopeLabel}.`;
+const SAFETY_BOARD_UNSCOPED_SUBTITLE_COPY =
+  "Safety scores are per facility. Use the top-bar facility filter to select a site.";
+
+const SAFETY_BOARD_NAMED_SUBTITLE_PREFIX =
+  "Composite safety scores updated daily from observation compliance, incident recency, and medication adherence";
+
+export function formatSafetyBoardPageSubtitle(scope: SafetyBoardFacilityScope): string {
+  if (scope.kind === "unscoped") return SAFETY_BOARD_UNSCOPED_SUBTITLE_COPY;
+  if (scope.kind === "missing_name") {
+    return `${SAFETY_BOARD_NAMED_SUBTITLE_PREFIX}. ${SAFETY_BOARD_NO_FACILITY_SCOPE_COPY}.`;
+  }
+  return `${SAFETY_BOARD_NAMED_SUBTITLE_PREFIX} at ${scope.name}.`;
 }
 
 export function formatSafetyBoardUnexpectedFetchError(): string {

@@ -32,7 +32,9 @@ import {
   formatSafetyBoardObservationCompliance,
   formatSafetyBoardRoomNumber,
   formatSafetyBoardScoreTrendEmpty,
-  resolveSafetyBoardFacilityScopeLabel,
+  formatSafetyBoardNoScoresEmptyTitle,
+  resolveSafetyBoardFacilityScope,
+  SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
 } from "@/lib/rounding/safety-board-display-copy";
 import {
   fetchSafetyBoardScores,
@@ -93,11 +95,11 @@ function deriveBoardState(args: {
 export default function SafetyScoresPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityScopeLabel = resolveSafetyBoardFacilityScopeLabel(
+  const facilityScope = resolveSafetyBoardFacilityScope(
     selectedFacilityId,
     selectedFacility?.name,
   );
-  const pageSubtitle = formatSafetyBoardPageSubtitle(facilityScopeLabel);
+  const pageSubtitle = formatSafetyBoardPageSubtitle(facilityScope);
   const supabase = useMemo(() => createClient() as unknown as SupabaseClient, []);
   const { organizationId, loading: authLoading } = useHavenAuth();
   const [rows, setRows] = useState<ScoreRow[]>([]);
@@ -249,7 +251,7 @@ export default function SafetyScoresPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoScoresEmptyState facilityName={facilityScopeLabel} />
+            <NoScoresEmptyState facilityScope={facilityScope} />
           ) : (
             <section
               aria-label="Resident safety score table"
@@ -416,8 +418,7 @@ function AllFacilitiesInterstitial() {
             Safety scores operate per facility
           </p>
           <p className="text-[13px] text-muted-foreground">
-            Composite safety scores are facility-scoped. Select a facility from the top bar to
-            continue.
+            Safety scores are per facility. Use the top-bar facility filter to select a site.
           </p>
         </div>
       </div>
@@ -457,19 +458,25 @@ function LoadErrorNotice({
   );
 }
 
-function NoScoresEmptyState({ facilityName }: { facilityName: string }) {
+function NoScoresEmptyState({
+  facilityScope,
+}: {
+  facilityScope: ReturnType<typeof resolveSafetyBoardFacilityScope>;
+}) {
+  const title = formatSafetyBoardNoScoresEmptyTitle(facilityScope);
+  const body =
+    facilityScope.kind === "missing_name"
+      ? `${SAFETY_BOARD_NO_FACILITY_SCOPE_COPY}. Safety score snapshots will appear here after the next scoring cycle.`
+      : "Safety score snapshots will appear here after the next scoring cycle.";
+
   return (
     <section
       aria-label="No safety scores computed"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <Shield className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">
-        No safety scores at {facilityName}
-      </p>
-      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
-        Safety score snapshots will appear here after the next scoring cycle.
-      </p>
+      <p className="mt-3 text-sm font-semibold text-foreground">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">{body}</p>
     </section>
   );
 }

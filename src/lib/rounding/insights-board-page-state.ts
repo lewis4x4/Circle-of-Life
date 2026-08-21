@@ -3,6 +3,10 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import {
+  SAFETY_BOARD_NO_FACILITY_SCOPE_COPY,
+  type SafetyBoardFacilityScope,
+} from "@/lib/rounding/safety-board-display-copy";
 
 export {
   EXECUTIVE_NO_ORGANIZATION_ON_PROFILE_COPY as INSIGHTS_BOARD_NO_ORGANIZATION_ON_PROFILE_COPY,
@@ -48,12 +52,30 @@ export function resolveInsightsBoardOrganizationGapMessage(options: {
   return resolveExecutiveOrganizationGapMessage(options);
 }
 
+const INSIGHTS_BOARD_UNSCOPED_SUBTITLE_COPY =
+  "Insights are per facility. Use the top-bar facility filter to select a site.";
+
+const INSIGHTS_BOARD_ACTIVITY_SUBTITLE_PREFIX =
+  "Clinical pattern detection, anomaly review, and early warnings across rounding activity";
+
+const INSIGHTS_BOARD_UNSTARTED_CYCLE_SUFFIX =
+  "Patterns surface after rounding observations and analysis runs.";
+
 export function formatInsightsBoardPageSubtitle(
-  facilityScopeLabel: string,
+  scope: SafetyBoardFacilityScope,
   options: { dataReady: boolean; insightCycleStarted: boolean },
 ): string {
   if (options.dataReady && !options.insightCycleStarted) {
-    return `No insight cycle has started at ${facilityScopeLabel} yet. Patterns surface after rounding observations and analysis runs.`;
+    if (scope.kind === "named") {
+      return `No insight cycle has started at ${scope.name} yet. ${INSIGHTS_BOARD_UNSTARTED_CYCLE_SUFFIX}`;
+    }
+    if (scope.kind === "unscoped") return INSIGHTS_BOARD_UNSCOPED_SUBTITLE_COPY;
+    return `No insight cycle has started yet. ${INSIGHTS_BOARD_UNSTARTED_CYCLE_SUFFIX} ${SAFETY_BOARD_NO_FACILITY_SCOPE_COPY}.`;
   }
-  return `Clinical pattern detection, anomaly review, and early warnings across rounding activity at ${facilityScopeLabel}.`;
+
+  if (scope.kind === "named") {
+    return `${INSIGHTS_BOARD_ACTIVITY_SUBTITLE_PREFIX} at ${scope.name}.`;
+  }
+  if (scope.kind === "unscoped") return INSIGHTS_BOARD_UNSCOPED_SUBTITLE_COPY;
+  return `${INSIGHTS_BOARD_ACTIVITY_SUBTITLE_PREFIX}. ${SAFETY_BOARD_NO_FACILITY_SCOPE_COPY}.`;
 }

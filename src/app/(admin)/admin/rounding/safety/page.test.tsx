@@ -159,16 +159,31 @@ describe("SafetyScoresPage auth hydration", () => {
     expect(screen.getByText("42")).toBeInTheDocument();
   });
 
-  it("uses named facility-gap copy in the subtitle when the facility name has not resolved", () => {
+  it("uses stand-alone missing-name gap copy when the facility name has not resolved", async () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
+    facilityMock.availableFacilities = [];
+    fetchMock.outcome = { kind: "success", rows: [], error: null };
+
+    render(<SafetyScoresPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No safety scores posted")).toBeInTheDocument();
+    });
+    expect(screen.getAllByText(/No facility name posted/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/at No facility name posted/)).not.toBeInTheDocument();
+  });
+
+  it("uses top-bar filter copy in the subtitle when no facility is selected", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    facilityMock.selectedFacilityId = null;
     facilityMock.availableFacilities = [];
 
     render(<SafetyScoresPage />);
 
-    expect(
-      screen.getByText(/Composite safety scores updated daily.*No facility name posted\./),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/selected facility/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Safety scores are per facility.*top-bar facility filter/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/at No facility name posted/)).not.toBeInTheDocument();
+    expect(screen.getByText("Safety scores operate per facility")).toBeInTheDocument();
   });
 });
