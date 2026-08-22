@@ -10,6 +10,9 @@ export const STAFF_STRIP_COVERAGE_CONFIGURE_RATIO_SUBCOPY =
 export const STAFF_STRIP_COVERAGE_POSTED_ZERO_SUBCOPY = "No shift gaps in window";
 export const STAFF_STRIP_COVERAGE_POSTED_COUNT_SUBCOPY = "Posted shift gap count · next 7 days";
 export const STAFF_STRIP_ACTIVE_STAFF_SUBCOPY = "Unique people · live roster";
+export const STAFF_STRIP_CERTS_SUBCOPY = "Current / expiring (30 days) / expired · facility scope";
+export const STAFF_STRIP_BG_CHECKS_CLEAR_SUBCOPY = "No background checks expiring in next 30 days";
+export const STAFF_STRIP_BG_CHECKS_RENEW_SUBCOPY = "Renew before lapse · next 30 days";
 
 export type StaffStripCoverageGapMainValue = string | number;
 

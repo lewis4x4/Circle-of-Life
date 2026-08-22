@@ -8,6 +8,9 @@ import {
   formatStaffStripCoverageGapMainValue,
   formatStaffStripCoverageGapSubcopy,
   STAFF_STRIP_ACTIVE_STAFF_SUBCOPY,
+  STAFF_STRIP_BG_CHECKS_CLEAR_SUBCOPY,
+  STAFF_STRIP_BG_CHECKS_RENEW_SUBCOPY,
+  STAFF_STRIP_CERTS_SUBCOPY,
   staffStripCoverageGapMainIsNotTracked,
   staffStripCoverageGapMainIsNumeric,
 } from "@/lib/facilities/staff-metrics-strip-display-copy";
@@ -107,12 +110,12 @@ export function FacilityStaffMetricsStrip(props: {
         <StripTile
           label="Certifications"
           value={<span className="text-2xl tabular-nums">{certsLine}</span>}
-          sub="Current / expiring / expired (facility scope)"
+          sub={STAFF_STRIP_CERTS_SUBCOPY}
         />
         <StripTile
           label="Background checks expiring <30 days"
           value={bgLine}
-          sub={bgLine > 0 ? "Renew before lapse" : "No expiring checks in window"}
+          sub={bgLine > 0 ? STAFF_STRIP_BG_CHECKS_RENEW_SUBCOPY : STAFF_STRIP_BG_CHECKS_CLEAR_SUBCOPY}
           valueClassName={bgLine > 0 ? "text-warning" : undefined}
         />
       </div>

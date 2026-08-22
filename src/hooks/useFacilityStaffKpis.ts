@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  classifyStaffCertification,
+  isBackgroundCheckExpiringWithin30Days,
+} from "@/lib/facilities/facility-staff-kpi-classification";
+import {
   countUniqueActiveStaffDirectoryRecords,
   STAFF_DIRECTORY_IDENTITY_SELECT,
   type StaffDirectorySourceRow,
@@ -33,27 +37,6 @@ const EMPTY: FacilityStaffKpiPayload = {
   coverageGapNext7Days: null,
 };
 
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function addDaysIso(base: string, days: number): string {
-  const d = new Date(`${base}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function classifyCert(expirationDate: string | null, status: string): "current" | "expiring" | "expired" {
-  const today = todayIsoDate();
-  const expiringCutoff = addDaysIso(today, 30);
-
-  if (status === "expired" || status === "revoked") return "expired";
-  if (expirationDate && expirationDate < today) return "expired";
-  if (status === "pending_renewal") return "expiring";
-  if (expirationDate && expirationDate >= today && expirationDate <= expiringCutoff) return "expiring";
-  return "current";
-}
-
 export function useFacilityStaffKpis(facilityId: string | undefined, enabled: boolean) {
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +52,6 @@ export function useFacilityStaffKpis(facilityId: string | undefined, enabled: bo
     setError(null);
     try {
       const supabase = createClient();
-      const today = todayIsoDate();
-      const plus30 = addDaysIso(today, 30);
 
       const [staffActiveRes, rosterFreshRes, certsRes, bgRes] = await Promise.all([
         supabase
@@ -123,7 +104,7 @@ export function useFacilityStaffKpis(facilityId: string | undefined, enabled: bo
       let certsExpired = 0;
       const certRows = (certsRes.data ?? []) as { expiration_date: string | null; status: string }[];
       for (const row of certRows) {
-        const bucket = classifyCert(row.expiration_date, row.status);
+        const bucket = classifyStaffCertification(row.expiration_date, row.status);
         if (bucket === "expired") certsExpired += 1;
         else if (bucket === "expiring") certsExpiring += 1;
         else certsCurrent += 1;
@@ -132,9 +113,7 @@ export function useFacilityStaffKpis(facilityId: string | undefined, enabled: bo
       let bgChecksExpiringLt30 = 0;
       const bgRows = (bgRes.data ?? []) as { expires_at: string | null }[];
       for (const row of bgRows) {
-        const exp = row.expires_at?.slice(0, 10);
-        if (!exp) continue;
-        if (exp >= today && exp <= plus30) bgChecksExpiringLt30 += 1;
+        if (isBackgroundCheckExpiringWithin30Days(row.expires_at)) bgChecksExpiringLt30 += 1;
       }
 
       setData({

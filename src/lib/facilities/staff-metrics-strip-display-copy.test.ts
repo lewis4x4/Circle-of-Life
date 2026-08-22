@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   STAFF_STRIP_ACTIVE_STAFF_SUBCOPY,
+  STAFF_STRIP_BG_CHECKS_CLEAR_SUBCOPY,
+  STAFF_STRIP_BG_CHECKS_RENEW_SUBCOPY,
+  STAFF_STRIP_CERTS_SUBCOPY,
   STAFF_STRIP_COVERAGE_CONFIGURE_RATIO_SUBCOPY,
   STAFF_STRIP_COVERAGE_NOT_COMPUTED_COPY,
   STAFF_STRIP_COVERAGE_NOT_TRACKED_COPY,
@@ -107,5 +110,20 @@ describe("STAFF_STRIP_ACTIVE_STAFF_SUBCOPY", () => {
   it("reads as unique people rather than raw row counts", () => {
     expect(STAFF_STRIP_ACTIVE_STAFF_SUBCOPY.toLowerCase()).toContain("unique");
     expect(STAFF_STRIP_ACTIVE_STAFF_SUBCOPY.toLowerCase()).toContain("people");
+  });
+});
+
+describe("STAFF_STRIP_CERTS_SUBCOPY", () => {
+  it("names the 30-day expiring window for operator clarity", () => {
+    expect(STAFF_STRIP_CERTS_SUBCOPY).toContain("30 days");
+    expect(STAFF_STRIP_CERTS_SUBCOPY.toLowerCase()).toContain("facility scope");
+  });
+});
+
+describe("STAFF_STRIP_BG_CHECKS_*_SUBCOPY", () => {
+  it("names the 30-day window instead of a vague in-window phrase", () => {
+    expect(STAFF_STRIP_BG_CHECKS_CLEAR_SUBCOPY).toContain("30 days");
+    expect(STAFF_STRIP_BG_CHECKS_RENEW_SUBCOPY).toContain("30 days");
+    expect(STAFF_STRIP_BG_CHECKS_CLEAR_SUBCOPY).not.toMatch(/in window/i);
   });
 });
