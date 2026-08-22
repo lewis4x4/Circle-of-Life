@@ -1,4 +1,5 @@
 import TrialBalancePageClient from "@/components/finance/TrialBalancePageClient";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import {
   loadFinanceEntities,
@@ -8,19 +9,14 @@ import {
 } from "@/lib/finance/load-trial-balance-data";
 import { createClient } from "@/lib/supabase/server";
 
-function firstOfMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+function defaultDateRange(): { dateFrom: string; dateTo: string } {
+  const dateTo = todayFacilityDateIso();
+  return { dateFrom: `${dateTo.slice(0, 7)}-01`, dateTo };
 }
 
 export default async function TrialBalancePage() {
   const roleContext = await loadFinanceRoleContextServer();
-  const dateFrom = firstOfMonth();
-  const dateTo = todayIso();
+  const { dateFrom, dateTo } = defaultDateRange();
 
   if (!roleContext.ok) {
     return (
