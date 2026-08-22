@@ -126,7 +126,7 @@ const sourcePlanResponse = {
       resident_id: "resident-1",
       status: "active",
       source_type: "manual",
-      effective_from: "2026-05-10T12:00:00.000Z",
+      effective_from: "2026-08-20T22:00:00.000Z",
       effective_to: null,
       rationale: "This rationale is intentionally long enough for validation.",
       resident_observation_plan_rules: [
@@ -337,7 +337,11 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
 
     render(<ObservationPlanEditor planId="plan-source" title="Edit" />);
 
-    await screen.findByLabelText("effective-from");
+    const effectiveFrom = await screen.findByLabelText("effective-from");
+
+    expect(effectiveFrom).toHaveValue("2026-08-20T18:00");
+    expect(screen.getByText("Effective from, Eastern (ET)")).toBeTruthy();
+    expect(screen.getByText("Effective to, Eastern (ET)")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Save plan" }));
 
@@ -353,6 +357,7 @@ describe("ObservationPlanEditor duplicate and edit payload ids", () => {
     const payload = JSON.parse(String(postCall?.[1]?.body ?? "{}"));
 
     expect(payload.id).toBe("plan-source");
+    expect(payload.effectiveFrom).toBe("2026-08-20T22:00:00.000Z");
     expect(payload.rules[0].id).toBe("rule-1");
   });
 });
