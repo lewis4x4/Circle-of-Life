@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatDoseAlertCount,
   formatNurseWatchlistRoomLabel,
   NURSE_WATCHLIST_NO_ROOM_COPY,
 } from "./medication-brief-display-copy";
 
 const EM_DASH = "—";
+
+describe("formatDoseAlertCount", () => {
+  it("keeps a real zero distinct from an unavailable count", () => {
+    expect(formatDoseAlertCount(0)).toBe(0);
+    expect(formatDoseAlertCount(null)).toBe("None posted");
+  });
+});
 
 describe("NURSE_WATCHLIST_NO_ROOM_COPY", () => {
   it("names the assurance watchlist room gap instead of a silent dash", () => {

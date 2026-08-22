@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchNurseMedicationBrief, type NurseMedicationBrief } from "@/lib/nurse/medication-brief";
-import { formatNurseWatchlistRoomLabel } from "@/lib/nurse/medication-brief-display-copy";
+import { formatDoseAlertCount, formatNurseWatchlistRoomLabel } from "@/lib/nurse/medication-brief-display-copy";
 import { Pill, ShieldCheck, AlertTriangle, Activity, FileWarning, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,16 +77,16 @@ export default function NurseDashboardPage() {
         {/* Missed Doses */}
         <div className="rounded-[var(--radius)] border border-border bg-card p-6 lg:p-8 shadow-[var(--shadow-card)]">
           <h3 className="text-xl font-semibold tracking-tight text-foreground mb-4 flex items-center gap-3">
-            <FileWarning className="w-5 h-5 text-warning" /> Dose Alerts Today
+            <FileWarning className="w-5 h-5 text-warning" /> Dose Alerts — Eastern today
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center bg-muted/40 p-5 rounded-[var(--radius)] border border-border">
               <span className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">Missed / Held Doses</span>
-              <span className="text-2xl font-semibold text-warning tabular-nums">{brief.missedDosesToday}</span>
+              <span className="text-2xl font-semibold text-warning tabular-nums">{formatDoseAlertCount(brief.missedDosesToday)}</span>
             </div>
             <div className="flex justify-between items-center bg-muted/40 p-5 rounded-[var(--radius)] border border-border">
               <span className="text-[13px] font-medium uppercase tracking-wider text-muted-foreground">PRN Given (24h)</span>
-              <span className="text-2xl font-semibold text-foreground tabular-nums">{brief.prnGiven24h}</span>
+              <span className="text-2xl font-semibold text-foreground tabular-nums">{formatDoseAlertCount(brief.prnGiven24h)}</span>
             </div>
           </div>
         </div>

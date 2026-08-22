@@ -1,19 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 
 export type FinanceOverviewSnapshot = {
   postedCount: number;
   unpostedInvoices: number;
+  postedLookbackStart: string;
 };
 
 export async function loadFinanceOverviewData(
   supabase: SupabaseClient<Database>,
   organizationId: string,
+  now: Date = new Date(),
 ): Promise<FinanceOverviewSnapshot> {
-  const start = new Date();
-  start.setMonth(start.getMonth() - 1);
-  const iso = start.toISOString().slice(0, 10);
+  const [facilityYear, facilityMonth, facilityDay] = todayFacilityDateIso(now).split("-").map(Number);
+  const start = new Date(Date.UTC(facilityYear, facilityMonth - 1, facilityDay));
+  start.setUTCMonth(start.getUTCMonth() - 1);
+  const iso = [
+    start.getUTCFullYear(),
+    String(start.getUTCMonth() + 1).padStart(2, "0"),
+    String(start.getUTCDate()).padStart(2, "0"),
+  ].join("-");
 
   const [{ count }, { count: invTotal }, { data: postedSources, error: postedSourcesError }] = await Promise.all([
     supabase
@@ -47,5 +55,6 @@ export async function loadFinanceOverviewData(
   return {
     postedCount: count ?? 0,
     unpostedInvoices: Math.max(0, (invTotal ?? 0) - postedIds.size),
+    postedLookbackStart: iso,
   };
 }
