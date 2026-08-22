@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { EXEC_KPI_METRICS_VERSION, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { EXEC_KPI_METRICS_VERSION, getExecutiveKpiDateWindow, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import {
   computeFacilityOccupancyPct,
   computeFacilityOccupiedResidents,
@@ -25,19 +25,6 @@ type CountByFacilityRow = {
   facility_id: string;
 };
 
-function startOfMonthIsoDate(): string {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
-}
-
-function todayAndPlus30Iso(): { today: string; plus30: string } {
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const p = new Date(now);
-  p.setUTCDate(p.getUTCDate() + 30);
-  return { today, plus30: p.toISOString().slice(0, 10) };
-}
-
 function emptyKpi(): ExecKpiPayload {
   return {
     version: EXEC_KPI_METRICS_VERSION,
@@ -47,7 +34,7 @@ function emptyKpi(): ExecKpiPayload {
     compliance: { openSurveyDeficiencies: 0 },
     workforce: { certificationsExpiring30d: 0 },
     infection: { activeOutbreaks: 0 },
-    residentAssurance: { overdueTasksCount: 0, missedRate: 0, openExceptions: 0, activeWatchCount: 0 },
+    residentAssurance: { overdueTasksCount: 0, missedRate: null, openExceptions: 0, activeWatchCount: 0 },
   };
 }
 
@@ -64,8 +51,7 @@ export async function loadExecutiveKpiBulk(
   organizationId: string,
   scopedFacilityId: string | null = null,
 ): Promise<{ orgKpi: ExecKpiPayload; facilityKpis: Map<string, ExecKpiPayload> }> {
-  const { today, plus30 } = todayAndPlus30Iso();
-  const mtdStart = startOfMonthIsoDate();
+  const { today, plus30, mtdStart } = getExecutiveKpiDateWindow();
   const facilityScoped = isValidFacilityIdForQuery(scopedFacilityId);
 
   let facilitiesQuery = supabase
@@ -262,7 +248,7 @@ export async function loadExecutiveKpiBulk(
       },
       residentAssurance: {
         overdueTasksCount: overdueTasksByFacility.get(facility.id) ?? 0,
-        missedRate: 0,
+        missedRate: null,
         openExceptions: openExceptionsByFacility.get(facility.id) ?? 0,
         activeWatchCount: activeWatchByFacility.get(facility.id) ?? 0,
       },
