@@ -49,6 +49,10 @@ import {
 } from "@/lib/rounding/observation-plan-validation";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
+  facilityDatetimeLocalToUtcIso,
+  utcIsoToFacilityDatetimeLocal,
+} from "@/lib/facility-wall-clock";
+import {
   createObservationPlanRuleForAdd,
   getColDiscoveryCadenceProfile,
   resolveColDiscoveryCadenceKey,
@@ -288,8 +292,14 @@ export function ObservationPlanEditor({
         setResidentId(plan.resident_id);
         setStatus(duplicatePlanId ? "draft" : (plan.status ?? "draft"));
         setSourceType(plan.source_type ?? "manual");
-        setEffectiveFrom(duplicatePlanId ? "" : plan.effective_from.slice(0, 16));
-        setEffectiveTo(duplicatePlanId ? "" : plan.effective_to ? plan.effective_to.slice(0, 16) : "");
+        setEffectiveFrom(
+          duplicatePlanId ? "" : utcIsoToFacilityDatetimeLocal(plan.effective_from),
+        );
+        setEffectiveTo(
+          duplicatePlanId || !plan.effective_to
+            ? ""
+            : utcIsoToFacilityDatetimeLocal(plan.effective_to),
+        );
         setRationale(plan.rationale ?? "");
         setRules(
           (plan.resident_observation_plan_rules ?? [])
@@ -450,8 +460,8 @@ export function ObservationPlanEditor({
         residentId,
         status,
         sourceType,
-        effectiveFrom: new Date(effectiveFrom).toISOString(),
-        effectiveTo: effectiveTo ? new Date(effectiveTo).toISOString() : null,
+        effectiveFrom: facilityDatetimeLocalToUtcIso(effectiveFrom),
+        effectiveTo: effectiveTo ? facilityDatetimeLocalToUtcIso(effectiveTo) : null,
         rationale: rationale.trim(),
         rules: rules.map((rule, index) => ({
           ...rule,
@@ -601,7 +611,7 @@ export function ObservationPlanEditor({
 
             <FormSection title="Effective window">
               <div className="grid gap-4 md:grid-cols-2">
-                <FormField id="effective-from" label="Effective from" required>
+                <FormField id="effective-from" label="Effective from, Eastern (ET)" required>
                   <DateTimePicker
                     id="effective-from"
                     value={effectiveFrom}
@@ -612,7 +622,7 @@ export function ObservationPlanEditor({
 
                 <FormField
                   id="effective-to"
-                  label="Effective to"
+                  label="Effective to, Eastern (ET)"
                   helper="Leave empty for open-ended plan."
                   error={effectiveWindowError ?? undefined}
                 >
