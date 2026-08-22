@@ -40,6 +40,9 @@ describe("formatAdminAssistantDashboardKpiValue", () => {
     expect(formatAdminAssistantDashboardKpiValue("pending_docs", undefined, false)).toBe(
       "No pending docs count posted",
     );
+    expect(formatAdminAssistantDashboardKpiValue("transportation_today", null, false)).toBe(
+      "No transport count posted",
+    );
   });
 });
 

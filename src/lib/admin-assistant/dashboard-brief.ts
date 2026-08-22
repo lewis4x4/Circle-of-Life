@@ -7,6 +7,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatFamilyBulletinDashboardPreview } from "@/lib/admin/family-bulletin-dashboard-copy";
+import {
+  facilityDatetimeLocalToUtcIso,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -15,7 +19,7 @@ export type AdminAssistantDashboardBrief = {
   censusCount: number;
   pendingDocs: number;
   staffBulletinNotes: number;
-  transportationToday: number;
+  transportationToday: number | null;
   recentBulletinNotes: Array<{
     id: string;
     preview: string;
@@ -31,6 +35,11 @@ type RecentBulletinRow = {
   created_at: string;
 };
 
+/** Start of the front desk's Eastern today, represented for UTC timestamptz queries. */
+export function transportationTodayStartUtcIso(now: Date = new Date()): string {
+  return facilityDatetimeLocalToUtcIso(`${todayFacilityDateIso(now)}T00:00`);
+}
+
 export async function fetchAdminAssistantDashboardBrief(
   facilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -39,7 +48,7 @@ export async function fetchAdminAssistantDashboardBrief(
   const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
-  const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00";
+  const todayStart = transportationTodayStartUtcIso();
 
   const [
     censusRes,
@@ -77,7 +86,7 @@ export async function fetchAdminAssistantDashboardBrief(
     censusCount: (censusRes as CountResponse).count ?? 0,
     pendingDocs: (docsRes as CountResponse).count ?? 0,
     staffBulletinNotes: (bulletinRes as CountResponse).count ?? 0,
-    transportationToday: (transportRes as CountResponse).count ?? 0,
+    transportationToday: (transportRes as CountResponse).count,
     recentBulletinNotes,
   };
 }
