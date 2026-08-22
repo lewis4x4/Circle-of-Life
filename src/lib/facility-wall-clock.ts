@@ -5,6 +5,7 @@ import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 export const FACILITY_OPERATOR_TZ = "America/New_York";
 
 const DATETIME_LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Date-only `<input type="date">` default: Eastern calendar date (not UTC ISO slice). */
 export function todayFacilityDateIso(
@@ -22,6 +23,24 @@ export function facilityDateIsoDaysFromToday(
 ): string {
   const zonedNow = toZonedTime(now, timeZone);
   return formatInTimeZone(addDays(zonedNow, dayOffset), timeZone, "yyyy-MM-dd");
+}
+
+/** Add days to a facility calendar date without converting the result through UTC midnight. */
+export function addFacilityCalendarDays(
+  dateIso: string,
+  dayOffset: number,
+  timeZone: string = FACILITY_OPERATOR_TZ,
+): string {
+  if (!DATE_ONLY_RE.test(dateIso)) {
+    throw new Error("dateIso must match YYYY-MM-DD");
+  }
+
+  // Noon stays on the intended facility date across Eastern DST transitions.
+  const facilityNoon = fromZonedTime(`${dateIso}T12:00:00`, timeZone);
+  if (Number.isNaN(facilityNoon.getTime())) {
+    throw new Error("dateIso must be a valid calendar date");
+  }
+  return formatInTimeZone(addDays(facilityNoon, dayOffset), timeZone, "yyyy-MM-dd");
 }
 
 /** `<input type="datetime-local">` default: current facility-local wall clock (not UTC ISO slice). */

@@ -1,4 +1,5 @@
 import type { RiskThresholds } from "./types";
+import { addFacilityCalendarDays } from "@/lib/facility-wall-clock";
 
 /** Sum all item scores to get the total assessment score */
 export function computeTotalScore(scores: Record<string, number>): number {
@@ -25,9 +26,7 @@ export function computeNextDueDate(
   assessmentDate: string,
   defaultFrequencyDays: number,
 ): string {
-  const d = new Date(assessmentDate + "T00:00:00");
-  d.setDate(d.getDate() + defaultFrequencyDays);
-  return d.toISOString().slice(0, 10);
+  return addFacilityCalendarDays(assessmentDate, defaultFrequencyDays);
 }
 
 // --- Morse Fall → fall_risk_level mapping ---
