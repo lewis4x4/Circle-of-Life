@@ -24,7 +24,6 @@ import { FacilityFormSelect } from "@/components/ui/facility-form-select";
 import { Input } from "@/components/ui/input";
 import type { DocumentVaultCategoryKey } from "@/lib/admin/facilities/document-vault-taxonomy";
 import {
-  DOCUMENT_CATEGORY_EXPIRATION_NA,
   DOCUMENT_VAULT_CATEGORY_KEYS,
   DOCUMENT_VAULT_CATEGORY_LABELS,
   DOCUMENT_VAULT_CATEGORY_PARENT,
@@ -33,7 +32,11 @@ import {
   vaultCategoryExpirationRequired,
 } from "@/lib/admin/facilities/document-vault-taxonomy";
 import { useFacilityDocuments, type FacilityDocumentHookRow } from "@/hooks/useFacilityDocuments";
-import { formatDocumentsTabUploaderDisplay } from "@/lib/facilities/documents-tab-display-copy";
+import {
+  formatDocumentsTabExpirationVisual,
+  formatDocumentsTabUploaderDisplay,
+  isDocumentsTabAttentionRequired,
+} from "@/lib/facilities/documents-tab-display-copy";
 import { cn } from "@/lib/utils";
 
 interface DocumentsTabProps {
@@ -41,16 +44,6 @@ interface DocumentsTabProps {
 }
 
 const LS_VIEW = "haven:facility-doc-vault:view";
-
-function isoToday(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function daysFromToday(isoDate: string): number {
-  const t0 = new Date(isoToday()).getTime();
-  const t1 = new Date(`${isoDate}T12:00:00.000Z`).getTime();
-  return Math.round((t1 - t0) / (1000 * 60 * 60 * 24));
-}
 
 function categoryLabel(key: string): string {
   const k = key as DocumentVaultCategoryKey;
@@ -60,28 +53,6 @@ function categoryLabel(key: string): string {
 function displayTitle(doc: FacilityDocumentHookRow): string {
   const t = doc.friendly_title?.trim();
   return t && t.length > 0 ? t : doc.document_name;
-}
-
-function expirationVisual(doc: FacilityDocumentHookRow): {
-  line: string;
-  className: string;
-} {
-  const key = doc.document_category as DocumentVaultCategoryKey;
-  if (DOCUMENT_CATEGORY_EXPIRATION_NA.has(key)) {
-    return { line: "N/A", className: "text-muted-foreground" };
-  }
-  if (!doc.expiration_date) {
-    return { line: "No expiry on file", className: "text-muted-foreground" };
-  }
-  const days = daysFromToday(doc.expiration_date);
-  const formatted = new Date(`${doc.expiration_date}T12:00:00`).toLocaleDateString();
-  if (days < 0) {
-    return { line: `Expired ${Math.abs(days)} days ago`, className: "text-destructive font-medium" };
-  }
-  if (days < 60) {
-    return { line: `Expires ${formatted} · in ${days} days`, className: "text-warning font-medium" };
-  }
-  return { line: `Expires ${formatted} · in ${days} days`, className: "text-muted-foreground" };
 }
 
 export function DocumentsTab({ facilityId }: DocumentsTabProps) {
@@ -153,13 +124,9 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
   }, [documents]);
 
   const attentionDocs = useMemo(() => {
-    return documents.filter((d) => {
-      const key = d.document_category as DocumentVaultCategoryKey;
-      if (DOCUMENT_CATEGORY_EXPIRATION_NA.has(key)) return false;
-      if (!d.expiration_date) return false;
-      const days = daysFromToday(d.expiration_date);
-      return days <= 60;
-    });
+    return documents.filter((d) =>
+      isDocumentsTabAttentionRequired(d.document_category, d.expiration_date),
+    );
   }, [documents]);
 
   const filteredSorted = useMemo(() => {
@@ -288,7 +255,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
           <p className="text-sm font-semibold text-foreground">Attention required</p>
           <ul className="mt-3 space-y-2">
             {attentionDocs.slice(0, 10).map((d) => {
-              const v = expirationVisual(d);
+              const v = formatDocumentsTabExpirationVisual(d.document_category, d.expiration_date);
               return (
                 <li key={d.id} className="flex flex-wrap items-center gap-2 text-sm">
                   <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden />
@@ -455,7 +422,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredSorted.map((doc) => {
-              const v = expirationVisual(doc);
+              const v = formatDocumentsTabExpirationVisual(doc.document_category, doc.expiration_date);
               return (
                 <div
                   role="button"
@@ -525,7 +492,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
             </thead>
             <tbody>
               {filteredSorted.map((doc) => {
-                const v = expirationVisual(doc);
+                const v = formatDocumentsTabExpirationVisual(doc.document_category, doc.expiration_date);
                 return (
                   <tr
                     key={doc.id}

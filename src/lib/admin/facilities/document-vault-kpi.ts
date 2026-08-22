@@ -3,6 +3,10 @@
  * Category keys must align with `facility_documents.document_category` CHECK constraint.
  */
 
+import {
+  facilityDateIsoDaysFromToday,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
 import { DOCUMENT_VAULT_REQUIRED_SLOTS } from "@/lib/admin/facilities/document-vault-taxonomy";
 
 export type DocumentVaultKpiPayload = {
@@ -17,8 +21,22 @@ export type VaultDocSlice = {
   expiration_date: string | null;
 };
 
-function isoDateUTC(d: Date): string {
-  return d.toISOString().slice(0, 10);
+/** Eastern calendar today + 60-day window for vault expiration KPIs. */
+export function getDocumentVaultKpiDateWindow(now: Date = new Date()) {
+  const today = todayFacilityDateIso(now);
+  const plus60 = facilityDateIsoDaysFromToday(60, now);
+  return { today, plus60 };
+}
+
+/** Calendar-day distance from Eastern today to a date-only expiration (negative = expired). */
+export function daysUntilFacilityExpirationDate(
+  expirationYmd: string,
+  now: Date = new Date(),
+): number {
+  const today = todayFacilityDateIso(now);
+  const expMs = new Date(`${expirationYmd}T12:00:00.000Z`).getTime();
+  const todayMs = new Date(`${today}T12:00:00.000Z`).getTime();
+  return Math.round((expMs - todayMs) / 86_400_000);
 }
 
 /** Document counts as active for requirement coverage when not expired. */
@@ -27,11 +45,8 @@ export function isDocumentRequirementSatisfied(expirationDate: string | null, to
   return expirationDate >= todayISO;
 }
 
-export function computeDocumentVaultKpi(rows: VaultDocSlice[], today = new Date()): DocumentVaultKpiPayload {
-  const todayISO = isoDateUTC(today);
-  const plus60 = new Date(today);
-  plus60.setUTCDate(plus60.getUTCDate() + 60);
-  const plus60ISO = isoDateUTC(plus60);
+export function computeDocumentVaultKpi(rows: VaultDocSlice[], now: Date = new Date()): DocumentVaultKpiPayload {
+  const { today, plus60 } = getDocumentVaultKpiDateWindow(now);
 
   let expiringLt60 = 0;
   let expired = 0;
@@ -39,16 +54,16 @@ export function computeDocumentVaultKpi(rows: VaultDocSlice[], today = new Date(
   for (const r of rows) {
     const exp = r.expiration_date;
     if (exp == null || exp === "") continue;
-    if (exp < todayISO) {
+    if (exp < today) {
       expired += 1;
-    } else if (exp <= plus60ISO) {
+    } else if (exp <= plus60) {
       expiringLt60 += 1;
     }
   }
 
   const categoriesCovered = new Set<string>();
   for (const r of rows) {
-    if (isDocumentRequirementSatisfied(r.expiration_date, todayISO)) {
+    if (isDocumentRequirementSatisfied(r.expiration_date, today)) {
       categoriesCovered.add(r.document_category);
     }
   }
