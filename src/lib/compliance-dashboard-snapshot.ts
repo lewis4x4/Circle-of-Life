@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  facilityDateIsoDaysFromToday,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -12,17 +16,16 @@ export type ComplianceDashboardSnapshot = {
   activeOutbreaks: number;
   expiringCertifications30d: number;
   openDeficiencies: number;
-  surveyVisitActive: boolean;
+  /** `null` when no facility is scoped — not a fabricated inactive session. */
+  surveyVisitActive: boolean | null;
 };
 
-function todayISODate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function addDaysISODate(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+/** Eastern calendar windows for overdue assessments, care-plan reviews, and cert expiry tiles. */
+export function getComplianceDashboardDateWindow(now: Date = new Date()) {
+  return {
+    today: todayFacilityDateIso(now),
+    plus30: facilityDateIsoDaysFromToday(30, now),
+  };
 }
 
 /** Latest assessment per (resident_id, assessment_type); count overdue next_due_date. */
@@ -33,6 +36,7 @@ export function countOverdueAssessments(
     assessment_date: string;
     next_due_date: string | null;
   }[],
+  today: string = todayFacilityDateIso(),
 ): number {
   const latestByKey = new Map<
     string,
@@ -45,7 +49,6 @@ export function countOverdueAssessments(
       latestByKey.set(key, r);
     }
   }
-  const today = todayISODate();
   let n = 0;
   for (const r of latestByKey.values()) {
     if (r.next_due_date !== null && r.next_due_date < today) {
@@ -58,11 +61,11 @@ export function countOverdueAssessments(
 export async function fetchComplianceDashboardSnapshot(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
+  now: Date = new Date(),
 ): Promise<ComplianceDashboardSnapshot> {
   const facilityFilter = isValidFacilityIdForQuery(selectedFacilityId);
 
-  const today = todayISODate();
-  const in30 = addDaysISODate(30);
+  const { today, plus30: in30 } = getComplianceDashboardDateWindow(now);
 
   let assessmentsQuery = supabase
     .from("assessments")
@@ -167,6 +170,7 @@ export async function fetchComplianceDashboardSnapshot(
           assessment_date: string;
           next_due_date: string | null;
         }[],
+        today,
       )
     : 0;
 
@@ -178,6 +182,6 @@ export async function fetchComplianceDashboardSnapshot(
     activeOutbreaks: outbreaksRes.count ?? 0,
     expiringCertifications30d: certsRes.count ?? 0,
     openDeficiencies: deficienciesRes.count ?? 0,
-    surveyVisitActive: !!sessionRes.data,
+    surveyVisitActive: facilityFilter ? !!sessionRes.data : null,
   };
 }

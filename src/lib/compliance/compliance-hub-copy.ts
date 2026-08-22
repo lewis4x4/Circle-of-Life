@@ -44,6 +44,18 @@ export function complianceScoreLoadingCopy(): string {
   return "Loading compliance score…";
 }
 
+/** Survey visit status when no facility is scoped in the header selector. */
+export function complianceSurveyVisitNotScopedCopy(): string {
+  return "Select a facility to check survey visit status.";
+}
+
+/** Survey visit status line from snapshot — never fabricates inactive when unscoped. */
+export function complianceSurveyVisitStatusCopy(surveyVisitActive: boolean | null): string {
+  if (surveyVisitActive === null) return complianceSurveyVisitNotScopedCopy();
+  if (surveyVisitActive) return "● Session active for this facility.";
+  return complianceSurveyVisitInactiveCopy();
+}
+
 /** KPI tile display value — number when loaded, explicit copy while loading. */
 export function complianceSnapshotTileDisplay(value: number | null): string | number {
   if (value === null) return complianceSnapshotTileLoadingCopy();

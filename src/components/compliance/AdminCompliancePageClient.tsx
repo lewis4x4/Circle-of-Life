@@ -40,8 +40,8 @@ import {
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
   complianceSnapshotTileDisplay,
-  complianceSurveyVisitInactiveCopy,
   complianceSurveyVisitLoadingCopy,
+  complianceSurveyVisitStatusCopy,
 } from "@/lib/compliance/compliance-hub-copy";
 
 type DefRow = {
@@ -602,7 +602,15 @@ export function AdminCompliancePageClient({
                 <h3 className="text-lg font-semibold text-foreground">Survey visit mode</h3>
                 <p className="text-xs font-medium text-muted-foreground mb-4">Use bar below header to activate logging while a regulator is on site.</p>
                 <div className="bg-muted p-4 rounded-xl border border-border font-mono text-sm text-foreground">
-                   {snapLoading ? complianceSurveyVisitLoadingCopy() : snapshot?.surveyVisitActive ? <span className="text-emerald-600 dark:text-emerald-400 font-bold">● Session active for this facility.</span> : complianceSurveyVisitInactiveCopy()}
+                   {snapLoading ? (
+                     complianceSurveyVisitLoadingCopy()
+                   ) : snapshot?.surveyVisitActive ? (
+                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                       {complianceSurveyVisitStatusCopy(true)}
+                     </span>
+                   ) : (
+                     complianceSurveyVisitStatusCopy(snapshot?.surveyVisitActive ?? null)
+                   )}
                 </div>
               </div>
             </div>
