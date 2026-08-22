@@ -1,6 +1,12 @@
+import { formatInTimeZone } from "date-fns-tz";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
+import {
+  FACILITY_OPERATOR_TZ,
+  facilityDateIsoDaysFromToday,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
   EMPTY_PRESENCE_CENSUS,
@@ -54,23 +60,27 @@ export type ExecKpiPayload = {
   };
   residentAssurance: {
     overdueTasksCount: number;
-    missedRate: number;
+    /** `null` on live load — nightly resident-safety-scorer owns miss-rate aggregation. */
+    missedRate: number | null;
     openExceptions: number;
     activeWatchCount: number;
   };
 };
 
-function startOfMonthIsoDate(): string {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
+/** Quiet Operator gap copy when live loaders skip miss-rate aggregation. */
+export const EXECUTIVE_LIVE_MISSED_RATE_NOT_COMPUTED_COPY = "Miss rate not on live load";
+
+export function formatExecutiveLiveMissedRate(missedRate: number | null): string {
+  if (missedRate === null) return EXECUTIVE_LIVE_MISSED_RATE_NOT_COMPUTED_COPY;
+  return `${Math.round(missedRate * 100)}%`;
 }
 
-function todayAndPlus30Iso(): { today: string; plus30: string } {
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const p = new Date(now);
-  p.setUTCDate(p.getUTCDate() + 30);
-  return { today, plus30: p.toISOString().slice(0, 10) };
+/** Eastern calendar windows for operator-facing today, +30 cert expiry, and MTD medication errors. */
+export function getExecutiveKpiDateWindow(now: Date = new Date()) {
+  const today = todayFacilityDateIso(now);
+  const plus30 = facilityDateIsoDaysFromToday(30, now);
+  const mtdStart = `${formatInTimeZone(now, FACILITY_OPERATOR_TZ, "yyyy-MM")}-01`;
+  return { today, plus30, mtdStart };
 }
 
 /**
@@ -83,8 +93,7 @@ export async function fetchExecutiveKpiSnapshot(
   facilityId: string | null,
 ): Promise<ExecKpiPayload> {
   const facilityScoped = isValidFacilityIdForQuery(facilityId);
-  const { today, plus30 } = todayAndPlus30Iso();
-  const mtdStart = startOfMonthIsoDate();
+  const { today, plus30, mtdStart } = getExecutiveKpiDateWindow();
 
   let facilitiesQuery = supabase
     .from("facilities")
@@ -110,7 +119,12 @@ export async function fetchExecutiveKpiSnapshot(
       compliance: { openSurveyDeficiencies: 0 },
       workforce: { certificationsExpiring30d: 0 },
       infection: { activeOutbreaks: 0 },
-      residentAssurance: { overdueTasksCount: 0, missedRate: 0, openExceptions: 0, activeWatchCount: 0 },
+      residentAssurance: {
+        overdueTasksCount: 0,
+        missedRate: null,
+        openExceptions: 0,
+        activeWatchCount: 0,
+      },
     };
   }
 
@@ -311,7 +325,7 @@ export async function fetchExecutiveKpiSnapshot(
     },
     residentAssurance: {
       overdueTasksCount: overdueTasksRes.count ?? 0,
-      missedRate: 0, // Computed by resident-safety-scorer; live calc too expensive here
+      missedRate: null,
       openExceptions: openExceptionsRes.count ?? 0,
       activeWatchCount: activeWatchRes.count ?? 0,
     },
