@@ -152,7 +152,7 @@ export function AssistantDashboardPageClient({
           href="/admin/family-messages"
         />
         <StatCard
-          title="Transport Today"
+          title="Transport · Eastern today"
           display={transportDisplay}
           isMetric={adminAssistantDashboardKpiTileIsMetric(transportDisplay)}
           icon={Truck}
