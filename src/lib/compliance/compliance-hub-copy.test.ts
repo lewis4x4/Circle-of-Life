@@ -10,6 +10,8 @@ import {
   complianceSnapshotTileLoadingCopy,
   complianceSurveyVisitInactiveCopy,
   complianceSurveyVisitLoadingCopy,
+  complianceSurveyVisitNotScopedCopy,
+  complianceSurveyVisitStatusCopy,
 } from "./compliance-hub-copy";
 
 describe("compliancePocDueDateLabel", () => {
@@ -49,6 +51,25 @@ describe("complianceSurveyVisitLoadingCopy", () => {
 describe("complianceSurveyVisitInactiveCopy", () => {
   it("states when no survey visit session is active", () => {
     expect(complianceSurveyVisitInactiveCopy()).toBe("No active session.");
+  });
+});
+
+describe("complianceSurveyVisitNotScopedCopy", () => {
+  it("names the gap when survey visit status is not facility-scoped", () => {
+    expect(complianceSurveyVisitNotScopedCopy()).toBe(
+      "Select a facility to check survey visit status.",
+    );
+  });
+});
+
+describe("complianceSurveyVisitStatusCopy", () => {
+  it("names the unscoped gap instead of fabricating inactive", () => {
+    expect(complianceSurveyVisitStatusCopy(null)).toBe(complianceSurveyVisitNotScopedCopy());
+  });
+
+  it("reports active and inactive sessions from snapshot truth", () => {
+    expect(complianceSurveyVisitStatusCopy(true)).toBe("● Session active for this facility.");
+    expect(complianceSurveyVisitStatusCopy(false)).toBe(complianceSurveyVisitInactiveCopy());
   });
 });
 
