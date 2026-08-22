@@ -1,13 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
 
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { invokeExportAuditLog } from "@/lib/audit-export";
-import { formatAuditExportRowCount } from "@/lib/compliance/audit-export-display-copy";
+import {
+  AUDIT_EXPORT_LOADING_JOBS_COPY,
+  AUDIT_EXPORT_LOADING_PROFILE_COPY,
+  AUDIT_EXPORT_NO_JOBS_COPY,
+  formatAuditExportJobDateRange,
+  formatAuditExportRowCount,
+} from "@/lib/compliance/audit-export-display-copy";
+import {
+  isAuditExportActionBlocked,
+  resolveAuditExportButtonLabel,
+  resolveAuditExportFetchErrorBannerMessage,
+  resolveAuditExportOrganizationGapMessage,
+} from "@/lib/compliance/audit-export-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -40,8 +52,8 @@ type JobRow = {
 const EXPORT_ROLES = new Set(["owner", "org_admin", "facility_admin"]);
 
 export default function AuditLogExportPage() {
-  const supabase = createClient();
-  const { user, organizationId, appRole } = useHavenAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
   const roleOk = EXPORT_ROLES.has(role);
@@ -49,11 +61,15 @@ export default function AuditLogExportPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
 
   const loadJobs = useCallback(async () => {
+    if (authLoading) {
+      setJobsLoading(true);
+      return;
+    }
     setJobsLoading(true);
     try {
       if (!organizationId || !roleOk) {
@@ -75,22 +91,42 @@ export default function AuditLogExportPage() {
     } finally {
       setJobsLoading(false);
     }
-  }, [organizationId, roleOk, supabase]);
+  }, [authLoading, organizationId, roleOk, supabase]);
 
   useEffect(() => {
     void loadJobs();
   }, [loadJobs]);
 
+  const organizationGapMessage = resolveAuditExportOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: jobs.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveAuditExportFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const exportBlocked = isAuditExportActionBlocked({
+    exporting: loading,
+    authLoading,
+    organizationId,
+    roleOk,
+  });
+  const exportButtonLabel = resolveAuditExportButtonLabel({
+    exporting: loading,
+    authLoading,
+  });
+
   const onExport = async () => {
-    setError(null);
+    if (authLoading) return;
+    setFetchError(null);
     setLoading(true);
     try {
       if (!organizationId) {
-        setError("Organization missing on profile.");
         return;
       }
       if (!roleOk) {
-        setError("Your role cannot export audit logs.");
+        setFetchError("Your role cannot export audit logs.");
         return;
       }
 
@@ -98,7 +134,7 @@ export default function AuditLogExportPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        setError("Session expired. Sign in again.");
+        setFetchError("Session expired. Sign in again.");
         return;
       }
 
@@ -106,7 +142,7 @@ export default function AuditLogExportPage() {
       const anonKey =
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY ?? "";
       if (!supabaseUrl || !anonKey) {
-        setError("Supabase environment is not configured.");
+        setFetchError("Supabase environment is not configured.");
         return;
       }
 
@@ -114,7 +150,7 @@ export default function AuditLogExportPage() {
         selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : null;
 
       if (!user) {
-        setError("Sign in required.");
+        setFetchError("Sign in required.");
         return;
       }
 
@@ -135,7 +171,7 @@ export default function AuditLogExportPage() {
         .single();
 
       if (insErr || !job) {
-        setError(insErr?.message ?? "Could not create export job.");
+        setFetchError(insErr?.message ?? "Could not create export job.");
         return;
       }
 
@@ -147,7 +183,7 @@ export default function AuditLogExportPage() {
       });
 
       if (!result.ok) {
-        setError(result.message);
+        setFetchError(result.message);
         void loadJobs();
         return;
       }
@@ -161,7 +197,7 @@ export default function AuditLogExportPage() {
 
       void loadJobs();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed.");
+      setFetchError(e instanceof Error ? e.message : "Export failed.");
     } finally {
       setLoading(false);
     }
@@ -189,17 +225,32 @@ export default function AuditLogExportPage() {
         </div>
       </div>
 
-      {roleOk === false && (
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {AUDIT_EXPORT_LOADING_PROFILE_COPY}
+        </p>
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {roleOk === false && !authLoading ? (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           Only owner, org admin, or facility admin can export audit logs.
         </p>
-      )}
+      ) : null}
 
-      {error && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
+      {fetchErrorBannerMessage ? (
+        <p
+          className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {fetchErrorBannerMessage}
         </p>
-      )}
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -218,7 +269,7 @@ export default function AuditLogExportPage() {
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                disabled={loading || roleOk === false}
+                disabled={exportBlocked}
               />
             </div>
             <div className="space-y-2">
@@ -228,7 +279,7 @@ export default function AuditLogExportPage() {
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                disabled={loading || roleOk === false}
+                disabled={exportBlocked}
               />
             </div>
           </div>
@@ -239,11 +290,11 @@ export default function AuditLogExportPage() {
           <Button
             type="button"
             onClick={() => void onExport()}
-            disabled={loading || roleOk === false}
+            disabled={exportBlocked}
             className="gap-2"
           >
             <Download className="h-4 w-4" aria-hidden />
-            {loading ? "Exporting…" : "Download CSV"}
+            {exportButtonLabel}
           </Button>
         </CardContent>
       </Card>
@@ -254,10 +305,12 @@ export default function AuditLogExportPage() {
           <CardDescription>Latest export jobs for your organization.</CardDescription>
         </CardHeader>
         <CardContent>
-          {jobsLoading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+          {authLoading ? null : jobsLoading ? (
+            <p className="text-sm text-slate-500" role="status">
+              {AUDIT_EXPORT_LOADING_JOBS_COPY}
+            </p>
           ) : jobs.length === 0 ? (
-            <p className="text-sm text-slate-500">No jobs yet.</p>
+            <p className="text-sm text-slate-500">{AUDIT_EXPORT_NO_JOBS_COPY}</p>
           ) : (
             <Table>
               <TableHeader>
@@ -282,7 +335,7 @@ export default function AuditLogExportPage() {
                     </TableCell>
                     <TableCell>{formatAuditExportRowCount(j.row_count)}</TableCell>
                     <TableCell className="text-xs text-slate-600 dark:text-slate-400">
-                      {j.date_from ?? "…"} → {j.date_to ?? "…"}
+                      {formatAuditExportJobDateRange(j.date_from, j.date_to)}
                     </TableCell>
                   </TableRow>
                 ))}
