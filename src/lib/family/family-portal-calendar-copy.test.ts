@@ -77,6 +77,10 @@ describe("family calendar portal copy", () => {
 
     expect(source).toMatch(/FAMILY_CALENDAR_NO_LOCATION/);
     expect(source).not.toMatch(/Community program/);
+    expect(source).toMatch(/getFamilyCalendarDateWindow/);
+    expect(source).toMatch(/facilityDateIsoDaysFromToday/);
+    expect(source).not.toMatch(/todayUtcYmd/);
+    expect(source).not.toMatch(/toISOString\(\)\.slice\(0, 10\)/);
   });
 
   it("family-portal-copy module keeps calendar strings free of lifestyle metaphors", () => {
