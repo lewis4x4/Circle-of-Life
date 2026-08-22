@@ -1,48 +1,76 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2 } from "lucide-react";
 
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../../../executive/executive-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+export const EXECUTIVE_ENTITY_LOADING_MESSAGE = "Loading entities…";
+export const EXECUTIVE_ENTITY_EMPTY_LIST_MESSAGE = "No legal entities on file.";
+
 export default function ExecutiveEntityIndexPage() {
-  const supabase = createClient();
-  const { organizationId } = useHavenAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+  const { organizationId, loading: authLoading } = useHavenAuth();
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [rows, setRows] = useState<{ id: string; name: string; status: string | null }[]>([]);
 
+  const hasOrgScopedData = rows.length > 0;
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    if (authLoading) {
+      return;
+    }
+
+    if (!organizationId) {
+      setRows([]);
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        setRows([]);
-        return;
-      }
       const { data, error: qErr } = await supabase
         .from("entities")
         .select("id, name, status")
         .eq("organization_id", organizationId)
         .is("deleted_at", null)
         .order("name");
-      if (qErr) throw qErr;
+      if (qErr) {
+        setFetchError(qErr.message);
+        return;
+      }
       setRows(data ?? []);
     } catch (e) {
       setRows([]);
-      setError(e instanceof Error ? e.message : "Unable to load entities.");
+      setFetchError(e instanceof Error ? e.message : "Unable to load entities.");
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [supabase, organizationId]);
+  }, [authLoading, supabase, organizationId]);
 
   useEffect(() => {
     void load();
@@ -62,19 +90,22 @@ export default function ExecutiveEntityIndexPage() {
         </p>
       </div>
 
-      {error && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => void load()} />
+      ) : null}
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Skeleton className="h-28 w-full" />
-          <Skeleton className="h-28 w-full" />
-        </div>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">No entities found for this organization.</p>
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {EXECUTIVE_ENTITY_LOADING_MESSAGE}
+        </p>
+      ) : organizationGapMessage || fetchErrorBannerMessage ? null : rows.length === 0 ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">{EXECUTIVE_ENTITY_EMPTY_LIST_MESSAGE}</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {rows.map((e) => (
