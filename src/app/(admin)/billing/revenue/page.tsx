@@ -13,6 +13,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { REVENUE_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { V2Card } from "@/components/ui/v2-card";
@@ -43,6 +44,7 @@ function monthLabel(key: string): string {
 export default function AdminRevenuePage() {
   const { selectedFacilityId } = useFacilityStore();
   const [byMonth, setByMonth] = useState<{ key: string; cents: number; count: number }[]>([]);
+  const [lookbackStart, setLookbackStart] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,9 +53,17 @@ export default function AdminRevenuePage() {
     setError(null);
     try {
       const supabase = createClient();
-      const since = new Date();
-      since.setMonth(since.getMonth() - 14);
-      const sinceStr = since.toISOString().slice(0, 10);
+      const [facilityYear, facilityMonth, facilityDay] = todayFacilityDateIso()
+        .split("-")
+        .map(Number);
+      const since = new Date(Date.UTC(facilityYear, facilityMonth - 1, facilityDay));
+      since.setUTCMonth(since.getUTCMonth() - 14);
+      const sinceStr = [
+        since.getUTCFullYear(),
+        String(since.getUTCMonth() + 1).padStart(2, "0"),
+        String(since.getUTCDate()).padStart(2, "0"),
+      ].join("-");
+      setLookbackStart(sinceStr);
       let q = supabase
         .from("payments" as never)
         .select("payment_date, amount, deleted_at")
@@ -129,6 +139,9 @@ export default function AdminRevenuePage() {
                        {billingCurrency.format(grand / 100)}
                      </p>
                      <p className="font-mono text-sm tracking-wider uppercase text-emerald-600/60 dark:text-emerald-400/60 mt-1">Across {byMonth.length} active months</p>
+                     <p className="mt-2 text-sm text-muted-foreground">
+                       Includes payments dated on or after {lookbackStart} Eastern.
+                     </p>
                    </div>
                  </div>
                </V2Card>
