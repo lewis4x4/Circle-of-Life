@@ -1,4 +1,4 @@
-import type { ExecutiveStandupLive } from "@/lib/executive/standup";
+import type { ExecutiveStandupLive, StandupSnapshotDetail } from "@/lib/executive/standup";
 import { resolveExecutiveOrganizationGapMessage } from "./executive-auth-page-state";
 
 export {
@@ -7,8 +7,15 @@ export {
   resolveExecutiveFetchErrorBannerMessage as resolveExecutiveStandupFetchErrorBannerMessage,
 } from "./executive-auth-page-state";
 
+export const EXECUTIVE_STANDUP_WEEK_LOADING_MESSAGE = "Loading standup…";
+export const EXECUTIVE_STANDUP_BOARD_LOADING_MESSAGE = "Loading standup board…";
+
 export function hasExecutiveStandupOrgScopedPackData(live: ExecutiveStandupLive | null): boolean {
   return (live?.facilities?.length ?? 0) > 0;
+}
+
+export function hasExecutiveStandupOrgScopedDetailData(detail: StandupSnapshotDetail | null): boolean {
+  return detail != null;
 }
 
 export function resolveExecutiveStandupOrganizationGapMessage(options: {

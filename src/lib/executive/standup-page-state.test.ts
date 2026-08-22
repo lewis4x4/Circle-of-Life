@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   EXECUTIVE_STANDUP_NO_ORGANIZATION_ON_PROFILE_COPY,
+  hasExecutiveStandupOrgScopedDetailData,
   hasExecutiveStandupOrgScopedPackData,
   isExecutiveStandupOrganizationGapError,
   resolveExecutiveStandupFetchErrorBannerMessage,
   resolveExecutiveStandupOrganizationGapMessage,
 } from "./standup-page-state";
-import type { ExecutiveStandupLive } from "./standup";
+import type { ExecutiveStandupLive, StandupSnapshotDetail } from "./standup";
 
 const LIVE_WITH_FACILITIES: ExecutiveStandupLive = {
   generatedAt: "2026-08-20T18:00:00.000Z",
@@ -24,6 +25,37 @@ const LIVE_WITH_FACILITIES: ExecutiveStandupLive = {
     },
   ],
 };
+
+const DETAIL_FIXTURE: StandupSnapshotDetail = {
+  snapshot: {
+    id: "snap-anon-1",
+    weekOf: "2026-08-18",
+    status: "draft",
+    generatedAt: "2026-08-20T18:00:00.000Z",
+    generatedById: null,
+    generatedByName: null,
+    publishedAt: null,
+    publishedById: null,
+    publishedByName: null,
+    publishedVersion: 0,
+    completenessPct: 42,
+    confidenceBand: "medium",
+    draftNotes: null,
+    reviewNotes: null,
+    pdfAttachmentPath: null,
+  },
+  facilities: [],
+};
+
+describe("hasExecutiveStandupOrgScopedDetailData", () => {
+  it("returns false when week detail is absent", () => {
+    expect(hasExecutiveStandupOrgScopedDetailData(null)).toBe(false);
+  });
+
+  it("returns true when a standup week snapshot is loaded", () => {
+    expect(hasExecutiveStandupOrgScopedDetailData(DETAIL_FIXTURE)).toBe(true);
+  });
+});
 
 describe("hasExecutiveStandupOrgScopedPackData", () => {
   it("returns false when live pack is absent", () => {
