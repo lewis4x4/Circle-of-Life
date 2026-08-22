@@ -40,9 +40,7 @@ import {
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
   complianceSnapshotTileDisplay,
-  complianceSurveyVisitInactiveCopy,
   complianceSurveyVisitLoadingCopy,
-  complianceSurveyVisitNotScopedCopy,
   complianceSurveyVisitStatusCopy,
 } from "@/lib/compliance/compliance-hub-copy";
 
