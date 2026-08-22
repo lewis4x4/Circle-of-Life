@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Printer, RefreshCw } from "lucide-react";
+import { Loader2, Printer, RefreshCw } from "lucide-react";
 
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildStandupPacketDocument } from "@/lib/executive/standup-packet";
@@ -18,31 +19,62 @@ import {
   fetchStandupSnapshotDetail,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
+import {
+  EXECUTIVE_STANDUP_BOARD_LOADING_MESSAGE,
+  hasExecutiveStandupOrgScopedDetailData,
+  resolveExecutiveStandupFetchErrorBannerMessage,
+  resolveExecutiveStandupOrganizationGapMessage,
+} from "@/lib/executive/standup-page-state";
 import { RecordDetailHeader } from "@/design-system/components/record-detail";
 
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const week = typeof params?.week === "string" ? params.week : "";
 
+  const hasOrgScopedDetailData = hasExecutiveStandupOrgScopedDetailData(detail);
+  const organizationGapMessage = resolveExecutiveStandupOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedPackData: hasOrgScopedDetailData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveStandupFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
-    if (!week) {
-      setError("Standup week is missing.");
-      setLoading(false);
+    if (authLoading) {
       return;
     }
-    setLoading(true);
-    setError(null);
+
+    if (!week) {
+      setFetchError("Standup week is missing.");
+      setFetching(false);
+      return;
+    }
+
+    if (!organizationId) {
+      setDetail(null);
+      setPreviousDetail(null);
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const [snapshot, previous] = await Promise.all([
         fetchStandupSnapshotDetail(supabase, organizationId, week),
         fetchPreviousPublishedStandupSnapshotDetail(supabase, organizationId, week),
@@ -52,11 +84,11 @@ export default function ExecutiveStandupBoardPage() {
     } catch (loadError) {
       setDetail(null);
       setPreviousDetail(null);
-      setError(loadError instanceof Error ? loadError.message : "Could not load board packet.");
+      setFetchError(loadError instanceof Error ? loadError.message : "Could not load board packet.");
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [organizationId, supabase, week]);
+  }, [authLoading, organizationId, supabase, week]);
 
   useEffect(() => {
     void load();
@@ -72,11 +104,11 @@ export default function ExecutiveStandupBoardPage() {
 
   async function onSaveBoardReport() {
     if (!detail || !organizationId || !user?.id) {
-      setError("Sign in required.");
+      setActionError("Sign in required.");
       return;
     }
     setSavingBoardReport(true);
-    setError(null);
+    setActionError(null);
     try {
       await saveStandupBoardReport(supabase, {
         organizationId,
@@ -89,7 +121,7 @@ export default function ExecutiveStandupBoardPage() {
         completenessPct: detail.snapshot.completenessPct,
       });
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
+      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
     } finally {
       setSavingBoardReport(false);
     }
@@ -98,14 +130,14 @@ export default function ExecutiveStandupBoardPage() {
   async function onDownloadPdf() {
     if (!detail) return;
     setDownloadingPdf(true);
-    setError(null);
+    setActionError(null);
     try {
       await downloadBlobFromUrl(
         `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf`,
         `executive-standup-${detail.snapshot.weekOf}.pdf`,
       );
     } catch (downloadError) {
-      setError(downloadError instanceof Error ? downloadError.message : "Could not generate standup PDF.");
+      setActionError(downloadError instanceof Error ? downloadError.message : "Could not generate standup PDF.");
     } finally {
       setDownloadingPdf(false);
     }
@@ -143,12 +175,42 @@ export default function ExecutiveStandupBoardPage() {
           />
         </div>
 
-        {error ? <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage ? (
+          <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => void load()} />
+        ) : null}
+
+        {actionError ? (
+          <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {actionError}
+          </div>
+        ) : null}
 
         {loading ? (
-          <div className="text-sm text-muted-foreground">Loading board packet…</div>
+          <Card className="rounded-lg border border-border bg-card shadow-sm">
+            <CardContent
+              className="flex items-center gap-3 p-6 text-sm text-muted-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {EXECUTIVE_STANDUP_BOARD_LOADING_MESSAGE}
+            </CardContent>
+          </Card>
         ) : !detail ? (
-          <div className="text-sm text-muted-foreground">No standup data found for this week.</div>
+          <Card className="rounded-lg border border-border bg-card shadow-sm">
+            <CardHeader>
+              <CardTitle>No standup board packet yet</CardTitle>
+              <CardDescription>
+                This week has no standup data to preview. Generate a draft from the standup pack page first.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         ) : (
           <div className="space-y-8">
             <section className="overflow-hidden rounded-[8px] border border-border bg-card px-8 py-10">

@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CheckCircle2, FileSpreadsheet, Loader2, Save } from "lucide-react";
 
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../../executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -33,6 +35,12 @@ import {
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
 import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import {
+  EXECUTIVE_STANDUP_WEEK_LOADING_MESSAGE,
+  hasExecutiveStandupOrgScopedDetailData,
+  resolveExecutiveStandupFetchErrorBannerMessage,
+  resolveExecutiveStandupOrganizationGapMessage,
+} from "@/lib/executive/standup-page-state";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
 
@@ -52,14 +60,15 @@ function normalizeInput(metric: StandupMetricRow, raw: string): number | null {
 export default function ExecutiveStandupWeekDetailPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
-  const { user, organizationId, appRole } = useHavenAuth();
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
   const canPublish = canMutateFinance(role);
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [savingBoardReport, setSavingBoardReport] = useState(false);
@@ -71,17 +80,42 @@ export default function ExecutiveStandupWeekDetailPage() {
 
   const week = typeof params?.week === "string" ? params.week : "";
 
+  const hasOrgScopedDetailData = hasExecutiveStandupOrgScopedDetailData(detail);
+  const organizationGapMessage = resolveExecutiveStandupOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedPackData: hasOrgScopedDetailData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveStandupFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
-    if (!week) {
-      setDetail(null);
-      setError("Standup week is missing.");
-      setLoading(false);
+    if (authLoading) {
       return;
     }
-    setLoading(true);
-    setError(null);
+
+    if (!week) {
+      setDetail(null);
+      setPreviousDetail(null);
+      setFetchError("Standup week is missing.");
+      setFetching(false);
+      return;
+    }
+
+    if (!organizationId) {
+      setDetail(null);
+      setPreviousDetail(null);
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
     try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const [snapshot, previous] = await Promise.all([
         fetchStandupSnapshotDetail(supabase, organizationId, week),
         fetchPreviousPublishedStandupSnapshotDetail(supabase, organizationId, week),
@@ -94,11 +128,11 @@ export default function ExecutiveStandupWeekDetailPage() {
     } catch (loadError) {
       setDetail(null);
       setPreviousDetail(null);
-      setError(loadError instanceof Error ? loadError.message : "Could not load standup detail.");
+      setFetchError(loadError instanceof Error ? loadError.message : "Could not load standup detail.");
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [organizationId, supabase, week]);
+  }, [authLoading, organizationId, supabase, week]);
 
   useEffect(() => {
     void load();
@@ -156,12 +190,12 @@ export default function ExecutiveStandupWeekDetailPage() {
 
   async function onSaveMetric(facilityId: string, metricKey: string, metric: StandupMetricRow) {
     if (!detail || !user?.id || !organizationId) {
-      setError("Sign in required.");
+      setActionError("Sign in required.");
       return;
     }
     const editKey = `${facilityId}:${metricKey}`;
     setSavingKey(editKey);
-    setError(null);
+    setActionError(null);
     try {
       const raw = edits[editKey] ?? "";
       await saveStandupMetricInput(supabase, {
@@ -177,7 +211,7 @@ export default function ExecutiveStandupWeekDetailPage() {
       });
       await load();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save standup metric.");
+      setActionError(saveError instanceof Error ? saveError.message : "Could not save standup metric.");
     } finally {
       setSavingKey(null);
     }
@@ -185,15 +219,15 @@ export default function ExecutiveStandupWeekDetailPage() {
 
   async function onPublish() {
     if (!detail || !user?.id) {
-      setError("Sign in required.");
+      setActionError("Sign in required.");
       return;
     }
     if (!publishReadiness.canPublish) {
-      setError(publishReadiness.blockers[0] ?? "Standup is not ready to publish.");
+      setActionError(publishReadiness.blockers[0] ?? "Standup is not ready to publish.");
       return;
     }
     setPublishing(true);
-    setError(null);
+    setActionError(null);
     try {
       await publishStandupSnapshot(supabase, {
         snapshotId: detail.snapshot.id,
@@ -203,7 +237,7 @@ export default function ExecutiveStandupWeekDetailPage() {
       });
       await load();
     } catch (publishError) {
-      setError(publishError instanceof Error ? publishError.message : "Could not publish standup snapshot.");
+      setActionError(publishError instanceof Error ? publishError.message : "Could not publish standup snapshot.");
     } finally {
       setPublishing(false);
     }
@@ -211,11 +245,11 @@ export default function ExecutiveStandupWeekDetailPage() {
 
   async function onSaveNotes() {
     if (!detail || !user?.id) {
-      setError("Sign in required.");
+      setActionError("Sign in required.");
       return;
     }
     setSavingNotes(true);
-    setError(null);
+    setActionError(null);
     try {
       await saveStandupSnapshotNotes(supabase, {
         snapshotId: detail.snapshot.id,
@@ -225,7 +259,7 @@ export default function ExecutiveStandupWeekDetailPage() {
       });
       await load();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save standup notes.");
+      setActionError(saveError instanceof Error ? saveError.message : "Could not save standup notes.");
     } finally {
       setSavingNotes(false);
     }
@@ -234,14 +268,14 @@ export default function ExecutiveStandupWeekDetailPage() {
   async function onDownloadPdf() {
     if (!detail) return;
     setDownloadingPdf(true);
-    setError(null);
+    setActionError(null);
     try {
       await downloadBlobFromUrl(
         buildStandupPdfUrl(detail.snapshot.weekOf),
         `executive-standup-${detail.snapshot.weekOf}.pdf`,
       );
     } catch (downloadError) {
-      setError(downloadError instanceof Error ? downloadError.message : "Could not download standup PDF.");
+      setActionError(downloadError instanceof Error ? downloadError.message : "Could not download standup PDF.");
     } finally {
       setDownloadingPdf(false);
     }
@@ -255,11 +289,11 @@ export default function ExecutiveStandupWeekDetailPage() {
 
   async function onSaveBoardReport() {
     if (!detail || !user?.id || !organizationId) {
-      setError("Sign in required.");
+      setActionError("Sign in required.");
       return;
     }
     setSavingBoardReport(true);
-    setError(null);
+    setActionError(null);
     try {
       await saveStandupBoardReport(supabase, {
         organizationId,
@@ -272,7 +306,7 @@ export default function ExecutiveStandupWeekDetailPage() {
         completenessPct: detail.snapshot.completenessPct,
       });
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
+      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
     } finally {
       setSavingBoardReport(false);
     }
@@ -328,20 +362,36 @@ export default function ExecutiveStandupWeekDetailPage() {
         }
       />
 
-      {error ? (
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => void load()} />
+      ) : null}
+
+      {actionError ? (
         <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
+          {actionError}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="rounded-[8px] border border-border bg-card p-6 flex items-center gap-3 text-sm text-muted-foreground">
+        <div
+          className="rounded-[8px] border border-border bg-card p-6 flex items-center gap-3 text-sm text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
           <Loader2 className="h-4 w-4 animate-spin" />
-          Loading standup week…
+          {EXECUTIVE_STANDUP_WEEK_LOADING_MESSAGE}
         </div>
       ) : !detail ? (
-        <RecordDetailSection title="No standup found">
-          <p className="text-sm text-muted-foreground">Generate a draft from the standup pack page first.</p>
+        <RecordDetailSection title="No standup week yet">
+          <p className="text-sm text-muted-foreground">
+            This week has no standup packet. Generate a draft from the standup pack page first.
+          </p>
           <div className="mt-4">
             <Link href="/admin/executive/standup" className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-card px-4 text-xs font-medium transition-colors hover:bg-muted">
               Back to standup pack
