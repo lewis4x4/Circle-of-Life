@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Building2, ExternalLink } from "lucide-react";
 
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../../../../executive/executive-hub-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +14,17 @@ import { buttonVariants } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { presenceSummaryText } from "@/lib/executive/presence-census";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+export const EXECUTIVE_ENTITY_DETAIL_LOADING_MESSAGE = "Loading entity portfolio…";
+export const EXECUTIVE_ENTITY_DETAIL_EMPTY_FACILITIES_MESSAGE = "No facilities linked to this entity yet.";
 
 function FacilityKpiStrip(props: { kpi: ExecKpiPayload }) {
   const { kpi } = props;
@@ -41,30 +49,53 @@ function FacilityKpiStrip(props: { kpi: ExecKpiPayload }) {
 export default function ExecutiveEntityDetailPage() {
   const params = useParams();
   const entityId = typeof params.id === "string" ? params.id : "";
-  const supabase = createClient();
-  const { organizationId } = useHavenAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const { organizationId, loading: authLoading } = useHavenAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [entityName, setEntityName] = useState<string | null>(null);
   const [facilities, setFacilities] = useState<{ id: string; name: string }[]>([]);
   const [kpisByFacility, setKpisByFacility] = useState<Record<string, ExecKpiPayload | null>>({});
 
+  const hasOrgScopedData = Boolean(entityName || facilities.length > 0);
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
+
   const load = useCallback(async () => {
-    if (!entityId) {
-      setError("Missing entity id.");
-      setLoading(false);
+    if (authLoading) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        return;
-      }
+    if (!entityId) {
+      setFetchError("Missing entity id.");
+      setEntityName(null);
+      setFacilities([]);
+      setKpisByFacility({});
+      setFetching(false);
+      return;
+    }
 
+    if (!organizationId) {
+      setEntityName(null);
+      setFacilities([]);
+      setKpisByFacility({});
+      setFetchError(null);
+      setFetching(false);
+      return;
+    }
+
+    setFetching(true);
+    setFetchError(null);
+    try {
       const { data: ent, error: entErr } = await supabase
         .from("entities")
         .select("id, name, organization_id")
@@ -72,9 +103,12 @@ export default function ExecutiveEntityDetailPage() {
         .is("deleted_at", null)
         .maybeSingle();
 
-      if (entErr) throw entErr;
+      if (entErr) {
+        setFetchError(entErr.message);
+        return;
+      }
       if (!ent || ent.organization_id !== organizationId) {
-        setError("Entity not found or not in your organization.");
+        setFetchError("Entity not found or not in your organization.");
         setEntityName(null);
         setFacilities([]);
         setKpisByFacility({});
@@ -91,7 +125,10 @@ export default function ExecutiveEntityDetailPage() {
         .is("deleted_at", null)
         .order("name");
 
-      if (fErr) throw fErr;
+      if (fErr) {
+        setFetchError(fErr.message);
+        return;
+      }
       const list = facs ?? [];
       setFacilities(list.map((f) => ({ id: f.id, name: f.name })));
 
@@ -107,14 +144,14 @@ export default function ExecutiveEntityDetailPage() {
       );
       setKpisByFacility(Object.fromEntries(kpiEntries));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to load entity.");
+      setFetchError(e instanceof Error ? e.message : "Unable to load entity.");
       setEntityName(null);
       setFacilities([]);
       setKpisByFacility({});
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
-  }, [supabase, entityId, organizationId]);
+  }, [authLoading, supabase, entityId, organizationId]);
 
   useEffect(() => {
     void load();
@@ -145,25 +182,29 @@ export default function ExecutiveEntityDetailPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => void load()} />
+      ) : null}
+
+      {loading && !fetchErrorBannerMessage && !organizationGapMessage ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {EXECUTIVE_ENTITY_DETAIL_LOADING_MESSAGE}
         </p>
-      )}
+      ) : null}
 
-      {loading && !error && (
-        <div className="space-y-3">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      )}
-
-      {!loading && !error && facilities.length === 0 && entityName && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">No facilities linked to this entity yet.</p>
+      {!loading && !fetchErrorBannerMessage && !organizationGapMessage && facilities.length === 0 && entityName && (
+        <p className="text-sm text-slate-500 dark:text-slate-400">{EXECUTIVE_ENTITY_DETAIL_EMPTY_FACILITIES_MESSAGE}</p>
       )}
 
       {!loading &&
-        !error &&
+        !fetchErrorBannerMessage &&
+        !organizationGapMessage &&
         facilities.map((f) => {
           const kpi = kpisByFacility[f.id];
           return (
