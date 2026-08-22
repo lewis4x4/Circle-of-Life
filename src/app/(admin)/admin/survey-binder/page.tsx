@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchActorContext } from "@/lib/office/meetings";
+import { formatBinderLastSurveyLine } from "@/lib/office/survey-binder-display-copy";
 import {
   BINDER_CATEGORIES,
   binderCategoryLabel,
@@ -193,14 +194,11 @@ export default function AdminSurveyBinderPage() {
             ))}
             <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 sm:col-span-2 lg:col-span-4">
               <p className="text-xs text-muted-foreground">Last survey on record</p>
-              {evidence.lastSurvey ? (
-                <p className="text-sm text-foreground">
-                  {evidence.lastSurvey.date} · {evidence.lastSurvey.type.replace(/_/g, " ")} ·{" "}
-                  {evidence.lastSurvey.result.replace(/_/g, " ")}
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">No survey history recorded.</p>
-              )}
+              <p
+                className={`text-sm ${evidence.lastSurvey ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                {formatBinderLastSurveyLine(evidence.lastSurvey)}
+              </p>
             </div>
           </div>
         ) : null}
