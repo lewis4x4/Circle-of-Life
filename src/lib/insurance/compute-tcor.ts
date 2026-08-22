@@ -5,6 +5,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { facilityDateIsoDaysFromToday, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 
 export type TcorSnapshot = {
@@ -21,12 +22,10 @@ export type TcorSnapshot = {
 };
 
 function rolling12MonthBounds(): { periodStart: string; periodEnd: string } {
-  const end = new Date();
-  const start = new Date(end);
-  start.setUTCDate(start.getUTCDate() - 365);
+  const now = new Date();
   return {
-    periodStart: start.toISOString().slice(0, 10),
-    periodEnd: end.toISOString().slice(0, 10),
+    periodStart: facilityDateIsoDaysFromToday(-365, now),
+    periodEnd: todayFacilityDateIso(now),
   };
 }
 

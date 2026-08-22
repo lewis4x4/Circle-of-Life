@@ -280,7 +280,7 @@ export default function AdminInsuranceHubPage() {
           ) : tcor ? (
             <div className="grid gap-3 text-sm md:grid-cols-2">
               <p className="text-muted-foreground">
-                <span className="font-medium text-foreground">Window:</span>{" "}
+                <span className="font-medium text-foreground">Window (Eastern):</span>{" "}
                 <span className="font-mono text-xs">
                   {tcor.periodStart} → {tcor.periodEnd}
                 </span>
