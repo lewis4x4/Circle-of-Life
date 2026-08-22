@@ -19,6 +19,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 const CERT_TYPE_PRESETS = [
   { value: "bls_cpr", label: "BLS / CPR" },
@@ -50,7 +51,7 @@ export default function AdminNewCertificationPage() {
   const [certType, setCertType] = useState("bls_cpr");
   const [certName, setCertName] = useState("");
   const [issuingAuthority, setIssuingAuthority] = useState("");
-  const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [issueDate, setIssueDate] = useState(() => todayFacilityDateIso());
   const [expirationDate, setExpirationDate] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -292,14 +293,30 @@ export default function AdminNewCertificationPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Issue date</label>
-                <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} required />
+                <label htmlFor="certification-issue-date" className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  Issue date (ET)
+                </label>
+                <Input
+                  id="certification-issue-date"
+                  type="date"
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  required
+                />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  Expiration (optional)
+                <label
+                  htmlFor="certification-expiration-date"
+                  className="text-xs font-medium text-slate-600 dark:text-slate-400"
+                >
+                  Expiration (optional, ET)
                 </label>
-                <Input type="date" value={expirationDate} onChange={(e) => setExpirationDate(e.target.value)} />
+                <Input
+                  id="certification-expiration-date"
+                  type="date"
+                  value={expirationDate}
+                  onChange={(e) => setExpirationDate(e.target.value)}
+                />
               </div>
             </div>
 
