@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { facilityDateIsoDaysFromToday } from "@/lib/facility-wall-clock";
 import { FAMILY_CALENDAR_NO_LOCATION } from "@/lib/family/family-portal-copy";
 import type { Database } from "@/types/database";
 
@@ -13,15 +14,12 @@ export type FamilyCalendarEventRow = {
   cancelled: boolean;
 };
 
-function addDaysYmd(ymd: string, days: number): string {
-  const d = new Date(`${ymd}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return ymd;
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function todayUtcYmd(): string {
-  return new Date().toISOString().slice(0, 10);
+/** Eastern calendar window for family activity session queries (recent past + upcoming). */
+export function getFamilyCalendarDateWindow(now: Date = new Date()) {
+  return {
+    from: facilityDateIsoDaysFromToday(-7, now),
+    to: facilityDateIsoDaysFromToday(120, now),
+  };
 }
 
 function formatDayLabel(ymd: string): string {
@@ -79,8 +77,7 @@ export async function fetchFamilyCalendarEvents(
   if (userErr) return { ok: false, error: userErr.message };
   if (!user) return { ok: false, error: "Sign in to view the calendar." };
 
-  const from = addDaysYmd(todayUtcYmd(), -7);
-  const to = addDaysYmd(todayUtcYmd(), 120);
+  const { from, to } = getFamilyCalendarDateWindow();
 
   const q = await supabase
     .from("activity_sessions")
