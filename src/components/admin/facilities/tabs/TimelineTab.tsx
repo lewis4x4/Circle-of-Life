@@ -4,6 +4,10 @@ import React, { useMemo, useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { useFacilityTimeline } from "@/hooks/useFacilityTimeline";
 import { TIMELINE_EVENT_TYPES } from "@/lib/admin/facilities/facility-constants";
+import {
+  TIMELINE_TAB_NO_EVENTS_COPY,
+  createDefaultTimelineEventForm,
+} from "@/lib/facilities/timeline-tab-display-copy";
 import type { TimelineEventInput } from "@/lib/validation/facility-admin";
 import { DateInput } from "@/components/ui/date-input";
 import { cn } from "@/lib/utils";
@@ -36,12 +40,7 @@ export function TimelineTab({ facilityId }: TimelineTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<TimelineEventInput>({
-    event_date: new Date().toISOString().slice(0, 10),
-    event_type: "other",
-    title: "",
-    description: "",
-  });
+  const [form, setForm] = useState<TimelineEventInput>(() => createDefaultTimelineEventForm());
 
   const filtered = useMemo(() => {
     if (filter === "all") return events;
@@ -54,12 +53,7 @@ export function TimelineTab({ facilityId }: TimelineTabProps) {
     try {
       await createEvent(form);
       setShowForm(false);
-      setForm({
-        event_date: new Date().toISOString().slice(0, 10),
-        event_type: "other",
-        title: "",
-        description: "",
-      });
+      setForm(createDefaultTimelineEventForm());
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -163,17 +157,21 @@ export function TimelineTab({ facilityId }: TimelineTabProps) {
         </form>
       )}
 
-      <ol className="relative border-l border-border ml-3 space-y-6">
-        {filtered.map((ev) => (
-          <li key={ev.id} className="ml-6">
-            <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-border bg-primary" />
-            <time className="text-xs text-muted-foreground tabular-nums">{ev.event_date}</time>
-            <h4 className="font-semibold text-foreground">{ev.title}</h4>
-            <p className="text-xs text-muted-foreground">{TYPE_LABEL[ev.event_type] ?? ev.event_type}</p>
-            {ev.description && <p className="text-sm mt-1 text-foreground">{ev.description}</p>}
-          </li>
-        ))}
-      </ol>
+      {filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{TIMELINE_TAB_NO_EVENTS_COPY}</p>
+      ) : (
+        <ol className="relative border-l border-border ml-3 space-y-6">
+          {filtered.map((ev) => (
+            <li key={ev.id} className="ml-6">
+              <span className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-border bg-primary" />
+              <time className="text-xs text-muted-foreground tabular-nums">{ev.event_date}</time>
+              <h4 className="font-semibold text-foreground">{ev.title}</h4>
+              <p className="text-xs text-muted-foreground">{TYPE_LABEL[ev.event_type] ?? ev.event_type}</p>
+              {ev.description && <p className="text-sm mt-1 text-foreground">{ev.description}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
