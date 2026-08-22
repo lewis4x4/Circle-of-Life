@@ -36,7 +36,9 @@ import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
 } from "@/lib/executive/metric-snapshot-queries";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchResidentAssuranceFacilityHeatMap,
   fetchResidentAssuranceFacilityTrendSeries,
@@ -64,7 +66,14 @@ import {
 } from "@/lib/executive/kpi-tile-copy";
 import { presenceLabel, presenceTone, type ResidencyStatus } from "@/lib/residents/presence";
 import type { StatusPillTone } from "@/components/ui/status-pill";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import type { Database } from "@/types/database";
+
+/** Named loading copy while auth hydrates or the first client fetch is in flight. */
+export const EXECUTIVE_OVERVIEW_LOADING_MESSAGE = "Loading portfolio overview…";
 
 type ExecutiveOverviewPageClientProps = {
   initialMetrics: Record<string, number>;
@@ -95,8 +104,8 @@ export function ExecutiveOverviewPageClient({
   const roleHomeSubtitle = resolveSubtitle(
     "portfolio movement, exception pressure, leadership decisions only.",
   );
-  const [, setLoading] = useState(!initialHasServerData);
-  const [, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!initialHasServerData);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Core metrics
   const [metrics, setMetrics] = useState<Record<string, number>>(initialMetrics);
@@ -119,17 +128,25 @@ export function ExecutiveOverviewPageClient({
   const skipNextLoadRef = useRef(initialHasServerData);
 
   const load = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
     if (skipNextLoadRef.current) {
       skipNextLoadRef.current = false;
       return;
     }
     skipNextLoadRef.current = false;
 
-    setLoading(true);
-    setError(null);
-    try {
-      if (!organizationId) throw new Error("Organization missing on profile.");
+    if (!organizationId) {
+      setFetchError(null);
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
+    setFetchError(null);
+    try {
       // 1. Fetch latest scoped executive snapshots. Aggregate metrics stay
       // separate from facility metrics; never smear portfolio averages into
       // facility rows.
@@ -227,11 +244,20 @@ export function ExecutiveOverviewPageClient({
       }
 
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load executive overview.");
+      const message =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" &&
+              e !== null &&
+              "message" in e &&
+              typeof (e as { message: unknown }).message === "string"
+            ? (e as { message: string }).message
+            : "Failed to load executive overview.";
+      setFetchError(message);
     } finally {
       setLoading(false);
     }
-  }, [organizationId, supabase]);
+  }, [authLoading, organizationId, supabase]);
 
   useEffect(() => {
     void load();
@@ -399,6 +425,21 @@ export function ExecutiveOverviewPageClient({
   const isOrgEmpty =
     !orgHasMetrics && !orgHasAlerts && !orgHasFacilityMetrics && !orgHasAssurance;
 
+  const hasOrgScopedData =
+    orgHasMetrics || orgHasAlerts || orgHasFacilityMetrics || orgHasAssurance || facilities.length > 0;
+
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const fetchErrorBannerMessage = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const showOverviewLoading =
+    (authLoading || loading) && !hasOrgScopedData && !organizationGapMessage;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
@@ -421,7 +462,19 @@ export function ExecutiveOverviewPageClient({
         </div>
       </div>
 
-      {isOrgEmpty ? (
+      {organizationGapMessage ? (
+        <div className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 p-4 text-sm text-muted-foreground">
+          {organizationGapMessage}
+        </div>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice message={fetchErrorBannerMessage} onRetry={() => void load()} />
+      ) : null}
+
+      {showOverviewLoading ? (
+        <ExecutiveOverviewLoadingBody />
+      ) : organizationGapMessage || fetchErrorBannerMessage ? null : isOrgEmpty ? (
         <ExecutiveEmptyOnboarding facilityCount={facilities.length} onRefreshComplete={load} />
       ) : (
         <ExecutiveDashboardBody
@@ -465,6 +518,29 @@ type ExecutiveRefreshState =
       risk?: ExecutiveRefreshFunctionStatus;
       missing?: string[];
     };
+
+/** Skeleton body while auth hydrates or the first scoped fetch is in flight. */
+function ExecutiveOverviewLoadingBody() {
+  return (
+    <div className="flex flex-col gap-6" role="status" aria-live="polite">
+      <p className="text-[13px] text-muted-foreground">{EXECUTIVE_OVERVIEW_LOADING_MESSAGE}</p>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <Skeleton className="h-24 rounded-lg bg-muted" />
+        <Skeleton className="h-24 rounded-lg bg-muted" />
+        <Skeleton className="h-24 rounded-lg bg-muted" />
+        <Skeleton className="h-24 rounded-lg bg-muted" />
+        <Skeleton className="col-span-2 h-24 rounded-lg bg-muted md:col-span-1" />
+      </div>
+      <Skeleton className="h-28 rounded-lg bg-muted" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <Skeleton className="h-32 rounded-lg bg-muted" />
+        <Skeleton className="h-32 rounded-lg bg-muted" />
+        <Skeleton className="h-32 rounded-lg bg-muted" />
+        <Skeleton className="h-32 rounded-lg bg-muted" />
+      </div>
+    </div>
+  );
+}
 
 function ExecutiveEmptyOnboarding({
   facilityCount,
