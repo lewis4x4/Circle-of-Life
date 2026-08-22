@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  facilityDateIsoDaysFromToday,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
+
 export type BinderCategory =
   | "admin_records"
   | "staff_records"
@@ -87,14 +92,29 @@ async function countWindow(
   }
 }
 
+export type BinderEvidenceDateWindow = {
+  todayIso: string;
+  in60Iso: string;
+  yearStartIso: string;
+};
+
+/** Eastern calendar windows for expiring-soon, drills-due, and in-services YTD counts. */
+export function binderEvidenceDateWindow(now: Date = new Date()): BinderEvidenceDateWindow {
+  const todayIso = todayFacilityDateIso(now);
+  return {
+    todayIso,
+    in60Iso: facilityDateIsoDaysFromToday(60, now),
+    yearStartIso: `${todayIso.slice(0, 4)}-01-01`,
+  };
+}
+
 /** Fetch live readiness evidence for a facility. Defensive: never throws. */
 export async function fetchBinderEvidence(
   supabase: SupabaseClient,
   facilityId: string,
+  now: Date = new Date(),
 ): Promise<BinderEvidence> {
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const in60Iso = new Date(Date.now() + 60 * 86400 * 1000).toISOString().slice(0, 10);
-  const yearStartIso = `${new Date().getFullYear()}-01-01`;
+  const { todayIso, in60Iso, yearStartIso } = binderEvidenceDateWindow(now);
 
   const [documentCount, expiringSoonCount, inservicesThisYear, drillsDueSoon] = await Promise.all([
     countWindow(supabase, "facility_documents", facilityId, null, null, null),
