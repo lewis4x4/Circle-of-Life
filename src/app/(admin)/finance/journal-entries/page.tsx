@@ -100,13 +100,7 @@ export default function JournalEntriesListPage() {
             </p>
           </div>
           <div className="flex shrink-0">
-            <Link
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "rounded-full font-bold uppercase tracking-wider text-[10px] shadow-lg bg-primary-600 hover:bg-primary-700 text-white border border-primary-500",
-              )}
-              href="/admin/finance/journal-entries/new"
-            >
+            <Link className={buttonVariants({ size: "default" })} href="/admin/finance/journal-entries/new">
               + New Journal
             </Link>
           </div>
