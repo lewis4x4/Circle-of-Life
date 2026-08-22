@@ -7,6 +7,11 @@ export const NURSE_WATCHLIST_NO_ROOM_COPY = "No room posted";
 
 const LEGACY_NO_ROOM_SENTINEL = "—";
 
+/** Dose alert count — real zero remains numeric; unavailable count names the gap. */
+export function formatDoseAlertCount(value: number | null): number | string {
+  return value === null ? "None posted" : value;
+}
+
 /** Dashboard label for watchlist rows: posted rooms vs safety watch (no room on file). */
 export function formatNurseWatchlistRoomLabel(room: string): string {
   const trimmed = room.trim();

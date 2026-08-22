@@ -7,6 +7,7 @@ import { CalendarDays, Loader2 } from "lucide-react";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
+import { facilityDateIsoDaysFromToday } from "@/lib/facility-wall-clock";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -16,6 +17,13 @@ import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportSt
 
 type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 
+export function getCaregiverScheduleWindow(now: Date = new Date()) {
+  return {
+    start: facilityDateIsoDaysFromToday(-1, now),
+    end: facilityDateIsoDaysFromToday(21, now),
+  };
+}
+
 export default function CaregiverSchedulesPage() {
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
@@ -23,6 +31,7 @@ export default function CaregiverSchedulesPage() {
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
+  const [scheduleWindow, setScheduleWindow] = useState(() => getCaregiverScheduleWindow());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,18 +78,16 @@ export default function CaregiverSchedulesPage() {
       }
 
       const staffId = (st.data as { id: string }).id;
-      const start = new Date();
-      start.setDate(start.getDate() - 1);
-      const end = new Date();
-      end.setDate(end.getDate() + 21);
+      const { start, end } = getCaregiverScheduleWindow();
+      setScheduleWindow({ start, end });
 
       const q = await supabase
         .from("shift_assignments")
         .select("*")
         .eq("staff_id", staffId)
         .eq("facility_id", ctxRes.ctx.facilityId)
-        .gte("shift_date", start.toISOString().slice(0, 10))
-        .lte("shift_date", end.toISOString().slice(0, 10))
+        .gte("shift_date", start)
+        .lte("shift_date", end)
         .is("deleted_at", null)
         .order("shift_date", { ascending: true })
         .order("shift_type", { ascending: true });
@@ -114,8 +121,8 @@ export default function CaregiverSchedulesPage() {
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {facilityName
-              ? `Published shifts at ${facilityName} for the next few weeks.`
-              : "Your published shift assignments."}
+              ? `Published shifts at ${facilityName} from ${scheduleWindow.start} through ${scheduleWindow.end} Eastern.`
+              : `Published shift assignments from ${scheduleWindow.start} through ${scheduleWindow.end} Eastern.`}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -123,7 +130,7 @@ export default function CaregiverSchedulesPage() {
       {loading ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Loading…
+          Loading your schedule…
         </div>
       ) : null}
 
@@ -136,7 +143,8 @@ export default function CaregiverSchedulesPage() {
       {!loading && !error && rows.length === 0 ? (
         <Card className="border-border bg-card text-card-foreground">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No shift assignments in this window. Scheduling publishes from the admin console.
+            No shift assignments from {scheduleWindow.start} through {scheduleWindow.end} Eastern. Scheduling
+            publishes from the admin console.
           </CardContent>
         </Card>
       ) : null}

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createClient } from "@/lib/supabase/client";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
@@ -54,6 +54,33 @@ describe("fetchNurseMedicationBrief watchlistResidents", () => {
         },
       ],
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("anchors today's eMAR queries to Eastern midnight after 8pm ET", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-20T20:05:00-04:00"));
+    const queries = Array.from({ length: 7 }, () => createCountQueryMock());
+    let queryIndex = 0;
+    vi.mocked(createClient).mockReturnValue({
+      from: vi.fn().mockImplementation(() => queries[queryIndex++]),
+    } as never);
+
+    await fetchNurseMedicationBrief("00000000-0000-4000-8000-0000000000f1");
+
+    for (const index of [1, 2, 5]) {
+      expect(queries[index]?.gte).toHaveBeenCalledWith(
+        "scheduled_time",
+        "2026-08-20T04:00:00.000Z",
+      );
+    }
+    expect(queries[6]?.gte).toHaveBeenCalledWith(
+      "scheduled_time",
+      "2026-08-20T00:05:00.000Z",
+    );
   });
 
   it("names the missing room gap on watchlist rows without changing name or reason", async () => {

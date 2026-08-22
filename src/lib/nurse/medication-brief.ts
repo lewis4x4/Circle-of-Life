@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
+import { facilityDatetimeLocalToUtcIso, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { NURSE_WATCHLIST_NO_ROOM_COPY } from "@/lib/nurse/medication-brief-display-copy";
 import { fetchResidentAssuranceCommandBrief } from "@/lib/resident-assurance/command-center-brief";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -13,8 +14,8 @@ export type NurseMedicationBrief = {
   emarCompliancePct: number;
   medErrors7d: number;
   controlledDiscrepancies: number;
-  missedDosesToday: number;
-  prnGiven24h: number;
+  missedDosesToday: number | null;
+  prnGiven24h: number | null;
   residentAssurance: {
     activeWatches: number;
     openEscalations: number;
@@ -41,7 +42,7 @@ export async function fetchNurseMedicationBrief(
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-  const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00";
+  const todayStart = facilityDatetimeLocalToUtcIso(`${todayFacilityDateIso()}T00:00`);
   const yesterday24h = new Date(Date.now() - 86400000).toISOString();
 
   const [
@@ -88,8 +89,8 @@ export async function fetchNurseMedicationBrief(
   const emarCompliancePct = emarTotal > 0 ? Math.round((emarGiven / emarTotal) * 100) : 100;
   const medErrors7d = (medErrorsRes as CountResponse).count ?? 0;
   const controlledDiscrepancies = (controlledRes as CountResponse).count ?? 0;
-  const missedDosesToday = (missedRes as CountResponse).count ?? 0;
-  const prnGiven24h = (prnRes as CountResponse).count ?? 0;
+  const missedDosesToday = (missedRes as CountResponse).count;
+  const prnGiven24h = (prnRes as CountResponse).count;
 
   return {
     activeMedications,

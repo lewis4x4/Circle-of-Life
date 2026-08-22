@@ -19,6 +19,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 type FinanceOverviewPageClientProps = {
   roleLabel: string;
   postedCount: number | null;
+  postedLookbackStart: string | null;
   unpostedInvoices: number | null;
   initialError: string | null;
 };
@@ -26,6 +27,7 @@ type FinanceOverviewPageClientProps = {
 export default function AdminFinanceHubPageClient({
   roleLabel,
   postedCount,
+  postedLookbackStart,
   unpostedInvoices,
   initialError,
 }: FinanceOverviewPageClientProps) {
@@ -117,6 +119,11 @@ export default function AdminFinanceHubPageClient({
                 <p className="text-4xl font-mono tracking-tighter pb-1">
                   {financeOverviewKpiTileValue("posted_count", postedCount, kpiCtx)}
                 </p>
+                {postedLookbackStart ? (
+                  <p className="text-xs text-muted-foreground">
+                    Includes entries dated on or after {postedLookbackStart} Eastern.
+                  </p>
+                ) : null}
               </div>
             </V2Card>
           </div>

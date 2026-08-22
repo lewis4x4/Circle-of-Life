@@ -26,6 +26,7 @@ async function FinanceOverviewData() {
       <FinanceOverviewPageClient
         roleLabel={roleLabel}
         postedCount={null}
+        postedLookbackStart={null}
         unpostedInvoices={null}
         initialError={roleContext.error}
       />
@@ -35,11 +36,13 @@ async function FinanceOverviewData() {
   const supabase = await createClient();
   let postedCount: number | null = null;
   let unpostedInvoices: number | null = null;
+  let postedLookbackStart: string | null = null;
   let initialError: string | null = null;
 
   try {
     const snapshot = await loadFinanceOverviewData(supabase, roleContext.ctx.organizationId);
     postedCount = snapshot.postedCount;
+    postedLookbackStart = snapshot.postedLookbackStart;
     unpostedInvoices = snapshot.unpostedInvoices;
   } catch (error) {
     initialError = error instanceof Error ? error.message : "Failed to load finance overview.";
@@ -49,6 +52,7 @@ async function FinanceOverviewData() {
     <FinanceOverviewPageClient
       roleLabel={roleLabel}
       postedCount={postedCount}
+      postedLookbackStart={postedLookbackStart}
       unpostedInvoices={unpostedInvoices}
       initialError={initialError}
     />
