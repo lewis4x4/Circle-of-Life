@@ -10,8 +10,11 @@ export const QUALITY_HUB_NO_PERIOD_END_COPY = "No end date posted";
 export const QUALITY_HUB_NO_VALUE_COPY = "No value posted";
 export const QUALITY_HUB_ROW_COUNT_NOT_POSTED = "Row count not posted";
 
+export const QUALITY_HUB_NO_ORGANIZATION_METRIC_COPY = "No organization on this profile";
+
 export type QualityHubMetricContext = {
   noFacility: boolean;
+  noOrganization: boolean;
   loading: boolean;
 };
 
@@ -25,12 +28,18 @@ export function qualityHubMetricLoadingCopy(): string {
   return "Loading…";
 }
 
+/** Metric strip when auth resolved but the profile has no organization. */
+export function qualityHubMetricNoOrganizationCopy(): string {
+  return QUALITY_HUB_NO_ORGANIZATION_METRIC_COPY;
+}
+
 /** Resolve a hub KPI tile value — real zeros stay numeric once loaded. */
 export function qualityHubMetricValue(
   value: number,
   ctx: QualityHubMetricContext,
 ): string | number {
   if (ctx.noFacility) return qualityHubMetricNoFacilityCopy();
+  if (ctx.noOrganization) return qualityHubMetricNoOrganizationCopy();
   if (ctx.loading) return qualityHubMetricLoadingCopy();
   return value;
 }

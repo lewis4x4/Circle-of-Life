@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, LineChart } from "lucide-react";
 
 import { QualityHubNav } from "./quality-hub-nav";
+import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
@@ -22,6 +23,13 @@ import {
   formatQualityHubResultValue,
   qualityHubMetricValue,
 } from "@/lib/quality/quality-hub-display-copy";
+import {
+  deriveQualityHubState,
+  QUALITY_HUB_LOADING_MESSAGE,
+  resolveQualityHubFetchErrorBannerMessage,
+  resolveQualityHubOrganizationGapMessage,
+  resolveQualityHubQueryErrorMessage,
+} from "@/lib/quality/quality-hub-page-state";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -39,7 +47,9 @@ export default function AdminQualityHubPage() {
   const {
     data,
     isPending,
+    isError,
     error: queryError,
+    refetch,
   } = useQuery({
     queryKey: ["quality", "hub", selectedFacilityId, organizationId],
     enabled: facilityReady && !!organizationId,
@@ -50,23 +60,48 @@ export default function AdminQualityHubPage() {
   const latest = data?.latest ?? [];
   const pbjRows = data?.pbjRows ?? [];
 
-  const loading = authLoading || (facilityReady && isPending && !data);
-  const loadError =
-    !authLoading && facilityReady && !organizationId
-      ? "Organization missing on profile."
-      : queryError
-        ? queryError instanceof Error
-          ? queryError.message
-          : "Could not load quality data."
-        : null;
+  const hasOrgScopedData = measures.length > 0 || latest.length > 0 || pbjRows.length > 0;
+
+  const hubLoadState =
+    !facilityReady || !organizationId
+      ? "idle"
+      : isPending
+        ? "loading"
+        : isError
+          ? "error"
+          : "ready";
+
+  const hubState = deriveQualityHubState({
+    authLoading,
+    organizationId,
+    loadState: hubLoadState,
+    hasFacility: facilityReady,
+  });
+
+  const organizationGapMessage = resolveQualityHubOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+
+  const fetchErrorBannerMessage = resolveQualityHubFetchErrorBannerMessage({
+    authLoading,
+    fetchError: resolveQualityHubQueryErrorMessage(queryError),
+  });
+
+  const hubLoading =
+    hubState === "auth_loading" || hubState === "loading";
 
   const homeHref = useMemo(() => {
     const effectiveRole = getAppRoleFromClaims(user) || appRole;
     return effectiveRole ? getDashboardRouteForRole(effectiveRole) : "/admin";
   }, [appRole, user]);
 
-  const noFacility = !facilityReady;
-  const metricCtx = { noFacility, loading };
+  const noFacility = hubState === "no_facility";
+  const noOrganization = hubState === "no_organization";
+  const showHubContent = !noFacility && !organizationGapMessage && !hubLoading && !fetchErrorBannerMessage;
+
+  const metricCtx = { noFacility, noOrganization, loading: hubLoading };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
@@ -89,16 +124,32 @@ export default function AdminQualityHubPage() {
         </div>
       ) : null}
 
-      {loadError ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {loadError}
+      {organizationGapMessage ? (
+        <section
+          aria-label="Organization scope required"
+          className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 p-6"
+        >
+          <p className="text-sm text-muted-foreground">{organizationGapMessage}</p>
+        </section>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <AdminLiveDataFallbackNotice
+          message={fetchErrorBannerMessage}
+          onRetry={() => void refetch()}
+        />
+      ) : null}
+
+      {hubState === "auth_loading" || hubState === "loading" ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {QUALITY_HUB_LOADING_MESSAGE}
         </p>
       ) : null}
 
       <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-5" staggerMs={60}>
         <div className="h-[140px]">
           <V2Card className="border-primary-500/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
-            <MonolithicWatermark value={loading ? 0 : measures.length} className="text-info/10 opacity-50" />
+            <MonolithicWatermark value={hubLoading ? 0 : measures.length} className="text-info/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary-600 dark:text-primary-400">
                  Active Measures
@@ -109,7 +160,7 @@ export default function AdminQualityHubPage() {
         </div>
         <div className="h-[140px]">
           <V2Card className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]" hoverColor="emerald">
-            <MonolithicWatermark value={loading ? 0 : latest.length} className="text-success/10 opacity-50" />
+            <MonolithicWatermark value={hubLoading ? 0 : latest.length} className="text-success/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
                  Latest Snapshot Rows
@@ -120,7 +171,7 @@ export default function AdminQualityHubPage() {
         </div>
         <div className="h-[140px]">
           <V2Card className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]" hoverColor="slate">
-            <MonolithicWatermark value={loading ? 0 : pbjRows.length} className="text-muted-foreground/10 opacity-50" />
+            <MonolithicWatermark value={hubLoading ? 0 : pbjRows.length} className="text-muted-foreground/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
               <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
                  PBJ Batches
@@ -131,6 +182,8 @@ export default function AdminQualityHubPage() {
         </div>
       </KineticGrid>
 
+      {showHubContent ? (
+        <>
       <Link href="/admin/quality/measures/new" className="group block focus-visible:outline-none mt-2">
         <div className="p-5 flex items-center gap-4 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:border-primary/40 hover:bg-muted/40 cursor-pointer">
           <div className="rounded-lg bg-primary/10 p-3 shadow-sm border border-primary/20 group-hover:bg-primary/20 transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]">
@@ -151,12 +204,10 @@ export default function AdminQualityHubPage() {
           <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Measure Catalog</h2>
         </div>
         
-        {noFacility || loading ? (
-          <p className="text-sm font-mono text-slate-500">Loading…</p>
-        ) : measures.length === 0 ? (
+        {measures.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground bg-muted rounded-lg border border-border max-w-xl mx-auto mt-8">
-             <p className="font-medium">No Baseline Quality Measures.</p>
-             <p className="text-sm opacity-80 mt-1">Use &apos;Define a measure&apos; to populate standard telemetry data.</p>
+             <p className="font-medium">No catalog measures posted.</p>
+             <p className="text-sm opacity-80 mt-1">Use &apos;Define a measure&apos; when your org is ready to add catalog rows.</p>
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -189,11 +240,9 @@ export default function AdminQualityHubPage() {
           <h2 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Latest Facilities Telemetry</h2>
         </div>
         
-        {noFacility || loading ? (
-           <p className="text-sm font-mono text-slate-500">Loading…</p>
-        ) : latest.length === 0 ? (
+        {latest.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground bg-muted rounded-lg border border-border max-w-xl mx-auto mt-8">
-             <p className="font-medium">No Results.</p>
+             <p className="font-medium">No telemetry rows posted.</p>
              <p className="text-sm opacity-80 mt-1">Import or enter results in a facility follow-up.</p>
           </div>
         ) : (
@@ -229,9 +278,7 @@ export default function AdminQualityHubPage() {
           </div>
         </div>
         
-        {noFacility || loading ? (
-          <p className="text-sm font-mono text-slate-500">Loading…</p>
-        ) : pbjRows.length === 0 ? (
+        {pbjRows.length === 0 ? (
           <div className="text-center text-muted-foreground bg-muted rounded-lg border border-border max-w-xl mx-auto mt-4 px-8 py-6">
              <p className="font-medium text-sm">No PBJ batches recorded.</p>
              <p className="text-xs opacity-80 mt-1">Generation ships in Enhanced.</p>
@@ -261,6 +308,8 @@ export default function AdminQualityHubPage() {
           </div>
         )}
       </div>
+        </>
+      ) : null}
 
       <div className="flex flex-wrap gap-2 text-sm text-slate-500 font-mono tracking-wider uppercase mt-4">
         <span>Dashboard:</span>
