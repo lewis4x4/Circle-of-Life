@@ -6,8 +6,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Umbrella } from "lucide-react";
 
 import { InsuranceHubNav } from "./insurance-hub-nav";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  resolveExecutiveFetchErrorBannerMessage,
+  resolveExecutiveOrganizationGapMessage,
+} from "@/lib/executive/executive-auth-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { computeTotalCostOfRisk, type TcorSnapshot } from "@/lib/insurance/compute-tcor";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
@@ -26,6 +31,8 @@ type InsuranceHubSnapshot = {
   openClaims: number;
   entities: EntityMini[];
 };
+
+export const INSURANCE_HUB_LOADING_PROFILE_COPY = "Loading insurance profile…";
 
 export default function AdminInsuranceHubPage() {
   const supabase = createClient();
@@ -99,12 +106,15 @@ export default function AdminInsuranceHubPage() {
   });
 
   const loading = authLoading || overviewPending;
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : overviewError
-        ? overviewError.message
-        : null;
+  const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: overview != null,
+  });
+  const loadError = resolveExecutiveFetchErrorBannerMessage({
+    authLoading,
+    fetchError: overviewError?.message ?? null,
+  });
   const entities = overview?.entities ?? [];
   const activePolicies = overview?.activePolicies ?? null;
   const renewalsInFlight = overview?.renewalsInFlight ?? null;
@@ -128,10 +138,24 @@ export default function AdminInsuranceHubPage() {
               Corporate policies, renewals, claims, COIs, and workers&apos; compensation (Module 18).
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              {roleConfig.roleLabel} drill-in: keep policy posture, claims movement, and renewal exposure close to the executive exception flow.
+              {authLoading
+                ? "Role context will appear when the operator profile is ready."
+                : `${roleConfig.roleLabel} drill-in: keep policy posture, claims movement, and renewal exposure close to the executive exception flow.`}
             </p>
           </div>
         </div>
+
+        {authLoading ? (
+          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+            {INSURANCE_HUB_LOADING_PROFILE_COPY}
+          </p>
+        ) : null}
+
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
 
         {loadError && (
           <p className="text-sm text-destructive" role="alert">
