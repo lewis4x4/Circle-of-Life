@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatStaffRosterNextShift } from "@/lib/staff/staff-roster-display-copy";
@@ -159,6 +160,11 @@ type SupabaseShiftRow = {
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
+/** Upcoming-shift query floor: Eastern calendar today (not UTC `toISOString().slice`). */
+export function staffUpcomingShiftCutoffIso(now: Date = new Date()): string {
+  return todayFacilityDateIso(now);
+}
+
 export async function fetchStaffFromSupabase(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -187,7 +193,7 @@ export async function fetchStaffFromSupabase(
   const staffList = dedupeStaffDirectoryRecords(rawStaffList);
 
   const staffIds = staffList.map((s) => s.id);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = staffUpcomingShiftCutoffIso();
 
   // The cert and shift queries both depend only on the staff id list — run
   // them in parallel instead of chaining two serial round-trips. Saves ~1 RTT

@@ -16,6 +16,8 @@ export const STAFF_DETAIL_NO_HIRE_DATE_COPY = "No hire date posted";
 export const STAFF_DETAIL_NO_ISSUE_DATE_COPY = "No issue date posted";
 export const STAFF_DETAIL_NO_EXPIRATION_DATE_COPY = "No expiration date posted";
 export const STAFF_DETAIL_NO_TERMINATION_DATE_COPY = "No termination date posted";
+export const STAFF_DETAIL_NO_CERTS_COPY = "No certifications posted";
+export const STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY = "No upcoming shifts posted";
 
 const STAFF_DETAIL_DATE_ONLY_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",

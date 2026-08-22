@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -66,7 +67,7 @@ export default function AdminNewStaffPage() {
   const [lastName, setLastName] = useState("");
   const [staffRole, setStaffRole] = useState("cna");
   const [employmentStatus, setEmploymentStatus] = useState("active");
-  const [hireDate, setHireDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [hireDate, setHireDate] = useState(() => todayFacilityDateIso());
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
@@ -248,8 +249,20 @@ export default function AdminNewStaffPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Hire date</label>
-              <Input type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} required />
+              <label
+                htmlFor="hire-date"
+                className="text-xs font-medium text-slate-600 dark:text-slate-400"
+              >
+                Hire date (ET)
+              </label>
+              <Input
+                id="hire-date"
+                type="date"
+                value={hireDate}
+                onChange={(e) => setHireDate(e.target.value)}
+                required
+                aria-label="Hire date (Eastern Time)"
+              />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

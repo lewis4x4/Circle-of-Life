@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   STAFF_DETAIL_NO_ALT_PHONE_COPY,
   STAFF_DETAIL_NO_EMAIL_COPY,
+  STAFF_DETAIL_NO_CERTS_COPY,
   STAFF_DETAIL_NO_EMERGENCY_NAME_COPY,
   STAFF_DETAIL_NO_EMERGENCY_PHONE_COPY,
   STAFF_DETAIL_NO_EMERGENCY_RELATIONSHIP_COPY,
@@ -13,6 +14,7 @@ import {
   STAFF_DETAIL_NO_PHONE_COPY,
   STAFF_DETAIL_NO_RATE_COPY,
   STAFF_DETAIL_NO_TERMINATION_DATE_COPY,
+  STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY,
   STAFF_DETAIL_NO_UPDATE_TIMESTAMP_COPY,
   formatStaffDetailAltPhone,
   formatStaffDetailCertExpirationDate,
@@ -31,6 +33,15 @@ import {
 } from "./staff-detail-display-copy";
 
 const EM_DASH = "—";
+
+describe("staff detail empty roster sections", () => {
+  it("names missing certifications and shifts instead of a silent dash", () => {
+    expect(STAFF_DETAIL_NO_CERTS_COPY).toBe("No certifications posted");
+    expect(STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY).toBe("No upcoming shifts posted");
+    expect(STAFF_DETAIL_NO_CERTS_COPY).not.toBe(EM_DASH);
+    expect(STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY).not.toBe(EM_DASH);
+  });
+});
 
 describe("formatStaffDetailPhone", () => {
   it("names a missing phone instead of an em dash", () => {

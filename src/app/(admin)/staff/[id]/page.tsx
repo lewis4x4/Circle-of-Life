@@ -15,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import {
   formatStaffDetailAltPhone,
@@ -30,6 +31,8 @@ import {
   formatStaffDetailRateCents,
   formatStaffDetailTerminationDate,
   formatStaffDetailUpdatedAt,
+  STAFF_DETAIL_NO_CERTS_COPY,
+  STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY,
 } from "@/lib/staff/staff-detail-display-copy";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
@@ -188,7 +191,7 @@ export default function AdminStaffDetailPage() {
       if (certRes.error) throw certRes.error;
       setCerts(certRes.data ?? []);
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayFacilityDateIso();
       let shiftQ = supabase
         .from("shift_assignments" as never)
         .select("shift_date, shift_type, status")
@@ -392,7 +395,7 @@ export default function AdminStaffDetailPage() {
 
           <RecordDetailSection title="Certifications" description="Active directory credentials" className="lg:col-span-2">
             {certs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No certification rows on file.</p>
+              <p className="text-sm text-muted-foreground">{STAFF_DETAIL_NO_CERTS_COPY}</p>
             ) : (
               <ul className="divide-y divide-border">
                 {certs.map((c) => (
@@ -419,7 +422,7 @@ export default function AdminStaffDetailPage() {
 
           <RecordDetailSection title="Upcoming shifts" description="Next assigned blocks" className="lg:col-span-2">
             {shifts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No upcoming shifts in range.</p>
+              <p className="text-sm text-muted-foreground">{STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY}</p>
             ) : (
               <ul className="flex flex-wrap gap-3">
                 {shifts.map((s, i) => (

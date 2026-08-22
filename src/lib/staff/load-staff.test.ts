@@ -6,6 +6,7 @@ import {
   dedupeStaffDirectoryRecords,
   isSameStaffDirectoryPerson,
   pickPreferredStaffDirectoryRecord,
+  staffUpcomingShiftCutoffIso,
   type StaffDirectorySourceRow,
 } from "./load-staff";
 
@@ -30,6 +31,17 @@ function row(
     ...overrides,
   };
 }
+
+describe("staffUpcomingShiftCutoffIso", () => {
+  /** 8:05 PM Eastern on 2026-08-20 (EDT, UTC−4) — after the UTC date rolls to tomorrow. */
+  const eightOhFivePmEt = new Date("2026-08-20T20:05:00-04:00");
+
+  it("anchors upcoming-shift gte on Eastern calendar today, not UTC ISO slice", () => {
+    expect(staffUpcomingShiftCutoffIso(eightOhFivePmEt)).toBe("2026-08-20");
+    expect(staffUpcomingShiftCutoffIso(eightOhFivePmEt)).not.toBe("2026-08-21");
+    expect(eightOhFivePmEt.toISOString().slice(0, 10)).toBe("2026-08-21");
+  });
+});
 
 describe("isSameStaffDirectoryPerson", () => {
   it("matches rows that share the same linked user id", () => {
