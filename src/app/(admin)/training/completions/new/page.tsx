@@ -19,6 +19,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 import {
   COMPETENCY_CERTIFICATE_BUCKET,
@@ -61,7 +62,7 @@ export default function AdminNewTrainingCompletionPage() {
 
   const [staffId, setStaffId] = useState("");
   const [programId, setProgramId] = useState("");
-  const [completedAt, setCompletedAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [completedAt, setCompletedAt] = useState(() => todayFacilityDateIso());
   const [expiresAt, setExpiresAt] = useState("");
   const [hoursCompleted, setHoursCompleted] = useState("");
   const [deliveryMethod, setDeliveryMethod] =
@@ -365,7 +366,7 @@ export default function AdminNewTrainingCompletionPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="completed">Completed on</Label>
+                <Label htmlFor="completed">Completed on (ET)</Label>
                 <Input
                   id="completed"
                   type="date"
