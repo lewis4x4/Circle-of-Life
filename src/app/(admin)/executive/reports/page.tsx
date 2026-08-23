@@ -42,6 +42,7 @@ import {
   resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { EXECUTIVE_REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
@@ -348,7 +349,7 @@ export default function ExecutiveSavedReportsPage() {
       const kpi = await fetchExecutiveKpiSnapshot(supabase, orgId, facilityId);
       const csv = kpiToCsv(report.name, kpi);
       const safe = report.name.replace(/[^\w\-]+/g, "_").slice(0, 48);
-      downloadTextFile(`haven-exec-${safe}-${new Date().toISOString().slice(0, 10)}.csv`, csv, "text/csv;charset=utf-8");
+      downloadTextFile(`haven-exec-${safe}-${todayFacilityDateIso()}.csv`, csv, "text/csv;charset=utf-8");
       await persistLastGenerated(report.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Export failed.");
@@ -725,6 +726,9 @@ export default function ExecutiveSavedReportsPage() {
             <CardTitle className="text-lg">Your reports</CardTitle>
             <CardDescription>
               Download CSV for spreadsheets, or print / save as PDF for board packs.
+              <span className="mt-1 block text-xs text-muted-foreground">
+                CSV export filenames use today&apos;s Eastern (ET) calendar date.
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent>
