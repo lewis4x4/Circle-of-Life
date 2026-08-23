@@ -17,6 +17,7 @@ import {
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
 import { formatDischargeDetailTimestamp } from "@/lib/discharge/discharge-detail-display-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: {
@@ -108,7 +109,7 @@ export default function AdminDischargeDetailPage() {
       setPharmacistNpiDraft(loadedRow?.pharmacist_npi ?? "");
       setDischargeTargetDraft(loadedRow?.residents?.discharge_target_date ?? "");
       setHospiceStatusDraft((loadedRow?.residents?.hospice_status as Database["public"]["Enums"]["hospice_status"] | undefined) ?? "none");
-      const todayIso = new Date().toISOString().slice(0, 10);
+      const todayIso = todayFacilityDateIso();
       setOfficialDischargeDate(
         loadedRow?.residents?.discharge_date ??
           loadedRow?.residents?.discharge_target_date ??
@@ -496,7 +497,7 @@ export default function AdminDischargeDetailPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Official discharge date
+                      Official discharge date (ET)
                     </span>
                     <input
                       type="date"
