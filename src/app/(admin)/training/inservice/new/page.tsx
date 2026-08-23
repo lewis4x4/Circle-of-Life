@@ -19,6 +19,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,7 @@ export default function AdminNewInserviceSessionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sessionDate, setSessionDate] = useState(() => todayFacilityDateIso());
   const [topic, setTopic] = useState("");
   const [trainerName, setTrainerName] = useState("");
   const [hours, setHours] = useState("1");
@@ -325,7 +326,7 @@ export default function AdminNewInserviceSessionPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="sessionDate">Session date</Label>
+                <Label htmlFor="sessionDate">Session date (ET)</Label>
                 <Input
                   id="sessionDate"
                   type="date"
