@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { VENDOR_PAYMENTS_LIST_SELECT } from "@/lib/admin/hub-list-limits";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canOperateFacilityVendorWorkflow } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
@@ -34,7 +35,7 @@ export default function VendorPaymentsPage() {
   const [facilityId, setFacilityId] = useState("");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("ach");
-  const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [payDate, setPayDate] = useState(() => todayFacilityDateIso());
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -209,8 +210,14 @@ export default function VendorPaymentsPage() {
                   <Input id="amt" value={amount} onChange={(ev) => setAmount(ev.target.value)} inputMode="decimal" placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="pd">Payment date</Label>
-                  <Input id="pd" type="date" value={payDate} onChange={(ev) => setPayDate(ev.target.value)} />
+                  <Label htmlFor="pd">Payment date (ET)</Label>
+                  <Input
+                    id="pd"
+                    type="date"
+                    value={payDate}
+                    onChange={(ev) => setPayDate(ev.target.value)}
+                    aria-label="Payment date (Eastern Time)"
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
