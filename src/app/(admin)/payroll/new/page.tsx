@@ -11,31 +11,57 @@ import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import {
+  isPayrollNewSubmitBlocked,
+  resolvePayrollNewFetchErrorBannerMessage,
+  resolvePayrollNewOrganizationGapMessage,
+  resolvePayrollNewSubmitButtonLabel,
+} from "@/lib/payroll/payroll-new-page-state";
+import { PAYROLL_NEW_LOADING_PROFILE_COPY } from "@/lib/payroll/payroll-new-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 export default function AdminPayrollNewBatchPage() {
   const supabase = createClient();
   const router = useRouter();
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [provider, setProvider] = useState("generic");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
 
+  const organizationGapMessage = resolvePayrollNewOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: false,
+  });
+  const fetchErrorBannerMessage = resolvePayrollNewFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+
+  const submitBlocked = isPayrollNewSubmitBlocked({
+    saving,
+    authLoading,
+    organizationId,
+    userId: user?.id,
+    facilityReady,
+    periodStart,
+    periodEnd,
+  });
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
-    if (!periodStart || !periodEnd) return;
+    if (submitBlocked) return;
+    if (!user || !organizationId || !selectedFacilityId) return;
+
     setSaving(true);
-    setError(null);
+    setFetchError(null);
     try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const { error: insErr } = await supabase.from("payroll_export_batches").insert({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
@@ -45,10 +71,10 @@ export default function AdminPayrollNewBatchPage() {
         status: "draft",
         created_by: user.id,
       });
-      if (insErr) throw insErr;
+      if (insErr) throw new Error(insErr.message);
       router.push("/admin/payroll");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create batch.");
+      setFetchError(e instanceof Error ? e.message : "Could not create batch.");
     } finally {
       setSaving(false);
     }
@@ -65,15 +91,27 @@ export default function AdminPayrollNewBatchPage() {
         </Link>
       </div>
 
-      {!facilityReady && (
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
-      )}
-
-      {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-          {error}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {PAYROLL_NEW_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {!facilityReady && !authLoading ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {fetchErrorBannerMessage}
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -86,23 +124,27 @@ export default function AdminPayrollNewBatchPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="ps">Period start</Label>
+                <Label htmlFor="ps">Period start (ET)</Label>
                 <Input
                   id="ps"
                   type="date"
                   required
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
+                  aria-label="Period start (Eastern Time)"
+                  disabled={Boolean(organizationGapMessage) || authLoading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pe">Period end</Label>
+                <Label htmlFor="pe">Period end (ET)</Label>
                 <Input
                   id="pe"
                   type="date"
                   required
                   value={periodEnd}
                   onChange={(e) => setPeriodEnd(e.target.value)}
+                  aria-label="Period end (Eastern Time)"
+                  disabled={Boolean(organizationGapMessage) || authLoading}
                 />
               </div>
             </div>
@@ -113,10 +155,11 @@ export default function AdminPayrollNewBatchPage() {
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
                 placeholder="generic"
+                disabled={Boolean(organizationGapMessage) || authLoading}
               />
             </div>
-            <Button type="submit" disabled={saving || !facilityReady || !periodStart || !periodEnd}>
-              {saving ? "Saving…" : "Create draft"}
+            <Button type="submit" disabled={submitBlocked}>
+              {resolvePayrollNewSubmitButtonLabel({ saving, authLoading })}
             </Button>
           </form>
         </CardContent>
