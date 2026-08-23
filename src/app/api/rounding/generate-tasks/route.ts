@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
 import { generateObservationTasks } from "@/lib/rounding/generate-observation-tasks";
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
   const planIds = plans.map((plan) => plan.id);
   const residentIds = [...new Set(plans.map((plan) => plan.resident_id))];
 
-  const shiftDate = body.shiftDate ?? windowStart.toISOString().slice(0, 10);
+  const shiftDate = body.shiftDate ?? todayFacilityDateIso(windowStart);
   const { data: assignmentsData, error: assignmentsError } = await context.admin
     .from("shift_assignments")
     .select("id, staff_id, shift_type")
