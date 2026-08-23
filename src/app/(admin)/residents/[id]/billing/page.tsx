@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -111,10 +112,6 @@ function formatDate(isoDate: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function centsToInput(cents: number | null | undefined): string {
   if (cents == null) return "";
   return (cents / 100).toFixed(2);
@@ -165,7 +162,7 @@ export default function ResidentBillingPage() {
   const currentAgreement = agreements.find((agreement) => agreement.status === "active" && !agreement.end_date) ?? agreements[0] ?? null;
 
   const [roomClass, setRoomClass] = useState<"private" | "companion" | "other">("private");
-  const [effectiveDate, setEffectiveDate] = useState(todayIso());
+  const [effectiveDate, setEffectiveDate] = useState(() => todayFacilityDateIso());
   const [negotiatedBase, setNegotiatedBase] = useState("");
   const [careMode, setCareMode] = useState<"standard" | "flat" | "bundled" | "waived">("standard");
   const [negotiatedCare, setNegotiatedCare] = useState("");
@@ -215,7 +212,7 @@ export default function ResidentBillingPage() {
       const ln = r.last_name?.trim() ?? "";
       setResident(r);
       setResidentName(`${fn} ${ln}`.trim() || "Resident");
-      const scheduleTargetDate = r.rate_effective_date ?? todayIso();
+      const scheduleTargetDate = r.rate_effective_date ?? todayFacilityDateIso();
 
       const [payRes, scheduleRes, agreementRes, providerRes] = (await Promise.all([
         supabase
@@ -321,7 +318,7 @@ export default function ResidentBillingPage() {
     }
 
     setRoomClass("private");
-    setEffectiveDate(resident.rate_effective_date ?? todayIso());
+    setEffectiveDate(resident.rate_effective_date ?? todayFacilityDateIso());
     setNegotiatedBase(centsToInput(resident.monthly_base_rate ?? resident.monthly_total_rate));
     setCareMode(resident.monthly_care_surcharge && resident.monthly_care_surcharge > 0 ? "flat" : "standard");
     setNegotiatedCare(centsToInput(resident.monthly_care_surcharge));
@@ -500,7 +497,7 @@ export default function ResidentBillingPage() {
                 </select>
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Effective date</span>
+                <span className="text-xs uppercase tracking-widest text-slate-500">Effective date (ET)</span>
                 <input type="date" value={effectiveDate} onChange={(event) => setEffectiveDate(event.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
