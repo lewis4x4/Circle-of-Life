@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,17 @@ import {
   COMPETENCY_CERTIFICATE_BUCKET,
   competencyCertificateObjectPath,
 } from "@/lib/training/competency-storage";
+import {
+  TRAINING_NEW_LOADING_PROFILE_COPY,
+  TRAINING_NEW_LOADING_STAFF_COPY,
+  TRAINING_NEW_NO_STAFF_AT_FACILITY_COPY,
+} from "@/lib/training/training-new-display-copy";
+import {
+  isTrainingNewSubmitBlocked,
+  resolveTrainingNewFetchErrorBannerMessage,
+  resolveTrainingNewOrganizationGapMessage,
+  resolveTrainingNewSubmitButtonLabel,
+} from "@/lib/training/training-new-page-state";
 import { cn } from "@/lib/utils";
 
 const MAX_CERT_PDF_BYTES = 15 * 1024 * 1024;
@@ -23,24 +34,38 @@ const MAX_CERT_PDF_BYTES = 15 * 1024 * 1024;
 type StaffOption = { id: string; name: string };
 
 export default function AdminTrainingNewDemonstrationPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [staffId, setStaffId] = useState("");
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loadingStaff, setLoadingStaff] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [certificatePdf, setCertificatePdf] = useState<File | null>(null);
 
+  const organizationGapMessage = resolveTrainingNewOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: false,
+  });
+  const fetchErrorBannerMessage = resolveTrainingNewFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+
   const loadStaff = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    if (authLoading) {
+      return;
+    }
+
+    setLoadingStaff(true);
+    setFetchError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setStaffList([]);
-      setLoading(false);
+      setLoadingStaff(false);
       return;
     }
     try {
@@ -51,7 +76,11 @@ export default function AdminTrainingNewDemonstrationPage() {
         .is("deleted_at", null)
         .order("last_name", { ascending: true })
         .limit(200);
-      if (qErr) throw qErr;
+      if (qErr) {
+        setFetchError(qErr.message);
+        setStaffList([]);
+        return;
+      }
       setStaffList(
         (data ?? []).map((s) => ({
           id: s.id,
@@ -59,12 +88,12 @@ export default function AdminTrainingNewDemonstrationPage() {
         })),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load staff.");
+      setFetchError(e instanceof Error ? e.message : "Failed to load staff.");
       setStaffList([]);
     } finally {
-      setLoading(false);
+      setLoadingStaff(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [authLoading, supabase, selectedFacilityId]);
 
   useEffect(() => {
     void loadStaff();
@@ -72,13 +101,23 @@ export default function AdminTrainingNewDemonstrationPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || !staffId) return;
-    setSaving(true);
-    setError(null);
-    try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
+    const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+    if (
+      isTrainingNewSubmitBlocked({
+        saving,
+        authLoading,
+        organizationId,
+        facilityReady,
+        staffId,
+      })
+    ) {
+      return;
+    }
+    if (!user || !organizationId || !selectedFacilityId) return;
 
+    setSaving(true);
+    setFetchError(null);
+    try {
       if (certificatePdf) {
         if (certificatePdf.size > MAX_CERT_PDF_BYTES) {
           throw new Error("Certificate PDF must be 15 MB or smaller.");
@@ -150,13 +189,27 @@ export default function AdminTrainingNewDemonstrationPage() {
 
       router.push("/admin/training");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save.");
+      setFetchError(e instanceof Error ? e.message : "Could not save.");
     } finally {
       setSaving(false);
     }
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const showEmptyStaffGap =
+    facilityReady && !authLoading && !loadingStaff && staffList.length === 0 && !fetchErrorBannerMessage;
+  const submitBlocked = isTrainingNewSubmitBlocked({
+    saving,
+    authLoading,
+    organizationId,
+    facilityReady,
+    staffId,
+  });
+  const selectClass = cn(
+    "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none",
+    "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+    "dark:bg-input/30",
+  );
 
   return (
     <div className="mx-auto max-w-lg space-y-6 p-6">
@@ -169,15 +222,27 @@ export default function AdminTrainingNewDemonstrationPage() {
         </Link>
       </div>
 
-      {!facilityReady && (
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
-      )}
-
-      {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-          {error}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {TRAINING_NEW_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {!facilityReady && !authLoading ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {fetchErrorBannerMessage}
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -190,20 +255,20 @@ export default function AdminTrainingNewDemonstrationPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="staff">Staff member</Label>
-              {loading ? (
-                <p className="text-sm text-slate-500">Loading staff…</p>
+              {loadingStaff || authLoading ? (
+                <p className="text-sm text-slate-500">{TRAINING_NEW_LOADING_STAFF_COPY}</p>
+              ) : showEmptyStaffGap ? (
+                <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  {TRAINING_NEW_NO_STAFF_AT_FACILITY_COPY}
+                </p>
               ) : (
                 <select
                   id="staff"
                   required
                   value={staffId}
                   onChange={(e) => setStaffId(e.target.value)}
-                  disabled={!facilityReady || staffList.length === 0}
-                  className={cn(
-                    "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none",
-                    "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                    "dark:bg-input/30",
-                  )}
+                  disabled={!facilityReady || staffList.length === 0 || Boolean(organizationGapMessage)}
+                  className={selectClass}
                 >
                   <option value="">Select…</option>
                   {staffList.map((s) => (
@@ -237,8 +302,8 @@ export default function AdminTrainingNewDemonstrationPage() {
                 Baya or other competency certificate. Stored in org-scoped private Storage (PDF only, max 15 MB).
               </p>
             </div>
-            <Button type="submit" disabled={saving || !facilityReady || !staffId}>
-              {saving ? "Saving…" : "Save draft"}
+            <Button type="submit" disabled={submitBlocked}>
+              {resolveTrainingNewSubmitButtonLabel({ saving, authLoading })}
             </Button>
           </form>
         </CardContent>
