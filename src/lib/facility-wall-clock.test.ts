@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   FACILITY_OPERATOR_TZ,
+  addFacilityCalendarDays,
   facilityDateIsoDaysFromToday,
   facilityDatetimeLocalToUtcIso,
   formatFacilityTimestampEt,
@@ -50,5 +51,6 @@ describe("facility wall clock (America/New_York)", () => {
   it("offsets date-only windows on the Eastern calendar", () => {
     expect(facilityDateIsoDaysFromToday(1, eightOhFivePmEt)).toBe("2026-08-21");
     expect(facilityDateIsoDaysFromToday(2, eightOhFivePmEt)).toBe("2026-08-22");
+    expect(addFacilityCalendarDays(todayFacilityDateIso(eightOhFivePmEt), 30)).toBe("2026-09-19");
   });
 });

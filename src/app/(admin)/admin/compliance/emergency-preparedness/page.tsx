@@ -14,6 +14,7 @@ import {
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { formatDrillLogAttendanceLine } from "@/lib/compliance/emergency-preparedness-display-copy";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -202,7 +203,7 @@ export default function EmergencyPreparednessPage() {
   const [savingNewItem, setSavingNewItem] = useState(false);
   const [newDrill, setNewDrill] = useState({
     drill_type: "fire" as DrillType,
-    drill_date: new Date().toISOString().slice(0, 10),
+    drill_date: todayFacilityDateIso(),
     drill_time: "10:00",
     pull_station_activated: false,
     staff_present_count: "",
@@ -294,9 +295,6 @@ export default function EmergencyPreparednessPage() {
       const item = items.find((i) => i.id === completionDialog.itemId);
       if (!item) return;
 
-      const nextDueDate = new Date();
-      nextDueDate.setDate(nextDueDate.getDate() + item.frequency_days);
-
       await updateEmergencyChecklistItemCompletion(
         supabase,
         completionDialog.itemId,
@@ -305,7 +303,7 @@ export default function EmergencyPreparednessPage() {
           last_completed_by: user.id,
           last_participants: participants,
           last_notes: completionDialog.notes || null,
-          next_due_date: nextDueDate.toISOString().split("T")[0],
+          next_due_date: addFacilityCalendarDays(todayFacilityDateIso(), item.frequency_days),
         }
       );
 
@@ -332,9 +330,6 @@ export default function EmergencyPreparednessPage() {
         throw new Error("Could not determine organization ID");
       }
 
-      const nextDueDate = new Date();
-      nextDueDate.setDate(nextDueDate.getDate() + newItemDialog.frequency);
-
       await insertEmergencyChecklistItem(supabase, {
         facility_id: selectedFacilityId!,
         organization_id: organizationId,
@@ -342,7 +337,7 @@ export default function EmergencyPreparednessPage() {
         title: newItemDialog.title,
         description: newItemDialog.description || null,
         frequency_days: newItemDialog.frequency,
-        next_due_date: nextDueDate.toISOString().split("T")[0],
+        next_due_date: addFacilityCalendarDays(todayFacilityDateIso(), newItemDialog.frequency),
       });
 
       // Close dialog and reload
@@ -790,7 +785,7 @@ export default function EmergencyPreparednessPage() {
                 <option value="tornado">Tornado</option>
               </select>
             </Field>
-            <Field label="Date"><Input type="date" value={newDrill.drill_date} onChange={(e) => setNewDrill((current) => ({ ...current, drill_date: e.target.value }))} /></Field>
+            <Field label="Drill date (ET)"><Input type="date" value={newDrill.drill_date} onChange={(e) => setNewDrill((current) => ({ ...current, drill_date: e.target.value }))} /></Field>
             <Field label="Time"><Input type="time" value={newDrill.drill_time} onChange={(e) => setNewDrill((current) => ({ ...current, drill_time: e.target.value }))} /></Field>
             <Field label="Staff present"><Input inputMode="numeric" value={newDrill.staff_present_count} onChange={(e) => setNewDrill((current) => ({ ...current, staff_present_count: e.target.value }))} /></Field>
             <Field label="Residents present"><Input inputMode="numeric" value={newDrill.residents_present_count} onChange={(e) => setNewDrill((current) => ({ ...current, residents_present_count: e.target.value }))} /></Field>
