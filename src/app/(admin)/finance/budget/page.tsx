@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
+import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import type { Database } from "@/types/database";
 
@@ -38,15 +39,16 @@ type VarianceRow = {
   variance_cents: number;
 };
 
-function firstOfMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-}
-
-function lastOfMonth(): string {
-  const d = new Date();
-  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return last.toISOString().slice(0, 10);
+function defaultBudgetPeriodRange(now: Date = new Date()): { periodStart: string; dateTo: string } {
+  const today = todayFacilityDateIso(now);
+  const periodStart = `${today.slice(0, 7)}-01`;
+  const [year, month] = today.split("-").map(Number);
+  const nextMonthStart =
+    month === 12
+      ? `${year + 1}-01-01`
+      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+  const lastDay = addFacilityCalendarDays(nextMonthStart, -1);
+  return { periodStart, dateTo: lastDay };
 }
 
 export default function BudgetPage() {
@@ -57,8 +59,8 @@ export default function BudgetPage() {
   const [entities, setEntities] = useState<EntityMini[]>([]);
   const [entityId, setEntityId] = useState("");
   const [accounts, setAccounts] = useState<GlMini[]>([]);
-  const [period, setPeriod] = useState(firstOfMonth);
-  const [dateTo, setDateTo] = useState(lastOfMonth);
+  const [period, setPeriod] = useState(() => defaultBudgetPeriodRange().periodStart);
+  const [dateTo, setDateTo] = useState(() => defaultBudgetPeriodRange().dateTo);
   const [budgets, setBudgets] = useState<BudgetRow[]>([]);
   const [variance, setVariance] = useState<VarianceRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -259,7 +261,7 @@ export default function BudgetPage() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bva-period">Budget period (first of month)</Label>
+              <Label htmlFor="bva-period">Budget period (ET)</Label>
               <Input
                 id="bva-period"
                 type="date"
@@ -268,7 +270,7 @@ export default function BudgetPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bva-to">Actual through</Label>
+              <Label htmlFor="bva-to">Actual through (ET)</Label>
               <Input id="bva-to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
             </div>
             <div className="flex items-end">
