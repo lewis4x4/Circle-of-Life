@@ -22,6 +22,7 @@ import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
 import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -174,7 +175,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
-    const datePart = new Date().toISOString().slice(0, 10);
+    const datePart = todayFacilityDateIso();
     anchor.href = url;
     anchor.download = `report-${slug}-${datePart}.csv`;
     anchor.click();
@@ -268,16 +269,21 @@ function TemplateReportRun({ slug }: { slug: string }) {
               disabled={running}
             />
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={() => void onRun()} disabled={running || !orgId}>
-              {running ? "Running…" : "Run report"}
-            </Button>
-            <Button variant="secondary" onClick={() => void onExportCsv()} disabled={!result}>
-              Download CSV
-            </Button>
-            <Button variant="outline" onClick={() => void onPrint()} disabled={!result}>
-              Print / PDF
-            </Button>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => void onRun()} disabled={running || !orgId}>
+                {running ? "Running…" : "Run report"}
+              </Button>
+              <Button variant="secondary" onClick={() => void onExportCsv()} disabled={!result}>
+                Download CSV
+              </Button>
+              <Button variant="outline" onClick={() => void onPrint()} disabled={!result}>
+                Print / PDF
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              CSV export filenames use today&apos;s Eastern (ET) calendar date.
+            </p>
           </div>
         </div>
       </RecordDetailSection>
@@ -515,7 +521,7 @@ function PackReportRun({ packId }: { packId: string }) {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
-    const datePart = new Date().toISOString().slice(0, 10);
+    const datePart = todayFacilityDateIso();
     anchor.href = url;
     anchor.download = `pack-${packId}-${datePart}.csv`;
     anchor.click();
@@ -613,16 +619,21 @@ function PackReportRun({ packId }: { packId: string }) {
               disabled={running}
             />
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={() => void runPack()} disabled={running || !orgId || loadingPack || slices.length === 0}>
-              {running ? "Running pack…" : "Run pack"}
-            </Button>
-            <Button variant="secondary" onClick={() => void onExportCsvPack()} disabled={completedSlices.length === 0}>
-              Download CSV
-            </Button>
-            <Button variant="outline" onClick={() => void onPrintPack()} disabled={completedSlices.length === 0}>
-              Print / PDF
-            </Button>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => void runPack()} disabled={running || !orgId || loadingPack || slices.length === 0}>
+                {running ? "Running pack…" : "Run pack"}
+              </Button>
+              <Button variant="secondary" onClick={() => void onExportCsvPack()} disabled={completedSlices.length === 0}>
+                Download CSV
+              </Button>
+              <Button variant="outline" onClick={() => void onPrintPack()} disabled={completedSlices.length === 0}>
+                Print / PDF
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              CSV export filenames use today&apos;s Eastern (ET) calendar date.
+            </p>
           </div>
           {loadingPack ? <p className="text-sm text-muted-foreground">Loading pack…</p> : null}
           {!loadingPack && slices.length === 0 ? (
