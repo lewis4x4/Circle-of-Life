@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 const INFECTION_TYPES: Database["public"]["Tables"]["infection_surveillance"]["Row"]["infection_type"][] = [
   "uti",
@@ -41,7 +42,7 @@ export default function NewInfectionSurveillancePage() {
   const [residentId, setResidentId] = useState("");
   const [infectionType, setInfectionType] =
     useState<Database["public"]["Tables"]["infection_surveillance"]["Row"]["infection_type"]>("uti");
-  const [onsetDate, setOnsetDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [onsetDate, setOnsetDate] = useState(() => todayFacilityDateIso());
   const [symptomsText, setSymptomsText] = useState("fever");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -188,7 +189,7 @@ export default function NewInfectionSurveillancePage() {
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="onset">Onset date</Label>
+            <Label htmlFor="onset">Onset date (ET)</Label>
             <Input id="onset" type="date" value={onsetDate} onChange={(e) => setOnsetDate(e.target.value)} />
           </div>
           <div className="space-y-2">
