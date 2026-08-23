@@ -90,6 +90,7 @@ import {
 } from "@/lib/billing/load-invoices";
 import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
 import { BILLING_LEDGER_INVOICE_COLUMN_LABEL } from "@/lib/billing/invoices-display-copy";
+import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
 
@@ -821,17 +822,14 @@ function BillingInvoiceLedgerInner({
   const [activityPayments, setActivityPayments] = useState<PayLine[]>([]);
   const [activityRatesSoon, setActivityRatesSoon] = useState<RatePeek[]>([]);
   const [activityRatesRecent, setActivityRatesRecent] = useState<RatePeek[]>([]);
+  const t = todayFacilityDateIso();
+  const activityWindowStart = addFacilityCalendarDays(t, -7);
+  const activityWindowEnd = addFacilityCalendarDays(t, 7);
 
   useEffect(() => {
     if (!isOverviewChrome) return;
     void (async () => {
       const supabase = createClient();
-      const today = new Date();
-      const weekAgo = new Date(today);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAhead = new Date(today);
-      weekAhead.setDate(weekAhead.getDate() + 7);
-      const iso = (d: Date) => d.toISOString().slice(0, 10);
 
       try {
         let pq = supabase
@@ -839,7 +837,7 @@ function BillingInvoiceLedgerInner({
           .select("id, payment_date, amount")
           .is("deleted_at", null)
           .eq("refunded", false)
-          .gte("payment_date", iso(weekAgo))
+          .gte("payment_date", activityWindowStart)
           .order("payment_date", { ascending: false })
           .limit(10);
         if (isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -863,12 +861,11 @@ function BillingInvoiceLedgerInner({
         };
         if (!rres.error) {
           const list = (rres.data ?? []) as RatePeek[];
-          const t = iso(today);
-          const w = iso(weekAhead);
-          const wa = iso(weekAgo);
-          setActivityRatesSoon(list.filter((r) => r.effective_date >= t && r.effective_date <= w).slice(0, 8));
+          setActivityRatesSoon(
+            list.filter((r) => r.effective_date >= t && r.effective_date <= activityWindowEnd).slice(0, 8),
+          );
           setActivityRatesRecent(
-            list.filter((r) => r.effective_date < t && r.effective_date >= wa).slice(0, 8),
+            list.filter((r) => r.effective_date < t && r.effective_date >= activityWindowStart).slice(0, 8),
           );
         }
       } catch {
@@ -877,7 +874,7 @@ function BillingInvoiceLedgerInner({
         setActivityRatesRecent([]);
       }
     })();
-  }, [isOverviewChrome, selectedFacilityId]);
+  }, [activityWindowEnd, activityWindowStart, isOverviewChrome, selectedFacilityId, t]);
 
   const showFacilitySubsetPicker =
     !residentIdFilter && selectedFacilityId == null && availableFacilities.length > 1;
@@ -2020,7 +2017,7 @@ function BillingInvoiceLedgerInner({
             <div className="rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60">
               <h2 className="text-[14px] font-semibold text-foreground">Activity this week</h2>
               <p className="mt-1 text-[12px] text-muted-foreground">
-                Recent cash application, rate effective dates, and upcoming schedule notes.
+                Recent cash application, rate effective dates, and upcoming schedule notes · as of {t} Eastern.
               </p>
 
               <div className="mt-4 space-y-4">
