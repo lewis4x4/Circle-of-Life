@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  facilityDatetimeLocalToUtcIso,
+  nowFacilityDatetimeLocal,
+} from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -26,11 +30,7 @@ export default function AdminTransportationInspectionNewPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [vehicles, setVehicles] = useState<{ id: string; name: string }[]>([]);
   const [vehicleId, setVehicleId] = useState("");
-  const [inspectedAt, setInspectedAt] = useState(() => {
-    const d = new Date();
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 16);
-  });
+  const [inspectedAt, setInspectedAt] = useState(() => nowFacilityDatetimeLocal());
   const [inspector, setInspector] = useState("");
   const [odometer, setOdometer] = useState("");
   const [result, setResult] = useState<Result>("pass");
@@ -75,9 +75,9 @@ export default function AdminTransportationInspectionNewPage() {
     setError(null);
     try {
       if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
+      if (!organizationId) throw new Error("No organization on this profile");
       const odo = odometer.trim() ? Number.parseInt(odometer, 10) : null;
-      const inspectedIso = inspectedAt ? new Date(inspectedAt).toISOString() : new Date().toISOString();
+      const inspectedIso = facilityDatetimeLocalToUtcIso(inspectedAt);
       const { error: insErr } = await supabase.from("vehicle_inspection_logs").insert({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
@@ -155,8 +155,8 @@ export default function AdminTransportationInspectionNewPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="when">Inspected at</Label>
-              <Input id="when" type="datetime-local" value={inspectedAt} onChange={(e) => setInspectedAt(e.target.value)} />
+              <Label htmlFor="when">Inspected at (ET)</Label>
+              <Input id="when" type="datetime-local" required value={inspectedAt} onChange={(e) => setInspectedAt(e.target.value)} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
