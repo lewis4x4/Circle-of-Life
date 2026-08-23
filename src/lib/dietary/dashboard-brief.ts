@@ -4,6 +4,10 @@
  */
 
 import { formatDietaryDashboardBriefResidentName } from "@/lib/dietary/dashboard-brief-display-copy";
+import {
+  facilityDatetimeLocalToUtcIso,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -34,6 +38,11 @@ type RecentDietChangeRow = {
 };
 type DietBreakdownRow = { diet_type: string | null };
 
+/** Start of the dietary operator's Eastern today, represented for UTC timestamptz queries. */
+export function dietaryMealsTodayStartUtcIso(now: Date = new Date()): string {
+  return facilityDatetimeLocalToUtcIso(`${todayFacilityDateIso(now)}T00:00`);
+}
+
 export async function fetchDietaryDashboardBrief(
   facilityId: string | null,
 ): Promise<DietaryDashboardBrief> {
@@ -42,7 +51,7 @@ export async function fetchDietaryDashboardBrief(
   const f = <T extends ScopedQuery<T>>(q: T): T =>
     isValidFacilityIdForQuery(facilityId) ? q.eq("facility_id", facilityId) : q;
 
-  const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00";
+  const todayStart = dietaryMealsTodayStartUtcIso();
   const fortyEightHoursAgo = new Date(Date.now() - 48 * 3600000).toISOString();
 
   const [
