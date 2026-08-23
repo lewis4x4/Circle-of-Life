@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { parseDollarsToCents } from "@/lib/finance/format-cents";
 import { canCreateDraftFinance } from "@/lib/finance/load-finance-context";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,7 @@ export default function NewJournalEntryPage() {
   const [accounts, setAccounts] = useState<GlMini[]>([]);
   const [entityId, setEntityId] = useState("");
   const [facilityId, setFacilityId] = useState<string>("");
-  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [entryDate, setEntryDate] = useState(() => todayFacilityDateIso());
   const [memo, setMemo] = useState("");
   const [lines, setLines] = useState<LineForm[]>([
     { gl_account_id: "", debit: "", credit: "" },
@@ -241,7 +242,7 @@ export default function NewJournalEntryPage() {
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="je-date">Entry date</Label>
+            <Label htmlFor="je-date">Entry date (ET)</Label>
             <Input id="je-date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
           </div>
           <div className="space-y-2 md:col-span-2">
