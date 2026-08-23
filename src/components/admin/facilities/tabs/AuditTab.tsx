@@ -15,6 +15,11 @@ import {
 import type { FacilityAuditMetricsPayload } from "@/hooks/useFacilityAuditMetrics";
 import { type AuditLogFilters, type FacilityAuditHookRow, useFacilityAuditLog } from "@/hooks/useFacilityAuditLog";
 import {
+  auditTabIsoToday,
+  auditTabRangeFromPreset,
+  type AuditTabDatePreset,
+} from "@/lib/facilities/audit-tab-date-range";
+import {
   formatAuditTabLastEventRelative,
   formatAuditTabNewValue,
   formatAuditTabOldValue,
@@ -34,29 +39,7 @@ interface AuditTabProps {
   metricsSummary?: FacilityAuditMetricsPayload | null;
 }
 
-type DatePreset = "24h" | "7d" | "30d" | "90d" | "ytd" | "custom";
-
-function isoToday(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function rangeFromPreset(key: Exclude<DatePreset, "custom">): { from: string; to: string } {
-  const to = new Date();
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  if (key === "24h") {
-    const from = new Date(to);
-    from.setHours(from.getHours() - 24);
-    return { from: fmt(from), to: fmt(to) };
-  }
-  if (key === "ytd") {
-    const start = new Date(to.getFullYear(), 0, 1);
-    return { from: fmt(start), to: fmt(to) };
-  }
-  const days = key === "7d" ? 7 : key === "30d" ? 30 : 90;
-  const from = new Date(to);
-  from.setDate(from.getDate() - days);
-  return { from: fmt(from), to: fmt(to) };
-}
+type DatePreset = AuditTabDatePreset;
 
 const ENTITY_ALL = new Set<FacilityAuditEntityFilterKey>(FACILITY_AUDIT_ENTITY_OPTIONS.map((o) => o.key));
 const DEFAULT_ACTION_KEYS = FACILITY_AUDIT_ACTION_UI.map((a) => a.key);
@@ -69,8 +52,8 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [from, setFrom] = useState(() => rangeFromPreset("30d").from);
-  const [to, setTo] = useState(() => rangeFromPreset("30d").to);
+  const [from, setFrom] = useState(() => auditTabRangeFromPreset("30d").from);
+  const [to, setTo] = useState(() => auditTabRangeFromPreset("30d").to);
 
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -185,7 +168,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
 
   function applyPreset(p: Exclude<DatePreset, "custom">) {
     setPreset(p);
-    const r = rangeFromPreset(p);
+    const r = auditTabRangeFromPreset(p);
     setFrom(r.from);
     setTo(r.to);
   }
@@ -201,7 +184,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
 
   const resetFilters = () => {
     setPreset("30d");
-    const r30 = rangeFromPreset("30d");
+    const r30 = auditTabRangeFromPreset("30d");
     setFrom(r30.from);
     setTo(r30.to);
     setCustomFrom("");
@@ -276,7 +259,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `facility-${facilityId}-audit-${isoToday()}.csv`;
+    a.download = `facility-${facilityId}-audit-${auditTabIsoToday()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [actorToken, actionToken, debouncedSearch, facilityId, from, tableFilterToken, to]);
@@ -353,7 +336,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
         </div>
 
         <div>
-          <span className="mb-1 block text-[12px] font-medium text-muted-foreground">Date range</span>
+          <span className="mb-1 block text-[12px] font-medium text-muted-foreground">Date range (ET)</span>
           <select
             className="h-10 rounded-md border border-border bg-background px-3 text-sm"
             value={preset}
@@ -378,7 +361,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
         {preset === "custom" ? (
           <div className="flex flex-wrap items-end gap-2">
             <div>
-              <span className="mb-1 block text-[12px] text-muted-foreground">From</span>
+              <span className="mb-1 block text-[12px] text-muted-foreground">From (ET)</span>
               <DateInput
                 className="h-10 w-[11rem]"
                 value={customFrom}
@@ -387,7 +370,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
               />
             </div>
             <div>
-              <span className="mb-1 block text-[12px] text-muted-foreground">To</span>
+              <span className="mb-1 block text-[12px] text-muted-foreground">To (ET)</span>
               <DateInput className="h-10 w-[11rem]" value={customTo} onValueChange={setCustomTo} emptyHint={null} />
             </div>
             <Button type="button" size="sm" className="h-10" onClick={applyCustomDates}>
@@ -396,7 +379,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
           </div>
         ) : (
           <p className="pb-2 text-[12px] tabular-nums text-muted-foreground">
-            {from} → {to}
+            {from} → {to} (ET)
           </p>
         )}
 
