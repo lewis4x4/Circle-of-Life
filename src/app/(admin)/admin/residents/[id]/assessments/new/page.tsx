@@ -18,6 +18,7 @@ import {
 import type { AssessmentTemplate, AssessmentTemplateItem } from "@/lib/assessments/types";
 import { formatAssessmentLiveScore } from "@/lib/assessments/assessment-new-display-copy";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -60,10 +61,6 @@ const RISK_COLORS: Record<string, string> = {
   severe: "bg-destructive/10 text-destructive",
 };
 
-function todayLocal(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export default function AssessmentEntryPage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "";
@@ -84,7 +81,7 @@ export default function AssessmentEntryPage() {
     resolver: zodResolver(assessmentFormSchema),
     defaultValues: {
       assessmentType: "",
-      assessmentDate: todayLocal(),
+      assessmentDate: todayFacilityDateIso(),
       scores: {},
       notes: "",
     },
@@ -352,7 +349,7 @@ export default function AssessmentEntryPage() {
                   name="assessmentDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Assessment date</FormLabel>
+                      <FormLabel>Assessment date (ET)</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} className="max-w-xs" />
                       </FormControl>
