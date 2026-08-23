@@ -19,6 +19,7 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 import { formatConcessionsDateDisplay } from "@/lib/billing/concessions-display-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
@@ -98,6 +99,7 @@ export default function BillingConcessionsPage() {
   const [rows, setRows] = useState<ConcessionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const asOfDate = todayFacilityDateIso();
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -110,7 +112,7 @@ export default function BillingConcessionsPage() {
         return;
       }
 
-      const targetDate = new Date().toISOString().slice(0, 10);
+      const targetDate = todayFacilityDateIso();
       const [residentRes, scheduleRes, agreementRes] = (await Promise.all([
         supabase
           .from("residents" as never)
@@ -232,6 +234,9 @@ export default function BillingConcessionsPage() {
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-3xl">
               Shows current posted standard rate versus actual resident monthly rent. Imported rows should be confirmed into negotiated billing agreements from each resident billing profile.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Rate schedules and agreements as of {asOfDate} Eastern.
             </p>
           </div>
         </header>
