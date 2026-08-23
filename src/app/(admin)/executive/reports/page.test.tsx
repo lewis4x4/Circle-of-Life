@@ -89,6 +89,34 @@ describe("ExecutiveSavedReportsPage auth hydration", () => {
     ).toBeInTheDocument();
   });
 
+  it("labels CSV exports as Eastern calendar dates near the download action", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-anon-1";
+    queryMock.data = {
+      rows: [
+        {
+          id: "report-1",
+          name: "Weekly ops",
+          template: "custom",
+          parameters: {},
+          organization_id: "org-anon-1",
+          created_by: "user-1",
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-01T00:00:00.000Z",
+          deleted_at: null,
+          last_generated_at: null,
+        },
+      ],
+      facilities: [],
+    };
+
+    render(<ExecutiveSavedReportsPage />);
+
+    expect(
+      screen.getByText("CSV export filenames use today's Eastern (ET) calendar date."),
+    ).toBeInTheDocument();
+  });
+
   it("surfaces real fetch failures after auth resolves", () => {
     authMock.loading = false;
     authMock.organizationId = "org-anon-1";
