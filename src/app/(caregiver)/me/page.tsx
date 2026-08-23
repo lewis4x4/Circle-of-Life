@@ -12,6 +12,8 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { fetchPendingPoliciesForUser, resolveAckFacilityId } from "@/lib/pending-policies";
 import type { Database } from "@/types/database";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
+import { caregiverIllnessSelfReportSuccessCopy } from "@/lib/caregiver/illness-self-report-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,7 +98,7 @@ export default function CaregiverMePage() {
         setIllMsg("Not signed in.");
         return;
       }
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayFacilityDateIso();
       const ins: Database["public"]["Tables"]["staff_illness_records"]["Insert"] = {
         staff_id: staff.id,
         facility_id: staff.facility_id,
@@ -110,7 +112,7 @@ export default function CaregiverMePage() {
       };
       const { error } = await supabase.from("staff_illness_records").insert(ins);
       if (error) throw error;
-      setIllMsg("Report submitted. A nurse may follow up.");
+      setIllMsg(caregiverIllnessSelfReportSuccessCopy());
     } catch (e) {
       setIllMsg(e instanceof Error ? e.message : "Could not submit.");
     } finally {
