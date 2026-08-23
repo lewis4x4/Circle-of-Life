@@ -55,6 +55,7 @@ import {
   truncateCareNoteSubtitle,
 } from "@/lib/residents/roster-format";
 import { RESIDENT_ROSTER_NO_ACUITY_COPY } from "@/lib/residents/roster-display-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_FILTERS = {
@@ -525,7 +526,7 @@ export function AdminResidentsPageClient({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `resident-roster-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `resident-roster-${todayFacilityDateIso()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${chosen.length} residents (CSV).`);
@@ -961,9 +962,12 @@ export function AdminResidentsPageClient({
             <p className="min-w-0 flex-1 text-[13px] text-foreground">
               <strong className="tabular-nums">{selectedIds.size}</strong> resident{selectedIds.size === 1 ? "" : "s"} selected
             </p>
-            <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 text-[12px]" onClick={exportSelectedCsv}>
-              Export selected (CSV)
-            </Button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button type="button" variant="outline" size="sm" className="h-8 text-[12px]" onClick={exportSelectedCsv}>
+                Export selected (CSV)
+              </Button>
+              <span className="hidden text-[11px] text-muted-foreground sm:inline">Eastern (ET)</span>
+            </div>
             <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 text-[12px]" onClick={queueCarePlanReview}>
               Send to care plan review queue
             </Button>
