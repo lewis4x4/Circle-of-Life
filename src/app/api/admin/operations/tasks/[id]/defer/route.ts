@@ -1,5 +1,7 @@
+import { formatInTimeZone } from "date-fns-tz";
 import { NextRequest, NextResponse } from "next/server";
 
+import { FACILITY_OPERATOR_TZ, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
 import { logError } from "@/lib/observability/logger";
 
@@ -92,7 +94,7 @@ export async function PATCH(
       template_name: task.template_name,
       template_category: task.template_category,
       template_cadence_type: task.template_cadence_type,
-      assigned_shift_date: deferredUntil.toISOString().slice(0, 10),
+      assigned_shift_date: todayFacilityDateIso(deferredUntil),
       assigned_shift: deferredShift,
       assigned_to: task.assigned_to,
       assigned_role: task.assigned_role,
@@ -159,8 +161,8 @@ export async function PATCH(
   return NextResponse.json({ success: true, new_task_id: newTask.id });
 }
 
-function inferShiftFromDate(date: Date): "day" | "evening" | "night" {
-  const hour = date.getHours();
+export function inferShiftFromDate(date: Date): "day" | "evening" | "night" {
+  const hour = Number(formatInTimeZone(date, FACILITY_OPERATOR_TZ, "H"));
   if (hour >= 7 && hour < 15) return "day";
   if (hour >= 15 && hour < 23) return "evening";
   return "night";
