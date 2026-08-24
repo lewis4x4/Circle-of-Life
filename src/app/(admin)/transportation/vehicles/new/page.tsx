@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,13 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { VEHICLE_NEW_LOADING_PROFILE_COPY } from "@/lib/transportation/vehicle-new-display-copy";
+import {
+  isVehicleNewSubmitBlocked,
+  resolveVehicleNewFetchErrorBannerMessage,
+  resolveVehicleNewOrganizationGapMessage,
+  resolveVehicleNewSubmitButtonLabel,
+} from "@/lib/transportation/vehicle-new-page-state";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +27,9 @@ type Status = Database["public"]["Enums"]["fleet_vehicle_status"];
 const STATUS_OPTIONS: Status[] = ["active", "out_of_service", "retired"];
 
 export default function AdminTransportationVehicleNewPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [name, setName] = useState("");
   const [vin, setVin] = useState("");
@@ -37,16 +44,38 @@ export default function AdminTransportationVehicleNewPage() {
   const [notes, setNotes] = useState("");
   const [wheelchairAccessible, setWheelchairAccessible] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const organizationGapMessage = resolveVehicleNewOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: false,
+  });
+  const submitErrorBannerMessage = resolveVehicleNewFetchErrorBannerMessage({
+    authLoading,
+    fetchError: submitError,
+  });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || !name.trim()) return;
+    const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+    if (
+      isVehicleNewSubmitBlocked({
+        saving,
+        authLoading,
+        user,
+        organizationId,
+        facilityReady,
+        name,
+      })
+    ) {
+      return;
+    }
+    if (!user || !organizationId || !selectedFacilityId) return;
+
     setSaving(true);
-    setError(null);
+    setSubmitError(null);
     try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const cap = capacity.trim() ? Number.parseInt(capacity, 10) : null;
       const year = modelYear.trim() ? Number.parseInt(modelYear, 10) : null;
       const { error: insErr } = await supabase.from("fleet_vehicles").insert({
@@ -66,16 +95,27 @@ export default function AdminTransportationVehicleNewPage() {
         wheelchair_accessible: wheelchairAccessible,
         created_by: user.id,
       });
-      if (insErr) throw insErr;
+      if (insErr) {
+        setSubmitError(insErr.message);
+        return;
+      }
       router.push("/admin/transportation");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save.");
+      setSubmitError(e instanceof Error ? e.message : "Could not save.");
     } finally {
       setSaving(false);
     }
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const submitBlocked = isVehicleNewSubmitBlocked({
+    saving,
+    authLoading,
+    user,
+    organizationId,
+    facilityReady,
+    name,
+  });
   const selectClass = cn(
     "h-8 w-full max-w-xl rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none",
     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
@@ -92,15 +132,27 @@ export default function AdminTransportationVehicleNewPage() {
         </Link>
       </div>
 
-      {!facilityReady && (
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
-      )}
-
-      {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-          {error}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {VEHICLE_NEW_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {!facilityReady && !authLoading ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+      ) : null}
+
+      {submitErrorBannerMessage ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {submitErrorBannerMessage}
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -161,11 +213,11 @@ export default function AdminTransportationVehicleNewPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="ins">Insurance expires</Label>
+                <Label htmlFor="ins">Insurance expires (ET)</Label>
                 <Input id="ins" type="date" value={insurance} onChange={(e) => setInsurance(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg">Registration expires</Label>
+                <Label htmlFor="reg">Registration expires (ET)</Label>
                 <Input id="reg" type="date" value={registration} onChange={(e) => setRegistration(e.target.value)} />
               </div>
             </div>
@@ -182,8 +234,15 @@ export default function AdminTransportationVehicleNewPage() {
               />
               Wheelchair accessible (ADA / lift)
             </label>
-            <Button type="submit" disabled={saving || !facilityReady || !name.trim()}>
-              {saving ? "Saving…" : "Save vehicle"}
+            <Button type="submit" disabled={submitBlocked}>
+              {resolveVehicleNewSubmitButtonLabel({
+                saving,
+                authLoading,
+                user,
+                organizationId,
+                facilityReady,
+                name,
+              })}
             </Button>
           </form>
         </CardContent>
