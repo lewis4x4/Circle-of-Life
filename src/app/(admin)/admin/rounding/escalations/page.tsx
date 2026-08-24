@@ -23,6 +23,15 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  ESCALATIONS_ET_TIMEZONE_CUE,
+  formatEscalationsDateTimeEt,
+  formatEscalationsLoadingNotice,
+  formatEscalationsNoFacilityInterstitialBody,
+  formatEscalationsNoOpenEmptyTitle,
+  formatEscalationsPageSubtitle,
+  resolveEscalationsFacilityScope,
+} from "@/lib/rounding/escalations-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -166,7 +175,11 @@ export default function RoundingEscalationsPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScope = resolveEscalationsFacilityScope(
+    selectedFacilityId,
+    selectedFacility?.name,
+  );
+  const pageSubtitle = formatEscalationsPageSubtitle(facilityScope);
   const [rows, setRows] = useState<EscalationRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -403,7 +416,7 @@ export default function RoundingEscalationsPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Observation escalations"
-        subtitle={`Missed or overdue checks requiring operator review and survey-ready resolution at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <Button
             type="button"
@@ -527,8 +540,12 @@ export default function RoundingEscalationsPage() {
             </div>
           </section>
 
-          {boardState === "empty" ? (
-            <NoEscalationsEmptyState facilityName={facilityName} />
+          <p className="text-[12px] text-muted-foreground">{ESCALATIONS_ET_TIMEZONE_CUE}</p>
+
+          {boardState === "loading" ? (
+            <LoadingNotice />
+          ) : boardState === "empty" ? (
+            <NoEscalationsEmptyState facilityScope={facilityScope} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
@@ -601,7 +618,7 @@ function EscalationCard({
               {residentName(row.residents, row.resident_id.slice(0, 8))}
             </h3>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
-              Triggered {new Date(row.triggered_at).toLocaleString()} ·{" "}
+              Triggered, Eastern (ET) {formatEscalationsDateTimeEt(row.triggered_at)} ·{" "}
               {relTime(row.triggered_at)}
             </p>
           </div>
@@ -612,8 +629,12 @@ function EscalationCard({
               value={task?.status?.replace(/_/g, " ") ?? row.escalation_type.replace(/_/g, " ")}
             />
             <DataPair
-              label="Originally due"
-              value={task ? new Date(task.due_at).toLocaleString() : new Date(row.triggered_at).toLocaleString()}
+              label="Originally due, Eastern (ET)"
+              value={
+                task
+                  ? formatEscalationsDateTimeEt(task.due_at)
+                  : formatEscalationsDateTimeEt(row.triggered_at)
+              }
             />
             <DataPair label="Hours overdue" value={hoursOverdue(row, nowMs)} />
             {row.watchSummary ? (
@@ -834,9 +855,24 @@ function AllFacilitiesInterstitial() {
             Escalations operate per facility
           </p>
           <p className="text-[13px] text-muted-foreground">
-            Escalations are facility-scoped. Select a facility from the top bar to continue.
+            {formatEscalationsNoFacilityInterstitialBody()}
           </p>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadingNotice() {
+  return (
+    <section
+      aria-label="Loading escalations"
+      className="rounded-lg border border-border bg-card p-6"
+      role="status"
+    >
+      <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        {formatEscalationsLoadingNotice()}
       </div>
     </section>
   );
@@ -874,14 +910,20 @@ function LoadErrorNotice({
   );
 }
 
-function NoEscalationsEmptyState({ facilityName }: { facilityName: string }) {
+function NoEscalationsEmptyState({
+  facilityScope,
+}: {
+  facilityScope: ReturnType<typeof resolveEscalationsFacilityScope>;
+}) {
   return (
     <section
       aria-label="No open escalations"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <CheckCircle2 className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No open escalations at {facilityName}</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        {formatEscalationsNoOpenEmptyTitle(facilityScope)}
+      </p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
         Missed and overdue checks will appear here for review.
       </p>
