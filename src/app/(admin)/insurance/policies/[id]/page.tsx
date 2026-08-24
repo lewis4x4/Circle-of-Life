@@ -2,15 +2,30 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { InsuranceHubNav } from "../../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { cn } from "@/lib/utils";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { formatInsuranceClaimDateOfLoss } from "@/lib/insurance/claims-display-copy";
+import {
+  INSURANCE_POLICY_DETAIL_AUTH_LOADING_COPY,
+  INSURANCE_POLICY_DETAIL_LOADING_COPY,
+  INSURANCE_POLICY_DETAIL_SCOPE_ET_COPY,
+  formatInsuranceClaimDateOfLoss,
+  formatInsurancePolicyDetailEffectiveDate,
+  formatInsurancePolicyDetailPeriodDate,
+  formatInsurancePolicyExpirationDate,
+  formatInsuranceRenewalTargetDate,
+  resolveInsurancePolicyDetailLoadErrorMessage,
+} from "@/lib/insurance/insurance-policy-detail-display-copy";
+import {
+  resolveInsurancePolicyDetailFetchErrorBannerMessage,
+  resolveInsurancePolicyDetailOrganizationGapMessage,
+} from "@/lib/insurance/insurance-policy-detail-page-state";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 
@@ -22,40 +37,92 @@ type Alloc = Database["public"]["Tables"]["premium_allocations"]["Row"];
 export default function InsurancePolicyDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
-  const supabase = createClient();
-  const { organizationId } = useHavenAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [entityName, setEntityName] = useState<string>("");
   const [renewals, setRenewals] = useState<Renewal[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [allocs, setAllocs] = useState<Alloc[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const organizationGapMessage = resolveInsurancePolicyDetailOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: policy !== null,
+  });
+  const fetchErrorBannerMessage = resolveInsurancePolicyDetailFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const loading = authLoading || fetching;
 
   const load = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
+    if (!id || authLoading) {
+      return;
+    }
+
     if (!organizationId) {
-      setError("Organization missing on profile.");
-      setLoading(false);
-      return;
-    }
-    const { data: pol, error: pErr } = await supabase.from("insurance_policies").select("*").eq("id", id).maybeSingle();
-    if (pErr || !pol) {
-      setError(pErr?.message ?? "Policy not found.");
       setPolicy(null);
-      setLoading(false);
+      setEntityName("");
+      setRenewals([]);
+      setClaims([]);
+      setAllocs([]);
+      setFetchError(null);
+      setFetching(false);
       return;
     }
+
+    setFetching(true);
+    setFetchError(null);
+
+    const { data: pol, error: pErr } = await supabase
+      .from("insurance_policies")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (pErr || !pol) {
+      setPolicy(null);
+      setEntityName("");
+      setRenewals([]);
+      setClaims([]);
+      setAllocs([]);
+      setFetchError(
+        resolveInsurancePolicyDetailLoadErrorMessage({
+          queryFailed: Boolean(pErr),
+          policyFound: Boolean(pol),
+        }),
+      );
+      setFetching(false);
+      return;
+    }
+
     const p = pol as Policy;
     setPolicy(p);
-    const { data: ent, error: entErr } = await supabase.from("entities").select("name").eq("id", p.entity_id).maybeSingle();
+
+    const { data: ent, error: entErr } = await supabase
+      .from("entities")
+      .select("name")
+      .eq("id", p.entity_id)
+      .maybeSingle();
+
     if (entErr) {
-      setError(entErr.message);
-      setLoading(false);
+      setEntityName("");
+      setRenewals([]);
+      setClaims([]);
+      setAllocs([]);
+      setFetchError(
+        resolveInsurancePolicyDetailLoadErrorMessage({
+          queryFailed: true,
+          policyFound: true,
+        }),
+      );
+      setFetching(false);
       return;
     }
+
     setEntityName((ent as { name: string } | null)?.name ?? p.entity_id);
 
     const [{ data: r, error: rErr }, { data: c, error: cErr }, { data: a, error: aErr }] = await Promise.all([
@@ -78,17 +145,27 @@ export default function InsurancePolicyDetailPage() {
         .is("deleted_at", null)
         .order("period_end", { ascending: false }),
     ]);
+
     const subErr = rErr ?? cErr ?? aErr;
     if (subErr) {
-      setError(subErr.message);
-      setLoading(false);
+      setRenewals([]);
+      setClaims([]);
+      setAllocs([]);
+      setFetchError(
+        resolveInsurancePolicyDetailLoadErrorMessage({
+          queryFailed: true,
+          policyFound: true,
+        }),
+      );
+      setFetching(false);
       return;
     }
+
     setRenewals((r ?? []) as Renewal[]);
     setClaims((c ?? []) as Claim[]);
     setAllocs((a ?? []) as Alloc[]);
-    setLoading(false);
-  }, [supabase, id, organizationId]);
+    setFetching(false);
+  }, [supabase, id, organizationId, authLoading]);
 
   useEffect(() => {
     queueMicrotask(() => void load());
@@ -98,18 +175,36 @@ export default function InsurancePolicyDetailPage() {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground" role="status">
+          {authLoading ? INSURANCE_POLICY_DETAIL_AUTH_LOADING_COPY : INSURANCE_POLICY_DETAIL_LOADING_COPY}
+        </p>
       </div>
     );
   }
 
-  if (error || !policy) {
+  if (organizationGapMessage) {
     return (
       <div className="space-y-6">
         <InsuranceHubNav />
-        <p className="text-sm text-destructive" role="alert">
-          {error ?? "Not found."}
-        </p>
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+        <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/policies">
+          Back to policies
+        </Link>
+      </div>
+    );
+  }
+
+  if (fetchErrorBannerMessage || !policy) {
+    return (
+      <div className="space-y-6">
+        <InsuranceHubNav />
+        {fetchErrorBannerMessage ? (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {fetchErrorBannerMessage}
+          </p>
+        ) : null}
         <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/admin/insurance/policies">
           Back to policies
         </Link>
@@ -126,9 +221,11 @@ export default function InsurancePolicyDetailPage() {
         backLink={{ label: "Back to policies", href: "/admin/insurance/policies" }}
       />
 
+      <p className="text-sm text-muted-foreground">{INSURANCE_POLICY_DETAIL_SCOPE_ET_COPY}</p>
+
       <RecordDetailSection
         title="Coverage"
-        description={`Effective ${policy.effective_date} through ${policy.expiration_date}`}
+        description={`Effective ${formatInsurancePolicyDetailEffectiveDate(policy.effective_date)} through ${formatInsurancePolicyExpirationDate(policy.expiration_date)} (ET)`}
       >
         <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
@@ -162,7 +259,7 @@ export default function InsurancePolicyDetailPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Target effective</th>
+                  <th className="py-2 pr-4 font-medium">Target effective (ET)</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 pr-4 font-medium">Quoted</th>
                   <th className="py-2 font-medium">Bound</th>
@@ -171,7 +268,7 @@ export default function InsurancePolicyDetailPage() {
               <tbody>
                 {renewals.map((r) => (
                   <tr key={r.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4">{r.target_effective_date}</td>
+                    <td className="py-2 pr-4">{formatInsuranceRenewalTargetDate(r.target_effective_date)}</td>
                     <td className="py-2 pr-4">{r.status.replace(/_/g, " ")}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.quoted_premium_cents)}</td>
                     <td className="py-2 tabular-nums">{formatUsdFromCents(r.bound_premium_cents)}</td>
@@ -194,7 +291,7 @@ export default function InsurancePolicyDetailPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Period</th>
+                  <th className="py-2 pr-4 font-medium">Period (ET)</th>
                   <th className="py-2 pr-4 font-medium">Method</th>
                   <th className="py-2 font-medium">Allocated</th>
                 </tr>
@@ -203,7 +300,8 @@ export default function InsurancePolicyDetailPage() {
                 {allocs.map((a) => (
                   <tr key={a.id} className="border-b border-border/50">
                     <td className="py-2 pr-4">
-                      {a.period_start} – {a.period_end}
+                      {formatInsurancePolicyDetailPeriodDate(a.period_start)} –{" "}
+                      {formatInsurancePolicyDetailPeriodDate(a.period_end)}
                     </td>
                     <td className="py-2 pr-4">{a.allocation_method.replace(/_/g, " ")}</td>
                     <td className="py-2 tabular-nums">{formatUsdFromCents(a.allocated_premium_cents)}</td>
@@ -226,7 +324,7 @@ export default function InsurancePolicyDetailPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Loss date</th>
+                  <th className="py-2 pr-4 font-medium">Loss date (ET)</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 pr-4 font-medium">Reserve</th>
                   <th className="py-2 pr-4 font-medium">Paid</th>
