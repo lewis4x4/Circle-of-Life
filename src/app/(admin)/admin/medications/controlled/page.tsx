@@ -24,6 +24,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CountInitiationModal } from "@/components/medication/CountInitiationModal";
 import { DiscrepancyResolutionModal, type DiscrepancyRecord } from "@/components/medication/DiscrepancyResolutionModal";
 import { formatMedicationName } from "@/lib/clinical/medications-display-copy";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 type Row = {
   id: string;
@@ -247,36 +248,41 @@ export default function AdminControlledSubstancesPage() {
             ({filteredRows.length} records)
           </span>
         </div>
+        <div className="flex flex-col items-end gap-1">
           <Button
-          variant="outline"
-          size="sm"
-          className="border-border text-muted-foreground"
-          onClick={() => {
-            const csv = filteredRows.map((r) =>
-              [
-                formatMedicationName(r.resident_medications?.medication_name),
-                r.count_date,
-                r.shift,
-                r.expected_count,
-                r.actual_count,
-                r.discrepancy,
-                r.discrepancy_resolved ? "Resolved" : "Open",
-                r.resolution_notes || "",
-              ].join(",")
-            ).join("\n");
-            const header = "Medication,Date,Shift,Expected,Actual,Delta,Status,Notes\n";
-            const blob = new Blob([header + csv], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `controlled-substances-${new Date().toISOString().slice(0, 10)}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
+            variant="outline"
+            size="sm"
+            className="border-border text-muted-foreground"
+            onClick={() => {
+              const csv = filteredRows.map((r) =>
+                [
+                  formatMedicationName(r.resident_medications?.medication_name),
+                  r.count_date,
+                  r.shift,
+                  r.expected_count,
+                  r.actual_count,
+                  r.discrepancy,
+                  r.discrepancy_resolved ? "Resolved" : "Open",
+                  r.resolution_notes || "",
+                ].join(",")
+              ).join("\n");
+              const header = "Medication,Date,Shift,Expected,Actual,Delta,Status,Notes\n";
+              const blob = new Blob([header + csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `controlled-substances-${todayFacilityDateIso()}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            CSV export filenames use today&apos;s Eastern (ET) calendar date.
+          </span>
+        </div>
       </div>
 
       {/* Count List */}
