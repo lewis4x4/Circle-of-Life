@@ -34,6 +34,15 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY,
+  WATCHES_BOARD_LOADING_COPY,
+  WATCHES_BOARD_WATCH_TIMES_ET_CUE,
+  formatWatchesBoardDateTime,
+  formatWatchesBoardNoWatchesEmptyTitle,
+  formatWatchesBoardPageSubtitle,
+  resolveWatchesBoardFacilityScope,
+} from "@/lib/rounding/watches-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -215,8 +224,22 @@ function deriveBoardState(args: {
 export default function SmartRoundingWatchesPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
-  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScope = useMemo(
+    () =>
+      resolveWatchesBoardFacilityScope(
+        selectedFacilityId,
+        availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name,
+      ),
+    [availableFacilities, selectedFacilityId],
+  );
+  const pageSubtitle = useMemo(
+    () => formatWatchesBoardPageSubtitle(facilityScope),
+    [facilityScope],
+  );
+  const noWatchesEmptyTitle = useMemo(
+    () => formatWatchesBoardNoWatchesEmptyTitle(facilityScope),
+    [facilityScope],
+  );
   const [protocols, setProtocols] = useState<WatchProtocolRow[]>([]);
   const [instances, setInstances] = useState<WatchInstanceRow[]>([]);
   const [events, setEvents] = useState<WatchEventRow[]>([]);
@@ -450,7 +473,7 @@ export default function SmartRoundingWatchesPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Watches"
-        subtitle={`Review active watches, approve auto-triggered monitoring, and close the loop on resident-specific safety protocols at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <Button
             type="button"
@@ -473,6 +496,8 @@ export default function SmartRoundingWatchesPage() {
 
       {boardState === "no_facility" ? (
         <AllFacilitiesInterstitial />
+      ) : boardState === "loading" ? (
+        <WatchesLoadingNotice />
       ) : boardState === "error" ? (
         <LoadErrorNotice
           message={errorMessage ?? "Could not load watch center."}
@@ -480,6 +505,7 @@ export default function SmartRoundingWatchesPage() {
         />
       ) : (
         <>
+          <p className="text-[12px] text-muted-foreground">{WATCHES_BOARD_WATCH_TIMES_ET_CUE}</p>
           {actionMessage ? (
             <InfoBanner
               tone="success"
@@ -569,7 +595,7 @@ export default function SmartRoundingWatchesPage() {
                 <div className="px-4 py-8 text-center">
                   <Shield className="mx-auto size-7 text-muted-foreground" aria-hidden />
                   <p className="mt-2 text-sm font-semibold text-foreground">
-                    No watches at {facilityName}
+                    {noWatchesEmptyTitle}
                   </p>
                   <p className="mt-1 text-[13px] text-muted-foreground">
                     Watches are created automatically when clinical triggers fire, or manually from a resident profile.
@@ -624,11 +650,7 @@ export default function SmartRoundingWatchesPage() {
                   </div>
                 </header>
 
-                {loadState === "loading" ? (
-                  <div className="flex items-center justify-center px-4 py-8">
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : protocols.length === 0 ? (
+                {protocols.length === 0 ? (
                   <div className="px-4 py-6 text-center text-[13px] text-muted-foreground">
                     No watch protocols configured for this facility.
                   </div>
@@ -675,11 +697,7 @@ export default function SmartRoundingWatchesPage() {
                   </div>
                 </header>
 
-                {loadState === "loading" ? (
-                  <div className="flex items-center justify-center px-4 py-8">
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : events.length === 0 ? (
+                {events.length === 0 ? (
                   <div className="px-4 py-6 text-center text-[13px] text-muted-foreground">
                     No watch events recorded yet.
                   </div>
@@ -705,7 +723,7 @@ export default function SmartRoundingWatchesPage() {
                               </p>
                             </div>
                             <div className="text-right text-[12px] text-muted-foreground">
-                              <div>{new Date(event.occurred_at).toLocaleString()}</div>
+                              <div>{formatWatchesBoardDateTime(event.occurred_at)}</div>
                               <div>{formatRelativeWindow(event.occurred_at)}</div>
                             </div>
                           </div>
@@ -804,12 +822,15 @@ function WatchInstanceRowCard({
         </div>
 
         <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
-          <DataPair label="Started" value={new Date(row.starts_at).toLocaleString()} />
           <DataPair
-            label="Ends"
+            label="Started, Eastern (ET)"
+            value={formatWatchesBoardDateTime(row.starts_at)}
+          />
+          <DataPair
+            label="Ends, Eastern (ET)"
             value={
               row.ends_at
-                ? `${new Date(row.ends_at).toLocaleString()} (${formatRelativeWindow(row.ends_at)})`
+                ? `${formatWatchesBoardDateTime(row.ends_at)} (${formatRelativeWindow(row.ends_at)})`
                 : "Open-ended"
             }
           />
@@ -1058,20 +1079,33 @@ function AllFacilitiesInterstitial() {
   return (
     <section
       aria-label="Facility scope required"
-      className="rounded-lg border border-dashed border-border bg-card p-6"
+      className="rounded-lg border border-dashed border-border bg-muted/20 p-3"
+      role="status"
     >
       <div className="flex items-start gap-3">
         <Building2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
         <div className="min-w-0 space-y-1">
           <p className="text-sm font-semibold text-foreground">
-            Watch center operates per facility
+            {OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY}
           </p>
           <p className="text-[13px] text-muted-foreground">
-            Watch protocols and instances are facility-scoped. Select a facility from the top
-            bar to continue.
+            Watch protocols and instances are facility-scoped. Choose a facility from the top bar
+            to review active watches and approvals.
           </p>
         </div>
       </div>
+    </section>
+  );
+}
+
+function WatchesLoadingNotice() {
+  return (
+    <section
+      aria-label="Loading watch center"
+      className="rounded-lg border border-dashed border-border bg-muted/20 p-3"
+      role="status"
+    >
+      <p className="text-[13px] leading-relaxed text-muted-foreground">{WATCHES_BOARD_LOADING_COPY}</p>
     </section>
   );
 }
