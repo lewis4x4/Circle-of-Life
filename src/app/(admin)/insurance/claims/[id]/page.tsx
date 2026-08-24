@@ -112,7 +112,7 @@ export default function InsuranceClaimDetailPage() {
   }, [supabase, id, organizationId, authLoading]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => void load());
   }, [load]);
 
   if (loading) {
