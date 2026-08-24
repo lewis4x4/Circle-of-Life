@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,17 @@ import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { normalizeTimeForDb, residentTransportRequestCreateSchema } from "@/lib/transport/transport-request-schemas";
+import {
+  TRANSPORT_REQUEST_NEW_LOADING_PROFILE_COPY,
+  TRANSPORT_REQUEST_NEW_LOADING_RESIDENTS_COPY,
+  TRANSPORT_REQUEST_NEW_NO_RESIDENTS_AT_FACILITY_COPY,
+} from "@/lib/transport/transport-request-new-display-copy";
+import {
+  isTransportRequestNewSubmitBlocked,
+  resolveTransportRequestNewFetchErrorBannerMessage,
+  resolveTransportRequestNewOrganizationGapMessage,
+  resolveTransportRequestNewSubmitButtonLabel,
+} from "@/lib/transport/transport-request-new-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -27,9 +38,9 @@ const TRANSPORT_TYPES: { value: TransportType; label: string }[] = [
 type ResidentOption = { id: string; first_name: string; last_name: string };
 
 export default function NewResidentTransportRequestPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [loadingResidents, setLoadingResidents] = useState(true);
@@ -44,15 +55,30 @@ export default function NewResidentTransportRequestPage() {
   const [escortRequired, setEscortRequired] = useState(false);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const organizationGapMessage = resolveTransportRequestNewOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: false,
+  });
+  const fetchErrorBannerMessage = resolveTransportRequestNewFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
 
   const loadResidents = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
+    setLoadingResidents(true);
+    setFetchError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setResidents([]);
       setLoadingResidents(false);
       return;
     }
-    setLoadingResidents(true);
     try {
       const { data, error: qErr } = await supabase
         .from("residents")
@@ -61,14 +87,19 @@ export default function NewResidentTransportRequestPage() {
         .is("deleted_at", null)
         .order("last_name", { ascending: true })
         .limit(500);
-      if (qErr) throw qErr;
+      if (qErr) {
+        setFetchError(qErr.message);
+        setResidents([]);
+        return;
+      }
       setResidents((data ?? []) as ResidentOption[]);
-    } catch {
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : "Failed to load residents.");
       setResidents([]);
     } finally {
       setLoadingResidents(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [authLoading, supabase, selectedFacilityId]);
 
   useEffect(() => {
     void loadResidents();
@@ -76,13 +107,23 @@ export default function NewResidentTransportRequestPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
-    setSaving(true);
-    setError(null);
-    try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
+    const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+    if (
+      isTransportRequestNewSubmitBlocked({
+        saving,
+        authLoading,
+        organizationId,
+        facilityReady,
+        residentId,
+      })
+    ) {
+      return;
+    }
+    if (!user || !organizationId || !selectedFacilityId) return;
 
+    setSaving(true);
+    setFetchError(null);
+    try {
       const parsed = residentTransportRequestCreateSchema.safeParse({
         resident_id: residentId,
         transport_type: transportType,
@@ -125,13 +166,22 @@ export default function NewResidentTransportRequestPage() {
       if (inserted?.id) router.push(`/admin/transportation/requests/${inserted.id}`);
       else router.push("/admin/transportation");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setFetchError(err instanceof Error ? err.message : "Could not save.");
     } finally {
       setSaving(false);
     }
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const showEmptyResidentsGap =
+    facilityReady && !authLoading && !loadingResidents && residents.length === 0 && !fetchErrorBannerMessage;
+  const submitBlocked = isTransportRequestNewSubmitBlocked({
+    saving,
+    authLoading,
+    organizationId,
+    facilityReady,
+    residentId,
+  });
   const selectClass = cn(
     "h-9 w-full max-w-xl rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none",
     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
@@ -141,7 +191,6 @@ export default function NewResidentTransportRequestPage() {
     <div className="mx-auto max-w-xl space-y-6 p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             New transport request
           </h1>
@@ -151,15 +200,27 @@ export default function NewResidentTransportRequestPage() {
         </Link>
       </div>
 
-      {!facilityReady && (
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
-      )}
-
-      {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-          {error}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {TRANSPORT_REQUEST_NEW_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {!facilityReady && !authLoading ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {fetchErrorBannerMessage}
+        </p>
+      ) : null}
 
       <Card className="border-slate-200/80 dark:border-slate-800">
         <CardHeader>
@@ -170,21 +231,29 @@ export default function NewResidentTransportRequestPage() {
           <form className="space-y-4" onSubmit={(e) => void submit(e)}>
             <div className="space-y-2">
               <Label htmlFor="resident">Resident</Label>
-              <select
-                id="resident"
-                required
-                className={selectClass}
-                value={residentId}
-                onChange={(e) => setResidentId(e.target.value)}
-                disabled={!facilityReady || loadingResidents}
-              >
-                <option value="">Select resident…</option>
-                {residents.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.last_name}, {r.first_name}
-                  </option>
-                ))}
-              </select>
+              {loadingResidents || authLoading ? (
+                <p className="text-sm text-slate-500">{TRANSPORT_REQUEST_NEW_LOADING_RESIDENTS_COPY}</p>
+              ) : showEmptyResidentsGap ? (
+                <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  {TRANSPORT_REQUEST_NEW_NO_RESIDENTS_AT_FACILITY_COPY}
+                </p>
+              ) : (
+                <select
+                  id="resident"
+                  required
+                  className={selectClass}
+                  value={residentId}
+                  onChange={(e) => setResidentId(e.target.value)}
+                  disabled={!facilityReady || residents.length === 0 || Boolean(organizationGapMessage)}
+                >
+                  <option value="">Select resident…</option>
+                  {residents.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.last_name}, {r.first_name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -205,7 +274,7 @@ export default function NewResidentTransportRequestPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="apptDate">Appointment date</Label>
+                <Label htmlFor="apptDate">Appointment date (ET)</Label>
                 <Input
                   id="apptDate"
                   type="date"
@@ -282,8 +351,8 @@ export default function NewResidentTransportRequestPage() {
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={!facilityReady || saving}>
-                {saving ? "Saving…" : "Create request"}
+              <Button type="submit" disabled={submitBlocked}>
+                {resolveTransportRequestNewSubmitButtonLabel({ saving, authLoading })}
               </Button>
               <Link href="/admin/transportation" className={cn(buttonVariants({ variant: "ghost" }))}>
                 Cancel
