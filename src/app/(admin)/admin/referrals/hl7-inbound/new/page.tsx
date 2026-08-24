@@ -11,6 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { HL7_INBOUND_NEW_LOADING_PROFILE_COPY } from "@/lib/referrals/hl7-inbound-new-display-copy";
+import {
+  isHl7InboundNewSubmitBlocked,
+  resolveHl7InboundNewFetchErrorBannerMessage,
+  resolveHl7InboundNewOrganizationGapMessage,
+  resolveHl7InboundNewSubmitButtonLabel,
+} from "@/lib/referrals/hl7-inbound-new-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -18,22 +25,45 @@ import { cn } from "@/lib/utils";
 export default function AdminReferralsHl7InboundNewPage() {
   const supabase = createClient();
   const router = useRouter();
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [rawMessage, setRawMessage] = useState("");
   const [messageControlId, setMessageControlId] = useState("");
   const [triggerEvent, setTriggerEvent] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+
+  const organizationGapMessage = resolveHl7InboundNewOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: false,
+  });
+  const fetchErrorBannerMessage = resolveHl7InboundNewFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+
+  const submitBlocked = isHl7InboundNewSubmitBlocked({
+    saving,
+    authLoading,
+    organizationId,
+    userId: user?.id,
+    facilityReady,
+    rawMessage,
+  });
+
+  const formDisabled = authLoading || Boolean(organizationGapMessage) || !user;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || !rawMessage.trim()) return;
+    if (submitBlocked) return;
+    if (!user || !organizationId || !selectedFacilityId) return;
+
     setSaving(true);
-    setError(null);
+    setFetchError(null);
     try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const { error: insErr } = await supabase.from("referral_hl7_inbound").insert({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
@@ -43,16 +73,15 @@ export default function AdminReferralsHl7InboundNewPage() {
         status: "pending",
         created_by: user.id,
       });
-      if (insErr) throw insErr;
+      if (insErr) throw new Error(insErr.message);
       router.push("/admin/referrals/hl7-inbound");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save.");
+      setFetchError(e instanceof Error ? e.message : "Could not save.");
     } finally {
       setSaving(false);
     }
   }
 
-  const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
   const taClass = cn(
     "min-h-[180px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none",
     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
@@ -71,17 +100,29 @@ export default function AdminReferralsHl7InboundNewPage() {
 
       <ReferralsHubNav />
 
-      {!facilityReady && (
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {HL7_INBOUND_NEW_LOADING_PROFILE_COPY}
+        </p>
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {!facilityReady && !authLoading ? (
         <p className="rounded-lg border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
           Select a facility in the header before adding a referral.
         </p>
-      )}
+      ) : null}
 
-      {error && (
+      {fetchErrorBannerMessage ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-          {error}
+          {fetchErrorBannerMessage}
         </p>
-      )}
+      ) : null}
 
       <Card className="border-slate-200/80 shadow-soft dark:border-slate-800">
         <CardHeader>
@@ -100,6 +141,7 @@ export default function AdminReferralsHl7InboundNewPage() {
                 onChange={(e) => setRawMessage(e.target.value)}
                 placeholder="MSH|^~\\&|..."
                 spellCheck={false}
+                disabled={formDisabled}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -110,16 +152,22 @@ export default function AdminReferralsHl7InboundNewPage() {
                   value={messageControlId}
                   onChange={(e) => setMessageControlId(e.target.value)}
                   className="font-mono text-sm"
+                  disabled={formDisabled}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="trg">Referral Type</Label>
-                <Input id="trg" value={triggerEvent} onChange={(e) => setTriggerEvent(e.target.value)} />
+                <Input
+                  id="trg"
+                  value={triggerEvent}
+                  onChange={(e) => setTriggerEvent(e.target.value)}
+                  disabled={formDisabled}
+                />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={saving || !facilityReady || !rawMessage.trim()}>
-                {saving ? "Saving…" : "Add to Inbox"}
+              <Button type="submit" disabled={submitBlocked}>
+                {resolveHl7InboundNewSubmitButtonLabel({ saving, authLoading })}
               </Button>
               <Link href="/admin/referrals/hl7-inbound" className={cn(buttonVariants({ variant: "outline" }))}>
                 Cancel
