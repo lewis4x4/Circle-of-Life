@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import {
+  DRIVER_NEW_LICENSE_EXPIRES_LABEL,
+  DRIVER_NEW_LOADING_PROFILE_COPY,
+  DRIVER_NEW_LOADING_STAFF_COPY,
+  DRIVER_NEW_NO_STAFF_AT_FACILITY_COPY,
+} from "@/lib/transportation/driver-new-display-copy";
+import {
+  isDriverNewSubmitBlocked,
+  resolveDriverNewFetchErrorBannerMessage,
+  resolveDriverNewOrganizationGapMessage,
+  resolveDriverNewSubmitButtonLabel,
+} from "@/lib/transportation/driver-new-page-state";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -20,9 +32,9 @@ type CredStatus = Database["public"]["Enums"]["driver_credential_status"];
 const STATUS_OPTIONS: CredStatus[] = ["active", "suspended", "expired"];
 
 export default function AdminTransportationDriverNewPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [staffList, setStaffList] = useState<{ id: string; label: string }[]>([]);
   const [staffId, setStaffId] = useState("");
@@ -32,16 +44,30 @@ export default function AdminTransportationDriverNewPage() {
   const [licenseExpires, setLicenseExpires] = useState("");
   const [medExpires, setMedExpires] = useState("");
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loadingStaff, setLoadingStaff] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const organizationGapMessage = resolveDriverNewOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: false,
+  });
+  const fetchErrorBannerMessage = resolveDriverNewFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
 
   const loadStaff = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    if (authLoading) {
+      return;
+    }
+
+    setLoadingStaff(true);
+    setFetchError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setStaffList([]);
-      setLoading(false);
+      setLoadingStaff(false);
       return;
     }
     try {
@@ -52,7 +78,11 @@ export default function AdminTransportationDriverNewPage() {
         .is("deleted_at", null)
         .order("last_name", { ascending: true })
         .limit(400);
-      if (qErr) throw qErr;
+      if (qErr) {
+        setFetchError(qErr.message);
+        setStaffList([]);
+        return;
+      }
       setStaffList(
         (data ?? []).map((s) => ({
           id: s.id,
@@ -60,12 +90,12 @@ export default function AdminTransportationDriverNewPage() {
         })),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load staff.");
+      setFetchError(e instanceof Error ? e.message : "Failed to load staff.");
       setStaffList([]);
     } finally {
-      setLoading(false);
+      setLoadingStaff(false);
     }
-  }, [supabase, selectedFacilityId]);
+  }, [authLoading, supabase, selectedFacilityId]);
 
   useEffect(() => {
     void loadStaff();
@@ -73,12 +103,23 @@ export default function AdminTransportationDriverNewPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) || !staffId) return;
+    const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+    if (
+      isDriverNewSubmitBlocked({
+        saving,
+        authLoading,
+        organizationId,
+        facilityReady,
+        staffId,
+      })
+    ) {
+      return;
+    }
+    if (!user || !organizationId || !selectedFacilityId) return;
+
     setSaving(true);
-    setError(null);
+    setFetchError(null);
     try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
       const { error: insErr } = await supabase.from("driver_credentials").insert({
         organization_id: organizationId,
         facility_id: selectedFacilityId,
@@ -94,13 +135,22 @@ export default function AdminTransportationDriverNewPage() {
       if (insErr) throw insErr;
       router.push("/admin/transportation");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save.");
+      setFetchError(e instanceof Error ? e.message : "Could not save.");
     } finally {
       setSaving(false);
     }
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const showEmptyStaffGap =
+    facilityReady && !authLoading && !loadingStaff && staffList.length === 0 && !fetchErrorBannerMessage;
+  const submitBlocked = isDriverNewSubmitBlocked({
+    saving,
+    authLoading,
+    organizationId,
+    facilityReady,
+    staffId,
+  });
   const selectClass = cn(
     "h-8 w-full max-w-xl rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none",
     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
@@ -117,15 +167,27 @@ export default function AdminTransportationDriverNewPage() {
         </Link>
       </div>
 
-      {!facilityReady && (
-        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
-      )}
-
-      {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-          {error}
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {DRIVER_NEW_LOADING_PROFILE_COPY}
         </p>
-      )}
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {!facilityReady && !authLoading ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility first.</p>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {fetchErrorBannerMessage}
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -136,8 +198,12 @@ export default function AdminTransportationDriverNewPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="stf">Staff</Label>
-              {loading ? (
-                <p className="text-sm text-slate-500">Loading staff…</p>
+              {loadingStaff || authLoading ? (
+                <p className="text-sm text-slate-500">{DRIVER_NEW_LOADING_STAFF_COPY}</p>
+              ) : showEmptyStaffGap ? (
+                <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  {DRIVER_NEW_NO_STAFF_AT_FACILITY_COPY}
+                </p>
               ) : (
                 <select
                   id="stf"
@@ -145,7 +211,7 @@ export default function AdminTransportationDriverNewPage() {
                   className={selectClass}
                   value={staffId}
                   onChange={(e) => setStaffId(e.target.value)}
-                  disabled={!facilityReady || staffList.length === 0}
+                  disabled={!facilityReady || staffList.length === 0 || Boolean(organizationGapMessage)}
                 >
                   <option value="">Select…</option>
                   {staffList.map((s) => (
@@ -178,7 +244,7 @@ export default function AdminTransportationDriverNewPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="le">License expires</Label>
+                <Label htmlFor="le">{DRIVER_NEW_LICENSE_EXPIRES_LABEL}</Label>
                 <Input id="le" type="date" value={licenseExpires} onChange={(e) => setLicenseExpires(e.target.value)} />
               </div>
               <div className="space-y-2">
@@ -190,8 +256,8 @@ export default function AdminTransportationDriverNewPage() {
               <Label htmlFor="notes">Notes</Label>
               <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
-            <Button type="submit" disabled={saving || !facilityReady || !staffId}>
-              {saving ? "Saving…" : "Save credential"}
+            <Button type="submit" disabled={submitBlocked}>
+              {resolveDriverNewSubmitButtonLabel({ saving, authLoading })}
             </Button>
           </form>
         </CardContent>
