@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
@@ -15,7 +16,16 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
-import { formatInsurancePolicyExpirationDate } from "@/lib/insurance/policies-display-copy";
+import {
+  formatInsurancePolicyExpirationDate,
+  INSURANCE_POLICIES_LOADING_COPY,
+  INSURANCE_POLICIES_LOADING_PROFILE_COPY,
+  INSURANCE_POLICIES_ORG_DATE_SCOPE_COPY,
+} from "@/lib/insurance/policies-display-copy";
+import {
+  resolveInsurancePoliciesFetchErrorBannerMessage,
+  resolveInsurancePoliciesOrganizationGapMessage,
+} from "@/lib/insurance/policies-page-state";
 import {
   INSURANCE_HUB_LIST_LIMIT,
   INSURANCE_POLICIES_LIST_SELECT,
@@ -69,13 +79,16 @@ export default function InsurancePoliciesPage() {
     },
   });
 
-  const loading = authLoading || isPending;
-  const loadError =
-    !authLoading && !organizationId
-      ? "Organization missing on profile."
-      : error
-        ? error.message
-        : null;
+  const organizationGapMessage = resolveInsurancePoliciesOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: rows.length > 0,
+  });
+  const fetchErrorBannerMessage = resolveInsurancePoliciesFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error?.message ?? null,
+  });
+  const loadingPolicies = !!organizationId && !authLoading && isPending;
 
   const entityName = useMemo(() => {
     const m = new Map(entities.map((e) => [e.id, e.name]));
@@ -96,19 +109,32 @@ export default function InsurancePoliciesPage() {
             <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
               Entity-level corporate insurance inventory.
             </p>
+            <p className="text-sm text-muted-foreground max-w-2xl">{INSURANCE_POLICIES_ORG_DATE_SCOPE_COPY}</p>
           </div>
           {canWrite && (
             <div className="flex flex-wrap items-center gap-2">
-              <Link href="/admin/insurance/policies/new" className={cn(buttonVariants({ size: "default" }), "font-mono uppercase tracking-wider text-[10px]")} >
-                 + New Policy
+              <Link href="/admin/insurance/policies/new" className={cn(buttonVariants({ size: "default" }))}>
+                + New Policy
               </Link>
             </div>
           )}
         </header>
 
-        {loadError && (
+        {authLoading ? (
+          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+            {INSURANCE_POLICIES_LOADING_PROFILE_COPY}
+          </p>
+        ) : null}
+
+        {organizationGapMessage ? (
+          <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+            <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+          </Card>
+        ) : null}
+
+        {fetchErrorBannerMessage && (
           <p className="text-sm text-destructive" role="alert">
-            {loadError}
+            {fetchErrorBannerMessage}
           </p>
         )}
 
@@ -121,6 +147,7 @@ export default function InsurancePoliciesPage() {
                 className="w-full h-10 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
                 value={entityFilter}
                 onChange={(e) => setEntityFilter(e.target.value)}
+                disabled={authLoading || !organizationId}
               >
                 <option value="">All entities</option>
                 {entities.map((e) => (
@@ -137,6 +164,7 @@ export default function InsurancePoliciesPage() {
                 className="w-full h-10 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
+                disabled={authLoading || !organizationId}
               >
                 <option value="">All statuses</option>
                 {Constants.public.Enums.insurance_policy_status.map((s) => (
@@ -147,7 +175,13 @@ export default function InsurancePoliciesPage() {
               </select>
             </div>
             <div className="flex items-end">
-              <Button type="button" variant="outline" className="h-10 rounded-lg px-6 border-border" onClick={() => void refetch()}>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-lg px-6 border-border"
+                onClick={() => void refetch()}
+                disabled={authLoading || !organizationId}
+              >
                 Apply Filters
               </Button>
             </div>
@@ -157,14 +191,18 @@ export default function InsurancePoliciesPage() {
             <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
               Policy List
             </h3>
-            <span className="text-xs font-medium text-muted-foreground">{loading ? "Loading…" : `${rows.length} policies`}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {authLoading || loadingPolicies ? "Loading…" : `${rows.length} policies`}
+            </span>
           </div>
 
-          {loading ? (
-            <p className="text-sm font-mono text-muted-foreground pl-2">Loading policies…</p>
+          {authLoading || loadingPolicies ? (
+            <p className="text-sm text-muted-foreground pl-2" role="status" aria-live="polite">
+              {INSURANCE_POLICIES_LOADING_COPY}
+            </p>
           ) : rows.length === 0 ? (
             <div className="p-12 text-center rounded-lg border border-dashed border-border bg-muted/20">
-               <p className="font-semibold text-lg text-foreground">No Policies Found</p>
+              <p className="font-semibold text-lg text-foreground">No Policies Found</p>
               <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or adding a new policy.</p>
             </div>
           ) : (
@@ -174,7 +212,7 @@ export default function InsurancePoliciesPage() {
                 <span className="flex-[2] min-w-0">Carrier</span>
                 <span className="flex-1 min-w-0">Type</span>
                 <span className="flex-1 min-w-0">Entity</span>
-                <span className="w-[110px] shrink-0">Expires</span>
+                <span className="w-[110px] shrink-0">Expires (ET)</span>
                 <span className="w-[120px] shrink-0 text-right">Premium</span>
                 <span className="w-[72px] shrink-0 text-right">Action</span>
               </TableRowHeader>
@@ -209,10 +247,7 @@ export default function InsurancePoliciesPage() {
                         <div className="w-[72px] shrink-0 flex justify-end">
                           <Link
                             href={`/admin/insurance/policies/${r.id}`}
-                            className={cn(
-                              buttonVariants({ variant: "outline", size: "sm" }),
-                              "h-7 px-2.5 font-mono uppercase tracking-wider text-[10px]"
-                            )}
+                            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 px-2.5 text-[10px]")}
                           >
                             View
                           </Link>
