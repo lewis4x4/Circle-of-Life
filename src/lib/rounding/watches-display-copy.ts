@@ -8,6 +8,7 @@ import { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY } from "./observation-plan-
 export { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY };
 
 export const WATCHES_BOARD_LOADING_COPY = "Loading watch center…";
+export const WATCHES_BOARD_NO_TIME_COPY = "No time posted";
 export const WATCHES_BOARD_WATCH_TIMES_ET_CUE = "Watch times are Eastern (ET).";
 
 export type WatchesBoardFacilityScope =
@@ -46,10 +47,10 @@ const WATCHES_NEW_YORK_TZ = "America/New_York";
 /** Watch instance or event timestamp — facility wall clock in Eastern (ET). */
 export function formatWatchesBoardDateTime(value: string | null | undefined): string {
   const trimmed = value?.trim();
-  if (!trimmed) return "—";
+  if (!trimmed) return WATCHES_BOARD_NO_TIME_COPY;
 
   const date = new Date(trimmed);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return WATCHES_BOARD_NO_TIME_COPY;
 
   try {
     return new Intl.DateTimeFormat("en-US", {
@@ -61,6 +62,6 @@ export function formatWatchesBoardDateTime(value: string | null | undefined): st
       timeZone: WATCHES_NEW_YORK_TZ,
     }).format(date);
   } catch {
-    return "—";
+    return WATCHES_BOARD_NO_TIME_COPY;
   }
 }

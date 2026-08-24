@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY,
   WATCHES_BOARD_LOADING_COPY,
+  WATCHES_BOARD_NO_TIME_COPY,
   WATCHES_BOARD_WATCH_TIMES_ET_CUE,
   formatWatchesBoardDateTime,
   formatWatchesBoardNoWatchesEmptyTitle,
@@ -75,10 +76,11 @@ describe("formatWatchesBoardDateTime", () => {
     expect(formatted).toMatch(/2026/);
   });
 
-  it("returns an em dash for missing or invalid values", () => {
-    expect(formatWatchesBoardDateTime(null)).toBe("—");
-    expect(formatWatchesBoardDateTime("")).toBe("—");
-    expect(formatWatchesBoardDateTime("not-a-date")).toBe("—");
+  it("names the gap for missing or invalid values instead of a silent dash", () => {
+    expect(formatWatchesBoardDateTime(null)).toBe(WATCHES_BOARD_NO_TIME_COPY);
+    expect(formatWatchesBoardDateTime("")).toBe(WATCHES_BOARD_NO_TIME_COPY);
+    expect(formatWatchesBoardDateTime("not-a-date")).toBe(WATCHES_BOARD_NO_TIME_COPY);
+    expect(formatWatchesBoardDateTime(null)).not.toBe("—");
   });
 });
 
