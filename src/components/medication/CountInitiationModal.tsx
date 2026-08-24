@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 
 type MedRow = {
@@ -185,7 +186,7 @@ export function CountInitiationModal({
         throw new Error("Could not determine organization");
       }
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayFacilityDateIso();
       const ids: string[] = [];
       for (const line of lines) {
         const actual = Number.parseInt(line.actual, 10);
@@ -298,6 +299,19 @@ export function CountInitiationModal({
               </div>
             ) : (
               <>
+                <div className="space-y-2 mb-4">
+                  <Label htmlFor="count-date" className="text-xs text-emerald-200/80">
+                    Count date (ET)
+                  </Label>
+                  <Input
+                    id="count-date"
+                    type="date"
+                    readOnly
+                    value={todayFacilityDateIso()}
+                    className="h-12 border-emerald-900/50 bg-zinc-950 px-4 text-sm text-zinc-100"
+                  />
+                </div>
+
                 {/* Shift Selection */}
                 <div className="space-y-2 mb-4">
                   <Label className="text-xs text-emerald-200/80">Shift ending</Label>
