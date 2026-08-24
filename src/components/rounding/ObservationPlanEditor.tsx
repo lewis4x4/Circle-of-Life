@@ -35,6 +35,7 @@ import {
   formatObservationPlanAcuitySegment,
   formatObservationPlanResidentName,
   formatObservationPlanRoomLabel,
+  OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY,
 } from "@/lib/rounding/observation-plan-display-copy";
 import {
   buildPlanSchedulePreview,
@@ -191,8 +192,10 @@ export function ObservationPlanEditor({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
-  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const selectedFacility = selectedFacilityId
+    ? availableFacilities.find((facility) => facility.id === selectedFacilityId)
+    : null;
+  const facilityName = selectedFacility?.name ?? "";
   const [residents, setResidents] = useState<ResidentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -216,7 +219,7 @@ export function ObservationPlanEditor({
   const [rationale, setRationale] = useState("");
   const [rules, setRules] = useState<PlanRuleInput[]>([]);
 
-  const cadenceKey = resolveColDiscoveryCadenceKey(facilityName);
+  const cadenceKey = facilityName ? resolveColDiscoveryCadenceKey(facilityName) : null;
   const isPlantationPending = cadenceKey != null && getColDiscoveryCadenceProfile(cadenceKey) === "pending";
   const isNewPlan = !planId && !duplicatePlanId;
   const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) ?? null;
@@ -442,7 +445,7 @@ export function ObservationPlanEditor({
   async function savePlan() {
     setSaveAttempted(true);
     if (!selectedFacilityId) {
-      setSaveError("Select a facility first.");
+      setSaveError(OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY);
       return;
     }
     if (!canSave) {
@@ -495,7 +498,7 @@ export function ObservationPlanEditor({
     return (
       <Card className="border-amber-200/80 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/30">
         <CardContent className="py-6 text-sm text-amber-950 dark:text-amber-100">
-          Select a facility in the header before creating or editing a rounding plan.
+          {OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY}
         </CardContent>
       </Card>
     );
@@ -663,7 +666,9 @@ export function ObservationPlanEditor({
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-foreground">Rules</h2>
-              <p className="text-sm text-muted-foreground">Configure interval, daypart, and grace.</p>
+              <p className="text-sm text-muted-foreground">
+                Configure interval, daypart, and grace. Cadence check times use Eastern (ET).
+              </p>
             </div>
             <div className="flex max-w-sm flex-col items-end gap-1">
               <Button

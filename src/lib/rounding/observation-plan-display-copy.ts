@@ -8,6 +8,8 @@
 export const OBSERVATION_PLAN_NO_ACUITY_COPY = "No acuity posted";
 export const OBSERVATION_PLAN_NO_NAME_COPY = "No name posted";
 export const OBSERVATION_PLAN_NO_ROOM_COPY = "No room posted";
+/** Named gap when facility scope is unset — never interpolate legacy "selected facility" copy. */
+export const OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY = "Select a facility first.";
 
 const OBSERVATION_PLAN_PLACEHOLDER_RESIDENT_NAMES = new Set([
   "—",

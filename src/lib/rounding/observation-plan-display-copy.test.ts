@@ -4,6 +4,7 @@ import {
   OBSERVATION_PLAN_NO_ACUITY_COPY,
   OBSERVATION_PLAN_NO_NAME_COPY,
   OBSERVATION_PLAN_NO_ROOM_COPY,
+  OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY,
   formatObservationPlanAcuityDisplay,
   formatObservationPlanAcuitySegment,
   formatObservationPlanResidentName,
@@ -11,6 +12,13 @@ import {
 } from "./observation-plan-display-copy";
 
 const EM_DASH = "—";
+
+describe("observation plan facility scope copy", () => {
+  it("names the unset-facility gap without legacy selected-facility interpolation", () => {
+    expect(OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY).toBe("Select a facility first.");
+    expect(OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY).not.toContain("selected facility");
+  });
+});
 
 describe("formatObservationPlanAcuityDisplay", () => {
   it("names missing acuity instead of an em dash", () => {

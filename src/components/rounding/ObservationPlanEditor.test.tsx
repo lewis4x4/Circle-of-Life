@@ -5,6 +5,7 @@ import {
   COL_DISCOVERY_FACILITY_NAMES,
   isLegacyMigration219HourlyWindow,
 } from "@/lib/rounding/col-discovery-round-cadence";
+import { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY } from "@/lib/rounding/observation-plan-display-copy";
 import { validatePlanRule } from "@/lib/rounding/observation-plan-validation";
 
 import { ObservationPlanEditor } from "./ObservationPlanEditor";
@@ -150,6 +151,23 @@ const sourcePlanResponse = {
 };
 
 describe("ObservationPlanEditor duplicate and edit payload ids", () => {
+  it("shows a named facility gap instead of selected-facility cadence copy", () => {
+    facilityStoreState.selectedFacilityId = "";
+    facilityStoreState.availableFacilities = [];
+
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(screen.getByText(OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY)).toBeTruthy();
+    expect(screen.queryByText(/selected facility/i)).toBeNull();
+    expect(residentsSelectMock).not.toHaveBeenCalled();
+  });
+
+  it("labels cadence rule times as Eastern (ET)", async () => {
+    render(<ObservationPlanEditor title="Create observation plan" />);
+
+    expect(await screen.findByText(/Cadence check times use Eastern \(ET\)/)).toBeTruthy();
+  });
+
   it("loads residents with explicit bed FK and shows calm empty census copy", async () => {
     residentsOrderMock.mockResolvedValueOnce({
       data: [],
