@@ -27,6 +27,10 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   formatRoundingPlanDateDisplay,
   formatRoundingPlanDateTimeDisplay,
+  formatRoundingPlansFilterEmptyTitle,
+  formatRoundingPlansNoPlansEmptyTitle,
+  formatRoundingPlansPageSubtitle,
+  resolveRoundingPlansFacilityScope,
 } from "@/lib/rounding/rounding-plans-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -138,8 +142,23 @@ function deriveFetchState(args: {
 export default function AdminRoundingPlansPage() {
   const searchParams = useSearchParams();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
-  const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScope = useMemo(
+    () =>
+      resolveRoundingPlansFacilityScope(
+        selectedFacilityId,
+        availableFacilities.find((facility) => facility.id === selectedFacilityId)?.name,
+      ),
+    [availableFacilities, selectedFacilityId],
+  );
+  const pageSubtitle = useMemo(() => formatRoundingPlansPageSubtitle(facilityScope), [facilityScope]);
+  const noPlansEmptyTitle = useMemo(
+    () => formatRoundingPlansNoPlansEmptyTitle(facilityScope),
+    [facilityScope],
+  );
+  const filterEmptyTitle = useMemo(
+    () => formatRoundingPlansFilterEmptyTitle(facilityScope),
+    [facilityScope],
+  );
   const supabase = useMemo(() => createClient(), []);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -249,7 +268,7 @@ export default function AdminRoundingPlansPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Observation plans"
-        subtitle={`Resident cadence rules, active observation windows, and shift-ready task generation at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <>
             <Button
@@ -327,9 +346,9 @@ export default function AdminRoundingPlansPage() {
             error={<LoadErrorNotice message={errorMessage ?? "Could not load observation plans."} onRetry={() => void load()} />}
             empty={
               filter === "all" ? (
-                <NoPlansEmptyState facilityName={facilityName} />
+                <NoPlansEmptyState title={noPlansEmptyTitle} />
               ) : (
-                <FilterEmptyState facilityName={facilityName} onClear={() => setFilter("all")} />
+                <FilterEmptyState title={filterEmptyTitle} onClear={() => setFilter("all")} />
               )
             }
           >
@@ -443,11 +462,11 @@ function LoadErrorNotice({ message, onRetry }: { message: string; onRetry: () =>
   );
 }
 
-function NoPlansEmptyState({ facilityName }: { facilityName: string }) {
+function NoPlansEmptyState({ title }: { title: string }) {
   return (
     <section aria-label="No observation plans" className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
       <ClipboardList className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No observation plans at {facilityName}</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">{title}</p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">Create one to define rounding cadence.</p>
       <div className="mt-4">
         <Link href="/admin/rounding/plans/new" className={cn(buttonVariants({ variant: "default", size: "sm" }))}>
@@ -459,11 +478,11 @@ function NoPlansEmptyState({ facilityName }: { facilityName: string }) {
   );
 }
 
-function FilterEmptyState({ facilityName, onClear }: { facilityName: string; onClear: () => void }) {
+function FilterEmptyState({ title, onClear }: { title: string; onClear: () => void }) {
   return (
     <section aria-label="No plans match filter" className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
       <ClipboardList className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No plans match this filter at {facilityName}</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">{title}</p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">Adjust the filter to see other observation plans.</p>
       <div className="mt-4">
         <Button type="button" variant="outline" size="sm" onClick={onClear}>
