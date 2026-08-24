@@ -26,6 +26,7 @@ import {
   formatExecutiveRiskScore,
 } from "@/lib/executive/executive-display-copy";
 import { formatCents } from "@/lib/finance/format-cents";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 type ExecutiveLeaguePageClientProps = {
   initialData: ExecutiveLeagueData | null;
@@ -75,7 +76,7 @@ function downloadLeagueCsv(rows: LeagueFacilityRow[]) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `executive-league-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.download = `executive-league-${todayFacilityDateIso()}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -144,15 +145,18 @@ export default function ExecutiveLeaguePageClient({
             <Download className="mr-2 h-4 w-4" />
             League PDF
           </button>
-          <button
-            type="button"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-            onClick={() => downloadLeagueCsv(rows)}
-            disabled={rows.length === 0}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            League CSV
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              onClick={() => downloadLeagueCsv(rows)}
+              disabled={rows.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              League CSV
+            </button>
+            <span className="text-xs text-muted-foreground">Eastern (ET) file date</span>
+          </div>
           {boardSummary.weekOf ? (
             <Link
               className={buttonVariants({ variant: "outline", size: "sm" })}
