@@ -5,11 +5,14 @@ import {
   FAMILY_PORTAL_ADMIN_NO_NOTE_COPY,
   FAMILY_PORTAL_ADMIN_NO_RESIDENT_NAME_COPY,
   FAMILY_PORTAL_ADMIN_NO_ROOM_COPY,
+  FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY,
   familyPortalAdminKpiValue,
   formatFamilyPortalAdminConferenceRoom,
   formatFamilyPortalAdminMatchedKeywords,
   formatFamilyPortalAdminNoteBody,
+  formatFamilyPortalAdminPageSubtitle,
   formatFamilyPortalAdminResidentName,
+  resolveFamilyPortalAdminFacilityScope,
 } from "./family-portal-admin-display-copy";
 
 const EM_DASH = "—";
@@ -84,5 +87,48 @@ describe("familyPortalAdminKpiValue", () => {
   it("keeps numeric counts when facility scope is ready", () => {
     expect(familyPortalAdminKpiValue("pending_triage", true, 0)).toBe(0);
     expect(familyPortalAdminKpiValue("conferences_this_week", true, 4)).toBe(4);
+  });
+});
+
+describe("resolveFamilyPortalAdminFacilityScope", () => {
+  it("returns unscoped when facility scope is not ready", () => {
+    expect(resolveFamilyPortalAdminFacilityScope(false, null)).toEqual({ kind: "unscoped" });
+    expect(resolveFamilyPortalAdminFacilityScope(false, "Anon Facility A")).toEqual({
+      kind: "unscoped",
+    });
+  });
+
+  it("returns missing_name when facility is ready without a resolved name", () => {
+    expect(resolveFamilyPortalAdminFacilityScope(true, null)).toEqual({ kind: "missing_name" });
+    expect(resolveFamilyPortalAdminFacilityScope(true, "   ")).toEqual({ kind: "missing_name" });
+  });
+
+  it("returns a named scope when the facility name resolves", () => {
+    expect(resolveFamilyPortalAdminFacilityScope(true, "Anon Facility A")).toEqual({
+      kind: "named",
+      name: "Anon Facility A",
+    });
+  });
+});
+
+describe("formatFamilyPortalAdminPageSubtitle", () => {
+  it("uses the shared select-facility gap when unscoped", () => {
+    expect(formatFamilyPortalAdminPageSubtitle({ kind: "unscoped" })).toContain(
+      FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY,
+    );
+    expect(formatFamilyPortalAdminPageSubtitle({ kind: "unscoped" })).not.toContain("selected facility");
+  });
+
+  it("interpolates the facility name only when resolved", () => {
+    expect(
+      formatFamilyPortalAdminPageSubtitle({ kind: "named", name: "Anon Facility A" }),
+    ).toContain("Family Connections at Anon Facility A.");
+  });
+
+  it("never interpolates a missing-name gap into an at-facility sentence", () => {
+    const subtitle = formatFamilyPortalAdminPageSubtitle({ kind: "missing_name" });
+    expect(subtitle).not.toContain(" at ");
+    expect(subtitle).not.toContain("selected facility");
+    expect(subtitle).toMatch(/^Family Connections\./);
   });
 });
