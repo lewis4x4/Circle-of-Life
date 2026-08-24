@@ -6,11 +6,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { addHours, format, parseISO } from "date-fns";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import {
+  TRANSPORT_REQUEST_DETAIL_LOADING_PROFILE_COPY,
+  TRANSPORT_REQUEST_DETAIL_LOADING_REQUEST_COPY,
+} from "@/lib/transport/transport-request-detail-display-copy";
+import {
+  isTransportRequestDetailSubmitBlocked,
+  resolveTransportRequestDetailEffectiveOrganizationId,
+  resolveTransportRequestDetailFetchErrorBannerMessage,
+  resolveTransportRequestDetailOrganizationGapMessage,
+  resolveTransportRequestDetailSignInGapMessage,
+  resolveTransportRequestDetailSubmitButtonLabel,
+} from "@/lib/transport/transport-request-detail-page-state";
 import { triggerFileDownload } from "@/lib/csv-export";
 import { DEFAULT_MILEAGE_RATE_CENTS } from "@/lib/transport/mileage-defaults";
 import { formatCentsPerMileUsd, getOrganizationMileageRateCents } from "@/lib/transport/org-mileage-rate";
@@ -55,8 +68,8 @@ const STATUS_OPTIONS: { value: TransportStatus; label: string }[] = [
 ];
 
 export default function EditResidentTransportRequestPage() {
-  const supabase = createClient();
-  const { user, organizationId } = useHavenAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
   const router = useRouter();
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -102,6 +115,9 @@ export default function EditResidentTransportRequestPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
     if (!id || !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setRow(null);
       setLoading(false);
@@ -192,7 +208,7 @@ export default function EditResidentTransportRequestPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, id, selectedFacilityId]);
+  }, [authLoading, supabase, id, selectedFacilityId]);
 
   useEffect(() => {
     void load();
@@ -212,13 +228,27 @@ export default function EditResidentTransportRequestPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!row || !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
+    const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+    const effectiveOrganizationId = resolveTransportRequestDetailEffectiveOrganizationId(
+      organizationId,
+      row?.organization_id,
+    );
+    if (
+      isTransportRequestDetailSubmitBlocked({
+        saving,
+        authLoading,
+        user,
+        effectiveOrganizationId,
+        facilityReady,
+        hasRow: Boolean(row),
+      })
+    ) {
+      return;
+    }
+    if (!row || !selectedFacilityId || !user || !effectiveOrganizationId) return;
     setSaving(true);
     setError(null);
     try {
-      if (!user) throw new Error("Sign in required.");
-      if (!organizationId) throw new Error("Organization missing on profile.");
-
       const parsed = residentTransportRequestUpdateSchema.safeParse({
         transport_type: transportType,
         appointment_date: appointmentDate,
@@ -279,7 +309,7 @@ export default function EditResidentTransportRequestPage() {
           updated_by: user.id,
         })
         .eq("id", row.id);
-      if (upErr) throw upErr;
+      if (upErr) throw new Error(upErr.message);
 
       if (
         parsed.data.status === "completed" &&
@@ -296,7 +326,7 @@ export default function EditResidentTransportRequestPage() {
         if (!ml.success) throw new Error(ml.error.issues.map((x) => x.message).join(" "));
         const milesNum = ml.data.miles;
         const totalMiles = ml.data.round_trip ? milesNum * 2 : milesNum;
-        const rateCents = await getOrganizationMileageRateCents(supabase, organizationId);
+        const rateCents = await getOrganizationMileageRateCents(supabase, effectiveOrganizationId);
         const reimbursement_amount_cents = Math.round(totalMiles * rateCents);
 
         const { data: existingMl } = await supabase
@@ -307,7 +337,7 @@ export default function EditResidentTransportRequestPage() {
           .maybeSingle();
         if (!existingMl) {
           const { error: mErr } = await supabase.from("mileage_logs").insert({
-            organization_id: organizationId,
+            organization_id: effectiveOrganizationId,
             facility_id: selectedFacilityId,
             staff_id: parsed.data.driver_staff_id,
             trip_date: parsed.data.appointment_date,
@@ -337,6 +367,36 @@ export default function EditResidentTransportRequestPage() {
   }
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const hasOrgScopedData = Boolean(row?.organization_id);
+  const effectiveOrganizationId = resolveTransportRequestDetailEffectiveOrganizationId(
+    organizationId,
+    row?.organization_id,
+  );
+  const organizationGapMessage = resolveTransportRequestDetailOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData,
+  });
+  const signInGapMessage = resolveTransportRequestDetailSignInGapMessage({
+    authLoading,
+    user,
+  });
+  const saveErrorBannerMessage = resolveTransportRequestDetailFetchErrorBannerMessage({
+    authLoading,
+    fetchError: error,
+  });
+  const loadErrorBannerMessage = resolveTransportRequestDetailFetchErrorBannerMessage({
+    authLoading,
+    fetchError: loadError,
+  });
+  const submitBlocked = isTransportRequestDetailSubmitBlocked({
+    saving,
+    authLoading,
+    user,
+    effectiveOrganizationId,
+    facilityReady,
+    hasRow: Boolean(row),
+  });
   const selectClass = cn(
     "h-9 w-full max-w-xl rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none",
     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
@@ -396,7 +456,7 @@ export default function EditResidentTransportRequestPage() {
     status,
   ]);
 
-  if (!facilityReady) {
+  if (!facilityReady && !authLoading) {
     return (
       <div className="mx-auto max-w-2xl p-6">
         <p className="text-sm text-warning">Select a facility first.</p>
@@ -404,18 +464,36 @@ export default function EditResidentTransportRequestPage() {
     );
   }
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="mx-auto max-w-2xl p-6">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {TRANSPORT_REQUEST_DETAIL_LOADING_PROFILE_COPY}
+        </p>
       </div>
     );
   }
 
-  if (loadError || !row) {
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl p-6">
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {TRANSPORT_REQUEST_DETAIL_LOADING_REQUEST_COPY}
+        </p>
+      </div>
+    );
+  }
+
+  if (loadErrorBannerMessage || !row) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-6">
-        <p className="text-sm text-destructive">{loadError ?? "Not found."}</p>
+        {loadErrorBannerMessage ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+            {loadErrorBannerMessage}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">Request not found.</p>
+        )}
         <Link href="/admin/transportation" className={cn(buttonVariants({ variant: "outline" }))}>
           Back to transportation
         </Link>
@@ -435,11 +513,23 @@ export default function EditResidentTransportRequestPage() {
         backLink={{ label: "Back to transportation", href: "/admin/transportation" }}
       />
 
-      {error && (
-        <p className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {signInGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{signInGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {saveErrorBannerMessage ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+          {saveErrorBannerMessage}
         </p>
-      )}
+      ) : null}
 
       <RecordDetailSection
         title="Schedule & assignment"
@@ -448,7 +538,7 @@ export default function EditResidentTransportRequestPage() {
         <form className="space-y-4" onSubmit={(e) => void save(e)}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Appointment date</Label>
+              <Label>Appointment date (ET)</Label>
               <Input
                 type="date"
                 required
@@ -694,8 +784,13 @@ export default function EditResidentTransportRequestPage() {
           ) : null}
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save"}
+            <Button type="submit" disabled={submitBlocked}>
+              {resolveTransportRequestDetailSubmitButtonLabel({
+                saving,
+                authLoading,
+                user,
+                effectiveOrganizationId,
+              })}
             </Button>
             <Link href={`/admin/residents/${row.resident_id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
               View resident
