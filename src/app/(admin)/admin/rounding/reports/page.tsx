@@ -32,7 +32,11 @@ import {
   roundingReportRangeForPreset,
   type DateRangePreset,
 } from "@/lib/rounding/rounding-reports-date-range";
-import { formatRoundingReportKpiValue } from "@/lib/rounding/rounding-reports-display-copy";
+import {
+  formatRoundingReportKpiValue,
+  formatRoundingReportsPageSubtitle,
+  resolveRoundingReportsFacilityScope,
+} from "@/lib/rounding/rounding-reports-display-copy";
 import { isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -164,7 +168,11 @@ function deriveBoardState(args: {
 export default function AdminRoundingReportsPage() {
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScope = resolveRoundingReportsFacilityScope(
+    selectedFacilityId,
+    selectedFacility?.name,
+  );
+  const pageSubtitle = formatRoundingReportsPageSubtitle(facilityScope);
   const initialRange = useMemo(() => defaultRoundingReportLast7Days(), []);
   const [preset, setPreset] = useState<DateRangePreset>("last_7");
   const [reportType, setReportType] = useState<ReportType>("completion_rate");
@@ -309,7 +317,7 @@ export default function AdminRoundingReportsPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Completion reports"
-        subtitle={`Pre-configured exportable summaries for surveyor packets, internal QA, and executive review at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <>
             <Button
