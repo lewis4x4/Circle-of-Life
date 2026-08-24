@@ -32,6 +32,11 @@ import {
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import {
+  formatIntegrityNoFlagsEmptyTitle,
+  formatIntegrityPageSubtitle,
+  resolveIntegrityFacilityScope,
+} from "@/lib/rounding/integrity-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import {
   fetchIncidentFollowupAssignees,
@@ -191,7 +196,11 @@ export default function RoundingIntegrityPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const selectedFacility = availableFacilities.find((facility) => facility.id === selectedFacilityId);
-  const facilityName = selectedFacility?.name ?? "selected facility";
+  const facilityScope = resolveIntegrityFacilityScope(
+    selectedFacilityId,
+    selectedFacility?.name,
+  );
+  const pageSubtitle = formatIntegrityPageSubtitle(facilityScope);
   const [rows, setRows] = useState<IntegrityRow[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -372,7 +381,7 @@ export default function RoundingIntegrityPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <PageHeader
         title="Documentation integrity"
-        subtitle={`Late entries, retroactive documentation, and audit-evidence flags before they become survey findings at ${facilityName}.`}
+        subtitle={pageSubtitle}
         actions={
           <Button
             type="button"
@@ -499,7 +508,7 @@ export default function RoundingIntegrityPage() {
           </section>
 
           {boardState === "empty" ? (
-            <NoFlagsEmptyState facilityName={facilityName} />
+            <NoFlagsEmptyState facilityScope={facilityScope} />
           ) : boardState === "empty_filtered" ? (
             <FilterEmptyState onClear={() => setFilter("all")} />
           ) : (
@@ -878,14 +887,20 @@ function LoadErrorNotice({
   );
 }
 
-function NoFlagsEmptyState({ facilityName }: { facilityName: string }) {
+function NoFlagsEmptyState({
+  facilityScope,
+}: {
+  facilityScope: ReturnType<typeof resolveIntegrityFacilityScope>;
+}) {
   return (
     <section
       aria-label="No integrity flags"
       className="rounded-lg border border-dashed border-border bg-card p-8 text-center"
     >
       <ShieldAlert className="mx-auto size-8 text-muted-foreground" aria-hidden />
-      <p className="mt-3 text-sm font-semibold text-foreground">No integrity flags at {facilityName}</p>
+      <p className="mt-3 text-sm font-semibold text-foreground">
+        {formatIntegrityNoFlagsEmptyTitle(facilityScope)}
+      </p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-muted-foreground">
         Late or retroactive entries will appear here for review before they become survey findings.
       </p>
