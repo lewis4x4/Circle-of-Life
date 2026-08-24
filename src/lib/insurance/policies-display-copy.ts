@@ -5,6 +5,13 @@
 
 import { format, parseISO } from "date-fns";
 
+export const INSURANCE_POLICIES_LOADING_PROFILE_COPY = "Loading insurance profile…";
+export const INSURANCE_POLICIES_LOADING_COPY = "Loading policies…";
+
+/** One-line scope stamp for the policies list header. */
+export const INSURANCE_POLICIES_ORG_DATE_SCOPE_COPY =
+  "Policies listed here are scoped to this organization; expiration dates follow Eastern (ET).";
+
 export const INSURANCE_POLICY_NO_EXPIRATION_DATE_COPY = "No expiration date posted";
 
 /** Policy expiration date on a list row — never invents a calendar day. */
