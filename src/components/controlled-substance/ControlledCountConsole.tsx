@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, Shield } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
@@ -136,7 +137,7 @@ export function ControlledCountConsole({
     setSaving(true);
     setLoadError(null);
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const countDate = todayFacilityDateIso();
       const ids: string[] = [];
       for (const line of lines) {
         const actual = Number.parseInt(line.actual, 10);
@@ -151,7 +152,7 @@ export function ControlledCountConsole({
             resident_medication_id: line.med.id,
             facility_id: ctx.facilityId,
             organization_id: ctx.organizationId,
-            count_date: today,
+            count_date: countDate,
             shift,
             count_type: "shift_change",
             expected_count: expected,
@@ -228,6 +229,12 @@ export function ControlledCountConsole({
         <p className="text-sm text-zinc-500">No active controlled medications for this facility.</p>
       ) : (
         <>
+          <div className="space-y-2">
+            <Label className="text-zinc-300">Count date (ET)</Label>
+            <p className="text-sm text-white">{todayFacilityDateIso()}</p>
+            <p className="text-xs text-zinc-500">Shift counts use today&apos;s Eastern (ET) calendar date.</p>
+          </div>
+
           <div className="space-y-2">
             <Label className="text-zinc-300">Shift ending</Label>
             <select
