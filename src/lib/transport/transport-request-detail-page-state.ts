@@ -1,6 +1,5 @@
 import {
   isExecutiveOrganizationGapError,
-  resolveExecutiveFetchErrorBannerMessage,
   resolveExecutiveOrganizationGapMessage,
 } from "@/lib/executive/executive-auth-page-state";
 
