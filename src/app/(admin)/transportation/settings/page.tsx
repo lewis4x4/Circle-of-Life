@@ -3,19 +3,30 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { ArrowLeft, Gauge, Info, MessageSquare } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FACILITY_OPERATOR_TZ } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { DEFAULT_MILEAGE_RATE_CENTS } from "@/lib/transport/mileage-defaults";
 import { formatCentsPerMileUsd } from "@/lib/transport/org-mileage-rate";
+import {
+  TRANSPORT_SETTINGS_LOADING_PROFILE_COPY,
+  TRANSPORT_SETTINGS_LOADING_SETTINGS_COPY,
+  TRANSPORT_SETTINGS_ORG_WIDE_SCOPE_CUE,
+} from "@/lib/transport/transport-settings-display-copy";
+import {
+  resolveTransportSettingsFetchErrorBannerMessage,
+  resolveTransportSettingsOrganizationGapMessage,
+} from "@/lib/transport/transport-settings-page-state";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -45,12 +56,12 @@ function centsToDollarsInput(cents: number): string {
 
 export default function TransportationOrgSettingsPage() {
   const supabase = createClient();
-  const { user, organizationId, appRole } = useHavenAuth();
+  const { user, organizationId, appRole, loading: authLoading } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
   const canWrite = canMutateFinance(role);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [savedOk, setSavedOk] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [hasRow, setHasRow] = useState(false);
@@ -61,14 +72,21 @@ export default function TransportationOrgSettingsPage() {
   });
 
   const load = useCallback(async () => {
+    if (authLoading) {
+      setLoading(false);
+      return;
+    }
+    if (!organizationId) {
+      setHasRow(false);
+      setUpdatedAt(null);
+      setLoading(false);
+      setFetchError(null);
+      return;
+    }
     setLoading(true);
-    setError(null);
+    setFetchError(null);
     setSavedOk(false);
     try {
-      if (!organizationId) {
-        setError("Organization missing on profile.");
-        return;
-      }
       const { data, error: qErr } = await supabase
         .from("organization_transport_settings")
         .select("mileage_reimbursement_rate_cents, updated_at")
@@ -76,7 +94,7 @@ export default function TransportationOrgSettingsPage() {
         .maybeSingle();
 
       if (qErr) {
-        setError(qErr.message);
+        setFetchError(qErr.message);
         return;
       }
 
@@ -90,11 +108,11 @@ export default function TransportationOrgSettingsPage() {
         form.reset({ dollarsPerMile: centsToDollarsInput(DEFAULT_MILEAGE_RATE_CENTS) });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to load settings.");
+      setFetchError(e instanceof Error ? e.message : "Unable to load settings.");
     } finally {
       setLoading(false);
     }
-  }, [organizationId, supabase, form]);
+  }, [authLoading, organizationId, supabase, form]);
 
   useEffect(() => {
     void load();
@@ -107,19 +125,28 @@ export default function TransportationOrgSettingsPage() {
     return Math.round(n * 100);
   }, [watchedDollars]);
 
+  const organizationGapMessage = resolveTransportSettingsOrganizationGapMessage({
+    authLoading,
+    organizationId,
+    hasOrgScopedData: hasRow,
+  });
+  const fetchErrorBannerMessage = resolveTransportSettingsFetchErrorBannerMessage({
+    authLoading,
+    fetchError,
+  });
+  const showLoading = authLoading || loading;
+
   async function onSubmit(values: FormValues) {
-    setError(null);
+    setFetchError(null);
     setSavedOk(false);
+    if (authLoading) return;
     if (!canWrite) {
-      setError("You do not have permission to change organization reimbursement settings.");
+      setFetchError("You do not have permission to change organization reimbursement settings.");
       return;
     }
-    if (!organizationId) {
-      setError("Organization missing on profile.");
-      return;
-    }
+    if (!organizationId) return;
     if (!user) {
-      setError("Sign in required.");
+      setFetchError("Sign in required.");
       return;
     }
 
@@ -134,7 +161,7 @@ export default function TransportationOrgSettingsPage() {
         })
         .eq("organization_id", organizationId);
       if (upErr) {
-        setError(upErr.message);
+        setFetchError(upErr.message);
         return;
       }
     } else {
@@ -145,7 +172,7 @@ export default function TransportationOrgSettingsPage() {
         updated_by: user.id,
       });
       if (insErr) {
-        setError(insErr.message);
+        setFetchError(insErr.message);
         return;
       }
     }
@@ -180,20 +207,33 @@ export default function TransportationOrgSettingsPage() {
             Set how staff are reimbursed per mile when using a <strong className="text-slate-800 dark:text-zinc-200">personal vehicle</strong> for approved resident transport. This rate is stored on each new{" "}
             <span className="font-mono text-sm">mileage_logs</span> row at the time it is created — changing it does not rewrite history.
           </p>
+          <p className="max-w-2xl text-sm text-muted-foreground">{TRANSPORT_SETTINGS_ORG_WIDE_SCOPE_CUE}</p>
         </div>
         <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-primary-200/50 bg-primary-500/10 dark:border-primary-500/20 dark:bg-primary-500/5">
           <MessageSquare className="h-10 w-10 text-primary-500 dark:text-primary-400" aria-hidden />
         </div>
       </div>
 
-      {error && (
+      {authLoading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {TRANSPORT_SETTINGS_LOADING_PROFILE_COPY}
+        </p>
+      ) : null}
+
+      {organizationGapMessage ? (
+        <Card className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 shadow-sm">
+          <CardContent className="p-4 text-sm text-muted-foreground">{organizationGapMessage}</CardContent>
+        </Card>
+      ) : null}
+
+      {fetchErrorBannerMessage ? (
         <div
           role="alert"
           className="rounded-2xl border border-rose-200 bg-rose-50/90 px-5 py-4 text-sm text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100"
         >
-          {error}
+          {fetchErrorBannerMessage}
         </div>
-      )}
+      ) : null}
 
       {savedOk && (
         <div
@@ -207,12 +247,11 @@ export default function TransportationOrgSettingsPage() {
       <div className="grid gap-8 lg:grid-cols-5 lg:gap-10">
         <div className="lg:col-span-3 space-y-6">
           <div className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm  dark:border-white/10 dark:bg-white/[0.04] md:p-8">
-            {loading ? (
-              <div className="space-y-4 animate-pulse">
-                <div className="h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
-                <div className="h-12 w-full rounded-xl bg-slate-100 dark:bg-slate-800" />
-              </div>
-            ) : (
+            {authLoading ? null : showLoading ? (
+              <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+                {TRANSPORT_SETTINGS_LOADING_SETTINGS_COPY}
+              </p>
+            ) : organizationGapMessage ? null : (
               <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="space-y-2">
                   <Label htmlFor="dollarsPerMile" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
@@ -247,7 +286,7 @@ export default function TransportationOrgSettingsPage() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-12 rounded-full px-8 text-xs font-bold uppercase tracking-wider bg-primary-600 hover:bg-primary-700"
+                    className="h-12 rounded-full px-8 text-sm font-semibold bg-primary-600 hover:bg-primary-700"
                   >
                     {form.formState.isSubmitting ? "Saving…" : "Save organization rate"}
                   </Button>
@@ -258,8 +297,9 @@ export default function TransportationOrgSettingsPage() {
                 )}
 
                 {updatedAt && (
-                  <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                    Record last touched {format(new Date(updatedAt), "MMM d, yyyy · h:mm a")}
+                  <p className="text-xs text-slate-500 dark:text-zinc-500">
+                    Record last touched{" "}
+                    {formatInTimeZone(new Date(updatedAt), FACILITY_OPERATOR_TZ, "MMM d, yyyy · h:mm a")} ET
                   </p>
                 )}
               </form>
@@ -272,7 +312,7 @@ export default function TransportationOrgSettingsPage() {
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-primary-700 dark:text-primary-300">Live preview</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Estimated reimbursement at <span className="font-semibold text-slate-900 dark:text-white">{formatCentsPerMileUsd(previewCents)}</span> / mi
-              {!hasRow && !loading && (
+              {!hasRow && !showLoading && !organizationGapMessage && (
                 <span className="block pt-1 text-xs font-normal opacity-80">
                   (default {formatCentsPerMileUsd(DEFAULT_MILEAGE_RATE_CENTS)} until you save)
                 </span>
