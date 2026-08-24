@@ -4,6 +4,10 @@
  * never fabricate family note text or conference details.
  */
 
+import { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY } from "@/lib/rounding/observation-plan-display-copy";
+
+export { OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY as FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY };
+
 export const FAMILY_PORTAL_ADMIN_NO_NOTE_COPY = "No note posted";
 export const FAMILY_PORTAL_ADMIN_NO_ROOM_COPY = "No room posted";
 export const FAMILY_PORTAL_ADMIN_NO_KEYWORDS_COPY = "No keywords posted";
@@ -13,6 +17,36 @@ export type FamilyPortalAdminKpiKey =
   | "pending_triage"
   | "conferences_this_week"
   | "consents_expiring";
+
+export type FamilyPortalAdminFacilityScope =
+  | { kind: "unscoped" }
+  | { kind: "named"; name: string }
+  | { kind: "missing_name" };
+
+const FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY =
+  "Post one-way bulletin notes for families to read on the portal, surface staff notes that need clinical follow-up, track care conferences, and verify consent records for surveyor readiness.";
+
+/** Page header facility scope — never fabricates a facility name. */
+export function resolveFamilyPortalAdminFacilityScope(
+  facilityReady: boolean,
+  facilityName: string | null | undefined,
+): FamilyPortalAdminFacilityScope {
+  if (!facilityReady) return { kind: "unscoped" };
+  const trimmed = facilityName?.trim();
+  if (trimmed) return { kind: "named", name: trimmed };
+  return { kind: "missing_name" };
+}
+
+/** Page subtitle — unscoped names the facility gap; named scope may interpolate the facility name. */
+export function formatFamilyPortalAdminPageSubtitle(scope: FamilyPortalAdminFacilityScope): string {
+  if (scope.kind === "unscoped") {
+    return `${OBSERVATION_PLAN_SELECT_FACILITY_FIRST_COPY} ${FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY}`;
+  }
+  if (scope.kind === "named") {
+    return `Family Connections at ${scope.name}. ${FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY}`;
+  }
+  return `Family Connections. ${FAMILY_PORTAL_ADMIN_PAGE_DESCRIPTION_COPY}`;
+}
 
 const KPI_NO_FACILITY_COPY: Record<FamilyPortalAdminKpiKey, string> = {
   pending_triage: "Select a facility to load triage counts",

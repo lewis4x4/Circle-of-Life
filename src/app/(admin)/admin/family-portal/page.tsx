@@ -23,7 +23,9 @@ import {
   formatFamilyPortalAdminConferenceRoom,
   formatFamilyPortalAdminMatchedKeywords,
   formatFamilyPortalAdminNoteBody,
+  formatFamilyPortalAdminPageSubtitle,
   formatFamilyPortalAdminResidentName,
+  resolveFamilyPortalAdminFacilityScope,
 } from "@/lib/family/family-portal-admin-display-copy";
 import { cn } from "@/lib/utils";
 
@@ -360,16 +362,22 @@ export default function AdminFamilyPortalPage() {
       .slice(0, 12);
   }, [consents]);
 
-  const subtitleFacility = facilityName ?? "the selected facility";
+  const facilityScope = useMemo(
+    () => resolveFamilyPortalAdminFacilityScope(facilityReady, facilityName),
+    [facilityReady, facilityName],
+  );
+
+  const pageSubtitle = useMemo(
+    () => formatFamilyPortalAdminPageSubtitle(facilityScope),
+    [facilityScope],
+  );
 
   return (
     <div className="mx-auto w-full max-w-[960px] space-y-10 pb-12 pt-2">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Family Connections</h1>
         <p className="max-w-[52rem] text-[13px] leading-relaxed text-muted-foreground">
-          Family Connections at <span className="font-medium text-foreground">{subtitleFacility}</span>. Post one-way
-          bulletin notes for families to read on the portal, surface staff notes that need clinical follow-up, track
-          care conferences, and verify consent records for surveyor readiness.
+          {pageSubtitle}
         </p>
         <p className="max-w-[52rem] text-[12px] leading-relaxed text-muted-foreground">
           Haven → family only. Families cannot reply in the portal; staff post updates from the bulletin log.
