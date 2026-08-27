@@ -1,6 +1,10 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  EXECUTIVE_CROSS_OPERATOR_GAP_COPY,
+  EXECUTIVE_CROSS_OPERATOR_OPT_IN_NOTE,
   EXECUTIVE_NO_FACILITIES_POSTED_COPY,
   formatExecutiveBenchmarkFacilitiesDisplay,
 } from "./executive-benchmarks-display-copy";
@@ -54,5 +58,23 @@ describe("formatExecutiveBenchmarkFacilitiesDisplay", () => {
         facNameById: {},
       }),
     ).toBe("cccccccc");
+  });
+});
+
+describe("executive cross-operator gap copy", () => {
+  it("names the missing peer feed without calling the page a stub", () => {
+    expect(EXECUTIVE_CROSS_OPERATOR_GAP_COPY).toMatch(/external peer comparisons blocked/i);
+    expect(EXECUTIVE_CROSS_OPERATOR_GAP_COPY.toLowerCase()).not.toContain("stub");
+    expect(EXECUTIVE_CROSS_OPERATOR_OPT_IN_NOTE.toLowerCase()).not.toContain("stub");
+  });
+
+  it("surfaces the named gap on the benchmarks page", () => {
+    const client = readFileSync(
+      path.join(process.cwd(), "src/components/executive/ExecutiveBenchmarksPageClient.tsx"),
+      "utf8",
+    );
+    expect(client).toContain("EXECUTIVE_CROSS_OPERATOR_GAP_COPY");
+    expect(client).toContain("EXECUTIVE_CROSS_OPERATOR_OPT_IN_NOTE");
+    expect(client.toLowerCase()).not.toContain("stub");
   });
 });

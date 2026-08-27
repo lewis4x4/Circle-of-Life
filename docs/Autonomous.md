@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — executive benchmarks stub copy (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `executive-benchmarks-stub-copy` |
+| **Mission alignment** | **pass** — operators see that external peer KPIs are not live, without calling the page a stub. |
+| **Change** | Named gap copy for cross-operator opt-in; removed “stub” from UI and stored notes. |
+| **Gate** | `test-results/agent-gates/2026-08-27T02-13-31-535Z-executive-benchmarks-stub-copy.json` |
+
+---
+
 ## RECORD — standup Eastern dates (2026-08-26)
 
 | Field | Value |

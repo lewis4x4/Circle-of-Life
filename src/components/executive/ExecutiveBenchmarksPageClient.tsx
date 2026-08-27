@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/table";
 import { fetchExecutiveKpiSnapshot, type ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 import { executiveKpiEmptyCopy } from "@/lib/executive/kpi-tile-copy";
-import { formatExecutiveBenchmarkFacilitiesDisplay } from "@/lib/executive/executive-benchmarks-display-copy";
+import {
+  EXECUTIVE_CROSS_OPERATOR_GAP_COPY,
+  EXECUTIVE_CROSS_OPERATOR_OPT_IN_NOTE,
+  formatExecutiveBenchmarkFacilitiesDisplay,
+} from "@/lib/executive/executive-benchmarks-display-copy";
 import {
   formatExecutiveOccupancyBarLabel,
   formatExecutiveOccupancyPct,
@@ -232,8 +236,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
             requested_at: new Date().toISOString(),
             requested_by: user.id,
             terms_acknowledged_at: new Date().toISOString(),
-            notes:
-              "Opt-in request recorded by executive benchmarks stub. External peer data remains disabled until a governed sharing program exists.",
+            notes: EXECUTIVE_CROSS_OPERATOR_OPT_IN_NOTE,
           } as never)
           .eq("id", crossOperatorSetting.id)
           .eq("organization_id", orgId);
@@ -246,8 +249,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
           requested_by: user.id,
           requested_at: new Date().toISOString(),
           terms_acknowledged_at: new Date().toISOString(),
-          notes:
-            "Opt-in request recorded by executive benchmarks stub. External peer data remains disabled until a governed sharing program exists.",
+          notes: EXECUTIVE_CROSS_OPERATOR_OPT_IN_NOTE,
         } as never);
         if (insertError) throw new Error(insertError.message);
       }
@@ -336,8 +338,7 @@ export default function ExecutiveBenchmarkCohortsPageClient({
               <div>
                 <CardTitle className="text-lg">Cross-operator benchmarking</CardTitle>
                 <CardDescription>
-                  Disabled by default. This stub records organization opt-in and keeps external peer comparisons blocked
-                  until a governed data-sharing program exists.
+                  {EXECUTIVE_CROSS_OPERATOR_GAP_COPY}
                 </CardDescription>
               </div>
               <Badge variant="secondary">
