@@ -3,6 +3,8 @@
  * Missing shift types name real gaps — never fabricate shift labels.
  */
 
+export const LIVE_ROUNDING_NO_RESIDENT_COPY = "No resident posted";
+
 export const LIVE_ROUNDING_NO_SHIFT_TYPE_COPY = "No shift posted";
 
 export const LIVE_ROUNDING_NO_DUE_DATE_COPY = "No date posted";
@@ -10,8 +12,24 @@ export const LIVE_ROUNDING_NO_DUE_DATE_COPY = "No date posted";
 export const LIVE_ROUNDING_NO_TIME_COPY = "No time posted";
 
 const LIVE_ROUNDING_LEGACY_UNKNOWN_DUE = "Unknown";
+const LIVE_ROUNDING_LEGACY_RESIDENT = "Resident";
 const LIVE_ROUNDING_EM_DASH = "—";
 const LIVE_ROUNDING_NEW_YORK_TZ = "America/New_York";
+
+/** Resident name on a live rounding card — names the join gap instead of inventing “Resident”. */
+export function formatLiveRoundingResidentDisplay(person?: {
+  first_name: string | null;
+  last_name: string | null;
+  preferred_name: string | null;
+} | null): string {
+  const first = (person?.preferred_name ?? person?.first_name)?.trim() ?? "";
+  const last = person?.last_name?.trim() ?? "";
+  const combined = `${first} ${last}`.trim();
+  if (!combined || combined === LIVE_ROUNDING_LEGACY_RESIDENT) {
+    return LIVE_ROUNDING_NO_RESIDENT_COPY;
+  }
+  return combined;
+}
 
 /** Shift type cell on a live rounding task row — full phrase, no dangling "shift". */
 export function formatLiveRoundingShiftType(shiftType: string | null | undefined): string {

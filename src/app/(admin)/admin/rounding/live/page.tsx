@@ -28,6 +28,7 @@ import {
 } from "@/lib/rounding/col-discovery-round-cadence";
 import {
   formatLiveRoundingDueLabel,
+  formatLiveRoundingResidentDisplay,
   formatLiveRoundingShiftType,
 } from "@/lib/rounding/live-rounding-display-copy";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -150,7 +151,7 @@ function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
   const room = (task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number;
   return {
     id: task.id,
-    residentName: displayName(task.residents) || "Resident",
+    residentName: formatLiveRoundingResidentDisplay(task.residents),
     roomLabel: room ? `RM ${room}` : null,
     dueAt: task.due_at,
     status: task.status,
@@ -627,7 +628,7 @@ export default function AdminRoundingLivePage() {
                       }
                       aria-label={
                         canCheck
-                          ? `Check in ${displayName(task.residents) || "Resident"}`
+                          ? `Check in ${formatLiveRoundingResidentDisplay(task.residents)}`
                           : undefined
                       }
                     >
@@ -647,7 +648,7 @@ export default function AdminRoundingLivePage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                           <span className="truncate text-[15px] font-semibold text-foreground">
-                            {displayName(task.residents) || "Resident"}
+                            {formatLiveRoundingResidentDisplay(task.residents)}
                           </span>
                           {room ? (
                             <span className="rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">

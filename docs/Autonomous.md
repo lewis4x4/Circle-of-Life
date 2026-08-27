@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — rounding live resident fallback (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `rounding-live-resident-fallback` |
+| **Mission alignment** | **pass** — live rounding names a missing resident join instead of inventing a person. |
+| **Change** | `formatLiveRoundingResidentDisplay` on cards, check-in label, and drawer task. |
+| **Gate** | `test-results/agent-gates/2026-08-27T02-17-44-567Z-rounding-live-resident-fallback.json` |
+
+---
+
 ## RECORD — executive benchmarks stub copy (2026-08-26)
 
 | Field | Value |

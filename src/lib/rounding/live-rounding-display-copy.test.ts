@@ -1,16 +1,78 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
   LIVE_ROUNDING_NO_DUE_DATE_COPY,
+  LIVE_ROUNDING_NO_RESIDENT_COPY,
   LIVE_ROUNDING_NO_SHIFT_TYPE_COPY,
   LIVE_ROUNDING_NO_TIME_COPY,
   formatLiveRoundingDueLabel,
+  formatLiveRoundingResidentDisplay,
   formatLiveRoundingShiftType,
   formatLiveRoundingTimeOfDay,
 } from "./live-rounding-display-copy";
 
 const EM_DASH = "—";
 const FIXED_NOW = Date.UTC(2026, 7, 15, 12, 0, 0);
+
+describe("formatLiveRoundingResidentDisplay", () => {
+  it("names a missing residents join instead of inventing Resident", () => {
+    expect(formatLiveRoundingResidentDisplay(null)).toBe(LIVE_ROUNDING_NO_RESIDENT_COPY);
+    expect(formatLiveRoundingResidentDisplay(undefined)).toBe(LIVE_ROUNDING_NO_RESIDENT_COPY);
+    expect(
+      formatLiveRoundingResidentDisplay({
+        first_name: null,
+        last_name: null,
+        preferred_name: null,
+      }),
+    ).toBe(LIVE_ROUNDING_NO_RESIDENT_COPY);
+    expect(formatLiveRoundingResidentDisplay(null)).not.toBe("Resident");
+  });
+
+  it("maps blank and legacy Resident labels to the named gap", () => {
+    expect(
+      formatLiveRoundingResidentDisplay({
+        first_name: "   ",
+        last_name: "",
+        preferred_name: null,
+      }),
+    ).toBe(LIVE_ROUNDING_NO_RESIDENT_COPY);
+    expect(
+      formatLiveRoundingResidentDisplay({
+        first_name: "Resident",
+        last_name: null,
+        preferred_name: null,
+      }),
+    ).toBe(LIVE_ROUNDING_NO_RESIDENT_COPY);
+  });
+
+  it("prefers preferred name then first and last", () => {
+    expect(
+      formatLiveRoundingResidentDisplay({
+        first_name: "Alex",
+        last_name: "Rivera",
+        preferred_name: "Lex",
+      }),
+    ).toBe("Lex Rivera");
+    expect(
+      formatLiveRoundingResidentDisplay({
+        first_name: "Alex",
+        last_name: "Rivera",
+        preferred_name: null,
+      }),
+    ).toBe("Alex Rivera");
+  });
+
+  it("surfaces the named gap on the live board instead of a Resident fallback", () => {
+    const live = readFileSync(
+      path.join(process.cwd(), "src/app/(admin)/admin/rounding/live/page.tsx"),
+      "utf8",
+    );
+    expect(live).toContain("formatLiveRoundingResidentDisplay");
+    expect(live).not.toContain('|| "Resident"');
+  });
+});
 
 describe("formatLiveRoundingShiftType", () => {
   it("names a missing shift type instead of an em dash", () => {
