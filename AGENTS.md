@@ -110,7 +110,7 @@ Read `docs/specs/TRACK-A-CLOSEOUT-ROADMAP.md` in full before doing anything. Thi
 Blockers requiring owner action (not agent action):
 - ~~**A1 Auth unblock**~~ — **Cleared (2026-04-09)** for pilot JWTs + migrations `110`–`111`; see `docs/specs/PHASE1-AUTH-DEBUG-HANDOFF.md` if Auth regresses.
 - ~~**A2 RLS matrix**~~ — **PASS** (owner sign-off, single-facility pilot); re-run **RLS-02** when a second facility exists — `docs/specs/PHASE1-RLS-VALIDATION-RECORD.md`.
-- **A5 Pro/BAA/PITR:** Owner must confirm Pro plan, signed BAA, and Point-in-Time Recovery are active before any PHI enters production.
+- ~~**A5 Pro/BAA/PITR**~~ — **PASS.** Pro + signed BAA owner-confirmed 2026-05-11; PITR `pitr_7` enabled 2026-08-19; owner re-attested 2026-08-26. Evidence: `docs/specs/PHASE1-ENV-CONFIRMATION.md` Production Compliance, `PHASE1-EXECUTION-LOG.md` PH1-P06 / PH1-OA04. **Do not re-open A5 as unsigned.**
 - **A3 Live UAT (depth):** Owner or delegated tester must complete `PHASE1-ACCEPTANCE-CHECKLIST.md` §B–§E rows in `PHASE1-EXECUTION-LOG.md` (§A + RLS owner-verified 2026-04-09).
 
 Agent-executable steps: migration parity checks, script generation, gate recording, doc updates.

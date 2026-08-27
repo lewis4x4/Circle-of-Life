@@ -2,7 +2,7 @@
 
 **Purpose:** One place to **finish** Track A without hunting across a dozen files. This is the execution order and evidence map. Authoritative verdicts still live in [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md).
 
-**Last updated:** 2026-04-09
+**Last updated:** 2026-08-26
 
 ---
 
@@ -13,7 +13,7 @@ Track A is **not** only engineering work. It requires:
 | Who | What |
 |-----|------|
 | **Supabase / project owner** | **A1 (2026-04-09):** Pilot JWT issuance and §A shell routing are **owner-verified** after hosted Auth fix + repo migrations **`110`–`111`** (`app_metadata.app_role`, `user_profiles.updated_by`). If Auth regresses, use [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md). |
-| **Owner or delegated tester** | **A2–A3:** Live **RLS** matrix, **§B–§E UAT**, **Pro / BAA / PITR** attestation. Agents cannot sign your BAA or tick dashboard boxes. |
+| **Owner or delegated tester** | **A3:** Live **§B–§E UAT** depth. **A5** (Pro / BAA / PITR) is **closed** — do not treat it as unsigned. |
 | **Repo / agent** | Scripts, docs, migration parity checks, and recording **PASS/FAIL** in the execution logs once you paste evidence. |
 
 **Closing Track A** means: every row in the table below has a **done** condition and a **named artifact** (file path, screenshot reference, or gate JSON).
@@ -30,7 +30,7 @@ Track A is **closed** when **all** are true:
 4. [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) — target project, migrations, and owner confirmations are current.
 5. [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) — active waivers reviewed and still acceptable.
 
-**A1** and **A2** are cleared for the single-facility pilot (2026-04-09). **A3** (depth UAT) and **A5** remain open until recorded.
+**A1**, **A2**, and **A5** are cleared. **A3** (depth UAT) remains the open owner gate. **A4** / **A6** as needed for full Phase 1 acceptance — not A5.
 
 ---
 
@@ -51,7 +51,7 @@ flowchart LR
 ```
 
 - **A4** can run in parallel with **A1** (env host, seeds).
-- **A5** is dashboard-only; do before PHI on production.
+- ~~**A5** dashboard-only~~ — **MET.** Pro + BAA 2026-05-11; PITR 2026-08-19; owner re-attested 2026-08-26.
 - **A6** should complete before calling Phase 1 “fully accepted” with waivers.
 
 ---
@@ -114,7 +114,7 @@ flowchart LR
 | **Owner** | Owner / legal / billing |
 | **Where** | Supabase dashboard + contracts |
 | **Record in** | [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) and/or closure record |
-| **Done when** | PH1-P06 (and closure criteria) owner-attested |
+| **Done when** | **MET.** PH1-P06 / PH1-OA04 **PASS** — Pro + BAA (2026-05-11); PITR `pitr_7` on `ci_small` (2026-08-19); owner re-attested 2026-08-26. Record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). **Do not re-open as unsigned.** |
 
 ---
 
@@ -135,13 +135,15 @@ flowchart LR
 | A2 | `PHASE1-RLS-VALIDATION-RECORD.md` | Tester | **Done (2026-04-09)** — owner sign-off |
 | A3 | `PHASE1-EXECUTION-LOG.md` | Tester | ☐ |
 | A4 | `PHASE1-ENV-CONFIRMATION.md` + PH1-P03–P04 | Owner | ☐ |
-| A5 | Dashboard attestation in env/closure | Owner | ☐ |
+| A5 | Dashboard attestation in env/closure | Owner | **Done** — Pro + BAA 2026-05-11; PITR 2026-08-19; re-attested 2026-08-26 |
 | A6 | `PHASE1-WAIVER-LOG.md` review | Owner | ☐ |
 | **Final** | `PHASE1-CLOSURE-RECORD.md` — set overall acceptance | Owner | ☐ |
 
-**Progress (2026-04-09):** **A1** + **A2** owner-verified: pilot JWTs, shells, and **RLS matrix** ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)). **Next:** **A3** §B–§E UAT + **PH1-A04**, **A4** env/facility as needed, **A5** Pro/BAA/PITR, **A6** waivers.
+**Progress (2026-04-09):** **A1** + **A2** owner-verified: pilot JWTs, shells, and **RLS matrix** ([PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md), [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)).
 
-**Progress (2026-04-21, S0 closeout):** Track A reconciled with current repo state (**193 migrations**, **27 Edge Function folders**) and all 5 COL facilities now confirmed via insurance policy NSC101045. RLS-02's single-facility deferral no longer applies — multi-facility seed (migration `120`) has shipped. Remaining blockers crystallized in [S0-CLOSEOUT-MEMO.md](./S0-CLOSEOUT-MEMO.md): **A3** depth UAT, **A5** Pro/BAA/PITR, RLS-02 re-execute. A6 waiver review current (no new waivers). Finding: **pre-existing lint debt** — 60 `no-explicit-any` errors across 56 files, not from S0 scope; flagged for cleanup before S1 meaningful TypeScript lands.
+**Progress (2026-08-26):** **A5 closed.** Owner: Pro, signed BAA, and PITR are taken care of. Do not list A5 as an open P0. **Next remaining:** **A3** §B–§E UAT + **PH1-A04**; **A4** / **A6** as needed for full acceptance.
+
+**Progress (2026-04-21, S0 closeout):** Track A reconciled with current repo state (**193 migrations**, **27 Edge Function folders**) and all 5 COL facilities now confirmed via insurance policy NSC101045. RLS-02's single-facility deferral no longer applies — multi-facility seed (migration `120`) has shipped. **A5 is no longer a remaining blocker** (closed 2026-08-26). Remaining: **A3** depth UAT; RLS-02 when a second facility is in play. A6 waiver review current (no new waivers). Finding: **pre-existing lint debt** — 60 `no-explicit-any` errors across 56 files, not from S0 scope; flagged for cleanup before S1 meaningful TypeScript lands.
 
 ---
 

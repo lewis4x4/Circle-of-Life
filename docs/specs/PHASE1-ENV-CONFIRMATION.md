@@ -1,6 +1,6 @@
 # Phase 1 — environment confirmation (non-UI)
 
-**Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) remain **owner-confirmed**.
+**Purpose:** Record **repo and CLI** checks for target Supabase alignment. **Dashboard-only** items (Pro, BAA, PITR) are **owner-attested and closed (A5)** — see Production Compliance below. Do not treat A5 as unsigned.
 
 **Last run (repo/CLI):** 2026-08-19 — `npm run migrations:check`: **319** files covering sequence **`001`–`316`** in [`supabase/migrations/`](../../supabase/migrations/) — see [README.md](./README.md) (next migration **`317`**). Timestamped Homewood files (`20260514*`) are present and replay-mitigated.
 
@@ -50,9 +50,9 @@ Command: `supabase migration list`
 
 | Check | Where | Owner |
 |-------|--------|-------|
-| Pro plan | Billing / subscription | ✅ Owner-confirmed 2026-05-11 |
-| BAA before PHI | Compliance / legal | ✅ Owner-confirmed 2026-05-11 |
-| PITR enabled | Database settings / backups | ✅ Enabled 2026-08-19 — GitHub Action [Enable Supabase PITR](https://github.com/lewis4x4/Circle-of-Life/actions/runs/32296769927) applied `pitr_7` after upgrading compute to `ci_small`. CLI confirm: `pitr_enabled: true`. |
+| Pro plan | Billing / subscription | ✅ Owner-confirmed 2026-05-11; **re-attested 2026-08-26** (Brian Lewis: taken care of) |
+| BAA before PHI | Compliance / legal | ✅ Owner-confirmed 2026-05-11; **re-attested 2026-08-26** (Brian Lewis: taken care of) |
+| PITR enabled | Database settings / backups | ✅ Enabled 2026-08-19 — GitHub Action [Enable Supabase PITR](https://github.com/lewis4x4/Circle-of-Life/actions/runs/32296769927) applied `pitr_7` after upgrading compute to `ci_small`. CLI confirm: `pitr_enabled: true`. **Owner re-attested 2026-08-26.** |
 
 ---
 
@@ -64,4 +64,4 @@ Command: `supabase migration list`
 | PH1-P02 | **PASS (2026-04-21)** | `supabase migration list` — **001–193** local/remote parity after **`193`** pushed (re-verify remote after each migration PR) |
 | PH1-P03–P04 | — | Seed + facility selector UAT; current remediation scope is single-facility pilot |
 | PH1-P05 | N/A until Storage uploads | — |
-| PH1-P06 | **PASS** — Pro + BAA (2026-05-11); PITR `pitr_7` on `ci_small` (2026-08-19) | — |
+| PH1-P06 | **PASS** — Pro + BAA (2026-05-11); PITR `pitr_7` on `ci_small` (2026-08-19); owner re-attested 2026-08-26 | — |

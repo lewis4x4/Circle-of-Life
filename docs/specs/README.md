@@ -8,7 +8,7 @@
 
 - **URL:** https://manfqmasfqppukpobpld.supabase.co
 - **Timezone:** America/New_York (all facilities in North Florida)
-- **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
+- **A5 (closed 2026-08-26):** Pro plan, signed BAA, and Point-in-Time Recovery are owner-attested. Do not re-list as unsigned. Record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
 ## Current state (reconciled 2026-08-19)
 
@@ -23,7 +23,7 @@
 | Layer | Status | Authoritative file |
 |-------|--------|-------------------|
 | Phase 1 — engineering (lint, build, replay, gates) | **PASS** | [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
-| Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); A3–A6 remain | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
+| Phase 1 — full acceptance (real auth, RLS matrix, UAT, Pro/BAA/PITR) | **NOT COMPLETE** — **Track A:** A1+A2 **done** (2026-04-09); **A5 closed** (2026-08-26). Remaining: A3 UAT depth; A4/A6 as needed | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md), [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | Phase 2 — acceptance | **PASS** (2026-04-04) | [PHASE2-ACCEPTANCE-CHECKLIST.md](./PHASE2-ACCEPTANCE-CHECKLIST.md) |
 | Phase 3 — acceptance (finance, insurance, vendors, executive v1) | **PENDING** — formal checklist | [PHASE3-ACCEPTANCE-CHECKLIST.md](./PHASE3-ACCEPTANCE-CHECKLIST.md) |
 | Phase 3.5 — acceptance (platform hardening `050`–`069`) | **PENDING** | [PHASE35-ACCEPTANCE-CHECKLIST.md](./PHASE35-ACCEPTANCE-CHECKLIST.md) |
@@ -44,7 +44,7 @@
 
 ### What to do next (closeout order)
 
-1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A3** real-auth UAT depth → **A4** env/seed → **A5** Pro/BAA/PITR → **A6** waiver review. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md). Production PHI still requires **A5** and remaining UAT rows.
+1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A5** Pro/BAA/PITR **closed 2026-08-26**. Remaining: **A3** real-auth UAT depth; **A4** / **A6** as needed. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md).
 2. **Remote DB migration parity** — Repo sequence **`001`–`206`** (`npm run migrations:check`). Current linked remote matches through **`206`** (`supabase migration list` on 2026-04-22). Re-run after any migration-adding PR; historical early-environment notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 3. **Tracks B–C** — **Engineering complete (closed in repo)** per sections below. Remaining items are **operations** (deploy Edge functions, schedule crons, production monitoring) and **Track A UAT** — not open B/C code issues.
 4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D84** (incl. Module 11 hubs **D29** + **D80** (**staff roster CSV** **hub filter scope**) + **D30** + **D81** (**certifications CSV** **hub filter scope**) + **D31–D33** + **D82** (**schedule weeks CSV** **hub filter scope**) + **D32** + **D84** (**staffing snapshots CSV** **loaded batch scope**) + **D35–D36** + **D83** (**shift swap CSV** **hub filter scope**) + **D37** + **D60** (`/admin/time-records` **bulk approve**) + **D79** (**time-records CSV** **approval scope**), **D34** shared CSV helpers, payroll **D17–D18** + **D26** + **D73**–**D74** + **D58**–**D59** + **D64** + **D69** (`time_records` → lines + **hub batch filter/CSV/search** + **flat CSV** + **vendor handoff CSV** + **hours split CSV**), reputation **D19** + **D28** + **D44**–**D49** (Google OAuth + imports + cron + Yelp Fusion + **`POST /api/reputation/replies/[id]/post-google`** + **`POST /api/reputation/replies/[id]/post-yelp`**) + **D75** (**replies CSV** **status scope**), training **D20–D21** + **D38–D43** (catalog, completions, log form, **`117`** PDF RLS, **`118`** inservice tables + **hub / new session / inservice→completions**), referrals **D22** + **D27** + **D65**–**D68** + **D70**–**D72** (**HL7** queue **Copy raw** + **status filter** + **CSV respects filter** + **search**; **pipeline** **status filter** + **leads CSV** + **search**), dietary **D23** + **D77** (**hub status filter + CSV scope**) + **D50**–**D53** (`/admin/dietary/clinical-review` med–diet **hints** + **IDDSI labels in callouts**) + **D54**–**D55** (`next.config.ts` **`/<segment>` → `/admin/<segment>`** redirects for route-group hubs), transportation **D24–D25** + **D76** (**transport hub status filter + CSV scope**) + **D78** (**mileage approvals CSV scope**) + **D56**–**D57** + **D61**–**D66** (transport **calendar** month view + **`.ics` export** + request detail **Google + Outlook** + **single-trip `.ics`** + **calendar `?date=`** + **View on calendar**)) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D85+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
@@ -358,7 +358,7 @@ Use these authoritative files as the acceptance source of truth:
 | A2 | RLS JWT matrix on target project | Policy existence in migrations is not enough; live tenant isolation must be proven | `PHASE1-RLS-VALIDATION-RECORD.md` = PASS |
 | A3 | Real-auth pilot UAT | UI + routes + gates do not replace operator workflows with real auth/session behavior | `PHASE1-EXECUTION-LOG.md` sections A–E completed |
 | A4 | Environment / seed / facility-context verification | Pilot readiness depends on correct target host, seeded users, and facility selector behavior | `PHASE1-ENV-CONFIRMATION.md` + execution log preconditions |
-| A5 | Pro / BAA / PITR attestation | PHI handling and recovery posture are part of release readiness, not optional follow-up | Owner confirmation in closure docs |
+| A5 | Pro / BAA / PITR attestation | **MET (2026-08-26).** Do not re-open. | [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) Production Compliance |
 | A6 | Active waiver review | Remaining waivers must map to named remediation work, not vague backlog language | `PHASE1-WAIVER-LOG.md` reviewed with owner |
 
 **Rule:** Phase 1 remains **NOT COMPLETE** until Track A closes. Do not describe Core-shipped scope as fully accepted before these artifacts are updated.
@@ -424,7 +424,7 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 
 | Area | Backlog (from specs + TRACK-D deferrals) | Notes |
 |------|--------------------------------------------|--------|
-| **Track A** | A3–A6 UAT, env, Pro/BAA/PITR, waivers | **Blocks “production-ready for PHI”** — see [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
+| **Track A** | A3 UAT depth; A4/A6 as needed. **A5 closed.** | Remaining closeout is UAT, not unsigned BAA/PITR — [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
 | **12 Training** | Certificate / sign-in **storage** uploads, Baya/API hooks, **automated assignment**, org-wide compliance snapshots | D2 used **metadata-only** demonstrations |
 | **14 Dietary** | **Automated** med–texture cross-check vs `resident_medications`, meal production sheets, vendor/menu integrations | D8 = **human-entered** notes visibility |
 | **15 Transport** | Payroll export **approval**, **month/week calendar**, external calendar sync | **D10** = org **mileage rate**; D1+D5–D7 cover compliance cards + requests + grouping |

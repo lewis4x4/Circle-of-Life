@@ -24,7 +24,7 @@
 
 | Track | Scope | Status | Authoritative doc |
 |-------|-------|--------|-------------------|
-| **A** | Phase 1 acceptance closeout (auth, RLS, UAT, Pro/BAA/PITR, waivers) | **OPEN — A5 PITR now PASS (2026-08-19).** Remaining: A3 §B–§E depth UAT, A4 seed/env, A6 waivers, RLS-02 when a second facility is in play | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
+| **A** | Phase 1 acceptance closeout (auth, RLS, UAT, Pro/BAA/PITR, waivers) | **A5 CLOSED (2026-08-26).** Pro + BAA 2026-05-11; PITR 2026-08-19; owner re-attested. Remaining: A3 §B–§E depth UAT, A4 seed/env as needed, A6 waivers, RLS-02 when a second facility is in play | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
 | **B** | Platform hardening (CI, observability, Sentry) | Closed (engineering) 2026-04-09; ongoing work is operational | README §Track B |
 | **C** | Workflow hardening (Edge functions, lifecycle runbooks) | Closed (engineering) 2026-04-09; per-project deploy/crons are ops | [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) |
 | **D** | Phase 6 completion pass + Enhanced backlog | Core D1–D10 + Enhanced D12–D84 shipped; D85+ optional per owner priority | [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md), [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
@@ -33,7 +33,7 @@
 
 ### Standing gates that apply to everything below
 
-1. **Track A blocks PHI production.** New Track F surfaces can be built and demoed, but no production PHI until A5 (Pro/BAA/PITR) and remaining UAT rows close.
+1. **A5 does not block PHI infrastructure.** Pro, signed BAA, and PITR are owner-attested. Remaining Track A work is **UAT depth (A3)**, not “unsigned BAA/PITR.”
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
 3. New DDL takes the next free migration number (currently `317`) and updates this file.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
@@ -141,7 +141,7 @@ Mostly new surfaces over existing data — cheap relative to impact.
 
 ## 3. What's next, in order
 
-1. **Close Track A** (owner-led: A3 UAT depth, A5 Pro/BAA/PITR, A6 waivers) — blocks PHI production for everything.
+1. **Finish remaining Track A UAT** (owner-led: A3 §B–§E depth, A6 waivers as needed). **A5 is closed** — do not block on unsigned BAA/PITR.
 2. **Owner ratifies F0 decisions** (can happen in parallel with #1).
 3. **Write `35-office-suite.md`** and start **F1-1 (unified approvals inbox)** as the first Track F segment.
 4. Continue Track E priorities (Resident Assurance Engine acceptance, Homewood launch) interleaved per owner direction — Track F segments are bounded, so they can alternate.

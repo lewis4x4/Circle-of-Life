@@ -6,7 +6,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-04-10 — same as 2026-04-09 for **Phase 1** Track A; **formal Phases 3–6 acceptance checklists** added ([HAVEN-ACCEPTANCE-SUMMARY.md](./HAVEN-ACCEPTANCE-SUMMARY.md)) — **Phase 1 full acceptance still** pending §B–§E UAT depth, PH1-A04, Pro/BAA/PITR, waiver review. Repo migrations **001–120** (see [README.md](./README.md)).
+**Last updated:** 2026-08-26 — **A5** (Pro / BAA / PITR) **PASS** and must not be listed as unsigned. **Phase 1 full acceptance still** pending §B–§E UAT depth (A3), PH1-A04, and waiver review as needed.
 
 ---
 
@@ -21,12 +21,12 @@
 | **Seeded users + pilot login / correct shell** | **PASS (owner)** — 2026-04-09: `owner`, `facility_admin`, `caregiver`, `family` demo users reach `/admin`, `/admin`, `/caregiver`, `/family` respectively (after hosted Auth fix + migrations **`110`–`111`**). See [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md). |
 | **Checklist §A (routing)** / **§B–§E (depth UAT)** | **§A PASS** for pilot shells / **§B–§E PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **RLS matrix** | **PASS (owner, single-facility pilot)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); **RLS-02** deferred until second facility on target |
-| **Production compliance** (Pro, BAA before PHI, PITR) | **PENDING** — Supabase dashboard |
+| **Production compliance** (Pro, BAA before PHI, PITR) | **PASS (owner)** — Pro + BAA 2026-05-11; PITR 2026-08-19; re-attested 2026-08-26. [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **Waivers (known Phase 1 gaps)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (review before final sign-off) |
 
 ### Overall Phase 1 full acceptance
 
-**NOT COMPLETE** as of 2026-04-09 — **auth**, **§A shells**, and **RLS (pilot scope)** are no longer blockers; remaining work is **§B–§E UAT**, **PH1-A04**, **PH1-P06**, and **waiver review**.
+**NOT COMPLETE** as of 2026-08-26 — **auth**, **§A shells**, **RLS (pilot scope)**, and **A5 Pro/BAA/PITR** are no longer blockers; remaining work is **§B–§E UAT** (A3), **PH1-A04**, and **waiver review** as needed.
 
 **Remaining blockers to full acceptance:**
 
@@ -34,7 +34,7 @@
 2. ~~**RLS**~~ — **PASS** (owner sign-off, single-facility); re-run **RLS-02** when second facility exists — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
 3. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections **B–E** (and **F** as applicable) with evidence; **PH1-A04** route guards.
 4. **Environment / facility context:** **PH1-P04** and related rows as needed; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
-5. **Production compliance:** Owner confirms Pro / BAA / PITR in dashboard.
+5. ~~**Production compliance:**~~ **PASS** — Pro / BAA / PITR attested (do not re-open A5).
 6. **Waiver review:** [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md).
 
 **Waivers alone do not close Phase 1** while checklist UAT rows remain open.
@@ -91,9 +91,9 @@ For repeatable ops checks before those owner-only steps, use [PHASE1-OPS-VERIFIC
 | **risk** | Accepted gaps waived with owner/expiry/remediation; or minor follow-ups documented; or **blockers remain** for full acceptance. |
 | **fail** | Block release: critical RLS or auth issue unfixed. |
 
-**Current (2026-04-09):** **risk** — Owner verified **shell routing**, **RLS matrix (single-facility pilot)**, and **data-layer isolation** for Oakridge; **§B–§E depth UAT**, **PH1-A04**, and **Pro/BAA/PITR** are not yet complete.
+**Current (2026-08-26):** **risk** — Owner verified **shell routing**, **RLS matrix (single-facility pilot)**, **data-layer isolation**, and **A5 Pro/BAA/PITR**. **§B–§E depth UAT** and **PH1-A04** are not yet complete.
 
-**Sentence:** Secure, role-governed access is **owner-attested** for the pilot scope; **full** Phase 1 acceptance remains **risk** until remaining UAT rows and production compliance close.
+**Sentence:** Secure, role-governed access and production recovery posture are **owner-attested**; **full** Phase 1 acceptance remains **risk** until remaining UAT rows close.
 
 ---
 
@@ -102,7 +102,7 @@ For repeatable ops checks before those owner-only steps, use [PHASE1-OPS-VERIFIC
 1. **RLS** verdict **PASS** — **satisfied (2026-04-09)** in [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) (single-facility pilot; **RLS-02** deferred until second facility).
 2. **Execution log:** All applicable rows **PASS** or **WAIVED** (waivers already filed for §F).
 3. **PH1-P06** and **PH1-P03–P04** owner-confirmed.
-4. **Dashboard compliance:** Pro / BAA / PITR attested.
+4. ~~**Dashboard compliance:**~~ **PASS** — Pro / BAA / PITR attested 2026-08-26 (do not re-open).
 5. **Waiver review:** Remaining waiver scope still accepted with remediation path.
 6. Mission alignment **pass** or **risk** (not fail).
 

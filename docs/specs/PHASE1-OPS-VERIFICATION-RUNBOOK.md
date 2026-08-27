@@ -99,7 +99,7 @@ Record:
 | Anomalies | NOTICE on 208: trigger `tr_facility_metric_targets_set_updated_at` did not exist (DROP IF EXISTS no-op) — expected on first apply |
 | Verification | RLS enabled on all 3 tables; policy counts: `user_dashboard_preferences`=4 (CRUD), `facility_metric_targets`=3 (no DELETE — soft-delete via `deleted_at`), `alert_audit_log`=2 (immutable — INSERT+SELECT only). Zero rows post-apply. |
 | Advisor | MCP `get_advisors` blocked (integration scoped to a different account); manual SQL advisor-equivalent: every new table has `relrowsecurity=true` AND `policy_count > 0` |
-| Outstanding | A5 (Pro/BAA/PITR) not yet confirmed by owner — these tables hold no PHI, but any PHI-bearing migration in later modules will require A5 sign-off before push. |
+| Outstanding | None for A5. Pro/BAA/PITR owner-attested (closed 2026-08-26). |
 
 ### UI-V2 S8.5 view deploy — 2026-04-25
 

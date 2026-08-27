@@ -16,7 +16,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 | **Environment / remote migrations** | **VERIFY** — Repo **001–120** (reconciled **2026-04-10**); owner keeps **remote** aligned; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **§A — login → correct shell (pilot roles)** | **PASS (owner, 2026-04-09)** — owner, facility_admin, caregiver, family; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01** |
 | **RLS matrix (target)** | **PASS (owner, 2026-04-09)** — single-facility pilot; [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
-| **Full product acceptance** (§B–§E depth, PH1-A04 guards, Pro/BAA/PITR) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
+| **Full product acceptance** (§B–§E depth, PH1-A04 guards) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md). **A5 Pro/BAA/PITR is closed** (2026-08-26). |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
 
@@ -89,7 +89,7 @@ The current remediation track is using a **single-facility pilot**. That is acce
 - [ ] Test users exist with correct `app_role` and facility access (see `docs/specs/DEMO-SEED-RUNBOOK.md` if using Oakridge seed).
 - [ ] Facility selected in admin shell where the UI expects it (facility store).
 - [ ] **Storage buckets:** Current Phase 1 UI does **not** call Supabase Storage (no `storage.from` / upload flows in `src/`). Bucket creation, CORS, and policies are **not** a Phase 1 app prerequisite until you add file uploads (e.g. incident photos, avatars). When you add them, verify buckets + RLS in the Supabase dashboard.
-- [ ] **Compliance / ops (production):** Pro plan, signed BAA before PHI, Point-in-Time Recovery — per `docs/specs/README.md`; confirm in Supabase **Project Settings** / billing, not in this repo.
+- [x] **Compliance / ops (production):** Pro plan, signed BAA, Point-in-Time Recovery — **PASS.** Owner-confirmed 2026-05-11 / PITR 2026-08-19; **re-attested 2026-08-26.** Record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). Do not re-open A5.
 
 **Recording rule:** Do not mark a row PASS in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) unless it was exercised with a real session on the target environment.
 
@@ -251,7 +251,7 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 | `npm audit` | 0 vulnerabilities |
 | Milestone routes compile (admin / caregiver / family) | PASS — see `next build` route list |
 
-**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (§B–§E UAT, PH1-A04, dashboard Pro/BAA/PITR). **RLS:** PASS owner 2026-04-09. **Mission alignment:** `risk` until remaining blockers close.
+**Verdict:** **Phase 1 engineering readiness: PASS.** **§F gap waivers:** approved 2026-04-06. Full acceptance remains **NOT COMPLETE** — see [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) (§B–§E UAT, PH1-A04). **A5 Pro/BAA/PITR:** PASS. **RLS:** PASS owner 2026-04-09. **Mission alignment:** `risk` until remaining UAT rows close.
 
 ---
 

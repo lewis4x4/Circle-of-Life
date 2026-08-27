@@ -177,7 +177,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 ---
 
-## Track A — owner parallel closeout (A3, A4, A5, A6, ops)
+## Track A — owner parallel closeout (A3, A4, A6, ops — A5 closed)
 
 **Purpose:** Single table for items that **only the owner (or delegated tester)** can complete on the **target** environment. Agents update this file when evidence is supplied; do not mark **PASS** without named tester + date.
 
@@ -186,7 +186,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | PH1-OA01 | **§B–§E** depth UAT — all rows in sections **B–E** below | PENDING | | | Checklist: [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) §B–§E; record each row **PASS** in place |
 | PH1-OA02 | **PH1-A04** — wrong role cannot open other-shell routes | PARTIAL | agent | 2026-08-19 | Owner + caregiver cross-shell probes passed on production. facility_admin + family did not complete login in the same run. |
 | PH1-OA03 | **PH1-P04** — facility context / switcher spot-check | PARTIAL | agent | 2026-08-19 | Owner admin facility filter visible on `/admin/executive`. facility_admin probe did not complete. |
-| PH1-OA04 | **PH1-P06** — Pro plan, **BAA** before PHI, **PITR** enabled | **PASS** | agent | 2026-08-19 | Pro + BAA owner-confirmed 2026-05-11. PITR enabled 2026-08-19 via [Enable Supabase PITR](https://github.com/lewis4x4/Circle-of-Life/actions/runs/32296769927): compute `ci_small`, add-on `pitr_7`, backups list `pitr_enabled: true`. |
+| PH1-OA04 | **PH1-P06** — Pro plan, **BAA** before PHI, **PITR** enabled | **PASS** | Brian Lewis | 2026-08-26 | Pro + BAA owner-confirmed 2026-05-11. PITR enabled 2026-08-19 via [Enable Supabase PITR](https://github.com/lewis4x4/Circle-of-Life/actions/runs/32296769927): compute `ci_small`, add-on `pitr_7`, backups list `pitr_enabled: true`. **Owner re-attested 2026-08-26: BAA and PITR are taken care of. Do not re-open A5.** |
 | PH1-OA05 | **Edge Function secrets** (cron + VAPID + dispatch) on target | **PASS** | agent / Brian Lewis | 2026-05-12 | `supabase secrets list --project-ref manfqmasfqppukpobpld` confirmed required cron, VAPID, dispatch, AI, BoldSign, Sentry, OCE, resident assurance, and Supabase service secrets are present by name/digest. Owner confirmed Netlify production env names without exposing values and added standalone `SUPABASE_URL` as a secret alias before redeploy. |
 | PH1-OA06 | **Scheduled invocations** (crons) for Edge functions | **PASS** | agent / Brian Lewis | 2026-05-12 | Remote `cron.job` and `cron.job_run_details` confirmed active jobs and recent successful runs. Owner accepted production `exec-alert-evaluator` every-4-hours cadence (`0 */4 * * *`) and confirmed Sentry health is good. |
 | PH1-OA07 | **A6** — active waivers reviewed | PENDING | | | [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |

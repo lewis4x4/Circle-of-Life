@@ -4,6 +4,19 @@
 
 ---
 
+## RECORD — Track A A5 owner re-attestation (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `track-a-a5-closed` (docs only) |
+| **Mission alignment** | **pass** — recovery posture (Pro, signed BAA, PITR) is owner-attested; hunts must not re-open A5 as unsigned. |
+| **Owner** | Brian Lewis — BAA and PITR are taken care of. |
+| **Already on file** | Pro + BAA 2026-05-11; PITR `pitr_7` 2026-08-19 (`pitr_enabled: true`). |
+| **Doc sync** | Struck A5 from `AGENTS.md` Track A blockers; marked **Done** in `TRACK-A-CLOSEOUT-ROADMAP.md`; **PASS** in `PHASE1-ENV-CONFIRMATION.md`, `PHASE1-CLOSURE-RECORD.md`, `UNIFIED-ROADMAP.md`, specs README. |
+| **Still open on Track A** | A3 §B–§E UAT depth (and A4/A6 as needed). Not A5. |
+
+---
+
 ## RECORD — perf navigation remediation (2026-06-30)
 
 | Field | Value |
@@ -53,7 +66,7 @@
 
 - **D85+** is the **next named backlog segment** after **D84** (shipped).
 - **Engineering alone cannot “complete” D85** until **COL clinical / pharmacy** signs off on automated dietary–medication texture rules (see same doc §1 table — partial work already shipped as D50–D53 read-only hints).
-- **Parallel (non-code) priorities:** Track **A3–A6** in [TRACK-A-CLOSEOUT-ROADMAP.md](./specs/TRACK-A-CLOSEOUT-ROADMAP.md) (owner UAT, Pro/BAA/PITR).
+- **Parallel (non-code) priorities:** Track **A3** UAT depth in [TRACK-A-CLOSEOUT-ROADMAP.md](./specs/TRACK-A-CLOSEOUT-ROADMAP.md). **A5 is closed** (2026-08-26).
 - **Strategic sequence (AGENTS.md):** After Track A closeout and owner direction — **Module 25: Resident Assurance Engine** (`docs/specs/25-resident-assurance-engine.md`).
 
 **Repo migration number:** **`317`** is the next free migration file after **`316`** (`316_admin_command_center_manager_access.sql`). Treat UNIFIED-ROADMAP §1 and the migrations folder as canonical if an older doc still says `121` / `207` / `308`.
