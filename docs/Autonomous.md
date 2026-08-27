@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — rounding escalate-further 404 (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `rounding-escalate-further-404` |
+| **Mission alignment** | **pass** — operators can finish an open escalation without a dead path. |
+| **Change** | Removed the **Escalate further** link to missing `/admin/rounding/escalations/[id]/review`. Start review / Resolve / Dismiss unchanged. |
+| **Gate** | `test-results/agent-gates/2026-08-27T00-55-17-802Z-rounding-escalate-further-404.json` |
+
+---
+
 ## RECORD — Track A A5 owner re-attestation (2026-08-26)
 
 | Field | Value |

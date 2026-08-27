@@ -752,12 +752,6 @@ function EscalationCard({
                   </Button>
                 </>
               )}
-              <Link
-                href={`/admin/rounding/escalations/${row.id}/review`}
-                className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                Escalate further
-              </Link>
             </div>
           </div>
         </div>
