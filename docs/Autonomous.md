@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — family-messages short URL (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `family-messages-short-url` |
+| **Mission alignment** | **pass** — staff bookmarks to `/family-messages` reach the notes hub instead of a 404. |
+| **Change** | Added `family-messages` to the next.config mirrored-segment redirects. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-26-55-895Z-family-messages-short-url.json` |
+
+---
+
 ## RECORD — family portal create stubs (2026-08-26)
 
 | Field | Value |

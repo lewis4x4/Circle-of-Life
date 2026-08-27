@@ -101,6 +101,7 @@ const nextConfig: NextConfig = {
       // Command Deck at (dietary)/dietary/page.tsx, not a redirect to admin.
       // Admin dietary hub remains at /admin/dietary (direct path).
       "executive",
+      "family-messages",
       "finance",
       "incidents",
       "insurance",

@@ -11,8 +11,8 @@
 | 2 | P1 | done | `flagship-v2-landing-honesty` | V2 stays on. Mounted rounding + executive hub navs on rewritten landings. Residents subtitle names the current roster. |
 | 3 | P1 | done | `executive-role-gate-copy` | Facility admin Command nav goes to Standup; overview/reports hidden. Role gate unchanged. |
 | 4 | P1 | done | `family-portal-create-stubs` | Removed hub CTAs. Leftover create URLs redirect to the Family Connections hub. |
-| 5 | P1 | **current** | `family-messages-short-url` | `/family-messages` 404s; page lives at `/admin/family-messages`. Redirect or drop the short path from shell. |
-| 6 | P1 | queued | `billing-settings-dead-end` | `/admin/billing/settings` is a named placeholder linked from the ledger. |
+| 5 | P1 | done | `family-messages-short-url` | `/family-messages` now redirects to `/admin/family-messages`. |
+| 6 | P1 | **current** | `billing-settings-dead-end` | `/admin/billing/settings` is a named placeholder linked from the ledger. |
 | 7 | P1 | queued | `billing-invoice-cap-200` | Name the invoice hub 200-row fetch ceiling (CSV uses the same cohort). |
 | 8 | P1 | queued | `billing-collections-cap-200` | Name collections 200-row log; stop dumping `error.message`. |
 | 9 | P1 | queued | `dietary-orders-cap-50` | Name the diet-order hub load ceiling (snack pass already names its cap). |
