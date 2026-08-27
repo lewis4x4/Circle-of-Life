@@ -72,6 +72,7 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
+import { applyExecutiveCommandNavToItems } from "@/lib/auth/executive-nav-access";
 import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
 import {
   PILLARS,
@@ -209,7 +210,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const activePillar = useMemo(() => findActivePillar(pathname), [pathname]);
+  const catalogActivePillar = useMemo(() => findActivePillar(pathname), [pathname]);
   const suppressSurveyVisitChrome = useMemo(() => shouldSuppressSurveyVisitChrome(pathname), [pathname]);
 
   // ── ⌘K / ⌘, global hotkeys ──────────────────────────────────────
@@ -714,17 +715,32 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   // role configs use group names ("Clinical Ops") — map them to pillar ids.
   const visiblePillars = useMemo(() => {
     const roleGroups = roleConfig.visibleGroups;
-    if (!roleGroups || roleGroups.length === 0) return PILLARS;
-    const allowed = new Set<string>();
-    for (const g of roleGroups) {
-      if (g === "Clinical Ops") allowed.add("clinical");
-      else if (g === "Quality & Risk") allowed.add("quality");
-      else if (g === "Finance") continue; // dropped from primary nav
-      else allowed.add(g.toLowerCase());
+    let pillars = PILLARS;
+    if (roleGroups && roleGroups.length > 0) {
+      const allowed = new Set<string>();
+      for (const g of roleGroups) {
+        if (g === "Clinical Ops") allowed.add("clinical");
+        else if (g === "Quality & Risk") allowed.add("quality");
+        else if (g === "Finance") continue; // dropped from primary nav
+        else allowed.add(g.toLowerCase());
+      }
+      const filtered = PILLARS.filter((p) => allowed.has(p.id));
+      pillars = filtered.length > 0 ? filtered : PILLARS;
     }
-    const filtered = PILLARS.filter((p) => allowed.has(p.id));
-    return filtered.length > 0 ? filtered : PILLARS;
-  }, [roleConfig.visibleGroups]);
+    return pillars.map((pillar) => ({
+      ...pillar,
+      items: applyExecutiveCommandNavToItems(pillar.items, appRole, authLoading),
+    }));
+  }, [appRole, authLoading, roleConfig.visibleGroups]);
+
+  const activePillar = useMemo(
+    () =>
+      catalogActivePillar
+        ? (visiblePillars.find((pillar) => pillar.id === catalogActivePillar.id) ??
+          catalogActivePillar)
+        : null,
+    [catalogActivePillar, visiblePillars],
+  );
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground antialiased">
@@ -936,6 +952,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           onOpenChange={setPaletteOpen}
           onSelect={handlePaletteSelect}
           onPrefetch={handleRoutePrefetch}
+          pillars={visiblePillars}
         />
       ) : null}
       <LazyOverlayShells />

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyExecutiveCommandNavToItems,
   canOpenExecutiveHubHref,
   canOpenExecutiveOverview,
   canOpenExecutiveStandup,
@@ -38,5 +39,26 @@ describe("executive nav access", () => {
     expect(resolveExecutiveCommandNav("nurse")).toBeNull();
     expect(canOpenExecutiveStandup("manager")).toBe(false);
     expect(canOpenExecutiveHubHref("nurse", "/admin/executive/standup")).toBe(false);
+  });
+
+  it("rewrites Command Executive items for the live AppShell role", () => {
+    const items = [
+      { key: "owner-home", href: "/admin", label: "Owner home" },
+      { key: "executive", href: "/admin/executive", label: "Executive" },
+    ];
+    expect(applyExecutiveCommandNavToItems(items, "owner", false)).toEqual([
+      { key: "owner-home", href: "/admin", label: "Owner home" },
+      { key: "executive", href: "/admin/executive", label: "Executive" },
+    ]);
+    expect(applyExecutiveCommandNavToItems(items, "facility_admin", false)).toEqual([
+      { key: "owner-home", href: "/admin", label: "Owner home" },
+      { key: "executive", href: "/admin/executive/standup", label: "Standup" },
+    ]);
+    expect(applyExecutiveCommandNavToItems(items, "nurse", false)).toEqual([
+      { key: "owner-home", href: "/admin", label: "Owner home" },
+    ]);
+    expect(applyExecutiveCommandNavToItems(items, "facility_admin", true)).toEqual([
+      { key: "owner-home", href: "/admin", label: "Owner home" },
+    ]);
   });
 });

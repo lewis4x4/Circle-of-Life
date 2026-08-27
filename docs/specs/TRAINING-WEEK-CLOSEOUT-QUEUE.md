@@ -21,5 +21,6 @@
 | 12 | P1 | done | `rounding-live-resident-fallback` | Live board names a missing resident join instead of inventing “Resident.” |
 | 13 | P1 | done | `flagship-raw-query-errors` | Flagship hub loads use `formatLiveDataLoadError` instead of PostgREST text. |
 | 14 | P1 | skipped | `facility-admin-login-smoke` | No signed-in production session in this agent. Owner must re-run facility-admin + family login. |
+| 15 | P0 | done | `executive-role-gate-appshell` | Review catch: slice 3 missed live AppShell. Command rail / jump list / ⌘K now follow the role helper. |
 
 **Done when:** every row is `done` or `skipped` with a one-line reason.

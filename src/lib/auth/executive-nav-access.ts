@@ -27,6 +27,25 @@ export function resolveExecutiveCommandNav(role: string): ExecutiveCommandNav | 
   return null;
 }
 
+/** Command rail / palette items: remap or drop the Executive entry by role. */
+export function applyExecutiveCommandNavToItems<
+  T extends { key: string; href: string; label: string },
+>(items: readonly T[], role: string | null, authLoading: boolean): T[] {
+  return items.flatMap((item) => {
+    if (item.key !== "executive") return [item];
+    if (authLoading || !role) return [];
+    const resolved = resolveExecutiveCommandNav(role);
+    if (!resolved) return [];
+    return [
+      {
+        ...item,
+        href: resolved.href,
+        label: resolved.href === "/admin/executive/standup" ? resolved.label : item.label,
+      },
+    ];
+  });
+}
+
 export function canOpenExecutiveHubHref(role: string, href: string): boolean {
   if (href === "/admin/executive/standup" || href.startsWith("/admin/executive/standup/")) {
     return canOpenExecutiveStandup(role);

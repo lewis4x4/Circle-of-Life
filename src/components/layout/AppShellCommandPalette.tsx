@@ -11,22 +11,24 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { AUXILIARY_ROUTES, PILLARS } from "@/lib/navigation/pillars";
+import { AUXILIARY_ROUTES, PILLARS, type Pillar } from "@/lib/navigation/pillars";
 
 export function AppShellCommandPalette({
   open,
   onOpenChange,
   onSelect,
   onPrefetch,
+  pillars = PILLARS,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (href: string) => void;
   onPrefetch: (href: string) => void;
+  pillars?: Pillar[];
 }) {
   const hrefByValue = useMemo(() => {
     const entries = [
-      ...PILLARS.flatMap((pillar) =>
+      ...pillars.flatMap((pillar) =>
         pillar.items.map((item) => [
           `${pillar.label} ${item.label} ${item.href}`,
           item.href,
@@ -38,7 +40,7 @@ export function AppShellCommandPalette({
       ] as const),
     ];
     return new Map<string, string>(entries);
-  }, []);
+  }, [pillars]);
 
   return (
     <CommandDialog
@@ -59,7 +61,7 @@ export function AppShellCommandPalette({
         <CommandInput placeholder="Search residents, staff, incidents, routes…" autoFocus />
         <CommandList>
           <CommandEmpty>No matches.</CommandEmpty>
-          {PILLARS.map((pillar) => (
+          {pillars.map((pillar) => (
             <CommandGroup key={pillar.id} heading={pillar.label}>
               {pillar.items.map((item) => {
                 const Icon = item.icon;

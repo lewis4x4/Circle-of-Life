@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — executive role-gate AppShell (2026-08-27)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `executive-role-gate-appshell` |
+| **Mission alignment** | **pass** — keep the org-admin overview gate and stop offering facility admins a Command link that bounces. |
+| **Change** | Live AppShell / jump list / ⌘K now apply `resolveExecutiveCommandNav`. Owner keeps Executive; facility admin gets Standup; other roles lose the item. |
+| **Gate** | `test-results/agent-gates/2026-08-27T14-00-48-757Z-executive-role-gate-appshell.json` |
+
+---
+
 ## RECORD — facility-admin login smoke (2026-08-26)
 
 | Field | Value |

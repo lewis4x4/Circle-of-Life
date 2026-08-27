@@ -239,4 +239,35 @@ describe("AppShell all-sections jump list", () => {
 
     expect(pushMock).toHaveBeenCalledWith("/admin/assessments/overdue");
   });
+
+  it("points facility admin at standup instead of the executive overview bounce", async () => {
+    authMock.appRole = "facility_admin";
+    const user = userEvent.setup();
+    renderAppShell();
+
+    expect(screen.queryByRole("link", { name: "Executive" })).not.toBeInTheDocument();
+    const standupLinks = screen.getAllByRole("link", { name: "Standup" });
+    expect(standupLinks.some((link) => link.getAttribute("href") === "/admin/executive/standup")).toBe(
+      true,
+    );
+
+    await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
+    expect(within(jumpList).getByText("Standup")).toBeInTheDocument();
+    expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
+  });
+
+  it("hides executive command nav for roles that cannot open standup or overview", async () => {
+    authMock.appRole = "nurse";
+    const user = userEvent.setup();
+    renderAppShell();
+
+    expect(screen.queryByRole("link", { name: "Executive" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Standup" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /open all sections menu/i }));
+    const jumpList = await screen.findByTestId("all-sections-jump-list");
+    expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Standup")).not.toBeInTheDocument();
+  });
 });
