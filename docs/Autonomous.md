@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — dietary diet-order hub cap (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `dietary-orders-cap-50` |
+| **Mission alignment** | **pass** — dietary staff can tell when the hub roster is a newest-50 slice, not every order at the facility. |
+| **Change** | Reused `DIET_ORDERS_HUB_LIMIT`; footnote when the fetch is full. CSV export stays its own 500-row query. |
+| **Gate** | `test-results/agent-gates/2026-08-27T02-00-18-587Z-dietary-orders-cap-50.json` |
+
+---
+
 ## RECORD — billing collections hub cap (2026-08-26)
 
 | Field | Value |

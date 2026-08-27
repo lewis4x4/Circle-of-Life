@@ -36,7 +36,10 @@ import {
   formatDietaryBatchStatPct,
   formatDietaryHubRelativeUpdatedAt,
 } from "@/lib/dietary/dietary-batch-stats-display-copy";
-import { formatDietaryHubResidentDisplay } from "@/lib/dietary/dietary-hub-display-copy";
+import {
+  dietOrdersHubLoadCapNotice,
+  formatDietaryHubResidentDisplay,
+} from "@/lib/dietary/dietary-hub-display-copy";
 import {
   loadDietaryHubBootstrap,
   type DietaryHubBootstrap,
@@ -402,6 +405,7 @@ export function AdminDietaryPageClient({
   }, [facilityReady, organizationId, selectedFacilityId, snackForm, supabase, load]);
 
   const snackPreviewFootnote = snackPassRecentPreviewFootnote(snackLogs.length);
+  const dietOrderLoadCapNotice = dietOrdersHubLoadCapNotice(rows.length);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -422,6 +426,9 @@ export function AdminDietaryPageClient({
                    {dietOrderStatusFilter !== "all" ? ` (${dietOrderStatusFilter})` : ""}.
                  </span>
                )}
+               {dietOrderLoadCapNotice ? (
+                 <span className="block mt-1 text-xs">{dietOrderLoadCapNotice}</span>
+               ) : null}
              </p>
            </div>
            <div className="flex flex-wrap items-center gap-3 justify-end">
