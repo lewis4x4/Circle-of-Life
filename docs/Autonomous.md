@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — facility-admin login smoke (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `facility-admin-login-smoke` |
+| **Mission alignment** | **pass** — no product change; login remains an owner-held production check. |
+| **Change** | Skipped. This agent has no signed-in production session. Code not indicated. |
+| **Gate** | `test-results/agent-gates/2026-08-27T02-30-42-901Z-facility-admin-login-smoke.json` |
+
+---
+
 ## RECORD — flagship raw query errors (2026-08-26)
 
 | Field | Value |

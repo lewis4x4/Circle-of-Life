@@ -20,6 +20,6 @@
 | 11 | P1 | done | `executive-benchmarks-stub-copy` | Cross-operator card names the missing peer feed. No “stub” copy. |
 | 12 | P1 | done | `rounding-live-resident-fallback` | Live board names a missing resident join instead of inventing “Resident.” |
 | 13 | P1 | done | `flagship-raw-query-errors` | Flagship hub loads use `formatLiveDataLoadError` instead of PostgREST text. |
-| 14 | P1 | queued (ops) | `facility-admin-login-smoke` | Re-run production facility-admin + family login. Code only if the timeout is a product bug. |
+| 14 | P1 | skipped | `facility-admin-login-smoke` | No signed-in production session in this agent. Owner must re-run facility-admin + family login. |
 
 **Done when:** every row is `done` or `skipped` with a one-line reason.
