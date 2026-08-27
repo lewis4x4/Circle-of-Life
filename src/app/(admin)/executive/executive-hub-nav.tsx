@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ChevronDown, Menu } from "lucide-react";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { canOpenExecutiveHubHref } from "@/lib/auth/executive-nav-access";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -53,11 +55,26 @@ function isSecondaryHrefActive(pathname: string, href: string) {
 
 export function ExecutiveHubNav() {
   const pathname = usePathname();
+  const { appRole, loading: authLoading } = useHavenAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const primaryItems = useMemo(() => {
+    if (authLoading || !appRole) {
+      return PRIMARY.filter((item) => item.href === "/admin/executive/standup");
+    }
+    return PRIMARY.filter((item) => canOpenExecutiveHubHref(appRole, item.href));
+  }, [appRole, authLoading]);
+
+  const secondaryItems = useMemo(() => {
+    if (authLoading || !appRole) {
+      return SECONDARY.filter((item) => item.href.startsWith("/admin/executive/standup/"));
+    }
+    return SECONDARY.filter((item) => canOpenExecutiveHubHref(appRole, item.href));
+  }, [appRole, authLoading]);
+
   const activeSecondary = useMemo(
-    () => SECONDARY.find((item) => isSecondaryHrefActive(pathname, item.href)),
-    [pathname],
+    () => secondaryItems.find((item) => isSecondaryHrefActive(pathname, item.href)),
+    [pathname, secondaryItems],
   );
 
   return (
@@ -70,7 +87,7 @@ export function ExecutiveHubNav() {
           "hidden md:inline-flex h-9 items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-1",
         )}
       >
-        {PRIMARY.map((item) => {
+        {primaryItems.map((item) => {
           const active = isPrimaryHrefActive(pathname, item.href);
           return (
             <Link
@@ -94,52 +111,54 @@ export function ExecutiveHubNav() {
           );
         })}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              "inline-flex h-7 items-center gap-1 rounded-md px-3 text-[12px] font-medium",
-              "transition-colors duration-100",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              activeSecondary
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            aria-label={
-              activeSecondary
-                ? `More views — currently ${activeSecondary.label}`
-                : "More views"
-            }
-          >
-            {activeSecondary ? activeSecondary.label : "More"}
-            <ChevronDown className="size-3 opacity-70" aria-hidden />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 p-1">
-            {SECONDARY.map((item) => {
-              const active = isSecondaryHrefActive(pathname, item.href);
-              return (
-                <DropdownMenuItem
-                  key={item.href}
-                  className="p-0"
-                  nativeButton={false}
-                  render={
-                    <Link
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex h-8 w-full cursor-pointer items-center rounded-md px-2 text-[13px]",
-                        active
-                          ? "bg-secondary font-medium text-foreground"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  }
-                />
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {secondaryItems.length > 0 ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "inline-flex h-7 items-center gap-1 rounded-md px-3 text-[12px] font-medium",
+                "transition-colors duration-100",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                activeSecondary
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-label={
+                activeSecondary
+                  ? `More views — currently ${activeSecondary.label}`
+                  : "More views"
+              }
+            >
+              {activeSecondary ? activeSecondary.label : "More"}
+              <ChevronDown className="size-3 opacity-70" aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 p-1">
+              {secondaryItems.map((item) => {
+                const active = isSecondaryHrefActive(pathname, item.href);
+                return (
+                  <DropdownMenuItem
+                    key={item.href}
+                    className="p-0"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "flex h-8 w-full cursor-pointer items-center rounded-md px-2 text-[13px]",
+                          active
+                            ? "bg-secondary font-medium text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    }
+                  />
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </nav>
 
       {/* Mobile: Sheet-driven drawer */}
@@ -166,7 +185,7 @@ export function ExecutiveHubNav() {
             className="flex flex-col gap-1 p-2"
             onClick={() => setMobileOpen(false)}
           >
-            {[...PRIMARY, ...SECONDARY].map((item) => {
+            {[...primaryItems, ...secondaryItems].map((item) => {
               const active = isPrimaryHrefActive(pathname, item.href);
               return (
                 <Link

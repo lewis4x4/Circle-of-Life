@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — executive role-gate copy (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `executive-role-gate-copy` |
+| **Mission alignment** | **pass** — keep the org-admin overview gate; stop offering facility admins and managers a bounce that looks like a 403. |
+| **Change** | Command nav: owner/org admin keep Executive summary; facility admin gets Standup; other roles lose the item. ExecutiveHubNav filters links by the same rule. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-13-43-390Z-executive-role-gate-copy.json` |
+
+---
+
 ## RECORD — flagship V2 landing honesty (2026-08-26)
 
 | Field | Value |

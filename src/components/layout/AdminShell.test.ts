@@ -5,6 +5,14 @@ import { describe, expect, it } from "vitest";
 const repoRoot = process.cwd();
 const readSource = (relativePath: string) => readFileSync(path.join(repoRoot, relativePath), "utf8");
 
+describe("AdminShell executive command nav", () => {
+  it("resolves the Executive sidebar item by role instead of hard-coding overview", () => {
+    const source = readSource("src/components/layout/AdminShell.tsx");
+    expect(source).toContain("resolveExecutiveCommandNav");
+    expect(source).toContain('item.key !== "executive"');
+  });
+});
+
 describe("AdminShell Quality navigation", () => {
   it("does not include reputation in the Quality & Risk nav group", () => {
     const source = readSource("src/components/layout/AdminShell.tsx");

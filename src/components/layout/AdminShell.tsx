@@ -99,6 +99,7 @@ import { IdentityBlock } from "@/components/ui/identity-block";
 import { SurveyVisitShellToggle } from "@/components/compliance/SurveyVisitShellToggle";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { resolveExecutiveCommandNav } from "@/lib/auth/executive-nav-access";
 import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
@@ -463,11 +464,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       .filter((group) => roleConfig.visibleGroups.includes(group.group))
       .map((group) => ({
         ...group,
-        items: visibleKeySet
+        items: (visibleKeySet
           ? group.items.filter((item) => visibleKeySet.has(item.key))
           : group.items.filter((item) =>
               roleConfig.route === "/admin" ? true : item.key !== "dashboard",
-            ),
+            )
+        ).flatMap((item) => {
+          if (item.key !== "executive") return [item];
+          if (authLoading || !appRole) return [];
+          const resolved = resolveExecutiveCommandNav(appRole);
+          if (!resolved) return [];
+          return [{ ...item, href: resolved.href, label: resolved.label }];
+        }),
       }))
       .filter((group) => group.items.length > 0);
 
