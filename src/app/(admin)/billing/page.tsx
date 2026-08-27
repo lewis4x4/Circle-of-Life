@@ -12,6 +12,7 @@ import {
   fetchActiveResidentCountForBillingScope,
   type BillingRow,
 } from "@/lib/billing/load-invoices";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminBillingPage() {
@@ -29,7 +30,7 @@ export default async function AdminBillingPage() {
     initialRows = await fetchInvoicesFromSupabase(initialFacilityId, null, supabase);
     initialCohortCount = await fetchActiveResidentCountForBillingScope(initialFacilityId, supabase);
   } catch (error) {
-    initialError = error instanceof Error ? error.message : "Failed to load data";
+    initialError = formatLiveDataLoadError(error, "Failed to load data");
   }
 
   return (

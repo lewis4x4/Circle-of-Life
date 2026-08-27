@@ -2,6 +2,7 @@ import ExecutiveBenchmarkCohortsPageClient from "@/components/executive/Executiv
 import { loadExecutiveBenchmarkData } from "@/lib/executive/load-benchmark-data";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ExecutiveBenchmarkCohortsPage() {
@@ -24,7 +25,7 @@ export default async function ExecutiveBenchmarkCohortsPage() {
   try {
     initialData = await loadExecutiveBenchmarkData(supabase, roleContext.ctx.organizationId);
   } catch (error) {
-    initialError = error instanceof Error ? error.message : "Unable to load benchmark cohorts.";
+    initialError = formatLiveDataLoadError(error, "Unable to load benchmark cohorts.");
   }
 
   return (

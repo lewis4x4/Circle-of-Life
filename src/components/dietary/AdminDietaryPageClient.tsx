@@ -23,6 +23,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -243,7 +244,7 @@ export function AdminDietaryPageClient({
       const bootstrap = await loadDietaryHubBootstrap(selectedFacilityId, supabase);
       applyBootstrap(bootstrap);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load dietary data.");
+      setError(formatLiveDataLoadError(e, "Failed to load dietary data."));
       applyBootstrap({
         rows: [],
         organizationId: null,

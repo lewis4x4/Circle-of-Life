@@ -94,6 +94,7 @@ import {
   invoiceHubLoadCapNotice,
 } from "@/lib/billing/invoices-display-copy";
 import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 
 import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
 
@@ -405,9 +406,7 @@ function BillingInvoiceLedgerInner({
   const invoiceLoadCapNotice = !isLoading ? invoiceHubLoadCapNotice(rows.length) : null;
   const error =
     facilityReady && queryError
-      ? queryError instanceof Error
-        ? queryError.message
-        : "Failed to load data"
+      ? formatLiveDataLoadError(queryError, "Failed to load data")
       : null;
 
   const [cohortCount, setCohortCount] = useState<number>(initialCohortResidentCount);

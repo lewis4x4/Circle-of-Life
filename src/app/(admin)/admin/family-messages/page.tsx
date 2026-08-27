@@ -22,6 +22,7 @@ import {
   FAMILY_BULLETIN_RESIDENT_LOG_LOADING_MESSAGE,
 } from "@/lib/admin/family-messages-copy";
 import { ADMIN_FAMILY_NOTES_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-route-loading-copy";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -89,10 +90,10 @@ export default function StaffFamilyMessagesPage() {
     try {
       const supabase = createClient();
       const result = await fetchStaffMessageThreads(supabase);
-      if (!result.ok) setError(result.error);
+      if (!result.ok) setError(formatLiveDataLoadError(result.error, "Failed to load bulletin notes"));
       else setThreads(result.threads);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load bulletin notes");
+      setError(formatLiveDataLoadError(err, "Failed to load bulletin notes"));
     } finally {
       setLoading(false);
     }
@@ -107,13 +108,13 @@ export default function StaffFamilyMessagesPage() {
       const supabase = createClient();
       const result = await fetchStaffMessagesForResident(supabase, residentId);
       if (!result.ok) {
-        setMsgError(result.error);
+        setMsgError(formatLiveDataLoadError(result.error, "Failed to load posted updates"));
       } else {
         setMessages(result.messages);
         setResidentName(result.residentName);
       }
     } catch (err) {
-      setMsgError(err instanceof Error ? err.message : "Failed to load posted updates");
+      setMsgError(formatLiveDataLoadError(err, "Failed to load posted updates"));
     } finally {
       setMsgLoading(false);
     }

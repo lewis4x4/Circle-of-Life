@@ -28,6 +28,7 @@ import {
   type StandupSectionKey,
 } from "@/lib/executive/standup";
 import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   hasExecutiveStandupOrgScopedPackData,
   resolveExecutiveStandupFetchErrorBannerMessage,
@@ -122,7 +123,7 @@ export default function ExecutiveStandupPage() {
       setLive(null);
       setActions([]);
       setDraftStatus(null);
-      setFetchError(loadError instanceof Error ? loadError.message : "Could not load executive standup.");
+      setFetchError(formatLiveDataLoadError(loadError, "Could not load executive standup."));
     } finally {
       if (generation === loadGenerationRef.current) {
         setFetching(false);

@@ -3,6 +3,7 @@ import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import { loadCeoDashboardData } from "@/lib/executive/load-ceo-dashboard-data";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CeoDashboardPage() {
@@ -31,8 +32,7 @@ export default async function CeoDashboardPage() {
     initialKpis = data.kpis;
     initialAlerts = data.alerts;
   } catch (error) {
-    initialError =
-      error instanceof Error ? error.message : "Failed to load CEO dashboard.";
+    initialError = formatLiveDataLoadError(error, "Failed to load CEO dashboard.");
   }
 
   return (

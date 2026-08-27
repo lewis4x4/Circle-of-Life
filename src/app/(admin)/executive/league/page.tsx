@@ -1,6 +1,7 @@
 import ExecutiveLeaguePageClient from "@/components/executive/ExecutiveLeaguePageClient";
 import { loadExecutiveLeagueData } from "@/lib/executive/load-league-data";
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ExecutiveLeaguePage() {
@@ -16,7 +17,7 @@ export default async function ExecutiveLeaguePage() {
   try {
     initialData = await loadExecutiveLeagueData(supabase, roleContext.ctx.organizationId);
   } catch (error) {
-    initialError = error instanceof Error ? error.message : "Could not load executive league.";
+    initialError = formatLiveDataLoadError(error, "Could not load executive league.");
   }
 
   return <ExecutiveLeaguePageClient initialData={initialData} initialError={initialError} />;

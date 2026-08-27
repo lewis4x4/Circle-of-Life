@@ -11,6 +11,7 @@ import {
   type RoundingOverviewSummary,
   type RoundingTaskRow,
 } from "@/lib/rounding/load-rounding-overview";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminRoundingPage() {
@@ -31,10 +32,10 @@ export default async function AdminRoundingPage() {
     initialTaskRows = result.taskRows;
     initialEmptyNotice = result.emptyNotice;
   } catch (error) {
-    initialError =
-      error instanceof Error
-        ? error.message
-        : "Could not load Smart Rounding metrics. Confirm the facility scope is set and retry.";
+    initialError = formatLiveDataLoadError(
+      error,
+      "Could not load Smart Rounding metrics. Confirm the facility scope is set and retry.",
+    );
   }
 
   return (

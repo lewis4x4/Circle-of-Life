@@ -26,6 +26,7 @@ import {
   resolveExecutiveStandupOrganizationGapMessage,
 } from "@/lib/executive/standup-page-state";
 import { RecordDetailHeader } from "@/design-system/components/record-detail";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
@@ -84,7 +85,7 @@ export default function ExecutiveStandupBoardPage() {
     } catch (loadError) {
       setDetail(null);
       setPreviousDetail(null);
-      setFetchError(loadError instanceof Error ? loadError.message : "Could not load board packet.");
+      setFetchError(formatLiveDataLoadError(loadError, "Could not load board packet."));
     } finally {
       setFetching(false);
     }

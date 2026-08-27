@@ -19,7 +19,7 @@
 | 10 | P1 | done | `standup-eastern-dates` | Standup today + Monday week window use the Eastern calendar, not a UTC date slice. |
 | 11 | P1 | done | `executive-benchmarks-stub-copy` | Cross-operator card names the missing peer feed. No “stub” copy. |
 | 12 | P1 | done | `rounding-live-resident-fallback` | Live board names a missing resident join instead of inventing “Resident.” |
-| 13 | P1 | **current** | `flagship-raw-query-errors` | Billing / dietary / rounding / family notes / executive show PostgREST text. Use `formatLiveDataLoadError`. |
+| 13 | P1 | done | `flagship-raw-query-errors` | Flagship hub loads use `formatLiveDataLoadError` instead of PostgREST text. |
 | 14 | P1 | queued (ops) | `facility-admin-login-smoke` | Re-run production facility-admin + family login. Code only if the timeout is a product bug. |
 
 **Done when:** every row is `done` or `skipped` with a one-line reason.

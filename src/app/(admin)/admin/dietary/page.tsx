@@ -10,6 +10,7 @@ import {
   loadDietaryHubBootstrap,
   type DietaryHubBootstrap,
 } from "@/lib/dietary/load-dietary-hub-bootstrap";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminDietaryHubPage() {
@@ -25,7 +26,7 @@ export default async function AdminDietaryHubPage() {
     const supabase = await createClient();
     initialBootstrap = await loadDietaryHubBootstrap(initialFacilityId, supabase);
   } catch (error) {
-    initialLoadError = error instanceof Error ? error.message : "Could not load dietary hub.";
+    initialLoadError = formatLiveDataLoadError(error, "Could not load dietary hub.");
   }
 
   return (

@@ -24,6 +24,7 @@ import {
   resolveExecutiveStandupOrganizationGapMessage,
 } from "@/lib/executive/standup-page-state";
 import { formatStandupMetricDelta, formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 
 export default function ExecutiveStandupComparePage() {
   const searchParams = useSearchParams();
@@ -96,7 +97,7 @@ export default function ExecutiveStandupComparePage() {
       setLeftDetail(null);
       setRightDetail(null);
       setComparison(null);
-      setFetchError(loadError instanceof Error ? loadError.message : "Could not load standup comparison.");
+      setFetchError(formatLiveDataLoadError(loadError, "Could not load standup comparison."));
     } finally {
       setFetching(false);
     }

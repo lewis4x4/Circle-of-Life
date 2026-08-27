@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — flagship raw query errors (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `flagship-raw-query-errors` |
+| **Mission alignment** | **pass** — training walkthroughs no longer see PostgREST text on flagship hub loads. |
+| **Change** | Billing, dietary, rounding, family notes, and executive load paths use `formatLiveDataLoadError`. |
+| **Gate** | `test-results/agent-gates/2026-08-27T02-24-02-070Z-flagship-raw-query-errors.json` |
+
+---
+
 ## RECORD — rounding live resident fallback (2026-08-26)
 
 | Field | Value |

@@ -35,6 +35,7 @@ import {
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
 import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   EXECUTIVE_STANDUP_WEEK_LOADING_MESSAGE,
   hasExecutiveStandupOrgScopedDetailData,
@@ -128,7 +129,7 @@ export default function ExecutiveStandupWeekDetailPage() {
     } catch (loadError) {
       setDetail(null);
       setPreviousDetail(null);
-      setFetchError(loadError instanceof Error ? loadError.message : "Could not load standup detail.");
+      setFetchError(formatLiveDataLoadError(loadError, "Could not load standup detail."));
     } finally {
       setFetching(false);
     }
