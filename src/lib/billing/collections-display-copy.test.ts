@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  COLLECTIONS_HUB_LIMIT,
   COLLECTIONS_NO_FOLLOW_UP_DATE_COPY,
   COLLECTIONS_NO_RESIDENT_NAME_COPY,
   collectionsFollowUpDateIsPosted,
+  collectionsHubLoadCapNotice,
   formatCollectionsFollowUpDate,
   formatCollectionsResidentName,
 } from "./collections-display-copy";
@@ -34,6 +36,19 @@ describe("formatCollectionsFollowUpDate", () => {
     expect(formatCollectionsFollowUpDate("")).toBe(COLLECTIONS_NO_FOLLOW_UP_DATE_COPY);
     expect(formatCollectionsFollowUpDate("   ")).toBe(COLLECTIONS_NO_FOLLOW_UP_DATE_COPY);
     expect(formatCollectionsFollowUpDate("—")).toBe(COLLECTIONS_NO_FOLLOW_UP_DATE_COPY);
+  });
+});
+
+describe("collectionsHubLoadCapNotice", () => {
+  it("stays quiet when the loaded list is under the hub cap", () => {
+    expect(collectionsHubLoadCapNotice(0)).toBeNull();
+    expect(collectionsHubLoadCapNotice(199)).toBeNull();
+  });
+
+  it("names the hub load cap when the fetch is full", () => {
+    expect(collectionsHubLoadCapNotice(COLLECTIONS_HUB_LIMIT)).toBe(
+      `Loaded the ${COLLECTIONS_HUB_LIMIT} most recent collection activities. Older activities are not listed on this hub.`,
+    );
   });
 });
 

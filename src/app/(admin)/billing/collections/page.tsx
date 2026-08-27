@@ -17,10 +17,13 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 import {
+  COLLECTIONS_HUB_LIMIT,
   collectionsFollowUpDateIsPosted,
+  collectionsHubLoadCapNotice,
   formatCollectionsFollowUpDate,
   formatCollectionsResidentName,
 } from "@/lib/billing/collections-display-copy";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 
 import { BillingHubNav } from "../billing-hub-nav";
 
@@ -42,6 +45,7 @@ export default function AdminCollectionsPage() {
   const [rows, setRows] = useState<CollectionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadCapNotice = collectionsHubLoadCapNotice(rows.length);
 
   const load = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -62,11 +66,11 @@ export default function AdminCollectionsPage() {
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
         .order("activity_date", { ascending: false })
-        .limit(200);
+        .limit(COLLECTIONS_HUB_LIMIT);
       if (res.error) throw res.error;
       setRows((res.data ?? []) as unknown as CollectionRow[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load collections.");
+      setError(formatLiveDataLoadError(e, "Failed to load collections."));
       setRows([]);
     } finally {
       setLoading(false);
@@ -121,6 +125,9 @@ export default function AdminCollectionsPage() {
                  Scoped to selected facility
               </p>
             </div>
+            {loadCapNotice ? (
+              <p className="mb-4 text-[12px] text-muted-foreground">{loadCapNotice}</p>
+            ) : null}
             
             <div className="flex items-center gap-3 px-[13px] py-2 border-b border-border bg-card/60 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hidden md:grid grid-cols-12 gap-4 mb-2">
                <div className="col-span-2">Date</div>

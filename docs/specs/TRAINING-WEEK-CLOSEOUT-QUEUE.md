@@ -14,8 +14,8 @@
 | 5 | P1 | done | `family-messages-short-url` | `/family-messages` now redirects to `/admin/family-messages`. |
 | 6 | P1 | done | `billing-settings-dead-end` | Dropped “Pilot placeholder.” Page names that invoice scheduling is not live and keeps overview / opening balance / rates links. |
 | 7 | P1 | done | `billing-invoice-cap-200` | Named the 200-row invoice hub fetch. CSV uses the same loaded cohort. |
-| 8 | P1 | **current** | `billing-collections-cap-200` | Name collections 200-row log; stop dumping `error.message`. |
-| 9 | P1 | queued | `dietary-orders-cap-50` | Name the diet-order hub load ceiling (snack pass already names its cap). |
+| 8 | P1 | done | `billing-collections-cap-200` | Named the 200-row activity log. Load errors use `formatLiveDataLoadError`. |
+| 9 | P1 | **current** | `dietary-orders-cap-50` | Name the diet-order hub load ceiling (snack pass already names its cap). |
 | 10 | P1 | queued | `standup-eastern-dates` | `toIsoDate()` UTC slice on executive standup. |
 | 11 | P1 | queued | `executive-benchmarks-stub-copy` | Benchmarks page calls itself a stub. |
 | 12 | P1 | queued | `rounding-live-resident-fallback` | Live board invents “Resident” when the name is missing. |

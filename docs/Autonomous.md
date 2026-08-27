@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — billing collections hub cap (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `billing-collections-cap-200` |
+| **Mission alignment** | **pass** — collectors can tell when the activity log is a newest-200 slice, and failed loads no longer show PostgREST text. |
+| **Change** | Named `COLLECTIONS_HUB_LIMIT`; footnote when full; `formatLiveDataLoadError` on fetch failure. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-52-26-022Z-billing-collections-cap-200.json` |
+
+---
+
 ## RECORD — billing invoice hub cap (2026-08-26)
 
 | Field | Value |
