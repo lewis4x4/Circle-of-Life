@@ -69,6 +69,22 @@ describe("<PageShell />", () => {
     expect(screen.queryByRole("complementary", { name: /right rail/i })).toBeNull();
   });
 
+  it("renders full-width below-header chrome when provided", () => {
+    render(
+      <PageShell
+        title="Smart Rounding"
+        belowHeader={<nav aria-label="Smart Rounding sections">Live board</nav>}
+        audit={audit}
+      >
+        <p>main</p>
+      </PageShell>,
+    );
+
+    expect(screen.getByRole("navigation", { name: /smart rounding sections/i })).toHaveTextContent(
+      "Live board",
+    );
+  });
+
   it("omits the filters region when filters prop is absent", () => {
     render(
       <PageShell title="Executive" audit={audit}>

@@ -8,6 +8,7 @@ import type {
   V2AnalyticsLoad,
   V2AnalyticsRollupRow,
 } from "@/lib/v2-analytics";
+import { FlagshipAnalyticsLandingNav } from "./flagship-landing-nav";
 import {
   formatW3AnalyticsAvgRisk,
   formatW3AnalyticsOccupancyPct,
@@ -103,6 +104,13 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
     <T4Analytics<V2AnalyticsRollupRow>
       title={load.title}
       subtitle={sourceNote ? `${load.subtitle} · ${sourceNote}` : load.subtitle}
+      topBarExtras={
+        load.id === "executive-standup" ||
+        load.id === "executive-reports" ||
+        load.id === "executive-benchmarks" ? (
+          <FlagshipAnalyticsLandingNav analyticsId={load.id} />
+        ) : undefined
+      }
       filters={{
         dashboardId: DASHBOARD_PATH[load.id],
         statuses: [

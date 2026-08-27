@@ -16,10 +16,15 @@ import {
   formatW2ListStatus,
 } from "@/lib/v2/w2-list-display-copy";
 
+import { FlagshipListLandingNav } from "./flagship-landing-nav";
 import { V2PaginationControls } from "./V2PaginationControls";
 
 const LIST_TITLES: Record<V2ListId, { title: string; subtitle: string; basePath: string }> = {
-  residents: { title: "Residents", subtitle: "All admitted residents in scope", basePath: "/admin/residents" },
+  residents: {
+    title: "Residents",
+    subtitle: "Current resident roster in scope",
+    basePath: "/admin/residents",
+  },
   incidents: { title: "Incidents", subtitle: "Incident queue", basePath: "/admin/incidents" },
   alerts: { title: "Executive alerts", subtitle: "Active alerts in scope", basePath: "/admin/executive/alerts" },
   admissions: { title: "Admissions", subtitle: "Active admission cases", basePath: "/admin/admissions" },
@@ -112,6 +117,7 @@ export function W2ListClient({
         ],
       }}
       actions={<V2PaginationControls pagination={pagination} showCurrentPageExportNote />}
+      topBarExtras={listId === "alerts" ? <FlagshipListLandingNav listId={listId} /> : undefined}
       table={{
         columns: COLUMNS,
         rows: tableRows,

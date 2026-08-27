@@ -15,6 +15,8 @@ export type T2ListProps<TableRow> = {
   scope?: ScopeSelectorProps;
   filters?: FilterBarProps;
   actions?: React.ReactNode;
+  /** Hub nav or other chrome rendered in the TopBar extras slot. */
+  topBarExtras?: React.ReactNode;
   table: DataTableProps<TableRow>;
   /** Optional side-panel detail; renders to the right of the table on xl+. */
   sidePanel?: React.ReactNode;
@@ -27,6 +29,7 @@ export function T2List<TableRow>({
   scope,
   filters,
   actions,
+  topBarExtras,
   table,
   sidePanel,
   audit,
@@ -38,6 +41,7 @@ export function T2List<TableRow>({
       scope={scope ? <ScopeSelector {...scope} /> : undefined}
       filters={filters ? <FilterBar {...filters} /> : undefined}
       actions={actions}
+      topBarExtras={topBarExtras}
       audit={audit}
       rightRail={sidePanel}
     >

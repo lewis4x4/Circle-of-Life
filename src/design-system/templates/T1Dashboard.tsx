@@ -37,6 +37,10 @@ export type T1DashboardProps<TableRow> = {
   scope: ScopeSelectorProps;
   filters?: FilterBarProps;
   actions?: React.ReactNode;
+  /** Hub nav or other chrome rendered in the TopBar extras slot. */
+  topBarExtras?: React.ReactNode;
+  /** Full-width hub strip under the title (rounding boards). */
+  belowHeader?: React.ReactNode;
   kpis: KPIStripTuple;
   panels: DashboardPanelTuple;
   table: DataTableProps<TableRow>;
@@ -51,6 +55,8 @@ export function T1Dashboard<TableRow>({
   scope,
   filters,
   actions,
+  topBarExtras,
+  belowHeader,
   kpis,
   panels,
   table,
@@ -65,6 +71,8 @@ export function T1Dashboard<TableRow>({
       scope={<ScopeSelector {...scope} />}
       filters={filters ? <FilterBar {...filters} /> : undefined}
       actions={actions}
+      topBarExtras={topBarExtras}
+      belowHeader={belowHeader}
       audit={audit}
       rightRail={
         <>

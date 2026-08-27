@@ -8,8 +8,8 @@
 |---|-----|--------|------------|------|
 | 0 | chore | done | `track-a-a5-closed` | Ship A5 closeout docs + orchestrator queue. Do not re-open A5. |
 | 1 | P0 | done | `rounding-escalate-further-404` | Removed dead **Escalate further** link. Start review / Resolve / Dismiss stay. |
-| 2 | P1 | **current** | `flagship-v2-landing-honesty` | V2 rewrites `/admin/executive`, `/standup`, `/rounding`, `/residents` by default. Decide: teach V2, name the landing, or kill-switch — do not silently flip production without owner. |
-| 3 | P1 | queued | `executive-role-gate-copy` | `facility_admin` is redirected off Executive overview (standup allowed). Name it in nav/copy so training does not look like a 403. |
+| 2 | P1 | done | `flagship-v2-landing-honesty` | V2 stays on. Mounted rounding + executive hub navs on rewritten landings. Residents subtitle names the current roster. |
+| 3 | P1 | **current** | `executive-role-gate-copy` | `facility_admin` is redirected off Executive overview (standup allowed). Name it in nav/copy so training does not look like a 403. |
 | 4 | P1 | queued | `family-portal-create-stubs` | Hide or rewrite + Schedule conference / + Add consent (stub “not wired”). |
 | 5 | P1 | queued | `family-messages-short-url` | `/family-messages` 404s; page lives at `/admin/family-messages`. Redirect or drop the short path from shell. |
 | 6 | P1 | queued | `billing-settings-dead-end` | `/admin/billing/settings` is a named placeholder linked from the ledger. |

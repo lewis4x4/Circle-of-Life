@@ -9,6 +9,8 @@ export type PageShellProps = {
   filters?: React.ReactNode;
   actions?: React.ReactNode;
   topBarExtras?: React.ReactNode;
+  /** Full-width chrome under the title (hub strips). */
+  belowHeader?: React.ReactNode;
   children: React.ReactNode;
   rightRail?: React.ReactNode;
   audit: AuditFooterProps;
@@ -22,6 +24,7 @@ export function PageShell({
   filters,
   actions,
   topBarExtras,
+  belowHeader,
   children,
   rightRail,
   audit,
@@ -43,6 +46,8 @@ export function PageShell({
         actions={actions}
         extras={topBarExtras}
       />
+
+      {belowHeader != null ? <div className="px-4">{belowHeader}</div> : null}
 
       {filters != null && (
         <section

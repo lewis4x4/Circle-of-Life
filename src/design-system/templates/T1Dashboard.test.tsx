@@ -69,4 +69,26 @@ describe("<T1Dashboard />", () => {
     expect(aside).toHaveTextContent(/priority alerts/i);
     expect(aside).toHaveTextContent(/action queue/i);
   });
+
+  it("renders top-bar extras for flagship hub navigation", () => {
+    render(
+      <T1Dashboard
+        {...buildProps()}
+        topBarExtras={<nav aria-label="Smart Rounding sections">Live board</nav>}
+      />,
+    );
+    expect(screen.getByRole("navigation", { name: /smart rounding sections/i })).toBeInTheDocument();
+  });
+
+  it("renders a full-width below-header hub strip", () => {
+    render(
+      <T1Dashboard
+        {...buildProps()}
+        belowHeader={<nav aria-label="Smart Rounding sections">Escalations</nav>}
+      />,
+    );
+    expect(screen.getByRole("navigation", { name: /smart rounding sections/i })).toHaveTextContent(
+      "Escalations",
+    );
+  });
 });

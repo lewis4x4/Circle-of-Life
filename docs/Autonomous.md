@@ -4,6 +4,18 @@
 
 ---
 
+## RECORD — flagship V2 landing honesty (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `flagship-v2-landing-honesty` |
+| **Mission alignment** | **pass** — keep V2 as the current flagship landing and restore the operational board nav so trainers are not trapped on a KPI shell. |
+| **Decision** | Do not kill-switch `NEXT_PUBLIC_UI_V2`. |
+| **Change** | Executive hub nav on V2 executive / standup / reports / benchmarks; rounding hub nav under the V2 rounding title; residents list subtitle names the current roster. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-05-11-368Z-flagship-v2-landing-honesty.json` |
+
+---
+
 ## RECORD — rounding escalate-further 404 (2026-08-26)
 
 | Field | Value |

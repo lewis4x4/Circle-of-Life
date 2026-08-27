@@ -19,6 +19,10 @@ import type {
 } from "@/lib/v2-dashboards";
 import { formatV2DashboardMetric } from "@/lib/v2-dashboard-display-copy";
 import { isV2DashboardShellKpiGapValue } from "@/lib/v2/v2-dashboard-kpi-display-copy";
+import {
+  FlagshipDashboardBoardNav,
+  FlagshipDashboardHeaderNav,
+} from "./flagship-landing-nav";
 import { V2EmptyOnboarding } from "./V2EmptyOnboarding";
 
 const DASHBOARD_BASE_PATH: Record<V2DashboardId, string> = {
@@ -159,6 +163,16 @@ export function W1DashboardClient({
             facilities={facilities.map((f) => ({ ...f, ownerId: "current" }))}
           />
         }
+        topBarExtras={
+          payload.id === "executive-intelligence" ? (
+            <FlagshipDashboardHeaderNav dashboardId={payload.id} />
+          ) : undefined
+        }
+        belowHeader={
+          payload.id === "rounding-operations" ? (
+            <FlagshipDashboardBoardNav dashboardId={payload.id} />
+          ) : undefined
+        }
         audit={{
           auditHref: "/admin/audit-log",
           updatedAt: auditUpdatedAt,
@@ -190,6 +204,16 @@ export function W1DashboardClient({
       kpis={payload.kpis}
       panels={payload.panels}
       actions={<V2PaginationControls pagination={tablePagination} showCurrentPageExportNote />}
+      topBarExtras={
+        payload.id === "executive-intelligence" ? (
+          <FlagshipDashboardHeaderNav dashboardId={payload.id} />
+        ) : undefined
+      }
+      belowHeader={
+        payload.id === "rounding-operations" ? (
+          <FlagshipDashboardBoardNav dashboardId={payload.id} />
+        ) : undefined
+      }
       table={{
         columns: COLUMNS,
         rows,

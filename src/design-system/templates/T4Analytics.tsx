@@ -15,6 +15,8 @@ export type T4AnalyticsProps<TableRow> = {
   subtitle?: string;
   scope?: ScopeSelectorProps;
   filters?: FilterBarProps;
+  /** Hub nav or other chrome rendered in the TopBar extras slot. */
+  topBarExtras?: React.ReactNode;
   kpiStrip?: KPITileProps[];
   /** 1–2 chart slots (cards rendered as full-width on small viewports). */
   charts: [React.ReactNode] | [React.ReactNode, React.ReactNode];
@@ -29,6 +31,7 @@ export function T4Analytics<TableRow>({
   subtitle,
   scope,
   filters,
+  topBarExtras,
   kpiStrip,
   charts,
   breakdownTable,
@@ -41,6 +44,7 @@ export function T4Analytics<TableRow>({
       subtitle={subtitle}
       scope={scope ? <ScopeSelector {...scope} /> : undefined}
       filters={filters ? <FilterBar {...filters} /> : undefined}
+      topBarExtras={topBarExtras}
       audit={audit}
     >
       {kpiStrip && kpiStrip.length > 0 && (

@@ -61,4 +61,24 @@ describe("<T4Analytics />", () => {
     );
     expect(screen.getByTestId("only")).toBeInTheDocument();
   });
+
+  it("renders top-bar extras for executive hub navigation", () => {
+    render(
+      <T4Analytics<{ id: string }>
+        title="Standup"
+        topBarExtras={<nav aria-label="Executive intelligence sections">Standup</nav>}
+        charts={[<div key="c">chart</div>]}
+        breakdownTable={{
+          columns: [{ id: "id", header: "ID", accessor: (r) => r.id }],
+          rows: [],
+          userPreferencesKey: "test/t4-extras",
+          disablePreferences: true,
+        }}
+        audit={audit}
+      />,
+    );
+    expect(
+      screen.getByRole("navigation", { name: /executive intelligence sections/i }),
+    ).toBeInTheDocument();
+  });
 });
