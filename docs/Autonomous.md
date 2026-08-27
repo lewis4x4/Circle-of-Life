@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — billing settings copy (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `billing-settings-dead-end` |
+| **Mission alignment** | **pass** — operators are told scheduling is not live and sent to working billing tools. |
+| **Change** | Removed “Pilot placeholder” subtitle. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-32-38-719Z-billing-settings-dead-end.json` |
+
+---
+
 ## RECORD — family-messages short URL (2026-08-26)
 
 | Field | Value |

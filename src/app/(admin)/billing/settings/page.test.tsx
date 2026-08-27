@@ -10,11 +10,17 @@ vi.mock("next/navigation", () => ({
 vi.mock("../billing-hub-nav", () => ({ BillingHubNav: () => <nav aria-label="Billing sections" /> }));
 
 describe("AdminBillingSettingsPage", () => {
-  it("renders the calm scheduling placeholder without crashing", () => {
+  it("names the scheduling gap without calling the page a placeholder", () => {
     render(<AdminBillingSettingsPage />);
 
     expect(screen.getByRole("heading", { name: "Billing settings" })).toBeInTheDocument();
     expect(screen.getByText("Billing scheduling not configured")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Invoice scheduling is not live. Use overview generation, opening balances, and the rate library until it ships.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Pilot placeholder/i)).not.toBeInTheDocument();
     expect(
       screen.getByText(/Automated invoice scheduling is not live in this pilot build/i),
     ).toBeInTheDocument();

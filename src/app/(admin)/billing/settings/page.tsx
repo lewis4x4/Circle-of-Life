@@ -33,7 +33,7 @@ export default function AdminBillingSettingsPage() {
       <div className="space-y-1">
         <h1 className="text-lg font-semibold tracking-tight text-foreground">Billing settings</h1>
         <p className="text-sm text-muted-foreground">
-          Pilot placeholder for invoice scheduling and automation preferences.
+          Invoice scheduling is not live. Use overview generation, opening balances, and the rate library until it ships.
         </p>
       </div>
 
