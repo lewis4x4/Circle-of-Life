@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — family portal create stubs (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `family-portal-create-stubs` |
+| **Mission alignment** | **pass** — do not offer create flows that are not wired. |
+| **Change** | Removed + Schedule conference / + Add consent. Stub routes redirect to the hub. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-20-35-726Z-family-portal-create-stubs.json` |
+
+---
+
 ## RECORD — executive role-gate copy (2026-08-26)
 
 | Field | Value |

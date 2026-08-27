@@ -622,12 +622,6 @@ export default function AdminFamilyPortalPage() {
             <Calendar className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Care conferences</h2>
           </div>
-          <Link
-            href="/admin/family-portal/conferences/new"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "self-start text-[13px] font-medium sm:self-auto")}
-          >
-            + Schedule conference
-          </Link>
         </div>
 
         <div className="rounded-xl border border-border bg-card px-4 py-5 shadow-[var(--shadow-card)] ring-1 ring-border/60 md:px-5 md:py-6">
@@ -779,12 +773,6 @@ export default function AdminFamilyPortalPage() {
             <FileText className={cn("h-5 w-5 shrink-0", consentIconClass)} aria-hidden />
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Consent records</h2>
           </div>
-          <Link
-            href="/admin/family-portal/consents/new"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "self-start text-[13px] font-medium sm:self-auto")}
-          >
-            + Add consent record
-          </Link>
         </div>
 
         <div className="rounded-xl border border-border bg-card px-4 py-5 shadow-[var(--shadow-card)] ring-1 ring-border/60 md:px-5 md:py-6">
