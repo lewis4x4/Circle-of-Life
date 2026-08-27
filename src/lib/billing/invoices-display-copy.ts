@@ -5,6 +5,9 @@
 
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
+/** Newest invoices loaded for the billing hub / ledger CSV. Older rows are not fetched. */
+export const INVOICE_HUB_LIMIT = 200;
+
 export const INVOICE_NO_UPDATED_AT_COPY = "No date posted";
 export const INVOICE_NUMBER_MISSING_COPY = "Invoice number not posted";
 
@@ -82,6 +85,15 @@ export function formatInvoiceNumberForDisplay(
 
 /** Billing ledger column header — trainees should know what they are scanning. */
 export const BILLING_LEDGER_INVOICE_COLUMN_LABEL = "Invoice";
+
+/** Names the hub fetch ceiling so the list and CSV are not a silent 200-row slice. */
+export function invoiceHubLoadCapNotice(
+  loadedCount: number,
+  loadedCap: number = INVOICE_HUB_LIMIT,
+): string | null {
+  if (loadedCount < loadedCap) return null;
+  return `Loaded the ${loadedCap} most recent invoices. Older invoices are not listed on this hub or included in CSV.`;
+}
 
 /** Invoice `updated_at` — posted ISO timestamp formatted, or explicit gap copy. */
 export function formatUpdatedAt(iso: string): string {

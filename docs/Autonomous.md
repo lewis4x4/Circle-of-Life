@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — billing invoice hub cap (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `billing-invoice-cap-200` |
+| **Mission alignment** | **pass** — operators can tell when the invoice list and CSV are a newest-200 slice, not the full ledger. |
+| **Change** | Named `INVOICE_HUB_LIMIT` and a footnote when the fetch is full. |
+| **Gate** | `test-results/agent-gates/2026-08-27T01-45-22-798Z-billing-invoice-cap-200.json` |
+
+---
+
 ## RECORD — billing settings copy (2026-08-26)
 
 | Field | Value |

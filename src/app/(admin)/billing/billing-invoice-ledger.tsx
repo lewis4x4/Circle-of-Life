@@ -89,7 +89,10 @@ import {
   type PayerTypeUi,
 } from "@/lib/billing/load-invoices";
 import { collectionActivityHref, paymentHref } from "@/lib/billing/billing-links";
-import { BILLING_LEDGER_INVOICE_COLUMN_LABEL } from "@/lib/billing/invoices-display-copy";
+import {
+  BILLING_LEDGER_INVOICE_COLUMN_LABEL,
+  invoiceHubLoadCapNotice,
+} from "@/lib/billing/invoices-display-copy";
 import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BILLING_AR_OVERVIEW_REFRESH } from "./billing-ar-overview-hero";
@@ -399,6 +402,7 @@ function BillingInvoiceLedgerInner({
   });
 
   const isLoading = facilityReady && isPending && rows.length === 0;
+  const invoiceLoadCapNotice = !isLoading ? invoiceHubLoadCapNotice(rows.length) : null;
   const error =
     facilityReady && queryError
       ? queryError instanceof Error
@@ -2008,6 +2012,11 @@ function BillingInvoiceLedgerInner({
                   </Button>
                 </div>
               </div>
+            ) : null}
+            {invoiceLoadCapNotice ? (
+              <p className="border-t border-border px-3 py-2 text-[12px] text-muted-foreground">
+                {invoiceLoadCapNotice}
+              </p>
             ) : null}
           </AdminOperationalListPanel>
         </div>

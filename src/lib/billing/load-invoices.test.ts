@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   fetchInvoicesFromSupabase,
+  INVOICE_HUB_LIMIT,
   mapDbInvoiceStatusToUi,
   mapDbPayerTypeToUi,
 } from "./load-invoices";
@@ -150,6 +154,13 @@ describe("load-invoices", () => {
     await fetchInvoicesFromSupabase("oakridge", "resident-1", supabase as never);
 
     expect(calls).toEqual([]);
+  });
+
+  it("caps the hub fetch with a named limit", () => {
+    const source = readFileSync(path.resolve(import.meta.dirname, "./load-invoices.ts"), "utf8");
+    expect(INVOICE_HUB_LIMIT).toBe(200);
+    expect(source).toContain(".limit(INVOICE_HUB_LIMIT)");
+    expect(source).not.toContain(".limit(200)");
   });
 
   it("normalizes payer and status values to UI-safe enums", () => {

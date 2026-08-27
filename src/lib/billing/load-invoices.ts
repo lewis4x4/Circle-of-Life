@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { formatInvoiceNumberForDisplay, formatUpdatedAt } from "@/lib/billing/invoices-display-copy";
+import {
+  formatInvoiceNumberForDisplay,
+  formatUpdatedAt,
+  INVOICE_HUB_LIMIT,
+} from "@/lib/billing/invoices-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -53,6 +57,8 @@ type SupabaseInvoiceRow = {
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
+export { INVOICE_HUB_LIMIT } from "@/lib/billing/invoices-display-copy";
+
 export async function fetchInvoicesFromSupabase(
   selectedFacilityId: string | null,
   residentIdFilter?: string | null,
@@ -65,7 +71,7 @@ export async function fetchInvoicesFromSupabase(
     )
     .is("deleted_at", null)
     .order("invoice_date", { ascending: false })
-    .limit(200);
+    .limit(INVOICE_HUB_LIMIT);
 
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     invQuery = invQuery.eq("facility_id", selectedFacilityId);

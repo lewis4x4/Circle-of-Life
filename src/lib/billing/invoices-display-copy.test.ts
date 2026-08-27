@@ -1,12 +1,17 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   BILLING_LEDGER_INVOICE_COLUMN_LABEL,
+  INVOICE_HUB_LIMIT,
   INVOICE_NO_UPDATED_AT_COPY,
   INVOICE_NUMBER_MISSING_COPY,
   formatInvoiceNumberForDisplay,
   formatInvoiceRowNumberForDisplay,
   formatUpdatedAt,
+  invoiceHubLoadCapNotice,
 } from "./invoices-display-copy";
 
 const EM_DASH = "—";
@@ -80,6 +85,28 @@ describe("billing ledger invoice column label", () => {
   it("uses Invoice instead of a bare hash symbol", () => {
     expect(BILLING_LEDGER_INVOICE_COLUMN_LABEL).toBe("Invoice");
     expect(BILLING_LEDGER_INVOICE_COLUMN_LABEL).not.toBe("#");
+  });
+});
+
+describe("invoiceHubLoadCapNotice", () => {
+  it("stays quiet when the loaded list is under the hub cap", () => {
+    expect(invoiceHubLoadCapNotice(0)).toBeNull();
+    expect(invoiceHubLoadCapNotice(199)).toBeNull();
+  });
+
+  it("names the hub load cap when the fetch is full", () => {
+    expect(invoiceHubLoadCapNotice(INVOICE_HUB_LIMIT)).toBe(
+      `Loaded the ${INVOICE_HUB_LIMIT} most recent invoices. Older invoices are not listed on this hub or included in CSV.`,
+    );
+  });
+
+  it("surfaces the cap notice on the invoice ledger", () => {
+    const ledger = readFileSync(
+      path.join(process.cwd(), "src/app/(admin)/billing/billing-invoice-ledger.tsx"),
+      "utf8",
+    );
+    expect(ledger).toContain("invoiceHubLoadCapNotice");
+    expect(ledger).toContain("invoiceLoadCapNotice");
   });
 });
 
