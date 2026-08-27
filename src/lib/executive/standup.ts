@@ -1,6 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toZonedTime } from "date-fns-tz";
 
 import type { Database } from "@/types/database";
+import {
+  FACILITY_OPERATOR_TZ,
+  addFacilityCalendarDays,
+  facilityDatetimeLocalToUtcIso,
+  todayFacilityDateIso,
+} from "@/lib/facility-wall-clock";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 export type StandupSourceMode = "auto" | "manual" | "hybrid" | "forecast";
@@ -438,31 +445,51 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
   },
 ];
 
-function toIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
+export type StandupCalendarWindow = {
+  todayIso: string;
+  weekOf: string;
+  thisWeekEnd: string;
+  completedLastWeekStart: string;
+  completedLastWeekEnd: string;
+  monthYm: string;
+};
 
-function startOfWeekMonday(now = new Date()): Date {
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
+/** Monday of the Eastern week that contains `now` (COL operator calendar). */
+function standupWeekMondayIso(now: Date): string {
+  const today = todayFacilityDateIso(now);
+  const day = toZonedTime(now, FACILITY_OPERATOR_TZ).getDay();
   const offset = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + offset);
-  return d;
+  return addFacilityCalendarDays(today, offset);
 }
 
-function endOfWeekSunday(weekStart: Date): Date {
-  const d = new Date(weekStart);
-  d.setDate(d.getDate() + 6);
-  d.setHours(23, 59, 59, 999);
-  return d;
+function facilityDayStartUtc(dateIso: string): string {
+  return facilityDatetimeLocalToUtcIso(`${dateIso}T00:00`);
 }
 
-function previousWeekStart(currentWeekStart: Date): Date {
-  const d = new Date(currentWeekStart);
-  d.setDate(d.getDate() - 7);
-  d.setHours(0, 0, 0, 0);
-  return d;
+function facilityDayAfterStartUtc(dateIso: string): string {
+  return facilityDatetimeLocalToUtcIso(`${addFacilityCalendarDays(dateIso, 1)}T00:00`);
+}
+
+function inFacilityDateRange(
+  value: string,
+  startIso: string,
+  endIso: string,
+): boolean {
+  return value >= facilityDayStartUtc(startIso) && value < facilityDayAfterStartUtc(endIso);
+}
+
+/** Eastern today + Monday-start week used by live standup and draft `week_of`. */
+export function standupCalendarWindow(now: Date = new Date()): StandupCalendarWindow {
+  const todayIso = todayFacilityDateIso(now);
+  const weekOf = standupWeekMondayIso(now);
+  return {
+    todayIso,
+    weekOf,
+    thisWeekEnd: addFacilityCalendarDays(weekOf, 6),
+    completedLastWeekStart: addFacilityCalendarDays(weekOf, -7),
+    completedLastWeekEnd: addFacilityCalendarDays(weekOf, -1),
+    monthYm: weekOf.slice(0, 7),
+  };
 }
 
 function metricTemplate(
@@ -791,8 +818,8 @@ export function buildStandupComparison(
   };
 }
 
-export function currentStandupWeekOf(): string {
-  return toIsoDate(startOfWeekMonday());
+export function currentStandupWeekOf(now: Date = new Date()): string {
+  return standupCalendarWindow(now).weekOf;
 }
 
 export function standupMetricDefinitionByKey(metricKey: string): StandupMetricDefinition | undefined {
@@ -1133,12 +1160,14 @@ export async function fetchExecutiveStandupLive(
 
   const facilities = facilitiesRes.data ?? [];
   const facilityIds = facilities.map((row) => row.id);
-  const weekStart = startOfWeekMonday();
-  const prevWeekStart = previousWeekStart(weekStart);
-  const prevWeekEnd = endOfWeekSunday(prevWeekStart);
-  const thisWeekEnd = endOfWeekSunday(weekStart);
-  const monthStart = new Date(weekStart.getFullYear(), weekStart.getMonth(), 1);
-  const todayIso = toIsoDate(new Date());
+  const {
+    todayIso,
+    weekOf,
+    thisWeekEnd,
+    completedLastWeekStart,
+    completedLastWeekEnd,
+    monthYm,
+  } = standupCalendarWindow();
 
   let invoicesQ = supabase
     .from("invoices" as never)
@@ -1292,48 +1321,42 @@ export async function fetchExecutiveStandupLive(
     const hospitalAndRehab = facilityResidents.filter((row) => ["hospital_hold", "loa"].includes(row.status ?? "")).length;
     const admissionsExpected = facilityAdmissionCases.filter((row) => {
       if (!row.target_move_in_date || row.status === "cancelled") return false;
-      return row.target_move_in_date >= toIsoDate(weekStart) && row.target_move_in_date <= toIsoDate(thisWeekEnd);
+      return row.target_move_in_date >= weekOf && row.target_move_in_date <= thisWeekEnd;
     }).length;
     const expectedDischarges = facilityResidents.filter((row) => {
       if (!row.discharge_target_date) return false;
-      return row.discharge_target_date >= toIsoDate(weekStart) && row.discharge_target_date <= toIsoDate(thisWeekEnd);
+      return row.discharge_target_date >= weekOf && row.discharge_target_date <= thisWeekEnd;
     }).length;
     const calloutsLastWeek = facilityAttendance.filter((row) => {
-      return row.occurred_at >= `${toIsoDate(prevWeekStart)}T00:00:00.000Z`
-        && row.occurred_at <= `${toIsoDate(prevWeekEnd)}T23:59:59.999Z`
+      return inFacilityDateRange(row.occurred_at, completedLastWeekStart, completedLastWeekEnd)
         && ["callout", "late_callout", "no_show", "left_early"].includes(row.event_type);
     }).length;
     const terminationsLastWeek = facilityStaff.filter((row) => {
       if (!row.termination_date) return false;
-      return row.termination_date >= toIsoDate(prevWeekStart) && row.termination_date <= toIsoDate(prevWeekEnd);
+      return row.termination_date >= completedLastWeekStart && row.termination_date <= completedLastWeekEnd;
     }).length;
     const currentOpenPositions = facilityRequisitions.filter((row) => ["open", "interviewing", "offered"].includes(row.status)).length;
     const overtimeHours = Math.round(
       facilityTime
-        .filter((row) => row.clock_in >= `${toIsoDate(prevWeekStart)}T00:00:00.000Z` && row.clock_in <= `${toIsoDate(prevWeekEnd)}T23:59:59.999Z`)
+        .filter((row) => inFacilityDateRange(row.clock_in, completedLastWeekStart, completedLastWeekEnd))
         .reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
     ) / 100;
     const toursExpected = facilityTours.filter((row) => {
       if (!row.tour_scheduled_for || ["lost", "merged"].includes(row.status)) return false;
-      return row.tour_scheduled_for >= `${toIsoDate(weekStart)}T00:00:00.000Z`
-        && row.tour_scheduled_for <= `${toIsoDate(thisWeekEnd)}T23:59:59.999Z`;
+      return inFacilityDateRange(row.tour_scheduled_for, weekOf, thisWeekEnd);
     }).length;
     const providerActivitiesExpected = facilityOutreach.filter((row) => {
       if (row.status === "cancelled" || row.activity_type !== "home_health_provider") return false;
-      return row.performed_for_week === toIsoDate(weekStart)
-        || (row.scheduled_for != null
-          && row.scheduled_for >= `${toIsoDate(weekStart)}T00:00:00.000Z`
-          && row.scheduled_for <= `${toIsoDate(thisWeekEnd)}T23:59:59.999Z`);
+      return row.performed_for_week === weekOf
+        || (row.scheduled_for != null && inFacilityDateRange(row.scheduled_for, weekOf, thisWeekEnd));
     }).length;
     const outreachEngagements = facilityOutreach.filter((row) => {
       if (row.status === "cancelled" || row.activity_type === "home_health_provider") return false;
-      return row.performed_for_week === toIsoDate(weekStart)
-        || (row.scheduled_for != null
-          && row.scheduled_for >= `${toIsoDate(weekStart)}T00:00:00.000Z`
-          && row.scheduled_for <= `${toIsoDate(thisWeekEnd)}T23:59:59.999Z`);
+      return row.performed_for_week === weekOf
+        || (row.scheduled_for != null && inFacilityDateRange(row.scheduled_for, weekOf, thisWeekEnd));
     }).length;
 
-    const currentMonthInvoices = facilityInvoices.filter((row) => row.period_start?.startsWith(toIsoDate(monthStart).slice(0, 7)));
+    const currentMonthInvoices = facilityInvoices.filter((row) => row.period_start?.startsWith(monthYm));
     const residentRateRows = facilityResidents
       .map((row) => row.monthly_total_rate)
       .filter((value): value is number => value != null && value > 0);
@@ -1494,7 +1517,7 @@ export async function fetchExecutiveStandupLive(
   }
 
   const totalMetrics = initializeMetricMap();
-  const totalCurrentMonthInvoices = invoiceRows.filter((row) => row.period_start?.startsWith(toIsoDate(monthStart).slice(0, 7)));
+  const totalCurrentMonthInvoices = invoiceRows.filter((row) => row.period_start?.startsWith(monthYm));
   const totalResidentRateRows = residentRows
     .map((row) => row.monthly_total_rate)
     .filter((value): value is number => value != null && value > 0);
@@ -1532,9 +1555,9 @@ export async function fetchExecutiveStandupLive(
 
   return {
     generatedAt: new Date().toISOString(),
-    weekOf: toIsoDate(weekStart),
-    completedLastWeekStart: toIsoDate(prevWeekStart),
-    completedLastWeekEnd: toIsoDate(prevWeekEnd),
+    weekOf,
+    completedLastWeekStart,
+    completedLastWeekEnd,
     facilities: liveFacilities.sort((a, b) => {
       if (a.facilityName === "Totals") return 1;
       if (b.facilityName === "Totals") return -1;

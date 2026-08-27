@@ -4,6 +4,17 @@
 
 ---
 
+## RECORD — standup Eastern dates (2026-08-26)
+
+| Field | Value |
+|-------|--------|
+| **Segment** | `standup-eastern-dates` |
+| **Mission alignment** | **pass** — evening walkthroughs keep standup “today” and the Monday week window on the COL Eastern calendar. |
+| **Change** | Replaced `toIsoDate()` UTC slice with `todayFacilityDateIso` + Eastern Monday week bounds. |
+| **Gate** | `test-results/agent-gates/2026-08-27T02-08-12-565Z-standup-eastern-dates.json` |
+
+---
+
 ## RECORD — dietary diet-order hub cap (2026-08-26)
 
 | Field | Value |
