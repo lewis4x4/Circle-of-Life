@@ -73,6 +73,20 @@ Current main baseline is `1d5a74fa`; governance segment gates passed. The referr
 
 ---
 
+## RECORD — runtime performance trim (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `runtime-performance-trim` |
+| **Mission alignment** | **pass** — preserve clinical/financial outputs, scope filters, and operator labels while removing redundant processing. |
+| **Change** | Standup computes weekly UTC bounds once and indexes rows by facility; roster reuses fixed date formatters and averages posted acuity in one pass. |
+| **Evidence** | Synthetic median: standup 292.94 → 3.43 ms for 29,400 source rows; roster 191.64 → 12.12 ms for 1,000 timestamps. 8,120 exact-output comparisons passed. Final focused tests 42 passed / 2 opt-in benchmarks skipped; production build, TypeScript, lint, secrets, and stress passed. |
+| **Baseline** | Full suite: 2,832 passed / 8 failed / 2 skipped. All eight failing tests also fail at original `71675f89`; no new failing test names. |
+| **Gate** | `test-results/agent-gates/2026-09-05T18-00-09-931Z-runtime-performance-trim.json` — **FAIL**: existing npm audit findings. Local Postgres replay has a nonblocking auth-schema permission error. |
+| **Handoff** | [Detailed report](./performance/2026-09-05-runtime-performance-trim.md). Owner explicitly authorized “Merge and Commit” after disclosure of the gate failure. Integrate the optimization on its own branch from `main`; the recorded FAIL verdict remains unchanged. No new module or production data change. |
+
+---
+
 ## RECORD — executive role-gate AppShell (2026-08-27)
 
 | Field | Value |

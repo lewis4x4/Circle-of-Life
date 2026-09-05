@@ -106,6 +106,12 @@ describe("formatResidentRosterAdlExport", () => {
 });
 
 describe("averageAcuity", () => {
+  it("continues to skip empty slots in sparse roster arrays", () => {
+    const rows = new Array<ResidentRow>(3);
+    rows[1] = anonymousResidentRow({ acuity: 2, acuityLevel: "level_2" });
+    expect(averageAcuity(rows)).toBe("2.0");
+  });
+
   it("names empty roster groups instead of a silent em dash", () => {
     expect(averageAcuity([])).toBe(RESIDENT_ROSTER_NO_ACUITY_COPY);
     expect(averageAcuity([])).not.toBe(EM_DASH);
