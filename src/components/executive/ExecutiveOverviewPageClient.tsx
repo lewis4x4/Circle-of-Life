@@ -1,5 +1,6 @@
 "use client";
 
+import { startupMark } from "@/lib/observability/startup-performance";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -126,6 +127,7 @@ export function ExecutiveOverviewPageClient({
   // live data. If the server returned empty arrays, the client retries once;
   // it must still render blanks rather than demo fallback values.
   const skipNextLoadRef = useRef(initialHasServerData);
+  useEffect(() => { startupMark("executive-mounted"); }, []);
 
   const load = useCallback(async () => {
     if (authLoading) {
@@ -144,6 +146,7 @@ export function ExecutiveOverviewPageClient({
       return;
     }
 
+    startupMark("executive-fetch-start");
     setLoading(true);
     setFetchError(null);
     try {
@@ -255,6 +258,7 @@ export function ExecutiveOverviewPageClient({
             : "Failed to load executive overview.";
       setFetchError(message);
     } finally {
+      startupMark("executive-fetch-end");
       setLoading(false);
     }
   }, [authLoading, organizationId, supabase]);

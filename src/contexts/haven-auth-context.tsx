@@ -15,6 +15,7 @@ import {
   primeClientRoleContext,
 } from "@/lib/auth/client-role-context";
 import { createClient, withSupabaseAuthLockRetry } from "@/lib/supabase/client";
+import { startupMark } from "@/lib/observability/startup-performance";
 import type { Database } from "@/types/database";
 
 export type HavenAuthContextValue = {
@@ -49,6 +50,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
   const loadGenerationRef = useRef(0);
 
   const load = useCallback(async () => {
+    startupMark("auth-start");
     const generation = loadGenerationRef.current;
     setLoading(true);
     try {
@@ -56,6 +58,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       // network round-trip to the auth server (getUser). The auth-lock retry
       // wrapper is preserved for the getSession call.
       const sessionRes = await withSupabaseAuthLockRetry(() => supabase.auth.getSession());
+      startupMark("session-ready");
       const session = sessionRes.data.session;
       const user = session?.user ?? null;
 
@@ -86,6 +89,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
 
       if (generation !== loadGenerationRef.current) return;
 
+      startupMark("profile-ready");
       if (profileError) {
         const errObj = profileError as unknown as Record<string, unknown>;
         console.error("[HavenAuth] user_profiles query failed", {
@@ -139,6 +143,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       setAvatarUrl(null);
     } finally {
       if (generation === loadGenerationRef.current) {
+        startupMark("auth-ready");
         setLoading(false);
       }
     }
@@ -161,6 +166,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
+      startupMark("auth-event");
       loadGenerationRef.current += 1;
       clearClientRoleContext(supabase);
       queueMicrotask(() => {
