@@ -1,0 +1,35 @@
+{
+  "kind": "Chromium component fixture; synthetic data; actual shell and tab components; mocked navigation, data loading, facility store and modals",
+  "results": [
+    {
+      "width": 375,
+      "scenario": "Header recovery preserves the draft and textarea DOM node",
+      "status": "passed"
+    },
+    {
+      "width": 375,
+      "scenario": "Facility change hides content while loading and after a confirmed mismatch",
+      "status": "passed"
+    },
+    {
+      "width": 375,
+      "scenario": "Initial missing resident blocks the tab",
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "scenario": "Header recovery preserves the draft and textarea DOM node",
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "scenario": "Facility change hides content while loading and after a confirmed mismatch",
+      "status": "passed"
+    },
+    {
+      "width": 1440,
+      "scenario": "Initial missing resident blocks the tab",
+      "status": "passed"
+    }
+  ]
+}
