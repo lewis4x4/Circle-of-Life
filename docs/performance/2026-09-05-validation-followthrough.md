@@ -19,3 +19,17 @@ Fixed a real rounding date bug: date-only values retain their calendar day, time
 The UI schema scanner now excludes test/spec fixtures and test directories. A temporary production JSX fixture still failed the scanner; the equivalent test fixture passed.
 
 Validation: full Vitest suite **449 files, 2,843 passed, 2 opt-in benchmarks skipped**; the 26 rounding/survey tests also passed with `TZ=UTC`. Segment UI gate [regression-baseline-repair](../../test-results/agent-gates/2026-09-05T18-18-22-943Z-regression-baseline-repair.json) **PASS**, including build, lint, audit, migrations, design review, and axe. The earlier failed artifact is retained: it identified the test-fixture scanner false positive. Local UI checks used `/login` and `/admin/rounding/plans` without authentication, so they verify the login boundary rather than authenticated rounding content.
+
+## Executive trend scheduling
+
+`fetchResidentAssuranceFacilityTrendSeries` now starts its five independent reads together. Query columns, organization/deleted filters, UTC window, ordering, score arithmetic, and result shape are unchanged. `allSettled` consumes every rejection, then unwrapping in input order preserves the prior rejection priority before checking response errors. Errors now wait for all started reads to settle; the caller retains its existing timeout. Peak concurrent requests increase from one to five, while total requests remain five.
+
+Five deterministic tests cover latest-score deduplication, facility/day aggregation, empty data, scope and time predicates, error/rejection precedence, and concurrent startup. Four compatibility tests pass on the original implementation; the concurrent-start test fails there and passes after refactoring. With simulated delays of 25 ms + four 20 ms reads, the serial wait is 105 ms and the parallel test finishes in 25 ms. This is scheduling evidence, not a measured production latency claim.
+
+The full suite after this change passed **450 files, 2,848 tests**, with two opt-in benchmarks skipped.
+
+## Authenticated browser witness
+
+Used the owner's existing signed-in browser session on `circleoflifealf.com`; no credentials or session tokens were extracted. Executive intelligence, portfolio health, smart-rounding trend, resident roster, and staffing roster were visibly rendered. A pre-deployment direct return to Executive took 1,352 ms through the content observation; an earlier warm click-to-content observation was 3,238 ms. These include automation overhead and use different navigation methods, so they are not a before/after comparison. Several click observations were discarded because a section menu remained open. No clinical records were changed or copied into artifacts.
+
+Gate: [executive-trend-parallel](../../test-results/agent-gates/2026-09-05T18-23-50-266Z-executive-trend-parallel.json), **PASS** — audit, secrets, lint, all 319 migrations, production build/TypeScript, and stress.

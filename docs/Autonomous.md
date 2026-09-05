@@ -4,6 +4,15 @@
 
 ---
 
+## RECORD — executive trend parallel reads (2026-09-05)
+
+- **Segment:** `executive-trend-parallel`. **Mission alignment: pass** — shorten operator waits while preserving scoped trend data and scoring.
+- **Change:** five independent trend reads start together; query semantics, aggregation, and error priority are preserved. Total request count stays five.
+- **Validation:** five focused tests; full suite 2,848 passed / two opt-in benchmarks skipped. Deterministic simulated delay 105 ms serial versus 25 ms parallel. Signed-in production executive/resident/staff content witnessed before deployment; no measured production speedup claimed.
+- **Gate:** `test-results/agent-gates/2026-09-05T18-23-50-266Z-executive-trend-parallel.json` — **PASS**.
+
+---
+
 ## RECORD — regression baseline repair (2026-09-05)
 
 - **Segment:** `regression-baseline-repair`. **Mission alignment: pass** — restore reliable validation and correct facility calendar labels without changing clinical records.
