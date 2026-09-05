@@ -4,6 +4,19 @@
 
 ---
 
+## RECORD — dependency audit refresh (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `dependency-audit-refresh` |
+| **Mission alignment** | **pass** — clear vulnerable transitive dependencies without changing the application dependency ranges or clinical behavior. |
+| **Change** | Compatible npm audit remediation in `package-lock.json`: five findings cleared, 13 transitive updates and one required transitive type package. |
+| **Environment repair** | Local `pgvector/pgvector:pg17` incorrectly referenced the Supabase Postgres image. Pulled the official pgvector image; no database permissions or production schema were changed. |
+| **Validation** | npm audit: zero findings. All 319 SQL migrations and the three SQL posture checks replay successfully. Build, lint, secrets, and stress pass. |
+| **Gate** | `test-results/agent-gates/2026-09-05T18-08-03-777Z-dependency-audit-refresh.json` — **PASS**. |
+
+---
+
 ## RECORD — runtime performance trim (2026-09-05)
 
 | Field | Value |
