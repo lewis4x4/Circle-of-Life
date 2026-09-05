@@ -4,6 +4,23 @@
 
 ---
 
+## RECORD — referral closure schema 317 (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `referral-closure-schema-317` |
+| **Mission alignment** | **pass** — records human referral outcomes with tenant/party integrity and existing facility RLS and audit controls. No automated admission decisions. |
+| **Change** | Migration 317 adds the closure vocabulary and lead fields; types/specs/index synchronized. No vocabulary seed, UI, import, or remote apply. |
+| **Validation** | `node scripts/test-referral-closure-migration.mjs` **PASS** on disposable PostgreSQL 17 using real helper, referral, and audit definitions with synthetic fixtures; org/party mismatches rejected, facility boundary retained, retirement/soft deletion and audit verified. Typecheck and required segment gates **PASS**. Full-repository Docker replay still has the pre-existing auth-stub failure; focused SQL proof does not replace live migration parity or real-role UAT. |
+| **Gate** | `test-results/agent-gates/2026-09-05T17-36-42-791Z-referral-closure-schema-317.json` |
+| **Next human input** | Jessica's approved closure vocabulary and reviewed source list (COL-23 / COL-35). |
+
+## BOOT / FIND — facility labels (2026-09-05)
+
+Migration 317 is local and tested. Read-only target inspection confirms the five canonical facility/entity mappings and the labels cited in the brief. Sunbiz lists Sorensen, Smith & Bay LLC, not LLLC. Next bounded segment is guarded name correction 318; no tax identifier changes and no production apply.
+
+---
+
 ## RECORD — whiteboard governance alignment (2026-09-05)
 
 | Field | Value |

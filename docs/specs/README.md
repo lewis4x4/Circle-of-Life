@@ -2,7 +2,7 @@
 
 **This folder is the single source of truth for building Haven.** When spec content conflicts with the roadmap overview, trust these specs.
 
-**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**. Live migration position: **`001`–`316`**, next free **`317`**.
+**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**. Remote tracking remains through **`316`**; migration **`317`** is local only. Next free **`318`**.
 
 ## Supabase Project
 
@@ -12,7 +12,7 @@
 
 ## Current state (reconciled 2026-08-19)
 
-**Repo migrations:** **`001`–`316`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release. Next free file: **`317`**.
+**Repo migrations:** **`001`–`317`** (317 not deployed) — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release. Next free file: **`318`**.
 
 **Remote migration parity:** Tracking repaired through **`316`** on 2026-08-19 (`schema-drift-310-316-repair`). Re-run `npm run migrations:verify:remote` after any remote apply. Historical closeout notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
@@ -36,7 +36,7 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`317`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`318`** — use for all new DDL after updating this README and the relevant spec.
 
 **Executive Standup status:** Board-packet track is in repo: workbook import jobs + importer script, packet archive + compare workflow, close/publish gating, premium board packet composition, authenticated PDF route, storage-backed packet PDF artifact persistence, and packet PDF smoke validation. Remote parity now depends on applying migrations `185`–`193`, especially the `report-exports` storage bucket in migration `193`.
 
@@ -48,7 +48,7 @@
 2. **Remote DB migration parity** — Repo sequence **`001`–`206`** (`npm run migrations:check`). Current linked remote matches through **`206`** (`supabase migration list` on 2026-04-22). Re-run after any migration-adding PR; historical early-environment notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 3. **Tracks B–C** — **Engineering complete (closed in repo)** per sections below. Remaining items are **operations** (deploy Edge functions, schedule crons, production monitoring) and **Track A UAT** — not open B/C code issues.
 4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D84** (incl. Module 11 hubs **D29** + **D80** (**staff roster CSV** **hub filter scope**) + **D30** + **D81** (**certifications CSV** **hub filter scope**) + **D31–D33** + **D82** (**schedule weeks CSV** **hub filter scope**) + **D32** + **D84** (**staffing snapshots CSV** **loaded batch scope**) + **D35–D36** + **D83** (**shift swap CSV** **hub filter scope**) + **D37** + **D60** (`/admin/time-records` **bulk approve**) + **D79** (**time-records CSV** **approval scope**), **D34** shared CSV helpers, payroll **D17–D18** + **D26** + **D73**–**D74** + **D58**–**D59** + **D64** + **D69** (`time_records` → lines + **hub batch filter/CSV/search** + **flat CSV** + **vendor handoff CSV** + **hours split CSV**), reputation **D19** + **D28** + **D44**–**D49** (Google OAuth + imports + cron + Yelp Fusion + **`POST /api/reputation/replies/[id]/post-google`** + **`POST /api/reputation/replies/[id]/post-yelp`**) + **D75** (**replies CSV** **status scope**), training **D20–D21** + **D38–D43** (catalog, completions, log form, **`117`** PDF RLS, **`118`** inservice tables + **hub / new session / inservice→completions**), referrals **D22** + **D27** + **D65**–**D68** + **D70**–**D72** (**HL7** queue **Copy raw** + **status filter** + **CSV respects filter** + **search**; **pipeline** **status filter** + **leads CSV** + **search**), dietary **D23** + **D77** (**hub status filter + CSV scope**) + **D50**–**D53** (`/admin/dietary/clinical-review` med–diet **hints** + **IDDSI labels in callouts**) + **D54**–**D55** (`next.config.ts` **`/<segment>` → `/admin/<segment>`** redirects for route-group hubs), transportation **D24–D25** + **D76** (**transport hub status filter + CSV scope**) + **D78** (**mileage approvals CSV scope**) + **D56**–**D57** + **D61**–**D66** (transport **calendar** month view + **`.ics` export** + request detail **Google + Outlook** + **single-trip `.ics`** + **calendar `?date=`** + **View on calendar**)) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D85+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
-5. **Track E / later DDL** — New files start at migration **`317`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+5. **Track E / later DDL** — New files start at migration **`318`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 

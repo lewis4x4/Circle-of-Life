@@ -212,3 +212,16 @@ The Phase 4 row in [`README.md`](README.md) must list **`075`–`076`** (not `07
 **Tour tracking:** COL uses `Tour Satisfactory Forms` to document prospect facility tours. The referral inquiry module should model a `tour_scheduled` → `tour_completed` → `tour_follow_up` workflow as part of the lead pipeline. Tour satisfaction ratings feed into Module 23 (Reputation) metrics.
 
 **Inquiry intake process not documented:** COL's formal inquiry intake process (how initial phone inquiries are handled, what information is collected, who handles them) is not documented in the wiki. Before building the Module 01 UI, collect COL's current inquiry intake workflow to ensure the form fields match what their staff currently capture.
+
+## COL referral closure outcomes (2026-09-05)
+
+Migration `317_referral_lead_closure_reasons.sql` adds an organization-owned, audited, soft-deleted `referral_closure_reasons` catalog and five nullable lead fields: `closed_at`, `closed_by_party`, `closure_reason_id`, `closure_note`, and `competitor_chosen`.
+
+- `prospect` means the prospect declined COL; `facility` means COL declined the prospect. This is a recorded human decision, never an automated admission decision.
+- A composite foreign key requires the reason to match both the lead's organization and closure party. Closure metadata requires `status = lost`, a timestamp, party, and reason together. Competitor is optional and only applies to a prospect closure.
+- Historical lost leads may retain all closure fields NULL; do not fabricate a reason or closure date. Reopening a classified lead requires explicitly clearing all five closure fields.
+- Catalog reads are limited to referral operators in the organization; catalog changes require owner/org_admin. Lead facility RLS and audit triggers remain in force. Catalog retirement by administrators uses `is_active = false`; active pickers must filter that flag and `deleted_at IS NULL`. The `deleted_at` field supports privileged retention workflows; authenticated hard deletion is denied.
+- **No seed vocabulary is approved by this migration.** Jessica supplies labels, codes, and party assignments through the COL-23 interview. COL-35 import requires the reviewed source list, approved vocabulary, dry-run reconciliation, and human approval; no prospect names in tickets or repository artifacts.
+- This segment is schema/types only. UI capture, catalog administration, closure reporting, and CSV import remain follow-on work after the operator workflow and vocabulary are approved. It does not claim the lost-referral workflow is operational.
+
+Focused regression: `node scripts/test-referral-closure-migration.mjs` uses a disposable PostgreSQL 17 container, real referral policies/audit functions, and synthetic two-organization, multi-facility fixtures. It never reads or writes production.
