@@ -1,5 +1,6 @@
 "use client";
 
+import { loadExecutiveOverview } from "@/lib/executive/load-executive-overview";
 import { startupMark } from "@/lib/observability/startup-performance";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,33 +23,17 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import { useHeldRoleHomeChrome } from "@/hooks/useHeldRoleHomeChrome";
 import {
-  applyFacilityOccupancyMetricHonesty,
-  attachFacilityMetrics,
-  buildLatestMetricMap,
   type AlertWithFacility,
   type ExecutiveOverviewFacility,
 } from "@/lib/executive/overview-model";
-import {
-  computePortfolioOccupancyFromBedCensus,
-  fetchFacilityBedCensusById,
-  type FacilityBedCensus,
-} from "@/lib/executive/facility-occupancy-census";
-import {
-  buildAggregateSnapshotQuery,
-  buildFacilitySnapshotQuery,
-} from "@/lib/executive/metric-snapshot-queries";
 import { AdminLiveDataFallbackNotice } from "@/components/common/AdminLiveDataFallbackNotice";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  fetchResidentAssuranceFacilityHeatMap,
-  fetchResidentAssuranceFacilityTrendSeries,
   type ResidentAssuranceFacilityTrendRow,
   type ResidentAssuranceFacilityRollup,
 } from "@/lib/resident-assurance/command-center-brief";
 import {
-  EMPTY_PRESENCE_CENSUS,
-  fetchPresenceCensus,
   type PresenceCensus,
 } from "@/lib/executive/presence-census";
 import {
@@ -57,7 +42,6 @@ import {
   resolveExecutiveOccupancyTileLabel,
 } from "@/lib/executive/executive-display-copy";
 import {
-  buildOccupancyContextFromPortfolioAggregate,
   occupancyContextOccPtFraction,
   executiveKpiEmptyCopy,
   executiveKpiStripHelperLine,
@@ -127,6 +111,7 @@ export function ExecutiveOverviewPageClient({
   // live data. If the server returned empty arrays, the client retries once;
   // it must still render blanks rather than demo fallback values.
   const skipNextLoadRef = useRef(initialHasServerData);
+  const requestGeneration = useRef(0);
   useEffect(() => { startupMark("executive-mounted"); }, []);
 
   const load = useCallback(async () => {
@@ -146,107 +131,23 @@ export function ExecutiveOverviewPageClient({
       return;
     }
 
+    const generation = ++requestGeneration.current;
     startupMark("executive-fetch-start");
     setLoading(true);
     setFetchError(null);
     try {
-      // 1. Fetch latest scoped executive snapshots. Aggregate metrics stay
-      // separate from facility metrics; never smear portfolio averages into
-      // facility rows.
-      const { data: snapData, error: snapErr } = await buildAggregateSnapshotQuery(
-        supabase,
-        organizationId,
-      );
-        
-      if (snapErr) throw snapErr;
-
-      const { data: facilityMetricData, error: facilityMetricErr } = await buildFacilitySnapshotQuery(
-        supabase,
-        organizationId,
-      );
-
-      if (facilityMetricErr) throw facilityMetricErr;
-
-      setMetrics(buildLatestMetricMap(snapData ?? []));
-
-      // 2. Fetch Executive Alerts
-      const { data: alertData, error: alertErr } = await supabase
-        .from("exec_alerts")
-        .select("*, facilities(name)")
-        .eq("organization_id", organizationId)
-        .eq("status", "open")
-        .is("deleted_at", null)
-        .order("severity", { ascending: false })
-        .limit(5);
-
-      if (alertErr) throw alertErr;
-      
-      setAlerts(alertData ?? []);
-
-      // 3. Fetch Portfolio Facilities
-      const { data: facData, error: facErr } = await supabase
-        .from("facilities")
-        .select("id, name, total_licensed_beds")
-        .eq("organization_id", organizationId)
-        .is("deleted_at", null)
-        .order("name", { ascending: true });
-        
-      let bedCensusByFacility: Map<string, FacilityBedCensus> = new Map();
-      if (!facErr && facData && facData.length > 0) {
-        bedCensusByFacility = await fetchFacilityBedCensusById(
-          supabase,
-          facData.map((facility) => facility.id),
-        );
-        setFacilities(
-          applyFacilityOccupancyMetricHonesty(
-            attachFacilityMetrics(facData, facilityMetricData ?? []),
-            bedCensusByFacility,
-            facData,
-          ),
-        );
-      } else {
-        setFacilities([]);
-      }
-
-      let nextPresenceCensus = EMPTY_PRESENCE_CENSUS;
-      try {
-        nextPresenceCensus = await fetchPresenceCensus(supabase, organizationId);
-        setPresenceCensus(nextPresenceCensus);
-      } catch {
-        setPresenceCensus(EMPTY_PRESENCE_CENSUS);
-      }
-
-      const licensedBeds = (facData ?? []).reduce(
-        (sum, facility) => sum + (facility.total_licensed_beds ?? 0),
-        0,
-      );
-      const portfolioOccupancy =
-        facData && facData.length > 0
-          ? computePortfolioOccupancyFromBedCensus(facData, bedCensusByFacility)
-          : null;
-      setOccupancyContext(
-        portfolioOccupancy
-          ? buildOccupancyContextFromPortfolioAggregate(portfolioOccupancy, licensedBeds)
-          : null,
-      );
-
-      const [assuranceRows, assuranceTrendRows] = await Promise.all([
-        fetchResidentAssuranceFacilityHeatMap(supabase, organizationId),
-        fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7),
-      ]);
-      if (assuranceRows.length > 0) {
-        setAssuranceHeatMap(assuranceRows);
-      } else {
-        setAssuranceHeatMap([]);
-      }
-
-      if (assuranceTrendRows.length > 0) {
-        setAssuranceTrends(assuranceTrendRows);
-      } else {
-        setAssuranceTrends([]);
-      }
+      const data = await loadExecutiveOverview(supabase, organizationId, { strict: true });
+      if (generation !== requestGeneration.current) return;
+      setMetrics(data.metrics);
+      setAlerts(data.alerts);
+      setFacilities(data.facilities);
+      setPresenceCensus(data.presenceCensus);
+      setOccupancyContext(data.occupancyContext);
+      setAssuranceHeatMap(data.assuranceHeatMap);
+      setAssuranceTrends(data.assuranceTrends);
 
     } catch (e) {
+      if (generation !== requestGeneration.current) return;
       const message =
         e instanceof Error
           ? e.message
@@ -258,13 +159,16 @@ export function ExecutiveOverviewPageClient({
             : "Failed to load executive overview.";
       setFetchError(message);
     } finally {
-      startupMark("executive-fetch-end");
-      setLoading(false);
+      if (generation === requestGeneration.current) {
+        startupMark("executive-fetch-end");
+        setLoading(false);
+      }
     }
   }, [authLoading, organizationId, supabase]);
 
   useEffect(() => {
     void load();
+    return () => { requestGeneration.current += 1; };
   }, [load]);
 
   // View helpers

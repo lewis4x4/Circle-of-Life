@@ -72,7 +72,16 @@ function withTimeout<T>(promise: PromiseLike<T>, label: string): Promise<T> {
 export async function loadExecutiveOverview(
   supabase: SupabaseClient<Database>,
   organizationId: string,
+  { strict = false }: { strict?: boolean } = {},
 ): Promise<ExecutiveOverviewData> {
+  // The bed census depends on this same facility list; do not fetch it twice.
+  const facilityQuery = withTimeout(
+    supabase.from("facilities").select("id, name, total_licensed_beds")
+      .eq("organization_id", organizationId).is("deleted_at", null)
+      .order("name", { ascending: true }),
+    "facilities",
+  );
+
   // Use allSettled so one failing query (e.g., a snapshot table that's empty
   // or an assurance lookup that errors) doesn't blank the entire dashboard.
   // Each query is also wrapped in a 5s timeout so the slowest call can't
@@ -100,32 +109,32 @@ export async function loadExecutiveOverview(
           .limit(5),
         "exec-alerts",
       ),
-      withTimeout(
-        supabase
-          .from("facilities")
-          .select("id, name, total_licensed_beds")
-          .eq("organization_id", organizationId)
-          .is("deleted_at", null)
-          .order("name", { ascending: true }),
-        "facilities",
-      ),
+      facilityQuery,
       withTimeout(fetchResidentAssuranceFacilityHeatMap(supabase, organizationId), "assurance-heatmap"),
       withTimeout(fetchResidentAssuranceFacilityTrendSeries(supabase, organizationId, 7), "assurance-trends"),
       withTimeout(fetchPresenceCensus(supabase, organizationId), "presence-census"),
       withTimeout(
         (async () => {
-          const { data: facilityRows, error } = await supabase
-            .from("facilities")
-            .select("id")
-            .eq("organization_id", organizationId)
-            .is("deleted_at", null);
-          if (error) throw new Error(error.message);
+          const { data: facilityRows, error } = await facilityQuery;
+          // Preserve the browser's existing unavailable-facility empty state.
+          if (error) return new Map<string, never>();
           const ids = (facilityRows ?? []).map((facility) => facility.id);
           return fetchFacilityBedCensusById(supabase, ids);
         })(),
         "bed-census",
       ),
     ]);
+
+  if (strict) {
+    // Match the browser's required-data failure priority. Presence and facility
+    // availability remain optional; a required failure keeps the Retry state.
+    for (const result of [aggregateSnapshotsRes, facilitySnapshotsRes, alertsRes, bedCensusRes, assuranceRows, assuranceTrendRows]) {
+      if (result.status === "rejected") throw result.reason;
+      if (result.value && "error" in result.value && result.value.error) {
+        throw new Error(result.value.error.message);
+      }
+    }
+  }
 
   const aggregateRows = aggregateSnapshotsRes.status === "fulfilled" ? aggregateSnapshotsRes.value.data ?? [] : [];
   const facilitySnapshotRows = facilitySnapshotsRes.status === "fulfilled" ? facilitySnapshotsRes.value.data ?? [] : [];

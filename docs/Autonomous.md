@@ -4,6 +4,16 @@
 
 ---
 
+## RECORD — executive static startup (2026-09-05)
+
+- **Mission alignment: pass.** Reduce the owner's observed entry delay while preserving authenticated, organization-scoped data access and current metric calculations.
+- **Measured production baseline:** opt-in browser trace on merge `b9f4f07c` measured a 2,850 ms dashboard transition request transferring only 3,137 bytes; dashboard mounted at 3,727 ms from login entry. Direct executive navigation: first byte 1,921 ms, first contentful paint 2,708 ms, auth ready 2,980 ms. These samples establish a server wait; they do not reproduce the reported 14 seconds.
+- **Change:** render data-free executive HTML at build time. After browser auth, reuse the overview loader with independent reads concurrent and one shared facility-list request. Preserve required-data Retry behavior, optional presence fallback, financial cents, occupancy rules, organization/deleted filters, and discard stale request completions. Proxy authorization and database RLS remain in force.
+- **Validation:** full suite 2,854 passed / two skipped; additional request-race test passed, loader tests cover scheduling, single facility read, output, required failure, optional fallback, and timeout. Both executive aliases compile as static routes. Segment gate `test-results/agent-gates/2026-09-05T21-01-40-938Z-executive-static-startup.json` **PASS**, including migration replay, build, lint, security, UI and axe. UI gates exercise the unauthenticated login boundary; authenticated production timing remains the next verification tier.
+- **Next:** deploy through the normal PR flow and repeat the signed-in browser trace. No claim that the full 14-second case is resolved before that measurement.
+
+---
+
 ## RECORD — startup latency trace (2026-09-05)
 
 - **Mission alignment: pass.** Owner reports a 14-second website entry delay despite a fast connection; earlier warm checks do not establish cold-load performance.
