@@ -4,6 +4,14 @@
 
 ---
 
+## RECORD — performance follow-through integration (2026-09-05)
+
+- **Mission alignment: pass.** Incorporated current main `bae56e7b`; preserved both logs and shared scanner fix.
+- **Validation:** full suite 2,848 passed / two opt-in benchmarks skipped; all 321 migrations replay; audit zero; build, lint, design and axe pass. Bundle caps pass at 435.9 / 442.4 kB gzip for admin / executive.
+- **Gate:** `test-results/agent-gates/2026-09-05T18-28-23-712Z-performance-followthrough-integration.json` — **PASS**.
+
+---
+
 ## RECORD — executive trend parallel reads (2026-09-05)
 
 - **Segment:** `executive-trend-parallel`. **Mission alignment: pass** — shorten operator waits while preserving scoped trend data and scoring.
@@ -32,6 +40,75 @@
 | **Environment repair** | Local `pgvector/pgvector:pg17` incorrectly referenced the Supabase Postgres image. Pulled the official pgvector image; no database permissions or production schema were changed. |
 | **Validation** | npm audit: zero findings. All 319 SQL migrations and the three SQL posture checks replay successfully. Build, lint, secrets, and stress pass. |
 | **Gate** | `test-results/agent-gates/2026-09-05T18-08-03-777Z-dependency-audit-refresh.json` — **PASS**. |
+
+---
+
+## BOOT / FIND — executive fallback import budget (2026-09-05)
+
+**BOOT:** Owner authorized Git publication and web deployment after the local alignment closeout. PR #447 exposed a release-blocking executive route bundle over the unchanged 450 kB gzip cap (CI 469.3 kB; local 468.8 kB).
+
+**FIND:** The executive overview imported its retry notice through the client table/filter module, which pulled Select dependencies into its first load. Extracted the identical notice into a dedicated client component and changed the overview to import it directly; retained the original module export for other callers. Local production first load is now 441.9 kB for `/admin/executive` and 435.6 kB for `/admin`. All 11 existing executive overview tests pass, including failed-fetch/Retry rendering.
+
+**Gate repair:** The first UI gate flagged database error strings in an existing `.test.tsx` fixture as operator prose. The scanner now excludes `.test`/`.spec` TSX/JSX files. A temporary fixture probe verified that test/spec data is ignored while identical production JSX still fails. The failed artifact remains recorded; the rerun is the completion gate. Browser/axe routes are unauthenticated and verify the login redirect surface, not executive role UAT.
+
+**RECORD:** Required segment gates **PASS**: `test-results/agent-gates/2026-09-05T18-00-43-321Z-executive-fallback-import-budget.json`. Prior failed run: `test-results/agent-gates/2026-09-05T17-55-43-963Z-executive-fallback-import-budget.json`. Full Docker replay retains its existing advisory auth-stub failure.
+
+**Mission alignment:** **pass** — smaller initial download with the same scoped data loading, failure visibility, and operator recovery behavior. Repository/web release does not apply migrations 317–318 or close Homewood live acceptance.
+
+---
+
+## RECORD — COL facility/entity names 318 (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `col-facility-entity-names-318` |
+| **Mission alignment** | **pass** — consistent operational names, preserved organization/entity relationships, tax identifiers, and auditability. |
+| **Change** | Guarded migration 318 verifies all five canonical mappings and expected current/corrected names; changes two facility labels and three entity name/DBA rows. Sunbiz confirms LLC, not LLLC. No remote apply. |
+| **Validation** | `node scripts/test-col-name-migration.mjs` **PASS**: unexpected names/org mappings reject the entire migration, exact changes audited, other-org/tax data unchanged, repeat apply does no duplicate writes. Required segment gates **PASS**; full-repository Docker replay remains the existing local auth-stub advisory failure. |
+| **Gate** | `test-results/agent-gates/2026-09-05T17-42-07-284Z-col-facility-entity-names-318.json` |
+| **Evidence and scope** | `docs/reviews/2026-09-05-col-name-alignment.md` |
+
+## BOOT / FIND / RECORD — alignment loop exit (2026-09-05)
+
+**BOOT:** Reviewed the three bounded local segments, final gate evidence, live read-only audit, remaining numbered actions, and repository diff. Migration 319 is next free locally; 317–318 have not been deployed.
+
+**FIND:** The remaining requested work depends on owner evidence or decisions: executed BAA/current controls, IP/license position, approved referral vocabulary and reviewed source list, Homewood clinical data/staff access and depth UAT, original HAVEN_BRAIN.md, and a verified destination/transfer plan for demo data. Do not invent data, clinical plans, legal agreements, or external approvals. The private brief's audience restriction keeps these commits local; no external message, ticket attachment, remote push, or deployment.
+
+**RECORD — loop exit:** All identified repo implementation segments are locally complete with required gate evidence. Full launch remains **risk**, not accepted. Next human action is to supply the missing source/decisions and resolve Homewood readiness; separately authorize any publication/deployment of this private work.
+
+---
+
+## RECORD — referral closure schema 317 (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `referral-closure-schema-317` |
+| **Mission alignment** | **pass** — records human referral outcomes with tenant/party integrity and existing facility RLS and audit controls. No automated admission decisions. |
+| **Change** | Migration 317 adds the closure vocabulary and lead fields; types/specs/index synchronized. No vocabulary seed, UI, import, or remote apply. |
+| **Validation** | `node scripts/test-referral-closure-migration.mjs` **PASS** on disposable PostgreSQL 17 using real helper, referral, and audit definitions with synthetic fixtures; org/party mismatches rejected, facility boundary retained, retirement/soft deletion and audit verified. Typecheck and required segment gates **PASS**. Full-repository Docker replay still has the pre-existing auth-stub failure; focused SQL proof does not replace live migration parity or real-role UAT. |
+| **Gate** | `test-results/agent-gates/2026-09-05T17-36-42-791Z-referral-closure-schema-317.json` |
+| **Next human input** | Jessica's approved closure vocabulary and reviewed source list (COL-23 / COL-35). |
+
+## BOOT / FIND — facility labels (2026-09-05)
+
+Migration 317 is local and tested. Read-only target inspection confirms the five canonical facility/entity mappings and the labels cited in the brief. Sunbiz lists Sorensen, Smith & Bay LLC, not LLLC. Next bounded segment is guarded name correction 318; no tax identifier changes and no production apply.
+
+---
+
+## RECORD — whiteboard governance alignment (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `haven-whiteboard-governance-2026-09-05` |
+| **Mission alignment** | **pass** — focuses Haven on COL assisted living operations while retaining role governance, resident safety, human judgment, licensure rules, and auditability. Launch readiness remains **risk** pending Homewood depth UAT and evidence reconciliation. |
+| **Change** | Synchronized five mission sources; Homewood is current acceptance and controlled launch facility; preserved Oakridge historical tests. Defined Office 365 / Haven records boundary, retired the missed Drive cutover date, and froze F3-1/F3-2/F3-4. Recorded the reported A5 discrepancy without asserting an absent contract. |
+| **Validation** | Required gates **PASS**; production build 415 pages, lint, migration sequence, secret checks, and stress suite passed. Initial gate found two high dependency advisories; targeted transitive updates to browserslist and fast-uri cleared the high-severity audit gate. Two moderate and one low advisory remain. Optional Docker replay still fails in the pre-existing auth-schema stub before applying migrations; this is not a remote schema proof. |
+| **Gate** | `test-results/agent-gates/2026-09-05T17-28-55-451Z-haven-whiteboard-governance-2026-09-05.json` |
+| **Boundary** | Private review branch; no publication, production change, external message, or IP agreement. |
+
+## BOOT / FIND — next alignment segment (2026-09-05)
+
+Current main baseline is `1d5a74fa`; governance segment gates passed. The referral closure schema is absent in the repository and a read-only target probe confirms missing closure columns/catalog. Next bounded segment is migration 317 with tenant/party integrity, RLS, audit, types, and a focused SQL regression test. Vocabulary and source-data import remain owner inputs; no guessed seed values.
 
 ---
 

@@ -1,16 +1,14 @@
-# COL unified operations SaaS — roadmap context (read-only)
+# Haven — Expand. Perfect. Secure. Multiply. — roadmap context
 
-**Purpose:** Give agents **broad orientation** to the product direction. **Do not treat this file as an implementation spec.** You will receive **phase-one deliverables and per-module depth** separately. The canonical, full roadmap (including operator-specific context) is maintained by the owner at:
+**Purpose:** Orientation for Circle of Life's assisted living operations. The current execution roadmap is [UNIFIED-ROADMAP.md](./specs/UNIFIED-ROADMAP.md); implementation scope comes from the module specs and owner decisions. The former Downloads moonshot roadmap is historical context, not an execution authority.
 
-`/Users/brianlewis/Downloads/COL_SaaS_Moonshot_Roadmap.md`
-
-Do **not** copy insured contacts, broker details, or premium figures from that document into the repo.
+The operating direction is enhanced management by virtual staff and real time, accurate access to the complete body of information. AI remains subordinate to human judgment, licensure rules, and auditability. This direction does not establish software ownership, a license, a valuation, or a sale agreement.
 
 ---
 
 ## What this product is
 
-A **multi-facility assisted living (ALF)** operations platform for **owner-operators** running **separate legal entities** (LLCs) under one organization—initial beachhead **Florida ALF / AHCA**, designed to scale beyond one operator. **Product name: Haven.**
+A **multi-facility assisted living (ALF)** operations platform for **owner-operators** running **separate legal entities** (LLCs) under one organization—current scope **Florida ALF / AHCA**, with future managed buildings, acquisitions, or additional states subject to owner direction and jurisdiction-specific validation. **Product name: Haven.**
 
 **Core gap the roadmap addresses:** No existing system unifies clinical ops, financial ops, regulatory compliance, insurance/risk, workforce, family engagement, and expansion planning in one **multi-tenant, multi-entity** stack built for ALFs (not SNF retrofits or IL property software).
 

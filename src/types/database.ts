@@ -9066,8 +9066,66 @@ export type Database = {
           },
         ]
       }
+      referral_closure_reasons: {
+        Row: {
+          closed_by_party: string
+          code: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          label: string
+          organization_id: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          closed_by_party: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          organization_id: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          closed_by_party?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          organization_id?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_closure_reasons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_leads: {
         Row: {
+          closed_at: string | null
+          closed_by_party: string | null
+          closure_note: string | null
+          closure_reason_id: string | null
+          competitor_chosen: string | null
           converted_at: string | null
           converted_resident_id: string | null
           created_at: string
@@ -9096,6 +9154,11 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          closed_at?: string | null
+          closed_by_party?: string | null
+          closure_note?: string | null
+          closure_reason_id?: string | null
+          competitor_chosen?: string | null
           converted_at?: string | null
           converted_resident_id?: string | null
           created_at?: string
@@ -9124,6 +9187,11 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          closed_at?: string | null
+          closed_by_party?: string | null
+          closure_note?: string | null
+          closure_reason_id?: string | null
+          competitor_chosen?: string | null
           converted_at?: string | null
           converted_resident_id?: string | null
           created_at?: string
@@ -9152,6 +9220,13 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "referral_leads_closure_reason_scope_fkey"
+            columns: ["organization_id", "closure_reason_id", "closed_by_party"]
+            isOneToOne: false
+            referencedRelation: "referral_closure_reasons"
+            referencedColumns: ["organization_id", "id", "closed_by_party"]
+          },
           {
             foreignKeyName: "referral_leads_converted_resident_id_fkey"
             columns: ["converted_resident_id"]

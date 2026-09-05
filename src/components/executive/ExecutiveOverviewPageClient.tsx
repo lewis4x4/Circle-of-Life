@@ -36,7 +36,7 @@ import {
   buildAggregateSnapshotQuery,
   buildFacilitySnapshotQuery,
 } from "@/lib/executive/metric-snapshot-queries";
-import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
+import { AdminLiveDataFallbackNotice } from "@/components/common/AdminLiveDataFallbackNotice";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {

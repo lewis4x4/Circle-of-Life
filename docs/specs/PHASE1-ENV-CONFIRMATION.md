@@ -46,7 +46,15 @@ Command: `supabase migration list`
 
 ---
 
-## Production compliance (Supabase dashboard)
+## A5 evidence reconciliation — 2026-09-05
+
+The prior owner attestations (2026-05-11 and 2026-08-26) remain part of the historical record. A new owner-supplied alignment brief reports a 2026-09-04 dashboard observation of Pro with the HIPAA add-on disabled. That observation has **not been independently verified in this review**; the browser required sign-in, and the executed agreement was not found in the searched local locations.
+
+Current [Supabase HIPAA project documentation](https://supabase.com/docs/guides/platform/hipaa-projects) requires a signed Supabase BAA and the HIPAA add-on for PHI. Its [shared responsibility documentation](https://supabase.com/docs/guides/deployment/shared-responsibility-model) says signing a BAA requires at least the Team plan. A Pro subscription or PITR alone does not establish those conditions.
+
+**Owner evidence needed (COL-5):** identify the executed agreement's counterparty and covered organization/project; confirm current plan, HIPAA add-on, and required project controls. Preserve PITR evidence separately. Resolve the discrepancy before treating the historic A5 PASS as current launch evidence. If the agreement does not cover Supabase or the required controls are absent, reopen A5 with the verified facts and named remediation. Do not record “no Supabase BAA in effect” without that evidence.
+
+## Production compliance (Supabase dashboard; historical attestations)
 
 | Check | Where | Owner |
 |-------|--------|-------|
