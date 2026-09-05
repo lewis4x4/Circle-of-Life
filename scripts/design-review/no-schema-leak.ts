@@ -60,7 +60,7 @@ function walkTsxFiles(dir: string, out: string[] = []): string[] {
     return out;
   }
   for (const name of entries) {
-    if (name === "node_modules" || name === ".next" || name === "dist") continue;
+    if (name === "node_modules" || name === ".next" || name === "dist" || name === "__tests__" || name === "__snapshots__") continue;
     const full = path.join(dir, name);
     let st: ReturnType<typeof statSync>;
     try {
@@ -70,7 +70,7 @@ function walkTsxFiles(dir: string, out: string[] = []): string[] {
     }
     if (st.isDirectory()) {
       walkTsxFiles(full, out);
-    } else if (name.endsWith(".tsx") || name.endsWith(".jsx")) {
+    } else if ((name.endsWith(".tsx") || name.endsWith(".jsx")) && !/\.(test|spec)\.[jt]sx$/.test(name)) {
       out.push(full);
     }
   }

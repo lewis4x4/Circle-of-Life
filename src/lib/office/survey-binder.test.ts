@@ -33,7 +33,7 @@ describe("binderEvidenceDateWindow", () => {
     expect(window.todayIso).toBe("2025-12-31");
     expect(window.yearStartIso).toBe("2025-01-01");
     expect(window.yearStartIso).not.toBe("2026-01-01");
-    expect(newYearsEveEt.getFullYear()).toBe(2026);
+    expect(newYearsEveEt.getUTCFullYear()).toBe(2026);
   });
 });
 

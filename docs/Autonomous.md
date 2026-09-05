@@ -4,6 +4,15 @@
 
 ---
 
+## RECORD — regression baseline repair (2026-09-05)
+
+- **Segment:** `regression-baseline-repair`. **Mission alignment: pass** — restore reliable validation and correct facility calendar labels without changing clinical records.
+- **Change:** fix rounding date-only timezone shifts and reuse formatters; align stale assertions with existing contracts; exclude non-shipped test fixtures from the UI schema scanner.
+- **Validation:** 2,843 tests passed, two opt-in benchmarks skipped; 26 date/survey tests also pass in UTC. Production-fixture scanner rejection verified. UI gate passes build, lint, audit, migrations, design and axe; local UI checks cover the unauthenticated boundary.
+- **Gate:** `test-results/agent-gates/2026-09-05T18-18-22-943Z-regression-baseline-repair.json` — **PASS**.
+
+---
+
 ## RECORD — dependency audit refresh (2026-09-05)
 
 | Field | Value |

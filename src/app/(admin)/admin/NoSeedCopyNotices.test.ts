@@ -42,9 +42,10 @@ describe("app-visible no-seed copy notices", () => {
   });
 
   it("keeps neutral live-source fallback wording", () => {
-    const sources = APP_VISIBLE_NOTICE_SOURCES.map(readSource).join("\n");
-
-    expect(sources).toContain("No fallback");
-    expect(sources).toContain("no fallback rows shown");
+    for (const file of ["W1DashboardClient", "W2ListClient", "W3AnalyticsClient"]) {
+      const source = readSource(`src/components/v2/${file}.tsx`);
+      expect(source).toContain("no fallback rows shown");
+      expect(source).toContain('=== "unavailable"');
+    }
   });
 });

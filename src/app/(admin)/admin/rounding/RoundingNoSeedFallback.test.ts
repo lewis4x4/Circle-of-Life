@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { formatRoundingPlansNoPlansEmptyTitle } from "@/lib/rounding/rounding-plans-display-copy";
+
 const repoRoot = process.cwd();
 const readSource = (relativePath: string) =>
   readFileSync(path.join(repoRoot, relativePath), "utf8");
@@ -50,7 +52,9 @@ describe("rounding pages seeded fallback removal", () => {
     expect(cadenceLib).toContain("No live tasks in the last 12 hours");
     expect(sources).toContain("No reports generated yet");
     expect(sources).toContain("No checks match the current filter");
-    expect(sources).toContain("No observation plans at");
+    expect(sources).toContain("formatRoundingPlansNoPlansEmptyTitle(facilityScope)");
+    expect(formatRoundingPlansNoPlansEmptyTitle({ kind: "named", name: "Test facility" })).toBe("No observation plans at Test facility");
+    expect(formatRoundingPlansNoPlansEmptyTitle({ kind: "missing_name" })).toBe("No observation plans posted");
   });
 
   it("does not render healthy or fake-derived statuses for empty live sources", () => {
