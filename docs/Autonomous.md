@@ -4,6 +4,20 @@
 
 ---
 
+## BOOT / FIND — executive fallback import budget (2026-09-05)
+
+**BOOT:** Owner authorized Git publication and web deployment after the local alignment closeout. PR #447 exposed a release-blocking executive route bundle over the unchanged 450 kB gzip cap (CI 469.3 kB; local 468.8 kB).
+
+**FIND:** The executive overview imported its retry notice through the client table/filter module, which pulled Select dependencies into its first load. Extracted the identical notice into a dedicated client component and changed the overview to import it directly; retained the original module export for other callers. Local production first load is now 441.9 kB for `/admin/executive` and 435.6 kB for `/admin`. All 11 existing executive overview tests pass, including failed-fetch/Retry rendering.
+
+**Gate repair:** The first UI gate flagged database error strings in an existing `.test.tsx` fixture as operator prose. The scanner now excludes `.test`/`.spec` TSX/JSX files. A temporary fixture probe verified that test/spec data is ignored while identical production JSX still fails. The failed artifact remains recorded; the rerun is the completion gate. Browser/axe routes are unauthenticated and verify the login redirect surface, not executive role UAT.
+
+**RECORD:** Required segment gates **PASS**: `test-results/agent-gates/2026-09-05T18-00-43-321Z-executive-fallback-import-budget.json`. Prior failed run: `test-results/agent-gates/2026-09-05T17-55-43-963Z-executive-fallback-import-budget.json`. Full Docker replay retains its existing advisory auth-stub failure.
+
+**Mission alignment:** **pass** — smaller initial download with the same scoped data loading, failure visibility, and operator recovery behavior. Repository/web release does not apply migrations 317–318 or close Homewood live acceptance.
+
+---
+
 ## RECORD — COL facility/entity names 318 (2026-09-05)
 
 | Field | Value |
