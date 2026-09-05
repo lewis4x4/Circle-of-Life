@@ -4,6 +4,16 @@
 
 ---
 
+## RECORD — startup latency trace (2026-09-05)
+
+- **Mission alignment: pass.** Owner reports a 14-second website entry delay despite a fast connection; earlier warm checks do not establish cold-load performance.
+- **Observed baseline:** public login HTML 230–290 ms; login background 465 ms; signed-in warm root-to-dashboard observation 1,676 ms; direct reload observation 4,808 ms with a contemporaneous server invocation of 1,769.83 ms. Browser observation timings include automation overhead; the 14-second case has not yet been reproduced.
+- **Change:** opt-in `haven_perf=1` console trace separates document response, paint, JavaScript/resource waits, long tasks, auth phases, and executive browser fetches. Emits only fixed stage/category labels and numeric timings; no URLs, queries, identifiers, tokens, or clinical content. Ordinary visits do not start observers or timers.
+- **Validation:** diagnostics privacy/default-off tests and auth race test pass. Segment gate `test-results/agent-gates/2026-09-05T20-44-38-088Z-startup-latency-trace.json` **PASS**.
+- **Next:** use the trace in the real signed-in browser before selecting the startup repair; no claim that diagnostics fixes latency.
+
+---
+
 ## RECORD — performance follow-through integration (2026-09-05)
 
 - **Mission alignment: pass.** Incorporated current main `bae56e7b`; preserved both logs and shared scanner fix.
