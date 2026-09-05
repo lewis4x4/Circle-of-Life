@@ -14,7 +14,7 @@
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`317` (`317_referral_lead_closure_reasons.sql`; 317 local only, not deployed) — **next free migration: `318`** |
+| Repo migrations | `001`–`318` (`318_col_facility_entity_names.sql`; 317–318 local only, not deployed) — **next free migration: `319`** |
 | Remote tracking | `310`–`316` recorded on `manfqmasfqppukpobpld` (2026-08-19). Live Command Center projection is the `315`/`316` definition (manager allowlist). Repair SQL: `scripts/repair-remote-schema-migrations-310-316.sql`. |
 | README "current state" drift | Reconcile `docs/specs/README.md` when the next DDL segment ships; treat **this file + the migrations folder** as current |
 | Pilot | Homewood Lodge is the current acceptance and controlled launch facility (`docs/homewood/`); preserve historical Oakridge seeded validation evidence. RLS-02 must run before Oakridge goes live. |
@@ -35,7 +35,7 @@
 
 1. **A5 historical attestation is retained; current evidence needs reconciliation.** Resolve the reported dashboard/contract discrepancy in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md#a5-evidence-reconciliation--2026-09-05) before using the historical PASS for launch. A3 depth UAT remains open.
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
-3. New DDL takes the next free migration number (currently `318`) and updates this file.
+3. New DDL takes the next free migration number (currently `319`) and updates this file.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
 
 ---

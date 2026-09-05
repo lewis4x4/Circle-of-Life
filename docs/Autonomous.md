@@ -4,6 +4,27 @@
 
 ---
 
+## RECORD — COL facility/entity names 318 (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `col-facility-entity-names-318` |
+| **Mission alignment** | **pass** — consistent operational names, preserved organization/entity relationships, tax identifiers, and auditability. |
+| **Change** | Guarded migration 318 verifies all five canonical mappings and expected current/corrected names; changes two facility labels and three entity name/DBA rows. Sunbiz confirms LLC, not LLLC. No remote apply. |
+| **Validation** | `node scripts/test-col-name-migration.mjs` **PASS**: unexpected names/org mappings reject the entire migration, exact changes audited, other-org/tax data unchanged, repeat apply does no duplicate writes. Required segment gates **PASS**; full-repository Docker replay remains the existing local auth-stub advisory failure. |
+| **Gate** | `test-results/agent-gates/2026-09-05T17-42-07-284Z-col-facility-entity-names-318.json` |
+| **Evidence and scope** | `docs/reviews/2026-09-05-col-name-alignment.md` |
+
+## BOOT / FIND / RECORD — alignment loop exit (2026-09-05)
+
+**BOOT:** Reviewed the three bounded local segments, final gate evidence, live read-only audit, remaining numbered actions, and repository diff. Migration 319 is next free locally; 317–318 have not been deployed.
+
+**FIND:** The remaining requested work depends on owner evidence or decisions: executed BAA/current controls, IP/license position, approved referral vocabulary and reviewed source list, Homewood clinical data/staff access and depth UAT, original HAVEN_BRAIN.md, and a verified destination/transfer plan for demo data. Do not invent data, clinical plans, legal agreements, or external approvals. The private brief's audience restriction keeps these commits local; no external message, ticket attachment, remote push, or deployment.
+
+**RECORD — loop exit:** All identified repo implementation segments are locally complete with required gate evidence. Full launch remains **risk**, not accepted. Next human action is to supply the missing source/decisions and resolve Homewood readiness; separately authorize any publication/deployment of this private work.
+
+---
+
 ## RECORD — referral closure schema 317 (2026-09-05)
 
 | Field | Value |
