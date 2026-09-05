@@ -14,10 +14,10 @@
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`316` (`316_admin_command_center_manager_access.sql`) — **next free migration: `317`** |
+| Repo migrations | `001`–`318` (`318_col_facility_entity_names.sql`; 317–318 local only, not deployed) — **next free migration: `319`** |
 | Remote tracking | `310`–`316` recorded on `manfqmasfqppukpobpld` (2026-08-19). Live Command Center projection is the `315`/`316` definition (manager allowlist). Repair SQL: `scripts/repair-remote-schema-migrations-310-316.sql`. |
 | README "current state" drift | Reconcile `docs/specs/README.md` when the next DDL segment ships; treat **this file + the migrations folder** as current |
-| Pilot | Oakridge ALF live pilot; Homewood Lodge launch workstream in repo (`docs/homewood/`) |
+| Pilot | Homewood Lodge is the current acceptance and controlled launch facility (`docs/homewood/`); preserve historical Oakridge seeded validation evidence. RLS-02 must run before Oakridge goes live. |
 | Production | Netlify auto-publish from `main` only |
 
 ### Track ledger
@@ -33,16 +33,20 @@
 
 ### Standing gates that apply to everything below
 
-1. **A5 does not block PHI infrastructure.** Pro, signed BAA, and PITR are owner-attested. Remaining Track A work is **UAT depth (A3)**, not “unsigned BAA/PITR.”
+1. **A5 historical attestation is retained; current evidence needs reconciliation.** Resolve the reported dashboard/contract discrepancy in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md#a5-evidence-reconciliation--2026-09-05) before using the historical PASS for launch. A3 depth UAT remains open.
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
-3. New DDL takes the next free migration number (currently `317`) and updates this file.
+3. New DDL takes the next free migration number (currently `319`) and updates this file.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
 
 ---
 
 ## 2. Track F — Employee Workspace & Office Suite
 
-**Goal:** replace Google Drive + paper office workflows with an in-platform workspace for management/officers and staff: office tools for daily admin work, a personal "Notion-style" notes + private file space with publish-to-group governance, and kanban task views integrated with the Operations Cadence Engine.
+**Current boundary (2026-09-05):** Office 365 owns email, general calendar, chat, files at rest, and the general document library. Haven owns resident workflows, staff compliance records, survey artifacts, and workflows with escalation: survey binders, policy acknowledgments, meeting minutes that create OCE tasks, front desk records, cash and trust ledgers, and letters generated from resident or staff records. This boundary does not itself move any files or enable an integration.
+
+Haven KB search ingests curated, approved documents from SharePoint or Drive. Preserve source ownership, audience restrictions, review/publish governance, and revocation handling; do not bulk-copy the general library. COL-34 still chooses the general library's destination and source permissions. Office 365 meeting transport, general calendars, and the general contact directory must not be duplicated by new Haven segments; Haven retains workflow minutes, operational deadlines, and facility on-call context.
+
+**Adoption gate:** F3-1, F3-2, and F3-4 are **built and frozen**. No further feature segments there until staff interviews and adoption evidence justify them. Existing privacy, retention, audit, and security obligations still apply.
 
 **Origin:** owner direction, 2026-06-12. Sequenced office-tools-first per owner priority ("tools management/officers can use day to day").
 
@@ -60,7 +64,7 @@
 
 ### F0 — Governance decisions (owner) — **RATIFIED 2026-06-12 (Brian Lewis)**
 
-"Private" space in a PHI platform needs explicit policy first. All five decisions ratified by owner message, 2026-06-12:
+"Private" space in a PHI platform needs explicit policy first. The five decisions were ratified on 2026-06-12. F0-1 through F0-4 remain in force; F0-5 is superseded below:
 
 | # | Decision | Ratified position | Status |
 |---|----------|-------------------|--------|
@@ -68,7 +72,7 @@
 | F0-2 | Audit + retention | Yes — private content gets `haven_capture_audit_log`, soft deletes, defined retention; discoverable in survey/litigation | **RATIFIED** |
 | F0-3 | Offboarding | On offboarding, private content transfers to the employee's manager or moves to a legal-hold archive — never deleted silently | **RATIFIED** |
 | F0-4 | Publish governance | Real approval workflow: draft → submit → facility_admin/DON review → published to team/facility/org — not one-click share | **RATIFIED** |
-| F0-5 | Google Drive cutover date | **2026-07-01** — Drive goes read-only; Haven is system of record | **RATIFIED** |
+| F0-5 | Google Drive cutover date | Historical target **2026-07-01** retired. No automatic Drive read-only change or bulk migration; Records & Data decision COL-34 governs the general library. | **SUPERSEDED 2026-09-05** |
 
 ### F1 — Office daily tools (highest priority)
 
@@ -94,10 +98,10 @@ Mostly new surfaces over existing data — cheap relative to impact.
 
 | Seg | Item | Description | Depends on |
 |-----|------|-------------|------------|
-| F3-1 | **Personal notes/pages** | Private-by-default pages with templates (shift report, incident follow-up, 1:1 notes, meeting notes, family-call log); version history; single-editor lock (no realtime co-editing in v1) | F0-1..F0-3 |
-| F3-2 | **Private file drive** | Per-user Storage prefix, quotas, previews (PDF/image); share action copies/links into team or group space | F0-1..F0-3 |
+| F3-1 | **Personal notes/pages — BUILT / FROZEN** | Private-by-default pages with templates (shift report, incident follow-up, 1:1 notes, meeting notes, family-call log); version history; single-editor lock (no realtime co-editing in v1) | F0-1..F0-3 |
+| F3-2 | **Private file drive — BUILT / FROZEN** | Per-user Storage prefix, quotas, previews (PDF/image); share action copies/links into team or group space | F0-1..F0-3 |
 | F3-3 | **Publish-to-group workflow** | Draft → review → publish into existing KB with audience scoping; published notes enter `ingest` so Grace can cite them | F0-4; KB |
-| F3-4 | **Team spaces** | Middle tier between Private and Org: per-facility, per-department (nursing, dietary, maintenance), ad-hoc project spaces | F3-1..F3-3 |
+| F3-4 | **Team spaces — BUILT / FROZEN** | Middle tier between Private and Org: per-facility, per-department (nursing, dietary, maintenance), ad-hoc project spaces | F3-1..F3-3 |
 | F3-5 | **Personal kanban** | Board rendering the employee's OCE-assigned tasks as cards + personal free-form cards; due dates; "my week" view | OCE |
 | F3-6 | **Shift handoff board** | Per-shift kanban: what 3–11 hands to 11–7; composes with OCE bulk shift-complete | OCE; F3-5 |
 | F3-7 | **Comments + @mentions** | On shared pages/files/cards; notifications via `dispatch-push` | F3-1..F3-4 |
@@ -116,8 +120,8 @@ Mostly new surfaces over existing data — cheap relative to impact.
 
 | Seg | Item | Description | Depends on |
 |-----|------|-------------|------------|
-| F5-1 | **Google Drive import** | Drive API → Storage + KB ingest, ownership mapped to employees/teams | F3-2..F3-4 |
-| F5-2 | **Cutover** | Owner-set hard cutoff date; Drive becomes read-only archive | F5-1; F0-5 |
+| F5-1 | **SharePoint/Drive to KB ingest** | Curated documents only; approved source scope, audience mapping, provenance, update/revocation behavior, and review before KB publication. Existing Drive import code is foundation; SharePoint support is not claimed built. | COL-34; source OAuth; F0-4; integration spec update before code |
+| F5-2 | **Records transition** | No standing cutoff. Owner approves destination and retention, permissions, and reconciliation before any source becomes read-only. Haven is the workflow record; Office 365 or Drive retains the general library. | COL-34; verified records transition plan |
 
 ### Explicitly deprioritized (recorded so it isn't re-litigated)
 
@@ -133,7 +137,7 @@ Mostly new surfaces over existing data — cheap relative to impact.
 3. **F2** documents & communication.
 4. **F3** employee workspace.
 5. **F4** ALF office tools (F4-1 needs vendor pick; F4-2/F4-3 can interleave earlier if owner prioritizes).
-6. **F5** migration + cutover.
+6. **F5** curated KB ingest after COL-34 and an updated integration spec; no bulk cutover.
 
 **Spec files to create when promoted to build:** `35-office-suite.md` (F1/F2/F4) and `36-employee-workspace.md` (F3/F5) — numbered to avoid the `30`–`34` slice-record filenames already in this folder. Until then, this section is the authoritative scope statement for Track F.
 
@@ -141,10 +145,10 @@ Mostly new surfaces over existing data — cheap relative to impact.
 
 ## 3. What's next, in order
 
-1. **Finish remaining Track A UAT** (owner-led: A3 §B–§E depth, A6 waivers as needed). **A5 is closed** — do not block on unsigned BAA/PITR.
-2. **Owner ratifies F0 decisions** (can happen in parallel with #1).
-3. **Write `35-office-suite.md`** and start **F1-1 (unified approvals inbox)** as the first Track F segment.
-4. Continue Track E priorities (Resident Assurance Engine acceptance, Homewood launch) interleaved per owner direction — Track F segments are bounded, so they can alternate.
+1. **Finish remaining Track A UAT** (owner-led: A3 §B–§E depth, A6 waivers as needed). **A5 historical PASS requires the current evidence reconciliation above**, without inventing an unsigned-contract finding.
+2. **Homewood acceptance and adoption:** resolve clinical source data and staff access with Homewood staff, then record depth UAT; run RLS-02 against the current multi-facility target before Oakridge goes live.
+3. **Records & Data:** resolve COL-34, then update the integration spec for curated SharePoint/Drive KB ingest. F0-1 through F0-4 are already ratified; F3-1, F3-2, and F3-4 stay frozen.
+4. **Remaining Track F:** eFax requires a vendor decision. Prioritize adoption of shipped workflow tools before expanding scope.
 
 ---
 
