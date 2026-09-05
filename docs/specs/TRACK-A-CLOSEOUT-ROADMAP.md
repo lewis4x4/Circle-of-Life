@@ -2,7 +2,7 @@
 
 **Purpose:** One place to **finish** Track A without hunting across a dozen files. This is the execution order and evidence map. Authoritative verdicts still live in [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md).
 
-**Last updated:** 2026-08-26
+**Last updated:** 2026-09-05
 
 ---
 
@@ -77,11 +77,11 @@ flowchart LR
 | **Prerequisite** | A1 complete — **met 2026-04-09** |
 | **Procedure** | [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md) |
 | **Record results in** | [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
-| **Done when** | **MET (2026-04-09)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) **PASS** (owner sign-off; **RLS-02** N/A until second facility) |
+| **Done when** | **MET (2026-04-09)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) **PASS** (owner sign-off; **RLS-02** historically deferred; run against the current multi-facility target before Oakridge goes live) |
 
 ---
 
-## A3 — Real-auth pilot UAT
+## A3 — Real-auth Homewood acceptance UAT
 
 | Field | Content |
 |-------|---------|
@@ -89,6 +89,8 @@ flowchart LR
 | **Checklist** | [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) |
 | **Record in** | [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
 | **Done when** | Sections **A–E** (and **F** as applicable) show **PASS** or **WAIVED** with evidence |
+
+**Current acceptance facility:** Homewood Lodge, with Homewood staff. Historical Oakridge seeded tests remain evidence for their original scope only. Rollout order is Homewood, Oakridge, Rising Oaks, Grande Cypress, The Plantation on Summers. Complete cross-facility RLS-02 before Oakridge goes live; existing multi-facility records make that check actionable now.
 
 **Optional local automation (does not replace A3):** with app running, `BASE_URL=… npm run demo:auth-smoke` covers **PH1-A02** / **PH1-A03** only.
 
@@ -108,6 +110,8 @@ flowchart LR
 ---
 
 ## A5 — Pro plan, BAA before PHI, PITR
+
+**2026-09-05 evidence review:** The supplied brief reports a dashboard state that conflicts with the prior attestation. The signed agreement and current settings remain unverified. Reconcile [A5 evidence](./PHASE1-ENV-CONFIRMATION.md#a5-evidence-reconciliation--2026-09-05) before relying on the historical PASS for launch; do not assert an absent or invalid BAA without evidence.
 
 | Field | Content |
 |-------|---------|

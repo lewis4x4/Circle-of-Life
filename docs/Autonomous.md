@@ -4,6 +4,23 @@
 
 ---
 
+## RECORD — whiteboard governance alignment (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `haven-whiteboard-governance-2026-09-05` |
+| **Mission alignment** | **pass** — focuses Haven on COL assisted living operations while retaining role governance, resident safety, human judgment, licensure rules, and auditability. Launch readiness remains **risk** pending Homewood depth UAT and evidence reconciliation. |
+| **Change** | Synchronized five mission sources; Homewood is current acceptance and controlled launch facility; preserved Oakridge historical tests. Defined Office 365 / Haven records boundary, retired the missed Drive cutover date, and froze F3-1/F3-2/F3-4. Recorded the reported A5 discrepancy without asserting an absent contract. |
+| **Validation** | Required gates **PASS**; production build 415 pages, lint, migration sequence, secret checks, and stress suite passed. Initial gate found two high dependency advisories; targeted transitive updates to browserslist and fast-uri cleared the high-severity audit gate. Two moderate and one low advisory remain. Optional Docker replay still fails in the pre-existing auth-schema stub before applying migrations; this is not a remote schema proof. |
+| **Gate** | `test-results/agent-gates/2026-09-05T17-28-55-451Z-haven-whiteboard-governance-2026-09-05.json` |
+| **Boundary** | Private review branch; no publication, production change, external message, or IP agreement. |
+
+## BOOT / FIND — next alignment segment (2026-09-05)
+
+Current main baseline is `1d5a74fa`; governance segment gates passed. The referral closure schema is absent in the repository and a read-only target probe confirms missing closure columns/catalog. Next bounded segment is migration 317 with tenant/party integrity, RLS, audit, types, and a focused SQL regression test. Vocabulary and source-data import remain owner inputs; no guessed seed values.
+
+---
+
 ## RECORD — executive role-gate AppShell (2026-08-27)
 
 | Field | Value |
