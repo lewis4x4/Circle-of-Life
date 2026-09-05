@@ -470,12 +470,20 @@ function facilityDayAfterStartUtc(dateIso: string): string {
   return facilityDatetimeLocalToUtcIso(`${addFacilityCalendarDays(dateIso, 1)}T00:00`);
 }
 
-function inFacilityDateRange(
-  value: string,
-  startIso: string,
-  endIso: string,
-): boolean {
-  return value >= facilityDayStartUtc(startIso) && value < facilityDayAfterStartUtc(endIso);
+function facilityDateRangePredicate(startIso: string, endIso: string): (value: string) => boolean {
+  const startUtc = facilityDayStartUtc(startIso);
+  const endUtc = facilityDayAfterStartUtc(endIso);
+  return (value) => value >= startUtc && value < endUtc;
+}
+
+function groupByFacility<T extends { facility_id: string }>(rows: T[]): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const group = groups.get(row.facility_id);
+    if (group) group.push(row);
+    else groups.set(row.facility_id, [row]);
+  }
+  return groups;
 }
 
 /** Eastern today + Monday-start week used by live standup and draft `week_of`. */
@@ -1292,18 +1300,32 @@ export async function fetchExecutiveStandupLive(
   const outreachRows = outreachRes.data ?? [];
   const referralTourRows = referralToursRes.data ?? [];
 
+  // These bounds are identical for every row in this load, including DST weeks.
+  const inCompletedLastWeek = facilityDateRangePredicate(completedLastWeekStart, completedLastWeekEnd);
+  const inThisWeek = facilityDateRangePredicate(weekOf, thisWeekEnd);
+  const invoicesByFacility = groupByFacility(invoiceRows);
+  const residentsByFacility = groupByFacility(residentRows);
+  const staffByFacility = groupByFacility(staffRows);
+  const timeByFacility = groupByFacility(timeRows);
+  const bedsByFacility = groupByFacility(bedRows);
+  const attendanceByFacility = groupByFacility(attendanceRows);
+  const requisitionsByFacility = groupByFacility(requisitionRows);
+  const admissionCasesByFacility = groupByFacility(admissionCaseRows);
+  const outreachByFacility = groupByFacility(outreachRows);
+  const toursByFacility = groupByFacility(referralTourRows);
+
   const liveFacilities = facilities.map<StandupFacilityLive>((facility) => {
     const metrics = initializeMetricMap();
-    const facilityInvoices = invoiceRows.filter((row) => row.facility_id === facility.id);
-    const facilityResidents = residentRows.filter((row) => row.facility_id === facility.id);
-    const facilityStaff = staffRows.filter((row) => row.facility_id === facility.id);
-    const facilityTime = timeRows.filter((row) => row.facility_id === facility.id);
-    const facilityBeds = bedRows.filter((row) => row.facility_id === facility.id);
-    const facilityAttendance = attendanceRows.filter((row) => row.facility_id === facility.id);
-    const facilityRequisitions = requisitionRows.filter((row) => row.facility_id === facility.id);
-    const facilityAdmissionCases = admissionCaseRows.filter((row) => row.facility_id === facility.id);
-    const facilityOutreach = outreachRows.filter((row) => row.facility_id === facility.id);
-    const facilityTours = referralTourRows.filter((row) => row.facility_id === facility.id);
+    const facilityInvoices = invoicesByFacility.get(facility.id) ?? [];
+    const facilityResidents = residentsByFacility.get(facility.id) ?? [];
+    const facilityStaff = staffByFacility.get(facility.id) ?? [];
+    const facilityTime = timeByFacility.get(facility.id) ?? [];
+    const facilityBeds = bedsByFacility.get(facility.id) ?? [];
+    const facilityAttendance = attendanceByFacility.get(facility.id) ?? [];
+    const facilityRequisitions = requisitionsByFacility.get(facility.id) ?? [];
+    const facilityAdmissionCases = admissionCasesByFacility.get(facility.id) ?? [];
+    const facilityOutreach = outreachByFacility.get(facility.id) ?? [];
+    const facilityTours = toursByFacility.get(facility.id) ?? [];
 
     const currentArCents = sum(facilityInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
     const overdueArCents = sum(
@@ -1328,7 +1350,7 @@ export async function fetchExecutiveStandupLive(
       return row.discharge_target_date >= weekOf && row.discharge_target_date <= thisWeekEnd;
     }).length;
     const calloutsLastWeek = facilityAttendance.filter((row) => {
-      return inFacilityDateRange(row.occurred_at, completedLastWeekStart, completedLastWeekEnd)
+      return inCompletedLastWeek(row.occurred_at)
         && ["callout", "late_callout", "no_show", "left_early"].includes(row.event_type);
     }).length;
     const terminationsLastWeek = facilityStaff.filter((row) => {
@@ -1338,22 +1360,22 @@ export async function fetchExecutiveStandupLive(
     const currentOpenPositions = facilityRequisitions.filter((row) => ["open", "interviewing", "offered"].includes(row.status)).length;
     const overtimeHours = Math.round(
       facilityTime
-        .filter((row) => inFacilityDateRange(row.clock_in, completedLastWeekStart, completedLastWeekEnd))
+        .filter((row) => inCompletedLastWeek(row.clock_in))
         .reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
     ) / 100;
     const toursExpected = facilityTours.filter((row) => {
       if (!row.tour_scheduled_for || ["lost", "merged"].includes(row.status)) return false;
-      return inFacilityDateRange(row.tour_scheduled_for, weekOf, thisWeekEnd);
+      return inThisWeek(row.tour_scheduled_for);
     }).length;
     const providerActivitiesExpected = facilityOutreach.filter((row) => {
       if (row.status === "cancelled" || row.activity_type !== "home_health_provider") return false;
       return row.performed_for_week === weekOf
-        || (row.scheduled_for != null && inFacilityDateRange(row.scheduled_for, weekOf, thisWeekEnd));
+        || (row.scheduled_for != null && inThisWeek(row.scheduled_for));
     }).length;
     const outreachEngagements = facilityOutreach.filter((row) => {
       if (row.status === "cancelled" || row.activity_type === "home_health_provider") return false;
       return row.performed_for_week === weekOf
-        || (row.scheduled_for != null && inFacilityDateRange(row.scheduled_for, weekOf, thisWeekEnd));
+        || (row.scheduled_for != null && inThisWeek(row.scheduled_for));
     }).length;
 
     const currentMonthInvoices = facilityInvoices.filter((row) => row.period_start?.startsWith(monthYm));

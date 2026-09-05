@@ -1,0 +1,75 @@
+{
+  "segment": "runtime-performance-trim",
+  "baseCommit": "71675f89",
+  "missionAlignment": "pass",
+  "scope": [
+    "src/lib/executive/standup.ts",
+    "src/lib/residents/roster-format.ts"
+  ],
+  "measurementMethod": "One warmup followed by five timed runs; median; Node 26.7.0, local synthetic fixtures and mocked read-only Supabase queries; no network or browser latency measured.",
+  "measurements": [
+    {
+      "benchmark": "standup-29400-rows",
+      "beforeMedianMs": 292.9440420000001,
+      "afterMedianMs": 3.4315409999999247,
+      "speedup": 85.36807282792381
+    },
+    {
+      "benchmark": "roster-1000-timestamps",
+      "beforeMedianMs": 191.643958,
+      "afterMedianMs": 12.120917000000077,
+      "speedup": 15.81101149360224
+    }
+  ],
+  "exactOutputComparisons": 8120,
+  "exactOutputComparisonStatus": "passed",
+  "focusedTestsWithBenchmarks": 43,
+  "typecheck": "passed",
+  "fullSuite": {
+    "passed": 2832,
+    "failed": 8,
+    "skipped": 2
+  },
+  "releaseStatus": "owner authorized commit and merge with documented existing gate failures",
+  "baselineSuite": {
+    "baseCommit": "71675f89",
+    "passed": 2811,
+    "failed": 9,
+    "currentFailuresAlsoOnBaseline": 8,
+    "newFailures": [],
+    "baselineOnlyFailures": [
+      " FAIL  src/app/(admin)/admin/compliance/audit-export/page.test.tsx > AuditLogExportPage auth hydration > surfaces real export failures after auth resolves"
+    ]
+  },
+  "preExistingFailures": [
+    " FAIL  src/app/(admin)/admin/AdminLiveNoSeedFallback.test.ts > admin live surfaces seeded fallback removal > keeps explicit empty live states instead of sample roster or incident rows",
+    " FAIL  src/app/(admin)/admin/NoSeedCopyNotices.test.ts > app-visible no-seed copy notices > keeps neutral live-source fallback wording",
+    " FAIL  src/app/(admin)/admin/rounding/RoundingNoSeedFallback.test.ts > rounding pages seeded fallback removal > keeps explicit live-source empty states instead of seeded fallback rows",
+    " FAIL  src/app/api/admin/executive/refresh/route.test.ts > /api/admin/executive/refresh > returns 503 when risk nightly scorer secret is missing",
+    " FAIL  src/lib/flags.test.ts > UI-V2 flags > S11 W5 settings routes are registered as exact matches",
+    " FAIL  src/lib/flags.test.ts > UI-V2 flags > rewrites every S11 settings route",
+    " FAIL  src/lib/office/survey-binder.test.ts > binderEvidenceDateWindow > uses the Eastern calendar year for in-services YTD, not UTC getFullYear",
+    " FAIL  src/lib/rounding/rounding-plans-display-copy.test.ts > formatRoundingPlanDateDisplay > formats posted ISO dates with short month and numeric day/year"
+  ],
+  "productionBuild": "passed",
+  "repositoryLint": "passed",
+  "finalFocusedTests": {
+    "passed": 42,
+    "skippedOptInBenchmarks": 2
+  },
+  "gateArtifact": "test-results/agent-gates/2026-09-05T18-00-09-931Z-runtime-performance-trim.json",
+  "gateVerdict": "FAIL",
+  "blockingChecks": [
+    "hygiene.npm-audit"
+  ],
+  "ownerAuthorization": {
+    "date": "2026-09-05",
+    "instruction": "Merge and Commit",
+    "gateVerdictUnchanged": true
+  },
+  "integrationBaseCommit": "1d5a74fa",
+  "integrationFocusedTests": {
+    "passed": 42,
+    "skippedOptInBenchmarks": 2
+  }
+}
