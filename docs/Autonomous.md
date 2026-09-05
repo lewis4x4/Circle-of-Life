@@ -4,6 +4,45 @@
 
 ---
 
+## RECORD — performance follow-through integration (2026-09-05)
+
+- **Mission alignment: pass.** Incorporated current main `bae56e7b`; preserved both logs and shared scanner fix.
+- **Validation:** full suite 2,848 passed / two opt-in benchmarks skipped; all 321 migrations replay; audit zero; build, lint, design and axe pass. Bundle caps pass at 435.9 / 442.4 kB gzip for admin / executive.
+- **Gate:** `test-results/agent-gates/2026-09-05T18-28-23-712Z-performance-followthrough-integration.json` — **PASS**.
+
+---
+
+## RECORD — executive trend parallel reads (2026-09-05)
+
+- **Segment:** `executive-trend-parallel`. **Mission alignment: pass** — shorten operator waits while preserving scoped trend data and scoring.
+- **Change:** five independent trend reads start together; query semantics, aggregation, and error priority are preserved. Total request count stays five.
+- **Validation:** five focused tests; full suite 2,848 passed / two opt-in benchmarks skipped. Deterministic simulated delay 105 ms serial versus 25 ms parallel. Signed-in production executive/resident/staff content witnessed before deployment; no measured production speedup claimed.
+- **Gate:** `test-results/agent-gates/2026-09-05T18-23-50-266Z-executive-trend-parallel.json` — **PASS**.
+
+---
+
+## RECORD — regression baseline repair (2026-09-05)
+
+- **Segment:** `regression-baseline-repair`. **Mission alignment: pass** — restore reliable validation and correct facility calendar labels without changing clinical records.
+- **Change:** fix rounding date-only timezone shifts and reuse formatters; align stale assertions with existing contracts; exclude non-shipped test fixtures from the UI schema scanner.
+- **Validation:** 2,843 tests passed, two opt-in benchmarks skipped; 26 date/survey tests also pass in UTC. Production-fixture scanner rejection verified. UI gate passes build, lint, audit, migrations, design and axe; local UI checks cover the unauthenticated boundary.
+- **Gate:** `test-results/agent-gates/2026-09-05T18-18-22-943Z-regression-baseline-repair.json` — **PASS**.
+
+---
+
+## RECORD — dependency audit refresh (2026-09-05)
+
+| Field | Value |
+|-------|-------|
+| **Segment** | `dependency-audit-refresh` |
+| **Mission alignment** | **pass** — clear vulnerable transitive dependencies without changing the application dependency ranges or clinical behavior. |
+| **Change** | Compatible npm audit remediation in `package-lock.json`: five findings cleared, 13 transitive updates and one required transitive type package. |
+| **Environment repair** | Local `pgvector/pgvector:pg17` incorrectly referenced the Supabase Postgres image. Pulled the official pgvector image; no database permissions or production schema were changed. |
+| **Validation** | npm audit: zero findings. All 319 SQL migrations and the three SQL posture checks replay successfully. Build, lint, secrets, and stress pass. |
+| **Gate** | `test-results/agent-gates/2026-09-05T18-08-03-777Z-dependency-audit-refresh.json` — **PASS**. |
+
+---
+
 ## BOOT / FIND — executive fallback import budget (2026-09-05)
 
 **BOOT:** Owner authorized Git publication and web deployment after the local alignment closeout. PR #447 exposed a release-blocking executive route bundle over the unchanged 450 kB gzip cap (CI 469.3 kB; local 468.8 kB).

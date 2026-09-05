@@ -98,12 +98,18 @@ describe("/api/admin/executive/refresh", () => {
   it("returns 503 when risk nightly scorer secret is missing", async () => {
     delete process.env.RISK_NIGHTLY_SCORER_SECRET;
 
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
     const response = await POST();
     const payload = await response.json();
 
     expect(response.status).toBe(503);
-    expect(payload.ok).toBe(false);
-    expect(payload.missing).toContain("RISK_NIGHTLY_SCORER_SECRET");
+    expect(payload).toEqual({ ok: false, error: "Executive refresh is not configured on this server." });
+    expect(JSON.stringify(payload)).not.toContain("RISK_NIGHTLY_SCORER_SECRET");
+    expect(JSON.stringify(consoleError.mock.calls)).toContain("RISK_NIGHTLY_SCORER_SECRET");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns all three function statuses on success and sends notify false to risk scorer", async () => {
