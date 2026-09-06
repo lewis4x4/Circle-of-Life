@@ -8,7 +8,7 @@
       "change": "Database trigger blocks direct identity/access profile changes; harmless self edits retained, insert/delete privileges revoked.",
       "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
       "evidence": [
-        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/migrations/317_review_access_boundaries.sql",
         "src/lib/admin/api-auth.ts",
         "supabase/tests/review_access_boundaries.sql"
       ]
@@ -19,7 +19,7 @@
       "change": "Direct grant writes revoked from browser roles; existing service API hierarchy and facility checks remain sole write entry.",
       "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
       "evidence": [
-        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/migrations/317_review_access_boundaries.sql",
         "src/app/api/admin/users/[id]/facility-access/route.ts",
         "supabase/tests/review_access_boundaries.sql"
       ]
@@ -40,8 +40,8 @@
       "change": "Database signature guard rejects forged incoming/outgoing identities; verified counts command locks all rows, signs and audits atomically.",
       "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
       "evidence": [
-        "supabase/migrations/20260906140828_review_access_boundaries.sql",
-        "supabase/migrations/20260906155657_review_med_tech_controlled_count_access.sql",
+        "supabase/migrations/317_review_access_boundaries.sql",
+        "supabase/migrations/323_review_med_tech_controlled_count_access.sql",
         "src/app/api/controlled-substance/verify-co-sign/route.ts",
         "src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts",
         "supabase/tests/review_access_boundaries.sql",
@@ -92,7 +92,7 @@
       "change": "Grace domain insert, audit trigger, run step and receipt commit in one RPC transaction. Same-key retry reconciles new pending receipts; legacy uncertain runs explicitly require reconciliation.",
       "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
       "evidence": [
-        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/migrations/317_review_access_boundaries.sql",
         "supabase/functions/grace-execute-flow-step/index.ts",
         "src/lib/admin/grace-transaction.test.ts",
         "supabase/tests/review_access_boundaries.sql"
@@ -104,7 +104,7 @@
       "change": "Atomic Undo checks active actor, organization, manager/owner authorization, target facility membership and saved record version, then commits compensation and run status together.",
       "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
       "evidence": [
-        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/migrations/317_review_access_boundaries.sql",
         "supabase/functions/grace-undo-flow-run/index.ts",
         "supabase/tests/review_access_boundaries.sql"
       ]

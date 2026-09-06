@@ -5,7 +5,7 @@
     "evidence": [
       "src/lib/payroll/payroll-export-csv.ts",
       "src/app/(admin)/payroll/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "src/lib/payroll/payroll-export-csv.test.ts"
     ],
     "notes": "Database computes actual hours on every punch write, invalidates approval on changed timestamps, rejects incomplete approval/import/export. Total-hours handoff works; regular/overtime split requires explicit payroll review. Existing pre-migration approved null-hour punches must be reopened/approved; no historical payroll was rewritten.",
@@ -18,7 +18,7 @@
     "evidence": [
       "src/app/(admin)/finance/journal-entries/new/page.tsx",
       "src/app/(admin)/finance/journal-entries/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "One invoker RPC validates scopes, locks draft, checks expected updated_at, updates header and soft-deletes/replaces lines in one transaction. Stable creation ID prevents duplicate creation; uncertain retries surface already-saved conflict. SQL rollback/history fixture passed on isolated PostgreSQL 17.9.",
@@ -45,7 +45,7 @@
       "src/lib/transport/transport-request-validation.ts",
       "src/lib/transport/transport-request-validation.test.ts",
       "src/app/(admin)/transportation/requests/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "Required license is checked independently through appointment day; medical card does not substitute. Database trigger checks direct requests too. Category-specific medical-card requirements are not invented.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -80,7 +80,7 @@
     "evidence": [
       "src/app/(admin)/training/inservice/new/page.tsx",
       "src/app/(admin)/training/completions/new/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "Session + attendance + catalog completions save atomically. Completion attachment errors retain one stable completion ID, preserve uploaded evidence, explain saved state and allow attachment retry. Saved fields freeze during attachment recovery. Live storage policy/upload verification remains required.",
@@ -93,7 +93,7 @@
     "evidence": [
       "src/app/api/admin/workflows/collection-activities/route.ts",
       "src/app/(admin)/billing/collections/new/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "Collection event is inserted by primary-row trigger in same transaction; stable request ID supports truthful identical retry and rejects mismatched payload reuse.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -106,7 +106,7 @@
       "src/app/(admin)/payroll/[id]/page.tsx",
       "src/lib/supabase/read-all-pages.ts",
       "src/lib/supabase/read-all-pages.test.ts",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "All import/source lists use reconciled exact-count pagination, advancing by actual page size. Each export fetches a fresh server JSON snapshot of all authorized batch lines, validates hours and includes row count in filename.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -127,7 +127,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/finance/journal-entries/new/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "Entity switch clears dependent accounts/facility/lines; transaction validates entity/account/facility scope; direct line writes also validate account/entity consistency.",
@@ -139,7 +139,7 @@
     "status": "mitigated",
     "evidence": [
       "src/app/(admin)/schedules/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "docs/specs/11-staff-management.md",
       "supabase/migrations/251_staffing_ratio_threshold_org_facility_seed.sql",
       "supabase/functions/oce-staffing-adequacy-computer/index.ts"
@@ -156,7 +156,7 @@
       "src/app/(admin)/admin/approvals/page.tsx",
       "src/app/(caregiver)/caregiver/shift-swaps/page.tsx",
       "src/app/(caregiver)/caregiver/schedules/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "Both employees confirm as their own signed-in identities; manager records current credential/hours/rest/coverage review. Approval updates assignments atomically with actor and confirmation audit fields. Same-role/active/current recorded credentials and conservative adjacent-shift conflicts enforced. Full automatic facility policy validation is unavailable; manager review remains explicit. Browser real-role confirmation flow pending.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -170,7 +170,7 @@
       "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
       "src/components/dietary/AdminDietaryPageClient.tsx",
       "src/lib/dietary/med-fluid-diet-hints.ts",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "Admin writes numeric canonical IDDSI levels, explicit inactive draft and canonical allergies. Database synchronizes legacy aliases on writes; clinician-reviewed activation transaction supersedes prior order. Numeric labels and medication hints fixed. Existing contradictory historical order fields were not reclassified; clinical reconciliation before rollout is required.",
@@ -205,7 +205,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/cash/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "One idempotent command locks account; insert trigger calculates authoritative balance and updates account in same transaction. Rejects overdrafts, direct balance changes, cross-facility resident links and identity reuse with altered payload. Failure keeps stable request ID; no existing money records rewritten.",

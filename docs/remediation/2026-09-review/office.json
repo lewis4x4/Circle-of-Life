@@ -5,7 +5,7 @@
     "evidence": [
       "src/app/(admin)/admin/meetings/[id]/page.tsx",
       "src/lib/office/meetings.ts",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql",
       "src/app/api/admin/meetings/[id]/actions/route.ts",
       "src/app/api/admin/meetings/[id]/actions/route.test.ts"
@@ -19,7 +19,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/meetings/[id]/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql",
       "src/app/api/admin/meetings/[id]/actions/route.ts",
       "src/app/api/admin/meetings/[id]/actions/route.test.ts"
@@ -47,7 +47,7 @@
       "src/app/(med-tech)/med-tech/acknowledgments/page.tsx",
       "src/app/(dietary)/dietary/acknowledgments/page.tsx",
       "src/lib/auth/caregiver-route-access.ts",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Existing required-reading contract is reachable in each floor role shell without admin routes. Issued content is snapshotted, role scope immutable, and signatures store the issued version and server-derived signer identity. Native authenticated caregiver reads/signs exact content; cannot read another owner file or forge role. Older requirements lack issuance snapshots and must be reissued, without rewriting prior signatures.",
@@ -83,7 +83,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/teams/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Team and first-lead membership use one idempotent transactional command. Failure injection verifies no orphan space; failed saves preserve form.",
@@ -95,7 +95,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/workspace/[id]/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Owner-only expected-version RPC atomically writes history and current page. Native stale version and failure injection checks preserve prior state and prevent orphan version.",
@@ -118,7 +118,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/files/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Move to Trash soft-deletes metadata without deleting bytes; owner-only Trash view and Restore preserve reversibility. Native authenticated owner restore and other-user denial pass. Permanent disposition awaits approved retention process; no retention duration invented.",

@@ -10,7 +10,7 @@
   },
   "gate": {
     "verdict": "PASS",
-    "artifact": "test-results/agent-gates/2026-09-06T16-43-22-404Z-REVIEW-20260906.json",
+    "artifact": "test-results/agent-gates/2026-09-06T17-13-56-536Z-REVIEW-MIGRATION-ORDER.json",
     "checks": [
       {
         "id": "hygiene.env-example",
@@ -111,5 +111,7 @@
     "C25"
   ],
   "stagedSecretScan": "PASS: gitleaks git --pre-commit --staged --redact",
-  "changedFileCount": 320
+  "changedFileCount": 320,
+  "migrationVersions": "317\u2013323; seven new undeployed migrations continue the numbered chain",
+  "migrationOrdering": "Ordinary filename ordering; no special tail ordering"
 }

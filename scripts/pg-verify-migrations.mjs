@@ -30,14 +30,9 @@ function docker(args, opts = {}) {
 }
 
 function orderedMigrationFiles() {
-  const historicalTimestamps = new Set([
-    "20260514180000_staff_role_enum_values.sql",
-    "20260514180707_homewood_round2_employee_seed.sql",
-    "20260514203302_homewood_round2_ar_intake_may_2026.sql",
-  ]);
-  const isNewTimestamp = (file) => /^\d{14}_/.test(file) && !historicalTimestamps.has(file);
-  return fs.readdirSync(migrationsDir).filter((file) => file.endsWith(".sql"))
-    .sort((a, b) => Number(isNewTimestamp(a)) - Number(isNewTimestamp(b)) || a.localeCompare(b));
+  // Match ordinary filename ordering; new migrations continue the legacy
+  // numbered chain after316 rather than interleaving timestamps with it.
+  return fs.readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort();
 }
 
 function nativeVerification(socket) {

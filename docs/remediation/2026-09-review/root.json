@@ -113,7 +113,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -130,7 +130,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -147,7 +147,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -164,7 +164,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],

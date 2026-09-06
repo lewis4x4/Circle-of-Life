@@ -6,7 +6,7 @@
     "line": 7,
     "status": "verified",
     "evidence": [
-      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/migrations/317_review_access_boundaries.sql",
       "src/lib/admin/api-auth.ts",
       "supabase/tests/review_access_boundaries.sql"
     ],
@@ -22,7 +22,7 @@
     "line": 15,
     "status": "verified",
     "evidence": [
-      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/migrations/317_review_access_boundaries.sql",
       "src/app/api/admin/users/[id]/facility-access/route.ts",
       "supabase/tests/review_access_boundaries.sql"
     ],
@@ -53,8 +53,8 @@
     "line": 31,
     "status": "verified",
     "evidence": [
-      "supabase/migrations/20260906140828_review_access_boundaries.sql",
-      "supabase/migrations/20260906155657_review_med_tech_controlled_count_access.sql",
+      "supabase/migrations/317_review_access_boundaries.sql",
+      "supabase/migrations/323_review_med_tech_controlled_count_access.sql",
       "src/app/api/controlled-substance/verify-co-sign/route.ts",
       "src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts",
       "supabase/tests/review_access_boundaries.sql",
@@ -191,7 +191,7 @@
     "line": 93,
     "status": "verified",
     "evidence": [
-      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/migrations/317_review_access_boundaries.sql",
       "supabase/functions/grace-execute-flow-step/index.ts",
       "src/lib/admin/grace-transaction.test.ts",
       "supabase/tests/review_access_boundaries.sql"
@@ -208,7 +208,7 @@
     "line": 101,
     "status": "verified",
     "evidence": [
-      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/migrations/317_review_access_boundaries.sql",
       "supabase/functions/grace-undo-flow-run/index.ts",
       "supabase/tests/review_access_boundaries.sql"
     ],
@@ -348,7 +348,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -369,7 +369,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -390,7 +390,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -411,7 +411,7 @@
       "src/hooks/dietary/useDietaryToday.ts",
       "src/app/api/dietary/tray-pass/route.ts",
       "src/app/api/dietary/temperature/route.ts",
-      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "supabase/migrations/320_dietary_verified_actions.sql",
       "src/components/dietary/PassModal.test.tsx",
       "supabase/tests/review_dietary_integrity.sql"
     ],
@@ -667,7 +667,7 @@
     "evidence": [
       "src/app/(admin)/reports/history/page.tsx",
       "src/app/(admin)/reports/history/[id]/page.tsx",
-      "supabase/migrations/20260906142243_review_report_outputs.sql",
+      "supabase/migrations/321_review_report_outputs.sql",
       "supabase/tests/review_report_outputs.sql"
     ],
     "notes": "Report snapshots retain full outputs and provenance; History links to saved result details, CSV, and Run again. Older unsaved reports are labeled unavailable instead of reconstructed.",
@@ -817,7 +817,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(caregiver)/meds/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "PRN remains available after a dose, shows last administration and order restrictions, captures indication and separate actual-time records. Exact request receipts prevent duplicate retries. Witness-required orders use the witnessed med-tech pass.",
@@ -880,7 +880,7 @@
     "evidence": [
       "src/lib/admissions/direct-intake-schema.ts",
       "src/app/(admin)/admin/admissions/new/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Identifiable intake drafts allow missing DOB, gender and source without fabricated answers. Bed preference is retained without implying reservation; arrival enforces complete demographics.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -911,7 +911,7 @@
     "evidence": [
       "src/components/med-tech/MedPassFlow/MedPassModal.tsx",
       "src/components/med-tech/MedPassFlow/MedPassModal.test.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Replaced simulation with actual MAR/pass/tape transaction and durable receipt. Human safety confirmation, live hold/order checks and independent authenticated witness signatures replace fabricated scans, vitals and signatures. Automatic scanning/voice/geofence verification are not claimed.",
@@ -959,7 +959,7 @@
       "src/lib/caregiver/clinical-writes.ts",
       "src/lib/caregiver/clinical-writes.test.ts",
       "src/app/(caregiver)/resident/[id]/log/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Vital writes append timestamped observations and atomically patch only supplied daily summary fields. The shift log displays the measurement timeline.",
@@ -995,7 +995,7 @@
       "src/components/medications/MedicationOrderEditor.tsx",
       "src/app/(admin)/admin/medications/verbal-orders/[id]/page.tsx",
       "src/components/medications/MedicationErrorReview.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql",
       "src/components/medications/clinical-authoring.test.tsx"
     ],
@@ -1047,7 +1047,7 @@
     "evidence": [
       "src/app/(admin)/admin/admissions/new/page.tsx",
       "src/app/api/admin/workflows/admission-cases/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Created resident identity survives partial intake failure. Case creation uses a stable request identity, exact payload hash and transaction lock; retries cannot create another resident/case or silently submit an existing draft.",
@@ -1064,7 +1064,7 @@
     "evidence": [
       "src/app/(admin)/admin/admissions/[id]/page.tsx",
       "src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "A separate actual-arrival action validates current readiness and atomically activates resident census and bed occupancy. Bed-reserved transitions also hold the actual bed transactionally; intake creation only records a preference.",
@@ -1081,7 +1081,7 @@
     "evidence": [
       "src/components/care-plans/CarePlanAuthor.tsx",
       "src/app/(admin)/residents/[id]/care-plan/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql",
       "src/components/medications/clinical-authoring.test.tsx"
     ],
@@ -1099,7 +1099,7 @@
     "evidence": [
       "src/components/discharge/DischargeMedicationReview.tsx",
       "src/app/(admin)/admin/discharge/[id]/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Medication reconciliation captures current medications and explicit continue/change/stop decisions. Pharmacist evidence is recorded separately without impersonating the current operator; database completion requires evidence and complete decisions.",
@@ -1116,7 +1116,7 @@
     "evidence": [
       "src/app/(admin)/admin/infection-control/new/page.tsx",
       "src/lib/infection-control/outbreak-detection.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Surveillance saves navigate to its durable record even if evaluation fails. Outbreak detection serializes facility/group linkage and derives distinct case totals atomically; retries cannot inflate outbreaks.",
@@ -1133,7 +1133,7 @@
     "evidence": [
       "src/app/(admin)/admin/infection-control/[id]/page.tsx",
       "src/app/(admin)/admin/infection-control/outbreaks/[id]/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Surveillance shows resident/symptom context and supports confirmation/resolution with evidence. Outbreak actions support ownership and signed completion; containment/closure requires clinical evidence and closure rejects unfinished cases/actions.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -1249,7 +1249,7 @@
       "src/lib/admissions/form-1823-readiness.test.ts",
       "src/lib/workflows/workflow-events.ts",
       "src/app/api/admin/workflows/admission-cases/[id]/form-1823/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Form1823 readiness fails closed on source errors and requires the latest received record, current validity, physician and evidence reference/physical-report verification. UI and arrival checks enforce the same meaning.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -1313,7 +1313,7 @@
       "src/app/api/admin/operations/tasks/[id]/complete/route.ts",
       "src/app/api/admin/operations/tasks/bulk-complete/route.ts",
       "src/app/(admin)/admin/operations/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Dual-sign operations record the first signature as awaiting independent verification. Atomic completion and bulk outcomes distinguish pending verification; raw client writes cannot forge signatures or disable the requirement.",
@@ -1330,7 +1330,7 @@
     "evidence": [
       "src/app/(admin)/admin/operations/page.tsx",
       "src/app/api/admin/operations/tasks/[id]/start/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Operation actions have in-flight protection and visible errors; start uses state-conditioned updates and completion is locked/idempotent.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -1376,7 +1376,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/api/admin/operations/templates/[id]/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Template publication locks the prior version and creates/retires versions atomically; competing publication returns a conflict instead of leaving two active versions.",
@@ -1393,7 +1393,7 @@
     "evidence": [
       "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx",
       "src/app/(admin)/admin/compliance/emergency-preparedness/page.test.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Emergency evidence and next-due state commit together; stable requests support exact retries. Maintenance explicitly distinguishes partial work from ticket resolution and commits evidence/ticket status together.",
@@ -1424,7 +1424,7 @@
     "evidence": [
       "src/lib/payroll/payroll-export-csv.ts",
       "src/app/(admin)/payroll/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "src/lib/payroll/payroll-export-csv.test.ts"
     ],
     "notes": "Database computes actual hours on every punch write, invalidates approval on changed timestamps, rejects incomplete approval/import/export. Total-hours handoff works; regular/overtime split requires explicit payroll review. Existing pre-migration approved null-hour punches must be reopened/approved; no historical payroll was rewritten.",
@@ -1441,7 +1441,7 @@
     "evidence": [
       "src/app/(admin)/finance/journal-entries/new/page.tsx",
       "src/app/(admin)/finance/journal-entries/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "One invoker RPC validates scopes, locks draft, checks expected updated_at, updates header and soft-deletes/replaces lines in one transaction. Stable creation ID prevents duplicate creation; uncertain retries surface already-saved conflict. SQL rollback/history fixture passed on isolated PostgreSQL 17.9.",
@@ -1476,7 +1476,7 @@
       "src/lib/transport/transport-request-validation.ts",
       "src/lib/transport/transport-request-validation.test.ts",
       "src/app/(admin)/transportation/requests/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "Required license is checked independently through appointment day; medical card does not substitute. Database trigger checks direct requests too. Category-specific medical-card requirements are not invented.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -1523,7 +1523,7 @@
     "evidence": [
       "src/app/(admin)/training/inservice/new/page.tsx",
       "src/app/(admin)/training/completions/new/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "Session + attendance + catalog completions save atomically. Completion attachment errors retain one stable completion ID, preserve uploaded evidence, explain saved state and allow attachment retry. Saved fields freeze during attachment recovery. Live storage policy/upload verification remains required.",
@@ -1540,7 +1540,7 @@
     "evidence": [
       "src/app/api/admin/workflows/collection-activities/route.ts",
       "src/app/(admin)/billing/collections/new/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "Collection event is inserted by primary-row trigger in same transaction; stable request ID supports truthful identical retry and rejects mismatched payload reuse.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -1557,7 +1557,7 @@
       "src/app/(admin)/payroll/[id]/page.tsx",
       "src/lib/supabase/read-all-pages.ts",
       "src/lib/supabase/read-all-pages.test.ts",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "All import/source lists use reconciled exact-count pagination, advancing by actual page size. Each export fetches a fresh server JSON snapshot of all authorized batch lines, validates hours and includes row count in filename.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -1586,7 +1586,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/finance/journal-entries/new/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "Entity switch clears dependent accounts/facility/lines; transaction validates entity/account/facility scope; direct line writes also validate account/entity consistency.",
@@ -1602,7 +1602,7 @@
     "status": "mitigated",
     "evidence": [
       "src/app/(admin)/schedules/[id]/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "docs/specs/11-staff-management.md",
       "supabase/migrations/251_staffing_ratio_threshold_org_facility_seed.sql",
       "supabase/functions/oce-staffing-adequacy-computer/index.ts"
@@ -1623,7 +1623,7 @@
       "src/app/(admin)/admin/approvals/page.tsx",
       "src/app/(caregiver)/caregiver/shift-swaps/page.tsx",
       "src/app/(caregiver)/caregiver/schedules/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql"
+      "supabase/migrations/318_september_business_integrity.sql"
     ],
     "notes": "Both employees confirm as their own signed-in identities; manager records current credential/hours/rest/coverage review. Approval updates assignments atomically with actor and confirmation audit fields. Same-role/active/current recorded credentials and conservative adjacent-shift conflicts enforced. Full automatic facility policy validation is unavailable; manager review remains explicit. Browser real-role confirmation flow pending.",
     "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
@@ -1641,7 +1641,7 @@
       "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
       "src/components/dietary/AdminDietaryPageClient.tsx",
       "src/lib/dietary/med-fluid-diet-hints.ts",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "Admin writes numeric canonical IDDSI levels, explicit inactive draft and canonical allergies. Database synchronizes legacy aliases on writes; clinician-reviewed activation transaction supersedes prior order. Numeric labels and medication hints fixed. Existing contradictory historical order fields were not reclassified; clinical reconciliation before rollout is required.",
@@ -1688,7 +1688,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/cash/page.tsx",
-      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/migrations/318_september_business_integrity.sql",
       "supabase/tests/review_business_integrity.sql"
     ],
     "notes": "One idempotent command locks account; insert trigger calculates authoritative balance and updates account in same transaction. Rejects overdrafts, direct balance changes, cross-facility resident links and identity reuse with altered payload. Failure keeps stable request ID; no existing money records rewritten.",
@@ -1705,7 +1705,7 @@
     "evidence": [
       "src/app/(admin)/admin/meetings/[id]/page.tsx",
       "src/lib/office/meetings.ts",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql",
       "src/app/api/admin/meetings/[id]/actions/route.ts",
       "src/app/api/admin/meetings/[id]/actions/route.test.ts"
@@ -1723,7 +1723,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/meetings/[id]/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql",
       "src/app/api/admin/meetings/[id]/actions/route.ts",
       "src/app/api/admin/meetings/[id]/actions/route.test.ts"
@@ -1759,7 +1759,7 @@
       "src/app/(med-tech)/med-tech/acknowledgments/page.tsx",
       "src/app/(dietary)/dietary/acknowledgments/page.tsx",
       "src/lib/auth/caregiver-route-access.ts",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Existing required-reading contract is reachable in each floor role shell without admin routes. Issued content is snapshotted, role scope immutable, and signatures store the issued version and server-derived signer identity. Native authenticated caregiver reads/signs exact content; cannot read another owner file or forge role. Older requirements lack issuance snapshots and must be reissued, without rewriting prior signatures.",
@@ -1825,7 +1825,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/teams/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Team and first-lead membership use one idempotent transactional command. Failure injection verifies no orphan space; failed saves preserve form.",
@@ -1841,7 +1841,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/workspace/[id]/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Owner-only expected-version RPC atomically writes history and current page. Native stale version and failure injection checks preserve prior state and prevent orphan version.",
@@ -1872,7 +1872,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(admin)/admin/files/page.tsx",
-      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/migrations/322_september_office_integrity.sql",
       "supabase/tests/review_office_integrity.sql"
     ],
     "notes": "Move to Trash soft-deletes metadata without deleting bytes; owner-only Trash view and Restore preserve reversibility. Native authenticated owner restore and other-user denial pass. Permanent disposition awaits approved retention process; no retention duration invented.",
@@ -1888,7 +1888,7 @@
     "status": "implemented",
     "evidence": [
       "src/lib/caregiver/clinical-writes.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Duplicate of C11: partial vital entries preserve earlier values and individual timestamped measurements.",
@@ -1920,7 +1920,7 @@
       "src/lib/caregiver/clinical-writes.ts",
       "src/app/(caregiver)/resident/[id]/page.tsx",
       "src/app/(caregiver)/resident/[id]/log/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Both quick-note entry points use one atomic database append operation instead of browser read/merge/replace.",
@@ -1954,7 +1954,7 @@
     "status": "implemented",
     "evidence": [
       "src/lib/compliance-dashboard-snapshot.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "RLS-preserving latest-per-resident/type aggregate counts assessments server-side, eliminating API history-cap truncation.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",

@@ -8,7 +8,7 @@ Scope: bounded recheck of the clinical safety challenge and new clinical authori
 
 | Challenge | Source correction verified | Evidence |
 |---|---|---|
-| Caregiver/med-tech duplicate scheduled doses | Both commands use the same medication/epoch advisory lock, reuse existing scheduled records, and reject resolved doses. A common eMAR trigger binds order scope, actor, prescribed slots, holds and witnesses. Direct reopening or deleting resolved records is rejected. | `20260906140928_clinical_review_integrity.sql`; `review_clinical_integrity.sql` |
+| Caregiver/med-tech duplicate scheduled doses | Both commands use the same medication/epoch advisory lock, reuse existing scheduled records, and reject resolved doses. A common eMAR trigger binds order scope, actor, prescribed slots, holds and witnesses. Direct reopening or deleting resolved records is rejected. | `319_clinical_review_integrity.sql`; `review_clinical_integrity.sql` |
 | Forged operation-task signatures | Browser INSERT/UPDATE/DELETE privileges are revoked; trusted completion records existing signature fields. Dual-sign finalization requires distinct actors. | Same migration and fixture; operations completion API |
 | Misleading bulk completion count | API counts only `outcome = completed`; first signatures are separately returned as `awaiting_verification_count`. | `src/app/api/admin/operations/tasks/bulk-complete/route.ts` |
 | Active care-plan uniqueness prevented revision approval | Prior plan retirement now runs BEFORE activation under a resident lock, allowing the immediate unique active-plan index to hold. | Clinical migration and prior-active/revision SQL fixture |
@@ -28,7 +28,7 @@ The OCE privilege revoke made the original browser-called invoker meeting-action
 - Three route regressions passed again after dependency synchronization. Scoped ESLint passed.
 - The native PostgreSQL office fixture passed with a real scoped-manager profile through the service role, denied an unscoped manager and caregiver author, and verified that authenticated clients cannot execute the actor-parameter RPC directly. Existing atomic rollback, version, signature and Trash cases also passed.
 
-Concrete evidence: `src/app/api/admin/meetings/[id]/actions/route.test.ts`, `supabase/tests/review_office_integrity.sql`, and `20260906143556_september_office_integrity.sql`. The new route's generated-function typing mismatch was corrected with an explicit narrow RPC result type; the lead must include the corrected source in its final build.
+Concrete evidence: `src/app/api/admin/meetings/[id]/actions/route.test.ts`, `supabase/tests/review_office_integrity.sql`, and `322_september_office_integrity.sql`. The new route's generated-function typing mismatch was corrected with an explicit narrow RPC result type; the lead must include the corrected source in its final build.
 
 ## Coverage and evidence audit
 

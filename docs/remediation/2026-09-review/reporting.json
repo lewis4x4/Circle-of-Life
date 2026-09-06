@@ -68,7 +68,7 @@
       "evidence": [
         "src/app/(admin)/reports/history/page.tsx",
         "src/app/(admin)/reports/history/[id]/page.tsx",
-        "supabase/migrations/20260906142243_review_report_outputs.sql",
+        "supabase/migrations/321_review_report_outputs.sql",
         "supabase/tests/review_report_outputs.sql"
       ],
       "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
@@ -91,7 +91,7 @@
     "independent_review": "INDEPENDENT-ROOT-REVIEW.md; root-reviewed scheduler advancement failure preserves completed output; service terminal receipt immutability verified in SQL"
   },
   "deployment_requirements": [
-    "Apply 20260906142243_review_report_outputs.sql before frontend",
+    "Apply 321_review_report_outputs.sql before frontend",
     "Deploy Next /api/reports/scheduler and Edge report-scheduler; configure shared REPORT_SCHEDULER_SECRET and canonical HTTPS REPORT_SCHEDULER_RUNNER_URL",
     "Legacy recurrence strings and non-CSV schedules need explicit calendar review before resume; saved outputs are in-app with CSV download",
     "Authenticated browser UAT and hosted scheduler executions remain unverified; no external delivery or production mutation performed"

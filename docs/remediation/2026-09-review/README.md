@@ -28,6 +28,8 @@ Final verification is recorded in `verification.json` and the segment gate artif
 
 **C25: Executable compliance presets.** Unimplemented presets are disabled configuration drafts and cannot masquerade as enabled checks. A verified runnable preset catalog is not delivered. Custom configured checks remain available.
 
+The seven new migrations are numbered 317–323 and replay in the ordinary repository order. See [migration ordering](MIGRATION-ORDER.md).
+
 ## Before operational use
 
 Deploy the new migrations, application, and changed Edge Functions together in a controlled rollout. Configure the report worker URL/shared secret. Reconcile existing payroll exceptions, conflicting legacy dietary data, historical financial balances and older acknowledgment requirements as described in the lane ledgers. No clinical/financial historical records were rewritten here.

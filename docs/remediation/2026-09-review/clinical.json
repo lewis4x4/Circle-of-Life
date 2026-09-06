@@ -16,7 +16,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/(caregiver)/meds/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "PRN remains available after a dose, shows last administration and order restrictions, captures indication and separate actual-time records. Exact request receipts prevent duplicate retries. Witness-required orders use the witnessed med-tech pass.",
@@ -63,7 +63,7 @@
     "evidence": [
       "src/lib/admissions/direct-intake-schema.ts",
       "src/app/(admin)/admin/admissions/new/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Identifiable intake drafts allow missing DOB, gender and source without fabricated answers. Bed preference is retained without implying reservation; arrival enforces complete demographics.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -86,7 +86,7 @@
     "evidence": [
       "src/components/med-tech/MedPassFlow/MedPassModal.tsx",
       "src/components/med-tech/MedPassFlow/MedPassModal.test.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Replaced simulation with actual MAR/pass/tape transaction and durable receipt. Human safety confirmation, live hold/order checks and independent authenticated witness signatures replace fabricated scans, vitals and signatures. Automatic scanning/voice/geofence verification are not claimed.",
@@ -122,7 +122,7 @@
       "src/lib/caregiver/clinical-writes.ts",
       "src/lib/caregiver/clinical-writes.test.ts",
       "src/app/(caregiver)/resident/[id]/log/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Vital writes append timestamped observations and atomically patch only supplied daily summary fields. The shift log displays the measurement timeline.",
@@ -150,7 +150,7 @@
       "src/components/medications/MedicationOrderEditor.tsx",
       "src/app/(admin)/admin/medications/verbal-orders/[id]/page.tsx",
       "src/components/medications/MedicationErrorReview.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql",
       "src/components/medications/clinical-authoring.test.tsx"
     ],
@@ -175,7 +175,7 @@
     "evidence": [
       "src/app/(admin)/admin/admissions/new/page.tsx",
       "src/app/api/admin/workflows/admission-cases/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Created resident identity survives partial intake failure. Case creation uses a stable request identity, exact payload hash and transaction lock; retries cannot create another resident/case or silently submit an existing draft.",
@@ -188,7 +188,7 @@
     "evidence": [
       "src/app/(admin)/admin/admissions/[id]/page.tsx",
       "src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "A separate actual-arrival action validates current readiness and atomically activates resident census and bed occupancy. Bed-reserved transitions also hold the actual bed transactionally; intake creation only records a preference.",
@@ -201,7 +201,7 @@
     "evidence": [
       "src/components/care-plans/CarePlanAuthor.tsx",
       "src/app/(admin)/residents/[id]/care-plan/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql",
       "src/components/medications/clinical-authoring.test.tsx"
     ],
@@ -215,7 +215,7 @@
     "evidence": [
       "src/components/discharge/DischargeMedicationReview.tsx",
       "src/app/(admin)/admin/discharge/[id]/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Medication reconciliation captures current medications and explicit continue/change/stop decisions. Pharmacist evidence is recorded separately without impersonating the current operator; database completion requires evidence and complete decisions.",
@@ -228,7 +228,7 @@
     "evidence": [
       "src/app/(admin)/admin/infection-control/new/page.tsx",
       "src/lib/infection-control/outbreak-detection.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Surveillance saves navigate to its durable record even if evaluation fails. Outbreak detection serializes facility/group linkage and derives distinct case totals atomically; retries cannot inflate outbreaks.",
@@ -241,7 +241,7 @@
     "evidence": [
       "src/app/(admin)/admin/infection-control/[id]/page.tsx",
       "src/app/(admin)/admin/infection-control/outbreaks/[id]/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Surveillance shows resident/symptom context and supports confirmation/resolution with evidence. Outbreak actions support ownership and signed completion; containment/closure requires clinical evidence and closure rejects unfinished cases/actions.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -295,7 +295,7 @@
       "src/lib/admissions/form-1823-readiness.test.ts",
       "src/lib/workflows/workflow-events.ts",
       "src/app/api/admin/workflows/admission-cases/[id]/form-1823/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Form1823 readiness fails closed on source errors and requires the latest received record, current validity, physician and evidence reference/physical-report verification. UI and arrival checks enforce the same meaning.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -343,7 +343,7 @@
       "src/app/api/admin/operations/tasks/[id]/complete/route.ts",
       "src/app/api/admin/operations/tasks/bulk-complete/route.ts",
       "src/app/(admin)/admin/operations/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Dual-sign operations record the first signature as awaiting independent verification. Atomic completion and bulk outcomes distinguish pending verification; raw client writes cannot forge signatures or disable the requirement.",
@@ -356,7 +356,7 @@
     "evidence": [
       "src/app/(admin)/admin/operations/page.tsx",
       "src/app/api/admin/operations/tasks/[id]/start/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "Operation actions have in-flight protection and visible errors; start uses state-conditioned updates and completion is locked/idempotent.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
@@ -390,7 +390,7 @@
     "status": "implemented",
     "evidence": [
       "src/app/api/admin/operations/templates/[id]/route.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Template publication locks the prior version and creates/retires versions atomically; competing publication returns a conflict instead of leaving two active versions.",
@@ -403,7 +403,7 @@
     "evidence": [
       "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx",
       "src/app/(admin)/admin/compliance/emergency-preparedness/page.test.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Emergency evidence and next-due state commit together; stable requests support exact retries. Maintenance explicitly distinguishes partial work from ticket resolution and commits evidence/ticket status together.",
@@ -415,7 +415,7 @@
     "status": "implemented",
     "evidence": [
       "src/lib/caregiver/clinical-writes.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Duplicate of C11: partial vital entries preserve earlier values and individual timestamped measurements.",
@@ -439,7 +439,7 @@
       "src/lib/caregiver/clinical-writes.ts",
       "src/app/(caregiver)/resident/[id]/page.tsx",
       "src/app/(caregiver)/resident/[id]/log/page.tsx",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/migrations/319_clinical_review_integrity.sql",
       "supabase/tests/review_clinical_integrity.sql"
     ],
     "notes": "Both quick-note entry points use one atomic database append operation instead of browser read/merge/replace.",
@@ -465,7 +465,7 @@
     "status": "implemented",
     "evidence": [
       "src/lib/compliance-dashboard-snapshot.ts",
-      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+      "supabase/migrations/319_clinical_review_integrity.sql"
     ],
     "notes": "RLS-preserving latest-per-resident/type aggregate counts assessments server-side, eliminating API history-cap truncation.",
     "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
