@@ -31,67 +31,14 @@ async function main() {
       const page = await context.newPage();
       const url = new URL(route, baseUrl).href;
       try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+        const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+        if (!response || response.status() >= 400) throw new Error(`HTTP ${response?.status() ?? "unavailable"}`);
+        if (new URL(page.url()).pathname === "/login" && !["/", "/login"].includes(new URL(url).pathname)) throw new Error("Authentication required for this route; login is not a substitute for its accessibility audit.");
         // Let client hydration settle to avoid scanning transient loading overlays.
         await page.waitForTimeout(1000);
-        // Remove known non-product debug overlays injected by local tooling.
-        await page.evaluate(() => {
-          // Next.js 16+ injects devtools into <nextjs-portal> (shadow DOM). Axe flags its
-          // internal contrast; production has no portal — exclude from product a11y scans.
-          document.querySelectorAll("nextjs-portal").forEach((el) => el.remove());
+        // Never remove product content by matching generic words such as
+        // "working" or "analytics". Only exclude the known Next dev portal.
 
-          const appRoot = document.querySelector("#__next");
-          if (appRoot?.parentElement === document.body) {
-            Array.from(document.body.children).forEach((child) => {
-              if (child === appRoot) return;
-              if (child.tagName === "SCRIPT" || child.tagName === "STYLE") return;
-              child.remove();
-            });
-          }
-
-          const findOverlayRoot = (start) => {
-            let element = start;
-            for (let i = 0; i < 10 && element?.parentElement; i += 1) {
-              const style = window.getComputedStyle(element);
-              const zIndex = Number.parseInt(style.zIndex || "0", 10);
-              if (style.position === "fixed" || zIndex > 999) return element;
-              element = element.parentElement;
-            }
-            return null;
-          };
-
-          const roots = new Set();
-          const markers = [
-            "drag · scroll · space+drag · dbl-click",
-            "SPEEDY INC",
-            "ANALYTICS",
-            "Justice Companies Agent",
-            "idle",
-            "working",
-          ];
-
-          document.querySelectorAll('[title*="Agent"]').forEach((node) => {
-            const root =
-              findOverlayRoot(node) ??
-              node.closest('[data-testid*="agent"], [class*="agent"], button, [role="dialog"], div');
-            if (root) roots.add(root);
-          });
-
-          document.querySelectorAll("body *").forEach((node) => {
-            const text = node.textContent ?? "";
-            if (!markers.some((marker) => text.includes(marker))) return;
-            const root =
-              findOverlayRoot(node) ??
-              node.closest('[data-testid*="agent"], [class*="agent"], [class*="overlay"], div');
-            if (root) roots.add(root);
-          });
-
-          roots.forEach((root) => {
-            if (root && root !== document.body && root !== document.documentElement) {
-              root.remove();
-            }
-          });
-        });
       } catch (e) {
         console.error(`[a11y:routes] FAIL: could not load ${url} — start the app (npm run dev) or set BASE_URL.\n${e.message}`);
         process.exitCode = 1;
@@ -99,17 +46,7 @@ async function main() {
         return;
       }
 
-      const hasAppRoot = await page.evaluate(
-        () => !!document.querySelector("#haven-app-root"),
-      );
-      let builder = new AxeBuilder({ page });
-      if (hasAppRoot) {
-        // Scoping to the app shell excludes <head>; document-level rules then false-positive.
-        builder = builder
-          .include("#haven-app-root")
-          .disableRules(["document-title", "html-has-lang"]);
-      }
-      const results = await builder.exclude("nextjs-portal").analyze();
+      const results = await new AxeBuilder({ page }).exclude("nextjs-portal").analyze();
       const serious = results.violations.filter((v) =>
         ["critical", "serious"].includes(v.impact),
       );

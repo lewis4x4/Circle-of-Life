@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus,
   CheckCircle,
@@ -75,23 +75,6 @@ type EmergencyChecklistItemRow = {
   last_completed_by: string | null;
   last_participants: string[] | null;
   last_notes: string | null;
-};
-
-type EmergencyChecklistCompletionInsert = {
-  checklist_item_id: string;
-  facility_id: string;
-  organization_id: string;
-  completed_by: string;
-  participants: string[];
-  notes: string | null;
-};
-
-type EmergencyChecklistItemCompletionUpdate = {
-  last_completed_at: string;
-  last_completed_by: string;
-  last_participants: string[];
-  last_notes: string | null;
-  next_due_date: string;
 };
 
 type EmergencyChecklistItemInsert = {
@@ -223,6 +206,9 @@ export default function EmergencyPreparednessPage() {
     notes: "",
     related_ticket_id: "",
   });
+  const checklistRequestId = useRef<string | null>(null);
+  const maintenanceRequestId = useRef<string | null>(null);
+  const [resolveLinkedTicket, setResolveLinkedTicket] = useState(false);
   const [savingCompletionLog, setSavingCompletionLog] = useState(false);
 
   const facilityReady = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
@@ -279,33 +265,11 @@ export default function EmergencyPreparednessPage() {
         throw new Error("Could not determine organization ID");
       }
 
-      // Create completion record
       const participants = completionDialog.participants.split(",").map((p) => p.trim()).filter(Boolean);
-      await insertEmergencyChecklistCompletion(supabase, {
-        checklist_item_id: completionDialog.itemId,
-        facility_id: selectedFacilityId!,
-        organization_id: organizationId,
-        completed_by: user.id,
-        participants,
-        notes: completionDialog.notes || null,
-      });
-
-      // Update the checklist item
-
-      const item = items.find((i) => i.id === completionDialog.itemId);
-      if (!item) return;
-
-      await updateEmergencyChecklistItemCompletion(
-        supabase,
-        completionDialog.itemId,
-        {
-          last_completed_at: new Date().toISOString(),
-          last_completed_by: user.id,
-          last_participants: participants,
-          last_notes: completionDialog.notes || null,
-          next_due_date: addFacilityCalendarDays(todayFacilityDateIso(), item.frequency_days),
-        }
-      );
+      checklistRequestId.current ??= crypto.randomUUID();
+      const result = await supabase.rpc("complete_emergency_checklist_review" as never, { p_id: checklistRequestId.current, p_item_id: completionDialog.itemId, p_participants: participants, p_notes: completionDialog.notes || null } as never);
+      if (result.error) throw result.error;
+      checklistRequestId.current = null;
 
       // Close dialog and reload
       setCompletionDialog({ open: false, itemId: null, participants: "", notes: "" });
@@ -425,7 +389,8 @@ export default function EmergencyPreparednessPage() {
       if (!user?.id) throw new Error("Not authenticated");
       const organizationId = await loadOrganizationIdForFacility(supabase, selectedFacilityId!);
       if (!organizationId) throw new Error("Could not determine organization ID");
-      await insertMaintenanceCompletion(supabase, {
+      maintenanceRequestId.current ??= crypto.randomUUID();
+      await insertMaintenanceCompletion(supabase, maintenanceRequestId.current, resolveLinkedTicket, {
         facility_id: selectedFacilityId!,
         organization_id: organizationId,
         task_type: newCompletion.task_type.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_"),
@@ -434,6 +399,8 @@ export default function EmergencyPreparednessPage() {
         notes: newCompletion.notes.trim() || null,
         related_ticket_id: newCompletion.related_ticket_id || null,
       });
+      maintenanceRequestId.current = null;
+      setResolveLinkedTicket(false);
       setNewCompletion({ ...newCompletion, notes: "", related_ticket_id: "", completed_by_vendor: "" });
       await loadItems();
     } catch (e) {
@@ -831,7 +798,7 @@ export default function EmergencyPreparednessPage() {
             <Field label="Task type"><Input value={newCompletion.task_type} onChange={(e) => setNewCompletion((current) => ({ ...current, task_type: e.target.value }))} placeholder="quarterly_grease_trap_cleaning" /></Field>
             <Field label="Completed by vendor (optional)"><Input value={newCompletion.completed_by_vendor} onChange={(e) => setNewCompletion((current) => ({ ...current, completed_by_vendor: e.target.value }))} placeholder="Vendor name" /></Field>
             <Field label="Related ticket (optional)"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={newCompletion.related_ticket_id} onChange={(e) => setNewCompletion((current) => ({ ...current, related_ticket_id: e.target.value }))}><option value="">None</option>{maintenanceTickets.map((ticket) => (<option key={ticket.id} value={ticket.id}>{ticket.asset_description} ({ticket.status})</option>))}</select></Field>
-            <div className="flex items-end"><Button onClick={() => void submitMaintenanceCompletion()} disabled={savingCompletionLog || !newCompletion.task_type.trim()}>{savingCompletionLog ? "Saving…" : "Log completion"}</Button></div>
+            <div className="flex items-end"><label><input type="checkbox" checked={resolveLinkedTicket} onChange={(e)=>setResolveLinkedTicket(e.target.checked)} disabled={!newCompletion.related_ticket_id} /> Resolve linked ticket (leave unchecked for partial work)</label><Button onClick={() => void submitMaintenanceCompletion()} disabled={savingCompletionLog || !newCompletion.task_type.trim()}>{savingCompletionLog ? "Saving…" : "Log completion"}</Button></div>
           </div>
           <Field label="Notes"><Textarea rows={2} value={newCompletion.notes} onChange={(e) => setNewCompletion((current) => ({ ...current, notes: e.target.value }))} /></Field>
           <ul className="space-y-2 text-sm">
@@ -900,42 +867,6 @@ async function loadOrganizationIdForFacility(
   }
 
   return data?.organization_id ?? null;
-}
-
-async function insertEmergencyChecklistCompletion(
-  supabase: ReturnType<typeof createClient>,
-  payload: EmergencyChecklistCompletionInsert,
-) {
-  const result = await supabase
-    .from("emergency_checklist_completions" as never)
-    .insert(payload as never);
-
-  const { error } = result as unknown as {
-    error: { message: string } | null;
-  };
-
-  if (error) {
-    throw new Error(error.message);
-  }
-}
-
-async function updateEmergencyChecklistItemCompletion(
-  supabase: ReturnType<typeof createClient>,
-  itemId: string,
-  payload: EmergencyChecklistItemCompletionUpdate,
-) {
-  const result = await supabase
-    .from("emergency_checklist_items" as never)
-    .update(payload as never)
-    .eq("id", itemId);
-
-  const { error } = result as unknown as {
-    error: { message: string } | null;
-  };
-
-  if (error) {
-    throw new Error(error.message);
-  }
 }
 
 async function insertEmergencyChecklistItem(
@@ -1008,8 +939,8 @@ async function fetchMaintenanceCompletions(supabase: ReturnType<typeof createCli
   return data ?? [];
 }
 
-async function insertMaintenanceCompletion(supabase: ReturnType<typeof createClient>, payload: MaintenanceCompletionInsert) {
-  const result = await supabase.from("maintenance_task_completions" as never).insert(payload as never);
+async function insertMaintenanceCompletion(supabase: ReturnType<typeof createClient>, requestId: string, resolveTicket: boolean, payload: MaintenanceCompletionInsert) {
+  const result = await supabase.rpc("complete_maintenance_work_review" as never, { p_id: requestId, p_payload: payload, p_resolve_ticket: resolveTicket } as never);
   const { error } = result as unknown as { error: { message: string } | null };
   if (error) throw new Error(error.message);
 }

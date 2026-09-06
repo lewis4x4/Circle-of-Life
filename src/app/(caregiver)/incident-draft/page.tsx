@@ -1,4 +1,7 @@
 "use client";
+import { formatInTimeZone, toDate } from "date-fns-tz";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -49,18 +52,15 @@ const SHIFT_LABELS: Record<(typeof caregiverIncidentShiftValues)[number], string
 };
 
 function toDatetimeLocalValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return formatInTimeZone(d, "America/New_York", "yyyy-MM-dd'T'HH:mm");
 }
 
 type ResidentOption = { id: string; label: string };
 
-const defaultFormValues = (): CaregiverIncidentFormData => ({
+const defaultFormValues = (): Partial<CaregiverIncidentFormData> => ({
   residentId: "",
-  category: "fall_without_injury",
-  severity: "level_2",
   occurredAtLocal: toDatetimeLocalValue(new Date()),
-  shift: "night",
+  shift: currentShiftForTimezone("America/New_York"),
   locationDescription: "",
   description: "",
   immediateActions: "",
@@ -113,77 +113,12 @@ function CaregiverIncidentDraftPageInner() {
       }
       setHomeHref(getDashboardRouteForUser(user, "/caregiver"));
 
-      const profileResult = await supabase
-        .from("user_profiles" as never)
-        .select("organization_id, app_role")
-        .eq("id", user.id)
-        .maybeSingle();
-      const profile = profileResult.data as { organization_id: string; app_role: string } | null;
-      if (profileResult.error) throw profileResult.error;
-      if (!profile?.organization_id) {
-        setLoadError("Your profile is missing an organization. Contact an administrator.");
-        setLoadingContext(false);
-        return;
-      }
-
-      let resolvedFacilityId: string | null = null;
-      let resolvedOrgId: string = profile.organization_id;
-      let resolvedFacilityName: string | null = null;
-
-      if (profile.app_role === "owner" || profile.app_role === "org_admin") {
-        const facResult = await supabase
-          .from("facilities" as never)
-          .select("id, name, organization_id")
-          .eq("organization_id", profile.organization_id)
-          .is("deleted_at", null)
-          .order("name")
-          .limit(1)
-          .maybeSingle();
-        const row = facResult.data as { id: string; name: string; organization_id: string } | null;
-        if (facResult.error) throw facResult.error;
-        if (row) {
-          resolvedFacilityId = row.id;
-          resolvedOrgId = row.organization_id;
-          resolvedFacilityName = row.name;
-        }
-      } else {
-        const accessResult = await supabase
-          .from("user_facility_access" as never)
-          .select("facility_id")
-          .eq("user_id", user.id)
-          .is("revoked_at", null)
-          .limit(1)
-          .maybeSingle();
-        const access = accessResult.data as { facility_id: string } | null;
-        if (accessResult.error) throw accessResult.error;
-        if (access?.facility_id) {
-          resolvedFacilityId = access.facility_id;
-        }
-        if (resolvedFacilityId) {
-          const facResult = await supabase
-            .from("facilities" as never)
-            .select("id, name, organization_id")
-            .eq("id", resolvedFacilityId)
-            .is("deleted_at", null)
-            .maybeSingle();
-          const row = facResult.data as { id: string; name: string; organization_id: string } | null;
-          if (facResult.error) throw facResult.error;
-          if (row) {
-            resolvedOrgId = row.organization_id;
-            resolvedFacilityName = row.name;
-          }
-        }
-      }
-
-      if (!resolvedFacilityId) {
-        setLoadError("No facility access is assigned to your account. Ask an administrator to grant facility access.");
-        setLoadingContext(false);
-        return;
-      }
-
+      const scope = await loadCaregiverFacilityContext(supabase);
+      if (!scope.ok) throw new Error(scope.error);
+      const resolvedFacilityId = scope.ctx.facilityId;
       setFacilityId(resolvedFacilityId);
-      setOrganizationId(resolvedOrgId);
-      setFacilityName(resolvedFacilityName);
+      setOrganizationId(scope.ctx.organizationId);
+      setFacilityName(scope.ctx.facilityName);
 
       const resResult = await supabase
         .from("residents" as never)
@@ -228,7 +163,8 @@ function CaregiverIncidentDraftPageInner() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const values = form.getValues();
+    if (!(await form.trigger())) { setSubmitError("Choose category and severity, and complete the required location, narrative and immediate actions."); return; }
+    const values = caregiverIncidentFormSchema.parse(form.getValues());
     setSubmitError(null);
     if (!facilityId || !organizationId) {
       setSubmitError("Facility context is not ready. Refresh and try again.");
@@ -246,7 +182,7 @@ function CaregiverIncidentDraftPageInner() {
         throw new Error("Could not allocate incident number.");
       }
 
-      const occurredAt = new Date(values.occurredAtLocal);
+      const occurredAt = toDate(values.occurredAtLocal, { timeZone: "America/New_York" });
       if (Number.isNaN(occurredAt.getTime())) {
         throw new Error("Invalid date and time.");
       }
@@ -421,6 +357,7 @@ function CaregiverIncidentDraftPageInner() {
                       className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
                       {...form.register("category")}
                     >
+                      <option value="">Choose category</option>
                       {caregiverIncidentCategoryValues.map((v) => (
                         <option key={v} value={v}>{CATEGORY_LABELS[v]}</option>
                       ))}
@@ -436,6 +373,7 @@ function CaregiverIncidentDraftPageInner() {
                       className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
                       {...form.register("severity")}
                     >
+                      <option value="">Choose severity</option>
                       {caregiverIncidentSeverityValues.map((v) => (
                         <option key={v} value={v}>{SEVERITY_LABELS[v]}</option>
                       ))}
@@ -451,7 +389,7 @@ function CaregiverIncidentDraftPageInner() {
                   <input 
                      type="datetime-local" 
                      className="w-full h-14 appearance-none rounded-[1.2rem] border border-white/10 bg-black/40 px-5 text-[15px] font-medium text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-inner tap-responsive"
-                     {...form.register("occurredAtLocal")}
+                     {...form.register("occurredAtLocal", { onChange: (event) => { const occurrence = toDate(event.target.value, { timeZone: "America/New_York" }); if (!Number.isNaN(occurrence.getTime())) form.setValue("shift", currentShiftForTimezone("America/New_York", occurrence)); } })}
                   />
                </div>
 

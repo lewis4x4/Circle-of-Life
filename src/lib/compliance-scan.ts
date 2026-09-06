@@ -300,10 +300,7 @@ export async function runComplianceScan(
   let passedCount = 0;
   let failedCount = 0;
 
-  // 4. Evaluate each rule
-  // NOTE: For production, this would use a server-side RPC to execute
-  // the check_query safely. For now, we simulate rule results
-  // based on the rule's severity and some heuristics.
+  // Evaluate each enabled rule through the server-owned RPC.
 
   for (const rule of rules) {
     const result = await evaluateRule(
@@ -327,7 +324,7 @@ export async function runComplianceScan(
   await updateComplianceScanCounts(scanId, passedCount, failedCount, supabase);
 
   return {
-    scan,
+    scan: { ...scan, rules_passed: passedCount, rules_failed: failedCount },
     results,
   };
 }

@@ -72,7 +72,7 @@ export default function NewComplianceRulePage() {
   const [severity, setSeverity] = useState<"minor" | "standard" | "serious" | "immediate_jeopardy">("serious");
   const [checkQuery, setCheckQuery] = useState("");
   const [facilityScoped, setFacilityScoped] = useState(true);
-  const [enabled, setEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -87,7 +87,8 @@ export default function NewComplianceRulePage() {
     setRuleDescription(preset.rule_description);
     setSeverity(preset.severity);
     // Note: check_query would need to be provided for each preset
-    setCheckQuery("-- Query for this rule (configure via database directly for production)");
+    setCheckQuery("");
+    setEnabled(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +99,10 @@ export default function NewComplianceRulePage() {
       return;
     }
 
+    if (enabled && !/^\s*(select|with)\b/i.test(checkQuery.replace(/--[^\n]*/g, ""))) {
+      setError("An enabled rule needs a validated read-only check query. Save this preset as a disabled draft until its check is configured.");
+      return;
+    }
     setSaving(true);
     setError(null);
     setSuccess(false);

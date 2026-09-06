@@ -44,7 +44,7 @@ describe("staffUpcomingShiftCutoffIso", () => {
 });
 
 describe("isSameStaffDirectoryPerson", () => {
-  it("matches rows that share the same linked user id", () => {
+  it("preserves employment identities that share the same linked user id", () => {
     const left = row({ id: "dddddddd-dddd-4ddd-8ddd-dddddddddd01", user_id: USER_ONE });
     const right = row({
       id: "dddddddd-dddd-4ddd-8ddd-dddddddddd02",
@@ -52,10 +52,10 @@ describe("isSameStaffDirectoryPerson", () => {
       facility_id: FACILITY_B,
     });
 
-    expect(isSameStaffDirectoryPerson(left, right)).toBe(true);
+    expect(isSameStaffDirectoryPerson(left, right)).toBe(false);
   });
 
-  it("matches rows that share the same normalized email", () => {
+  it("does not infer employment identity from normalized email", () => {
     const left = row({
       id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1",
       email: "sample.worker@example.com",
@@ -65,10 +65,10 @@ describe("isSameStaffDirectoryPerson", () => {
       email: " Sample.Worker@example.com ",
     });
 
-    expect(isSameStaffDirectoryPerson(left, right)).toBe(true);
+    expect(isSameStaffDirectoryPerson(left, right)).toBe(false);
   });
 
-  it("matches duplicate import rows at the same facility by name when ids differ", () => {
+  it("preserves same-name rows at the same facility when IDs differ", () => {
     const seedRow = row({
       id: "ffffffff-ffff-4fff-8fff-fffffffffff1",
       first_name: "Sample",
@@ -84,7 +84,7 @@ describe("isSameStaffDirectoryPerson", () => {
       updated_at: "2026-08-10T12:00:00.000Z",
     });
 
-    expect(isSameStaffDirectoryPerson(seedRow, importRow)).toBe(true);
+    expect(isSameStaffDirectoryPerson(seedRow, importRow)).toBe(false);
   });
 
   it("does not merge different people who share a name across facilities", () => {
@@ -106,7 +106,7 @@ describe("isSameStaffDirectoryPerson", () => {
 });
 
 describe("dedupeStaffDirectoryRecords", () => {
-  it("returns one directory row when one user has two facility memberships", () => {
+  it("retains each employment when a user has two facility memberships", () => {
     const rows = dedupeStaffDirectoryRecords([
       row({
         id: "22222222-2222-4222-8222-222222222201",
@@ -120,11 +120,11 @@ describe("dedupeStaffDirectoryRecords", () => {
       }),
     ]);
 
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(2);
     expect(rows[0]?.user_id).toBe(USER_ONE);
   });
 
-  it("prefers the richer import row when seed and import rows overlap at one facility", () => {
+  it("preserves original and imported employment relationships for review", () => {
     const rows = dedupeStaffDirectoryRecords([
       row({
         id: "33333333-3333-4333-8333-333333333301",
@@ -144,8 +144,8 @@ describe("dedupeStaffDirectoryRecords", () => {
       }),
     ]);
 
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.id).toBe("33333333-3333-4333-8333-333333333302");
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.id)).toEqual(["33333333-3333-4333-8333-333333333301", "33333333-3333-4333-8333-333333333302"]);
   });
 
   it("keeps distinct people separate", () => {
@@ -176,7 +176,7 @@ describe("pickPreferredStaffDirectoryRecord", () => {
 });
 
 describe("countUniqueActiveStaffDirectoryRecords", () => {
-  it("counts one active person when two rows share the same user id", () => {
+  it("counts both active employment records sharing a user ID", () => {
     const count = countUniqueActiveStaffDirectoryRecords([
       row({
         id: "66666666-6666-4666-8666-666666666601",
@@ -190,10 +190,10 @@ describe("countUniqueActiveStaffDirectoryRecords", () => {
       }),
     ]);
 
-    expect(count).toBe(1);
+    expect(count).toBe(2);
   });
 
-  it("counts one active person when seed and import rows overlap at one facility by name", () => {
+  it("counts distinct active employment records with a shared name", () => {
     const count = countUniqueActiveStaffDirectoryRecords([
       row({
         id: "77777777-7777-4777-8777-777777777701",
@@ -210,7 +210,7 @@ describe("countUniqueActiveStaffDirectoryRecords", () => {
       }),
     ]);
 
-    expect(count).toBe(1);
+    expect(count).toBe(2);
   });
 
   it("keeps two distinct active people separate", () => {
@@ -241,7 +241,7 @@ describe("countUniqueActiveStaffDirectoryRecords", () => {
 });
 
 describe("buildDedupedStaffPickerOptions", () => {
-  it("returns one picker option when duplicate active rows share a user id", () => {
+  it("retains picker options for each employment sharing a user ID", () => {
     const options = buildDedupedStaffPickerOptions([
       row({
         id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01",
@@ -257,7 +257,7 @@ describe("buildDedupedStaffPickerOptions", () => {
       }),
     ]);
 
-    expect(options).toHaveLength(1);
+    expect(options).toHaveLength(2);
     expect(options[0]?.label).toBe("Sample Picker");
   });
 });

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
 import { useDietaryToday } from "@/hooks/dietary/useDietaryToday";
@@ -17,7 +16,7 @@ export function CommandDeck() {
   const [activeTicket, setActiveTicket] = useState<TrayTicket | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
 
-  const { services, tickets, haccp, fortification, npo, refusals, service_bar, loading, error } =
+  const { services, tickets, haccp, fortification, npo, refusals, service_bar, loading, error, refresh, refreshedAt, facilityId } =
     useDietaryToday();
 
   if (loading) {
@@ -36,7 +35,8 @@ export function CommandDeck() {
       <div className="h-screen w-full flex items-center justify-center">
         <div className="max-w-md rounded-2xl border border-rose-500/30 bg-rose-500/10 px-6 py-5 text-center">
           <h2 className="text-lg font-semibold text-rose-300 mb-2">Kitchen Data Unavailable</h2>
-          <p className="text-sm text-stone-400">{error}</p>
+          <p role="alert" className="text-sm text-stone-400">{error}</p>
+          <button className="mt-3 rounded border px-3 py-2" type="button" onClick={() => void refresh()}>Retry kitchen data</button>
         </div>
       </div>
     );
@@ -66,19 +66,9 @@ export function CommandDeck() {
           <p className="mt-2 text-sm text-stone-300">
             Keep service timing, tray execution, resident dietary watch items, and HACCP logging in one kitchen lane.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href="/admin/dietary"
-              className="rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-300 transition hover:border-white/20 hover:text-white"
-            >
-              Diet orders hub
-            </Link>
-            <Link
-              href="/admin/dietary/clinical-review"
-              className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-200 transition hover:bg-amber-500/20"
-            >
-              Clinical review
-            </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <button type="button" className="rounded border px-3 py-2" onClick={() => void refresh()}>Refresh kitchen data</button>
+            <span>Updated {refreshedAt ? new Date(refreshedAt).toLocaleTimeString("en-US", { timeZone: "America/New_York", timeZoneName: "short" }) : "not yet"}</span>
           </div>
         </div>
       </div>
@@ -90,8 +80,8 @@ export function CommandDeck() {
 
       <HACCPStrip entries={haccp} onVoice={() => setVoiceOpen(true)} />
 
-      <PassModal ticket={activeTicket} onClose={() => setActiveTicket(null)} />
-      <VoiceModal open={voiceOpen} onClose={() => setVoiceOpen(false)} />
+      <PassModal key={activeTicket?.id ?? "closed"} ticket={activeTicket} onClose={() => setActiveTicket(null)} onSaved={() => void refresh()} />
+      {voiceOpen && <VoiceModal open facilityId={facilityId} onClose={() => setVoiceOpen(false)} onSaved={() => void refresh()} />}
     </div>
   );
 }

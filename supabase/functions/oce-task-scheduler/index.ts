@@ -63,19 +63,6 @@ type FacilityRow = {
   timezone: string | null;
 };
 
-type ProfileRow = {
-  id: string;
-  organization_id: string;
-  app_role: AppRole;
-  full_name: string | null;
-};
-
-type FacilityAccessRow = {
-  user_id: string;
-  facility_id: string;
-  is_primary: boolean;
-};
-
 type CandidateInstance = {
   organization_id: string;
   facility_id: string;
@@ -248,49 +235,6 @@ Deno.serve(async (req) => {
     ),
   );
 
-  const relevantAppRoles = new Set(
-    Object.values(assigneeCrosswalk)
-      .flat()
-      .concat(["owner", "org_admin"]),
-  );
-
-  const { data: profileData, error: profileError } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role, full_name")
-    .eq("organization_id", COL_ORG_ID)
-    .eq("is_active", true)
-    .is("deleted_at", null);
-
-  const profiles = ((profileData ?? []) as ProfileRow[]).filter((profile) =>
-    relevantAppRoles.has(profile.app_role)
-  );
-  if (profileError) {
-    t.log({ event: "profile_query_failed", outcome: "error", error_message: profileError.message });
-    return jsonResponse({ error: "Failed to load operator profiles" }, 500, origin);
-  }
-
-  const profileIds = profiles.map((profile) => profile.id);
-  const { data: accessData, error: accessError } = await admin
-    .from("user_facility_access")
-    .select("user_id, facility_id, is_primary")
-    .eq("organization_id", COL_ORG_ID)
-    .in("user_id", profileIds)
-    .in("facility_id", facilityIds)
-    .is("revoked_at", null);
-
-  const facilityAccess = (accessData ?? []) as FacilityAccessRow[];
-  if (accessError) {
-    t.log({ event: "facility_access_query_failed", outcome: "error", error_message: accessError.message });
-    return jsonResponse({ error: "Failed to load facility access rows" }, 500, origin);
-  }
-
-  const profileAccessMap = new Map<string, FacilityAccessRow[]>();
-  for (const access of facilityAccess) {
-    const list = profileAccessMap.get(access.user_id) ?? [];
-    list.push(access);
-    profileAccessMap.set(access.user_id, list);
-  }
-
   const candidates: CandidateInstance[] = [];
   let skippedExisting = 0;
 
@@ -320,12 +264,7 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          const assignment = resolveAssignee({
-            facility,
-            template,
-            profiles,
-            profileAccessMap,
-          });
+          const assignment = resolveAssignee(template);
 
           const baseLocalTime = getBaseLocalTime(shift);
           const dueAt = buildDueAt({
@@ -482,58 +421,16 @@ function expandTemplateShifts(template: TemplateRow): Array<"day" | "evening" | 
   return [template.shift_scope ?? "day"];
 }
 
-function resolveAssignee(args: {
-  facility: FacilityRow;
-  template: TemplateRow;
-  profiles: ProfileRow[];
-  profileAccessMap: Map<string, FacilityAccessRow[]>;
-}) {
+function resolveAssignee(template: TemplateRow) {
   const roleSequence = [
-    ...(assigneeCrosswalk[args.template.assignee_role ?? ""] ?? []),
-    ...(assigneeCrosswalk[args.template.required_role_fallback ?? ""] ?? []),
+    ...(assigneeCrosswalk[template.assignee_role ?? ""] ?? []),
+    ...(assigneeCrosswalk[template.required_role_fallback ?? ""] ?? []),
   ];
 
-  for (const role of roleSequence) {
-    const candidates = args.profiles
-      .filter((profile) =>
-        profile.organization_id === args.facility.organization_id &&
-        profile.app_role === role
-      )
-      .sort((left, right) => (left.full_name || left.id).localeCompare(right.full_name || right.id));
+  // Keep recurring work in its qualified role queue until on-duty staff claim it.
+  // An alphabetical profile list is not evidence that a person is working this shift.
+  return { assigned_to: null, assigned_role: roleSequence[0] ?? null };
 
-    const primaryScoped = candidates.find((profile) =>
-      (args.profileAccessMap.get(profile.id) ?? []).some((row) => row.facility_id === args.facility.id && row.is_primary)
-    );
-    if (primaryScoped) {
-      return {
-        assigned_to: primaryScoped.id,
-        assigned_role: role,
-      };
-    }
-
-    const scoped = candidates.find((profile) =>
-      (args.profileAccessMap.get(profile.id) ?? []).some((row) => row.facility_id === args.facility.id)
-    );
-    if (scoped) {
-      return {
-        assigned_to: scoped.id,
-        assigned_role: role,
-      };
-    }
-
-    const orgWide = candidates.find((profile) => profile.app_role === "owner" || profile.app_role === "org_admin");
-    if (orgWide) {
-      return {
-        assigned_to: orgWide.id,
-        assigned_role: role,
-      };
-    }
-  }
-
-  return {
-    assigned_to: null,
-    assigned_role: args.template.required_role_fallback ?? args.template.assignee_role ?? null,
-  };
 }
 
 function getBaseLocalTime(shift: "day" | "evening" | "night" | null) {

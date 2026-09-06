@@ -23,7 +23,7 @@ function row(
 }
 
 describe("fetchStaffOptions dedupe contract", () => {
-  it("lists one option when seed and import rows overlap at one facility by name", () => {
+  it("retains both employment records when names match", () => {
     const options = buildDedupedStaffPickerOptions([
       row({
         id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbb001",
@@ -38,7 +38,7 @@ describe("fetchStaffOptions dedupe contract", () => {
       }),
     ]);
 
-    expect(options).toHaveLength(1);
+    expect(options).toHaveLength(2);
   });
 
   it("lists two options for two distinct active people", () => {

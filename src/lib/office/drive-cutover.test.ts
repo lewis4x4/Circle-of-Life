@@ -32,8 +32,8 @@ describe("rollupFromStatuses / migrationComplete", () => {
     expect(r).toMatchObject({ files: 6, imported: 2, pending: 1, failed: 1, skipped: 1, mapped: 1 });
   });
 
-  it("is complete only when nothing is pending/mapped/failed", () => {
-    expect(migrationComplete({ batches: 1, ...rollupFromStatuses(["imported", "skipped"]) })).toBe(true);
+  it("requires verified content, not processed bookmarks", () => {
+    expect(migrationComplete({ batches: 1, ...rollupFromStatuses(["imported", "skipped"]) })).toBe(false);
     expect(migrationComplete({ batches: 1, ...rollupFromStatuses(["imported", "pending"]) })).toBe(false);
     expect(migrationComplete({ batches: 0, ...rollupFromStatuses([]) })).toBe(false);
   });

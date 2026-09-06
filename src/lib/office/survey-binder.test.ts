@@ -114,3 +114,11 @@ describe("fetchBinderEvidence", () => {
     expect(inservices?.lte).toBe("2999-12-31");
   });
 });
+
+it("shows unavailable evidence separately from a confirmed zero", async () => {
+ const chain = { select() { return this; }, eq() { return this; }, is() { return this; }, gte() { return this; }, lte() { return this; }, order() { return this; }, limit() { return this; }, then(resolve: (value: unknown) => void) { resolve({ data: null, count: null, error: new Error("unavailable") }); } };
+ const evidence = await fetchBinderEvidence({ from: () => chain } as unknown as SupabaseClient, "facility");
+ expect(evidence.documentCount).toBeNull();
+ expect(evidence.expiringSoonCount).toBeNull();
+ expect(evidence.lastSurveyAvailable).toBe(false);
+});

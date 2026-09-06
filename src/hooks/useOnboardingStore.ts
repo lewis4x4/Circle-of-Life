@@ -76,6 +76,7 @@ interface OnboardingState {
   resetWorkspace: () => Promise<void>;
   /** Clears client state after `supabase.auth.signOut()` so no stale answers stay in memory. */
   clearAfterSignOut: () => void;
+  flushPending: () => Promise<void>;
   exportMarkdown: () => string;
   exportMarkdownFromDb: () => Promise<string>;
 }
@@ -99,31 +100,49 @@ async function resolveOrganizationId(
 }
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => {
-  const persistResponse = async (questionId: string) => {
+  let hydrationGeneration = 0;
+  let sessionGeneration = 0;
+  const dirty = new Set<string>();
+  const failures = new Map<string, string>();
+  const inFlight = new Map<string, Promise<void>>();
+  const publishSaveState = () => set({
+    saveStatus: failures.size ? "error" : dirty.size || inFlight.size ? "saving" : "saved",
+    saveError: failures.size ? [...failures.values()].join("; ") : null,
+  });
+  const persistResponse = async (questionId: string): Promise<void> => {
+    const previous = inFlight.get(questionId);
+    if (previous) { await previous; if (dirty.has(questionId) && !failures.has(questionId)) await persistResponse(questionId); return; }
     const state = get();
-    if (state.hydration !== "ready" || !state.organizationId) return;
+    const sessionAtStart = sessionGeneration;
     const r = state.responsesByQuestionId[questionId];
-    if (!r) return;
-    if (!isBrowserSupabaseConfigured()) return;
-    const supabase = createClient();
-    set({ saveStatus: "saving", saveError: null });
-    try {
-      await upsertResponse(supabase, {
-        organizationId: state.organizationId,
-        questionId,
-        value: r.value,
-        confidence: r.confidence,
-        enteredByName: r.enteredByName,
-        enteredByUserId: state.userId,
-      });
-      set({ saveStatus: "saved" });
-      setTimeout(() => set({ saveStatus: "idle" }), 1600);
-    } catch (e) {
-      set({
-        saveStatus: "error",
-        saveError: e instanceof Error ? e.message : "Save failed",
-      });
+    if (!r || !dirty.has(questionId)) return;
+    if (state.hydration !== "ready" || !state.organizationId || !isBrowserSupabaseConfigured()) {
+      failures.set(questionId, "Cannot save until the workspace is connected."); publishSaveState(); return;
     }
+    failures.delete(questionId);
+    const save = (async () => {
+      try {
+        await upsertResponse(createClient(), { organizationId: state.organizationId!, questionId,
+          value: r.value, confidence: r.confidence, enteredByName: r.enteredByName, enteredByUserId: state.userId });
+        if (sessionAtStart === sessionGeneration && get().responsesByQuestionId[questionId] === r) dirty.delete(questionId);
+      } catch (e) { if (sessionAtStart === sessionGeneration) failures.set(questionId, e instanceof Error ? e.message : "Save failed"); }
+    })();
+    inFlight.set(questionId, save); publishSaveState();
+    await save;
+    if (sessionAtStart !== sessionGeneration) return;
+    if (inFlight.get(questionId) === save) inFlight.delete(questionId);
+    publishSaveState();
+  };
+  const queueResponse = (questionId: string) => {
+    dirty.add(questionId); publishSaveState();
+    scheduleDebounced(`rq-${questionId}`, () => { void persistResponse(questionId); });
+  };
+  const flushPending = async () => {
+    clearAllOnboardingDebounceTimers();
+    do {
+      await Promise.all([...dirty].map((questionId) => persistResponse(questionId)));
+      if (failures.size) throw new Error([...failures.values()].join("; "));
+    } while (dirty.size || inFlight.size);
   };
 
   return {
@@ -141,6 +160,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     defaultEnteredByName: "",
 
     hydrate: async () => {
+      const generation = ++hydrationGeneration;
       if (!isBrowserSupabaseConfigured()) {
         set({ hydration: "error", loadError: "Supabase is not configured for this environment." });
         return;
@@ -150,6 +170,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      if (generation !== hydrationGeneration) return;
       if (!session?.user) {
         set({ hydration: "error", loadError: "Sign in to load shared onboarding answers.", appRole: "", isOrgAdmin: false });
         return;
@@ -158,6 +179,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       const appRole = getAppRoleFromClaims(session.user);
       set({ appRole, isOrgAdmin: isOrgAdminAppRole(appRole) });
       const organizationId = await resolveOrganizationId(supabase, userId, appRole);
+      if (generation !== hydrationGeneration) return;
       if (!organizationId) {
         set({
           hydration: "error",
@@ -175,6 +197,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       try {
         const questions = await fetchQuestions(supabase);
         const responses = await fetchResponses(supabase, organizationId);
+        if (generation !== hydrationGeneration) return;
         set({
           hydration: "ready",
           questionsById: indexQuestions(questions),
@@ -185,6 +208,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
           loadError: null,
         });
       } catch (e) {
+        if (generation !== hydrationGeneration) return;
         set({
           hydration: "error",
           loadError: e instanceof Error ? e.message : "Failed to load onboarding data from Supabase.",
@@ -213,9 +237,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
           },
         };
       });
-      scheduleDebounced(`rq-${questionId}`, () => {
-        void persistResponse(questionId);
-      });
+      queueResponse(questionId);
     },
 
     setResponseConfidence: (questionId, confidence) => {
@@ -247,9 +269,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
           },
         };
       });
-      scheduleDebounced(`rq-${questionId}`, () => {
-        void persistResponse(questionId);
-      });
+      queueResponse(questionId);
     },
 
     setEnteredByForQuestion: (questionId, enteredByName) => {
@@ -273,9 +293,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
           },
         };
       });
-      scheduleDebounced(`rq-${questionId}`, () => {
-        void persistResponse(questionId);
-      });
+      queueResponse(questionId);
     },
 
     importQuestionFileJson: async (jsonText) => {
@@ -312,12 +330,18 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       }
     },
 
+    flushPending,
+
     resetWorkspace: async () => {
+      await flushPending();
       await get().hydrate();
     },
 
     clearAfterSignOut: () => {
+      hydrationGeneration += 1; sessionGeneration += 1;
+      inFlight.clear();
       clearAllOnboardingDebounceTimers();
+      dirty.clear(); failures.clear();
       set({
         hydration: "idle",
         saveStatus: "idle",
@@ -346,6 +370,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     },
 
     exportMarkdownFromDb: async () => {
+      await flushPending();
       const state = get();
       if (!state.organizationId || !isBrowserSupabaseConfigured()) {
         return get().exportMarkdown();

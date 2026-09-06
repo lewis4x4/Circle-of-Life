@@ -9863,6 +9863,9 @@ export type Database = {
           generated_by_user_id: string | null
           id: string
           organization_id: string
+          result_snapshot_json: Json | null
+          schedule_id: string | null
+          scheduled_for: string | null
           run_scope_json: Json
           runtime_classification: string | null
           source_id: string
@@ -9881,6 +9884,9 @@ export type Database = {
           generated_by_user_id?: string | null
           id?: string
           organization_id: string
+          result_snapshot_json?: Json | null
+          schedule_id?: string | null
+          scheduled_for?: string | null
           run_scope_json?: Json
           runtime_classification?: string | null
           source_id: string
@@ -9899,6 +9905,9 @@ export type Database = {
           generated_by_user_id?: string | null
           id?: string
           organization_id?: string
+          result_snapshot_json?: Json | null
+          schedule_id?: string | null
+          scheduled_for?: string | null
           run_scope_json?: Json
           runtime_classification?: string | null
           source_id?: string
@@ -12501,7 +12510,7 @@ export type Database = {
           fall_risk_level: string | null
           first_name: string
           food_preferences: string | null
-          gender: Database["public"]["Enums"]["gender"]
+          gender: Database["public"]["Enums"]["gender"] | null
           gender_other: string | null
           hold_case_manager_notified_at: string | null
           hold_decline_return_at: string | null
@@ -12589,7 +12598,7 @@ export type Database = {
           fall_risk_level?: string | null
           first_name: string
           food_preferences?: string | null
-          gender: Database["public"]["Enums"]["gender"]
+          gender: Database["public"]["Enums"]["gender"] | null
           gender_other?: string | null
           hold_case_manager_notified_at?: string | null
           hold_decline_return_at?: string | null
@@ -12677,7 +12686,7 @@ export type Database = {
           fall_risk_level?: string | null
           first_name?: string
           food_preferences?: string | null
-          gender?: Database["public"]["Enums"]["gender"]
+          gender?: Database["public"]["Enums"]["gender"] | null
           gender_other?: string | null
           hold_case_manager_notified_at?: string | null
           hold_decline_return_at?: string | null
@@ -15770,6 +15779,16 @@ export type Database = {
       }
     }
     Functions: {
+      record_verified_med_pass_witness: {
+        Args: { p_pass_id: string; p_actor_id: string; p_witness_id: string }
+        Returns: string
+      }
+
+      complete_verified_controlled_counts: {
+        Args: { p_count_ids: string[]; p_outgoing_id: string; p_incoming_id: string; p_facility_id: string; p_organization_id: string }
+        Returns: undefined
+      }
+
       admin_command_center_projection: {
         Args: { p_facility_id?: string | null }
         Returns: Json

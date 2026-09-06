@@ -6,6 +6,7 @@ import {
   clearFailureRateLimit,
   recordFailureRateLimit,
 } from "@/lib/security/in-memory-failure-rate-limit";
+import { verifyWitnessCredentials } from "@/lib/supabase/witness-auth";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
@@ -20,6 +21,7 @@ type Body = {
 };
 
 const ALLOWED_ROLES = new Set(["nurse", "caregiver"]);
+const OUTGOING_ROLES = new Set(["nurse", "caregiver", "med_tech"]);
 const FAILURE_LIMIT = {
   maxFailures: 5,
   windowMs: 10 * 60 * 1000,
@@ -87,10 +89,16 @@ export async function POST(request: Request) {
     .from("user_profiles")
     .select("organization_id, app_role")
     .eq("id", outgoing.id)
+    .eq("is_active", true)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (outProfErr || !outgoingProfile?.organization_id) {
     return NextResponse.json({ verified: false, error: "Outgoing profile not found" }, { status: 403 });
+  }
+
+  if (!OUTGOING_ROLES.has(outgoingProfile.app_role)) {
+    return NextResponse.json({ verified: false, error: "Only a nurse, caregiver, or medication technician may originate a count" }, { status: 403 });
   }
 
   const okOutgoingFac = await serviceRoleUserHasFacilityAccess(admin, {
@@ -126,23 +134,14 @@ export async function POST(request: Request) {
     );
   }
 
-  type SignInResult = Awaited<ReturnType<typeof admin.auth.signInWithPassword>>;
-  let authData: SignInResult["data"] | null = null;
-  let authErr: SignInResult["error"] | null = null;
+  let verification;
   try {
-    const result = await admin.auth.signInWithPassword({
-      email,
-      password,
-    });
-    authData = result.data;
-    authErr = result.error;
-  } finally {
-    try {
-      await admin.auth.signOut();
-    } catch {
-      /* service-role session must not persist if signOut fails */
-    }
+    verification = await verifyWitnessCredentials(email, password);
+  } catch (error) {
+    logError("controlled-substance.verify-co-sign", error, { action: "witness_authentication" });
+    return NextResponse.json({ verified: false, error: "Witness verification unavailable" }, { status: 503 });
   }
+  const { data: authData, error: authErr } = verification;
 
   if (authErr || !authData?.user) {
     recordFailureRateLimit(limiterKey, FAILURE_LIMIT);
@@ -164,6 +163,8 @@ export async function POST(request: Request) {
     .from("user_profiles")
     .select("app_role, full_name, organization_id")
     .eq("id", incomingId)
+    .eq("is_active", true)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (profErr || !profile) {
@@ -244,40 +245,16 @@ export async function POST(request: Request) {
     }
   }
 
-  const signedAt = new Date().toISOString();
-
-  const { error: upErr } = await admin
-    .from("controlled_substance_counts")
-    .update({
-      incoming_staff_id: incomingId,
-      incoming_signed_at: signedAt,
-    })
-    .in("id", countIds)
-    .is("incoming_staff_id", null);
-
+  const { error: upErr } = await admin.rpc("complete_verified_controlled_counts", {
+    p_count_ids: countIds,
+    p_outgoing_id: outgoing.id,
+    p_incoming_id: incomingId,
+    p_facility_id: facilityId,
+    p_organization_id: orgId,
+  });
   if (upErr) {
     logError("controlled-substance.verify-co-sign", upErr, { action: "update_counts", countCount: countIds.length, facilityId });
-    return NextResponse.json({ verified: false, error: "Could not save signature" }, { status: 500 });
-  }
-
-  const auditRows = rows.map((row) => ({
-    table_name: "controlled_substance_counts",
-    record_id: row.id,
-    action: "UPDATE" as const,
-    new_data: {
-      event: "incoming_co_sign_verified",
-      incoming_staff_id: incomingId,
-      outgoing_staff_id: outgoing.id,
-    },
-    user_id: incomingId,
-    organization_id: row.organization_id,
-    facility_id: row.facility_id,
-  }));
-
-  const { error: auditErr } = await admin.from("audit_log").insert(auditRows);
-
-  if (auditErr) {
-    logError("controlled-substance.verify-co-sign", auditErr, { action: "audit_log_insert", countCount: countIds.length });
+    return NextResponse.json({ verified: false, error: "Counts changed or signature could not be saved. Refresh and retry." }, { status: 409 });
   }
 
   const displayName =

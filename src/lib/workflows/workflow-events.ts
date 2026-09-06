@@ -1,3 +1,4 @@
+import { isForm1823Current } from "@/lib/admissions/form-1823-readiness";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
@@ -156,7 +157,7 @@ export async function loadForm1823State(admin: AdminClient, args: {
   admissionCaseId: string;
   residentId: string;
 }) : Promise<Form1823State> {
-  const [{ data: checklist }, { data: caseRecord }, { data: fallbackRecord }] = await Promise.all([
+  const [checklistResult, caseResult, fallbackResult] = await Promise.all([
     admin
       .from(ADMISSION_DOCUMENT_CHECKLIST_ITEMS_TABLE)
       .select("id, received_at, notes, waived_reason")
@@ -182,9 +183,13 @@ export async function loadForm1823State(admin: AdminClient, args: {
       .maybeSingle(),
   ]);
 
+  for (const result of [checklistResult, caseResult, fallbackResult]) if (result.error) throw result.error;
+  const checklist = checklistResult.data;
+  const caseRecord = caseResult.data;
+  const fallbackRecord = fallbackResult.data;
   const record = (caseRecord ?? fallbackRecord ?? null) as unknown as Form1823State["record"];
   const checklistRow = checklist as unknown as Form1823State["checklist"];
-  const isSatisfied = Boolean(record?.status === "received" && checklistRow?.received_at);
+  const isSatisfied = isForm1823Current(record, checklistRow);
 
   return {
     record,

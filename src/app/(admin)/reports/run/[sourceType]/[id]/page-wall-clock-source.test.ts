@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
+const persistenceSource = readFileSync(path.resolve(process.cwd(), "src/lib/reports/run-persistence.ts"), "utf8");
 const pageSource = readFileSync(path.resolve(import.meta.dirname, "./page.tsx"), "utf8");
 
 describe("report run CSV export Eastern date stamp", () => {
@@ -28,6 +29,9 @@ describe("report run CSV export Eastern date stamp", () => {
     expect(pageSource).toContain("const datePart = todayFacilityDateIso();");
     expect(pageSource).toContain("CSV export filenames use today&apos;s Eastern (ET) calendar date.");
     expect(pageSource).not.toMatch(/datePart = new Date\(\)\.toISOString\(\)\.slice\(0,\s*10\)/);
-    expect(pageSource).toContain("completed_at: new Date().toISOString()");
+    expect(pageSource).toContain("runTemplateAndPersist(");
+    expect(pageSource).toContain("finishReportRun(");
+    expect(persistenceSource).toContain("completed_at: snapshot.generatedAt");
+    expect(persistenceSource).toContain("generatedAt:new Date().toISOString()");
   });
 });

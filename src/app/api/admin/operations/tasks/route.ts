@@ -17,6 +17,8 @@ type OperationTaskRow = {
   assigned_shift_date: string;
   assigned_shift: "day" | "evening" | "night" | null;
   assigned_to: string | null;
+  signed_by?: string | null;
+  requires_dual_sign?: boolean;
   assigned_role: string | null;
   status: "pending" | "in_progress" | "completed" | "missed" | "deferred" | "cancelled";
   due_at: string | null;
@@ -79,6 +81,8 @@ export async function GET(request: Request) {
       assigned_shift_date,
       assigned_shift,
       assigned_to,
+      signed_by,
+      requires_dual_sign,
       assigned_role,
       status,
       due_at,
@@ -97,6 +101,8 @@ export async function GET(request: Request) {
     .gte("assigned_shift_date", filters.dateFrom)
     .lte("assigned_shift_date", filters.dateTo)
     .limit(effectiveLimit);
+
+  if (actor.appRole === "housekeeper") query = query.or(`assigned_to.eq.${actor.id},and(assigned_to.is.null,assigned_role.eq.housekeeper)`);
 
   if (filters.status) {
     query = query.eq("status", filters.status);

@@ -114,6 +114,12 @@ export async function POST(
   const VALID_QUICK_STATUSES = new Set<ObservationQuickStatus>([
     "awake", "asleep", "calm", "agitated", "confused", "distressed", "not_found", "refused",
   ]);
+  if (request.headers.get("x-haven-sync") === "service-worker" && !body.offline) {
+    return NextResponse.json({ error: "Offline observation has no original operator. Reconciliation required." }, { status: 409 });
+  }
+  if (body.offline && (body.offline.ownerUserId !== context.userId || body.offline.organizationId !== context.organizationId)) {
+    return NextResponse.json({ error: "Sign in as the original operator to send this observation." }, { status: 403 });
+  }
   if (!body.quickStatus || !VALID_QUICK_STATUSES.has(body.quickStatus)) {
     return NextResponse.json({ error: "A valid quickStatus is required" }, { status: 400 });
   }
@@ -150,6 +156,9 @@ export async function POST(
   if (taskError || !task) {
     return NextResponse.json({ error: "Observation task not found" }, { status: 404 });
   }
+  if (body.offline && (!body.observedAt || body.offline.facilityId !== task.facility_id)) {
+    return NextResponse.json({ error: "Offline observation scope or original time is missing or does not match." }, { status: 409 });
+  }
 
   const TERMINAL_STATUSES = new Set(["completed_on_time", "completed_late", "excused"]);
   if (TERMINAL_STATUSES.has(task.status as string)) {
@@ -177,7 +186,7 @@ export async function POST(
 
   const now = new Date();
   const entryMode: ObservationEntryMode =
-    observedAt.getTime() < now.getTime() - 5 * 60 * 1000 ? "late" : "live";
+    body.offline ? "offline_synced" : observedAt.getTime() < now.getTime() - 5 * 60 * 1000 ? "late" : "live";
   if (entryMode === "late" && !body.lateReason?.trim()) {
     return NextResponse.json({ error: "lateReason is required for late entries" }, { status: 400 });
   }

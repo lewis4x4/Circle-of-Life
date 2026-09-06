@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-serif), "Playfair Display", Georgia, serif;
+  --font-serif: var(--font-serif), "Playfair Display", Georgia, serif;
   --font-mono: var(--font-mono), ui-monospace, "JetBrains Mono", "IBM Plex Mono", SFMono-Regular, Menlo, monospace;
 
   --color-background: hsl(var(--background));
@@ -761,4 +761,19 @@
 @keyframes landing-marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+
+/* =============================================================================
+   Senior Living Accessibility & Vision Comfort Modes
+   ========================================================================= */
+.text-scale-large {
+  font-size: 112.5% !important;
+}
+
+.text-scale-xlarge {
+  font-size: 125% !important;
+}
+
+.high-contrast-mode {
+  filter: contrast(1.15) saturate(1.1);
 }

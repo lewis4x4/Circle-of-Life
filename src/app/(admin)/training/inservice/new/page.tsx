@@ -35,6 +35,7 @@ export default function AdminNewInserviceSessionPage() {
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [programList, setProgramList] = useState<ProgramOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,84 +188,10 @@ export default function AdminNewInserviceSessionPage() {
       const nt = notes.trim();
       if (nt) payload.notes = nt;
 
-      const { data: inserted, error: insErr } = await supabase
-        .from("inservice_log_sessions")
-        .insert(payload)
-        .select("id")
-        .single();
-
-      if (insErr) {
-        const msg = insErr.message ?? "";
-        if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("policy")) {
-          setError(
-            "You may not have permission to create sessions (requires owner, org admin, or facility admin).",
-          );
-          return;
-        }
-        throw new Error(insErr.message);
-      }
-      if (!inserted?.id) throw new Error("Could not create session.");
-
-      const sessionId = inserted.id;
-      const attendeeRows: Database["public"]["Tables"]["inservice_log_attendees"]["Insert"][] = [
-        ...selectedStaffIds,
-      ].map((staffId) => ({
-        session_id: sessionId,
-        staff_id: staffId,
-        signed_in: true,
-      }));
-
-      const { error: attErr } = await supabase.from("inservice_log_attendees").insert(attendeeRows);
-
-      if (attErr) {
-        await supabase
-          .from("inservice_log_sessions")
-          .update({ deleted_at: new Date().toISOString() })
-          .eq("id", sessionId);
-        const msg = attErr.message ?? "";
-        if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("policy")) {
-          setError("Could not add attendees (permission denied). Session was not saved.");
-          return;
-        }
-        throw new Error(attErr.message);
-      }
-
-      const catalogProgramId = programId.trim();
-      if (catalogProgramId) {
-        const completionRows: Database["public"]["Tables"]["staff_training_completions"]["Insert"][] =
-          [...selectedStaffIds].map((staffId) => ({
-            organization_id: orgId,
-            facility_id: selectedFacilityId,
-            staff_id: staffId,
-            training_program_id: catalogProgramId,
-            completed_at: sessionDate,
-            hours_completed: hn,
-            delivery_method: "in_person" as const,
-            evaluator_user_id: user.id,
-            notes: `In-service: ${t} (session ${sessionId})`,
-            created_by: user.id,
-          }));
-
-        const { error: compErr } = await supabase
-          .from("staff_training_completions")
-          .insert(completionRows);
-
-        if (compErr) {
-          await supabase.from("inservice_log_attendees").delete().eq("session_id", sessionId);
-          await supabase
-            .from("inservice_log_sessions")
-            .update({ deleted_at: new Date().toISOString() })
-            .eq("id", sessionId);
-          const msg = compErr.message ?? "";
-          if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("policy")) {
-            setError(
-              "Could not log training completions for attendees (permission denied). Session was not saved.",
-            );
-            return;
-          }
-          throw new Error(compErr.message);
-        }
-      }
+      const { error: saveError } = await supabase.rpc("save_inservice_session" as never, {
+        p_id: sessionId, p_session: payload, p_staff_ids: [...selectedStaffIds],
+      } as never);
+      if (saveError) throw new Error(saveError.message);
 
       router.push("/admin/training");
     } catch (err) {

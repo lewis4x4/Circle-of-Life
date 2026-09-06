@@ -44,3 +44,20 @@ describe("pillars navigation", () => {
     expect(all.some((entry) => entry.href === "/admin/finance")).toBe(true);
   });
 });
+
+import { getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
+import { pillarsForRole } from "./pillars";
+
+describe("role navigation", () => {
+  it("keeps broker navigation in insurance instead of falling back to all tools", () => {
+    const items = pillarsForRole(getRoleDashboardConfig("broker")).flatMap((p) => p.items);
+    expect(items.map((i) => i.key)).toContain("insurance");
+    expect(items.map((i) => i.key)).not.toContain("residents");
+    expect(items.map((i) => i.key)).not.toContain("payroll");
+  });
+  it("applies nurse item restrictions within clinical and quality groups", () => {
+    const items = pillarsForRole(getRoleDashboardConfig("nurse")).flatMap((p) => p.items);
+    expect(items.map((i) => i.key)).toContain("residents");
+    expect(items.map((i) => i.key)).not.toContain("transportation");
+  });
+});

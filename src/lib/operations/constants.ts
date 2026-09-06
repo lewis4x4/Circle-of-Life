@@ -26,6 +26,7 @@ export const OPERATION_SHIFT_LABELS: Record<string, string> = {
 };
 
 export const OPERATIONS_VIEW_ROLES = [
+  "housekeeper",
   "owner",
   "org_admin",
   "facility_admin",

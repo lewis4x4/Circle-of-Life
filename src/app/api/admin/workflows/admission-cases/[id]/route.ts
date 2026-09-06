@@ -8,7 +8,8 @@ import {
   loadAdmissionRateTermCount,
   loadForm1823State,
 } from "@/lib/workflows/workflow-events";
-import type { Database } from "@/types/database";
+import { Constants } from "@/types/database";
+import { z } from "zod";
 
 const ALLOWED_ROLES = [
   "owner",
@@ -20,18 +21,22 @@ const ALLOWED_ROLES = [
   "nurse",
 ] as const;
 
-type MedicaidPipelineStage = "prospect" | "app_requested" | "pending" | "approved" | "denied" | "waitlist";
-
-const MEDICAID_PIPELINE_STAGES: MedicaidPipelineStage[] = [
-  "prospect",
-  "app_requested",
-  "pending",
-  "approved",
-  "denied",
-  "waitlist",
-];
-
-type AdmissionPatch = Partial<Database["public"]["Tables"]["admission_cases"]["Update"]>;
+const admissionPatchSchema = z.object({
+  status: z.enum(Constants.public.Enums.admission_case_status).optional(),
+  bed_id: z.string().uuid().nullable().optional(),
+  target_move_in_date: z.string().date().nullable().optional(),
+  financial_clearance_at: z.string().datetime({ offset: true }).nullable().optional(),
+  financial_clearance_by: z.string().uuid().nullable().optional(),
+  physician_orders_received_at: z.string().datetime({ offset: true }).nullable().optional(),
+  physician_orders_summary: z.string().max(20000).nullable().optional(),
+  notes: z.string().max(20000).nullable().optional(),
+  medicaid_pipeline_stage: z.enum(["prospect", "app_requested", "pending", "approved", "denied", "waitlist"]).optional(),
+  intake_program_type: z.string().max(200).nullable().optional(),
+  source: z.enum(Constants.public.Enums.admission_case_source).nullable().optional(),
+  source_other: z.string().max(2000).nullable().optional(),
+  anticipated_payer_source: z.enum(Constants.public.Enums.anticipated_payer_source).nullable().optional(),
+  anticipated_payer_other: z.string().max(2000).nullable().optional(),
+}).strict().refine((value) => Object.keys(value).length > 0);
 
 export async function PATCH(
   request: NextRequest,
@@ -42,28 +47,34 @@ export async function PATCH(
   const { actor } = actorResult;
   const { id } = await params;
 
-  let patch: AdmissionPatch;
+  let body: unknown;
   try {
-    patch = (await request.json()) as AdmissionPatch;
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-
-  if (
-    patch.medicaid_pipeline_stage !== undefined
-    && !MEDICAID_PIPELINE_STAGES.includes(patch.medicaid_pipeline_stage as MedicaidPipelineStage)
-  ) {
-    return NextResponse.json({ error: "Invalid Medicaid pipeline stage" }, { status: 400 });
+  const parsed = admissionPatchSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid admission fields", details: parsed.error.flatten() }, { status: 400 });
+  const patch = parsed.data;
+  if (patch.financial_clearance_by !== undefined && patch.financial_clearance_by !== actor.id && patch.financial_clearance_by !== null) {
+    return NextResponse.json({ error: "Clearance must identify the acting user" }, { status: 400 });
   }
 
   const current = await loadAdmissionCaseWorkflowContext(actor.admin, id);
-  if (!current) {
+  if (!current || current.organization_id !== actor.organization_id) {
     return NextResponse.json({ error: "Admission case not found" }, { status: 404 });
   }
 
   const canAccessFacility = await actorCanAccessFacility(actor, current.facility_id);
   if (!canAccessFacility) {
     return NextResponse.json({ error: "Access denied for facility" }, { status: 403 });
+  }
+
+  if (patch.bed_id) {
+    const { data: bed, error } = await actor.admin.from("beds").select("id")
+      .eq("id", patch.bed_id).eq("facility_id", current.facility_id)
+      .eq("organization_id", actor.organization_id).is("deleted_at", null).maybeSingle();
+    if (error || !bed) return NextResponse.json({ error: "Bed not found in this facility" }, { status: 400 });
   }
 
   const nextStatus = patch.status ?? current.status;
@@ -117,6 +128,7 @@ export async function PATCH(
 
   const updatePayload = {
     ...patch,
+    ...(patch.financial_clearance_at !== undefined ? { financial_clearance_by: patch.financial_clearance_at ? actor.id : null } : {}),
     updated_at: new Date().toISOString(),
     updated_by: actor.id,
   };
@@ -124,7 +136,9 @@ export async function PATCH(
   const { error: updateError } = await actor.admin
     .from("admission_cases")
     .update(updatePayload)
-    .eq("id", current.id);
+    .eq("id", current.id)
+    .eq("organization_id", actor.organization_id)
+    .eq("facility_id", current.facility_id);
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });

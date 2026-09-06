@@ -17,13 +17,14 @@ export type CoordinatorDashboardBrief = {
   staffBulletinNotes: number;
   activeAdmissions: number;
   recentConditionChanges: number;
-  carePlansDue: Array<{ id: string; residentName: string; reviewDate: string }>;
+  carePlansDue: Array<{ residentId?: string; id: string; residentName: string; reviewDate: string }>;
   pendingAdmissions: Array<{ id: string; name: string; daysSinceInquiry: number }>;
 };
 
 type CountResponse = { count: number | null };
 type ScopedQuery<T> = { eq(column: string, value: string): T };
 type ReviewListRow = {
+  resident_id: string;
   id: string;
   next_review_date: string;
   residents: { first_name: string | null; last_name: string | null } | null;
@@ -74,7 +75,7 @@ export async function fetchCoordinatorDashboardBrief(
     f(supabase.from("condition_changes" as never).select("id", { count: "exact", head: true }))
       .gte("created_at", new Date(Date.now() - 48 * 3600000).toISOString())
       .is("deleted_at", null),
-    f(supabase.from("care_plans" as never).select("id, next_review_date, residents(first_name, last_name)"))
+    f(supabase.from("care_plans" as never).select("id, resident_id, next_review_date, residents(first_name, last_name)"))
       .eq("status", "active")
       .lte("next_review_date", fourteenDays)
       .is("deleted_at", null)
@@ -89,6 +90,7 @@ export async function fetchCoordinatorDashboardBrief(
 
   const carePlansDue = ((reviewsListRes.data ?? []) as ReviewListRow[]).map((review) => ({
     id: review.id,
+    residentId: review.resident_id,
     residentName: formatCoordinatorDashboardResidentName(review.residents),
     reviewDate: review.next_review_date,
   }));

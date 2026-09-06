@@ -59,6 +59,10 @@ export async function POST(
   const expirationDate =
     body.expiration_date ?? defaultForm1823Expiration(examDate);
 
+  if (body.status === "received" && (!body.physician_name?.trim() || !examDate || !expirationDate || !body.notes?.trim())) {
+    return NextResponse.json({ error: "A received report requires physician, exam/expiration dates and a document reference or physical-report verification note." }, { status: 400 });
+  }
+
   const state = await upsertAdmissionForm1823(actor.admin, {
     organizationId: current.organization_id,
     facilityId: current.facility_id,

@@ -8,7 +8,7 @@ import type { Database } from "@/types/database";
 
 export type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
 export type StaffStatus = "active" | "on_leave" | "off_shift";
-export type CertificationStatus = "current" | "expiring_soon" | "expired";
+export type CertificationStatus = "current" | "expiring_soon" | "expired" | "not_verified";
 
 export type StaffRow = {
   id: string;
@@ -19,7 +19,6 @@ export type StaffRow = {
   status: StaffStatus;
   certifications: CertificationStatus;
   nextShift: string;
-  overtimeRisk: "low" | "medium" | "high";
   photoUrl?: string | null;
 };
 
@@ -57,34 +56,9 @@ function normalizeStaffEmail(email: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
-function normalizeStaffPersonName(firstName: string, lastName: string): string {
-  return `${firstName.trim().toLowerCase()} ${lastName.trim().toLowerCase()}`.trim();
-}
-
-/** True when two roster source rows represent the same person in the directory. */
-export function isSameStaffDirectoryPerson(
-  left: StaffDirectorySourceRow,
-  right: StaffDirectorySourceRow,
-): boolean {
-  if (left.user_id && right.user_id && left.user_id === right.user_id) {
-    return true;
-  }
-
-  const leftEmail = normalizeStaffEmail(left.email);
-  const rightEmail = normalizeStaffEmail(right.email);
-  if (leftEmail && rightEmail && leftEmail === rightEmail) {
-    return true;
-  }
-
-  if (left.facility_id === right.facility_id) {
-    const leftName = normalizeStaffPersonName(left.first_name, left.last_name);
-    const rightName = normalizeStaffPersonName(right.first_name, right.last_name);
-    if (leftName.length > 0 && leftName === rightName) {
-      return true;
-    }
-  }
-
-  return false;
+/** Employment relationships are keyed by staff ID, never inferred from a name or email. */
+export function isSameStaffDirectoryPerson(left: StaffDirectorySourceRow, right: StaffDirectorySourceRow): boolean {
+  return left.id === right.id;
 }
 
 function staffDirectoryRetentionScore(row: StaffDirectorySourceRow): number {
@@ -109,7 +83,7 @@ export function pickPreferredStaffDirectoryRecord<T extends StaffDirectorySource
   return candidate.updated_at >= existing.updated_at ? candidate : existing;
 }
 
-/** Collapse duplicate staff rows so the Team directory shows each person once. */
+/** Collapse repeated query rows only; preserve each employment record and its relationships. */
 export function dedupeStaffDirectoryRecords<T extends StaffDirectorySourceRow>(rows: T[]): T[] {
   const kept: T[] = [];
   for (const row of rows) {
@@ -126,12 +100,12 @@ export function dedupeStaffDirectoryRecords<T extends StaffDirectorySourceRow>(r
 export const STAFF_DIRECTORY_IDENTITY_SELECT =
   "id, facility_id, user_id, first_name, last_name, email, staff_role, employment_status, updated_at, deleted_at";
 
-/** Count unique active people after collapsing duplicate roster rows. */
+/** Count active employment records by stable staff ID. */
 export function countUniqueActiveStaffDirectoryRecords(rows: StaffDirectorySourceRow[]): number {
   return dedupeStaffDirectoryRecords(rows).filter((row) => row.employment_status === "active").length;
 }
 
-/** One picker option per person; prefers linked auth and contactable rows when imports overlap. */
+/** One picker option per employment record. */
 export function buildDedupedStaffPickerOptions(
   rows: StaffDirectorySourceRow[],
 ): { id: string; label: string }[] {
@@ -250,7 +224,6 @@ export async function fetchStaffFromSupabase(
     const uiRole = mapDbStaffRoleToUi(s.staff_role);
     const uiStatus = mapEmploymentToUiStatus(s.employment_status);
     const nextShift = formatStaffRosterNextShift(nextShiftByStaff.get(s.id));
-    const overtimeRisk = deriveOvertimeRisk(certState, s.employment_status);
 
     return {
       id: s.id,
@@ -261,7 +234,6 @@ export async function fetchStaffFromSupabase(
       status: uiStatus,
       certifications: certState,
       nextShift,
-      overtimeRisk,
       photoUrl: s.photo_url,
     };
   });
@@ -314,8 +286,8 @@ function mapEmploymentToUiStatus(employment: string): StaffStatus {
   return "active";
 }
 
-function aggregateCertStatus(certs: SupabaseCertRow[]): CertificationStatus {
-  if (certs.length === 0) return "current";
+export function aggregateCertStatus(certs: SupabaseCertRow[]): CertificationStatus {
+  if (certs.length === 0) return "not_verified";
   const now = new Date();
   const soon = new Date();
   soon.setDate(soon.getDate() + 60);
@@ -334,11 +306,4 @@ function aggregateCertStatus(certs: SupabaseCertRow[]): CertificationStatus {
     }
   }
   return worst;
-}
-
-function deriveOvertimeRisk(cert: CertificationStatus, employment: string): "low" | "medium" | "high" {
-  if (cert === "expired") return "high";
-  if (employment === "on_leave") return "medium";
-  if (cert === "expiring_soon") return "medium";
-  return "low";
 }

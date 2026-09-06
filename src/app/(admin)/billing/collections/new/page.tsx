@@ -90,6 +90,7 @@ export default function AdminNewCollectionActivityPage() {
   const [followUpDate, setFollowUpDate] = useState("");
   const [followUpNotes, setFollowUpNotes] = useState("");
 
+  const [activityId] = useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +222,7 @@ export default function AdminNewCollectionActivityPage() {
       if (!resRow) throw new Error("Resident not found.");
 
       const payload: Record<string, unknown> = {
+        id: activityId,
         resident_id: residentId,
         facility_id: resRow.facility_id,
         activity_type: activityType,

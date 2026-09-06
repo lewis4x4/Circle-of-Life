@@ -1,9 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { resolveModuleContext, generateDynamicSuggestions, type ModuleContext } from "./context-map";
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { normalizeInsightCitations, type InsightCitation } from "./citations";
+import { createClient } from "@/lib/supabase/client";
 import { authorizedEdgeFetch } from "@/lib/supabase/edge-auth";
 
 export interface HavenInsightMessage {
@@ -12,6 +16,9 @@ export interface HavenInsightMessage {
   content: string;
   timestamp: Date;
   tokensUsed?: number;
+  sessionId?: string;
+  citations?: InsightCitation[];
+  fallbackUsed?: boolean;
 }
 
 interface HavenInsightState {
@@ -45,6 +52,16 @@ export function useHavenInsight(): HavenInsightState {
 }
 
 export function HavenInsightProvider({ children }: { children: React.ReactNode }) {
+  const { user, organizationId } = useHavenAuth();
+  const facilityId = useFacilityStore((state) => state.selectedFacilityId);
+  const storageKey = `haven:insight-session:${organizationId ?? "none"}:${user?.id ?? "signed-out"}:${facilityId ?? "all"}`;
+  return <InsightConversation key={storageKey} storageKey={storageKey} organizationId={organizationId}>{children}</InsightConversation>;
+}
+
+function InsightConversation({ children, storageKey, organizationId }: { children: React.ReactNode; storageKey: string; organizationId: string | null }) {
+  const sessionId = useRef<string | undefined>(undefined);
+  const generation = useRef(0);
+  const hydrated = useRef(false);
   const pathname = usePathname();
   // `hasOpened` flips true the first time the panel is opened and stays true
   // for the life of the provider. Gating useExecRoleKpis on it keeps 4 admin
@@ -57,6 +74,32 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
   const [messages, setMessages] = useState<HavenInsightMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasOpened || hydrated.current || !organizationId) return;
+    hydrated.current = true;
+    const previous = sessionStorage.getItem(storageKey);
+    if (!previous || messages.length) return;
+    sessionId.current = previous;
+    const requestGeneration = generation.current;
+    let cancelled = false;
+    setLoading(true);
+    void (async () => {
+      try {
+        const { data, error: loadError } = await createClient().from("exec_nlq_messages" as never)
+          .select("id, role, content, ordinal, citations, fallback_used, tokens_used, created_at, session_id" as never)
+          .eq("session_id" as never, previous as never).eq("organization_id" as never, organizationId as never)
+          .neq("role" as never, "system" as never).is("deleted_at" as never, null)
+          .order("ordinal" as never, { ascending: false }).limit(MAX_MESSAGES);
+        if (loadError) throw loadError;
+        if (cancelled || requestGeneration !== generation.current) return;
+        type HistoryRow = { id: string; role: "user" | "assistant"; content: string; created_at: string; session_id: string; citations: unknown; fallback_used: boolean; tokens_used?: number };
+        setMessages(((data ?? []) as unknown as HistoryRow[]).reverse().map((row) => ({ id: row.id, role: row.role, content: row.content, timestamp: new Date(row.created_at), sessionId: row.session_id, citations: normalizeInsightCitations(row.citations), fallbackUsed: row.fallback_used, tokensUsed: row.tokens_used })));
+      } catch (e) { if (!cancelled) setError(e instanceof Error ? e.message : "Saved conversation could not be loaded."); }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [hasOpened, organizationId, storageKey, messages.length]);
 
   const currentModule = useMemo(() => resolveModuleContext(pathname), [pathname]);
   const suggestedQuestions = useMemo(
@@ -75,12 +118,13 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
       return !prev;
     });
   }, []);
-  const clearChat = useCallback(() => { setMessages([]); setError(null); }, []);
+  const clearChat = useCallback(() => { generation.current++; sessionId.current = undefined; sessionStorage.removeItem(storageKey); setMessages([]); setError(null); setLoading(false); }, [storageKey]);
 
   const sendQuestion = useCallback(async (text: string) => {
     const q = text.trim();
     if (!q || loading) return;
 
+    const requestGeneration = generation.current;
     setError(null);
     const userMsg: HavenInsightMessage = { id: `u-${Date.now()}`, role: "user", content: q, timestamp: new Date() };
     setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), userMsg]);
@@ -89,6 +133,7 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
     try {
       const payload = JSON.stringify({
         question: q,
+        session_id: sessionId.current,
         route: pathname,
         module: currentModule.module,
       });
@@ -125,8 +170,16 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Failed to get response");
 
+      if (requestGeneration !== generation.current) return;
+      if (typeof data.session_id === "string") {
+        sessionId.current = data.session_id;
+        try { sessionStorage.setItem(storageKey, data.session_id); } catch { /* Conversation still exists on the server. */ }
+      }
       const aiMsg: HavenInsightMessage = {
-        id: data.session_id || `a-${Date.now()}`,
+        id: data.message_id || crypto.randomUUID(),
+        sessionId: sessionId.current,
+        citations: normalizeInsightCitations(data.citations),
+        fallbackUsed: routerFailed || data.fallback_used === true,
         role: "assistant",
         content: data.answer || "No response generated.",
         timestamp: new Date(),
@@ -134,6 +187,7 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
       };
       setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), aiMsg]);
     } catch (err) {
+      if (requestGeneration !== generation.current) return;
       const errMsg: HavenInsightMessage = {
         id: `e-${Date.now()}`,
         role: "assistant",
@@ -143,9 +197,9 @@ export function HavenInsightProvider({ children }: { children: React.ReactNode }
       setMessages(prev => [...prev.slice(-MAX_MESSAGES + 1), errMsg]);
       setError(err instanceof Error ? err.message : "Query failed");
     } finally {
-      setLoading(false);
+      if (requestGeneration === generation.current) setLoading(false);
     }
-  }, [loading, pathname, currentModule.module]);
+  }, [loading, pathname, currentModule.module, storageKey]);
 
   const value = useMemo<HavenInsightState>(() => ({
     isOpen, messages, currentModule, suggestedQuestions, loading, error,

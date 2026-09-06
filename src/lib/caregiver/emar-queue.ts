@@ -14,8 +14,9 @@ export type EmarQueueSlot = {
   scheduleLabel: string;
   scheduledTimeIso: string;
   isPrn: boolean;
+  lastAdministrationIso?: string | null;
   instructions: string;
-  /** due-now = within past 30m or overdue &lt; 2h; due-soon = next 60m */
+  /** Overdue work stays due-now until explicitly resolved. */
   urgency: "due-now" | "due-soon";
 };
 
@@ -69,13 +70,13 @@ function routeDisplay(route: string): string {
 }
 
 /**
- * Classify slot vs now: due-now if overdue up to 2h or due within 30m; due-soon if within 60m after that window.
+ * Unresolved overdue slots never become upcoming as time passes.
  */
 export function urgencyForSlot(scheduledTimeIso: string, now: Date): "due-now" | "due-soon" {
   const t = new Date(scheduledTimeIso).getTime();
   const n = now.getTime();
   const diffMin = (t - n) / 60000;
-  if (diffMin <= 30 && diffMin >= -120) return "due-now";
+  if (diffMin <= 30) return "due-now";
   return "due-soon";
 }
 
@@ -86,8 +87,11 @@ export type MedRowInput = {
   strength: string | null;
   route: string;
   frequency: string;
+  start_date?: string;
+  end_date?: string | null;
   scheduled_times: string[] | null;
   instructions: string | null;
+  lastAdministrationIso?: string | null;
   resident: { first_name: string | null; last_name: string | null };
   roomLabel: string;
 };
@@ -102,6 +106,15 @@ export function buildEmarQueueSlots(
   const slots: EmarQueueSlot[] = [];
 
   for (const med of meds) {
+    if (med.start_date && ymd < med.start_date) continue;
+    if (med.end_date && ymd > med.end_date) continue;
+    if (["weekly", "biweekly", "monthly"].includes(med.frequency)) {
+      if (!med.start_date) continue;
+      const elapsedDays = Math.round((Date.parse(`${ymd}T00:00:00Z`) - Date.parse(`${med.start_date}T00:00:00Z`)) / 86400000);
+      if (med.frequency === "weekly" && elapsedDays % 7 !== 0) continue;
+      if (med.frequency === "biweekly" && elapsedDays % 14 !== 0) continue;
+      if (med.frequency === "monthly" && ymd.slice(8) !== med.start_date.slice(8)) continue;
+    }
     const first = med.resident.first_name?.trim() ?? "";
     const last = med.resident.last_name?.trim() ?? "";
     const residentName = `${first} ${last}`.trim() || "Resident";
@@ -109,8 +122,7 @@ export function buildEmarQueueSlots(
 
     if (med.frequency === "prn") {
       const key = `prn|${med.id}|${ymd}`;
-      if (documentedKeys.has(key)) continue;
-      const noon = wallClocksToUtc(ymd, ["12:00:00"], timeZone)[0] ?? now.toISOString();
+      const requestedAt = now.toISOString();
       slots.push({
         queueKey: key,
         residentMedicationId: med.id,
@@ -120,8 +132,9 @@ export function buildEmarQueueSlots(
         medicationLabel: medLabel,
         routeLabel: routeDisplay(med.route),
         scheduleLabel: "PRN",
-        scheduledTimeIso: noon,
+        scheduledTimeIso: requestedAt,
         isPrn: true,
+        lastAdministrationIso: med.lastAdministrationIso,
         instructions: med.instructions?.trim() || "Document indication and response per policy.",
         urgency: "due-soon",
       });
@@ -137,7 +150,7 @@ export function buildEmarQueueSlots(
       if (documentedKeys.has(key)) continue;
 
       const diffMin = (new Date(iso).getTime() - now.getTime()) / 60000;
-      if (diffMin < -180 || diffMin > 90) continue;
+      if (diffMin > 90) continue;
 
       slots.push({
         queueKey: key,

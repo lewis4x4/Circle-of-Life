@@ -1,7 +1,7 @@
 import type { Database } from "@/types/database";
 
 type FluidLevel = Database["public"]["Enums"]["iddsi_fluid_level"];
-type FoodLevel = Database["public"]["Enums"]["iddsi_food_level"];
+type FoodLevel = Database["public"]["Enums"]["iddsi_food_level"] | number | null;
 
 /** True when IDDSI fluid is something other than thin or not assessed (resident expected on modified/thickened fluids). */
 export function isThickenedOrModifiedFluidsDiet(fluid: FluidLevel): boolean {
@@ -46,6 +46,7 @@ export function liquidFormVsThickenedFluidsHint(
  * through minced moist and soft bite–sized). Excludes regular / easy chew and not assessed.
  */
 export function isTextureModifiedFoodForSolidOralHint(food: FoodLevel): boolean {
+  if (typeof food === "number") return food >= 3 && food <= 6;
   return (
     food === "level_3_liquidized" ||
     food === "level_4_pureed" ||

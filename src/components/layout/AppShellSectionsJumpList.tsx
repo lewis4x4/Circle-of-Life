@@ -14,8 +14,9 @@ import {
 import { PopoverContent } from "@/components/ui/popover";
 import {
   allSectionJumpEntries,
-  sectionJumpQuickEntries,
   type Pillar,
+  type PillarItem,
+  AUXILIARY_ROUTES,
   type SectionJumpEntry,
 } from "@/lib/navigation/pillars";
 import { cn } from "@/lib/utils";
@@ -33,27 +34,28 @@ function matchesQuery(entry: SectionJumpEntry, query: string): boolean {
 
 export function AppShellSectionsJumpListPanel({
   pillars,
+  auxiliary = AUXILIARY_ROUTES,
   onSelect,
   search,
   onSearchChange,
   onOpenChange,
 }: {
   pillars: Pillar[];
+  auxiliary?: PillarItem[];
   onSelect: (href: string) => void;
   search: string;
   onSearchChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
 }) {
-  const allEntries = useMemo(() => allSectionJumpEntries(pillars), [pillars]);
-  const quickEntries = useMemo(() => sectionJumpQuickEntries(pillars), [pillars]);
+  const allEntries = useMemo(() => allSectionJumpEntries(pillars, auxiliary), [pillars, auxiliary]);
 
   const trimmedSearch = search.trim();
   const isSearching = trimmedSearch.length > 0;
 
   const visibleEntries = useMemo(() => {
-    if (!isSearching) return quickEntries;
+    if (!isSearching) return allEntries;
     return allEntries.filter((entry) => matchesQuery(entry, trimmedSearch));
-  }, [allEntries, isSearching, quickEntries, trimmedSearch]);
+  }, [allEntries, isSearching, trimmedSearch]);
 
   const handleSelect = useCallback(
     (href: string) => {
@@ -83,12 +85,12 @@ export function AppShellSectionsJumpListPanel({
         />
         {!isSearching ? (
           <p className="px-3 pb-1 text-[11px] text-muted-foreground">
-            Common shortcuts for office week. Type to search every section.
+            Available pages for your role. Type to filter.
           </p>
         ) : null}
         <CommandList>
           <CommandEmpty>No matches.</CommandEmpty>
-          <CommandGroup heading={isSearching ? "All sections" : "Common"}>
+          <CommandGroup heading="Available pages">
             {visibleEntries.map((entry) => {
               const Icon = entry.icon;
               return (

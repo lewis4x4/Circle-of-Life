@@ -34,7 +34,10 @@ async function requireUser(admin: any, req: Request) {
     .from("user_profiles")
     .select("app_role, organization_id")
     .eq("id", user.id)
+    .eq("is_active", true)
+    .is("deleted_at", null)
     .single();
+  if (!profile) return null;
   return {
     user,
     accessToken: token,
@@ -118,6 +121,12 @@ async function getResident(admin: any, residentId: string, organizationId: strin
   return data as { id: string; facility_id: string; organization_id: string };
 }
 
+function canonicalSlots(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalSlots).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => `${JSON.stringify(key)}:${canonicalSlots(entry)}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
 function computeFlowTotalCents(slots: Record<string, unknown>): number {
   const lineItems = slots.line_items;
   if (!Array.isArray(lineItems)) return 0;
@@ -137,6 +146,7 @@ async function createDailyLog(
   auth: AuthContext,
   accessibleFacilityIds: string[],
   slots: Record<string, unknown>,
+  runId: string,
 ) {
   const resident = await getResident(admin, String(slots.resident_id ?? ""), auth.organizationId, accessibleFacilityIds);
   const payload = {
@@ -152,12 +162,9 @@ async function createDailyLog(
     created_by: auth.user.id,
     updated_by: auth.user.id,
   };
-  const { data, error } = await admin.from("daily_logs").insert(payload).select("id").single();
-  if (error || !data?.id) throw new Error(error?.message ?? "Failed to create daily log");
-  return {
-    result: { daily_log_id: data.id },
-    undo_handler: "delete_daily_log",
-  };
+  const { data, error } = await admin.rpc("commit_grace_action", { p_run_id: runId, p_table: "daily_logs", p_payload: payload });
+  if (error || !data) throw new Error(error?.message ?? "Could not commit action receipt");
+  return data;
 }
 
 async function createIncident(
@@ -166,6 +173,7 @@ async function createIncident(
   auth: AuthContext,
   accessibleFacilityIds: string[],
   slots: Record<string, unknown>,
+  runId: string,
 ) {
   const residentId = slots.resident_id ? String(slots.resident_id) : null;
   const resident = residentId ? await getResident(admin, residentId, auth.organizationId, accessibleFacilityIds) : null;
@@ -197,12 +205,9 @@ async function createIncident(
     updated_by: auth.user.id,
   };
 
-  const { data, error } = await admin.from("incidents").insert(payload).select("id").single();
-  if (error || !data?.id) throw new Error(error?.message ?? "Failed to create incident");
-  return {
-    result: { incident_id: data.id, incident_number: String(incidentNumberRow) },
-    undo_handler: "delete_incident",
-  };
+  const { data, error } = await admin.rpc("commit_grace_action", { p_run_id: runId, p_table: "incidents", p_payload: payload });
+  if (error || !data) throw new Error(error?.message ?? "Could not commit action receipt");
+  return data;
 }
 
 async function createAssessment(
@@ -210,6 +215,7 @@ async function createAssessment(
   auth: AuthContext,
   accessibleFacilityIds: string[],
   slots: Record<string, unknown>,
+  runId: string,
 ) {
   const resident = await getResident(admin, String(slots.resident_id ?? ""), auth.organizationId, accessibleFacilityIds);
   const payload = {
@@ -224,12 +230,9 @@ async function createAssessment(
     created_by: auth.user.id,
     updated_by: auth.user.id,
   };
-  const { data, error } = await admin.from("assessments").insert(payload).select("id").single();
-  if (error || !data?.id) throw new Error(error?.message ?? "Failed to create assessment");
-  return {
-    result: { assessment_id: data.id },
-    undo_handler: "delete_assessment",
-  };
+  const { data, error } = await admin.rpc("commit_grace_action", { p_run_id: runId, p_table: "assessments", p_payload: payload });
+  if (error || !data) throw new Error(error?.message ?? "Could not commit action receipt");
+  return data;
 }
 
 Deno.serve(async (req) => {
@@ -286,17 +289,21 @@ Deno.serve(async (req) => {
 
   const { data: existingRun } = await admin
     .from("flow_workflow_runs")
-    .select("id,status,result_payload,undo_deadline,undo_handler")
+    .select("id,status,result_payload,undo_deadline,undo_handler,metadata,flow_definition_id,conversation_id,slot_values")
     .eq("organization_id", auth.organizationId)
     .eq("user_id", auth.user.id)
     .eq("idempotency_key", body.idempotency_key)
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (existingRun?.id) {
+  if (existingRun?.id && (existingRun.flow_definition_id !== body.flow_id || existingRun.conversation_id !== body.conversation_id
+    || canonicalSlots(existingRun.slot_values) !== canonicalSlots(body.slots))) {
+    return jsonResponse({ ok: false, error: "idempotency_request_mismatch" }, 409, origin);
+  }
+  if (existingRun?.id && existingRun.status !== "running") {
     return jsonResponse(
       {
-        ok: true,
+        ok: existingRun.status === "succeeded",
         run_id: existingRun.id,
         status: existingRun.status,
         result: existingRun.result_payload ?? {},
@@ -308,6 +315,10 @@ Deno.serve(async (req) => {
       200,
       origin,
     );
+  }
+
+  if (existingRun?.status === "running" && existingRun.metadata?.receipt_version !== 1) {
+    return jsonResponse({ ok: false, error: "run_requires_reconciliation", run_id: existingRun.id }, 409, origin);
   }
 
   const { data: flowDef, error: flowError } = await admin
@@ -347,7 +358,7 @@ Deno.serve(async (req) => {
   }
 
   const undoDeadline = new Date(Date.now() + UNDO_WINDOW_MS).toISOString();
-  const { data: run, error: runError } = await admin
+  const { data: run, error: runError } = existingRun?.id ? { data: existingRun, error: null } : await admin
     .from("flow_workflow_runs")
     .insert({
       organization_id: auth.organizationId,
@@ -362,6 +373,7 @@ Deno.serve(async (req) => {
       undo_deadline: undoDeadline,
       metadata: {
         flow_slug: flowDef.slug,
+        receipt_version: 1,
       },
       started_at: new Date().toISOString(),
       created_by: auth.user.id,
@@ -374,45 +386,21 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: runError?.message ?? "run_insert_failed" }, 500, origin);
   }
 
-  let executionResult: { result: Record<string, unknown>; undo_handler: string | null };
+  let executionResult: { result: Record<string, unknown>; undo_handler: string | null; undo_deadline: string };
   try {
     switch (String(flowDef.slug)) {
       case "log_daily_note":
-        executionResult = await createDailyLog(admin, auth, accessibleFacilityIds, body.slots);
+        executionResult = await createDailyLog(admin, auth, accessibleFacilityIds, body.slots, run.id);
         break;
       case "report_incident":
-        executionResult = await createIncident(admin, userScoped, auth, accessibleFacilityIds, body.slots);
+        executionResult = await createIncident(admin, userScoped, auth, accessibleFacilityIds, body.slots, run.id);
         break;
       case "schedule_assessment":
-        executionResult = await createAssessment(admin, auth, accessibleFacilityIds, body.slots);
+        executionResult = await createAssessment(admin, auth, accessibleFacilityIds, body.slots, run.id);
         break;
       default:
         throw new Error(`Unsupported Grace flow: ${String(flowDef.slug)}`);
     }
-
-    await admin.from("flow_workflow_run_steps").insert({
-      organization_id: auth.organizationId,
-      run_id: run.id,
-      step_index: 0,
-      step_type: "action",
-      action_key: String(flowDef.slug),
-      params: body.slots,
-      status: "succeeded",
-      result: executionResult.result,
-      started_at: new Date().toISOString(),
-      finished_at: new Date().toISOString(),
-    });
-
-    await admin
-      .from("flow_workflow_runs")
-      .update({
-        status: "succeeded",
-        result_payload: executionResult.result,
-        undo_handler: executionResult.undo_handler,
-        finished_at: new Date().toISOString(),
-        updated_by: auth.user.id,
-      })
-      .eq("id", run.id);
 
     await admin.rpc("grace_increment_usage", {
       p_user_id: auth.user.id,
@@ -427,7 +415,7 @@ Deno.serve(async (req) => {
         run_id: run.id,
         status: "succeeded",
         result: executionResult.result,
-        undo_deadline: undoDeadline,
+        undo_deadline: executionResult.undo_deadline,
         undo_handler: executionResult.undo_handler,
         total_cents: totalCents,
       },
@@ -436,29 +424,7 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Grace flow execution failed";
-    await admin.from("flow_workflow_run_steps").insert({
-      organization_id: auth.organizationId,
-      run_id: run.id,
-      step_index: 0,
-      step_type: "action",
-      action_key: String(flowDef.slug),
-      params: body.slots,
-      status: "failed",
-      error_text: errorMessage,
-      started_at: new Date().toISOString(),
-      finished_at: new Date().toISOString(),
-    });
-    await admin
-      .from("flow_workflow_runs")
-      .update({
-        status: "failed",
-        error_text: errorMessage,
-        finished_at: new Date().toISOString(),
-        updated_by: auth.user.id,
-      })
-      .eq("id", run.id);
-
     t.log({ event: "flow_failed", outcome: "error", error_message: errorMessage, flow_slug: flowDef.slug, run_id: run.id });
-    return jsonResponse({ ok: false, error: errorMessage, failed_step: String(flowDef.slug) }, 200, origin);
+    return jsonResponse({ ok: false, error: errorMessage, run_id: run.id, retryable: true, failed_step: String(flowDef.slug) }, 503, origin);
   }
 });

@@ -2,31 +2,43 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchHousekeepingBrief, type HousekeeperDashboardBrief } from "@/lib/housekeeper/dashboard-brief";
 import { BedDouble, CheckCircle2, AlertTriangle, Clock, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function HousekeeperDashboardPage() {
-  const { selectedFacilityId } = useFacilityStore();
   const [brief, setBrief] = useState<HousekeeperDashboardBrief | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchHousekeepingBrief(selectedFacilityId);
+      const data = await fetchHousekeepingBrief();
       setBrief(data);
     } catch (e) {
       console.error("[housekeeper-dashboard]", e);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFacilityId]);
+  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function act(taskId: string, action: "start" | "complete" | "escalate") {
+    if (busy) return;
+    setBusy(taskId); setActionError(null);
+    try {
+      const response = await fetch(`/api/admin/operations/tasks/${taskId}/${action}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ completion_notes: notes[taskId] ?? "", reason: notes[taskId] ?? "" }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Task action failed");
+      await load();
+    } catch(e) { setActionError(e instanceof Error ? e.message : "Task action failed"); } finally { setBusy(null); }
+  }
 
   if (isLoading) return <LoadingSkeleton />;
 
@@ -49,6 +61,7 @@ export default function HousekeeperDashboardPage() {
 
   return (
     <div className="space-y-8 px-4 pb-12">
+      {actionError && <p role="alert">{actionError}</p>}
       {/* Header */}
       <div className="rounded-lg border border-border bg-card p-6">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-info/30 bg-info/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground">
@@ -92,11 +105,11 @@ export default function HousekeeperDashboardPage() {
       {/* Task list */}
       <div className="rounded-lg border border-border bg-card p-5">
         <h3 className="mb-4 flex items-center gap-2 text-lg font-medium text-foreground">
-          <BedDouble className="h-4 w-4 text-info" /> Today&apos;s Rooms
+          <BedDouble className="h-4 w-4 text-info" /> Today&apos;s assigned tasks
         </h3>
         {brief.tasks.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-border py-8 text-center">
-            <p className="text-sm font-medium text-muted-foreground">No rooms assigned for today.</p>
+            <p className="text-sm font-medium text-muted-foreground">No housekeeping tasks are assigned for today. Ask your shift lead to configure or assign the cleaning schedule.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -113,7 +126,7 @@ export default function HousekeeperDashboardPage() {
                 )}
               >
                 <div>
-                  <span className="text-[14px] font-semibold text-foreground">Room {t.roomNumber}</span>
+                  <span className="text-[14px] font-semibold text-foreground">{t.roomNumber || t.taskType}</span>
                   <span className="ml-2 text-xs text-muted-foreground">{t.taskType}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -122,6 +135,7 @@ export default function HousekeeperDashboardPage() {
                       Priority
                     </span>
                   )}
+                  {t.status !== "completed" && <div><label>Work notes<input value={notes[t.id] ?? ""} onChange={(e) => setNotes((prior) => ({ ...prior, [t.id]: e.target.value }))} className="block rounded border bg-background p-2" /></label><button disabled={!!busy} onClick={() => void act(t.id, t.status === "pending" ? "start" : "complete")}>{t.status === "pending" ? "Start" : "Done"}</button><button disabled={!!busy || !notes[t.id]?.trim()} onClick={() => void act(t.id, "escalate")}>Cannot complete — notify lead</button></div>}
                   <span
                     className={cn(
                       "text-xs font-medium",

@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { createClient } from "@/lib/supabase/client";
 import type {
   DietaryDeckState,
@@ -95,6 +97,7 @@ async function q(
     query = query.eq(k, v);
   }
   const { data, error } = await query;
+  if (error) throw new Error(`${table}: ${error.message ?? "Data unavailable"}`);
   return { data: data as QueryRow[] | null, error };
 }
 
@@ -138,10 +141,14 @@ function facilityDisplayName(row: QueryRow | undefined): string {
   return name || UNRESOLVED_FACILITY_LABEL;
 }
 
-export function useDietaryToday(): DietaryDeckState {
+export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<void>; refreshedAt: string | null; facilityId: string | null } {
+  const generation = useRef(0);
+  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
+  const [resolvedFacilityId, setResolvedFacilityId] = useState<string | null>(null);
   const [state, setState] = useState<DietaryDeckState>(EMPTY_STATE);
 
   const load = useCallback(async () => {
+    const current = ++generation.current;
     try {
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
@@ -150,17 +157,10 @@ export function useDietaryToday(): DietaryDeckState {
         return;
       }
 
-      // Get facility_id from user_facility_access
-      const { data: facRows } = await q("user_facility_access", "facility_id, organization_id", {
-        user_id: user.id,
-        is_primary: true,
-        _limit: 1,
-      });
-      const facilityId = facRows?.[0]?.facility_id as string | undefined;
-      if (!facilityId) {
-        setState((s) => ({ ...s, loading: false, error: "No facility assigned" }));
-        return;
-      }
+      const context = await loadCaregiverFacilityContext(sb);
+      if (!context.ok) throw new Error(context.error);
+      const facilityId = context.ctx.facilityId;
+      if (current !== generation.current) return;
 
       const { data: facilityRows } = await q("facilities", "name", {
         id: facilityId,
@@ -244,6 +244,7 @@ export function useDietaryToday(): DietaryDeckState {
             diet_type: dietType as TrayTicket["diet_type"],
             diet_label: dietLabel(dietType),
             iddsi_level: iddsi,
+            iddsi_liquid_level: typeof snap.iddsi_liquid_level === "number" ? snap.iddsi_liquid_level : null,
             allergens,
             status: (t.status as TicketStatus) ?? "queued",
             menu_items: menuItems,
@@ -257,7 +258,7 @@ export function useDietaryToday(): DietaryDeckState {
       }
 
       // ── HACCP logs for today ──
-      const startOfDay = `${today}T00:00:00+00:00`;
+      const startOfDay = facilityDatetimeLocalToUtcIso(`${today}T00:00`);
       const { data: haccpRows } = await q("haccp_logs",
         "id, log_type, item, temperature_f, in_safe_range, logged_at, user_profiles!logged_by(full_name)",
         {
@@ -395,6 +396,9 @@ export function useDietaryToday(): DietaryDeckState {
         snack_hs: "HS Snack",
       };
 
+      if (current !== generation.current) return;
+      setResolvedFacilityId(facilityId);
+      setRefreshedAt(new Date().toISOString());
       setState({
         services,
         tickets,
@@ -418,6 +422,7 @@ export function useDietaryToday(): DietaryDeckState {
         error: null,
       });
     } catch (err) {
+      if (current !== generation.current) return;
       setState((s) => ({
         ...s,
         loading: false,
@@ -426,7 +431,12 @@ export function useDietaryToday(): DietaryDeckState {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    setState(EMPTY_STATE);
+    void load();
+    const timer = window.setInterval(() => { void load(); }, 60000);
+    return () => { window.clearInterval(timer); };
+  }, [load]);
 
-  return state;
+  return { ...state, refresh: load, refreshedAt, facilityId: resolvedFacilityId };
 }

@@ -2,23 +2,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Clock3, Loader2, UserRound } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
 import { formatCaregiverTasksShiftBucket } from "@/lib/caregiver/tasks-display-copy";
-import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { getDashboardRouteForUser } from "@/lib/auth/user-home-route";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { ResidentAdlCard } from "@/components/caregiver/ResidentAdlCard";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
 
 export default function CaregiverTasksPage() {
@@ -94,12 +91,9 @@ export default function CaregiverTasksPage() {
 
   const sortedResidents = useMemo(() => {
     return [...residents].sort((a, b) => {
-      const ca = adlCountByResident.get(a.id) ?? 0;
-      const cb = adlCountByResident.get(b.id) ?? 0;
-      if (ca !== cb) return ca - cb;
       return a.displayName.localeCompare(b.displayName);
     });
-  }, [residents, adlCountByResident]);
+  }, [residents]);
 
   const metrics = useMemo(() => {
     let noPass = 0;
@@ -123,13 +117,14 @@ export default function CaregiverTasksPage() {
       notes: string;
     },
   ) {
-    if (!ctx) return;
+    if (!ctx || submittingId) return false;
+    if (payload.refused && !payload.notes.trim()) { setLoadError("Document the resident's reason for declining care or the observed circumstances."); return false; }
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Session expired. Sign in again.");
-      return;
+      return false;
     }
     setSubmittingId(resident.id);
     setLoadError(null);
@@ -155,15 +150,17 @@ export default function CaregiverTasksPage() {
         adl_type: payload.adlType,
         assistance_level: payload.assistance,
         refused: payload.refused,
-        refusal_reason: payload.refused ? "Documented on floor device" : null,
+        refusal_reason: payload.refused ? payload.notes.trim() : null,
         notes: payload.notes.trim() || null,
         detail_data: {},
       };
       const ins = await supabase.from("adl_logs").insert(row).select("id").single();
       if (ins.error) throw ins.error;
-      await load();
+      setAdlCountByResident((counts) => new Map(counts).set(resident.id, (counts.get(resident.id) ?? 0) + 1));
+      return true;
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not log ADL.");
+      return false;
     } finally {
       setSubmittingId(null);
     }
@@ -222,7 +219,7 @@ export default function CaregiverTasksPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="muted" />
           <MetricPill label="No ADL yet today" value={String(metrics.noPass)} tone="danger" />
-          <MetricPill label="ADL passes today" value={String(metrics.totalAdl)} tone="success" />
+          <MetricPill label="ADL entries today" value={String(metrics.totalAdl)} tone="success" />
           <MetricPill label="Shift bucket" value={formatCaregiverTasksShiftBucket(ctx?.timeZone)} tone="muted" />
         </div>
       </div>
@@ -242,8 +239,8 @@ export default function CaregiverTasksPage() {
               <ResidentAdlCard
                 resident={r}
                 passesToday={adlCountByResident.get(r.id) ?? 0}
-                busy={submittingId === r.id}
-                onSubmit={(p) => void logAdl(r, p)}
+                busy={submittingId !== null}
+                onSubmit={(p) => logAdl(r, p)}
               />
             </MotionItem>
           ))}
@@ -275,141 +272,6 @@ function MetricPill({
     <div className={`rounded-xl border p-4  ${toneClass}`}>
       <p className="text-[9px] uppercase tracking-wider font-mono text-zinc-400">{label}</p>
       <p className="mt-1.5 text-2xl font-semibold text-white">{value}</p>
-    </div>
-  );
-}
-
-function ResidentAdlCard({
-  resident,
-  passesToday,
-  busy,
-  onSubmit,
-}: {
-  resident: ResidentWithRoom;
-  passesToday: number;
-  busy: boolean;
-  onSubmit: (p: {
-    adlType: string;
-    assistance: Database["public"]["Enums"]["assistance_level"];
-    refused: boolean;
-    notes: string;
-  }) => void;
-}) {
-  const [adlType, setAdlType] = useState("rounding");
-  const [assistance, setAssistance] = useState<Database["public"]["Enums"]["assistance_level"]>("supervision");
-  const [refused, setRefused] = useState(false);
-  const [notes, setNotes] = useState("");
-
-  const priority = passesToday === 0 ? "critical" : passesToday < 2 ? "high" : "normal";
-  const priorityClasses =
-    priority === "critical"
-      ? "border-destructive/30 bg-card shadow-sm hover:border-destructive/50"
-      : priority === "high"
-        ? "border-warning/30 bg-card shadow-sm hover:border-warning/50"
-        : "border-border bg-card shadow-sm hover:border-border";
-
-  return (
-    <div className={`p-4 md:p-5 rounded-2xl group transition-all duration-300 border  overflow-hidden relative ${priorityClasses}`}>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none" />
-      <div className="space-y-4 relative z-10 w-full">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${priority === 'critical' ? 'bg-rose-500/20 border-rose-500/40 text-rose-300' : priority === 'high' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'}`}>
-               <UserRound className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-base font-semibold text-white tracking-wide">{resident.displayName}</p>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-0.5">Room {resident.roomLabel}</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <Badge
-              className={`rounded-full px-3 py-0.5 text-[9px] uppercase tracking-wider font-mono font-bold border ${
-                priority === "critical"
-                  ? "border-rose-500/40 bg-rose-500/20 text-rose-300"
-                  : priority === "high"
-                    ? "border-amber-500/40 bg-amber-500/20 text-amber-300"
-                    : "border-emerald-500/40 bg-emerald-500/20 text-emerald-300"
-              }`}
-            >
-              {priority === "critical" ? "No ADL yet" : priority === "high" ? "Light pass" : "Stable"}
-            </Badge>
-            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-zinc-400">
-              <Clock3 className="h-3 w-3" />
-              {passesToday} pass{passesToday === 1 ? "" : "es"} today
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 pt-2">
-          <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">ADL Type</Label>
-            <select
-              className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
-              value={adlType}
-              onChange={(e) => setAdlType(e.target.value)}
-            >
-              {ADL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value} className="bg-slate-900 text-sm">
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">Assistance</Label>
-            <select
-              className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
-              value={assistance}
-              onChange={(e) => setAssistance(e.target.value as Database["public"]["Enums"]["assistance_level"])}
-            >
-              {ASSIST_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value} className="bg-slate-900 text-sm">
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="pt-2">
-            <textarea
-              rows={2}
-              placeholder="Optional note (objective, brief)"
-              className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 font-mono resize-none"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-        </div>
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
-            <label className="flex items-center gap-3 text-sm text-zinc-300 shrink-0 cursor-pointer group">
-              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${refused ? 'bg-cyan-500 border-cyan-500' : 'border-zinc-600 bg-black/40 group-hover:border-cyan-500/50'}`}>
-                {refused && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
-              </div>
-              <input
-                type="checkbox"
-                className="hidden"
-                checked={refused}
-                onChange={(e) => setRefused(e.target.checked)}
-              />
-              <span className="font-mono text-xs uppercase tracking-wider select-none">Refused / deferred</span>
-            </label>
-
-            <Button
-              type="button"
-              disabled={busy}
-              className={`h-12 rounded-full font-mono uppercase tracking-wider text-[10px] px-8 w-full sm:w-auto shadow-lg transition-all hover:scale-[1.02] border-0 text-zinc-950 font-bold ${refused ? 'bg-amber-400 hover:bg-amber-300 focus:ring-amber-500/50' : 'bg-cyan-400 hover:bg-cyan-300 focus:ring-cyan-500/50'}`}
-              onClick={() => {
-                onSubmit({ adlType, assistance, refused, notes });
-                setNotes("");
-              }}
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin text-zinc-950" /> : <CheckCircle2 className="mr-2 h-4 w-4 text-zinc-950" />}
-              {refused ? "Log Deferral" : "Log ADL Pass"}
-            </Button>
-        </div>
-      </div>
     </div>
   );
 }

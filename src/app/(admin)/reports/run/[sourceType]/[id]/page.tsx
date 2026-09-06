@@ -15,12 +15,13 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import {
   buildReportPrintHtml,
+  escapeHtml,
   detailRowsToCsv,
   summaryRowsToCsv,
 } from "@/lib/reports/metric-presentation";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { executeReportTemplate, type ReportExecutionResult } from "@/lib/reports/executors";
-import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
+import { runTemplateAndPersist, finishReportRun, failReportRun } from "@/lib/reports/run-persistence";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
@@ -61,11 +62,13 @@ function TemplateReportRun({ slug }: { slug: string }) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ReportExecutionResult | null>(null);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const [resultScope, setResultScope] = useState<{ facilityId: string | null; label: string } | null>(null);
   const [scopeFacilityId, setScopeFacilityId] = useState<string | null>(null);
   const [facilityOptions, setFacilityOptions] = useState<{ id: string; name: string }[]>([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [orgWide, setOrgWide] = useState(false);
 
   const template = useMemo(() => PHASE1_TEMPLATE_SEED.find((item) => item.slug === slug), [slug]);
 
@@ -77,7 +80,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
   useEffect(() => {
     void (async () => {
       const ctx = await loadReportsRoleContext(supabase);
-      if (ctx.ok) setOrgId(ctx.ctx.organizationId);
+      if (ctx.ok) { setOrgId(ctx.ctx.organizationId); setOrgWide(["owner", "org_admin"].includes(ctx.ctx.appRole)); }
       else setError(ctx.error);
     })();
   }, [supabase]);
@@ -104,21 +107,24 @@ function TemplateReportRun({ slug }: { slug: string }) {
   useEffect(() => {
     if (selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId)) {
       setScopeFacilityId(selectedFacilityId);
+    } else {
+      setScopeFacilityId(null);
     }
   }, [selectedFacilityId]);
 
   useEffect(() => {
     if (facilitiesLoading) return;
+    if (!orgWide && scopeFacilityId === null && facilityOptions[0]) { setScopeFacilityId(facilityOptions[0].id); return; }
     if (
       scopeFacilityId !== null &&
       !facilityOptions.some((f) => f.id === scopeFacilityId)
     ) {
       setScopeFacilityId(null);
     }
-  }, [facilitiesLoading, facilityOptions, scopeFacilityId]);
+  }, [facilitiesLoading, facilityOptions, scopeFacilityId, orgWide]);
 
   const onRun = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId || (!orgWide && !scopeFacilityId)) return;
     setRunning(true);
     setError(null);
     try {
@@ -127,51 +133,21 @@ function TemplateReportRun({ slug }: { slug: string }) {
           ? scopeFacilityId
           : null;
 
-      const resolved = await resolveReportTemplateIdBySlug(supabase, slug, orgId);
-      if ("error" in resolved) throw new Error(resolved.error);
-
-      const { data: runRow, error: runErr } = await supabase
-        .from("report_runs")
-        .insert({
-          organization_id: orgId,
-          source_type: "template",
-          source_id: resolved.id,
-          template_id: resolved.id,
-          status: "running",
-          run_scope_json: scopedFacilityId ? { facility_id: scopedFacilityId } : {},
-        })
-        .select("id")
-        .single();
-      if (runErr) throw new Error(runErr.message);
-
-      const execution = await executeReportTemplate(slug, {
-        supabase,
-        organizationId: orgId,
-        facilityId: scopedFacilityId,
-      });
-      setResult(execution);
-      setLastRunId(runRow.id);
-
-      const { error: doneErr } = await supabase
-        .from("report_runs")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          filter_snapshot_json: scopedFacilityId ? { facilityId: scopedFacilityId } : {},
-        })
-        .eq("id", runRow.id)
-        .eq("organization_id", orgId);
-      if (doneErr) throw new Error(doneErr.message);
+      const run = await runTemplateAndPersist({ supabase, organizationId: orgId, slug,
+        title: template?.name ?? slug, facilityId: scopedFacilityId, scopeLabel });
+      setResult(run.result);
+      setLastRunId(run.runId);
+      setResultScope({ facilityId: scopedFacilityId, label: run.snapshot.scopeLabel });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Run failed.");
     } finally {
       setRunning(false);
     }
-  }, [orgId, scopeFacilityId, slug, supabase]);
+  }, [orgId, orgWide, scopeFacilityId, scopeLabel, slug, supabase, template?.name]);
 
   const onExportCsv = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
-    const csv = buildFullCsv(result);
+    const csv = `${summaryRowsToCsv([{metricKey:"Run",value:lastRunId},{metricKey:"Scope",value:resultScope?.label??scopeLabel}])}\n\n${buildFullCsv(result)}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -187,7 +163,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
       export_format: "csv",
       file_name: `report-${slug}-${datePart}.csv`,
     });
-  }, [lastRunId, orgId, result, slug, supabase]);
+  }, [lastRunId, orgId, result, resultScope, scopeLabel, slug, supabase]);
 
   const onPrint = useCallback(async () => {
     if (!result || !orgId || !lastRunId) return;
@@ -195,15 +171,16 @@ function TemplateReportRun({ slug }: { slug: string }) {
     const html = buildReportPrintHtml({
       reportTitle,
       templateLabel: template?.name ?? slug,
-      scopeLabel,
+      scopeLabel: resultScope?.label ?? scopeLabel,
       summary: result.summary,
       footnotes: result.footnotes,
     });
-    const w = window.open("", "_blank", "noopener,noreferrer");
+    const w = window.open("", "_blank");
     if (!w) {
       setError("Pop-up blocked. Allow pop-ups for this site to print or save as PDF.");
       return;
     }
+    w.opener = null;
     w.document.write(html);
     w.document.close();
     w.focus();
@@ -226,7 +203,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
       export_format: "pdf",
       file_name: `report-${slug}.pdf`,
     });
-  }, [lastRunId, orgId, result, scopeLabel, slug, supabase, template?.name]);
+  }, [lastRunId, orgId, result, resultScope, scopeLabel, slug, supabase, template?.name]);
 
   return (
     <div className="space-y-6">
@@ -257,7 +234,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
               Run for one site or across all facilities in your organization. When the header has a single facility selected,
               this scope starts aligned with it—you can switch to organization-wide anytime.
             </p>
-            <AdminFacilityScopeDropdown
+            {orgWide ? <AdminFacilityScopeDropdown
               id="report-facility-scope"
               describedBy="report-facility-scope-hint"
               value={scopeFacilityId}
@@ -267,7 +244,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
               loadFailed={facilitiesLoadFailed}
               onRetry={() => void loadFacilityOptions()}
               disabled={running}
-            />
+            /> : <select aria-label="Facility scope" className="rounded border bg-card p-3" value={scopeFacilityId ?? ""} onChange={event=>setScopeFacilityId(event.target.value || null)} disabled={running || facilitiesLoading}><option value="">Select a facility</option>{facilityOptions.map(facility=><option key={facility.id} value={facility.id}>{facility.name}</option>)}</select>}
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap gap-3">
@@ -289,7 +266,7 @@ function TemplateReportRun({ slug }: { slug: string }) {
       </RecordDetailSection>
 
       {result ? (
-        <RecordDetailSection title="Run result" description={`Scope: ${scopeLabel}`}>
+        <RecordDetailSection title="Run result" description={`Scope: ${resultScope?.label ?? scopeLabel}${resultScope && resultScope.facilityId !== scopeFacilityId ? " · Scope changed; run again for the new selection." : ""}`}>
           <div className="space-y-6">
             <ReportRunResult summary={result.summary} detailRows={result.rows} />
             {result.footnotes && result.footnotes.length > 0 ? (
@@ -324,12 +301,14 @@ function PackReportRun({ packId }: { packId: string }) {
   const [loadingPack, setLoadingPack] = useState(true);
   const [slices, setSlices] = useState<PackSlice[]>([]);
   const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const [resultScope, setResultScope] = useState<{ facilityId: string | null; label: string } | null>(null);
 
   const [scopeFacilityId, setScopeFacilityId] = useState<string | null>(null);
   const [facilityOptions, setFacilityOptions] = useState<{ id: string; name: string }[]>([]);
   const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [facilitiesLoadFailed, setFacilitiesLoadFailed] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [orgWide, setOrgWide] = useState(false);
 
   const scopeLabel = useMemo(() => {
     if (scopeFacilityId === null) return "All facilities";
@@ -339,7 +318,7 @@ function PackReportRun({ packId }: { packId: string }) {
   useEffect(() => {
     void (async () => {
       const ctx = await loadReportsRoleContext(supabase);
-      if (ctx.ok) setOrgId(ctx.ctx.organizationId);
+      if (ctx.ok) { setOrgId(ctx.ctx.organizationId); setOrgWide(["owner", "org_admin"].includes(ctx.ctx.appRole)); }
       else setError(ctx.error);
     })();
   }, [supabase]);
@@ -366,18 +345,21 @@ function PackReportRun({ packId }: { packId: string }) {
   useEffect(() => {
     if (selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId)) {
       setScopeFacilityId(selectedFacilityId);
+    } else {
+      setScopeFacilityId(null);
     }
   }, [selectedFacilityId]);
 
   useEffect(() => {
     if (facilitiesLoading) return;
+    if (!orgWide && scopeFacilityId === null && facilityOptions[0]) { setScopeFacilityId(facilityOptions[0].id); return; }
     if (
       scopeFacilityId !== null &&
       !facilityOptions.some((f) => f.id === scopeFacilityId)
     ) {
       setScopeFacilityId(null);
     }
-  }, [facilitiesLoading, facilityOptions, scopeFacilityId]);
+  }, [facilitiesLoading, facilityOptions, scopeFacilityId, orgWide]);
 
   const loadPack = useCallback(async () => {
     if (!orgId) return;
@@ -438,9 +420,10 @@ function PackReportRun({ packId }: { packId: string }) {
 
   const runPack = useCallback(
     async (opts?: { stripQueryAfter?: boolean }) => {
-    if (!orgId || slices.length === 0) return;
+    if (!orgId || slices.length === 0 || (!orgWide && !scopeFacilityId)) return;
     setRunning(true);
     setError(null);
+    let createdRunId: string | null = null;
     try {
       const scopedFacilityId =
         scopeFacilityId !== null && isValidFacilityIdForQuery(scopeFacilityId)
@@ -461,8 +444,11 @@ function PackReportRun({ packId }: { packId: string }) {
         .single();
       if (runErr) throw new Error(runErr.message);
       setLastRunId(runRow.id);
+      createdRunId = runRow.id;
+      setResultScope({ facilityId: scopedFacilityId, label: scopeLabel });
 
       const nextSlices: PackSlice[] = [...slices.map((s) => ({ ...s, result: null, error: undefined }))];
+      setSlices(nextSlices);
 
       for (let i = 0; i < nextSlices.length; i += 1) {
         const slug = nextSlices[i].slug;
@@ -483,19 +469,16 @@ function PackReportRun({ packId }: { packId: string }) {
         setSlices([...nextSlices]);
       }
 
-      const anyFailed = nextSlices.some((s) => s.error);
-      const { error: doneErr } = await supabase
-        .from("report_runs")
-        .update({
-          status: anyFailed ? "failed" : "completed",
-          completed_at: new Date().toISOString(),
-          filter_snapshot_json: scopedFacilityId ? { facilityId: scopedFacilityId } : {},
-        })
-        .eq("id", runRow.id)
-        .eq("organization_id", orgId);
-      if (doneErr) throw new Error(doneErr.message);
+      await finishReportRun(supabase, orgId, runRow.id, {
+        title: packName, scopeLabel, facilityId: scopedFacilityId, generatedAt: new Date().toISOString(), slices: nextSlices,
+      });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Pack run failed.");
+      const message = e instanceof Error ? e.message : "Pack run failed.";
+      if (createdRunId) {
+        try { await failReportRun(supabase, orgId, createdRunId, message); }
+        catch (saveError) { setError(saveError instanceof Error ? saveError.message : message); return; }
+      }
+      setError(message);
     } finally {
       setRunning(false);
       if (opts?.stripQueryAfter) {
@@ -503,7 +486,7 @@ function PackReportRun({ packId }: { packId: string }) {
       }
     }
   },
-    [orgId, packId, router, scopeFacilityId, slices, supabase],
+    [orgId, orgWide, packId, packName, router, scopeFacilityId, scopeLabel, slices, supabase],
   );
 
   useEffect(() => {
@@ -517,7 +500,7 @@ function PackReportRun({ packId }: { packId: string }) {
   const onExportCsvPack = useCallback(async () => {
     if (!orgId || !lastRunId || completedSlices.length === 0) return;
     const bodies = completedSlices.map((s) => `--- ${s.name} (${s.slug}) ---\n${buildFullCsv(s.result!)}`);
-    const csv = bodies.join("\n\n");
+    const csv = `${summaryRowsToCsv([{metricKey:"Run",value:lastRunId},{metricKey:"Scope",value:resultScope?.label??scopeLabel}])}\n\n${bodies.join("\n\n")}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -533,7 +516,7 @@ function PackReportRun({ packId }: { packId: string }) {
       export_format: "csv",
       file_name: `pack-${packId}-${datePart}.csv`,
     });
-  }, [completedSlices, lastRunId, orgId, packId, supabase]);
+  }, [completedSlices, lastRunId, orgId, packId, resultScope, scopeLabel, supabase]);
 
   const onPrintPack = useCallback(async () => {
     if (!orgId || !lastRunId || completedSlices.length === 0) return;
@@ -541,20 +524,21 @@ function PackReportRun({ packId }: { packId: string }) {
       buildReportPrintHtml({
         reportTitle: `${packName} · ${s.name}`,
         templateLabel: s.name,
-        scopeLabel,
+        scopeLabel: resultScope?.label ?? scopeLabel,
         summary: s.result!.summary,
         footnotes: s.result!.footnotes,
       }),
     );
     const styles = extractPrintStyles(docs[0] ?? "");
     const sheets = docs.map((d) => extractSheetHtml(d));
-    const combined = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${packName}</title>${styles}</head><body>${sheets.join('<div style="page-break-before:always;height:1px"></div>')}</body></html>`;
+    const combined = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${escapeHtml(packName)}</title>${styles}</head><body>${sheets.join('<div style="page-break-before:always;height:1px"></div>')}</body></html>`;
 
-    const w = window.open("", "_blank", "noopener,noreferrer");
+    const w = window.open("", "_blank");
     if (!w) {
       setError("Pop-up blocked. Allow pop-ups for this site to print or save as PDF.");
       return;
     }
+    w.opener = null;
     w.document.write(combined);
     w.document.close();
     w.focus();
@@ -577,7 +561,7 @@ function PackReportRun({ packId }: { packId: string }) {
       export_format: "pdf",
       file_name: `pack-${packId}.pdf`,
     });
-  }, [completedSlices, lastRunId, orgId, packId, packName, scopeLabel, supabase]);
+  }, [completedSlices, lastRunId, orgId, packId, packName, resultScope, scopeLabel, supabase]);
 
   return (
     <div className="space-y-6">
@@ -607,7 +591,7 @@ function PackReportRun({ packId }: { packId: string }) {
             <p id="pack-facility-scope-hint" className="text-xs leading-relaxed text-muted-foreground">
               Applies to every report in this pack for this run.
             </p>
-            <AdminFacilityScopeDropdown
+            {orgWide ? <AdminFacilityScopeDropdown
               id="pack-facility-scope"
               describedBy="pack-facility-scope-hint"
               value={scopeFacilityId}
@@ -617,7 +601,7 @@ function PackReportRun({ packId }: { packId: string }) {
               loadFailed={facilitiesLoadFailed}
               onRetry={() => void loadFacilityOptions()}
               disabled={running}
-            />
+            /> : <select aria-label="Facility scope" className="rounded border bg-card p-3" value={scopeFacilityId ?? ""} onChange={event=>setScopeFacilityId(event.target.value || null)} disabled={running || facilitiesLoading}><option value="">Select a facility</option>{facilityOptions.map(facility=><option key={facility.id} value={facility.id}>{facility.name}</option>)}</select>}
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap gap-3">
@@ -643,7 +627,7 @@ function PackReportRun({ packId }: { packId: string }) {
       </RecordDetailSection>
 
       {slices.some((s) => s.result || s.error) ? (
-        <RecordDetailSection title="Run results" description={`Scope: ${scopeLabel}`}>
+        <RecordDetailSection title="Run results" description={`Scope: ${resultScope?.label ?? scopeLabel}${resultScope && resultScope.facilityId !== scopeFacilityId ? " · Scope changed; run again for the new selection." : ""}`}>
           <div className="space-y-10">
             {slices.map((s) =>
               s.error ? (
@@ -685,8 +669,8 @@ export default function ReportRunPage() {
         </div>
       );
     }
-    return <PackReportRun packId={sourceId} />;
+    return <PackReportRun key={sourceId} packId={sourceId} />;
   }
 
-  return <TemplateReportRun slug={sourceId} />;
+  return <TemplateReportRun key={sourceId} slug={sourceId} />;
 }

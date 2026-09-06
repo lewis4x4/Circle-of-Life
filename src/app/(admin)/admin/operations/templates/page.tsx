@@ -150,6 +150,11 @@ export default function OperationsTemplatesPage() {
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Failed to load templates");
       setTemplates((json.templates || []) as OperationTemplateRecord[]);
+      const source = new URLSearchParams(window.location.search);
+      const assetId = source.get("asset");
+      if (assetId) {
+        setForm((current) => ({ ...current, name: `${source.get("name") ?? "Asset"} service`, asset_ref: assetId, category: "maintenance", cadence_type: "", description: `Asset service interval: ${source.get("interval") || "not configured"} days. Select the supported cadence and verify the scheduled dates before saving.` }));
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Failed to load templates.");
     } finally {
@@ -195,6 +200,10 @@ export default function OperationsTemplatesPage() {
     }
     if (form.scope === "facility" && !form.facility_id) {
       setError("Select a facility for facility-scoped templates.");
+      return;
+    }
+    if (!editorTemplateId && new URLSearchParams(window.location.search).has("asset") && form.asset_ref && templates.some((template) => template.asset_ref === form.asset_ref && template.is_active)) {
+      setError("This asset already has an active schedule. Open its existing template below to revise it.");
       return;
     }
     if (form.category === "maintenance" && form.scope === "facility" && !form.asset_ref && assets.length > 0) {
@@ -439,6 +448,7 @@ export default function OperationsTemplatesPage() {
                   onChange={(event) => setForm((current) => ({ ...current, cadence_type: event.target.value }))}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
+                  <option value="">Choose service cadence</option>
                   {OCE_CADENCE_TYPES.map((cadence) => (
                     <option key={cadence} value={cadence}>
                       {OPERATION_CADENCE_LABELS[cadence]}
@@ -641,6 +651,7 @@ export default function OperationsTemplatesPage() {
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="all">All</option>
+                  <option value="">Choose service cadence</option>
                   {OCE_CADENCE_TYPES.map((cadence) => (
                     <option key={cadence} value={cadence}>
                       {OPERATION_CADENCE_LABELS[cadence]}

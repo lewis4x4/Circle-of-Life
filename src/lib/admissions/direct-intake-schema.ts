@@ -137,3 +137,15 @@ export function parseDirectAdmitForSubmit(input: DirectAdmitSubmitInput) {
   return directAdmitSubmitSchema.safeParse(input);
 }
 
+
+/** Identifiable drafts preserve missing answers; final admission retains the complete schema. */
+export function parseDirectAdmitDraft(input: DirectAdmitSubmitInput) {
+  return z.object({
+    firstName: z.string().trim().min(1, "First name is required."),
+    lastName: z.string().trim().min(1, "Last name is required."),
+    nameSuffix: z.string().trim().max(40).optional(), preferredName: z.string().trim().max(120).optional(),
+    dob: z.union([directAdmitDobSchema, z.literal("")]), gender: z.union([directAdmitGenderSchema, z.literal("")]),
+    genderOther: z.string().trim().max(500).optional(), phoneDigits: z.string().trim().max(20).optional(),
+    source: z.union([directAdmitSourceSchema, z.literal("")]), sourceOther: z.string().trim().max(2000).optional(),
+  }).safeParse(input);
+}

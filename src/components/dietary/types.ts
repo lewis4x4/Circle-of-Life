@@ -59,6 +59,7 @@ export interface TrayTicket {
   diet_type: DietType;
   diet_label: string;      // human-readable, e.g. "Renal" / "NCS · 60g"
   iddsi_level: number;
+  iddsi_liquid_level?: number | null;
   allergens: string[];
   status: TicketStatus;
   menu_items: string[];

@@ -21,7 +21,7 @@ type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
 type MedRow = Database["public"]["Tables"]["resident_medications"]["Row"];
 
 function formatEnumLabel(s: string): string {
-  return s.replace(/_/g, " ");
+  return String(s ?? "not assessed").replace(/_/g, " ");
 }
 
 function pickPrimaryDietOrder(orders: DietRow[]): DietRow | null {

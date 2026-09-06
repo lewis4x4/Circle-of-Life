@@ -113,7 +113,7 @@ async function q(table: string, select: string, filters: QueryFilters = {}) {
   return { data: data as QueryRow[] | QueryRow | null, error };
 }
 
-export function useShiftCurrent(): ShiftData {
+export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } {
   const [data, setData] = useState<ShiftData>({
     userId: "",
     shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: UNRESOLVED_UNIT_LABEL, assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
@@ -155,29 +155,33 @@ export function useShiftCurrent(): ShiftData {
       const srRes = await q("med_tech_shift_residents",
         "resident_id, priority, residents(id, first_name, last_name, preferred_name)",
         { shift_id: shift.id, _order: { col: "priority", opts: { ascending: true } } });
+      if (srRes.error) throw new Error(srRes.error.message ?? "Resident assignments unavailable");
       const shiftResidents = (srRes.data ?? []) as QueryRow[];
 
       // Med passes with medication details
       const mpRes = await q("med_passes",
-        "*, resident_medications(medication_name, strength, form, route, controlled_schedule)",
+        "*, resident_medications(medication_name, strength, form, route, instructions, controlled_schedule, witness_required)",
         { shift_id: shift.id, _is: { col: "deleted_at", val: null }, _order: { col: "scheduled_time", opts: { ascending: true } } });
+      if (mpRes.error) throw new Error(mpRes.error.message ?? "Medication pass data unavailable");
       const passes = (mpRes.data ?? []) as QueryRow[];
 
       // Tape events
       const tRes = await q("shift_tape_events", "*",
         { shift_id: shift.id, _order: { col: "occurred_at", opts: { ascending: true } } });
+      if (tRes.error) throw new Error(tRes.error.message ?? "Shift history unavailable");
       const tapeRows = (tRes.data ?? []) as QueryRow[];
 
       // Active holds
       const rids = shiftResidents.map(sr => sr.resident_id);
       const holdRes = await q("pre_pass_holds", "resident_id",
         { active: true, _in: { col: "resident_id", vals: rids } });
+      if (holdRes.error) throw new Error(holdRes.error.message ?? "Hold status unavailable");
       const holdRids = new Set(((holdRes.data ?? []) as QueryRow[]).map(h => h.resident_id));
 
       // ── Build UI data ──
 
       const passItems: MedPassItem[] = passes
-        .filter(p => p.status !== "given")
+        .filter(p => p.status === "pending" || p.status === "overdue")
         .map(p => {
           const med = p.resident_medications as QueryRow | null;
           const { status, minutes } = derivePassStatus(p.status as string, p.scheduled_time as string | null);
@@ -194,6 +198,7 @@ export function useShiftCurrent(): ShiftData {
           );
           return {
             id: p.id as string,
+            residentId: p.resident_id as string,
             resident: resName,
             room: formatShiftCurrentRoomLabel(null),
             med: formatShiftCurrentMedicationLabel(
@@ -204,9 +209,10 @@ export function useShiftCurrent(): ShiftData {
                   }
                 : null,
             ),
-            dose: med ? `1 ${med.form} ${med.route}` : "",
+            dose: typeof med?.instructions === "string" ? med.instructions : "Review current order instructions",
             time: p.scheduled_time ? fmtTime(p.scheduled_time as string) : "--:--",
             status, minutes,
+            witnessRequired: Boolean(p.witness_required || med?.witness_required),
             controlled: med?.controlled_schedule !== "non_controlled" && med?.controlled_schedule != null,
             hold: (p.hold_reason as string | null) || null,
           } satisfies MedPassItem;
@@ -219,13 +225,12 @@ export function useShiftCurrent(): ShiftData {
       const resItems: ResidentItem[] = shiftResidents.map(sr => {
         const res = sr.residents as QueryRow | null;
         const rid = sr.resident_id as string;
-        const ln = (res?.last_name ?? "") as string;
         const hasHold = holdRids.has(rid);
-        const hasOverdue = passItems.some(p => p.status === "overdue" && p.resident.startsWith(ln));
+        const hasOverdue = passItems.some(p => p.status === "overdue" && p.residentId === rid);
         let status: ResidentItem["status"] = "stable";
         if (hasHold) status = "hold";
         else if (hasOverdue) status = "alert";
-        const nextPass = passItems.find(p => p.resident.startsWith(ln) && p.status !== "given");
+        const nextPass = passItems.find(p => p.residentId === rid && p.status !== "given");
         return {
           id: rid,
           name: formatShiftCurrentResidentCompactName(
@@ -239,7 +244,7 @@ export function useShiftCurrent(): ShiftData {
           ),
           room: formatShiftCurrentRoomLabel(null),
           status,
-          note: hasHold ? "Hold active" : hasOverdue ? `Overdue ${nextPass?.time ?? ""}` : nextPass ? `Next ${nextPass.time}` : "All clear",
+          note: hasHold ? "Hold active" : hasOverdue ? `Overdue ${nextPass?.time ?? ""}` : nextPass ? `Next ${nextPass.time}` : "No pending passes",
         };
       });
 
@@ -274,5 +279,5 @@ export function useShiftCurrent(): ShiftData {
 
   useEffect(() => { void load(); }, [load]);
 
-  return data;
+  return { ...data, refresh: load };
 }

@@ -1,4 +1,6 @@
 "use client";
+import { COUNT_RECEIPT_COLUMNS, saveControlledCountBatch, type SavedControlledCount } from "@/lib/medications/controlled-count-batch";
+import { PendingCountReceipt } from "@/components/controlled-substance/PendingCountReceipt";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -17,8 +19,9 @@ import { Label } from "@/components/ui/label";
 type MedRow = Database["public"]["Tables"]["resident_medications"]["Row"];
 
 type LineState = {
+  id: string;
   med: MedRow;
-  expected: number;
+  expected: string;
   actual: string;
 };
 
@@ -41,6 +44,7 @@ export function ControlledCountConsole({
   const [lines, setLines] = useState<LineState[]>([]);
   const [shift, setShift] = useState<Database["public"]["Enums"]["shift_type"]>("evening");
   const [saving, setSaving] = useState(false);
+  const [pendingCounts, setPendingCounts] = useState<SavedControlledCount[]>([]);
   const [pendingCountIds, setPendingCountIds] = useState<string[]>([]);
   const [showCoSign, setShowCoSign] = useState(false);
   const [coEmail, setCoEmail] = useState("");
@@ -48,39 +52,7 @@ export function ControlledCountConsole({
   const [coError, setCoError] = useState<string | null>(null);
   const [coBusy, setCoBusy] = useState(false);
 
-  const loadExpected = useCallback(
-    async (meds: MedRow[]) => {
-      const out: LineState[] = [];
-      for (const m of meds) {
-        const { data: last } = await supabase
-          .from("controlled_substance_counts")
-          .select("actual_count, created_at")
-          .eq("resident_medication_id", m.id)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const base = last?.actual_count ?? 0;
-        const since = last?.created_at ?? "1970-01-01T00:00:00Z";
-        const { count, error: countError } = await supabase
-          .from("emar_records")
-          .select("id", { count: "exact", head: true })
-          .eq("resident_medication_id", m.id)
-          .eq("status", "given")
-          .gte("actual_time", since);
-
-        if (countError) {
-          out.push({ med: m, expected: base, actual: String(base) });
-          continue;
-        }
-        const given = count ?? 0;
-        out.push({ med: m, expected: Math.max(0, base - given), actual: String(Math.max(0, base - given)) });
-      }
-      return out;
-    },
-    [supabase],
-  );
+  const loadExpected = useCallback(async (meds: MedRow[]): Promise<LineState[]> => meds.map((med) => ({ id: crypto.randomUUID(), med, expected: "", actual: "" })), []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,6 +85,14 @@ export function ControlledCountConsole({
       const meds = (medRes.data ?? []) as MedRow[];
       const withExpected = await loadExpected(meds);
       setLines(withExpected);
+      const { data: { user: author } } = await supabase.auth.getUser();
+      if (author) {
+        const pending = await supabase.from("controlled_substance_counts").select(COUNT_RECEIPT_COLUMNS).eq("facility_id", c.facilityId).eq("outgoing_staff_id", author.id).is("incoming_signed_at", null).is("deleted_at", null);
+        if (pending.error) throw pending.error;
+        setPendingCounts(pending.data ?? []);
+        setPendingCountIds((pending.data ?? []).map((row) => row.id));
+        if (pending.data?.length) setShowCoSign(true);
+      }
     } catch (e: unknown) {
       setLoadError(e instanceof Error ? e.message : "Failed to load");
       setLines([]);
@@ -126,6 +106,8 @@ export function ControlledCountConsole({
   }, [load]);
 
   const submitCounts = async () => {
+    if (saving) return;
+    if (pendingCountIds.length) { setShowCoSign(true); return; }
     if (!ctx) return;
     const {
       data: { user },
@@ -138,17 +120,13 @@ export function ControlledCountConsole({
     setLoadError(null);
     try {
       const countDate = todayFacilityDateIso();
-      const ids: string[] = [];
-      for (const line of lines) {
-        const actual = Number.parseInt(line.actual, 10);
-        if (Number.isNaN(actual)) {
-          throw new Error(`Invalid count for ${line.med.medication_name}`);
-        }
-        const expected = line.expected;
+      const rows = lines.map((line) => {
+        const actual = Number(line.actual);
+        const expected = Number(line.expected);
+        if (!line.actual.trim() || !line.expected.trim() || !Number.isInteger(actual) || !Number.isInteger(expected) || actual < 0 || expected < 0) throw new Error(`Enter independently counted actual and verified ledger expected quantities for ${line.med.medication_name}`);
         const discrepancy = actual - expected;
-        const { data: inserted, error } = await supabase
-          .from("controlled_substance_counts")
-          .insert({
+        return {
+            id: line.id,
             resident_medication_id: line.med.id,
             facility_id: ctx.facilityId,
             organization_id: ctx.organizationId,
@@ -159,12 +137,11 @@ export function ControlledCountConsole({
             actual_count: actual,
             discrepancy,
             outgoing_staff_id: user.id,
-          })
-          .select("id")
-          .single();
-        if (error) throw error;
-        if (inserted?.id) ids.push(inserted.id);
-      }
+          };
+      });
+      const receipt = await saveControlledCountBatch(supabase, rows);
+      const ids = receipt.map((row) => row.id);
+      setPendingCounts(receipt);
       setPendingCountIds(ids);
       setShowCoSign(true);
       setCoPassword("");
@@ -256,10 +233,11 @@ export function ControlledCountConsole({
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base text-white">{line.med.medication_name}</CardTitle>
                   <CardDescription className="text-xs text-zinc-500">
-                    Expected {line.expected} (from last count minus documented doses)
+                    Enter expected quantity from the verified inventory ledger; count actual stock independently.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <Label className="text-xs text-zinc-400">Expected quantity from inventory ledger</Label><Input inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
                   <Label className="text-xs text-zinc-400">Actual count on hand</Label>
                   <Input
                     inputMode="numeric"
@@ -294,8 +272,9 @@ export function ControlledCountConsole({
           <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-4 shadow-xl">
             <h2 className="text-lg font-semibold text-white">Incoming staff verification</h2>
             <p className="mt-1 text-xs text-zinc-400">
-              Enter the incoming staff member&apos;s Haven login. This does not switch your session.
+              An independent nurse or caregiver with access to this facility must verify the saved counts. Enter their Haven login; this does not switch your session.
             </p>
+            <PendingCountReceipt counts={pendingCounts} medicationNames={new Map(lines.map((line) => [line.med.id, line.med.medication_name]))} />
             {coError ? <p className="mt-2 text-sm text-red-400">{coError}</p> : null}
             <div className="mt-4 space-y-3">
               <div>

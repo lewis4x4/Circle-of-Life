@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
-import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
   id: string;
   organization_id: string;
   facility_id: string;
   assigned_to: string | null;
+  assigned_role: string | null;
   status: string;
   due_at: string | null;
 };
@@ -33,7 +33,7 @@ export async function PATCH(
 
   const { data, error } = await actor.admin
     .from("operation_task_instances" as never)
-    .select("id, organization_id, facility_id, assigned_to, status, due_at")
+    .select("id, organization_id, facility_id, assigned_to, assigned_role, status, due_at")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -48,51 +48,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authorized to complete this task" }, { status: 403 });
   }
 
-  const now = new Date().toISOString();
-  const slaMet = task.due_at ? new Date(task.due_at) >= new Date(now) : true;
-
-  const { error: updateError } = await actor.admin
-    .from("operation_task_instances" as never)
-    .update({
-      status: "completed",
-      completed_at: now,
-      completion_notes: body.completion_notes || null,
-      completion_evidence_paths: Array.isArray(body.completion_evidence_paths) ? body.completion_evidence_paths : [],
-      verified_by: actor.id,
-      verified_at: now,
-      sla_met: slaMet,
-      sla_miss_reason: slaMet ? null : "Completed after due time",
-      updated_at: now,
-      updated_by: actor.id,
-    } as never)
-    .eq("id", id);
-
-  if (updateError) {
-    logError("admin.operations.tasks.complete", updateError, {
-      action: "update",
-      taskId: id,
-      facilityId: task.facility_id,
-      slaMet,
-    });
-    return NextResponse.json({ error: "Failed to complete task" }, { status: 500 });
-  }
-
-  await actor.admin.from("operation_audit_log" as never).insert({
-    organization_id: task.organization_id,
-    facility_id: task.facility_id,
-    task_instance_id: task.id,
-    event_type: "completed",
-    from_status: task.status,
-    to_status: "completed",
-    actor_id: actor.id,
-    actor_role: actor.appRole,
-    event_notes: body.completion_notes || "Completed via operations queue",
-    event_data: {
-      sla_met: slaMet,
-      auto_verified: true,
-      evidence_count: Array.isArray(body.completion_evidence_paths) ? body.completion_evidence_paths.length : 0,
-    },
-  } as never);
-
-  return NextResponse.json({ success: true });
+  const result = await actor.admin.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: actor.id, p_actor_role: actor.appRole, p_notes: body.completion_notes ?? "", p_evidence: body.completion_evidence_paths ?? [] } as never);
+  if (result.error) return NextResponse.json({ error: result.error.message }, { status: 409 });
+  return NextResponse.json({ success: true, status: result.data });
 }

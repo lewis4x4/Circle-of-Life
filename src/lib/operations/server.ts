@@ -22,6 +22,8 @@ type OperationTaskRow = {
   assigned_shift_date: string;
   assigned_shift: OperationTaskShift | null;
   assigned_to: string | null;
+  signed_by?: string | null;
+  requires_dual_sign?: boolean;
   assigned_role: string | null;
   status: OperationTaskStatus;
   due_at: string | null;
@@ -208,6 +210,8 @@ function shapeOperationTask(
     assigned_shift_date: row.assigned_shift_date,
     assigned_shift: row.assigned_shift,
     assigned_to: row.assigned_to,
+    signed_by: row.signed_by,
+    requires_dual_sign: row.requires_dual_sign,
     assigned_to_name: row.assigned_to ? assigneeNames.get(row.assigned_to) ?? null : null,
     assigned_role: row.assigned_role,
     status: row.status,

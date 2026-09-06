@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { X, Send, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHavenInsight } from "@/lib/haven-insight/HavenInsightContext";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { Button } from "@/components/ui/button";
 // FIX-P2-C: InsightFeedback intentionally NOT imported here. After R2-C dropped the
 // sessionId fallback path on set_nlq_message_feedback, the legacy HavenInsightPanel — which
@@ -12,7 +13,9 @@ import { Button } from "@/components/ui/button";
 // threads real exec_nlq_messages.id values through to InsightFeedback.
 
 export function HavenInsightPanel() {
-  const { isOpen, close, messages, currentModule, suggestedQuestions, loading, sendQuestion, clearChat } = useHavenInsight();
+  const { isOpen, close, messages, currentModule, suggestedQuestions, loading, error, sendQuestion, clearChat } = useHavenInsight();
+  const { appRole } = useHavenAuth();
+  const session = messages.findLast((message) => message.sessionId)?.sessionId;
   const [input, setInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +64,8 @@ export function HavenInsightPanel() {
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto px-[13px] py-3">
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {session && (appRole === "owner" || appRole === "org_admin") && <a className="text-xs underline" href={`/admin/executive/nlq?session=${encodeURIComponent(session)}`}>Open this conversation and saved history</a>}
           {messages.length === 0 && (
             <InsightEmptyState
               moduleLabel={currentModule.module}
@@ -81,6 +86,8 @@ export function HavenInsightPanel() {
                 )}
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.fallbackUsed && <p className="mt-2 text-muted-foreground">Fallback answer used. Review the supporting evidence.</p>}
+                {msg.citations?.length ? <ul aria-label="Sources" className="mt-2 space-y-1">{msg.citations.map((source, index) => <li key={`${source.label}-${index}`}>{source.href ? <a href={source.href} className="underline">{source.label}</a> : source.label}</li>)}</ul> : msg.role === "assistant" ? <p className="mt-2 text-muted-foreground">No supporting sources returned.</p> : null}
                 {msg.tokensUsed != null && (
                   <p className="mt-1.5 font-mono text-[9px] text-muted-foreground">{msg.tokensUsed} tokens</p>
                 )}

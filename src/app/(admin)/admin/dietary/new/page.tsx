@@ -148,14 +148,18 @@ export default function AdminDietaryNewPage() {
         facility_id: selectedFacilityId,
         resident_id: residentId,
         status: "draft",
-        iddsi_food_level: food,
+        active: false,
+        diet_type: "regular",
+        iddsi_food_level: food === "not_assessed" ? null : Number(food.match(/level_(\d)/)?.[1]),
+        iddsi_liquid_level: fluid === "not_assessed" ? null : Number(fluid.match(/level_(\d)/)?.[1]),
+        allergies: splitList(allergies),
         iddsi_fluid_level: fluid,
         allergy_constraints: splitList(allergies),
         texture_constraints: splitList(textures),
         aspiration_notes: aspiration.trim() || null,
         medication_texture_review_notes: medReview.trim() || null,
         created_by: user.id,
-      });
+      } as never);
       if (insErr) throw insErr;
       router.push("/admin/dietary");
     } catch (e) {

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { FileUp, Loader2 } from "lucide-react";
 
 import { ExportMarkdownButton } from "@/components/onboarding/export-markdown-button";
@@ -18,6 +19,11 @@ function questionTier(q: { tier?: string | null }): OnboardingQuestionTier {
 }
 
 export default function OnboardingQuestionsPage() {
+  return <Suspense fallback={<p role="status">Loading department questions…</p>}><OnboardingQuestionsContent /></Suspense>;
+}
+
+function OnboardingQuestionsContent() {
+  const selectedDepartment = useSearchParams().get("department");
   const fileRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -41,7 +47,7 @@ export default function OnboardingQuestionsPage() {
   const importQuestionFileJson = useOnboardingStore((s) => s.importQuestionFileJson);
 
   const sortedQuestions = useMemo(() => {
-    const list = Object.values(questionsById);
+    const list = Object.values(questionsById).filter((q) => !selectedDepartment || q.department === selectedDepartment);
     return list.sort((a, b) => {
       const ta = questionTier(a) === "extended" ? 1 : 0;
       const tb = questionTier(b) === "extended" ? 1 : 0;
@@ -53,7 +59,7 @@ export default function OnboardingQuestionsPage() {
       if (d !== 0) return d;
       return a.id.localeCompare(b.id);
     });
-  }, [questionsById]);
+  }, [questionsById, selectedDepartment]);
 
   const tierStats = useMemo(() => {
     const answeredFor = (qs: typeof sortedQuestions) =>

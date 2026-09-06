@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, FileCheck2, Loader2, PenLine } from "lucide-react";
 
@@ -45,6 +47,8 @@ export default function MyAcknowledgmentsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const { appRole } = useHavenAuth();
+  const [readingId, setReadingId] = useState<string | null>(null);
   const [signingId, setSigningId] = useState<string | null>(null);
   const [signatureName, setSignatureName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,7 +71,7 @@ export default function MyAcknowledgmentsPage() {
       const requirementsQ = supabase
         .from("document_acknowledgment_requirements" as never)
         .select(
-          "id, document_id, document_title, required_roles, require_signature, due_date, note, is_active, created_at",
+          "id, document_id, document_title, required_roles, require_signature, due_date, note, is_active, created_at, document_content_snapshot, document_version_hash",
         )
         .eq("facility_id", selectedFacilityId as string)
         .eq("is_active", true)
@@ -155,7 +159,7 @@ export default function MyAcknowledgmentsPage() {
       <div className="relative z-10 space-y-6 max-w-3xl">
         <header className="mb-6 space-y-2">
           <Link
-            href="/admin/acknowledgments"
+            href={getDashboardRouteForRole(appRole)}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -221,16 +225,12 @@ export default function MyAcknowledgmentsPage() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Link
-                              href={`/admin/knowledge/documents/${r.document_id}`}
-                              className="text-sm underline text-foreground"
-                            >
-                              Read document
-                            </Link>
+                            <Button type="button" variant="outline" size="sm" onClick={() => setReadingId(readingId === r.id ? null : r.id)}>Read document</Button>
                             <Button
                               type="button"
                               size="sm"
                               className="gap-2"
+                              disabled={!r.document_version_hash || readingId !== r.id}
                               onClick={() => {
                                 setSigningId(signing ? null : r.id);
                                 setSignatureName("");
@@ -241,7 +241,8 @@ export default function MyAcknowledgmentsPage() {
                             </Button>
                           </div>
                         </div>
-                        {signing ? (
+                        {readingId === r.id && <div className="rounded-lg border border-border p-4"><h3 className="font-medium mb-2">{r.document_title}</h3><p className="whitespace-pre-wrap text-sm">{r.document_content_snapshot || "This older requirement has no issued content snapshot. Ask an administrator to reissue it before signing."}</p></div>}
+                      {signing ? (
                           <div className="space-y-2 border-t border-border pt-3">
                             {r.require_signature ? (
                               <label className="flex flex-col gap-1 text-sm">

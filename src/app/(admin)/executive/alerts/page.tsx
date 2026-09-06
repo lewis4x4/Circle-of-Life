@@ -232,7 +232,7 @@ export default function ExecutiveAlertsPage() {
                           isCrit ? "border-destructive/30" : isWarn ? "border-warning/30" : "border-border"
                        )}
                     >
-                       <div className="flex flex-col md:flex-row">
+                       <div id={`alert-${a.id}`} className="flex flex-col md:flex-row">
                           <div className={cn(
                              "md:w-64 p-5 flex flex-col justify-center border-b md:border-b-0 md:border-r",
                              isCrit ? "bg-destructive/10 border-destructive/20" : isWarn ? "bg-warning/10 border-warning/20" : "bg-muted/40 border-border"

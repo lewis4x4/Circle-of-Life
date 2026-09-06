@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
@@ -80,6 +81,7 @@ function CeoAlertsWatchlist({ alerts }: { alerts: CeoAlertDisplay[] }) {
                   <p className="mt-1 text-[11px] text-muted-foreground">
                     {alert.facility} · {alert.age}
                   </p>
+                  {alert.href && <Link className="text-xs underline" href={alert.href}>Open</Link>}
                 </div>
               </div>
             ))}

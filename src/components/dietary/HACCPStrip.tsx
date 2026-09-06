@@ -10,7 +10,7 @@ export function HACCPStrip({
   entries: HACCPEntry[];
   onVoice: () => void;
 }) {
-  const allInRange = entries.every((e) => e.in_safe_range);
+  const allInRange = entries.length > 0 && entries.every((e) => e.in_safe_range);
 
   return (
     <div className="h-32 border-t border-stone-800 bg-stone-950/70  flex">
@@ -27,7 +27,7 @@ export function HACCPStrip({
             </span>
           ) : (
             <span className="text-[10px] text-rose-400 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Out of range
+              <AlertTriangle className="w-3 h-3" /> {entries.length ? "Out of range" : "No readings"}
             </span>
           )}
         </div>
@@ -35,7 +35,7 @@ export function HACCPStrip({
           onClick={onVoice}
           className="rounded-xl hover: hover: text-white py-3 font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30 transition"
         >
-          <Mic className="w-4 h-4" /> Hold to Log Temp
+          <Mic className="w-4 h-4" /> Record temperature
         </button>
       </div>
 

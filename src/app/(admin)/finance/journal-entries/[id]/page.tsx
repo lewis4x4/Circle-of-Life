@@ -195,37 +195,12 @@ export default function JournalEntryDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const { error: uErr } = await supabase
-        .from("journal_entries")
-        .update({
-          entry_date: formEntryDate,
-          memo: formMemo.trim() || null,
-          facility_id: formFacilityId || null,
-        })
-        .eq("id", header.id)
-        .eq("status", "draft");
-      if (uErr) {
-        setError(uErr.message);
-        return;
-      }
-      const { error: dErr } = await supabase.from("journal_entry_lines").delete().eq("journal_entry_id", header.id);
-      if (dErr) {
-        setError(dErr.message);
-        return;
-      }
-      const inserts: Database["public"]["Tables"]["journal_entry_lines"]["Insert"][] = parsed.map((l) => ({
-        journal_entry_id: header.id,
-        organization_id: organizationId,
-        gl_account_id: l.gl_account_id,
-        line_number: l.line_number,
-        debit_cents: l.debit_cents,
-        credit_cents: l.credit_cents,
-      }));
-      const { error: iErr } = await supabase.from("journal_entry_lines").insert(inserts);
-      if (iErr) {
-        setError(iErr.message);
-        return;
-      }
+      const { error: saveError } = await supabase.rpc("save_journal_draft" as never, {
+        p_id: header.id, p_entity_id: header.entity_id, p_facility_id: formFacilityId || null,
+        p_entry_date: formEntryDate, p_memo: formMemo.trim() || null, p_lines: parsed,
+        p_expected_updated_at: header.updated_at,
+      } as never);
+      if (saveError) { setError(saveError.message); return; }
       await load();
       router.refresh();
     } finally {

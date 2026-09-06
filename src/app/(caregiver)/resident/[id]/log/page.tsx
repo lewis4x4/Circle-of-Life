@@ -8,9 +8,9 @@ import { ArrowLeft, FileText, Loader2 } from "lucide-react";
 import { adlTypeLabel, assistanceLabel } from "@/lib/caregiver/adl-form-options";
 import { formatCaregiverResidentLogGeneralNotes } from "@/lib/caregiver/resident-log-display-copy";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { appendShiftNote as persistShiftNote, parseVitalMeasurements, recordVitals } from "@/lib/caregiver/clinical-writes";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
@@ -31,15 +31,6 @@ type AdlRow = Pick<
   Database["public"]["Tables"]["adl_logs"]["Row"],
   "id" | "log_time" | "log_date" | "shift" | "adl_type" | "assistance_level" | "refused" | "notes"
 >;
-
-function zonedTimeShort(now: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(now);
-}
 
 export default function CaregiverResidentLogPage() {
   const params = useParams<{ id: string }>();
@@ -66,6 +57,8 @@ export default function CaregiverResidentLogPage() {
   const [bpDia, setBpDia] = useState("");
   const [pulse, setPulse] = useState("");
   const [savingVitals, setSavingVitals] = useState(false);
+  const [alertPending, setAlertPending] = useState<{ id: string; error: string } | null>(null);
+  const [observations, setObservations] = useState<{ id: string; observed_at: string; measurements: Record<string, number> }[]>([]);
 
   const idOk = isValidFacilityIdForQuery(residentId);
 
@@ -135,7 +128,7 @@ export default function CaregiverResidentLogPage() {
         "Resident";
       setResidentLabel(display);
 
-      const [dailyQ, adlQ] = await Promise.all([
+      const [dailyQ, adlQ, observationsQ] = await Promise.all([
         supabase
           .from("daily_logs")
           .select("id, log_date, shift, general_notes, logged_by")
@@ -152,9 +145,12 @@ export default function CaregiverResidentLogPage() {
           .is("deleted_at", null)
           .order("log_time", { ascending: false })
           .limit(12),
+        supabase.from("daily_vital_observations" as never).select("id, observed_at, measurements").eq("resident_id", residentId).is("deleted_at", null).order("observed_at", { ascending: false }).limit(30),
       ]);
       if (dailyQ.error) throw dailyQ.error;
       if (adlQ.error) throw adlQ.error;
+      if (observationsQ.error) throw observationsQ.error;
+      setObservations((observationsQ.data ?? []) as unknown as typeof observations);
       setDailyHistory((dailyQ.data ?? []) as DailyRow[]);
       setAdlRecent((adlQ.data ?? []) as AdlRow[]);
     } catch (e) {
@@ -183,45 +179,7 @@ export default function CaregiverResidentLogPage() {
     setSavingNote(true);
     setLoadError(null);
     try {
-      const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
-      const stamp = zonedTimeShort(new Date(), ctx.timeZone);
-      const line = `[${stamp}] ${noteDraft.trim()}`;
-
-      const existing = await supabase
-        .from("daily_logs")
-        .select("id, general_notes")
-        .eq("resident_id", residentId)
-        .eq("facility_id", ctx.facilityId)
-        .eq("log_date", ymd)
-        .eq("shift", shift)
-        .eq("logged_by", user.id)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (existing.error) throw existing.error;
-
-      if (existing.data) {
-        const prev = (existing.data as { id: string; general_notes: string | null }).general_notes?.trim() ?? "";
-        const next = prev ? `${prev}\n${line}` : line;
-        const upd = await supabase
-          .from("daily_logs")
-          .update({ general_notes: next, updated_by: user.id })
-          .eq("id", (existing.data as { id: string }).id);
-        if (upd.error) throw upd.error;
-      } else {
-        const ins: Database["public"]["Tables"]["daily_logs"]["Insert"] = {
-          resident_id: residentId,
-          facility_id: ctx.facilityId,
-          organization_id: ctx.organizationId,
-          log_date: ymd,
-          shift,
-          logged_by: user.id,
-          general_notes: line,
-        };
-        const insQ = await supabase.from("daily_logs").insert(ins);
-        if (insQ.error) throw insQ.error;
-      }
+      await persistShiftNote(supabase, residentId, noteDraft);
       setNoteDraft("");
       await load();
     } catch (e) {
@@ -243,53 +201,22 @@ export default function CaregiverResidentLogPage() {
     setSavingVitals(true);
     setLoadError(null);
     try {
-      const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
-      let dailyLogId = await fetchShiftDailyLogId(supabase, {
-        residentId,
-        facilityId: ctx.facilityId,
-        logDate: ymd,
-        shift,
-        loggedBy: user.id,
-      });
-      if (!dailyLogId) {
-        const ins: Database["public"]["Tables"]["daily_logs"]["Insert"] = {
-          resident_id: residentId,
-          facility_id: ctx.facilityId,
-          organization_id: ctx.organizationId,
-          log_date: ymd,
-          shift,
-          logged_by: user.id,
-        };
-        const insQ = await supabase.from("daily_logs").insert(ins).select("id").single();
-        if (insQ.error) throw insQ.error;
-        dailyLogId = (insQ.data as { id: string }).id;
-      }
-      const t = temp.trim() ? Number.parseFloat(temp) : null;
-      const ps = bpSys.trim() ? Number.parseInt(bpSys, 10) : null;
-      const pd = bpDia.trim() ? Number.parseInt(bpDia, 10) : null;
-      const pl = pulse.trim() ? Number.parseInt(pulse, 10) : null;
-      const upd = await supabase
-        .from("daily_logs")
-        .update({
-          temperature: t,
-          blood_pressure_systolic: ps,
-          blood_pressure_diastolic: pd,
-          pulse: pl,
-          updated_by: user.id,
-        })
-        .eq("id", dailyLogId);
-      if (upd.error) throw upd.error;
+      const dailyLogId = await recordVitals(supabase, residentId, parseVitalMeasurements({ temperature: temp, blood_pressure_systolic: bpSys, blood_pressure_diastolic: bpDia, pulse }), new Date().toISOString());
+      setTemp(""); setBpSys(""); setBpDia(""); setPulse("");
       const ev = await requestEvaluateVitals(dailyLogId);
-      if (!ev.ok) {
-        setLoadError(ev.error ?? "Vital alert evaluation failed");
-      }
+      setAlertPending(ev.ok ? null : { id: dailyLogId, error: ev.error ?? "Vital alert evaluation failed" });
       await load();
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not save vitals.");
     } finally {
       setSavingVitals(false);
     }
+  }
+
+  async function retryAlertEvaluation() {
+    if (!alertPending) return;
+    const result = await requestEvaluateVitals(alertPending.id);
+    setAlertPending(result.ok ? null : { ...alertPending, error: result.error ?? "Alert check unavailable" });
   }
 
   if (!idOk) {
@@ -348,6 +275,8 @@ export default function CaregiverResidentLogPage() {
         Resident
       </Link>
 
+      {alertPending && <div role="alert" className="rounded-lg border border-amber-700 p-4 text-amber-100">Vitals saved; alert check unavailable: {alertPending.error} <Button onClick={() => void retryAlertEvaluation()}>Retry alert check</Button></div>}
+      {observations.length > 0 && <Card><CardHeader><CardTitle>Recent measurements</CardTitle></CardHeader><CardContent><ul className="space-y-2">{observations.map((observation) => <li key={observation.id}><time>{new Date(observation.observed_at).toLocaleString("en-US", { timeZone: ctx?.timeZone ?? "America/New_York" })}</time> · {Object.entries(observation.measurements).map(([key, value]) => `${key.replaceAll("_", " ")}: ${value}`).join(" · ")}</li>)}</ul></CardContent></Card>}
       {loadError ? (
         <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-4 py-2 text-xs text-amber-100">{loadError}</div>
       ) : null}

@@ -16,6 +16,7 @@ export type ImportRollup = {
   batches: number;
   files: number;
   imported: number;
+  verified?: number;
   pending: number;
   mapped: number;
   failed: number;
@@ -36,9 +37,9 @@ export function daysUntilCutoff(cutoff: string = DRIVE_CUTOFF_DATE, now: Date = 
   return Math.round((target - today) / 86400000);
 }
 
-/** Migration is considered complete when every loaded file is imported or skipped. */
+/** Bookmark status and skips cannot establish copied, verified content. */
 export function migrationComplete(rollup: ImportRollup): boolean {
-  return rollup.files > 0 && rollup.pending === 0 && rollup.mapped === 0 && rollup.failed === 0;
+  return rollup.files > 0 && rollup.verified === rollup.files && rollup.skipped === 0 && rollup.pending === 0 && rollup.mapped === 0 && rollup.failed === 0;
 }
 
 export function rollupFromStatuses(statuses: string[]): Omit<ImportRollup, "batches"> {

@@ -24,5 +24,7 @@ export function formatFamilyPortalTimestamp(isoOrLabel: string): string {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
   }).format(parsed);
 }

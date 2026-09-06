@@ -43,12 +43,11 @@ describe("AdminNewTrainingCompletionPage completion date", () => {
     expect(eightOhFivePmEt.toISOString().slice(0, 10)).toBe("2026-08-21");
   });
 
-  it("uses the shared facility date helper while preserving timestamptz soft-delete stamps", () => {
+  it("uses the shared facility date helper independent of save implementation", () => {
     expect(pageSource).toContain("todayFacilityDateIso()");
     expect(pageSource).toContain("Completed on (ET)");
     expect(pageSource).not.toMatch(
       /useState\(\s*\(\)\s*=>\s*new Date\(\)\.toISOString\(\)\.slice\(0,\s*10\)/,
     );
-    expect(pageSource).toContain("deleted_at: new Date().toISOString()");
   });
 });

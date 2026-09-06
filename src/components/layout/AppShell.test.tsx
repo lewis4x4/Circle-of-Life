@@ -138,7 +138,13 @@ describe("AppShell all-sections jump list", () => {
     expect(screen.queryByText(/Facility Admin/i)).not.toBeInTheDocument();
   });
 
-  it("opens on /admin/executive without crashing and shows common destinations", async () => {
+  it("keeps clinical incident creation out of the broker toolbar", () => {
+    authMock.appRole = "broker";
+    renderAppShell();
+    expect(screen.queryByRole("link", { name: "Report incident" })).not.toBeInTheDocument();
+  });
+
+  it("opens on /admin/executive without crashing and shows all available destinations", async () => {
     const user = userEvent.setup();
     renderAppShell();
 
@@ -157,15 +163,15 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).getByText("Family notes")).toBeInTheDocument();
     expect(within(jumpList).getByText("Live rounding")).toBeInTheDocument();
     expect(within(jumpList).getByText("Snack pass")).toBeInTheDocument();
-    expect(within(jumpList).queryByText("Ask knowledge base")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Incident queue")).not.toBeInTheDocument();
+    expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Incident queue")).toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
 
   it("marks only the role-home alias active when it resolves to another nav destination", () => {
     renderAppShell();
 
-    const ownerHomeLinks = screen.getAllByRole("link", { name: "Owner home" });
+    const ownerHomeLinks = screen.getAllByRole("link", { name: "Home" });
     const executiveLinks = screen.getAllByRole("link", { name: "Executive" });
 
     expect(ownerHomeLinks.some((link) => link.getAttribute("aria-current") === "page")).toBe(true);

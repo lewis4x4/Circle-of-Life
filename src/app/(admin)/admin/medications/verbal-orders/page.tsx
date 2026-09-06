@@ -150,7 +150,7 @@ export default function AdminVerbalOrdersPage() {
                       
                       <div className="flex flex-col">
                         <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Resident</span>
-                        <span className="font-semibold text-lg text-foreground tracking-tight">{name}</span>
+                        <Link href={`/admin/medications/verbal-orders/${r.id}`} className="font-semibold text-lg text-foreground tracking-tight underline">{name} · Review order</Link>
                       </div>
 
                       <div className="flex flex-col min-w-0 pr-4">

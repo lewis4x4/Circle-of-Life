@@ -107,6 +107,7 @@ export default function NewInfectionSurveillancePage() {
       const { data: created, error: insErr } = await supabase.from("infection_surveillance").insert(ins).select("id").single();
       if (insErr) throw insErr;
       const id = (created as { id: string }).id;
+      try {
       const evalRes = await fetch("/api/infection-control/evaluate-outbreak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,6 +116,10 @@ export default function NewInfectionSurveillancePage() {
       if (!evalRes.ok) {
         const j = (await evalRes.json()) as { error?: string };
         throw new Error(j.error ?? "Outbreak evaluation failed");
+      }
+      } catch {
+        router.push(`/admin/infection-control/${id}?evaluation=pending`);
+        return;
       }
       router.push(`/admin/infection-control/${id}`);
     } catch (e) {

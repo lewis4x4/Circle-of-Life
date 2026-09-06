@@ -247,6 +247,7 @@ export default function AdminApprovalsInboxPage() {
 
   const approveSwap = useCallback(
     async (id: string) => {
+      if (!globalThis.confirm("I have reviewed both employees’ required credentials, total weekly hours (maximum 60), minimum 8-hour rest and facility coverage. Apply this confirmed coverage change to the working schedule?")) return;
       setActionId(id);
       setNotice(null);
       try {
@@ -258,10 +259,12 @@ export default function AdminApprovalsInboxPage() {
           .from("shift_swap_requests")
           .update({
             status: "approved",
+            eligibility_reviewed_at: new Date().toISOString(),
+            eligibility_reviewed_by: user.id,
             approved_at: new Date().toISOString(),
             approved_by: user.id,
             denied_reason: null,
-          })
+          } as never)
           .eq("id", id)
           .is("deleted_at", null);
         if (error) throw error;

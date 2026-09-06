@@ -19,7 +19,7 @@ interface ResidentDrawerProps {
 }
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
-  stable: { label: "Stable",     cls: "text-emerald-300 bg-emerald-500/10 ring-emerald-500/30" },
+  stable: { label: "No pending alerts",     cls: "text-emerald-300 bg-emerald-500/10 ring-emerald-500/30" },
   watch:  { label: "Watch",      cls: "text-amber-300  bg-amber-500/10  ring-amber-500/30" },
   alert:  { label: "Alert",      cls: "text-rose-300   bg-rose-500/10   ring-rose-500/30" },
   hold:   { label: "Hold active",cls: "text-rose-300   bg-rose-500/10   ring-rose-500/30 animate-pulse" },
@@ -29,7 +29,7 @@ export function ResidentDrawer({ resident, passes, onClose }: ResidentDrawerProp
   if (!resident) return null;
 
   const residentPasses = passes.filter((p) =>
-    p.resident.startsWith(resident.name.split(",")[0]),
+    p.residentId === resident.id,
   );
   const status = statusLabel[resident.status] ?? statusLabel.stable;
 

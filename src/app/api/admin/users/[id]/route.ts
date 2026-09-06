@@ -108,6 +108,13 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
   return NextResponse.json({
     data: {
       ...profile,
+      login_email: authSnapshots[id]?.email ?? null,
+      auth_app_role: authSnapshots[id]?.app_role ?? null,
+      identity_sync_status: !authSnapshots[id] ? "unavailable" :
+        authSnapshots[id].email.toLowerCase() === profile.email.toLowerCase()
+        && authSnapshots[id].app_role === profile.app_role
+        && (Boolean(authSnapshots[id].banned_until && new Date(authSnapshots[id].banned_until).getTime() > Date.now()) === !profile.is_active)
+          ? "synchronized" : "retry_required",
       last_login_at: authSnapshots[id]?.last_sign_in_at ?? profile.last_login_at,
       facilities: visibleFacilities.map((facility) => ({
         id: facility.id,
@@ -176,7 +183,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   const isSelf = actor.id === id;
 
   // Role change requires canManageUser
-  if (updates.app_role !== undefined && updates.app_role !== target.app_role) {
+  if (updates.app_role !== undefined) {
     if (isSelf) {
       return NextResponse.json({ error: "Cannot change your own role" }, { status: 422 });
     }
@@ -201,18 +208,19 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Cannot modify this user" }, { status: 403 });
   }
 
-  // Email uniqueness check if changing email
-  if (updates.email && updates.email !== target.email) {
-    const { data: existing } = await admin
-      .from("user_profiles")
-      .select("id")
-      .eq("email", updates.email)
-      .eq("organization_id", actor.organization_id!)
-      .neq("id", id)
-      .maybeSingle();
-    if (existing) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
-    }
+  if (updates.email !== undefined && updates.email !== target.email) {
+    return NextResponse.json({ error: "Use the login-email command to change sign-in identity" }, { status: 422 });
+  }
+  if (updates.is_active === true && !target.is_active) {
+    return NextResponse.json({ error: "Use the reactivate command to restore account access" }, { status: 422 });
+  }
+  // Auth must acknowledge access changes before the profile advertises them.
+  try {
+    if (updates.app_role) await adminUpdateUserRole(id, updates.app_role);
+    if (updates.is_active === false) await adminDisableUser(id);
+  } catch (error) {
+    logError("admin.users.update", error, { action: "sync_auth", targetUserId: id });
+    return NextResponse.json({ error: "Account access synchronization failed. Retry this update.", sync_status: "retry_required" }, { status: 502 });
   }
 
   // Build update payload
@@ -233,23 +241,11 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     .eq("organization_id", actor.organization_id!)
     .select()
     .single();
-  if (updateErr) {
-    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+  if (updateErr || !updated) {
+    return NextResponse.json({ error: "Profile update failed; account access may already have changed. Retry this update.", sync_status: "retry_required" }, { status: 500 });
   }
 
-  // Sync role to auth if changed
   const auditAction = updates.app_role && updates.app_role !== target.app_role ? "update_role" : "update_profile";
-  if (updates.app_role && updates.app_role !== target.app_role) {
-    try {
-      await adminUpdateUserRole(id, updates.app_role);
-    } catch (err) {
-      logError("admin.users.update", err, {
-        action: "sync_role_to_auth",
-        targetUserId: id,
-        newRole: updates.app_role,
-      });
-    }
-  }
 
   // Audit
   await writeUserAuditEntry({
@@ -314,36 +310,37 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
 
   const now = new Date().toISOString();
 
+  try {
+    await adminDisableUser(id);
+  } catch (error) {
+    logError("admin.users.delete", error, { action: "disable_auth", targetUserId: id });
+    return NextResponse.json({ error: "Could not disable account access. Retry deletion.", sync_status: "retry_required" }, { status: 502 });
+  }
+
   // Soft-delete profile
-  await admin
+  const { error: profileError } = await admin
     .from("user_profiles")
     .update({ deleted_at: now, is_active: false, updated_at: now })
     .eq("id", id)
     .eq("organization_id", actor.organization_id!);
 
+  if (profileError) return NextResponse.json({ error: "Sign-in disabled; profile deletion needs retry.", sync_status: "retry_required" }, { status: 500 });
+
   // Revoke all facility access
-  const { data: accessRows } = await admin
+  const { data: accessRows, error: accessError } = await admin
     .from("user_facility_access")
     .select("id, facilities!inner(organization_id)")
     .eq("user_id", id)
     .eq("facilities.organization_id", actor.organization_id!)
     .is("revoked_at", null);
+  if (accessError) return NextResponse.json({ error: "Account disabled; facility revocation needs retry.", sync_status: "retry_required" }, { status: 500 });
   const accessIds = (accessRows ?? []).map((row) => row.id);
   if (accessIds.length > 0) {
-    await admin
+    const { error: revokeError } = await admin
       .from("user_facility_access")
       .update({ revoked_at: now, revoked_by: actor.id })
       .in("id", accessIds);
-  }
-
-  // Disable auth account
-  try {
-    await adminDisableUser(id);
-  } catch (err) {
-    logError("admin.users.delete", err, {
-      action: "disable_auth",
-      targetUserId: id,
-    });
+    if (revokeError) return NextResponse.json({ error: "Account disabled; facility revocation needs retry.", sync_status: "retry_required" }, { status: 500 });
   }
 
   // Audit

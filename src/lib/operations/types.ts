@@ -24,6 +24,8 @@ export type OperationTask = {
   assigned_shift_date: string;
   assigned_shift: OperationTaskShift | null;
   assigned_to: string | null;
+  signed_by?: string | null;
+  requires_dual_sign?: boolean;
   assigned_to_name: string | null;
   assigned_role: string | null;
   status: OperationTaskStatus;

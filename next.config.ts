@@ -38,7 +38,8 @@ const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob:${supabaseHost ? ` https://${supabaseHost}` : ""}`,
+  `img-src 'self' data: blob: https://images.unsplash.com${supabaseHost ? ` https://${supabaseHost}` : ""}`,
+  "media-src 'self' https://cdn.pixabay.com",
   "font-src 'self'",
   `connect-src 'self'${supabaseHost ? ` https://${supabaseHost} wss://${supabaseHost}` : ""}${sentryHost ? ` https://${sentryHost}` : ""}`,
   "frame-src 'none'",
@@ -119,10 +120,6 @@ const nextConfig: NextConfig = {
       "vendors",
     ];
     return [
-      // Apex URL is the operator sign-in — bypass the marketing landing.
-      // Routing-level redirect runs before any HTML is generated, so it
-      // beats CDN/browser caching of the old marketing page.
-      { source: "/", destination: "/login", permanent: false },
       ...segments.flatMap((seg) => [
         { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
         { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },

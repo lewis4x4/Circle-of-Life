@@ -8,6 +8,7 @@ type TaskRow = {
   organization_id: string;
   facility_id: string;
   assigned_to: string | null;
+  assigned_role: string | null;
   status: string;
 };
 
@@ -25,7 +26,7 @@ export async function PATCH(
 
   const { data, error } = await actor.admin
     .from("operation_task_instances" as never)
-    .select("id, organization_id, facility_id, assigned_to, status")
+    .select("id, organization_id, facility_id, assigned_to, assigned_role, status")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -40,16 +41,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authorized to start this task" }, { status: 403 });
   }
 
+  if (task.status === "in_progress") return NextResponse.json({ success: true });
+  if (task.status !== "pending") return NextResponse.json({ error: "Only pending tasks can be started" }, { status: 409 });
+
   const now = new Date().toISOString();
   const { error: updateError } = await actor.admin
     .from("operation_task_instances" as never)
     .update({
       status: "in_progress",
+      assigned_to: task.assigned_to ?? actor.id,
       started_at: now,
       updated_at: now,
       updated_by: actor.id,
     } as never)
-    .eq("id", id);
+    .eq("id", id).eq("status", "pending").select("id").single();
 
   if (updateError) {
     logError("admin.operations.tasks.start", updateError, {

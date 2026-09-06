@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AuditLogExportPage from "@/app/(admin)/admin/compliance/audit-export/page";
 import {
@@ -117,7 +117,10 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 describe("AuditLogExportPage auth hydration", () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://fixture.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "fixture-key");
     authMock.loading = false;
     authMock.organizationId = null;
     authMock.user = null;

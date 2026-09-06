@@ -1,7 +1,2 @@
-import { V2AnalyticsPage } from "@/components/v2/V2AnalyticsPage";
-
-export const dynamic = "force-dynamic";
-
-export default function ExecutiveReportsPage() {
-  return <V2AnalyticsPage analyticsId="executive-reports" />;
-}
+// Share the complete operational workflow across both route entry points.
+export { default } from "../../../executive/reports/page";

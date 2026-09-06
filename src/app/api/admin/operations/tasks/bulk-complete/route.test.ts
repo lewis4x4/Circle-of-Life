@@ -23,7 +23,7 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
   });
 
-  it("filters to authorized tasks before RPC", async () => {
+  it.each([["completed", 1, 0], ["awaiting_verification", 0, 1]] as const)("filters authorized tasks and reports %s separately", async (outcome, completedCount, awaitingCount) => {
     const loadedTasks = [
       {
         id: "11111111-1111-1111-1111-111111111111",
@@ -55,7 +55,7 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     vi.mocked(actorCanMutateTask)
       .mockResolvedValueOnce(true as never)
       .mockResolvedValueOnce(false as never);
-    actor.admin.rpc.mockResolvedValue({ data: [{ task_instance_id: loadedTasks[0].id }], error: null });
+    actor.admin.rpc.mockResolvedValue({ data: [{ task_instance_id: loadedTasks[0].id, outcome }], error: null });
 
     const request = new Request("http://localhost/api/admin/operations/tasks/bulk-complete", {
       method: "POST",
@@ -72,7 +72,8 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     );
     expect(payload).toEqual({
       success: true,
-      completed_count: 1,
+      completed_count: completedCount,
+      awaiting_verification_count: awaitingCount,
       requested_count: 2,
     });
     expect(queryChain.update).not.toHaveBeenCalled();

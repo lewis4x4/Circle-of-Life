@@ -1,4 +1,5 @@
 "use client";
+import { MedicationOrderEditor } from "@/components/medications/MedicationOrderEditor";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -107,6 +108,7 @@ export default function AdminResidentMedicationsPage() {
           }
         />
 
+        <MedicationOrderEditor key={`new:${residentId}`} residentId={residentId} onSaved={() => void load()} />
         <div className="flex gap-2">
           {(["active", "discontinued", "all"] as const).map((t) => (
             <button
@@ -151,7 +153,8 @@ export default function AdminResidentMedicationsPage() {
                     <MotionList className="space-y-2">
                       {filtered.map((m) => (
                         <MotionItem key={m.id}>
-                          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_2fr_1fr_1fr] gap-4 lg:items-center p-[14px] rounded-[8px] bg-card border border-border shadow-[var(--shadow-card)] tap-responsive group hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration)] w-full outline-none">
+                          {m.status === "active" && <MedicationOrderEditor key={`${residentId}:${m.id}`} residentId={residentId} medicationId={m.id} onSaved={() => void load()} />}
+                                <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_2fr_1fr_1fr] gap-4 lg:items-center p-[14px] rounded-[8px] bg-card border border-border shadow-[var(--shadow-card)] tap-responsive group hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-[var(--motion-duration)] w-full outline-none">
 
                             <div className="flex flex-col relative w-full">
                               <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medication</span>

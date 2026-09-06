@@ -58,6 +58,7 @@ const ADMISSION_CASE_SOURCES: AdmissionCaseSource[] = [
 ];
 
 type RequestBody = {
+  create_request_id?: string;
   facility_id?: string;
   resident_id?: string;
   referral_lead_id?: string | null;
@@ -198,15 +199,15 @@ export async function POST(request: NextRequest) {
     admissionCaseSource === "other" ? (body.source_other?.trim() || null) : null;
 
   const status = intent === "draft" ? "draft" : "pending_clearance";
-  const bedId = intent === "draft" ? null : (body.bed_id ?? null);
+  const bedId = body.bed_id ?? null;
   const moveInDate =
     intent === "draft"
       ? (body.target_move_in_date?.trim() || null)
       : (body.target_move_in_date?.trim() || null);
 
-  const { data: inserted, error: insertError } = await actor.admin
-    .from("admission_cases")
-    .insert({
+  if (body.create_request_id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.create_request_id)) return NextResponse.json({ error: "Invalid creation request" }, { status: 400 });
+  const { data: createdCase, error: insertError } = await actor.admin.rpc("create_admission_case_review" as never, { p_payload: {
+      create_request_id: body.create_request_id ?? crypto.randomUUID(),
       organization_id: facility.organization_id,
       facility_id: body.facility_id,
       resident_id: body.resident_id,
@@ -223,9 +224,8 @@ export async function POST(request: NextRequest) {
       status,
       created_by: actor.id,
       updated_by: actor.id,
-    })
-    .select("id, organization_id, facility_id, resident_id, referral_lead_id")
-    .single();
+    } } as never);
+  const inserted = createdCase as unknown as { id: string; organization_id: string; facility_id: string; resident_id: string; referral_lead_id: string | null } | null;
 
   if (insertError || !inserted) {
     return NextResponse.json({ error: insertError?.message ?? "Failed to create admission case" }, { status: 500 });

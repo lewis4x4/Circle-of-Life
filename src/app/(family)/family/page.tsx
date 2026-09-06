@@ -245,6 +245,7 @@ function JournalEntryCard({ item }: { item: FamilyFeedItem }) {
         </div>
       </div>
 
+      <p className="text-sm text-muted-foreground">{item.residentName}</p>
       <p className="text-base font-semibold leading-relaxed text-foreground">{item.detail}</p>
 
       {isInvoice && (

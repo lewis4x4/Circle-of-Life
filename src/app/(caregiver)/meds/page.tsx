@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X, RefreshCw } from "lucide-react";
 import { toDate } from "date-fns-tz";
@@ -52,7 +52,9 @@ export default function CaregiverMedsPage() {
     facilityName: string | null;
     timeZone: string;
   } | null>(null);
+  const [residentFilter, setResidentFilter] = useState("");
   const [slots, setSlots] = useState<EmarQueueSlot[]>([]);
+  const requestIds = useRef(new Map<string, string>());
   const [actingKey, setActingKey] = useState<string | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
 
@@ -94,8 +96,11 @@ export default function CaregiverMedsPage() {
           strength,
           route,
           frequency,
+          start_date,
+          end_date,
           scheduled_times,
           instructions,
+          prn_max_frequency,
           status,
           residents!inner ( first_name, last_name )
         `,
@@ -164,7 +169,7 @@ export default function CaregiverMedsPage() {
 
       const emarQ = await supabase
         .from("emar_records")
-        .select("resident_medication_id, scheduled_time, is_prn, status")
+        .select("resident_medication_id, scheduled_time, actual_time, is_prn, status")
         .eq("facility_id", c.facilityId)
         .gte("scheduled_time", startUtc)
         .lte("scheduled_time", endUtc)
@@ -182,6 +187,12 @@ export default function CaregiverMedsPage() {
         ymd,
       );
 
+      const lastPrnByMedication = new Map<string, string | null>();
+      await Promise.all(medsFiltered.filter((m) => m.frequency === "prn").map(async (med) => {
+        const last = await supabase.from("emar_records").select("actual_time").eq("resident_medication_id", med.id).eq("is_prn", true).eq("status", "given").is("deleted_at", null).order("actual_time", { ascending: false }).limit(1).maybeSingle();
+        if (last.error) throw last.error;
+        lastPrnByMedication.set(med.id, last.data?.actual_time ?? null);
+      }));
       const medInputs = medsFiltered.map((m) => {
         const res = resById.get(m.resident_id);
         const r = m.residents!;
@@ -192,14 +203,26 @@ export default function CaregiverMedsPage() {
           strength: m.strength,
           route: m.route,
           frequency: m.frequency,
+          start_date: m.start_date,
+          end_date: m.end_date,
           scheduled_times: (m.scheduled_times ?? []) as string[],
-          instructions: m.instructions,
+          lastAdministrationIso: lastPrnByMedication.get(m.id),
+          instructions: [m.instructions, m.frequency === "prn" ? m.prn_max_frequency : null].filter(Boolean).join(" · "),
           resident: { first_name: res?.first_name ?? r.first_name, last_name: res?.last_name ?? r.last_name },
           roomLabel: roomByResident.get(m.resident_id) ?? formatCaregiverEmarRoomLabel({}),
         };
       });
 
-      const built = buildEmarQueueSlots(medInputs, c.timeZone, now, docKeys);
+      const residentScope = new URLSearchParams(window.location.search).get("resident") ?? "";
+      setResidentFilter(residentScope);
+      const built = buildEmarQueueSlots(medInputs.filter((m) => !residentScope || m.resident_id === residentScope), c.timeZone, now, docKeys);
+      const older = await supabase.from("emar_records").select("id,resident_medication_id,scheduled_time").eq("facility_id", c.facilityId).eq("status", "scheduled").eq("is_prn", false).lt("scheduled_time", startUtc).is("deleted_at", null).order("scheduled_time");
+      if (older.error) throw older.error;
+      for (const pending of older.data ?? []) {
+        const med = medInputs.find((m) => m.id === pending.resident_medication_id && (!residentScope || m.resident_id === residentScope));
+        if (!med) continue;
+        built.unshift({ queueKey: `${med.id}|${pending.scheduled_time}`, residentMedicationId: med.id, residentId: med.resident_id, residentName: `${med.resident.first_name ?? ""} ${med.resident.last_name ?? ""}`.trim(), roomLabel: med.roomLabel, medicationLabel: [med.medication_name, med.strength].filter(Boolean).join(" "), routeLabel: med.route, scheduleLabel: new Date(pending.scheduled_time).toLocaleString("en-US", { timeZone: c.timeZone }), scheduledTimeIso: pending.scheduled_time, isPrn: false, instructions: med.instructions, urgency: "due-now" });
+      }
       setSlots(built);
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load eMAR queue.");
@@ -219,8 +242,12 @@ export default function CaregiverMedsPage() {
     return { dueNow, dueSoon, total: slots.length };
   }, [slots]);
 
-  async function documentDose(slot: EmarQueueSlot, status: "given" | "refused") {
-    if (!ctx) return;
+  async function documentDose(slot: EmarQueueSlot, status: "given" | "refused", reason: string) {
+    if (!ctx || actingKey) return;
+    if ((slot.isPrn || status === "refused") && !reason.trim()) {
+      setLoadError("Enter the PRN indication or refusal reason before saving.");
+      return;
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -232,21 +259,12 @@ export default function CaregiverMedsPage() {
     setActingKey(slot.queueKey);
     setLoadError(null);
     try {
-      const row: Database["public"]["Tables"]["emar_records"]["Insert"] = {
-        resident_id: slot.residentId,
-        resident_medication_id: slot.residentMedicationId,
-        facility_id: ctx.facilityId,
-        organization_id: ctx.organizationId,
-        scheduled_time: slot.scheduledTimeIso,
-        actual_time: new Date().toISOString(),
-        status,
-        administered_by: user.id,
-        is_prn: slot.isPrn,
-        created_by: user.id,
-        refusal_reason: status === "refused" ? "Refused (floor documentation)" : null,
-      };
-      const ins = await supabase.from("emar_records").insert(row).select("id").single();
-      if (ins.error) throw ins.error;
+      const requestId = requestIds.current.get(slot.queueKey) ?? crypto.randomUUID();
+      requestIds.current.set(slot.queueKey, requestId);
+      const result = await supabase.rpc("record_caregiver_emar_review" as never, { p_request_id: requestId, p_medication_id: slot.residentMedicationId, p_scheduled_at: slot.scheduledTimeIso, p_status: status, p_reason: reason } as never);
+      if (result.error) throw result.error;
+      if (typeof result.data !== "string") throw new Error("No saved MAR receipt was returned. Keep this entry and retry.");
+      requestIds.current.delete(slot.queueKey);
       await load();
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not save eMAR entry.");
@@ -329,6 +347,8 @@ export default function CaregiverMedsPage() {
         </div>
       )}
 
+      {residentFilter && <Link href="/caregiver/meds" className="text-sm underline">Show all residents</Link>}
+
       {/* ─── METRICS BLOCK ─────────────────────────────────────────────────── */}
       <div className="rounded-lg p-4 flex flex-wrap gap-2 md:grid md:grid-cols-3 border border-white/5 bg-slate-900/40">
         <EmarMetricPill
@@ -371,9 +391,9 @@ export default function CaregiverMedsPage() {
               <MotionItem key={item.queueKey}>
                 <MedicationCard
                   item={item}
-                  busy={actingKey === item.queueKey}
-                  onGiven={() => void documentDose(item, "given")}
-                  onRefused={() => void documentDose(item, "refused")}
+                  busy={actingKey !== null}
+                  onGiven={(reason) => void documentDose(item, "given", reason)}
+                  onRefused={(reason) => void documentDose(item, "refused", reason)}
                 />
               </MotionItem>
             ))}
@@ -428,10 +448,11 @@ function MedicationCard({
 }: {
   item: EmarQueueSlot;
   busy: boolean;
-  onGiven: () => void;
-  onRefused: () => void;
+  onGiven: (reason: string) => void;
+  onRefused: (reason: string) => void;
 }) {
   const isDueNow = item.urgency === "due-now";
+  const [reason, setReason] = useState("");
 
   return (
     <div className={`rounded-xl p-6 transition-all relative overflow-hidden  border ${
@@ -455,7 +476,7 @@ function MedicationCard({
             <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                isDueNow ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-amber-500/10 text-amber-300 border-amber-500/30"
             }`}>
-               {isDueNow ? "Due Now" : "Due Soon"}
+               {item.isPrn ? "As needed" : isDueNow ? "Due / needs resolution" : "Due Soon"}
             </div>
          </div>
 
@@ -475,11 +496,15 @@ function MedicationCard({
            </span>
          </div>
 
+         {item.isPrn && <p className="text-sm text-zinc-300">Last recorded administration: {item.lastAdministrationIso ? new Date(item.lastAdministrationIso).toLocaleString() : "None recorded"}. Check the order restrictions before any repeat dose.</p>}
+         <label className="text-sm text-zinc-300">{item.isPrn ? "Indication and order restrictions checked" : "Refusal reason (required if refused)"}
+           <input value={reason} onChange={(e) => setReason(e.target.value)} className="mt-2 w-full rounded-lg border border-white/20 bg-black/30 p-3" />
+         </label>
          <div className="grid grid-cols-2 gap-3 mt-1">
             <button
               type="button"
               disabled={busy}
-              onClick={onGiven}
+              onClick={() => onGiven(reason)}
               className="h-14 rounded-xl flex items-center justify-center font-bold tracking-wide transition-all shadow-[0_4px_20px_rgba(16,185,129,0.15)] bg-emerald-500 border border-emerald-400 text-black hover:bg-emerald-400 disabled:opacity-50 tap-responsive"
             >
               {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
@@ -489,7 +514,7 @@ function MedicationCard({
             <button
               type="button"
               disabled={busy}
-              onClick={onRefused}
+              onClick={() => onRefused(reason)}
               className="h-14 rounded-xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white disabled:opacity-50 tap-responsive shadow-inner"
             >
               <X className="mr-2 h-5 w-5" />

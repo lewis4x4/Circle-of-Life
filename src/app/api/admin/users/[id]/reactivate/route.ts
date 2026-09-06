@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .select("id, organization_id, email, full_name, app_role, is_active, deleted_at")
     .eq("id", targetUserId)
     .eq("organization_id", actor.organization_id!)
-    .not("deleted_at", "is", null)
+    .or("deleted_at.not.is.null,is_active.eq.false")
     .maybeSingle();
   if (targetErr || !target) {
     return NextResponse.json({ error: "Deleted user not found" }, { status: 404 });
@@ -52,6 +52,17 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     // No body — reason is optional
   }
 
+  // Re-enable auth account
+  try {
+    await adminEnableUser(targetUserId);
+  } catch (err) {
+    logError("admin.users.reactivate", err, {
+      action: "enable_auth",
+      targetUserId,
+    });
+    return NextResponse.json({ error: "Auth reactivation failed. Retry reactivation.", sync_status: "retry_required" }, { status: 502 });
+  }
+
   const now = new Date().toISOString();
 
   // Reactivate profile
@@ -64,16 +75,6 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
     .single();
   if (updateErr) {
     return NextResponse.json({ error: "Failed to reactivate user" }, { status: 500 });
-  }
-
-  // Re-enable auth account
-  try {
-    await adminEnableUser(targetUserId);
-  } catch (err) {
-    logError("admin.users.reactivate", err, {
-      action: "enable_auth",
-      targetUserId,
-    });
   }
 
   // Audit

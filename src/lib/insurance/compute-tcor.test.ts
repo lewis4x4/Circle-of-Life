@@ -77,5 +77,6 @@ describe("computeTotalCostOfRisk", () => {
     });
     expect(policyCalls).toContainEqual({ method: "lte", args: ["effective_date", "2026-08-20"] });
     expect(policyCalls).toContainEqual({ method: "gte", args: ["expiration_date", "2025-08-20"] });
+    expect(policyCalls).toContainEqual({ method: "in", args: ["status", ["active", "pending_renewal", "expired", "cancelled"]] });
   });
 });

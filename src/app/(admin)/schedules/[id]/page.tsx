@@ -20,6 +20,9 @@ import {
   formatScheduleAssignmentStaffLabel,
 } from "@/lib/schedules/schedule-assignment-display-copy";
 import { formatSchedulePublishedSubtitle } from "@/lib/schedules/schedules-display-copy";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { Input } from "@/components/ui/input";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -110,6 +113,15 @@ export default function AdminScheduleWeekDetailPage() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
 
+  const { appRole } = useHavenAuth();
+  const canEdit = ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "");
+  const [staffOptions, setStaffOptions] = useState<SupabaseStaffMini[]>([]);
+  const [shiftStaff, setShiftStaff] = useState("");
+  const [shiftDate, setShiftDate] = useState("");
+  const [shiftStart, setShiftStart] = useState("");
+  const [shiftEnd, setShiftEnd] = useState("");
+  const [savingShift, setSavingShift] = useState(false);
+  const [shiftId, setShiftId] = useState(() => crypto.randomUUID());
   const [schedule, setSchedule] = useState<ScheduleRow | null>(null);
   const [rows, setRows] = useState<AssignmentUi[]>([]);
   const [rawAssignments, setRawAssignments] = useState<ShiftAssignmentRow[]>([]);
@@ -148,15 +160,17 @@ export default function AdminScheduleWeekDetailPage() {
         return;
       }
       setSchedule(schedRes.data);
+      const staffResult = await readAllPages((from, to) => supabase.from("staff").select("id, first_name, last_name, deleted_at", { count: "exact" }).eq("facility_id", schedRes.data!.facility_id).eq("employment_status", "active").is("deleted_at", null).order("id").range(from, to));
+      setStaffOptions(staffResult.data as SupabaseStaffMini[]);
 
-      const assignRes = (await supabase
+      const assignRes = (await readAllPages((from, to) => supabase
         .from("shift_assignments" as never)
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("schedule_id", scheduleId)
         .is("deleted_at", null)
         .order("shift_date", { ascending: true })
         .order("shift_type", { ascending: true })
-        .limit(500)) as unknown as QueryResult<ShiftAssignmentRow>;
+        .order("id").range(from, to))) as unknown as QueryResult<ShiftAssignmentRow>;
       if (assignRes.error) throw assignRes.error;
       const list = assignRes.data ?? [];
       setRawAssignments(list);
@@ -230,6 +244,22 @@ export default function AdminScheduleWeekDetailPage() {
     }
   }, [schedule, rawAssignments, rows]);
 
+  async function editAssignment(action: "add" | "remove", assignmentId = shiftId) {
+    if (!schedule || !canEdit || !facilityScopeOk || savingShift) return;
+    setSavingShift(true); setError(null);
+    try {
+      const { error: editError } = await supabase.rpc("edit_draft_schedule" as never, {
+        p_schedule_id: schedule.id, p_action: action, p_shift_id: assignmentId,
+        p_staff_id: action === "add" ? shiftStaff : null, p_date: action === "add" ? shiftDate : null,
+        p_start: action === "add" ? shiftStart : null, p_end: action === "add" ? shiftEnd : null,
+      } as never);
+      if (editError) throw new Error(editError.message);
+      setShiftId(crypto.randomUUID());
+      await load();
+    } catch (error) { setError(error instanceof Error ? error.message : "Assignment was not saved."); }
+    finally { setSavingShift(false); }
+  }
+
   const weekLabel = schedule ? formatWeekLabel(schedule.week_start_date) : "";
 
   return (
@@ -274,7 +304,7 @@ export default function AdminScheduleWeekDetailPage() {
             Shift assignments
           </p>
           <p className="text-2xl font-semibold text-foreground">{rows.length}</p>
-          <p className="text-xs text-muted-foreground">Up to 500 rows loaded for this week container.</p>
+          <p className="text-xs text-muted-foreground">All assignments reconciled against the schedule row count.</p>
         </div>
       </div>
 
@@ -292,12 +322,19 @@ export default function AdminScheduleWeekDetailPage() {
       {!isLoading && schedule ? (
           <RecordDetailSection
             title="Assignments"
-            description="Read-only list for this schedule week. Full builder grid ships in a later slice."
+            description="Draft assignments can be planned and exported. Publishing requires approved facility staffing and credential rules; a draft is not the working schedule."
           >
+            {schedule.status === "draft" && canEdit && facilityScopeOk && <form className="grid gap-3 rounded-lg border border-border p-4 mb-4" onSubmit={(event) => { event.preventDefault(); void editAssignment("add"); }}>
+              <label>Employee<select aria-label="Employee" required value={shiftStaff} onChange={(event) => setShiftStaff(event.target.value)} className="block border rounded p-2 w-full"><option value="">Choose employee</option>{staffOptions.map((staff) => <option key={staff.id} value={staff.id}>{staff.first_name} {staff.last_name}</option>)}</select></label>
+              <label>Shift date<Input type="date" required value={shiftDate} onChange={(event) => setShiftDate(event.target.value)} /></label>
+              <label>Start time (Eastern)<Input type="time" required value={shiftStart} onChange={(event) => setShiftStart(event.target.value)} /></label>
+              <label>End time (Eastern; next day if earlier)<Input type="time" required value={shiftEnd} onChange={(event) => setShiftEnd(event.target.value)} /></label>
+              <Button type="submit" disabled={savingShift}>Add draft shift</Button>
+            </form>}
             {rows.length === 0 ? (
               <AdminEmptyState
                 title="No shift assignments yet"
-                description="Add assignments from scheduling tools when the builder is available."
+                description="Add draft shifts using the form above, then export the plan for staffing review."
               />
             ) : (
               <MotionList className="space-y-3">
@@ -314,6 +351,7 @@ export default function AdminScheduleWeekDetailPage() {
                           {row.shiftClassification}
                         </Badge>
                         <AssignmentStatusBadge status={row.status} />
+                        {schedule.status === "draft" && canEdit && facilityScopeOk && <Button type="button" variant="outline" size="sm" disabled={savingShift} onClick={() => void editAssignment("remove", row.id)}>Remove draft shift</Button>}
                         {row.notes ? (
                           <span className="max-w-md truncate text-xs text-muted-foreground" title={row.notes}>
                             {row.notes}

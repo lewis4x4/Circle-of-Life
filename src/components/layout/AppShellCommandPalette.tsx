@@ -11,7 +11,7 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { AUXILIARY_ROUTES, PILLARS, type Pillar } from "@/lib/navigation/pillars";
+import { AUXILIARY_ROUTES, PILLARS, type Pillar, type PillarItem } from "@/lib/navigation/pillars";
 
 export function AppShellCommandPalette({
   open,
@@ -19,12 +19,14 @@ export function AppShellCommandPalette({
   onSelect,
   onPrefetch,
   pillars = PILLARS,
+  auxiliary = AUXILIARY_ROUTES,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (href: string) => void;
   onPrefetch: (href: string) => void;
   pillars?: Pillar[];
+  auxiliary?: PillarItem[];
 }) {
   const hrefByValue = useMemo(() => {
     const entries = [
@@ -34,20 +36,20 @@ export function AppShellCommandPalette({
           item.href,
         ] as const),
       ),
-      ...AUXILIARY_ROUTES.map((item) => [
+      ...auxiliary.map((item) => [
         `${item.label} ${item.href}`,
         item.href,
       ] as const),
     ];
     return new Map<string, string>(entries);
-  }, [pillars]);
+  }, [pillars, auxiliary]);
 
   return (
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Command palette"
-      description="Jump to any page, resident, staff member, or incident."
+      title="Find a page"
+      description="Find an available page by name."
       className="sm:max-w-[480px]"
     >
       <Command
@@ -58,7 +60,7 @@ export function AppShellCommandPalette({
           if (href) onPrefetch(href);
         }}
       >
-        <CommandInput placeholder="Search residents, staff, incidents, routes…" autoFocus />
+        <CommandInput placeholder="Find a page…" autoFocus />
         <CommandList>
           <CommandEmpty>No matches.</CommandEmpty>
           {pillars.map((pillar) => (
@@ -81,8 +83,8 @@ export function AppShellCommandPalette({
               })}
             </CommandGroup>
           ))}
-          <CommandGroup heading="Finance & Settings">
-            {AUXILIARY_ROUTES.map((item) => {
+          <CommandGroup heading="More tools">
+            {auxiliary.map((item) => {
               const Icon = item.icon;
               return (
                 <CommandItem

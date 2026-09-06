@@ -154,7 +154,7 @@ export default function ReportsNlqPage() {
         </div>
 
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Haven Insight reporting</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Find a report</h1>
           <p className="text-sm text-muted-foreground">
             Natural language maps to approved templates and governed report definitions.
           </p>
@@ -215,13 +215,13 @@ export default function ReportsNlqPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" onClick={() => void applyQuestion(query)} className="rounded-md">
-                Ask Haven Insight
+                Find matching reports
               </Button>
             </div>
 
             <details className="rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm">
               <summary className="flex cursor-pointer list-none items-center gap-1 font-medium text-foreground select-none marker:content-none [&::-webkit-details-marker]:hidden [&::marker]:content-none">
-                What kinds of questions does Haven Insight answer?
+                Which reports can I find?
                 <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
               </summary>
               <ul className="mt-3 space-y-2 text-muted-foreground">

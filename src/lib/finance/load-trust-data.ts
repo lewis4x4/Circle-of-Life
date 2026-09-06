@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import type { Database } from "@/types/database";
 
 export type TrustEntry = {
@@ -45,21 +46,22 @@ export async function loadFinanceTrustData(
 ): Promise<ResidentTrustRow[]> {
   let trustQuery = supabase
     .from("trust_account_entries")
-    .select("id, resident_id, facility_id, entry_date, entry_type, amount_cents, balance_after_cents, notes")
+    .select("id, resident_id, facility_id, entry_date, entry_type, amount_cents, balance_after_cents, notes", { count: "exact" })
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .order("entry_date", { ascending: false })
-    .limit(1000);
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
 
   let residentQuery = supabase
     .from("residents")
-    .select("id, first_name, last_name, facility_id")
+    .select("id, first_name, last_name, facility_id", { count: "exact" }).order("id")
     .eq("organization_id", organizationId)
     .is("deleted_at", null);
 
   let invoiceQuery = supabase
     .from("invoices" as never)
-    .select("resident_id, balance_due, status, facility_id")
+    .select("resident_id, balance_due, status, facility_id", { count: "exact" }).order("id")
     .eq("organization_id", organizationId as never)
     .is("deleted_at" as never, null as never)
     .in("status" as never, ["sent", "partial", "overdue"] as never);
@@ -71,9 +73,9 @@ export async function loadFinanceTrustData(
   }
 
   const [trustRes, residentRes, invoiceRes] = await Promise.all([
-    trustQuery,
-    residentQuery,
-    invoiceQuery,
+    readAllPages((from, to) => trustQuery.range(from, to)),
+    readAllPages((from, to) => residentQuery.range(from, to)),
+    readAllPages((from, to) => invoiceQuery.range(from, to)),
   ]);
 
   if (trustRes.error) throw trustRes.error;

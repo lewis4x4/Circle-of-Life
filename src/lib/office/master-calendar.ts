@@ -1,6 +1,7 @@
 import { addDays, addHours, format, parseISO } from "date-fns";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { addFacilityCalendarDays, facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 
 const CRLF = "\r\n";
@@ -53,6 +54,10 @@ function etTime(iso: string): string {
   });
 }
 
+export function masterCalendarTimestampBounds(startDate: string, endDate: string) {
+  return { start: facilityDatetimeLocalToUtcIso(`${startDate}T00:00`), end: new Date(new Date(facilityDatetimeLocalToUtcIso(`${addFacilityCalendarDays(endDate, 1)}T00:00`)).getTime() - 1).toISOString() };
+}
+
 /**
  * Loads every layer for one facility and date window (inclusive YYYY-MM-DD bounds)
  * through the caller's session client — existing RLS on each source governs.
@@ -63,9 +68,7 @@ export async function fetchMasterCalendarEvents(
   startIso: string,
   endIso: string,
 ): Promise<MasterCalendarEvent[]> {
-  const windowStartTs = `${startIso}T00:00:00.000Z`;
-  // Inclusive end-of-day with ET slack: add a day and rely on ET date filtering below.
-  const windowEndTs = `${endIso}T23:59:59.999Z`;
+  const { start: windowStartTs, end: windowEndTs } = masterCalendarTimestampBounds(startIso, endIso);
 
   const transportQ = supabase
     .from("resident_transport_requests")

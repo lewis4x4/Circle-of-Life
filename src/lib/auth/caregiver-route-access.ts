@@ -4,6 +4,8 @@ const HOUSEKEEPER_ALLOWED_PREFIXES = [
   "/caregiver/schedules",
   "/caregiver/me",
   "/caregiver/policies",
+  "/caregiver/acknowledgments",
+  "/caregiver/shift-swaps",
   "/clock",
   "/me",
 ] as const;

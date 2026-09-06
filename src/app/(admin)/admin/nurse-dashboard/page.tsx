@@ -11,11 +11,16 @@ import { cn } from "@/lib/utils";
 
 export default function NurseDashboardPage() {
   const { selectedFacilityId } = useFacilityStore();
+  return <NurseDashboardScope key={selectedFacilityId ?? "all"} selectedFacilityId={selectedFacilityId} />;
+}
+
+function NurseDashboardScope({ selectedFacilityId }: { selectedFacilityId: string | null }) {
   const [brief, setBrief] = useState<NurseMedicationBrief | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
     setIsLoading(true);
+    setBrief(null);
     try {
       const data = await fetchNurseMedicationBrief(selectedFacilityId);
       setBrief(data);
@@ -103,13 +108,13 @@ export default function NurseDashboardPage() {
           ) : (
             <div className="space-y-3">
               {brief.watchlistResidents.map((r) => (
-                <div key={r.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
+                <Link href={`/admin/residents/${r.id}`} key={r.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
                   <div>
                     <span className="text-[15px] font-semibold text-foreground">{r.name}</span>
                     <span className="text-xs font-medium text-muted-foreground ml-2">{formatNurseWatchlistRoomLabel(r.room)}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">{r.reason}</span>
-                </div>
+                </Link>
               ))}
             </div>
           )}

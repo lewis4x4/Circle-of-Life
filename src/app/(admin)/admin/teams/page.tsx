@@ -25,6 +25,7 @@ export default function AdminTeamSpacesPage() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [teamId, setTeamId] = useState(() => crypto.randomUUID());
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -57,28 +58,9 @@ export default function AdminTeamSpacesPage() {
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
-      const res = (await supabase
-        .from("team_spaces" as never)
-        .insert({
-          organization_id: actor.organizationId,
-          name: name.trim(),
-          description: description.trim() || null,
-          created_by: actor.userId,
-          updated_by: actor.userId,
-        } as never)
-        .select("id")
-        .single()) as unknown as { data: { id: string } | null; error: { message: string } | null };
-      if (res.error) throw new Error(res.error.message);
-      // Creator becomes the first lead.
-      if (res.data?.id) {
-        await supabase.from("team_space_members" as never).insert({
-          organization_id: actor.organizationId,
-          team_space_id: res.data.id,
-          user_id: actor.userId,
-          space_role: "lead",
-          created_by: actor.userId,
-        } as never);
-      }
+      const { error } = await supabase.rpc("create_team_with_lead" as never, { p_id: teamId, p_name: name.trim(), p_description: description.trim() || null } as never);
+      if (error) throw new Error(error.message);
+      setTeamId(crypto.randomUUID());
       setName("");
       setDescription("");
       setShowForm(false);
@@ -88,7 +70,7 @@ export default function AdminTeamSpacesPage() {
     } finally {
       setSaving(false);
     }
-  }, [supabase, name, description, load]);
+  }, [supabase, name, description, teamId, load]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">

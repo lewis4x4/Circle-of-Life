@@ -67,6 +67,9 @@ interface UserData {
   is_active: boolean;
   deleted_at: string | null;
   last_login_at: string | null;
+  login_email?: string | null;
+  auth_app_role?: string | null;
+  identity_sync_status?: "synchronized" | "retry_required" | "unavailable";
   manager_user_id: string | null;
   facilities: Array<{
     id: string;
@@ -153,7 +156,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   // Audit
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
 
-  const isDeactivated = Boolean(user?.deleted_at);
+  const isDeactivated = Boolean(user?.deleted_at || (user && !user.is_active));
   const canManageTarget = Boolean(user && currentUser?.id !== user.id && canActorManageTarget(currentRole, user.app_role));
   const canHardDeleteTarget = Boolean(
     user && currentUser?.id !== user.id && canActorHardDeleteTarget(currentRole, user.app_role),
@@ -241,8 +244,8 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
 
   // Save role
   const handleSaveRole = async () => {
-    if (!appRole || appRole === user?.app_role) return;
-    if (!confirm(`Change role to ${ROLE_LABELS[appRole] ?? appRole}? This affects their access immediately.`)) return;
+    if (!appRole || (appRole === user?.app_role && user?.identity_sync_status !== "retry_required")) return;
+    if (!confirm(`Change role to ${ROLE_LABELS[appRole] ?? appRole}? Review this role before saving.`)) return;
     setIsSaving(true);
     setError(null);
     try {
@@ -514,6 +517,12 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
           </button>
         </SheetHeader>
 
+        {user?.identity_sync_status === "retry_required" ? (
+          <div role="alert" className="mx-6 mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+            Account identity needs synchronization. Review sign-in email and role, and retry the account change that failed before confirming access.
+            <p className="mt-1">Sign-in email: {user.login_email ?? "Unavailable"}. Sign-in role: {ROLE_LABELS[user.auth_app_role ?? ""] ?? user.auth_app_role ?? "Unavailable"}.</p>
+          </div>
+        ) : null}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as Tab)} className="gap-0">
           <TabsList
             variant="line"
@@ -582,7 +591,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                       <Button
                         type="button"
                         onClick={handleSaveRole}
-                        disabled={isSaving || appRole === user?.app_role}
+                        disabled={isSaving || (appRole === user?.app_role && user?.identity_sync_status !== "retry_required")}
                         className="min-h-11"
                       >
                         {isSaving ? "Saving..." : "Change Role"}

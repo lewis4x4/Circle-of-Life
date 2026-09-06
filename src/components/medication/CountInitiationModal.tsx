@@ -1,4 +1,6 @@
 "use client";
+import { COUNT_RECEIPT_COLUMNS, saveControlledCountBatch, type SavedControlledCount } from "@/lib/medications/controlled-count-batch";
+import { PendingCountReceipt } from "@/components/controlled-substance/PendingCountReceipt";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Shield, ChevronDown, Loader2, AlertTriangle } from "lucide-react";
@@ -46,8 +48,9 @@ type ResidentMedicationQueryRow = {
 };
 
 type LineState = {
+  id: string;
   med: MedRow;
-  expected: number;
+  expected: string;
   actual: string;
 };
 
@@ -73,6 +76,7 @@ export function CountInitiationModal({
   const [lines, setLines] = useState<LineState[]>([]);
   const [shift, setShift] = useState<Shift>("evening");
   const [saving, setSaving] = useState(false);
+  const [pendingCounts, setPendingCounts] = useState<SavedControlledCount[]>([]);
   const [pendingCountIds, setPendingCountIds] = useState<string[]>([]);
   const [showCoSign, setShowCoSign] = useState(false);
   const [coEmail, setCoEmail] = useState("");
@@ -80,39 +84,7 @@ export function CountInitiationModal({
   const [coError, setCoError] = useState<string | null>(null);
   const [coBusy, setCoBusy] = useState(false);
 
-  const loadExpected = useCallback(
-    async (meds: MedRow[]) => {
-      const out: LineState[] = [];
-      for (const m of meds) {
-        const { data: last } = await supabase
-          .from("controlled_substance_counts")
-          .select("actual_count, created_at")
-          .eq("resident_medication_id", m.id)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const base = last?.actual_count ?? 0;
-        const since = last?.created_at ?? "1970-01-01T00:00:00Z";
-        const { count, error: cErr } = await supabase
-          .from("emar_records")
-          .select("id", { count: "exact", head: true })
-          .eq("resident_medication_id", m.id)
-          .eq("status", "given")
-          .gte("actual_time", since);
-
-        if (cErr) {
-          out.push({ med: m, expected: base, actual: String(base) });
-          continue;
-        }
-        const given = count ?? 0;
-        out.push({ med: m, expected: Math.max(0, base - given), actual: String(Math.max(0, base - given)) });
-      }
-      return out;
-    },
-    [supabase],
-  );
+  const loadExpected = useCallback(async (meds: MedRow[]): Promise<LineState[]> => meds.map((med) => ({ id: crypto.randomUUID(), med, expected: "", actual: "" })), []);
 
   const load = useCallback(async () => {
     if (!open || !facilityId) return;
@@ -155,6 +127,14 @@ export function CountInitiationModal({
 
       const withExpected = await loadExpected(meds);
       setLines(withExpected);
+      const { data: { user: author } } = await supabase.auth.getUser();
+      if (author) {
+        const pending = await supabase.from("controlled_substance_counts").select(COUNT_RECEIPT_COLUMNS).eq("facility_id", facilityId).eq("outgoing_staff_id", author.id).is("incoming_signed_at", null).is("deleted_at", null);
+        if (pending.error) throw pending.error;
+        setPendingCounts(pending.data ?? []);
+        setPendingCountIds((pending.data ?? []).map((row) => row.id));
+        if (pending.data?.length) setShowCoSign(true);
+      }
     } catch (e: unknown) {
       setLoadError(e instanceof Error ? e.message : "Failed to load");
       setLines([]);
@@ -168,6 +148,8 @@ export function CountInitiationModal({
   }, [load]);
 
   const submitCounts = async () => {
+    if (saving) return;
+    if (pendingCountIds.length) { setShowCoSign(true); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Not signed in.");
@@ -186,21 +168,18 @@ export function CountInitiationModal({
         throw new Error("Could not determine organization");
       }
 
+      const countOrganizationId = profile.organization_id;
       const today = todayFacilityDateIso();
-      const ids: string[] = [];
-      for (const line of lines) {
-        const actual = Number.parseInt(line.actual, 10);
-        if (Number.isNaN(actual)) {
-          throw new Error(`Invalid count for ${line.med.medication_name}`);
-        }
-        const expected = line.expected;
+      const rows = lines.map((line) => {
+        const actual = Number(line.actual);
+        const expected = Number(line.expected);
+        if (!line.actual.trim() || !line.expected.trim() || !Number.isInteger(actual) || !Number.isInteger(expected) || actual < 0 || expected < 0) throw new Error(`Enter independently counted actual and verified ledger expected quantities for ${line.med.medication_name}`);
         const discrepancy = actual - expected;
-        const { data: ins, error } = await supabase
-          .from("controlled_substance_counts")
-          .insert({
+        return {
+            id: line.id,
             resident_medication_id: line.med.id,
             facility_id: facilityId,
-            organization_id: profile.organization_id,
+            organization_id: countOrganizationId,
             count_date: today,
             shift,
             count_type: "shift_change",
@@ -208,12 +187,11 @@ export function CountInitiationModal({
             actual_count: actual,
             discrepancy,
             outgoing_staff_id: user.id,
-          })
-          .select("id")
-          .single();
-        if (error) throw error;
-        if (ins?.id) ids.push(ins.id);
-      }
+          };
+      });
+      const receipt = await saveControlledCountBatch(supabase, rows);
+      const ids = receipt.map((row) => row.id);
+      setPendingCounts(receipt);
       setPendingCountIds(ids);
       setShowCoSign(true);
       setCoPassword("");
@@ -265,7 +243,7 @@ export function CountInitiationModal({
   };
 
   const hasDiscrepancies = lines.some(
-    (l) => Number.parseInt(l.actual, 10) !== l.expected
+    (l) => Number.parseInt(l.actual, 10) !== Number(l.expected)
   );
 
   return (
@@ -335,7 +313,7 @@ export function CountInitiationModal({
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                   {lines.map((line) => {
                     const actual = Number.parseInt(line.actual, 10);
-                    const isDiscrepant = !Number.isNaN(actual) && actual !== line.expected;
+                    const isDiscrepant = !Number.isNaN(actual) && actual !== Number(line.expected);
                     return (
                       <Card
                         key={line.med.id}
@@ -349,8 +327,8 @@ export function CountInitiationModal({
                             <span>{line.med.medication_name}</span>
                             {isDiscrepant && (
                               <span className="text-rose-400 text-sm font-bold">
-                                {actual > line.expected ? "+" : ""}
-                                {actual - line.expected}
+                                {actual > Number(line.expected) ? "+" : ""}
+                                {actual - Number(line.expected)}
                               </span>
                             )}
                           </CardTitle>
@@ -362,7 +340,7 @@ export function CountInitiationModal({
                         <CardContent className="flex items-center gap-4">
                           <div className="flex-1">
                             <Label className="text-[10px] text-zinc-400">Expected</Label>
-                            <div className="text-lg text-zinc-400 font-semibold">{line.expected}</div>
+                            <Input aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
                           </div>
                           <div className="flex-1">
                             <Label className="text-[10px] text-zinc-400">Actual</Label>
@@ -390,6 +368,7 @@ export function CountInitiationModal({
                   })}
                 </div>
 
+                <p className="text-sm text-zinc-300">Expected quantity must come from the verified medication inventory ledger. Count actual stock independently before requesting the incoming signature.</p>
                 {/* Discrepancy Warning */}
                 {hasDiscrepancies && (
                   <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-200 flex items-start gap-2">
@@ -439,11 +418,12 @@ export function CountInitiationModal({
                 Incoming Staff Verification
               </DialogTitle>
               <DialogDescription className="text-emerald-200/70">
-                The incoming staff member must verify the count to complete the record.
+                An independent nurse or caregiver with facility access must verify the saved count to complete the record.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
+              <PendingCountReceipt counts={pendingCounts} medicationNames={new Map(lines.map((line) => [line.med.id, line.med.medication_name]))} />
               {coError && (
                 <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />

@@ -27,6 +27,7 @@ type OperationTaskAccessShape = {
   organization_id: string;
   facility_id: string;
   assigned_to: string | null;
+  assigned_role?: string | null;
 };
 
 export async function requireOperationsActor(): Promise<
@@ -113,7 +114,7 @@ export async function actorCanMutateTask(
   task: OperationTaskAccessShape,
 ): Promise<boolean> {
   if (task.organization_id !== actor.organizationId) return false;
-  if (task.assigned_to === actor.id) return true;
+  if (task.assigned_to === actor.id || (!task.assigned_to && task.assigned_role === actor.appRole)) return actorCanAccessFacility(actor, task.facility_id);
   if (!actorHasMutationAdminScope(actor)) return false;
   return actorCanAccessFacility(actor, task.facility_id);
 }
