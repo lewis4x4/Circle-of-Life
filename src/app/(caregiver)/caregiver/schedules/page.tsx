@@ -108,6 +108,7 @@ export default function CaregiverSchedulesPage() {
 
   return (
     <div className="space-y-4">
+      <Link href="/caregiver/shift-swaps" className="text-sm underline">Review and confirm my shift swaps</Link>
       <CaregiverSupportStrip
         active="schedules"
         title="Check your published shifts before or after the floor workflow changes."

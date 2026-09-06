@@ -11,23 +11,12 @@ import {
   type RiskBanner,
 } from "@/lib/caregiver/resident-profile";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { appendShiftNote } from "@/lib/caregiver/clinical-writes";
 import { createClient } from "@/lib/supabase/client";
 import {
   formatCaregiverResidentAcuity,
   formatCaregiverResidentMood,
 } from "@/lib/caregiver/resident-detail-display-copy";
-import type { Database } from "@/types/database";
-
-function zonedTimeShort(now: Date, tz: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(now);
-}
 
 export default function CaregiverResidentQuickProfilePage() {
   const params = useParams<{ id: string }>();
@@ -202,7 +191,7 @@ export default function CaregiverResidentQuickProfilePage() {
          <h4 className="text-xl font-semibold text-white tracking-wide mb-6">Shift Actions</h4>
          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             <ActionLink
-              href="/caregiver/meds"
+              href={`/caregiver/meds?resident=${residentId}`}
               icon={<Pill className="h-5 w-5 text-primary-400" />}
               label="Open eMAR"
             />
@@ -294,49 +283,8 @@ export default function CaregiverResidentQuickProfilePage() {
 
       const fcResult = await loadCaregiverFacilityContext(supabase);
       if (!fcResult.ok) { setError(fcResult.error); return; }
-      const fc = fcResult.ctx;
 
-      const tz = fc.timeZone;
-      const ymd = zonedYmd(new Date(), tz);
-      const shift = currentShiftForTimezone(tz);
-      const stamp = zonedTimeShort(new Date(), tz);
-      const line = `[${stamp}] ${noteDraft.trim()}`;
-
-      const existing = await supabase
-        .from("daily_logs")
-        .select("id, general_notes")
-        .eq("resident_id", residentId)
-        .eq("facility_id", fc.facilityId)
-        .eq("log_date", ymd)
-        .eq("shift", shift)
-        .eq("logged_by", user.id)
-        .is("deleted_at", null)
-        .maybeSingle();
-
-      if (existing.error) throw existing.error;
-
-      if (existing.data) {
-        const prev = (existing.data as { id: string; general_notes: string | null }).general_notes?.trim() ?? "";
-        const next = prev ? `${prev}\n${line}` : line;
-        const upd = await supabase
-          .from("daily_logs")
-          .update({ general_notes: next, updated_by: user.id } as never)
-          .eq("id", (existing.data as { id: string }).id);
-        if (upd.error) throw upd.error;
-      } else {
-        const ins: Database["public"]["Tables"]["daily_logs"]["Insert"] = {
-          resident_id: residentId,
-          facility_id: fc.facilityId,
-          organization_id: fc.organizationId,
-          log_date: ymd,
-          shift,
-          logged_by: user.id,
-          general_notes: line,
-          created_by: user.id,
-        };
-        const { error: insErr } = await supabase.from("daily_logs").insert(ins);
-        if (insErr) throw insErr;
-      }
+      await appendShiftNote(supabase, residentId, noteDraft);
 
       setNoteDraft("");
       setNoteSaved(true);

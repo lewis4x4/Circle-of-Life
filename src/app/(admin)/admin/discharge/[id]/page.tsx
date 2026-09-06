@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { DischargeMedicationReview } from "@/components/discharge/DischargeMedicationReview";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
@@ -59,7 +60,7 @@ function formatStatus(s: string) {
 export default function AdminDischargeDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const { user } = useHavenAuth();
 
@@ -129,9 +130,6 @@ export default function AdminDischargeDetailPage() {
     selectedFacilityId &&
     isValidFacilityIdForQuery(selectedFacilityId) &&
     row.facility_id !== selectedFacilityId;
-
-  const snapshotStr =
-    row?.med_snapshot_json != null ? JSON.stringify(row.med_snapshot_json, null, 2) : null;
 
   async function updateReconciliation(
     patch: Partial<Database["public"]["Tables"]["discharge_med_reconciliation"]["Update"]>,
@@ -429,15 +427,9 @@ export default function AdminDischargeDetailPage() {
             </div>
           </RecordDetailSection>
 
-          <RecordDetailSection title="Med snapshot (JSON)">
-            {snapshotStr ? (
-              <pre className="max-h-64 overflow-auto rounded-[8px] border border-border bg-muted p-3 text-xs">
-                {snapshotStr}
-              </pre>
-            ) : (
-              <p className="text-sm text-muted-foreground">No snapshot stored.</p>
-            )}
-          </RecordDetailSection>
+          <RecordDetailSection title="Record pharmacist review evidence"><p>Enter the pharmacist NPI and review notes above, including the signed report reference. This records evidence of external review; it does not identify the current operator as the pharmacist.</p><Button disabled={!!actionLoading || !/^\d{10}$/.test(pharmacistNpiDraft) || !pharmacistNotesDraft.trim()} onClick={() => void updateReconciliation({ pharmacist_npi: pharmacistNpiDraft, pharmacist_notes: pharmacistNotesDraft, pharmacist_reviewed_at: new Date().toISOString() }, "Pharmacist review evidence recorded.")}>Record reviewed report</Button></RecordDetailSection>
+          <RecordDetailSection title="Medication reconciliation"><DischargeMedicationReview key={row.id} residentId={row.resident_id} initial={row.med_snapshot_json} busy={!!actionLoading} onSave={(snapshot) => void updateReconciliation({ med_snapshot_json: snapshot }, "Medication decisions saved.")} /></RecordDetailSection>
+
 
           <RecordDetailSection title="Workflow actions">
             <div className="grid gap-3 sm:grid-cols-3">
@@ -459,13 +451,12 @@ export default function AdminDischargeDetailPage() {
               </Button>
               <Button
                 type="button"
-                disabled={row.status === "complete" || !!actionLoading}
+                disabled={row.status === "complete" || !!actionLoading || !row.pharmacist_reviewed_at || !row.med_snapshot_json}
                 onClick={() =>
                   void updateReconciliation(
                     {
                       status: "complete",
-                      pharmacist_reviewed_at: row.pharmacist_reviewed_at ?? new Date().toISOString(),
-                      pharmacist_reviewed_by: row.pharmacist_reviewed_by ?? user?.id ?? null,
+
                     },
                     "Reconciliation marked complete.",
                   )

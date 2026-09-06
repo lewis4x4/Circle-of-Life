@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
-import { emitWorkflowEvent } from "@/lib/workflows/workflow-events";
 
 const ALLOWED_ROLES = [
   "owner",
@@ -14,6 +13,7 @@ const ALLOWED_ROLES = [
 ] as const;
 
 type RequestBody = {
+  id?: string;
   resident_id?: string;
   facility_id?: string;
   invoice_id?: string | null;
@@ -57,9 +57,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Resident not found in facility" }, { status: 400 });
   }
 
+  if (body.id) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) return NextResponse.json({ error: "Invalid activity identity" }, { status: 400 });
+    const { data: existing, error: existingError } = await actor.admin.from("collection_activities").select("*").eq("id", body.id).maybeSingle();
+    if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
+    if (existing) {
+      if (existing.performed_by !== actor.id || existing.facility_id !== body.facility_id || existing.resident_id !== body.resident_id || existing.description !== body.description || existing.activity_type !== body.activity_type || existing.activity_date !== body.activity_date || existing.invoice_id !== (body.invoice_id ?? null) || existing.outcome !== (body.outcome ?? null) || existing.follow_up_date !== (body.follow_up_date ?? null) || existing.follow_up_notes !== (body.follow_up_notes ?? null)) return NextResponse.json({ error: "This activity identity was already saved with different values. Review the saved activity." }, { status: 409 });
+      return NextResponse.json({ id: existing.id });
+    }
+  }
+
   const { data: insertedData, error: insertError } = await actor.admin
     .from("collection_activities")
     .insert({
+      ...(body.id ? { id: body.id } : {}),
       resident_id: body.resident_id,
       invoice_id: body.invoice_id ?? null,
       facility_id: body.facility_id,
@@ -80,24 +91,6 @@ export async function POST(request: NextRequest) {
   if (insertError || !inserted) {
     return NextResponse.json({ error: insertError?.message ?? "Failed to create collection activity" }, { status: 500 });
   }
-
-  await emitWorkflowEvent(actor.admin, {
-    organization_id: resident.organization_id,
-    facility_id: body.facility_id,
-    resident_id: body.resident_id,
-    invoice_id: body.invoice_id ?? null,
-    collection_activity_id: inserted.id,
-    event_type: "collection_activity_logged",
-    source_module: "billing",
-    event_key: `collection-activity:${inserted.id}`,
-    created_by: actor.id,
-    payload_json: {
-      activity_type: body.activity_type,
-      activity_date: body.activity_date,
-      outcome: body.outcome ?? null,
-      follow_up_date: body.follow_up_date ?? null,
-    },
-  });
 
   return NextResponse.json({ id: inserted.id });
 }

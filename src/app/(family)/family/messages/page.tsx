@@ -53,7 +53,12 @@ export default function FamilyMessagesPage() {
         setResidents([]);
       } else {
         setResidents(result.residents);
-        setSelectedResidentId((current) => current ?? result.residents[0]?.id ?? null);
+        const requested = new URLSearchParams(window.location.search).get("residentId");
+        setSelectedResidentId((current) => {
+          const candidate = current ?? requested;
+          return result.residents.some((resident) => resident.id === candidate)
+            ? candidate : result.residents[0]?.id ?? null;
+        });
       }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Could not load updates.");
@@ -168,6 +173,7 @@ export default function FamilyMessagesPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
         <ResidentUpdateLog
+          key={selectedResidentId}
           supabase={supabase}
           residentId={selectedResidentId}
           residentName={selectedResident?.displayName ?? null}
@@ -213,8 +219,9 @@ function ResidentUpdateLog({
   const [messages, setMessages] = useState<FamilyMessageRow[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (cursor?: { createdAt: string; id: string }) => {
     if (!residentId) {
       setMessages([]);
       return;
@@ -222,16 +229,17 @@ function ResidentUpdateLog({
     setLoadingMessages(true);
     setError(null);
     try {
-      const result = await fetchFamilyMessagesForResident(supabase, residentId);
+      const result = await fetchFamilyMessagesForResident(supabase, residentId, cursor);
       if (!result.ok) {
         setError(result.error);
-        setMessages([]);
+        if (!cursor) setMessages([]);
       } else {
-        setMessages(result.messages);
+        setMessages((current) => !cursor ? result.messages : [...new Map([...current, ...result.messages].map(message=>[message.id,message])).values()]);
+        setHasMore(result.messages.length === 200);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load updates.");
-      setMessages([]);
+      if (!cursor) setMessages([]);
     } finally {
       setLoadingMessages(false);
     }
@@ -264,15 +272,16 @@ function ResidentUpdateLog({
           <h2 className="truncate text-lg font-medium text-foreground">
             {residentName ?? "Resident"}
           </h2>
-          {error ? (
+          {(
             <button
               type="button"
               onClick={() => void refresh()}
+              disabled={loadingMessages}
               className="inline-flex h-7 shrink-0 items-center rounded-md border border-border bg-card px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Refresh
             </button>
-          ) : null}
+          )}
         </div>
         {lastPostedAt ? (
           <p className="mt-2 text-xs text-muted-foreground">
@@ -292,7 +301,7 @@ function ResidentUpdateLog({
 
       <FamilyPortalUpdateLog
         loading={loadingMessages}
-        items={[...messages].reverse().map((message) => ({
+        items={messages.map((message) => ({
           id: message.id,
           body: message.body,
           timestamp: message.timeLabel,
@@ -303,6 +312,11 @@ function ResidentUpdateLog({
         emptyDescription={FAMILY_HOME_BULLETIN_EMPTY_DESCRIPTION}
         listLabel={FAMILY_MESSAGES_LIST_LABEL}
       />
+      {hasMore && <button type="button" disabled={loadingMessages}
+        onClick={() => void refresh(messages[messages.length - 1])}
+        className="mt-4 rounded-md border border-border px-3 py-2 text-sm">
+        Load older updates
+      </button>}
     </section>
   );
 }

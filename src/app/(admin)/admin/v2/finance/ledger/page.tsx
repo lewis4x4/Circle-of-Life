@@ -1,7 +1,2 @@
-import { V2AnalyticsPage } from "@/components/v2/V2AnalyticsPage";
-
-export const dynamic = "force-dynamic";
-
-export default function FinanceLedgerPage() {
-  return <V2AnalyticsPage analyticsId="finance-labor" />;
-}
+// Share the complete operational workflow across both route entry points.
+export { default } from "../../../finance/ledger/page";

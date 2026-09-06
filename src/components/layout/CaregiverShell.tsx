@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AlertTriangle, ClipboardList, Clock3, Home, Pill, User } from "lucide-react";
 
+import { WorkingFacilitySelector } from "@/components/caregiver/WorkingFacilitySelector";
+import { RoundingOutbox } from "@/components/rounding/RoundingOutbox";
 import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
@@ -50,6 +52,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { appRole, loading, organizationId, user } = useHavenAuth();
+  const [workingFacilityId, setWorkingFacilityId] = useState("");
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState("Shift");
   const effectiveRole = getAppRoleFromClaims(user) || appRole;
@@ -74,6 +77,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
       try {
         const resolved = await loadCaregiverFacilityContextForUser(supabase, {
           userId: user.id,
+          selectedFacilityId: workingFacilityId,
           organizationId,
           appRole: effectiveRole,
         });
@@ -96,7 +100,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [effectiveRole, loading, organizationId, user?.id]);
+  }, [effectiveRole, loading, organizationId, user?.id, workingFacilityId]);
 
   const isDeeperWorkflowPage = useMemo(
     () =>
@@ -162,12 +166,14 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
             <div>
               <h1 className="text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
                 {facilityName}
+                {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               </h1>
               <p className="mt-0.5 text-[11px] uppercase tracking-wider haven-chrome-fg-muted">
                 {shiftLabel}
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />
               <button
                 type="button"
@@ -179,22 +185,13 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
                   {syncState.label}
                 </StatusPill>
               </button>
-              <button
-                type="button"
-                aria-label="Alerts"
-                className="haven-chrome-on-header-chip tap-responsive relative inline-flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 haven-chrome-tw-ring-offset-primary"
-              >
-                <AlertTriangle className="h-4 w-4" aria-hidden />
-                <span
-                  aria-hidden
-                  className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning"
-                />
-              </button>
+
             </div>
           </header>
 
           <main className="flex-1 p-4 md:p-8">
-            <div className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div>
+            <RoundingOutbox />
+            {workingFacilityId ? <div key={workingFacilityId} className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div> : <p role="status">Choose your working facility in the header to begin this shift.</p>}
           </main>
         </div>
 

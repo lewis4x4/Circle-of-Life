@@ -38,7 +38,6 @@ export default function OperationsAssetsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [templateSavingId, setTemplateSavingId] = useState<string | null>(null);
   const [newAsset, setNewAsset] = useState({
     name: "",
     asset_type: "generator",
@@ -135,36 +134,9 @@ export default function OperationsAssetsPage() {
     }
   }
 
-  async function createMaintenanceTemplate(asset: AssetRow) {
-    if (!selectedFacilityId) return;
-    setTemplateSavingId(asset.id);
-    setError(null);
-    try {
-      const cadence = asset.service_interval_days && asset.service_interval_days <= 31 ? "monthly" : "quarterly";
-      const response = await fetch("/api/admin/operations/maintenance-templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          facility_id: selectedFacilityId,
-          name: `${asset.name} service review`,
-          description: `Review ${asset.name} service requirements and confirm vendor follow-up.`,
-          category: "maintenance",
-          cadence_type: cadence,
-          day_of_month: 1,
-          assignee_role: "maintenance",
-          priority: "high",
-          estimated_minutes: 30,
-          asset_ref: asset.id,
-        }),
-      });
-      const json = await response.json();
-      if (!response.ok) throw new Error(json.error || "Failed to create maintenance template");
-      await load();
-    } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Failed to create maintenance template.");
-    } finally {
-      setTemplateSavingId(null);
-    }
+  function createMaintenanceTemplate(asset: AssetRow) {
+    const params = new URLSearchParams({ asset: asset.id, name: asset.name, interval: String(asset.service_interval_days ?? "") });
+    window.location.assign(`/admin/operations/templates?${params.toString()}`);
   }
 
   return (
@@ -277,10 +249,9 @@ export default function OperationsAssetsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={templateSavingId === asset.id}
                     onClick={() => void createMaintenanceTemplate(asset)}
                   >
-                    {templateSavingId === asset.id ? "Creating..." : asset.linked_template_count > 0 ? `Templates ${asset.linked_template_count}` : "Add template"}
+                    {asset.linked_template_count > 0 ? `Review schedules (${asset.linked_template_count})` : "Set service schedule"}
                   </Button>
                 </div>
               </div>

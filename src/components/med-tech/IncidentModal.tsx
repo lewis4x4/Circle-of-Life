@@ -7,12 +7,14 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
 const CATEGORIES = [
-  { value: "fall",             label: "Fall" },
+  { value: "fall_without_injury", label: "Fall without injury" },
+  { value: "fall_with_injury", label: "Fall with injury" },
+  { value: "fall_unwitnessed", label: "Unwitnessed fall" },
   { value: "skin_integrity",   label: "Skin Integrity" },
-  { value: "behavior",         label: "Behavior" },
+  { value: "behavioral_resident_to_resident", label: "Resident to resident behavior" },
+  { value: "behavioral_resident_to_staff", label: "Resident to staff behavior" },
   { value: "medication_error", label: "Medication Error" },
   { value: "elopement",        label: "Elopement" },
-  { value: "choking",          label: "Choking" },
   { value: "other",            label: "Other" },
 ] as const;
 
@@ -36,15 +38,16 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
   const [step, setStep]             = useState(0); // 0 details, 1 narrative, 2 done
   const [residentId, setResidentId] = useState("");
   const [category, setCategory]     = useState("");
-  const [severity, setSeverity]     = useState<Database["public"]["Enums"]["incident_severity"]>("level_2");
+  const [severity, setSeverity]     = useState<Database["public"]["Enums"]["incident_severity"] | "">("");
+  const [immediateActions, setImmediateActions] = useState("");
   const [narrative, setNarrative]   = useState("");
   const [locationDescription, setLocationDescription] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [incidentNumber, setIncidentNumber] = useState<string | null>(null);
 
-  const canProceed1 = residentId !== "" && category !== "";
-  const canProceed2 = narrative.trim().length >= 10;
+  const canProceed1 = residentId !== "" && category !== "" && severity !== "";
+  const canProceed2 = narrative.trim().length >= 10 && immediateActions.trim().length >= 3 && locationDescription.trim().length >= 3;
 
   const selectedResident = residents.find((r) => r.id === residentId);
 
@@ -52,7 +55,8 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
     setStep(0);
     setResidentId("");
     setCategory("");
-    setSeverity("level_2");
+    setSeverity("");
+    setImmediateActions("");
     setNarrative("");
     setLocationDescription("");
     setSubmitError(null);
@@ -87,15 +91,15 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
           organization_id: payload.organizationId,
           incident_number: payload.incidentNumber,
           category: category as Database["public"]["Enums"]["incident_category"],
-          severity,
+          severity: severity as Database["public"]["Enums"]["incident_severity"],
           status: "open",
           occurred_at: new Date().toISOString(),
           shift: shiftType,
-          location_description: locationDescription.trim() || "Medication cart / med-tech workflow",
+          location_description: locationDescription.trim(),
           location_type: null,
           description: narrative.trim(),
-          immediate_actions: "Documented from med-tech cockpit",
-          injury_occurred: category === "fall" || category === "skin_integrity" || category === "choking",
+          immediate_actions: immediateActions.trim(),
+          injury_occurred: category === "fall_with_injury",
           reported_by: userId,
           created_by: userId,
         })
@@ -264,10 +268,9 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
                 />
               </div>
 
-              <button className="w-full rounded-xl bg-slate-800/60 ring-1 ring-slate-700 hover:ring-slate-500 py-3 flex items-center justify-center gap-2 text-sm text-slate-300 transition">
-                <Camera className="w-4 h-4" /> Attach photos (optional)
-              </button>
 
+
+              <label className="block text-sm text-slate-300">Immediate actions taken<textarea value={immediateActions} onChange={(e) => setImmediateActions(e.target.value)} rows={3} className="mt-2 block w-full rounded border border-slate-700 bg-slate-800 p-3" /></label>
               {narrative.trim().length > 0 && narrative.trim().length < 10 && (
                 <div className="flex items-center gap-2 text-xs text-amber-300">
                   <AlertTriangle className="w-3.5 h-3.5" />

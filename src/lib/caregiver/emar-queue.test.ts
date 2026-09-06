@@ -43,3 +43,24 @@ describe("buildEmarQueueSlots scheduled instructions", () => {
     expect(slots[0]?.instructions).toBe("Take with food");
   });
 });
+
+describe("unresolved medication work", () => {
+  it("retains doses overdue by four hours as due now", () => {
+    const slots = buildEmarQueueSlots([scheduledMed()], TIME_ZONE, new Date("2026-08-15T22:00:00Z"), new Set());
+    expect(slots).toHaveLength(1);
+    expect(slots[0].urgency).toBe("due-now");
+  });
+  it("keeps a PRN available after a prior administration and uses actual request time", () => {
+    const med = scheduledMed({ frequency: "prn" });
+    const now = new Date("2026-08-15T22:00:00Z");
+    const slots = buildEmarQueueSlots([med], TIME_ZONE, now, new Set([`prn|${med.id}|2026-08-15`]));
+    expect(slots).toHaveLength(1);
+    expect(slots[0].scheduledTimeIso).toBe(now.toISOString());
+  });
+});
+
+it("does not present a weekly order as a daily dose", () => {
+ const med = scheduledMed({ frequency: "weekly", start_date: "2026-08-14" });
+ expect(buildEmarQueueSlots([med], TIME_ZONE, new Date("2026-08-15T18:00:00Z"), new Set())).toHaveLength(0);
+ expect(buildEmarQueueSlots([med], TIME_ZONE, new Date("2026-08-21T18:00:00Z"), new Set())).toHaveLength(1);
+});

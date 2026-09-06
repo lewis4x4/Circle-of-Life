@@ -87,6 +87,7 @@ export type ObservationTaskRow = {
 };
 
 export type CompletionPayload = {
+  offline?: { ownerUserId: string; organizationId: string; facilityId: string; queueId: string };
   observedAt?: string;
   quickStatus: ObservationQuickStatus;
   residentLocation?: string | null;

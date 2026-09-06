@@ -36,6 +36,8 @@ function formatTime(iso: string): string {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
   }).format(d);
 }
 
@@ -83,15 +85,22 @@ export async function fetchFamilyMessageResidents(
 export async function fetchFamilyMessagesForResident(
   supabase: SupabaseClient<Database>,
   residentId: string,
+  cursor?: { createdAt: string; id: string },
 ): Promise<{ ok: true; messages: FamilyMessageRow[] } | { ok: false; error: string }> {
-  const q = await supabase
+  if (cursor && (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(cursor.id)
+    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(cursor.createdAt)
+    || Number.isNaN(new Date(cursor.createdAt).getTime()))) return { ok: false, error: "Invalid updates cursor" };
+  let query = supabase
     .from("family_portal_messages")
     .select("id, author_user_id, author_kind, body, created_at")
     .eq("resident_id", residentId)
     .eq("author_kind", "staff")
     .is("deleted_at", null)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(200);
+  if (cursor) query = query.or(`created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`);
+  const q = await query;
 
   if (q.error) return { ok: false, error: q.error.message };
 

@@ -82,12 +82,13 @@ export async function POST(request: NextRequest) {
   }
 
   const completedCount = Array.isArray(completedRows)
-    ? (completedRows as Array<{ task_instance_id: string }>).length
+    ? (completedRows as Array<{ task_instance_id: string; outcome: string }>).filter((row) => row.outcome === "completed").length
     : 0;
 
   return NextResponse.json({
     success: true,
     completed_count: completedCount,
+    awaiting_verification_count: Array.isArray(completedRows) ? (completedRows as Array<{ outcome: string }>).filter((row) => row.outcome === "awaiting_verification").length : 0,
     requested_count: body.task_ids.length,
   });
 }

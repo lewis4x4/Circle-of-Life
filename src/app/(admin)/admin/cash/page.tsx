@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Banknote, Loader2, Plus, Wallet } from "lucide-react";
 
 import {
@@ -15,8 +15,6 @@ import {
   PETTY_CASH_CATEGORIES,
   TRUST_CATEGORIES,
   categoryLabel,
-  pettyCashDelta,
-  trustDelta,
   type PettyCashAccountRow,
   type PettyCashDirection,
   type PettyCashTxRow,
@@ -203,6 +201,9 @@ export default function AdminCashLedgersPage() {
     }
   }, [supabase, facilityReady, selectedFacilityId, load]);
 
+  const pettyRequestId = useRef<string | null>(null);
+  const trustRequestId = useRef<string | null>(null);
+
   const postPetty = useCallback(async () => {
     if (!pettyAccount) return;
     const cents = parseDollarsToCents(pAmount);
@@ -215,25 +216,14 @@ export default function AdminCashLedgersPage() {
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
-      const newBalance = pettyAccount.balance_cents + pettyCashDelta(pDir, cents);
-      const { error: txErr } = await supabase.from("petty_cash_transactions" as never).insert({
-        organization_id: actor.organizationId,
-        facility_id: selectedFacilityId as string,
-        account_id: pettyAccount.id,
-        direction: pDir,
-        amount_cents: cents,
-        balance_after_cents: newBalance,
-        category: pCategory,
-        description: pDesc.trim(),
-        resident_id: pResident || null,
-        created_by: actor.userId,
+      pettyRequestId.current ??= crypto.randomUUID();
+      const { error: txErr } = await supabase.rpc("post_cash_transaction" as never, {
+        p_kind: "petty", p_id: pettyRequestId.current, p_account_id: pettyAccount.id,
+        p_direction: pDir, p_amount_cents: cents, p_category: pCategory,
+        p_description: pDesc.trim(), p_resident_id: pResident || null,
       } as never);
       if (txErr) throw new Error(txErr.message);
-      const { error: accErr } = await supabase
-        .from("petty_cash_accounts" as never)
-        .update({ balance_cents: newBalance, updated_by: actor.userId } as never)
-        .eq("id", pettyAccount.id);
-      if (accErr) throw new Error(accErr.message);
+      pettyRequestId.current = null;
       setPAmount("");
       setPDesc("");
       setPResident("");
@@ -243,7 +233,7 @@ export default function AdminCashLedgersPage() {
     } finally {
       setBusy(false);
     }
-  }, [supabase, pettyAccount, pAmount, pDir, pCategory, pDesc, pResident, selectedFacilityId, load]);
+  }, [supabase, pettyAccount, pAmount, pDir, pCategory, pDesc, pResident, load]);
 
   const openTrustAccount = useCallback(async () => {
     if (!facilityReady || !newTrustResident) return;
@@ -290,30 +280,14 @@ export default function AdminCashLedgersPage() {
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
-      const newBalance = selectedTrust.balance_cents + trustDelta(tDir, cents);
-      if (newBalance < 0) {
-        setNotice("Withdrawal exceeds the trust balance.");
-        setBusy(false);
-        return;
-      }
-      const { error: txErr } = await supabase.from("resident_trust_transactions" as never).insert({
-        organization_id: actor.organizationId,
-        facility_id: selectedFacilityId as string,
-        account_id: selectedTrust.id,
-        resident_id: selectedTrust.resident_id,
-        direction: tDir,
-        amount_cents: cents,
-        balance_after_cents: newBalance,
-        category: tCategory,
-        description: tDesc.trim(),
-        created_by: actor.userId,
+      trustRequestId.current ??= crypto.randomUUID();
+      const { error: txErr } = await supabase.rpc("post_cash_transaction" as never, {
+        p_kind: "trust", p_id: trustRequestId.current, p_account_id: selectedTrust.id,
+        p_direction: tDir, p_amount_cents: cents, p_category: tCategory,
+        p_description: tDesc.trim(), p_resident_id: null,
       } as never);
       if (txErr) throw new Error(txErr.message);
-      const { error: accErr } = await supabase
-        .from("resident_trust_accounts" as never)
-        .update({ balance_cents: newBalance, updated_by: actor.userId } as never)
-        .eq("id", selectedTrust.id);
-      if (accErr) throw new Error(accErr.message);
+      trustRequestId.current = null;
       setTAmount("");
       setTDesc("");
       await load();
@@ -323,7 +297,7 @@ export default function AdminCashLedgersPage() {
     } finally {
       setBusy(false);
     }
-  }, [supabase, selectedTrust, tAmount, tDir, tCategory, tDesc, selectedFacilityId, load, loadTrustTx]);
+  }, [supabase, selectedTrust, tAmount, tDir, tCategory, tDesc, load, loadTrustTx]);
 
   const residentsWithoutTrust = useMemo(() => {
     const taken = new Set(trustAccounts.map((a) => a.resident_id));

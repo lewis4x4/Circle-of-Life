@@ -152,9 +152,9 @@ export default function AdminSurveyBinderPage() {
   const kpis = evidence
     ? [
         { label: "Facility documents", value: evidence.documentCount },
-        { label: "Expiring ≤60d", value: evidence.expiringSoonCount, warn: evidence.expiringSoonCount > 0 },
+        { label: "Expiring ≤60d", value: evidence.expiringSoonCount, warn: (evidence.expiringSoonCount ?? 0) > 0 },
         { label: "In-services YTD", value: evidence.inservicesThisYear },
-        { label: "Drills due ≤60d", value: evidence.drillsDueSoon, warn: evidence.drillsDueSoon > 0 },
+        { label: "Drills due ≤60d", value: evidence.drillsDueSoon, warn: (evidence.drillsDueSoon ?? 0) > 0 },
       ]
     : [];
 
@@ -167,7 +167,7 @@ export default function AdminSurveyBinderPage() {
             Survey-readiness binder
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            AHCA inspection evidence at a glance. {readyCount} ready · {missingCount} missing across{" "}
+            Manual binder checklist status; live evidence availability is shown below. {readyCount} ready · {missingCount} missing across{" "}
             {items.length} tracked item{items.length === 1 ? "" : "s"}.
           </p>
         </header>
@@ -189,7 +189,7 @@ export default function AdminSurveyBinderPage() {
             {kpis.map((k) => (
               <div key={k.label} className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
                 <p className="text-xs text-muted-foreground">{k.label}</p>
-                <p className={`text-2xl font-semibold ${k.warn ? "text-warning" : "text-foreground"}`}>{k.value}</p>
+                <p className={`text-2xl font-semibold ${k.warn ? "text-warning" : "text-foreground"}`}>{k.value ?? "Unavailable"}</p>
               </div>
             ))}
             <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 sm:col-span-2 lg:col-span-4">
@@ -197,7 +197,7 @@ export default function AdminSurveyBinderPage() {
               <p
                 className={`text-sm ${evidence.lastSurvey ? "text-foreground" : "text-muted-foreground"}`}
               >
-                {formatBinderLastSurveyLine(evidence.lastSurvey)}
+                {evidence.lastSurveyAvailable ? formatBinderLastSurveyLine(evidence.lastSurvey) : "Survey evidence unavailable. Retry to load this source."}
               </p>
             </div>
           </div>

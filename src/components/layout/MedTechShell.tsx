@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -25,19 +25,12 @@ import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLaunch
  *  3. Full-viewport container
  */
 export function MedTechShell({ children }: { children: React.ReactNode }) {
-  const { setTheme } = useTheme();
   const router = useRouter();
-  const themeSet = useRef(false);
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
   // Force dark theme
-  useEffect(() => {
-    if (!themeSet.current) {
-      setTheme("dark");
-      themeSet.current = true;
-    }
-  }, [setTheme]);
+
 
   // Role guard
   const checkAccess = useCallback(async () => {
@@ -107,6 +100,7 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     <div className="dark">
       <div className="min-h-screen bg-background font-sans text-foreground antialiased">
         <div className="fixed right-4 top-4 z-50">
+          <Link href="/med-tech/acknowledgments" className="mr-3 rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
           <PilotFeedbackLauncher shellKind="med-tech" compact />
         </div>
         {children}

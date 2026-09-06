@@ -390,9 +390,8 @@ export function AdminStaffPageClient({
           <TableRowHeader className="hidden lg:flex">
             <div className="flex-[3]">Staff</div>
             <div className="flex-1">Status</div>
-            <div className="flex-1">Certifications</div>
+            <div className="flex-1">Recorded credentials</div>
             <div className="flex-1">Next shift</div>
-            <div className="flex-1">Overtime risk</div>
             <div className="w-6" aria-hidden />
           </TableRowHeader>
 
@@ -436,9 +435,6 @@ export function AdminStaffPageClient({
                   <div className="flex-1 text-[12px] tabular-nums text-foreground truncate">
                     {staff.nextShift}
                   </div>
-                  <div className="flex-1">
-                    <OvertimeRiskPill risk={staff.overtimeRisk} />
-                  </div>
 
                   <div className="w-6 flex justify-end">
                     <ChevronRight
@@ -481,27 +477,14 @@ function StaffStatusPill({ status }: { status: StaffStatus }) {
  */
 function CertificationStatusPill({ certifications }: { certifications: CertificationStatus }) {
   switch (certifications) {
+    case "not_verified":
+      return <StatusPill tone="warning">Not verified</StatusPill>;
     case "expired":
       return <StatusPill tone="danger">Expired</StatusPill>;
     case "expiring_soon":
       return <StatusPill tone="warning">Expiring soon</StatusPill>;
     case "current":
     default:
-      return <StatusPill tone="muted">Current</StatusPill>;
-  }
-}
-
-/**
- * Healthy default = `low` → neutral. Risk earns color only when present.
- */
-function OvertimeRiskPill({ risk }: { risk: "low" | "medium" | "high" }) {
-  switch (risk) {
-    case "high":
-      return <StatusPill tone="danger">High</StatusPill>;
-    case "medium":
-      return <StatusPill tone="warning">Medium</StatusPill>;
-    case "low":
-    default:
-      return <StatusPill tone="muted">Low</StatusPill>;
+      return <StatusPill tone="muted">Recorded credentials current</StatusPill>;
   }
 }

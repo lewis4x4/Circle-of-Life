@@ -1,0 +1,126 @@
+{
+  "lane": "access",
+  "mission_alignment": "pass",
+  "findings": [
+    {
+      "id": "SYS-01",
+      "status": "verified",
+      "change": "Database trigger blocks direct identity/access profile changes; harmless self edits retained, insert/delete privileges revoked.",
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+      "evidence": [
+        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "src/lib/admin/api-auth.ts",
+        "supabase/tests/review_access_boundaries.sql"
+      ]
+    },
+    {
+      "id": "SYS-02",
+      "status": "verified",
+      "change": "Direct grant writes revoked from browser roles; existing service API hierarchy and facility checks remain sole write entry.",
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+      "evidence": [
+        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "src/app/api/admin/users/[id]/facility-access/route.ts",
+        "supabase/tests/review_access_boundaries.sql"
+      ]
+    },
+    {
+      "id": "SYS-03",
+      "status": "implemented",
+      "change": "Strict admission patch schema rejects protected identity and invalid fields; bed belongs to authorized facility; clearance actor bound server-side.",
+      "evidence": [
+        "src/app/api/admin/workflows/admission-cases/[id]/route.ts",
+        "src/lib/admin/access-boundaries.test.ts"
+      ],
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+    },
+    {
+      "id": "SYS-04",
+      "status": "verified",
+      "change": "Database signature guard rejects forged incoming/outgoing identities; verified counts command locks all rows, signs and audits atomically.",
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+      "evidence": [
+        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/migrations/20260906155657_review_med_tech_controlled_count_access.sql",
+        "src/app/api/controlled-substance/verify-co-sign/route.ts",
+        "src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts",
+        "supabase/tests/review_access_boundaries.sql",
+        "supabase/tests/review_controlled_count_roles.sql",
+        "src/app/api/med-tech/passes/[id]/witness/route.ts",
+        "src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts"
+      ]
+    },
+    {
+      "id": "SYS-05",
+      "status": "implemented",
+      "change": "Dedicated nonpersisting public-key verifier closes only its temporary local session; shared admin client never signs in.",
+      "evidence": [
+        "src/lib/supabase/witness-auth.ts",
+        "src/lib/supabase/witness-auth.test.ts",
+        "src/app/api/controlled-substance/verify-co-sign/route.ts"
+      ],
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+    },
+    {
+      "id": "SYS-08",
+      "status": "implemented",
+      "change": "Auth access updates acknowledged before profile mutation; errors and partial sync require retry. Named login-email command synchronizes actual login identity; deactivation/reactivation errors are surfaced.",
+      "evidence": [
+        "src/app/api/admin/users/[id]/route.ts",
+        "src/app/api/admin/users/[id]/login-email/route.ts",
+        "src/app/api/admin/users/[id]/reactivate/route.ts",
+        "src/lib/supabase/admin-client.ts",
+        "src/components/admin/users/UserEditSheet.tsx",
+        "src/lib/admin/user-sync.test.ts",
+        "src/lib/admin/login-email.test.ts"
+      ],
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+    },
+    {
+      "id": "SYS-09",
+      "status": "implemented",
+      "change": "Scoped target-user existence query uses organization and limit(1), returns false on query error.",
+      "evidence": [
+        "src/lib/admin/api-auth.ts",
+        "src/lib/admin/access-boundaries.test.ts"
+      ],
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+    },
+    {
+      "id": "SYS-12",
+      "status": "verified",
+      "change": "Grace domain insert, audit trigger, run step and receipt commit in one RPC transaction. Same-key retry reconciles new pending receipts; legacy uncertain runs explicitly require reconciliation.",
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+      "evidence": [
+        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/functions/grace-execute-flow-step/index.ts",
+        "src/lib/admin/grace-transaction.test.ts",
+        "supabase/tests/review_access_boundaries.sql"
+      ]
+    },
+    {
+      "id": "SYS-13",
+      "status": "verified",
+      "change": "Atomic Undo checks active actor, organization, manager/owner authorization, target facility membership and saved record version, then commits compensation and run status together.",
+      "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+      "evidence": [
+        "supabase/migrations/20260906140828_review_access_boundaries.sql",
+        "supabase/functions/grace-undo-flow-run/index.ts",
+        "supabase/tests/review_access_boundaries.sql"
+      ]
+    }
+  ],
+  "verification": {
+    "targeted_tests": "18 core access tests passed;14 outgoing/incoming role API tests passed (11 controlled count,3 medication-pass witness);2 existing report-date tests also passed in the access handoff.",
+    "targeted_lint": "PASS: combined changed-source ESLint and final account UI/source reruns",
+    "sql_probe": "PASS: rollback-only supabase/tests/review_access_boundaries.sql on native PostgreSQL17.9 + pgvector, after full replay; vanilla Supabase auth/storage stubs, auth visibility adapters are transaction-local.",
+    "typecheck": "Final integrated typecheck is parent-owned; source/test paths and latest targeted checks are recorded here without claiming a hosted result.",
+    "controlled_count_roles": "PASS:14 API role tests and rollback-only review_controlled_count_roles.sql, including real med-tech-owned count and medication-pass witness receipt. Nurse/caregiver incoming signer limit retained; med-tech may originate/request an eligible witness."
+  },
+  "limitations": [
+    "Requires migration/frontend/Edge deployment and authenticated role/facility UAT",
+    "Auth and profile writes use explicit retry-required partial outcomes; they are separate services",
+    "Legacy Grace running receipts require human reconciliation; no automatic duplicate creation",
+    "No production records changed"
+  ]
+}

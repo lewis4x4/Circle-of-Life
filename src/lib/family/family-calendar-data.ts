@@ -41,6 +41,8 @@ function formatTimeRange(start: string | null, end: string | null): string {
     return new Intl.DateTimeFormat("en-US", {
       hour: "numeric",
       minute: "2-digit",
+      timeZone: "America/New_York",
+      timeZoneName: "short",
     }).format(t);
   };
   const a = start ? fmt(start) : null;

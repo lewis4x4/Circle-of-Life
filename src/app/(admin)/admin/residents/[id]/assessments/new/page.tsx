@@ -75,6 +75,7 @@ export default function AssessmentEntryPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [savedAssessment, setSavedAssessment] = useState<{ type: string; totalScore: number; riskLevel: string } | null>(null);
   const [selectedType, setSelectedType] = useState<string>("");
 
   const form = useForm<AssessmentFormData>({
@@ -169,6 +170,7 @@ export default function AssessmentEntryPage() {
       const riskLevel = lookupRiskLevel(totalScore, selectedTemplate.risk_thresholds);
       const nextDueDate = computeNextDueDate(data.assessmentDate, selectedTemplate.default_frequency_days);
 
+      if (!savedAssessment) {
       const { error: insertErr } = await supabase.from("assessments").insert({
         resident_id: residentId,
         facility_id: facilityId,
@@ -185,8 +187,9 @@ export default function AssessmentEntryPage() {
         updated_by: user.id,
       });
       if (insertErr) throw new Error(insertErr.message);
-
-      await updateResidentFromAssessment(data.assessmentType, totalScore, riskLevel);
+      setSavedAssessment({ type: data.assessmentType, totalScore, riskLevel });
+      }
+      await updateResidentFromAssessment(savedAssessment?.type ?? data.assessmentType, savedAssessment?.totalScore ?? totalScore, savedAssessment?.riskLevel ?? riskLevel);
 
       setSuccess(true);
     } catch (err) {
@@ -199,11 +202,12 @@ export default function AssessmentEntryPage() {
   async function updateResidentFromAssessment(type: string, totalScore: number, riskLevel: string) {
     if (type === "morse_fall") {
       const fallRisk = mapMorseToFallRisk(totalScore);
-      await supabase.from("residents").update({ fall_risk_level: fallRisk }).eq("id", residentId);
+      const result = await supabase.from("residents").update({ fall_risk_level: fallRisk }).eq("id", residentId).select("id").single();
+      if (result.error) throw result.error;
     }
 
     if (["katz_adl", "morse_fall", "braden"].includes(type)) {
-      const { data: latestAssessments } = await supabase
+      const { data: latestAssessments, error: latestError } = await supabase
         .from("assessments")
         .select("assessment_type, total_score, risk_level")
         .eq("resident_id", residentId)
@@ -211,6 +215,7 @@ export default function AssessmentEntryPage() {
         .in("assessment_type", ["katz_adl", "morse_fall", "braden"])
         .order("assessment_date", { ascending: false });
 
+      if (latestError) throw latestError;
       const latest: Record<string, { total_score: number | null; risk_level: string | null }> = {};
       for (const a of latestAssessments ?? []) {
         if (!latest[a.assessment_type]) latest[a.assessment_type] = a;
@@ -222,13 +227,14 @@ export default function AssessmentEntryPage() {
         bradenRiskLevel: latest.braden?.risk_level ?? undefined,
       });
 
-      await supabase.from("residents").update({
+      const acuityResult = await supabase.from("residents").update({
         acuity_score: acuityScore,
         acuity_level: acuityLevel,
-      }).eq("id", residentId);
+      }).eq("id", residentId).select("id").single();
+      if (acuityResult.error) throw acuityResult.error;
     }
 
-    const { data: priorAssessments } = await supabase
+    const { data: priorAssessments, error: priorError } = await supabase
       .from("assessments")
       .select("risk_level")
       .eq("resident_id", residentId)
@@ -237,10 +243,11 @@ export default function AssessmentEntryPage() {
       .order("assessment_date", { ascending: false })
       .limit(2);
 
+    if (priorError) throw priorError;
     const prior = priorAssessments && priorAssessments.length > 1 ? priorAssessments[1] : null;
 
     if (prior && didRiskWorsen(type, riskLevel, prior.risk_level)) {
-      const { data: activePlan } = await supabase
+      const { data: activePlan, error: planError } = await supabase
         .from("care_plans")
         .select("id")
         .eq("resident_id", residentId)
@@ -248,6 +255,7 @@ export default function AssessmentEntryPage() {
         .is("deleted_at", null)
         .maybeSingle();
 
+      if (planError) throw planError;
       if (activePlan) {
         const { error: alertErr } = await supabase.from("care_plan_review_alerts" as never).insert({
           care_plan_id: activePlan.id,
@@ -260,7 +268,7 @@ export default function AssessmentEntryPage() {
         const pgCode = alertErr ? (alertErr as { code?: string }).code : undefined;
         const isUniqueViolation = pgCode === "23505" || alertErr?.message?.toLowerCase().includes("unique");
         if (alertErr && !isUniqueViolation) {
-          console.error("Failed to create review alert:", alertErr.message);
+          throw new Error(`Assessment saved; care-plan review alert failed: ${alertErr.message}`);
         }
       }
     }
@@ -279,7 +287,7 @@ export default function AssessmentEntryPage() {
               <a href={`/admin/residents/${residentId}/assessments`}>
                 <Button variant="outline" size="sm">View history</Button>
               </a>
-              <Button size="sm" onClick={() => { setSuccess(false); setSelectedType(""); form.reset(); }}>
+              <Button size="sm" onClick={() => { setSuccess(false); setSavedAssessment(null); setSelectedType(""); form.reset(); }}>
                 New assessment
               </Button>
             </div>
@@ -310,8 +318,8 @@ export default function AssessmentEntryPage() {
 
           {error && !loading && (
             <div className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-              <Button variant="ghost" size="sm" onClick={load} className="ml-2 text-destructive">
+              {savedAssessment ? "Assessment saved; follow-up updates need retry. " : ""}{error}
+              <Button variant="ghost" size="sm" onClick={savedAssessment ? () => void onSubmit(form.getValues()) : load} className="ml-2 text-destructive">
                 Retry
               </Button>
             </div>

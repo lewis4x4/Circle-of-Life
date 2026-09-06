@@ -29,6 +29,48 @@ function docker(args, opts = {}) {
   return spawnSync("docker", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, ...opts });
 }
 
+function orderedMigrationFiles() {
+  const historicalTimestamps = new Set([
+    "20260514180000_staff_role_enum_values.sql",
+    "20260514180707_homewood_round2_employee_seed.sql",
+    "20260514203302_homewood_round2_ar_intake_may_2026.sql",
+  ]);
+  const isNewTimestamp = (file) => /^\d{14}_/.test(file) && !historicalTimestamps.has(file);
+  return fs.readdirSync(migrationsDir).filter((file) => file.endsWith(".sql"))
+    .sort((a, b) => Number(isNewTimestamp(a)) - Number(isNewTimestamp(b)) || a.localeCompare(b));
+}
+
+function nativeVerification(socket) {
+  // Only use the explicitly identified run-owned temporary cluster. Never
+  // accept a normal application socket or a network database URL here.
+  const base = path.join(process.env.HOME, ".hermes", "tmp", "agent-runs");
+  const resolved = fs.realpathSync(socket);
+  if (!resolved.startsWith(`${fs.realpathSync(base)}${path.sep}`)) throw new Error("Native replay requires a run-owned scratch cluster");
+  const manifest = JSON.parse(fs.readFileSync(path.join(resolved, "manifest.json"), "utf8"));
+  if (manifest.created_by !== "codex" || manifest.run_id !== path.basename(resolved)) throw new Error("Native replay ownership manifest does not match");
+  const bin = process.env.PG_VERIFY_NATIVE_BIN;
+  if (!bin || !path.isAbsolute(bin)) throw new Error("PG_VERIFY_NATIVE_BIN must identify installed PostgreSQL binaries");
+  const connection = ["-h", resolved, "-p", process.env.PG_VERIFY_NATIVE_PORT || "55439", "-U", "postgres"];
+  const database = `haven_verify_${process.pid}_${Date.now()}`;
+  const run = (tool, args, opts = {}) => spawnSync(path.join(bin, tool), args, { encoding: "utf8", timeout: 120000, maxBuffer: 64 * 1024 * 1024, ...opts });
+  const create = run("createdb", [...connection, database]);
+  if (create.status !== 0) throw new Error(create.stderr || create.error?.message || "Could not create isolated replay database");
+  try {
+    const files = orderedMigrationFiles();
+    const tests = fs.readdirSync(path.join(root, "supabase", "tests"))
+      .filter((name) => /^review_.*\.sql$/.test(name) || ["rpc_grant_posture.sql", "family_portal_messages_one_way.sql", "team_space_rls_no_recursion.sql"].includes(name)).sort();
+    const inputs = [path.join(root, "scripts", "pg-verify-stub.sql"), ...files.map((file) => path.join(migrationsDir, file)), ...tests.map((file) => path.join(root, "supabase", "tests", file))];
+    for (const file of inputs) {
+      const result = run("psql", [...connection, "-d", database, "-v", "ON_ERROR_STOP=1", "-f", file]);
+      if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || "SQL failed"}`);
+    }
+    console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.length} SQL probes; native PostgreSQL with Supabase stubs)`);
+  } finally {
+    const dropped = run("dropdb", [...connection, database]);
+    if (dropped.status !== 0) throw new Error(`Run-owned replay database retained: ${database}. ${dropped.stderr}`);
+  }
+}
+
 async function main() {
   if (skip) {
     if (process.env.REQUIRE_PG_VERIFY === "1") {
@@ -39,7 +81,9 @@ async function main() {
     process.exit(0);
   }
 
-  const info = docker(["info"], { stdio: "pipe" });
+  if (process.env.PG_VERIFY_NATIVE_SOCKET) { nativeVerification(process.env.PG_VERIFY_NATIVE_SOCKET); return; }
+
+  const info = docker(["info"], { stdio: "pipe", timeout: 10000 });
   if (info.status !== 0) {
     if (requireDocker) {
       console.error("[migrations:verify:pg] FAIL: Docker required but not available");
@@ -133,10 +177,7 @@ async function main() {
 
     runFile("stub", stubPath);
 
-    const files = fs
-      .readdirSync(migrationsDir)
-      .filter((f) => f.endsWith(".sql"))
-      .sort();
+    const files = orderedMigrationFiles();
     for (const f of files) {
       runFile(f, path.join(migrationsDir, f));
     }
@@ -154,6 +195,10 @@ async function main() {
     const teamSpaceRlsPath = path.join(root, "supabase", "tests", "team_space_rls_no_recursion.sql");
     if (fs.existsSync(teamSpaceRlsPath)) {
       runFile("team_space_rls_no_recursion", teamSpaceRlsPath);
+    }
+
+    for (const file of fs.readdirSync(path.join(root, "supabase", "tests")).filter((file) => /^review_.*\.sql$/.test(file)).sort()) {
+      runFile(file, path.join(root, "supabase", "tests", file));
     }
 
     console.log(`[migrations:verify:pg] PASS (${files.length} migration file(s))`);

@@ -103,7 +103,8 @@ describe("/api/admin/executive/refresh", () => {
 
     expect(response.status).toBe(503);
     expect(payload.ok).toBe(false);
-    expect(payload.missing).toContain("RISK_NIGHTLY_SCORER_SECRET");
+    expect(payload.error).toBe("Executive refresh is not configured on this server.");
+    expect(payload).not.toHaveProperty("missing");
   });
 
   it("returns all three function statuses on success and sends notify false to risk scorer", async () => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, ClipboardList, Loader2, NotebookPen } from "lucide-react";
 
 import {
@@ -13,7 +13,6 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import {
   asStringArray,
-  createOceTaskForActionItem,
   fetchActorContext,
   meetingStatusTone,
   type ActionItemRow,
@@ -63,6 +62,9 @@ export default function AdminMeetingDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const minutesBaseline = useRef<string | null>(null);
+  const minutesHydratedFor = useRef<string | null>(null);
+  const [actionId, setActionId] = useState(() => crypto.randomUUID());
   const [minutesDraft, setMinutesDraft] = useState("");
   const [savingMinutes, setSavingMinutes] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
@@ -115,7 +117,7 @@ export default function AdminMeetingDetailPage() {
         agenda: asStringArray(raw.agenda),
         attendees: asStringArray(raw.attendees),
       });
-      setMinutesDraft(raw.minutes ?? "");
+      if (minutesHydratedFor.current !== meetingId) { setMinutesDraft(raw.minutes ?? ""); minutesBaseline.current = raw.minutes; minutesHydratedFor.current = meetingId; }
       setActionItems(itemsRes.data ?? []);
       setProfiles(profilesRes.data ?? []);
     } catch (err) {
@@ -137,12 +139,12 @@ export default function AdminMeetingDetailPage() {
       try {
         const actor = await fetchActorContext(supabase);
         if (!actor) throw new Error("Sign in required.");
-        const res = (await supabase
-          .from("meetings" as never)
-          .update({ ...patch, updated_by: actor.userId } as never)
-          .eq("id", meetingId)
-          .is("deleted_at", null)) as { error: QueryError | null };
-        if (res.error) throw new Error(res.error.message);
+        let query = supabase.from("meetings" as never)
+          .update({ ...patch, updated_by: actor.userId } as never).eq("id", meetingId).is("deleted_at", null);
+        if ("minutes" in patch) query = minutesBaseline.current === null ? query.is("minutes", null) : query.eq("minutes", minutesBaseline.current);
+        const res = await query.select("id").single();
+        if (res.error) throw new Error("Meeting changed or could not be saved. Your draft is preserved; reload in another tab to compare before retrying.");
+        if ("minutes" in patch) minutesBaseline.current = patch.minutes as string | null;
         await load();
       } catch (err) {
         setNotice(err instanceof Error ? err.message : "Update failed.");
@@ -180,26 +182,12 @@ export default function AdminMeetingDetailPage() {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Sign in required.");
 
-      const oceTaskId = await createOceTaskForActionItem(supabase, {
-        actor,
-        facilityId: meeting.facility_id,
-        description,
-        assignedTo: newItemAssignee || null,
-        dueDate: newItemDueDate,
-      });
-
-      const res = (await supabase.from("meeting_action_items" as never).insert({
-        organization_id: actor.organizationId,
-        facility_id: meeting.facility_id,
-        meeting_id: meeting.id,
-        description,
-        assigned_to: newItemAssignee || null,
-        due_date: newItemDueDate,
-        oce_task_instance_id: oceTaskId,
-        created_by: actor.userId,
-        updated_by: actor.userId,
-      } as never)) as { error: QueryError | null };
-      if (res.error) throw new Error(res.error.message);
+      const response = await fetch(`/api/admin/meetings/${meeting.id}/actions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        id: actionId, description, assigned_to: newItemAssignee || null, due_date: newItemDueDate,
+      }) });
+      const result = await response.json();
+      if (!response.ok || result.id !== actionId) throw new Error(result.error ?? "Action save was not acknowledged.");
+      setActionId(crypto.randomUUID());
 
       setNewItemDescription("");
       setNewItemAssignee("");
@@ -209,7 +197,7 @@ export default function AdminMeetingDetailPage() {
     } finally {
       setSavingItem(false);
     }
-  }, [supabase, meeting, newItemDescription, newItemAssignee, newItemDueDate, load]);
+  }, [supabase, meeting, newItemDescription, newItemAssignee, newItemDueDate, actionId, load]);
 
   const completeActionItem = useCallback(
     async (item: ActionItemRow) => {
@@ -218,27 +206,10 @@ export default function AdminMeetingDetailPage() {
       try {
         const actor = await fetchActorContext(supabase);
         if (!actor) throw new Error("Sign in required.");
-        const nowIso = new Date().toISOString();
-
-        const itemRes = (await supabase
-          .from("meeting_action_items" as never)
+        const { error: completionError } = await supabase.from("meeting_action_items" as never)
           .update({ status: "completed", updated_by: actor.userId } as never)
-          .eq("id", item.id)
-          .is("deleted_at", null)) as { error: QueryError | null };
-        if (itemRes.error) throw new Error(itemRes.error.message);
-
-        if (item.oce_task_instance_id) {
-          const oceRes = (await supabase
-            .from("operation_task_instances" as never)
-            .update({
-              status: "completed",
-              completed_at: nowIso,
-              completion_notes: "Completed from meeting hub action item.",
-            } as never)
-            .eq("id", item.oce_task_instance_id)
-            .is("deleted_at", null)) as { error: QueryError | null };
-          if (oceRes.error) throw new Error(oceRes.error.message);
-        }
+          .eq("id", item.id).is("deleted_at", null).select("id").single();
+        if (completionError) throw new Error(completionError.message);
         await load();
       } catch (err) {
         setNotice(err instanceof Error ? err.message : "Could not complete action item.");
@@ -379,6 +350,7 @@ export default function AdminMeetingDetailPage() {
                 placeholder="Discussion notes, decisions, follow-ups…"
                 aria-label="Meeting minutes"
               />
+              <p className="text-xs text-muted-foreground" role="status">{savingMinutes ? "Saving minutes…" : minutesDraft.trim() !== (meeting?.minutes ?? "").trim() ? "Unsaved minutes" : "Minutes saved"}</p>
               <div className="flex justify-end">
                 <Button type="button" size="sm" disabled={savingMinutes} onClick={() => void saveMinutes()}>
                   {savingMinutes ? <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden /> : null}
@@ -461,7 +433,7 @@ export default function AdminMeetingDetailPage() {
                         <span className="text-xs text-muted-foreground">
                           {profileName(item.assigned_to)}
                           {item.due_date ? ` · due ${item.due_date}` : ""}
-                          {item.oce_task_instance_id ? " · OCE-chased" : ""}
+                          {item.oce_task_instance_id ? " · Tracked in operations" : ""}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 shrink-0">

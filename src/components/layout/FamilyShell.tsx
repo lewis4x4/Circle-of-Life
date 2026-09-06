@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell,
   CalendarDays,
   CalendarHeart,
   CreditCard,
@@ -115,17 +114,7 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
     <div className="family-shell relative flex min-h-screen flex-col bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] font-sans text-foreground antialiased">
         <div className="absolute right-4 top-4 z-50 flex items-center gap-2 md:right-6 md:top-6">
           <PilotFeedbackLauncher shellKind="family" compact />
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="haven-chrome-floating-chip tap-responsive relative inline-flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <Bell className="h-5 w-5" aria-hidden />
-            <span
-              aria-hidden
-              className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning"
-            />
-          </button>
+
 
           <DropdownMenu>
             <DropdownMenuTrigger

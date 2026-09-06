@@ -1,0 +1,1964 @@
+[
+  {
+    "id": "SYS-01",
+    "title": "P0: Users can change the profile role used for authorization",
+    "report": "shared-systems-review.md",
+    "line": 7,
+    "status": "verified",
+    "evidence": [
+      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "src/lib/admin/api-auth.ts",
+      "supabase/tests/review_access_boundaries.sql"
+    ],
+    "notes": "Database trigger blocks direct identity/access profile changes; harmless self edits retained, insert/delete privileges revoked.",
+    "change": "Database trigger blocks direct identity/access profile changes; harmless self edits retained, insert/delete privileges revoked.",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+    "lane": "access"
+  },
+  {
+    "id": "SYS-02",
+    "title": "P1: Facility managers can bypass the facility-grant UI boundary",
+    "report": "shared-systems-review.md",
+    "line": 15,
+    "status": "verified",
+    "evidence": [
+      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "src/app/api/admin/users/[id]/facility-access/route.ts",
+      "supabase/tests/review_access_boundaries.sql"
+    ],
+    "notes": "Direct grant writes revoked from browser roles; existing service API hierarchy and facility checks remain sole write entry.",
+    "change": "Direct grant writes revoked from browser roles; existing service API hierarchy and facility checks remain sole write entry.",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+    "lane": "access"
+  },
+  {
+    "id": "SYS-03",
+    "title": "P1: Admission edits accept protected identity fields without reauthorization",
+    "report": "shared-systems-review.md",
+    "line": 23,
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/workflows/admission-cases/[id]/route.ts",
+      "src/lib/admin/access-boundaries.test.ts"
+    ],
+    "notes": "Strict admission patch schema rejects protected identity and invalid fields; bed belongs to authorized facility; clearance actor bound server-side.",
+    "change": "Strict admission patch schema rejects protected identity and invalid fields; bed belongs to authorized facility; clearance actor bound server-side.",
+    "lane": "access",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+  },
+  {
+    "id": "SYS-04",
+    "title": "P1: Witness verification can be bypassed through direct count writes",
+    "report": "shared-systems-review.md",
+    "line": 31,
+    "status": "verified",
+    "evidence": [
+      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/migrations/20260906155657_review_med_tech_controlled_count_access.sql",
+      "src/app/api/controlled-substance/verify-co-sign/route.ts",
+      "src/app/api/controlled-substance/verify-co-sign/route-roles.test.ts",
+      "supabase/tests/review_access_boundaries.sql",
+      "supabase/tests/review_controlled_count_roles.sql",
+      "src/app/api/med-tech/passes/[id]/witness/route.ts",
+      "src/app/api/med-tech/passes/[id]/witness/route-roles.test.ts"
+    ],
+    "notes": "Database signature guard rejects forged incoming/outgoing identities; verified counts command locks all rows, signs and audits atomically.",
+    "change": "Database signature guard rejects forged incoming/outgoing identities; verified counts command locks all rows, signs and audits atomically.",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+    "lane": "access"
+  },
+  {
+    "id": "SYS-05",
+    "title": "P1: Co-signing uses a shared admin auth client and requests global sign-out",
+    "report": "shared-systems-review.md",
+    "line": 39,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/supabase/witness-auth.ts",
+      "src/lib/supabase/witness-auth.test.ts",
+      "src/app/api/controlled-substance/verify-co-sign/route.ts"
+    ],
+    "notes": "Dedicated nonpersisting public-key verifier closes only its temporary local session; shared admin client never signs in.",
+    "change": "Dedicated nonpersisting public-key verifier closes only its temporary local session; shared admin client never signs in.",
+    "lane": "access",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+  },
+  {
+    "id": "SYS-06",
+    "title": "P1: Offline work and cached responses are not separated by operator identity",
+    "report": "shared-systems-review.md",
+    "line": 47,
+    "status": "implemented",
+    "evidence": [
+      "public/sw.js",
+      "src/lib/pwa/rounding-sync.ts",
+      "src/hooks/useRoundingOfflineSync.ts",
+      "src/app/api/rounding/tasks/[id]/complete/route.ts",
+      "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "src/components/rounding/RoundingOutbox.tsx",
+      "src/lib/pwa/rounding-sync-integrity.test.ts"
+    ],
+    "notes": "Offline observations retain original time/operator/org/facility; server rejects another operator replay; conflicts and unattributed legacy records are retained. Sensitive shared navigation/API caches removed; operator-scoped Outbox exposes pending work and errors. Supervisor reconciliation remains manual for genuine conflicts.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "SYS-07",
+    "title": "P1: Offline sync discards every conflict as if it succeeded",
+    "report": "shared-systems-review.md",
+    "line": 55,
+    "status": "implemented",
+    "evidence": [
+      "public/sw.js",
+      "src/lib/pwa/rounding-sync.ts",
+      "src/hooks/useRoundingOfflineSync.ts",
+      "src/app/api/rounding/tasks/[id]/complete/route.ts",
+      "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "src/components/rounding/RoundingOutbox.tsx",
+      "src/lib/pwa/rounding-sync-integrity.test.ts"
+    ],
+    "notes": "Offline observations retain original time/operator/org/facility; server rejects another operator replay; conflicts and unattributed legacy records are retained. Sensitive shared navigation/API caches removed; operator-scoped Outbox exposes pending work and errors. Supervisor reconciliation remains manual for genuine conflicts.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "SYS-08",
+    "title": "P1/P2: Account-update APIs can report success while login identity or role remains different",
+    "report": "shared-systems-review.md",
+    "line": 63,
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/users/[id]/route.ts",
+      "src/app/api/admin/users/[id]/login-email/route.ts",
+      "src/app/api/admin/users/[id]/reactivate/route.ts",
+      "src/lib/supabase/admin-client.ts",
+      "src/components/admin/users/UserEditSheet.tsx",
+      "src/lib/admin/user-sync.test.ts",
+      "src/lib/admin/login-email.test.ts"
+    ],
+    "notes": "Auth access updates acknowledged before profile mutation; errors and partial sync require retry. Named login-email command synchronizes actual login identity; deactivation/reactivation errors are surfaced.",
+    "change": "Auth access updates acknowledged before profile mutation; errors and partial sync require retry. Named login-email command synchronizes actual login identity; deactivation/reactivation errors are surfaced.",
+    "lane": "access",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+  },
+  {
+    "id": "SYS-09",
+    "title": "P2: A manager sharing two facilities with a staff member can get \u201cnot found\u201d",
+    "report": "shared-systems-review.md",
+    "line": 73,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/admin/api-auth.ts",
+      "src/lib/admin/access-boundaries.test.ts"
+    ],
+    "notes": "Scoped target-user existence query uses organization and limit(1), returns false on query error.",
+    "change": "Scoped target-user existence query uses organization and limit(1), returns false on query error.",
+    "lane": "access",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified."
+  },
+  {
+    "id": "SYS-10",
+    "title": "P1: Preflight can declare GO after skipping the relevant operational gates",
+    "report": "shared-systems-review.md",
+    "line": 79,
+    "status": "implemented",
+    "evidence": [
+      "scripts/homewood/preflight.mjs",
+      "src/lib/preflight-integrity.test.ts"
+    ],
+    "notes": "Missing required operational prerequisites produce BLOCKED, missing/invalid audit evidence fails, and non-success exits nonzero without a strict flag.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "SYS-11",
+    "title": "P2: Observation plan calendar dates display one day early in Eastern time",
+    "report": "shared-systems-review.md",
+    "line": 87,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/rounding/rounding-plans-display-copy.ts",
+      "src/lib/rounding/rounding-plans-display-copy.test.ts"
+    ],
+    "notes": "Date-only observation-plan dates preserve calendar date; instants are explicitly Eastern.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "SYS-12",
+    "title": "P1: Grace can lose the run record needed to explain and undo a completed action",
+    "report": "shared-systems-review.md",
+    "line": 93,
+    "status": "verified",
+    "evidence": [
+      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/functions/grace-execute-flow-step/index.ts",
+      "src/lib/admin/grace-transaction.test.ts",
+      "supabase/tests/review_access_boundaries.sql"
+    ],
+    "notes": "Grace domain insert, audit trigger, run step and receipt commit in one RPC transaction. Same-key retry reconciles new pending receipts; legacy uncertain runs explicitly require reconciliation.",
+    "change": "Grace domain insert, audit trigger, run step and receipt commit in one RPC transaction. Same-key retry reconciles new pending receipts; legacy uncertain runs explicitly require reconciliation.",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+    "lane": "access"
+  },
+  {
+    "id": "SYS-13",
+    "title": "P1: Grace Undo checks organization and manager role, but not the target facility",
+    "report": "shared-systems-review.md",
+    "line": 101,
+    "status": "verified",
+    "evidence": [
+      "supabase/migrations/20260906140828_review_access_boundaries.sql",
+      "supabase/functions/grace-undo-flow-run/index.ts",
+      "supabase/tests/review_access_boundaries.sql"
+    ],
+    "notes": "Atomic Undo checks active actor, organization, manager/owner authorization, target facility membership and saved record version, then commits compensation and run status together.",
+    "change": "Atomic Undo checks active actor, organization, manager/owner authorization, target facility membership and saved record version, then commits compensation and run status together.",
+    "verification_scope": "Local source, API regressions and/or PostgreSQL integration as listed; deployed behavior unverified.",
+    "lane": "access"
+  },
+  {
+    "id": "N01",
+    "title": "P1: Role-specific item filtering is not applied",
+    "report": "navigation-comprehensive.md",
+    "line": 32,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N02",
+    "title": "P1: Global search promises record search but only filters destinations",
+    "report": "navigation-comprehensive.md",
+    "line": 38,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N03",
+    "title": "P1: Mobile admin loses its facility control",
+    "report": "navigation-comprehensive.md",
+    "line": 42,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N04",
+    "title": "P1: Facility record and global selector can disagree",
+    "report": "navigation-comprehensive.md",
+    "line": 46,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N05",
+    "title": "P2: Legacy dashboard summaries precede and duplicate the actual work (V2 disabled only)",
+    "report": "navigation-comprehensive.md",
+    "line": 50,
+    "status": "implemented",
+    "evidence": [
+      "src/components/admin/AdminDashboardPageClient.tsx"
+    ],
+    "notes": "Today work queue and resident watchlist precede secondary summaries; internal workflow labels replaced with operator language. Existing detail links and distinct obligations retained.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N06",
+    "title": "P2: Competing navigation mechanisms and orphaned business tools",
+    "report": "navigation-comprehensive.md",
+    "line": 54,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N07",
+    "title": "P2: Decorative alert indicators are presented as actionable signals",
+    "report": "navigation-comprehensive.md",
+    "line": 58,
+    "status": "implemented",
+    "evidence": [
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/CaregiverShell.tsx",
+      "src/components/layout/FamilyShell.tsx"
+    ],
+    "notes": "Decorative alert dots removed. Admin bell opens notification settings; family/caregiver inactive alert controls removed.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N08",
+    "title": "P1: Kitchen tray verification is a simulation inside the operational surface",
+    "report": "navigation-comprehensive.md",
+    "line": 62,
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N09",
+    "title": "P1: Kitchen voice logging and other prominent actions do nothing",
+    "report": "navigation-comprehensive.md",
+    "line": 68,
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N10",
+    "title": "P1: Kitchen data errors become All clear, and Live data never refreshes",
+    "report": "navigation-comprehensive.md",
+    "line": 74,
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N11",
+    "title": "P1: Kitchen context/actions do not match the dietary role's permissions",
+    "report": "navigation-comprehensive.md",
+    "line": 80,
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N12",
+    "title": "P1: Family billing formats stored cents as dollars",
+    "report": "navigation-comprehensive.md",
+    "line": 86,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N13",
+    "title": "P1: Family outstanding balance is calculated from only the latest 60 invoices",
+    "report": "navigation-comprehensive.md",
+    "line": 92,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N14",
+    "title": "P1: Family Updates eventually stops showing new messages",
+    "report": "navigation-comprehensive.md",
+    "line": 96,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N15",
+    "title": "P2: Family feed loses resident context when opening an update",
+    "report": "navigation-comprehensive.md",
+    "line": 100,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N16",
+    "title": "P2: Family calendar/feed times use an unlabeled browser timezone",
+    "report": "navigation-comprehensive.md",
+    "line": 106,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N17",
+    "title": "P1: Nurse dashboard retains the previous facility's brief after a failed switch",
+    "report": "navigation-comprehensive.md",
+    "line": 110,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/nurse-dashboard/page.tsx",
+      "src/components/coordinator/CoordinatorDashboardPageClient.tsx",
+      "src/lib/coordinator/dashboard-brief.ts",
+      "src/components/executive/CeoDashboardPageClient.tsx",
+      "src/lib/executive/load-ceo-dashboard-data.ts"
+    ],
+    "notes": "Nurse data remounts by facility and clears on failure; nurse/coordinator/CEO work rows link to the corresponding resident, care plan, or alert source.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N18",
+    "title": "P2: Role dashboards identify people needing action but do not link those rows to their records",
+    "report": "navigation-comprehensive.md",
+    "line": 114,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/nurse-dashboard/page.tsx",
+      "src/components/coordinator/CoordinatorDashboardPageClient.tsx",
+      "src/lib/coordinator/dashboard-brief.ts",
+      "src/components/executive/CeoDashboardPageClient.tsx",
+      "src/lib/executive/load-ceo-dashboard-data.ts"
+    ],
+    "notes": "Nurse data remounts by facility and clears on failure; nurse/coordinator/CEO work rows link to the corresponding resident, care plan, or alert source.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N19",
+    "title": "P1: Executive scenario projections use hardcoded business baselines presented as current",
+    "report": "navigation-comprehensive.md",
+    "line": 118,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/executive/scenarios/page.tsx"
+    ],
+    "notes": "Scenario baseline is explicitly illustrative and independently editable with date/source/scope and dollar units; no hardcoded value is called current facility data.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N20",
+    "title": "P1: One Haven Insight name hides different history, context and evidence behavior",
+    "report": "navigation-comprehensive.md",
+    "line": 124,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/haven-insight/HavenInsightContext.tsx",
+      "src/lib/haven-insight/citations.ts",
+      "src/lib/haven-insight/HavenInsightContext.test.tsx",
+      "src/components/haven-insight/HavenInsightPanel.tsx",
+      "src/app/(admin)/executive/nlq/page.tsx",
+      "src/app/(admin)/reports/nlq/page.tsx"
+    ],
+    "notes": "Compact Insight reuses server session IDs, hydrates saved conversation, preserves citations/fallback evidence and isolates user/facility changes. Compact/full views share citation normalization; authorized users can open the same session in full history. Local template search is labeled Find a report.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N21",
+    "title": "P1: Report results can be relabeled as another facility without rerunning",
+    "report": "navigation-comprehensive.md",
+    "line": 130,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx",
+      "src/lib/reports/run-persistence.ts",
+      "src/lib/reports/run-persistence.test.ts",
+      "supabase/tests/review_report_outputs.sql"
+    ],
+    "notes": "Template and pack results capture executed facility scope; print/CSV use that captured label and UI marks changed scope as needing rerun. Scoped roles must select an accessible facility.",
+    "change": "Template and pack results capture executed facility scope; print/CSV use that captured label and UI marks changed scope as needing rerun. Scoped roles must select an accessible facility.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N22",
+    "title": "P1: Scheduled report creation inserts template slugs into a UUID field",
+    "report": "navigation-comprehensive.md",
+    "line": 136,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/reports/scheduled/page.tsx",
+      "src/lib/reports/resolve-template-id.ts"
+    ],
+    "notes": "Schedule creation resolves template slug to actual active database template UUID before saving.",
+    "change": "Schedule creation resolves template slug to the actual database template UUID before saving.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N23",
+    "title": "P1: Report scheduler marks runs completed without producing a report",
+    "report": "navigation-comprehensive.md",
+    "line": 140,
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/reports/scheduler/route.ts",
+      "supabase/functions/report-scheduler/index.ts",
+      "src/lib/reports/scheduler.test.ts",
+      "src/lib/reports/run-persistence.test.ts",
+      "docs/remediation/2026-09-review/REPORTING-OPERATIONS.md"
+    ],
+    "notes": "Authenticated scheduled runner calls existing report executors, persists output, rechecks schedule owner scope, and claims each occurrence uniquely before success. Edge configuration failures no longer fabricate completed reports.",
+    "change": "Authenticated scheduled runner calls existing report executors, persists output, rechecks schedule owner scope, and claims each occurrence uniquely before success. Edge configuration failures no longer fabricate completed reports.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N24",
+    "title": "P2: Schedule controls are raw configuration and calendar semantics are not honored",
+    "report": "navigation-comprehensive.md",
+    "line": 146,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/reports/schedule-preview.ts",
+      "src/lib/reports/schedule-preview.test.ts",
+      "src/app/(admin)/reports/scheduled/page.tsx",
+      "src/components/reports/report-packs-hub.tsx"
+    ],
+    "notes": "Validated frequency/day/time contract, facility timezone calendar calculation, next-three preview, DST gap handling, month-end clamping and calendar-quarter anchors replace elapsed-day recurrence.",
+    "change": "Validated frequency/day/time contract, facility timezone calendar calculation, next-three preview, DST gap handling, month-end clamping and calendar-quarter anchors replace elapsed-day recurrence.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N25",
+    "title": "P1: Template failure leaves report history stuck Running",
+    "report": "navigation-comprehensive.md",
+    "line": 150,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/reports/run-persistence.ts",
+      "src/lib/reports/run-persistence.test.ts",
+      "src/lib/reports/scheduler.test.ts",
+      "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx"
+    ],
+    "notes": "Shared template runner records failed status/error on executor or output persistence failure and checks returned update row. Pack catches finalize created runs; scheduler detects interrupted occurrences.",
+    "change": "Shared template runner records failed status/error on executor or output persistence failure and checks returned update row. Pack catches finalize created runs; scheduler detects interrupted occurrences.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N26",
+    "title": "P2: Report history is an execution log, not a way to recover previous results",
+    "report": "navigation-comprehensive.md",
+    "line": 154,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/reports/history/page.tsx",
+      "src/app/(admin)/reports/history/[id]/page.tsx",
+      "supabase/migrations/20260906142243_review_report_outputs.sql",
+      "supabase/tests/review_report_outputs.sql"
+    ],
+    "notes": "Report snapshots retain full outputs and provenance; History links to saved result details, CSV, and Run again. Older unsaved reports are labeled unavailable instead of reconstructed.",
+    "change": "Report snapshots retain full outputs and provenance; History links to saved result details, CSV, and Run again. Older unsaved reports are labeled unavailable instead of reconstructed.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N27",
+    "title": "P2: Reports tabs remove keyboard access to inactive destinations",
+    "report": "navigation-comprehensive.md",
+    "line": 158,
+    "status": "implemented",
+    "evidence": [
+      "src/components/reports/reports-hub-nav.tsx"
+    ],
+    "notes": "Parent owns ordinary tabbable report navigation links.",
+    "change": "Parent owns ordinary tabbable report navigation links.",
+    "lane": "reporting",
+    "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+  },
+  {
+    "id": "N28",
+    "title": "P1: Onboarding autosave has no flush/retry guarantee and global status can lie",
+    "report": "navigation-comprehensive.md",
+    "line": 162,
+    "status": "implemented",
+    "evidence": [
+      "src/hooks/useOnboardingStore.ts",
+      "src/hooks/useOnboardingStore.test.ts",
+      "src/components/layout/OnboardingShell.tsx",
+      "src/app/(onboarding)/onboarding/departments/page.tsx",
+      "src/app/(onboarding)/onboarding/questions/page.tsx"
+    ],
+    "notes": "Per-answer serialization and aggregate failure state preserve drafts; export/exit flush pending saves with retry. Hydration is generation guarded. Department links target actual assigned questions; URL navigation does not claim discovery completion.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N29",
+    "title": "P2: Onboarding progress and department links do not reflect actual onboarding work",
+    "report": "navigation-comprehensive.md",
+    "line": 168,
+    "status": "implemented",
+    "evidence": [
+      "src/hooks/useOnboardingStore.ts",
+      "src/hooks/useOnboardingStore.test.ts",
+      "src/components/layout/OnboardingShell.tsx",
+      "src/app/(onboarding)/onboarding/departments/page.tsx",
+      "src/app/(onboarding)/onboarding/questions/page.tsx"
+    ],
+    "notes": "Per-answer serialization and aggregate failure state preserve drafts; export/exit flush pending saves with retry. Hydration is generation guarded. Department links target actual assigned questions; URL navigation does not claim discovery completion.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N30",
+    "title": "P2: Specialist shells unexpectedly overwrite the user's global theme",
+    "report": "navigation-comprehensive.md",
+    "line": 172,
+    "status": "implemented",
+    "evidence": [
+      "src/components/layout/MedTechShell.tsx",
+      "src/components/layout/DietaryShell.tsx"
+    ],
+    "notes": "Specialist dark appearance is scoped locally without overwriting the global theme preference.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N31",
+    "title": "P1: Default dashboards never load the advertised action queues or KPI panels",
+    "report": "navigation-comprehensive.md",
+    "line": 176,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N32",
+    "title": "P1: V2 scope/date/status controls do not constrain the loaded data",
+    "report": "navigation-comprehensive.md",
+    "line": 182,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N33",
+    "title": "P1: Default executive Reports/Standup/Benchmarks are generic analytic placeholders replacing real workflows",
+    "report": "navigation-comprehensive.md",
+    "line": 188,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "N34",
+    "title": "P2: V2 Save view reports success without persistence",
+    "report": "navigation-comprehensive.md",
+    "line": 196,
+    "status": "implemented",
+    "evidence": [
+      "src/design-system/components/FilterBar/FilterBar.tsx",
+      "src/design-system/components/FilterBar/FilterBar.test.tsx"
+    ],
+    "notes": "Deleted fabricated saved-view receipts. Saving is shown only when the caller supplies a persistence operation and success waits for its acknowledgment.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "C01",
+    "title": "P1: Medication urgency regresses before unresolved work leaves the queue",
+    "report": "clinical-comprehensive.md",
+    "line": 17,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/emar-queue.ts",
+      "src/lib/caregiver/emar-queue.test.ts",
+      "src/app/(caregiver)/meds/page.tsx"
+    ],
+    "notes": "Unresolved scheduled doses remain urgent, including prior-day generated records. Calendar recurrence is honored; documented doses are joined by their scheduled instant.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C02",
+    "title": "P1: Caregiver PRN flow permits one daily card and omits indication capture",
+    "report": "clinical-comprehensive.md",
+    "line": 23,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/meds/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "PRN remains available after a dose, shows last administration and order restrictions, captures indication and separate actual-time records. Exact request receipts prevent duplicate retries. Witness-required orders use the witnessed med-tech pass.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C03",
+    "title": "P1: Caregiver incident form bypasses its declared validation and silently classifies events",
+    "report": "clinical-comprehensive.md",
+    "line": 29,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/incident-draft/page.tsx",
+      "src/lib/caregiver/shift.ts"
+    ],
+    "notes": "Incident submission invokes Zod validation, requires explicit category/severity, derives an editable shift from facility-local occurrence time, and uses the chosen working facility.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C04",
+    "title": "P1: ADL saves erase unfinished documentation",
+    "report": "clinical-comprehensive.md",
+    "line": 35,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/tasks/page.tsx",
+      "src/components/caregiver/ResidentAdlCard.tsx",
+      "src/app/(caregiver)/tasks/page.test.tsx"
+    ],
+    "notes": "ADL cards remain mounted and sorted consistently; failed writes and edits typed during a save retain drafts. Only the acknowledged note is cleared.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C05",
+    "title": "P1: Stable is inferred from the number of ADL entries",
+    "report": "clinical-comprehensive.md",
+    "line": 41,
+    "status": "implemented",
+    "evidence": [
+      "src/components/caregiver/ResidentAdlCard.tsx",
+      "src/app/(caregiver)/tasks/page.tsx"
+    ],
+    "notes": "ADL counts are factual entries with neutral styling. Clinical Stable and count-derived priority are removed; declined-care documentation requires real circumstances.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C06",
+    "title": "P2: Direct-admission draft requires full intake validation and discards the bed selection",
+    "report": "clinical-comprehensive.md",
+    "line": 47,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/admissions/direct-intake-schema.ts",
+      "src/app/(admin)/admin/admissions/new/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Identifiable intake drafts allow missing DOB, gender and source without fabricated answers. Bed preference is retained without implying reservation; arrival enforces complete demographics.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C07",
+    "title": "P2: Resident Open eMAR loses resident context",
+    "report": "clinical-comprehensive.md",
+    "line": 55,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/resident/[id]/page.tsx",
+      "src/app/(caregiver)/meds/page.tsx"
+    ],
+    "notes": "Resident eMAR links retain UUID scope and offer an explicit all-residents continuation.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C08",
+    "title": "P1: Live med-tech route claims an administration and safety checks that never occur",
+    "report": "clinical-comprehensive.md",
+    "line": 61,
+    "status": "implemented",
+    "evidence": [
+      "src/components/med-tech/MedPassFlow/MedPassModal.tsx",
+      "src/components/med-tech/MedPassFlow/MedPassModal.test.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Replaced simulation with actual MAR/pass/tape transaction and durable receipt. Human safety confirmation, live hold/order checks and independent authenticated witness signatures replace fabricated scans, vitals and signatures. Automatic scanning/voice/geofence verification are not claimed.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C09",
+    "title": "P1: Med-tech resident drawer matches medication records by surname prefix",
+    "report": "clinical-comprehensive.md",
+    "line": 67,
+    "status": "implemented",
+    "evidence": [
+      "src/components/med-tech/PassCard.tsx",
+      "src/components/med-tech/ResidentDrawer.tsx",
+      "src/hooks/med-tech/useShiftCurrent.ts"
+    ],
+    "notes": "Passes carry resident UUIDs; rail and drawer associations use UUIDs rather than surname prefixes.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C10",
+    "title": "P1: Med-tech capture offers incident categories that the stored enum rejects",
+    "report": "clinical-comprehensive.md",
+    "line": 73,
+    "status": "implemented",
+    "evidence": [
+      "src/components/med-tech/IncidentModal.tsx"
+    ],
+    "notes": "Med-tech incident categories match stored enum values and require explicit severity, location and actual immediate actions. Removed nonfunctional photo attachment control.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C11",
+    "title": "P1: Vitals entry can erase earlier values and does not preserve individual measurements",
+    "report": "clinical-comprehensive.md",
+    "line": 79,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/clinical-writes.ts",
+      "src/lib/caregiver/clinical-writes.test.ts",
+      "src/app/(caregiver)/resident/[id]/log/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Vital writes append timestamped observations and atomically patch only supplied daily summary fields. The shift log displays the measurement timeline.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C12",
+    "title": "P1: Controlled counts encourage confirmation without counting and have fragile interruption recovery",
+    "report": "clinical-comprehensive.md",
+    "line": 85,
+    "status": "implemented",
+    "evidence": [
+      "src/components/controlled-substance/ControlledCountConsole.tsx",
+      "src/components/medication/CountInitiationModal.tsx",
+      "src/components/controlled-substance/PendingCountReceipt.tsx",
+      "src/lib/medications/controlled-count-batch.ts",
+      "src/lib/medications/controlled-count-batch.test.ts"
+    ],
+    "notes": "Blank independent counts replace guessed stock quantities. Expected count comes from the verified inventory ledger. One atomic batch, stable request IDs, exact replay checks and persisted pending count receipts support interrupted co-sign recovery.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C13",
+    "title": "P1: Core medication management lacks a finishable order/review path in the inspected app",
+    "report": "clinical-comprehensive.md",
+    "line": 91,
+    "status": "implemented",
+    "evidence": [
+      "src/components/medications/MedicationOrderEditor.tsx",
+      "src/app/(admin)/admin/medications/verbal-orders/[id]/page.tsx",
+      "src/components/medications/MedicationErrorReview.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql",
+      "src/components/medications/clinical-authoring.test.tsx"
+    ],
+    "notes": "Added authorized medication order creation/revision/discontinuation with historical lineage; verbal order receipt and implementation are separate finishable steps linked to resulting medication orders; medication errors have clinical review/evidence actions. Revisions preserve untouched stop dates, form, indication, PRN interval, pharmacy/document metadata and safety settings; authoring state is bound to resident/order identity and frozen while saving.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C14",
+    "title": "P1: Offline rounding records the reconnection time as the observation time",
+    "report": "clinical-comprehensive.md",
+    "line": 97,
+    "status": "implemented",
+    "evidence": [
+      "public/sw.js",
+      "src/lib/pwa/rounding-sync.ts",
+      "src/hooks/useRoundingOfflineSync.ts",
+      "src/app/api/rounding/tasks/[id]/complete/route.ts",
+      "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "src/components/rounding/RoundingOutbox.tsx",
+      "src/lib/pwa/rounding-sync-integrity.test.ts"
+    ],
+    "notes": "Offline observations retain original time/operator/org/facility; server rejects another operator replay; conflicts and unattributed legacy records are retained. Sensitive shared navigation/API caches removed; operator-scoped Outbox exposes pending work and errors. Supervisor reconciliation remains manual for genuine conflicts.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "C15",
+    "title": "P1: Admin handoff notes do not feed the caregiver handoff screen",
+    "report": "clinical-comprehensive.md",
+    "line": 103,
+    "status": "implemented",
+    "evidence": [
+      "src/components/caregiver/ShiftHandoffBoard.tsx",
+      "src/app/(caregiver)/handoff/page.tsx"
+    ],
+    "notes": "Caregiver handoff includes the same persisted shift_handoff_notes stream as office/nursing, with post and acknowledgement actions, while retaining prior shift_handoffs.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C16",
+    "title": "P1: Intake creation is multi-step without a resumable success boundary",
+    "report": "clinical-comprehensive.md",
+    "line": 109,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/admissions/new/page.tsx",
+      "src/app/api/admin/workflows/admission-cases/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Created resident identity survives partial intake failure. Case creation uses a stable request identity, exact payload hash and transaction lock; retries cannot create another resident/case or silently submit an existing draft.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C17",
+    "title": "P2: Admission stage and actual census activation are separate without a clear completion action",
+    "report": "clinical-comprehensive.md",
+    "line": 117,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/admissions/[id]/page.tsx",
+      "src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "A separate actual-arrival action validates current readiness and atomically activates resident census and bed occupancy. Bed-reserved transitions also hold the actual bed transactionally; intake creation only records a preference.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C18",
+    "title": "P1: Care plans can be reviewed but new/changed plans have no authoring continuation",
+    "report": "clinical-comprehensive.md",
+    "line": 125,
+    "status": "implemented",
+    "evidence": [
+      "src/components/care-plans/CarePlanAuthor.tsx",
+      "src/app/(admin)/residents/[id]/care-plan/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql",
+      "src/components/medications/clinical-authoring.test.tsx"
+    ],
+    "notes": "Structured care-plan authoring saves versioned needs/interventions for clinical review. Version selection preserves historical access; approval retires the prior active version before the unique active-plan constraint applies. Editor state is bound to resident/source version and frozen during persistence.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C19",
+    "title": "P1: Discharge reconciliation can be marked pharmacist-reviewed without medication reconciliation",
+    "report": "clinical-comprehensive.md",
+    "line": 131,
+    "status": "implemented",
+    "evidence": [
+      "src/components/discharge/DischargeMedicationReview.tsx",
+      "src/app/(admin)/admin/discharge/[id]/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Medication reconciliation captures current medications and explicit continue/change/stop decisions. Pharmacist evidence is recorded separately without impersonating the current operator; database completion requires evidence and complete decisions.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C20",
+    "title": "P1: Infection capture retries can duplicate a record and inflate outbreak counts",
+    "report": "clinical-comprehensive.md",
+    "line": 137,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/infection-control/new/page.tsx",
+      "src/lib/infection-control/outbreak-detection.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Surveillance saves navigate to its durable record even if evaluation fails. Outbreak detection serializes facility/group linkage and derives distinct case totals atomically; retries cannot inflate outbreaks.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C21",
+    "title": "P2: Infection and outbreak screens stop at viewing rather than closing the work",
+    "report": "clinical-comprehensive.md",
+    "line": 143,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/infection-control/[id]/page.tsx",
+      "src/app/(admin)/admin/infection-control/outbreaks/[id]/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Surveillance shows resident/symptom context and supports confirmation/resolution with evidence. Outbreak actions support ownership and signed completion; containment/closure requires clinical evidence and closure rejects unfinished cases/actions.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C22",
+    "title": "P2: Assessment saved can hide failure to update the resident's risk indicators",
+    "report": "clinical-comprehensive.md",
+    "line": 149,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx"
+    ],
+    "notes": "Assessment persistence and risk/care-plan follow-ups have separate outcomes. A saved assessment retains its follow-up context for retry without reinsertion; downstream query/update errors are surfaced.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C23",
+    "title": "P2: Vitals read errors look like no clinical data",
+    "report": "clinical-comprehensive.md",
+    "line": 155,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/residents/[id]/vitals/page.tsx"
+    ],
+    "notes": "Vital and alert sources expose independent unavailable states and retry, retaining loaded data instead of displaying false empty charts.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C24",
+    "title": "P2: A completed compliance scan displays stale zero summary counts",
+    "report": "clinical-comprehensive.md",
+    "line": 161,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/compliance-scan.ts"
+    ],
+    "notes": "Compliance scan returns the finalized persisted counts rather than the initially zeroed snapshot; execution comments now describe the actual server RPC.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C25",
+    "title": "P2: Compliance presets create the appearance of runnable rules without a real check",
+    "report": "clinical-comprehensive.md",
+    "line": 167,
+    "status": "mitigated",
+    "evidence": [
+      "src/app/(admin)/admin/compliance/rules/new/page.tsx"
+    ],
+    "notes": "Unconfigured presets are explicitly disabled configuration drafts; placeholder/comment-only queries cannot be enabled. A verified executable preset catalog is not delivered. The broad source descriptions (for example administrator accessibility and adequate care) lack measurable approved query definitions; custom configured checks remain available.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C26",
+    "title": "P1: Default V2 detail routes replace working clinical actions with placeholders",
+    "report": "clinical-comprehensive.md",
+    "line": 173,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "C27",
+    "title": "P1: Default V2 incident submission does not satisfy the incident table contract",
+    "report": "clinical-comprehensive.md",
+    "line": 179,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "C28",
+    "title": "P2: V2 forms say they do not persist while their handlers perform real writes",
+    "report": "clinical-comprehensive.md",
+    "line": 185,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "C29",
+    "title": "P1: Form1823 readiness ignores the recorded expiration and document evidence",
+    "report": "clinical-coverage-addendum.md",
+    "line": 16,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/admissions/form-1823-readiness.ts",
+      "src/lib/admissions/form-1823-readiness.test.ts",
+      "src/lib/workflows/workflow-events.ts",
+      "src/app/api/admin/workflows/admission-cases/[id]/form-1823/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Form1823 readiness fails closed on source errors and requires the latest received record, current validity, physician and evidence reference/physical-report verification. UI and arrival checks enforce the same meaning.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C30",
+    "title": "P1: Survey access can be shown as logged after its audit-log insertion fails",
+    "report": "clinical-coverage-addendum.md",
+    "line": 24,
+    "status": "implemented",
+    "evidence": [
+      "src/components/compliance/SurveyVisitSearchOverlay.tsx"
+    ],
+    "notes": "Survey access is marked logged only after acknowledged insertion. Failed logging remains explicit and chart retrieval can be retried.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C31",
+    "title": "P2: Survey binder evidence errors become reassuring zeros",
+    "report": "clinical-coverage-addendum.md",
+    "line": 32,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/office/survey-binder.ts",
+      "src/lib/office/survey-binder.test.ts",
+      "src/app/(admin)/admin/survey-binder/page.tsx"
+    ],
+    "notes": "Per-source binder evidence distinguishes null/unavailable from real zero, including survey-history availability. Manual readiness is named separately.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C32",
+    "title": "P1: Housekeeper dashboard has no real assignment or completion workflow",
+    "report": "clinical-coverage-addendum.md",
+    "line": 40,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/housekeeper/dashboard-brief.ts",
+      "src/app/(caregiver)/caregiver/housekeeper/page.tsx",
+      "src/lib/operations/auth.ts",
+      "src/app/api/admin/operations/tasks/route.ts"
+    ],
+    "notes": "Housekeeping reads real assigned/role-queue tasks for the selected facility and signed-in worker, with start/done/cannot-complete actions and personal hours. Empty assignments show a setup gap instead of 100% completion.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C33",
+    "title": "P1: Operations completion ignores the task's two-signature requirement",
+    "report": "clinical-coverage-addendum.md",
+    "line": 46,
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/operations/tasks/[id]/complete/route.ts",
+      "src/app/api/admin/operations/tasks/bulk-complete/route.ts",
+      "src/app/(admin)/admin/operations/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Dual-sign operations record the first signature as awaiting independent verification. Atomic completion and bulk outcomes distinguish pending verification; raw client writes cannot forge signatures or disable the requirement.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C34",
+    "title": "P2: Operations task failures are silent and repeated actions have no in-flight protection",
+    "report": "clinical-coverage-addendum.md",
+    "line": 54,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/operations/page.tsx",
+      "src/app/api/admin/operations/tasks/[id]/start/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Operation actions have in-flight protection and visible errors; start uses state-conditioned updates and completion is locked/idempotent.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C35",
+    "title": "P2: Asset-to-maintenance shortcut silently changes the service schedule",
+    "report": "clinical-coverage-addendum.md",
+    "line": 60,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/operations/assets/page.tsx",
+      "src/app/(admin)/admin/operations/templates/page.tsx"
+    ],
+    "notes": "Asset shortcut opens a populated schedule editor with the true source interval and explicit cadence selection. Existing schedules can be revised; shortcut duplicate creation is blocked without preventing intentional advanced schedules.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C36",
+    "title": "P2: Scheduler assigns recurring work by alphabetical staff selection rather than the shift roster",
+    "report": "clinical-coverage-addendum.md",
+    "line": 66,
+    "status": "implemented",
+    "evidence": [
+      "supabase/functions/oce-task-scheduler/index.ts",
+      "src/lib/operations/auth.ts",
+      "src/app/api/admin/operations/tasks/[id]/start/route.ts"
+    ],
+    "notes": "Recurring work remains in a qualified role queue until staff claim it, rather than being assigned alphabetically to potentially off-duty staff. Removed unnecessary profile/access-list scans. Automatic roster-based assignment is not claimed.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C37",
+    "title": "P2: Versioning a task template can leave both old and new schedules active after failure",
+    "report": "clinical-coverage-addendum.md",
+    "line": 72,
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/operations/templates/[id]/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Template publication locks the prior version and creates/retires versions atomically; competing publication returns a conflict instead of leaving two active versions.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "C38",
+    "title": "P2: Emergency checklist completion and maintenance completion can leave contradictory states",
+    "report": "clinical-coverage-addendum.md",
+    "line": 78,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx",
+      "src/app/(admin)/admin/compliance/emergency-preparedness/page.test.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Emergency evidence and next-due state commit together; stable requests support exact retries. Maintenance explicitly distinguishes partial work from ticket resolution and commits evidence/ticket status together.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "B-17",
+    "title": "Default Ledger and Trial Balance routes replace accounting with unrelated analytics",
+    "report": "business-comprehensive.md",
+    "line": 9,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "B-01",
+    "title": "Normal mobile time punches can reach payroll with blank hours",
+    "report": "business-comprehensive.md",
+    "line": 15,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/payroll/payroll-export-csv.ts",
+      "src/app/(admin)/payroll/[id]/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "src/lib/payroll/payroll-export-csv.test.ts"
+    ],
+    "notes": "Database computes actual hours on every punch write, invalidates approval on changed timestamps, rejects incomplete approval/import/export. Total-hours handoff works; regular/overtime split requires explicit payroll review. Existing pre-migration approved null-hour punches must be reopened/approved; no historical payroll was rewritten.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-02",
+    "title": "Saving a journal draft can destroy its previous lines",
+    "report": "business-comprehensive.md",
+    "line": 27,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/finance/journal-entries/new/page.tsx",
+      "src/app/(admin)/finance/journal-entries/[id]/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/tests/review_business_integrity.sql"
+    ],
+    "notes": "One invoker RPC validates scopes, locks draft, checks expected updated_at, updates header and soft-deletes/replaces lines in one transaction. Stable creation ID prevents duplicate creation; uncertain retries surface already-saved conflict. SQL rollback/history fixture passed on isolated PostgreSQL 17.9.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-03",
+    "title": "The public review reply can be older than the text the user just edited",
+    "report": "business-comprehensive.md",
+    "line": 35,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/reputation/page.tsx",
+      "src/app/api/reputation/replies/[id]/post-google/route.ts",
+      "src/app/api/reputation/replies/[id]/post-yelp/route.ts",
+      "src/lib/reputation/publish-visible-draft.test.ts"
+    ],
+    "notes": "Controlled visible draft with explicit Save, and post carries exact visible text plus expected stored draft. Endpoint saves conditionally before publishing that exact text. External publication/reconciliation remains untested; upstream success/local finalization failure is reported explicitly.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-04",
+    "title": "An expired driver's license passes when the medical card is current",
+    "report": "business-comprehensive.md",
+    "line": 41,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/transport/transport-request-validation.ts",
+      "src/lib/transport/transport-request-validation.test.ts",
+      "src/app/(admin)/transportation/requests/[id]/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql"
+    ],
+    "notes": "Required license is checked independently through appointment day; medical card does not substitute. Database trigger checks direct requests too. Category-specific medical-card requirements are not invented.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-05",
+    "title": "Staff \u201covertime risk\u201d is actually a certification/leave label",
+    "report": "business-comprehensive.md",
+    "line": 47,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/staff/load-staff.ts",
+      "src/components/staff/AdminStaffPageClient.tsx"
+    ],
+    "notes": "Removed fabricated overtime calculation and column. Recorded credentials and availability remain distinct.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-06",
+    "title": "Missing certification evidence is displayed as current",
+    "report": "business-comprehensive.md",
+    "line": 53,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/staff/load-staff.ts",
+      "src/lib/staff/business-review.test.ts",
+      "src/components/staff/AdminStaffPageClient.tsx"
+    ],
+    "notes": "Empty evidence is Not verified and included in attention count. Column explicitly covers recorded credentials, not completeness of every role requirement. Stable employment IDs preserve same-name staff and their linked records.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-07",
+    "title": "Multi-record training saves have unreliable rollback and misleading recovery",
+    "report": "business-comprehensive.md",
+    "line": 59,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/training/inservice/new/page.tsx",
+      "src/app/(admin)/training/completions/new/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/tests/review_business_integrity.sql"
+    ],
+    "notes": "Session + attendance + catalog completions save atomically. Completion attachment errors retain one stable completion ID, preserve uploaded evidence, explain saved state and allow attachment retry. Saved fields freeze during attachment recovery. Live storage policy/upload verification remains required.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-08",
+    "title": "Collections can report failure after the collection activity was saved",
+    "report": "business-comprehensive.md",
+    "line": 65,
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/workflows/collection-activities/route.ts",
+      "src/app/(admin)/billing/collections/new/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql"
+    ],
+    "notes": "Collection event is inserted by primary-row trigger in same transaction; stable request ID supports truthful identical retry and rejects mismatched payload reuse.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-09",
+    "title": "Payroll export silently relies on an unpaginated browser list",
+    "report": "business-comprehensive.md",
+    "line": 71,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/payroll/[id]/page.tsx",
+      "src/lib/supabase/read-all-pages.ts",
+      "src/lib/supabase/read-all-pages.test.ts",
+      "supabase/migrations/20260906140904_september_business_integrity.sql"
+    ],
+    "notes": "All import/source lists use reconciled exact-count pagination, advancing by actual page size. Each export fetches a fresh server JSON snapshot of all authorized batch lines, validates hours and includes row count in filename.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-10",
+    "title": "Invoice line-load failure does not stop invoice approval",
+    "report": "business-comprehensive.md",
+    "line": 77,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/vendors/invoices/[id]/page.tsx"
+    ],
+    "notes": "Line retrieval error is shown with Retry review; failed/loading review disables finalization and handler refuses it.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-11",
+    "title": "Changing journal entity retains hidden accounts and facility from the prior entity",
+    "report": "business-comprehensive.md",
+    "line": 83,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/finance/journal-entries/new/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/tests/review_business_integrity.sql"
+    ],
+    "notes": "Entity switch clears dependent accounts/facility/lines; transaction validates entity/account/facility scope; direct line writes also validate account/entity consistency.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-12",
+    "title": "\u201cNew schedule\u201d creates a container the user cannot populate or publish",
+    "report": "business-comprehensive.md",
+    "line": 91,
+    "status": "mitigated",
+    "evidence": [
+      "src/app/(admin)/schedules/[id]/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "docs/specs/11-staff-management.md",
+      "supabase/migrations/251_staffing_ratio_threshold_org_facility_seed.sql",
+      "supabase/functions/oce-staffing-adequacy-computer/index.ts"
+    ],
+    "notes": "Draft add/remove shift planning and exact export completed. COL ratios 1:6 awake/1:15 overnight, max60h/week and 8h rest are established and are not missing. Publishing still needs exact facility/shift RN-LPN minimums or approved exemptions; which staff job roles count toward care staffing ratios; and a mapping of required credential names to actual certification_type values and validity evidence. Native schema has no facility_ratio_rules table or nurse-minimum/required-cert mapping columns; OCE references that absent table; seed251 stores alert severity thresholds only. Original February2025 Employee Handbook and imported handbook draft confirm40h/supervisor-set shifts but no nurse coverage matrix. Drafts remain explicitly unpublished; no generic compliance disclaimer substitutes for these concrete inputs.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-13",
+    "title": "Swap approval changes a request label, not the working schedule",
+    "report": "business-comprehensive.md",
+    "line": 97,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/shift-swaps/page.tsx",
+      "src/app/(admin)/admin/approvals/page.tsx",
+      "src/app/(caregiver)/caregiver/shift-swaps/page.tsx",
+      "src/app/(caregiver)/caregiver/schedules/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql"
+    ],
+    "notes": "Both employees confirm as their own signed-in identities; manager records current credential/hours/rest/coverage review. Approval updates assignments atomically with actor and confirmation audit fields. Same-role/active/current recorded credentials and conservative adjacent-shift conflicts enforced. Full automatic facility policy validation is unavailable; manager review remains explicit. Browser real-role confirmation flow pending.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-14",
+    "title": "Dietary has two incompatible order contracts instead of one authoritative order",
+    "report": "business-comprehensive.md",
+    "line": 103,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/dietary/new/page.tsx",
+      "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
+      "src/components/dietary/AdminDietaryPageClient.tsx",
+      "src/lib/dietary/med-fluid-diet-hints.ts",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/tests/review_business_integrity.sql"
+    ],
+    "notes": "Admin writes numeric canonical IDDSI levels, explicit inactive draft and canonical allergies. Database synchronizes legacy aliases on writes; clinician-reviewed activation transaction supersedes prior order. Numeric labels and medication hints fixed. Existing contradictory historical order fields were not reclassified; clinical reconciliation before rollout is required.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-15",
+    "title": "Rolling cost-of-risk omits expired policies that covered part of the window",
+    "report": "business-comprehensive.md",
+    "line": 109,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/insurance/compute-tcor.ts",
+      "src/lib/insurance/compute-tcor.test.ts"
+    ],
+    "notes": "Rolling-window policy selection includes expired/cancelled historical coverage and explicitly remains a stated-premium proxy without proration.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-16",
+    "title": "Trust balances choose an arbitrary same-day entry and can omit quiet residents",
+    "report": "business-comprehensive.md",
+    "line": 115,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/finance/load-trust-data.ts",
+      "src/lib/supabase/read-all-pages.ts",
+      "src/lib/supabase/read-all-pages.test.ts"
+    ],
+    "notes": "Removed global history cap and paged trust/resident/invoice sources with exact count reconciliation. Latest entries sorted date, created_at and ID deterministically. Older finance trust ledger and newer office trust accounts remain separate data sources; migration between them is not claimed.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "B-18",
+    "title": "Cash/trust posting can leave the balance inconsistent with immutable transactions",
+    "report": "business-comprehensive.md",
+    "line": 123,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/cash/page.tsx",
+      "supabase/migrations/20260906140904_september_business_integrity.sql",
+      "supabase/tests/review_business_integrity.sql"
+    ],
+    "notes": "One idempotent command locks account; insert trigger calculates authoritative balance and updates account in same transaction. Rejects overdrafts, direct balance changes, cross-facility resident links and identity reuse with altered payload. Failure keeps stable request ID; no existing money records rewritten.",
+    "verification": "77 focused business tests passed (including six exact-text publication/failure/conflict tests); scoped ESLint passed with zero warnings; typecheck passed. All 324 then-current migrations replayed on isolated native PostgreSQL 17.9 (lead evidence). review_business_integrity.sql passed transactional rollback/history, cash idempotency/overdraft, punch hours, training rollback and diet contract checks. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending hosted deployment and real-role workflow validation; local SQL regression proof passed",
+    "lane": "business"
+  },
+  {
+    "id": "O01",
+    "title": "P1: Meeting actions labeled OCE-chased never become eligible for automatic chasing",
+    "report": "office-coverage-addendum.md",
+    "line": 18,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/meetings/[id]/page.tsx",
+      "src/lib/office/meetings.ts",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql",
+      "src/app/api/admin/meetings/[id]/actions/route.ts",
+      "src/app/api/admin/meetings/[id]/actions/route.test.ts"
+    ],
+    "notes": "Meeting actions have explicit end-of-due-day Eastern deadlines, eligible for existing scanner fallback behavior. The UI labels the real operations task linkage; scanner/provider delivery is an external operational check and was not executed. Final integration moves browser creation through a strict authenticated service route and service-only atomic command; active manager/org/facility/assignee scope is rechecked in SQL. Direct browser execution and caller actor injection are denied.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed. Three service-route regressions pass; native service-role command succeeds for a scoped manager and denies an unscoped manager/caregiver role. Updated office rollback fixture passed after OCE grants were restricted.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O02",
+    "title": "P1: Meeting/OCE state can diverge or orphan tasks",
+    "report": "office-coverage-addendum.md",
+    "line": 22,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/meetings/[id]/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql",
+      "src/app/api/admin/meetings/[id]/actions/route.ts",
+      "src/app/api/admin/meetings/[id]/actions/route.test.ts"
+    ],
+    "notes": "One stable action identity creates OCE task and meeting action atomically. Private trigger synchronizes status in either direction, scoped to linked organization/facility. Fault injection proves no orphan task remains. Final integration moves browser creation through a strict authenticated service route and service-only atomic command; active manager/org/facility/assignee scope is rechecked in SQL. Direct browser execution and caller actor injection are denied.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed. Three service-route regressions pass; native service-role command succeeds for a scoped manager and denies an unscoped manager/caregiver role. Updated office rollback fixture passed after OCE grants were restricted.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O03",
+    "title": "P1: Adding an action or changing status can erase unsaved meeting minutes",
+    "report": "office-coverage-addendum.md",
+    "line": 26,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/meetings/[id]/page.tsx"
+    ],
+    "notes": "Minutes hydrate only on meeting identity change; related action/status reloads preserve editor text. Saving checks the original minute value and rejects concurrent edits while retaining the draft; visible unsaved/saving/saved state added. Browser interaction UAT remains pending.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O04",
+    "title": "P1: Policy acknowledgment assigns floor roles work they cannot reach in this flow",
+    "report": "office-coverage-addendum.md",
+    "line": 30,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/acknowledgments/my/page.tsx",
+      "src/app/(caregiver)/caregiver/acknowledgments/page.tsx",
+      "src/app/(med-tech)/med-tech/acknowledgments/page.tsx",
+      "src/app/(dietary)/dietary/acknowledgments/page.tsx",
+      "src/lib/auth/caregiver-route-access.ts",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Existing required-reading contract is reachable in each floor role shell without admin routes. Issued content is snapshotted, role scope immutable, and signatures store the issued version and server-derived signer identity. Native authenticated caregiver reads/signs exact content; cannot read another owner file or forge role. Older requirements lack issuance snapshots and must be reissued, without rewriting prior signatures.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O05",
+    "title": "P2: Acknowledgment outstanding counts can include staff outside the selected facility",
+    "report": "office-coverage-addendum.md",
+    "line": 36,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/acknowledgments/page.tsx",
+      "src/lib/supabase/read-all-pages.ts"
+    ],
+    "notes": "Eligible profile query is restricted to complete selected-facility unrevoked user_facility_access membership before outstanding calculation. Active-role and existing signature checks retained.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O06",
+    "title": "P2: Core office modules are absent from the page finder advertised as all sections",
+    "report": "office-coverage-addendum.md",
+    "line": 40,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified.",
+    "lane": "root"
+  },
+  {
+    "id": "O07",
+    "title": "P1: Drive migration complete can mean bookmark creation or skipping, without content migration evidence",
+    "report": "office-coverage-addendum.md",
+    "line": 44,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/office/drive-cutover.ts",
+      "src/lib/office/review-regressions.test.ts",
+      "src/lib/office/drive-cutover.test.ts",
+      "src/app/(admin)/admin/drive-cutover/page.tsx"
+    ],
+    "notes": "Bookmarks and skipped files no longer establish migrated content. Complete counted pagination replaces capped inventories; UI separates bookmarks, content not verified and Drive-setting attestation. Attestation requires actual read-only date and does not claim Haven is sole system of record. Real content copying/verification remains an external migration requirement, not an implemented importer capability.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O08",
+    "title": "P2: Team creation and first-lead membership can partially succeed without error",
+    "report": "office-coverage-addendum.md",
+    "line": 50,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/teams/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Team and first-lead membership use one idempotent transactional command. Failure injection verifies no orphan space; failed saves preserve form.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O09",
+    "title": "P2: Workspace save uses separate version and page writes",
+    "report": "office-coverage-addendum.md",
+    "line": 54,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/workspace/[id]/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Owner-only expected-version RPC atomically writes history and current page. Native stale version and failure injection checks preserve prior state and prevent orphan version.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O10",
+    "title": "P2: Master calendar excludes late-evening meetings on its ending date",
+    "report": "office-coverage-addendum.md",
+    "line": 58,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/office/master-calendar.ts",
+      "src/lib/office/review-regressions.test.ts"
+    ],
+    "notes": "Timestamp sources use Eastern start and end instants via shared wall-clock conversion. Tests include late evening and 25-hour DST day; date-only predicates unchanged.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "O11",
+    "title": "P2: File Delete removes the stored bytes immediately, without an undo path",
+    "report": "office-coverage-addendum.md",
+    "line": 62,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/files/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Move to Trash soft-deletes metadata without deleting bytes; owner-only Trash view and Restore preserve reversibility. Native authenticated owner restore and other-user denial pass. Permanent disposition awaits approved retention process; no retention duration invented.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed",
+    "lane": "office"
+  },
+  {
+    "id": "I-01",
+    "title": "Saving one vital erases other previously recorded vitals",
+    "report": "implementation-initial.md",
+    "line": 7,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/clinical-writes.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Duplicate of C11: partial vital entries preserve earlier values and individual timestamped measurements.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "I-02",
+    "title": "Failed vital alert checks disappear immediately",
+    "report": "implementation-initial.md",
+    "line": 15,
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/resident/[id]/log/page.tsx"
+    ],
+    "notes": "Vitals-save acknowledgement and alert-evaluation failure are separate. Saved observations retain an alert-check unavailable message with retry until evaluation succeeds.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "I-03",
+    "title": "Concurrent quick notes can overwrite one another",
+    "report": "implementation-initial.md",
+    "line": 23,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/clinical-writes.ts",
+      "src/app/(caregiver)/resident/[id]/page.tsx",
+      "src/app/(caregiver)/resident/[id]/log/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Both quick-note entry points use one atomic database append operation instead of browser read/merge/replace.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "I-04",
+    "title": "\u201cCurrent facility\u201d for floor work is selected arbitrarily",
+    "report": "implementation-initial.md",
+    "line": 31,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/facility-context.ts",
+      "src/lib/caregiver/facility-context.test.ts",
+      "src/components/caregiver/WorkingFacilitySelector.tsx",
+      "src/components/layout/CaregiverShell.tsx",
+      "src/app/(caregiver)/clock/page.tsx"
+    ],
+    "notes": "Per-user working-facility selection is re-authorized against live grants, synchronized with shared facility state, and shown persistently. Auto-selection occurs only for one authorized facility. Roster, incidents, resident care and clock share it.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  },
+  {
+    "id": "I-05",
+    "title": "Compliance overdue-assessment count depends on a truncated history sample",
+    "report": "implementation-initial.md",
+    "line": 37,
+    "status": "implemented",
+    "evidence": [
+      "src/lib/compliance-dashboard-snapshot.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "RLS-preserving latest-per-resident/type aggregate counts assessments server-side, eliminating API history-cap truncation.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed",
+    "lane": "clinical"
+  }
+]

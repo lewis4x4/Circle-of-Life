@@ -11,7 +11,7 @@ import type { Database } from "@/types/database";
 export type TcorSnapshot = {
   periodStart: string;
   periodEnd: string;
-  /** Sum of policy premium_cents for policies overlapping the period (active/draft/pending_renewal excluded if expired). */
+  /** Sum of policy premium_cents for policies overlapping the period (including expired historical coverage; stated premiums, not prorated). */
   premiumsCents: number;
   /** Sum of (paid_cents + reserve_cents) for claims in the loss window. */
   incurredLossesCents: number;
@@ -48,7 +48,7 @@ export async function computeTotalCostOfRisk(
     .select("id, premium_cents, effective_date, expiration_date, status")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .in("status", ["active", "pending_renewal"])
+    .in("status", ["active", "pending_renewal", "expired", "cancelled"])
     .lte("effective_date", periodEnd)
     .gte("expiration_date", periodStart);
 

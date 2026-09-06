@@ -19,7 +19,7 @@ export function Cockpit() {
   const [activeResident, setActiveResident] = useState<ResidentItem | null>(null);
   const [incidentOpen, setIncidentOpen]     = useState(false);
 
-  const { userId, shift, passes, residents, tape, shiftId, loading, error } = useShiftCurrent();
+  const { userId, shift, passes, residents, tape, shiftId, loading, error, refresh } = useShiftCurrent();
 
   if (loading) {
     return (
@@ -100,7 +100,7 @@ export function Cockpit() {
 
       {/* Med pass modal */}
       {activePass && (
-        <MedPassModal pass={activePass} onClose={() => setActivePass(null)} />
+        <MedPassModal pass={activePass} onClose={() => setActivePass(null)} onSaved={() => void refresh()} />
       )}
 
       {/* Resident chart drawer */}

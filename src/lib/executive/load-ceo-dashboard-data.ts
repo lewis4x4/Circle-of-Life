@@ -12,6 +12,7 @@ export type CeoAlertDisplay = {
   description: string;
   facility: string;
   age: string;
+  href?: string;
 };
 
 export type CeoDashboardData = {
@@ -63,6 +64,7 @@ export async function loadCeoDashboardData(
     kpis: orgKpi,
     alerts: alerts.map((alert) => ({
       id: alert.id,
+      href: alert.deep_link_path?.startsWith("/") && !alert.deep_link_path.startsWith("//") ? alert.deep_link_path : "/admin/executive/alerts",
       severity: normalizeSeverity(alert.severity),
       title: alert.title,
       description: alert.body ?? "",

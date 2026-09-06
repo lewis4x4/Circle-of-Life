@@ -31,7 +31,7 @@ const SECONDARY = [
   { href: "/admin/reports/saved", label: "Saved" },
   { href: "/admin/reports/admin", label: "Governance" },
   { href: "/admin/reports/benchmarks", label: "Benchmarks" },
-  { href: "/admin/reports/nlq", label: "Haven Insight" },
+  { href: "/admin/reports/nlq", label: "Find a report" },
 ] as const;
 
 function overviewActive(pathname: string) {
@@ -91,7 +91,7 @@ export function ReportsHubNav() {
   return (
     <>
       <nav
-        role="tablist"
+
         aria-label="Reports sections"
         className={cn(
           "hidden md:inline-flex h-9 items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-1",
@@ -106,10 +106,9 @@ export function ReportsHubNav() {
             <Link
               key={item.href}
               href={item.href}
-              role="tab"
-              aria-selected={active}
+
               aria-current={active ? "page" : undefined}
-              tabIndex={active ? 0 : -1}
+              tabIndex={0}
               data-state={active ? "active" : "inactive"}
               className={cn(
                 "inline-flex h-7 items-center rounded-md px-3 text-[12px] font-medium",

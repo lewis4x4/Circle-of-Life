@@ -111,6 +111,7 @@ export default function AdminReputationHubPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [draftBodies, setDraftBodies] = useState<Record<string, string>>({});
   const [postingGoogleId, setPostingGoogleId] = useState<string | null>(null);
   const [postingYelpId, setPostingYelpId] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -232,6 +233,7 @@ export default function AdminReputationHubPage() {
   }
 
   async function saveDraftReplyBody(id: string, reply_body: string) {
+    setUpdatingId(id);
     setActionError(null);
     try {
       // Identity from the app-wide auth provider (no per-call getUser round-trip).
@@ -240,19 +242,25 @@ export default function AdminReputationHubPage() {
         .from("reputation_replies")
         .update({ reply_body, updated_by: user.id })
         .eq("id", id)
-        .eq("status", "draft");
+        .eq("status", "draft")
+        .eq("reply_body", replies.find((row) => row.id === id)?.reply_body ?? "")
+        .select("id").single();
       if (uErr) throw uErr;
       await load();
+      return true;
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Could not save draft.");
-    }
+      return false;
+    } finally { setUpdatingId(null); }
   }
 
   async function postReplyToGoogle(id: string) {
     setPostingGoogleId(id);
     setActionError(null);
     try {
-      const res = await fetch(`/api/reputation/replies/${id}/post-google`, { method: "POST" });
+      const row = replies.find((reply) => reply.id === id);
+      if (!row) throw new Error("Reply unavailable. Reload before posting.");
+      const res = await fetch(`/api/reputation/replies/${id}/post-google`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reply_body: draftBodies[id] ?? row.reply_body, expected_reply_body: row.reply_body }) });
       const j = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(j.error ?? "Could not post to Google");
@@ -269,7 +277,9 @@ export default function AdminReputationHubPage() {
     setPostingYelpId(id);
     setActionError(null);
     try {
-      const res = await fetch(`/api/reputation/replies/${id}/post-yelp`, { method: "POST" });
+      const row = replies.find((reply) => reply.id === id);
+      if (!row) throw new Error("Reply unavailable. Reload before posting.");
+      const res = await fetch(`/api/reputation/replies/${id}/post-yelp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reply_body: draftBodies[id] ?? row.reply_body, expected_reply_body: row.reply_body }) });
       const j = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(j.error ?? "Could not post to Yelp");
@@ -286,6 +296,9 @@ export default function AdminReputationHubPage() {
     setUpdatingId(id);
     setActionError(null);
     try {
+      const visibleBody = draftBodies[id] ?? replies.find((row) => row.id === id)?.reply_body ?? "";
+      if (!(await saveDraftReplyBody(id, visibleBody))) return;
+      setUpdatingId(id);
       // Identity from the app-wide auth provider (no per-call getUser round-trip).
       if (!user) throw new Error("Sign in required.");
       const { error: uErr } = await supabase
@@ -296,7 +309,7 @@ export default function AdminReputationHubPage() {
           posted_to_platform_at: new Date().toISOString(),
           updated_by: user.id,
         })
-        .eq("id", id);
+        .eq("id", id).eq("status", "draft").eq("reply_body", visibleBody).select("id").single();
       if (uErr) throw uErr;
       await load();
     } catch (e) {
@@ -488,19 +501,17 @@ export default function AdminReputationHubPage() {
                       <textarea
                         id={`draft-reply-${row.id}`}
                         className="w-full min-h-[88px] rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        defaultValue={row.reply_body}
+                        value={draftBodies[row.id] ?? row.reply_body}
                         disabled={
                           postingGoogleId === row.id ||
                           postingYelpId === row.id ||
                           updatingId === row.id
                         }
-                        onBlur={(e) => {
-                          const v = e.target.value;
-                          if (v !== row.reply_body) void saveDraftReplyBody(row.id, v);
-                        }}
+                        onChange={(e) => setDraftBodies((previous) => ({ ...previous, [row.id]: e.target.value }))}
                       />
                     </div>
                     <div className="flex flex-wrap justify-start gap-2">
+                        <Button type="button" variant="outline" size="sm" disabled={updatingId === row.id || postingGoogleId === row.id || postingYelpId === row.id} onClick={() => void saveDraftReplyBody(row.id, draftBodies[row.id] ?? row.reply_body)}>Save draft</Button>
                         {row.reputation_accounts?.platform === "google_business" && row.external_review_id ? (
                           <button
                             type="button"
@@ -509,12 +520,12 @@ export default function AdminReputationHubPage() {
                               "bg-primary-600 hover:bg-primary-700 text-white font-mono uppercase tracking-wider text-[10px]",
                             )}
                             disabled={
-                              postingGoogleId === row.id ||
-                              row.reply_body.trim() === GOOGLE_IMPORTED_REPLY_PLACEHOLDER ||
-                              !row.reply_body.trim()
+                              postingGoogleId === row.id || updatingId === row.id ||
+                              (draftBodies[row.id] ?? row.reply_body).trim() === GOOGLE_IMPORTED_REPLY_PLACEHOLDER ||
+                              !(draftBodies[row.id] ?? row.reply_body).trim()
                             }
                             title={
-                              row.reply_body.trim() === GOOGLE_IMPORTED_REPLY_PLACEHOLDER
+                              (draftBodies[row.id] ?? row.reply_body).trim() === GOOGLE_IMPORTED_REPLY_PLACEHOLDER
                                 ? "Replace the imported placeholder text before posting to Google."
                                 : undefined
                             }
@@ -531,12 +542,12 @@ export default function AdminReputationHubPage() {
                               "bg-destructive hover:bg-destructive/90 text-destructive-foreground font-mono uppercase tracking-wider text-[10px]",
                             )}
                             disabled={
-                              postingYelpId === row.id ||
-                              row.reply_body.trim() === YELP_IMPORTED_REPLY_PLACEHOLDER ||
-                              !row.reply_body.trim()
+                              postingYelpId === row.id || updatingId === row.id ||
+                              (draftBodies[row.id] ?? row.reply_body).trim() === YELP_IMPORTED_REPLY_PLACEHOLDER ||
+                              !(draftBodies[row.id] ?? row.reply_body).trim()
                             }
                             title={
-                              row.reply_body.trim() === YELP_IMPORTED_REPLY_PLACEHOLDER
+                              (draftBodies[row.id] ?? row.reply_body).trim() === YELP_IMPORTED_REPLY_PLACEHOLDER
                                 ? "Replace the imported placeholder text before posting to Yelp."
                                 : undefined
                             }

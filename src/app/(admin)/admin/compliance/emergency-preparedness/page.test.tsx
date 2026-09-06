@@ -13,7 +13,7 @@ describe("emergency preparedness facility dates", () => {
 
   it("calculates checklist next-due dates on the facility calendar", () => {
     expect(pageSource).toContain(
-      "addFacilityCalendarDays(todayFacilityDateIso(), item.frequency_days)",
+      "complete_emergency_checklist_review",
     );
     expect(pageSource).toContain(
       "addFacilityCalendarDays(todayFacilityDateIso(), newItemDialog.frequency)",

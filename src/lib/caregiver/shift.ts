@@ -3,8 +3,7 @@ import type { Database } from "@/types/database";
 export type ShiftType = Database["public"]["Enums"]["shift_type"];
 
 /** Infer facility-local shift bucket from wall clock (spec-aligned with admin dashboard). */
-export function currentShiftForTimezone(timeZone: string): ShiftType {
-  const now = new Date();
+export function currentShiftForTimezone(timeZone: string, now: Date = new Date()): ShiftType {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     hour: "numeric",

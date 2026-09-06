@@ -32,7 +32,7 @@ describe("<FilterBar />", () => {
     mockSearch = "";
   });
 
-  it("renders default state with Reset and Save view buttons", () => {
+  it("does not offer saving without a persistence handler", () => {
     render(
       <FilterBar
         dashboardId="/admin"
@@ -44,7 +44,7 @@ describe("<FilterBar />", () => {
 
     expect(screen.getByRole("toolbar", { name: /filter bar/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reset/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /save view/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /save view/i })).toBeNull();
     expect(screen.getByText(/no filters active/i)).toBeInTheDocument();
   });
 
@@ -80,15 +80,16 @@ describe("<FilterBar />", () => {
     }
   });
 
-  it("stubbed save-view logs and transitions to Saved label", async () => {
+  it("waits for the supplied persistence handler before claiming Saved", async () => {
     const user = userEvent.setup();
-    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    const persist = vi.fn().mockResolvedValue(undefined);
 
     render(
       <FilterBar
         dashboardId="/admin"
         facilities={facilities}
         scopeOverride={{ facilityIds: ["f1"] }}
+        onSaveView={persist}
         onScopeChange={vi.fn()}
       />,
     );
@@ -96,12 +97,7 @@ describe("<FilterBar />", () => {
     const saveBtn = screen.getByRole("button", { name: /save view/i });
     await user.click(saveBtn);
     await screen.findByRole("button", { name: /^saved$/i });
-    expect(infoSpy).toHaveBeenCalledWith(
-      "[ui-v2-s3] stubbed save-view",
-      expect.objectContaining({ success: true }),
-    );
-
-    infoSpy.mockRestore();
+    expect(persist).toHaveBeenCalledWith(expect.objectContaining({ scope: { facilityIds: ["f1"] } }));
   });
 
   it("Reset clears facility scope and status selections via callbacks", async () => {

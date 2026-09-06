@@ -23,6 +23,8 @@ type AuthAdminSnapshot = {
   id: string;
   email: string;
   last_sign_in_at: string | null;
+  app_role: string | null;
+  banned_until: string | null;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -103,7 +105,7 @@ export async function adminFindUserByEmail(email: string): Promise<AuthAdminLook
 async function adminListAuthUsers() {
   const supabase = createServiceRoleClient();
   let page = 1;
-  const users: Array<{ id: string; email?: string | null; last_sign_in_at?: string | null }> = [];
+  const users: Array<{ id: string; email?: string | null; last_sign_in_at?: string | null; app_metadata?: Record<string, unknown>; banned_until?: string | null }> = [];
 
   while (true) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
@@ -137,6 +139,8 @@ export async function adminGetAuthSnapshotsByIds(
       id: user.id,
       email: user.email ?? "",
       last_sign_in_at: user.last_sign_in_at ?? null,
+      app_role: typeof user.app_metadata?.app_role === "string" ? user.app_metadata.app_role : null,
+      banned_until: user.banned_until ?? null,
     };
     return acc;
   }, {});

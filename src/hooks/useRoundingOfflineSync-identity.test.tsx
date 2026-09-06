@@ -1,0 +1,25 @@
+import {act,renderHook,waitFor} from "@testing-library/react";
+import {expect,it,vi} from "vitest";
+const mocks=vi.hoisted(()=>({request:vi.fn(),auth:vi.fn()}));
+vi.mock("@/lib/pwa/rounding-sync",()=>({requestRoundingSyncState:mocks.request,flushQueuedRounds:mocks.request,subscribeToRoundingSyncState:()=>()=>{},supportsRoundingOfflineSync:()=>true}));
+vi.mock("@/lib/supabase/client",()=>({createClient:()=>({auth:{onAuthStateChange:mocks.auth}})}));
+import {useRoundingOfflineSync} from "./useRoundingOfflineSync";
+it("clears displayed Outbox on sign-out and ignores the old operator's pending response",async()=>{
+ let authChanged!:(_event:string,session:unknown)=>void;
+ mocks.auth.mockImplementation(callback=>{authChanged=callback;return {data:{subscription:{unsubscribe:vi.fn()}}};});
+ const state={pendingCount:1,queuedTaskIds:["old-task"],isSyncing:false,lastSyncedAt:null,lastError:null,online:true,supported:true,items:[{id:"old-observation"}]};
+ mocks.request.mockResolvedValue(state);
+ const {result,unmount}=renderHook(()=>useRoundingOfflineSync());
+ await waitFor(()=>expect(result.current.pendingCount).toBe(1));
+ expect(authChanged).toBeTypeOf("function");
+ let release!:(value:unknown)=>void;
+ mocks.request.mockImplementationOnce(()=>new Promise(resolve=>{release=resolve;}));
+ let pending!:ReturnType<typeof result.current.refresh>;
+ act(()=>{pending=result.current.refresh();});
+ act(()=>authChanged("SIGNED_OUT",null));
+ expect(result.current.pendingCount).toBe(0);
+ await act(async()=>{release(state);await pending;});
+ expect(result.current.pendingCount).toBe(0);
+ expect(result.current.items).toBeUndefined();
+ unmount();
+});

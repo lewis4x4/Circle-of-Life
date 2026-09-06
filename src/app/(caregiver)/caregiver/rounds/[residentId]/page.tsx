@@ -39,6 +39,7 @@ export default function CaregiverResidentRoundPage() {
   const residentId = params?.residentId ?? "";
   const taskIdFromQuery = searchParams.get("taskId");
 
+  const [queueOwner, setQueueOwner] = useState<{ ownerUserId: string; organizationId: string; facilityId: string } | null>(null);
   const [facilityId, setFacilityId] = useState<string | null>(null);
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [residentName, setResidentName] = useState("Resident");
@@ -65,6 +66,9 @@ export default function CaregiverResidentRoundPage() {
         throw new Error(resolved.error);
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sign in to record observations.");
+      setQueueOwner({ ownerUserId: user.id, organizationId: resolved.ctx.organizationId, facilityId: resolved.ctx.facilityId });
       setFacilityId(resolved.ctx.facilityId);
       setFacilityName(resolved.ctx.facilityName);
       const response = await fetch(
@@ -101,12 +105,13 @@ export default function CaregiverResidentRoundPage() {
   }, [load]);
 
   async function submitRound(payload: CompletionPayload) {
-    if (!task) return;
+    if (!task || !queueOwner) return;
+    payload = { ...payload, observedAt: payload.observedAt ?? new Date().toISOString() };
     setSubmitting(true);
     setLoadError(null);
     try {
       if (!navigator.onLine) {
-        await queueRoundingCompletion(task.id, residentId, payload);
+        await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
         setSuccessMessage("Round queued for sync. It will upload automatically when the device reconnects.");
         setTask(null);
         return;
@@ -119,9 +124,8 @@ export default function CaregiverResidentRoundPage() {
       });
       const json = (await response.json()) as { error?: string };
       if (response.status === 409) {
-        setSuccessMessage("Task already completed. Queue state refreshed.");
-        await roundingSync.refresh();
-        await load();
+        await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
+        setLoadError("This task was completed elsewhere. Your observation is retained in the Outbox for reconciliation.");
         return;
       }
       if (!response.ok) {
@@ -131,9 +135,13 @@ export default function CaregiverResidentRoundPage() {
       await load();
     } catch (error) {
       if (shouldQueueRoundingRequest(error)) {
-        await queueRoundingCompletion(task.id, residentId, payload);
-        setSuccessMessage("Connection lost. Round queued for sync and will upload automatically.");
-        setTask(null);
+        try {
+          await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
+          setSuccessMessage("Connection lost. Round queued for sync and will upload automatically.");
+          setTask(null);
+        } catch (queueError) {
+          setLoadError(queueError instanceof Error ? queueError.message : "Could not preserve the observation in the Outbox. Keep this draft open.");
+        }
       } else {
         setLoadError(error instanceof Error ? error.message : "Could not complete round.");
       }

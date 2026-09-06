@@ -70,7 +70,7 @@ function walkTsxFiles(dir: string, out: string[] = []): string[] {
     }
     if (st.isDirectory()) {
       walkTsxFiles(full, out);
-    } else if (name.endsWith(".tsx") || name.endsWith(".jsx")) {
+    } else if ((name.endsWith(".tsx") || name.endsWith(".jsx")) && !/\.(test|spec)\.[jt]sx$/.test(name)) {
       out.push(full);
     }
   }

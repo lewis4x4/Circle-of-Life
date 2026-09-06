@@ -54,6 +54,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import type { DashboardConfig } from "@/lib/auth/dashboard-routing";
 
 export type PillarId =
   | "command"
@@ -61,6 +62,7 @@ export type PillarId =
   | "clinical"
   | "quality"
   | "workforce"
+  | "finance"
   | "knowledge";
 
 export type PillarItem = {
@@ -90,7 +92,7 @@ export const PILLARS: Pillar[] = [
     label: "Command",
     icon: Zap,
     items: [
-      { key: "owner-home", href: "/admin", label: "Owner home", icon: Home },
+      { key: "owner-home", href: "/admin", label: "Home", icon: Home },
       { key: "executive", href: "/admin/executive", label: "Executive", icon: LineChart },
       { key: "reports", href: "/admin/reports", label: "Reports hub", icon: FileText },
       { key: "facilities", href: "/admin/facilities", label: "Facilities", icon: Hotel },
@@ -152,6 +154,16 @@ export const PILLARS: Pillar[] = [
     ],
   },
   {
+    id: "finance",
+    label: "Business",
+    icon: Landmark,
+    items: [
+      { key: "finance", href: "/admin/finance", label: "Finance", icon: Landmark },
+      { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
+      { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
+    ],
+  },
+  {
     id: "knowledge",
     label: "Knowledge",
     icon: BrainCircuit,
@@ -171,9 +183,22 @@ export const PILLARS: Pillar[] = [
 export const AUXILIARY_ROUTES: PillarItem[] = [
   { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
   { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie },
-  { key: "finance", href: "/admin/finance", label: "Finance hub", icon: Landmark },
-  { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
-  { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
+  { key: "meetings", href: "/admin/meetings", label: "Meetings", icon: Users },
+  { key: "policies", href: "/admin/compliance/policies", label: "Policies", icon: BookOpen },
+  { key: "teams", href: "/admin/teams", label: "Teams", icon: Users },
+  { key: "calendar", href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
+  { key: "files", href: "/admin/files", label: "Files", icon: FileText },
+  { key: "workspace", href: "/admin/workspace", label: "Workspace", icon: BookOpen },
+  { key: "front-desk", href: "/admin/front-desk", label: "Front desk", icon: Home },
+  { key: "letters", href: "/admin/letters", label: "Letters", icon: FileText },
+  { key: "contacts", href: "/admin/contacts", label: "Contacts", icon: Users },
+  { key: "acknowledgments", href: "/admin/acknowledgments", label: "Required reading administration", icon: BookOpen },
+  { key: "kanban", href: "/admin/kanban", label: "Team tasks", icon: ClipboardList },
+  { key: "cash", href: "/admin/cash", label: "Cash & trust accounts", icon: Banknote },
+  { key: "forms", href: "/admin/forms", label: "Forms", icon: FileText },
+  { key: "drive-import", href: "/admin/drive-import", label: "Drive inventory & bookmarks", icon: FileText },
+  { key: "drive-cutover", href: "/admin/drive-cutover", label: "Drive transition readiness", icon: ClipboardCheck },
+  { key: "briefing", href: "/admin/briefing", label: "Daily briefing", icon: FileText },
   { key: "users", href: "/admin/settings/users", label: "User management", icon: Users },
   { key: "settings-notifications", href: "/admin/settings/notifications", label: "Notification settings", icon: Settings },
   { key: "pilot-feedback", href: "/admin/feedback", label: "Pilot feedback", icon: MessageSquare },
@@ -234,7 +259,7 @@ export type SectionJumpEntry = PillarItem & {
 };
 
 /** All jump-list destinations (pillar items + auxiliary routes). */
-export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
+export function allSectionJumpEntries(pillars: Pillar[] = PILLARS, auxiliary: PillarItem[] = AUXILIARY_ROUTES): SectionJumpEntry[] {
   const pillarEntries = pillars.flatMap((pillar) =>
     pillar.items.map((item) => ({
       ...item,
@@ -242,7 +267,7 @@ export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpE
       group: "pillar" as const,
     })),
   );
-  const auxiliaryEntries = AUXILIARY_ROUTES.map((item) => ({
+  const auxiliaryEntries = auxiliary.map((item) => ({
     ...item,
     group: "auxiliary" as const,
   }));
@@ -250,8 +275,8 @@ export function allSectionJumpEntries(pillars: Pillar[] = PILLARS): SectionJumpE
 }
 
 /** Quick links shown before the operator types in the all-sections jump list. */
-export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS): SectionJumpEntry[] {
-  const byKey = new Map(allSectionJumpEntries(pillars).map((entry) => [entry.key, entry]));
+export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS, auxiliary: PillarItem[] = AUXILIARY_ROUTES): SectionJumpEntry[] {
+  const byKey = new Map(allSectionJumpEntries(pillars, auxiliary).map((entry) => [entry.key, entry]));
   return SECTION_JUMP_QUICK_KEYS.map((key) => byKey.get(key))
     .filter((entry): entry is SectionJumpEntry => entry != null)
     .map((entry) => {
@@ -261,3 +286,12 @@ export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS): SectionJum
 }
 
 export const PILLAR_ITEM_CAP = 9;
+
+export function pillarsForRole(config: DashboardConfig): Pillar[] {
+  const groups = new Set(config.visibleGroups.map((group) =>
+    group === "Clinical Ops" ? "clinical" : group === "Quality & Risk" ? "quality" : group.toLowerCase()));
+  const keys = config.visibleItemKeys ? new Set(config.visibleItemKeys) : null;
+  return PILLARS.filter((pillar) => groups.has(pillar.id))
+    .map((pillar) => ({ ...pillar, items: pillar.items.filter((item) => !keys || keys.has(item.key) || (item.key === "clinical-desk" && keys.has("assessments"))) }))
+    .filter((pillar) => pillar.items.length > 0);
+}

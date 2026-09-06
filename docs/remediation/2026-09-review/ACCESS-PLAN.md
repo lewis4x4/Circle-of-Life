@@ -1,0 +1,3 @@
+# Access lane cleanup plan
+
+Protect existing allowed admission edits, facility-scoped staff lookup, two-person count entry, and Grace create/undo. Add behavioral regressions before implementation. Replace boundary violations in this order: bounded admission fields and existence lookup; isolated witness authentication plus database signature guard; profile/grant direct-write guards; truthful identity synchronization; transactional Grace action receipts and facility/version-constrained undo. Preserve existing API hierarchy and audit conventions. No hosted mutation or new dependencies. Verify targeted tests, lint, typecheck and local SQL when available; record deployment gaps explicitly.

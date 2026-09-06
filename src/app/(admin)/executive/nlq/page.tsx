@@ -7,6 +7,7 @@
  * and get AI-powered answers from Haven data.
  */
 
+import { normalizeInsightCitations as normalizeCitations } from "@/lib/haven-insight/citations";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
@@ -117,28 +118,6 @@ function formatErrorMessage(err: unknown): string {
   return "I couldn't process that question right now. Please try again or rephrase.";
 }
 
-function normalizeCitations(citations: unknown): NlqMessage["citations"] {
-  if (!Array.isArray(citations)) return undefined;
-
-  type NlqCitation = NonNullable<NlqMessage["citations"]>[number];
-  const normalized = citations.flatMap((citation): NlqCitation[] => {
-    if (!citation || typeof citation !== "object") return [];
-    const record = citation as Record<string, unknown>;
-    const label = typeof record.label === "string" ? record.label : "";
-    if (!label) return [];
-
-    const rawKind = record.kind;
-    const kind: NlqCitation["kind"] = rawKind === "facility" || rawKind === "report" || rawKind === "kb" || rawKind === "metric" ? rawKind : undefined;
-    return [{
-      label,
-      href: typeof record.href === "string" ? record.href : undefined,
-      facility_id: typeof record.facility_id === "string" ? record.facility_id : undefined,
-      kind,
-    }];
-  });
-
-  return normalized.length ? normalized : undefined;
-}
 
 function normalizeStringArray(value: unknown, limit?: number): string[] | undefined {
   if (!Array.isArray(value)) return undefined;

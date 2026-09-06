@@ -28,7 +28,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { V2Card } from "@/components/ui/v2-card";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
-type SwapRowDb = Database["public"]["Tables"]["shift_swap_requests"]["Row"];
+type SwapRowDb = Database["public"]["Tables"]["shift_swap_requests"]["Row"] & { requesting_confirmed_at: string | null; covering_confirmed_at: string | null };
 
 type SwapUiRow = {
   id: string;
@@ -38,6 +38,8 @@ type SwapUiRow = {
   createdAt: string;
   requestingName: string;
   coveringName: string | null;
+  requestingConfirmed: boolean;
+  coveringConfirmed: boolean;
 };
 
 type SupabaseStaffMini = {
@@ -107,7 +109,8 @@ const DEFAULT_FILTERS = { search: "", status: "all" };
 
 export default function AdminShiftSwapsPage() {
   const supabase = createClient();
-  const { user } = useHavenAuth();
+  const { user, appRole } = useHavenAuth();
+  const canManage = ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "");
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<SwapUiRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -244,6 +247,7 @@ export default function AdminShiftSwapsPage() {
 
   const approveSwap = useCallback(
     async (id: string) => {
+      if (!globalThis.confirm("I have reviewed both employees’ required credentials, total weekly hours (maximum 60), minimum 8-hour rest and facility coverage. Apply this confirmed coverage change to the working schedule?")) return;
       setActionId(id);
       setNotice(null);
       try {
@@ -255,6 +259,8 @@ export default function AdminShiftSwapsPage() {
           .from("shift_swap_requests" as never)
           .update({
             status: "approved",
+            eligibility_reviewed_at: new Date().toISOString(),
+            eligibility_reviewed_by: user.id,
             approved_at: new Date().toISOString(),
             approved_by: user.id,
             denied_reason: null,
@@ -423,19 +429,26 @@ export default function AdminShiftSwapsPage() {
                     ) : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {row.status.toLowerCase() === "pending" ? (
+                    <span className="text-xs text-muted-foreground">Requester: {row.requestingConfirmed ? "confirmed" : "awaiting confirmation"} · Cover: {row.coveringConfirmed ? "confirmed" : "awaiting confirmation"}</span>
+                    {["pending", "claimed"].includes(row.status.toLowerCase()) ? (
                       <>
+                        <Button type="button" variant="outline" size="sm" disabled={actionId !== null} onClick={async () => {
+                          setActionId(row.id); setNotice(null);
+                          try { const { error } = await supabase.rpc("confirm_shift_swap" as never, { p_id: row.id } as never); if (error) throw new Error(error.message); await load(); }
+                          catch (error) { setNotice(error instanceof Error ? error.message : "Confirmation failed."); }
+                          finally { setActionId(null); }
+                        }}>Confirm my participation</Button>
                         <Button
                           type="button"
                           size="sm"
                           className="font-medium text-[10px] uppercase tracking-wider"
-                          disabled={actionId !== null}
+                          disabled={!canManage || actionId !== null || !row.requestingConfirmed || !row.coveringConfirmed}
                           onClick={() => void approveSwap(row.id)}
                         >
                           {actionId === row.id ? (
                             <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden />
                           ) : null}
-                          Approve
+                          Approve and apply coverage
                         </Button>
                         <Button
                           type="button"
@@ -444,6 +457,7 @@ export default function AdminShiftSwapsPage() {
                           className="font-medium text-[10px] uppercase tracking-wider"
                           disabled={actionId !== null}
                           onClick={() => {
+                            if (!canManage) return;
                             setDenyTargetId(row.id);
                             setDenyReason("");
                             setNotice(null);
@@ -565,6 +579,8 @@ async function fetchShiftSwapsFromSupabase(
     swapType: r.swap_type,
     reason: r.reason,
     createdAt: r.created_at,
+    requestingConfirmed: Boolean(r.requesting_confirmed_at),
+    coveringConfirmed: Boolean(r.covering_confirmed_at),
     requestingName: formatShiftSwapStaffLabel(byId.get(r.requesting_staff_id)),
     coveringName: r.covering_staff_id ? formatShiftSwapStaffLabel(byId.get(r.covering_staff_id)) : null,
   }));

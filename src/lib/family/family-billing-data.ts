@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatFamilyPaymentReference } from "@/lib/family/family-billing-copy";
+import { formatCents } from "@/lib/finance/format-cents";
 import type { Database } from "@/types/database";
 
 export type FamilyInvoiceRow = {
@@ -39,7 +40,7 @@ function residentDisplayName(row: {
 }
 
 function formatMoney(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+  return formatCents(n);
 }
 
 function formatMediumDate(ymd: string): string {
@@ -80,15 +81,27 @@ export async function fetchFamilyBillingContext(
   if (userErr) return { ok: false, error: userErr.message };
   if (!user) return { ok: false, error: "Sign in to view billing." };
 
+  const fetchInvoices = async () => {
+    type Invoice = Pick<Database["public"]["Tables"]["invoices"]["Row"], "id" | "resident_id" | "invoice_number" | "invoice_date" | "due_date" | "period_start" | "period_end" | "total" | "balance_due" | "status">;
+    const rows: Invoice[] = [];
+    let afterId: string | null = null;
+    for (;;) {
+      let query = supabase.from("invoices").select("id,resident_id,invoice_number,invoice_date,due_date,period_start,period_end,total,balance_due,status")
+        .is("deleted_at", null).order("id", { ascending: false }).limit(500);
+      if (afterId) query = query.lt("id", afterId);
+      const result = await query;
+      if (result.error) return { data: null, error: result.error };
+      const page = result.data ?? [];
+      rows.push(...page);
+      if (page.length < 500) {
+        rows.sort((a,b) => b.invoice_date.localeCompare(a.invoice_date) || b.id.localeCompare(a.id));
+        return { data: rows, error: null };
+      }
+      afterId = page[page.length - 1].id;
+    }
+  };
   const [invQ, payQ] = await Promise.all([
-    supabase
-      .from("invoices")
-      .select(
-        "id, resident_id, invoice_number, invoice_date, due_date, period_start, period_end, total, balance_due, status",
-      )
-      .is("deleted_at", null)
-      .order("invoice_date", { ascending: false })
-      .limit(60),
+    fetchInvoices(),
     supabase
       .from("payments")
       .select("amount, payment_date")

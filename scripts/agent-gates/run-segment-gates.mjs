@@ -16,7 +16,7 @@
  *   SEGMENT_PREVIEW_PORT — port for auto-started preview server (default 4310)
  */
 
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
@@ -72,47 +72,6 @@ function probePortInUse(port) {
     sock.once("timeout", () => done(false));
     sock.connect(port, "127.0.0.1");
   });
-}
-
-/** Returns true if <url> responds with a 2xx/3xx/4xx inside 3s (i.e., HTTP is alive). */
-async function isHttpAlive(url) {
-  try {
-    const res = await fetch(url, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(3000),
-    });
-    return res.status >= 200 && res.status < 500;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Kills any process holding a LISTEN socket on <port>. Returns the count of
- * pids signaled. Best-effort: swallows errors if lsof is missing or no holder.
- */
-function killHolderOnPort(port) {
-  try {
-    const out = execSync(`lsof -ti :${port} -sTCP:LISTEN`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-    if (!out) return 0;
-    const pids = out
-      .split("\n")
-      .map((s) => Number(s))
-      .filter((n) => Number.isFinite(n));
-    for (const pid of pids) {
-      try {
-        process.kill(pid, "SIGTERM");
-      } catch {
-        /* already gone */
-      }
-    }
-    return pids.length;
-  } catch {
-    return 0;
-  }
 }
 
 function parseArgs(argv) {
@@ -490,39 +449,26 @@ async function main() {
     const useDevServer = process.env.SEGMENT_GATES_USE_DEV_SERVER === "1";
 
     try {
+      if (checks.some((check) => check.id === "qa.root-build" && check.status === "failed")) {
+        throw new Error("UI verification cannot start because the production build failed.");
+      }
       if (!useDevServer) {
-        const previewPort = process.env.SEGMENT_PREVIEW_PORT ?? "4310";
-        const previewPortNum = Number(previewPort);
-        const previewUrl = `http://127.0.0.1:${previewPort}/`;
-
-        // Port pre-flight: if something is already bound, probe its health.
-        // If it's responding, reuse it (don't spawn, don't kill). If it's a
-        // dead squatter (bound but no HTTP response), kill it and spawn fresh.
-        if (await probePortInUse(previewPortNum)) {
-          if (await isHttpAlive(previewUrl)) {
-            console.log(
-              `[segment:gates] reusing existing preview server on :${previewPort}`,
-            );
-            process.env.BASE_URL = `http://127.0.0.1:${previewPort}`;
-          } else {
-            const killed = killHolderOnPort(previewPortNum);
-            console.log(
-              `[segment:gates] port :${previewPort} was held by ${killed} orphan pid(s); signaled SIGTERM`,
-            );
-            // Give the OS a moment to release the socket before we bind.
-            await new Promise((r) => setTimeout(r, 1500));
-          }
+        const requestedPort = Number(process.env.SEGMENT_PREVIEW_PORT ?? "4310");
+        if (!Number.isInteger(requestedPort) || requestedPort < 1024 || requestedPort > 65515) throw new Error("Invalid preview port");
+        let previewPort = requestedPort;
+        while (await probePortInUse(previewPort)) {
+          if (process.env.SEGMENT_PREVIEW_PORT || previewPort >= requestedPort + 20) throw new Error("Preview port is occupied; existing process retained. Choose a free SEGMENT_PREVIEW_PORT.");
+          previewPort++;
         }
-
-        // Spawn fresh only if we didn't successfully reuse an existing server.
-        if (process.env.BASE_URL !== `http://127.0.0.1:${previewPort}`) {
+        const previewUrl = `http://127.0.0.1:${previewPort}/`;
+        {
           const nextCli = path.join(root, "node_modules", "next", "dist", "bin", "next");
           previewChild = spawn(
             process.execPath,
-            [nextCli, "start", "-p", previewPort],
+            [nextCli, "start", "-p", String(previewPort)],
             {
               cwd: root,
-              env: { ...process.env, PORT: previewPort },
+              env: { ...process.env, PORT: String(previewPort) },
               stdio: "ignore",
             },
           );
@@ -567,6 +513,14 @@ async function main() {
           stdout: "skipped (--no-a11y)",
         });
       }
+    } catch (error) {
+      executeStaticCheck(checks, advisoryCheckIds, {
+        id: "cdo.preview-prerequisite",
+        required: true,
+        status: "failed",
+        command: "start verified UI preview",
+        stderr: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       if (previewChild) {
         previewChild.kill("SIGTERM");

@@ -4,7 +4,7 @@ export default function MedTechControlledCountPage() {
   return (
     <ControlledCountConsole
       title="Controlled count"
-      description="Shift reconciliation for controlled medications from the med-tech lane"
+      description="Record your physical count, then have an independent nurse or caregiver with facility access verify the saved counts."
       backHref="/med-tech"
       backLabel="Back to cockpit"
     />

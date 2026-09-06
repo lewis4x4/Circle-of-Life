@@ -1,0 +1,128 @@
+[
+  {
+    "id": "O01",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/meetings/[id]/page.tsx",
+      "src/lib/office/meetings.ts",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql",
+      "src/app/api/admin/meetings/[id]/actions/route.ts",
+      "src/app/api/admin/meetings/[id]/actions/route.test.ts"
+    ],
+    "notes": "Meeting actions have explicit end-of-due-day Eastern deadlines, eligible for existing scanner fallback behavior. The UI labels the real operations task linkage; scanner/provider delivery is an external operational check and was not executed. Final integration moves browser creation through a strict authenticated service route and service-only atomic command; active manager/org/facility/assignee scope is rechecked in SQL. Direct browser execution and caller actor injection are denied.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed. Three service-route regressions pass; native service-role command succeeds for a scoped manager and denies an unscoped manager/caregiver role. Updated office rollback fixture passed after OCE grants were restricted.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O02",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/meetings/[id]/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql",
+      "src/app/api/admin/meetings/[id]/actions/route.ts",
+      "src/app/api/admin/meetings/[id]/actions/route.test.ts"
+    ],
+    "notes": "One stable action identity creates OCE task and meeting action atomically. Private trigger synchronizes status in either direction, scoped to linked organization/facility. Fault injection proves no orphan task remains. Final integration moves browser creation through a strict authenticated service route and service-only atomic command; active manager/org/facility/assignee scope is rechecked in SQL. Direct browser execution and caller actor injection are denied.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed. Three service-route regressions pass; native service-role command succeeds for a scoped manager and denies an unscoped manager/caregiver role. Updated office rollback fixture passed after OCE grants were restricted.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O03",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/meetings/[id]/page.tsx"
+    ],
+    "notes": "Minutes hydrate only on meeting identity change; related action/status reloads preserve editor text. Saving checks the original minute value and rejects concurrent edits while retaining the draft; visible unsaved/saving/saved state added. Browser interaction UAT remains pending.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O04",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/acknowledgments/my/page.tsx",
+      "src/app/(caregiver)/caregiver/acknowledgments/page.tsx",
+      "src/app/(med-tech)/med-tech/acknowledgments/page.tsx",
+      "src/app/(dietary)/dietary/acknowledgments/page.tsx",
+      "src/lib/auth/caregiver-route-access.ts",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Existing required-reading contract is reachable in each floor role shell without admin routes. Issued content is snapshotted, role scope immutable, and signatures store the issued version and server-derived signer identity. Native authenticated caregiver reads/signs exact content; cannot read another owner file or forge role. Older requirements lack issuance snapshots and must be reissued, without rewriting prior signatures.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O05",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/acknowledgments/page.tsx",
+      "src/lib/supabase/read-all-pages.ts"
+    ],
+    "notes": "Eligible profile query is restricted to complete selected-facility unrevoked user_facility_access membership before outstanding calculation. Active-role and existing signature checks retained.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O07",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/office/drive-cutover.ts",
+      "src/lib/office/review-regressions.test.ts",
+      "src/lib/office/drive-cutover.test.ts",
+      "src/app/(admin)/admin/drive-cutover/page.tsx"
+    ],
+    "notes": "Bookmarks and skipped files no longer establish migrated content. Complete counted pagination replaces capped inventories; UI separates bookmarks, content not verified and Drive-setting attestation. Attestation requires actual read-only date and does not claim Haven is sole system of record. Real content copying/verification remains an external migration requirement, not an implemented importer capability.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O08",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/teams/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Team and first-lead membership use one idempotent transactional command. Failure injection verifies no orphan space; failed saves preserve form.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O09",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/workspace/[id]/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Owner-only expected-version RPC atomically writes history and current page. Native stale version and failure injection checks preserve prior state and prevent orphan version.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O10",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/office/master-calendar.ts",
+      "src/lib/office/review-regressions.test.ts"
+    ],
+    "notes": "Timestamp sources use Eastern start and end instants via shared wall-clock conversion. Tests include late evening and 25-hour DST day; date-only predicates unchanged.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  },
+  {
+    "id": "O11",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/files/page.tsx",
+      "supabase/migrations/20260906143556_september_office_integrity.sql",
+      "supabase/tests/review_office_integrity.sql"
+    ],
+    "notes": "Move to Trash soft-deletes metadata without deleting bytes; owner-only Trash view and Restore preserve reversibility. Native authenticated owner restore and other-user denial pass. Permanent disposition awaits approved retention process; no retention duration invented.",
+    "verification": "59 office/training tests passed; typecheck passed; scoped ESLint passed without warnings. Office migration applied on isolated native PostgreSQL17.9; review_office_integrity.sql passed atomic rollback, optimistic versions, task synchronization, exact issued content, caregiver signatures and owner Trash restore. Hosted migration and browser UAT not performed.",
+    "mission_alignment": "risk pending hosted rollout and real-role UAT; native SQL proof passed"
+  }
+]

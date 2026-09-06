@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
+import { formatCents } from "@/lib/finance/format-cents";
 
 export type FamilyFeedIncidentItem = {
   kind: "incident";
@@ -95,7 +96,7 @@ function residentDisplayName(row: {
 }
 
 function formatMoney(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+  return formatCents(n);
 }
 
 function formatShortTime(iso: string): string {
@@ -106,6 +107,8 @@ function formatShortTime(iso: string): string {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
   }).format(d);
 }
 
@@ -290,7 +293,7 @@ export async function fetchFamilyHomeSnapshot(
       detail,
       timeLabel: formatShortTime(note.created_at),
       badge: "Update",
-      href: "/family/messages",
+      href: `/family/messages?residentId=${encodeURIComponent(note.resident_id)}`,
     });
   }
 

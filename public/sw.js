@@ -1,8 +1,6 @@
 /* Minimal PWA service worker with caregiver rounds queue + background sync. */
 
-const STATIC_CACHE = "haven-static-v3";
-const RUNTIME_CACHE = "haven-runtime-v3";
-const ROUNDING_CACHE = "haven-rounding-v3";
+const STATIC_CACHE = "haven-static-v4";
 const DB_NAME = "haven-offline";
 const STORE_NAME = "roundingQueue";
 const SYNC_TAG = "haven-rounding-sync";
@@ -22,7 +20,7 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => ![STATIC_CACHE, RUNTIME_CACHE, ROUNDING_CACHE].includes(key))
+        .filter((key) => ["haven-static-v3", "haven-runtime-v3", "haven-rounding-v3"].includes(key))
         .map((key) => caches.delete(key)),
     );
     await self.clients.claim();
@@ -66,14 +64,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate" && (url.pathname === "/" || url.pathname.startsWith("/caregiver"))) {
-    event.respondWith(networkFirst(request, RUNTIME_CACHE));
-    return;
-  }
+  // Authenticated HTML and API responses must not survive an operator change.
 
-  if (url.pathname.startsWith("/api/rounding/tasks")) {
-    event.respondWith(networkFirst(request, ROUNDING_CACHE));
-  }
 });
 
 self.addEventListener("sync", (event) => {
@@ -90,7 +82,8 @@ self.addEventListener("message", (event) => {
     event.waitUntil((async () => {
       try {
         await putQueueItem(data.item);
-        const state = await broadcastSyncState();
+        await broadcastSyncState();
+        const state = await buildSyncState({}, data.item.ownerUserId);
         if (port) port.postMessage({ ok: true, state });
       } catch (error) {
         if (port) port.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
@@ -101,7 +94,7 @@ self.addEventListener("message", (event) => {
 
   if (data.type === "HAVEN_PING_ROUNDING_SYNC_STATE") {
     event.waitUntil((async () => {
-      const state = await buildSyncState();
+      const state = await buildSyncState({}, data.ownerUserId);
       if (port) port.postMessage({ ok: true, state });
     })());
     return;
@@ -110,7 +103,8 @@ self.addEventListener("message", (event) => {
   if (data.type === "HAVEN_FLUSH_ROUNDING_QUEUE") {
     event.waitUntil((async () => {
       try {
-        const state = await flushQueue();
+        await flushQueue();
+        const state = await buildSyncState({}, data.ownerUserId);
         if (port) port.postMessage({ ok: true, state });
       } catch (error) {
         if (port) port.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
@@ -128,21 +122,6 @@ async function cacheFirst(request, cacheName) {
     cache.put(request, response.clone());
   }
   return response;
-}
-
-async function networkFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  try {
-    const response = await fetch(request);
-    if (response && response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    const cached = await cache.match(request);
-    if (cached) return cached;
-    throw new Error("offline");
-  }
 }
 
 function openQueueDb() {
@@ -201,14 +180,16 @@ async function getAllQueueItems() {
   });
 }
 
-async function buildSyncState(extra = {}) {
-  const items = await getAllQueueItems();
+async function buildSyncState(extra = {}, ownerUserId = null) {
+  const allItems = await getAllQueueItems();
+  const items = ownerUserId ? allItems.filter((item) => item.ownerUserId === ownerUserId) : [];
   return {
     pendingCount: items.length,
     queuedTaskIds: items.map((item) => item.taskId),
     isSyncing: Boolean(extra.isSyncing),
     lastSyncedAt: extra.lastSyncedAt || null,
-    lastError: extra.lastError || null,
+    lastError: extra.lastError || items.find((item) => item.lastError)?.lastError || null,
+    items: items.map(({ id, taskId, residentId, facilityId, queuedAt, lastError, payload }) => ({ id, taskId, residentId, facilityId, queuedAt, lastError, payload })),
   };
 }
 
@@ -218,7 +199,8 @@ async function broadcastSyncState(extra = {}) {
   for (const client of clients) {
     client.postMessage({
       type: "HAVEN_ROUNDING_SYNC_STATE",
-      ...state,
+      // Refresh each window through its own operator-scoped request.
+
     });
   }
   return state;
@@ -248,20 +230,27 @@ async function flushQueue() {
 
     const items = await getAllQueueItems();
     let lastError = null;
+    let sent = false;
     for (const item of items) {
       try {
+        if (!item.ownerUserId) {
+          item.lastError = "Original operator is unknown. Retained for manual reconciliation.";
+          await putQueueItem(item);
+          continue;
+        }
         const response = await fetch(`/api/rounding/tasks/${encodeURIComponent(item.taskId)}/complete`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-haven-sync": "service-worker",
           },
-          body: JSON.stringify(item.payload),
+          body: JSON.stringify({ ...item.payload, offline: { ownerUserId: item.ownerUserId, organizationId: item.organizationId, facilityId: item.facilityId, queueId: item.id }, observedAt: item.payload.observedAt || item.queuedAt }),
           credentials: "same-origin",
         });
 
-        if (response.ok || response.status === 409) {
+        if (response.ok) {
           await deleteQueueItem(item.id);
+          sent = true;
           continue;
         }
 
@@ -279,12 +268,12 @@ async function flushQueue() {
 
     const finalState = await broadcastSyncState({
       isSyncing: false,
-      lastSyncedAt: new Date().toISOString(),
+      lastSyncedAt: sent ? new Date().toISOString() : null,
       lastError,
     });
     flushPromise = null;
     return finalState;
   })();
 
-  return await flushPromise;
+  try { return await flushPromise; } finally { flushPromise = null; }
 }

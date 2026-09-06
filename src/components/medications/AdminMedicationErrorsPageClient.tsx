@@ -1,4 +1,5 @@
 "use client";
+import { MedicationErrorReview } from "@/components/medications/MedicationErrorReview";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -187,6 +188,7 @@ export function AdminMedicationErrorsPageClient({
             <MotionList className="space-y-4">
               {visibleRows.map((r) => (
                 <MotionItem key={r.id}>
+                  {!r.reviewed_at && <MedicationErrorReview id={r.id} onSaved={() => void load()} />}
                   <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center min-h-[36px] px-[13px] py-3 rounded-[9px] border border-border bg-card hover:bg-muted/40 hover:-translate-y-px transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] tap-responsive w-full outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0">
                     
                     <div className="flex flex-col min-w-0 pr-4">

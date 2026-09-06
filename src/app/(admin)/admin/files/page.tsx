@@ -38,6 +38,7 @@ export default function AdminWorkspaceFilesPage() {
   const [uploading, setUploading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [folder, setFolder] = useState("General");
+  const [showTrash, setShowTrash] = useState(false);
   const [folderFilter, setFolderFilter] = useState<string>("all");
 
   const load = useCallback(async () => {
@@ -52,7 +53,7 @@ export default function AdminWorkspaceFilesPage() {
           "id, owner_user_id, name, original_filename, storage_path, mime_type, size_bytes, folder, visibility, created_at",
         )
         .eq("owner_user_id", actor.userId)
-        .is("deleted_at", null)
+        .filter("deleted_at", showTrash ? "not.is" : "is", null)
         .order("created_at", { ascending: false })
         .limit(300)) as unknown as QueryResult<WorkspaceFileRow>;
       if (res.error) throw new Error(res.error.message);
@@ -62,7 +63,7 @@ export default function AdminWorkspaceFilesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, showTrash]);
 
   useEffect(() => {
     void load();
@@ -136,10 +137,9 @@ export default function AdminWorkspaceFilesPage() {
         const actor = await fetchActorContext(supabase);
         const { error } = await supabase
           .from("workspace_files" as never)
-          .update({ deleted_at: new Date().toISOString(), updated_by: actor?.userId } as never)
-          .eq("id", f.id);
+          .update({ deleted_at: showTrash ? null : new Date().toISOString(), updated_by: actor?.userId } as never)
+          .eq("id", f.id).select("id").single();
         if (error) throw new Error(error.message);
-        await supabase.storage.from(WORKSPACE_FILES_BUCKET).remove([f.storage_path]);
         await load();
       } catch (err) {
         setNotice(err instanceof Error ? err.message : "Delete failed.");
@@ -147,7 +147,7 @@ export default function AdminWorkspaceFilesPage() {
         setBusyId(null);
       }
     },
-    [supabase, load],
+    [supabase, load, showTrash],
   );
 
   const folders = useMemo(() => {
@@ -214,6 +214,7 @@ export default function AdminWorkspaceFilesPage() {
           )}
         </section>
 
+        <div className="flex items-center gap-3"><Button type="button" variant="outline" onClick={() => setShowTrash((current) => !current)}>{showTrash ? "Back to files" : "Open Trash"}</Button><span className="text-sm text-muted-foreground">Trash preserves files until restored. Permanent disposal is handled through the approved retention process.</span></div>
         {isLoading ? <AdminTableLoadingState /> : null}
         {!isLoading && loadError ? (
           <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} />
@@ -293,6 +294,7 @@ export default function AdminWorkspaceFilesPage() {
                         onClick={() => void removeFile(f)}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden />
+                        {showTrash ? "Restore" : "Move to Trash"}
                       </Button>
                     </div>
                   </li>

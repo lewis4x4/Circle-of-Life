@@ -1,11 +1,10 @@
-import { startOfDay } from "date-fns";
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
-/** Driver license / medical card date string YYYY-MM-DD must be on or after today (facility-local calendar day approximation). */
-export function isCredentialDateValid(expiresOn: string | null | undefined): boolean {
-  if (!expiresOn) return false;
-  const d = startOfDay(new Date(`${expiresOn}T12:00:00.000Z`));
-  if (Number.isNaN(d.getTime())) return false;
-  return d >= startOfDay(new Date());
+/** A required credential must remain valid through the trip's facility calendar date. */
+export function isCredentialDateValid(expiresOn: string | null | undefined, tripDate = todayFacilityDateIso()): boolean {
+  if (!expiresOn || !/^\d{4}-\d{2}-\d{2}$/.test(expiresOn)) return false;
+  const parsed = new Date(`${expiresOn}T12:00:00Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === expiresOn && expiresOn >= tripDate;
 }
 
 /** Spec 15 rule 5: wheelchair trip requires wheelchair-capable vehicle when a vehicle is assigned. */

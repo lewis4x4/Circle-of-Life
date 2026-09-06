@@ -9,8 +9,29 @@ export type PayrollExportLineRow = {
   staff: { first_name: string | null; last_name: string | null } | null;
 };
 
+/** Reject incomplete wages instead of handing a payroll vendor a blank quantity. */
+export function payrollExportIssue(lines: PayrollExportLineRow[], requireSplit = false): string | null {
+  for (const line of lines) {
+    if (line.line_kind !== "time_record_hours") continue;
+    const p = line.payload;
+    const total = Number(flatHoursFromPayload(p));
+    if (!p || !Number.isFinite(total) || total <= 0) return `Calculate and approve hours for ${line.idempotency_key} before exporting.`;
+    if (requireSplit) {
+      const reg = num(p, "regular_hours"); const ot = num(p, "overtime_hours");
+      if (reg === null || ot === null || reg < 0 || ot < 0 || Math.abs(reg + ot - total) > 0.01) return `Review the regular/overtime split for ${line.idempotency_key} before exporting.`;
+    }
+  }
+  return null;
+}
+
+function assertExportReady(lines: PayrollExportLineRow[], requireSplit = false) {
+  const issue = payrollExportIssue(lines, requireSplit);
+  if (issue) throw new Error(issue);
+}
+
 /** Full vendor handoff: includes raw JSON payload per line (Track D18). */
 export function buildPayrollLinesCsvGeneric(lines: PayrollExportLineRow[]): string {
+  assertExportReady(lines);
   const header = [
     "idempotency_key",
     "staff_first_name",
@@ -37,7 +58,7 @@ export function buildPayrollLinesCsvGeneric(lines: PayrollExportLineRow[]): stri
 
 function num(p: Record<string, unknown>, key: string): number | null {
   const v = p[key];
-  return typeof v === "number" && !Number.isNaN(v) ? v : null;
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
 /** Hours total for `time_record_hours` lines; prefers `actual_hours`, else regular + overtime. */
@@ -89,6 +110,7 @@ export function buildPayrollLinesCsvHoursSplit(
   lines: PayrollExportLineRow[],
   batch: { period_start: string; period_end: string },
 ): string {
+  assertExportReady(lines, true);
   const header = [
     "period_start",
     "period_end",
@@ -133,6 +155,7 @@ export function buildPayrollLinesCsvVendorHandoff(
   lines: PayrollExportLineRow[],
   batch: { period_start: string; period_end: string },
 ): string {
+  assertExportReady(lines);
   const header = [
     "period_start",
     "period_end",
@@ -167,6 +190,7 @@ export function buildPayrollLinesCsvVendorHandoff(
 }
 
 export function buildPayrollLinesCsvFlat(lines: PayrollExportLineRow[]): string {
+  assertExportReady(lines);
   const header = [
     "idempotency_key",
     "staff_first_name",

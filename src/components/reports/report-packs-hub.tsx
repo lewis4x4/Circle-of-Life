@@ -55,7 +55,7 @@ import {
 import {
   computeNextRunUtc,
   estimatePdfPages,
-  recurrenceRuleForFrequency,
+  encodeScheduleRule,
 } from "@/lib/reports/schedule-preview";
 import { formatReportPackCadenceSummary } from "@/lib/reports/reports-display-copy";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
@@ -306,15 +306,11 @@ export function ReportPacksHub() {
     };
   }, [deliveryDestination, eventTrigger, failureAlertUserId, frequency, packKind, timeLocal, weekday]);
 
-  const previewNextRunIso =
-    packKind === "event_based"
-      ? null
-      : computeNextRunUtc({
-          frequency,
-          weekday: Number.parseInt(weekday, 10),
-          timeLocal,
-          timezone: TZ_DEFAULT,
-        }).toISOString();
+  const previewNextRunIso = (() => {
+    if (packKind === "event_based") return null;
+    try { return computeNextRunUtc({ frequency, weekday: Number.parseInt(weekday, 10), monthDay: 1, timeLocal, timezone: TZ_DEFAULT }).toISOString(); }
+    catch { return null; }
+  })();
 
   const selectedOrderedSlugs = useMemo(() => {
     const order = PHASE1_TEMPLATE_SEED.map((t) => t.slug);
@@ -387,12 +383,13 @@ export function ReportPacksHub() {
       return;
     }
 
-    const recurrence_rule = recurrenceRuleForFrequency(frequency);
+    const recurrence_rule = encodeScheduleRule({ frequency, weekday, monthDay: 1, timeLocal });
     const next_run_at = computeNextRunUtc({
       frequency,
       weekday,
       timeLocal,
       timezone,
+      monthDay: 1,
     }).toISOString();
 
     let scheduleId: string | null = null;
@@ -402,6 +399,7 @@ export function ReportPacksHub() {
         .from("report_schedules")
         .update({
           recurrence_rule,
+          output_format: "csv",
           timezone,
           next_run_at,
           status: "active",
@@ -420,7 +418,7 @@ export function ReportPacksHub() {
           source_id: packId,
           timezone,
           recurrence_rule,
-          output_format: "pdf",
+          output_format: "csv",
           title_pattern: "",
           status: "active",
           next_run_at,

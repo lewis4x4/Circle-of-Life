@@ -21,7 +21,7 @@ function deriveStepState(stepHref: string, currentHref: string): WizardStepState
   const currentIdx = WIZARD_STEPS.findIndex((s) => s.href === currentHref);
   const stepIdx = WIZARD_STEPS.findIndex((s) => s.href === stepHref);
   if (currentIdx < 0 || stepIdx < 0) return "upcoming";
-  if (stepIdx < currentIdx) return "complete";
+  // Navigation history is not evidence of completed discovery work.
   if (stepIdx === currentIdx) return "current";
   return "upcoming";
 }
@@ -43,12 +43,21 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [exiting, setExiting] = useState(false);
+  const [exitError, setExitError] = useState<string | null>(null);
+  const saveStatus = useOnboardingStore((s) => s.saveStatus);
+  const flushPending = useOnboardingStore((s) => s.flushPending);
   const hydrate = useOnboardingStore((s) => s.hydrate);
   const clearAfterSignOut = useOnboardingStore((s) => s.clearAfterSignOut);
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => { if (saveStatus === "saving" || saveStatus === "error") { event.preventDefault(); event.returnValue = ""; } };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [saveStatus]);
 
   const currentHref = normalizePathname(pathname);
 
@@ -59,11 +68,16 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
       return;
     }
     setExiting(true);
+    setExitError(null);
     try {
-      await supabase.auth.signOut();
+      await flushPending();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       clearAfterSignOut();
       router.replace("/login");
       router.refresh();
+    } catch (e) {
+      setExitError(e instanceof Error ? e.message : "Could not save and sign out.");
     } finally {
       setExiting(false);
     }
@@ -88,6 +102,8 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {exitError && <p role="alert">{exitError}</p>}
+              {saveStatus === "error" && <button type="button" onClick={() => void flushPending().catch((e: Error) => setExitError(e.message))}>Retry unsaved answers</button>}
               <Badge
                 variant="outline"
                 className="haven-chrome-fg border-[hsl(var(--chrome-foreground)/0.25)]"

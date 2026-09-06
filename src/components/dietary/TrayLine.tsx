@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Printer, PackageOpen } from "lucide-react";
+import { Activity, Printer } from "lucide-react";
 import { VenueColumn } from "./VenueColumn";
 import type { MealService, TrayTicket, VenueId } from "./types";
 
@@ -26,17 +26,15 @@ export function TrayLine({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
-            <Activity className="w-4 h-4 text-amber-400" /> Tray Line · Live
+            <Activity className="w-4 h-4 text-amber-400" /> Tray Line
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">Tap a ticket to scan + pass</p>
+          <p className="text-xs text-stone-500 mt-0.5">Open a ticket to verify and record a tray pass</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-medium ring-1 ring-stone-700 transition flex items-center gap-1.5">
+          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-medium ring-1 ring-stone-700 transition flex items-center gap-1.5">
             <Printer className="w-3.5 h-3.5" /> Reprint Sheet
           </button>
-          <button className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-semibold ring-1 ring-amber-500/40 transition flex items-center gap-1.5">
-            <PackageOpen className="w-3.5 h-3.5" /> Substitute
-          </button>
+
         </div>
       </div>
 

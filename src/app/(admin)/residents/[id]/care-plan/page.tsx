@@ -1,4 +1,5 @@
 "use client";
+import { CarePlanAuthor } from "@/components/care-plans/CarePlanAuthor";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -96,6 +97,8 @@ export default function AdminResidentCarePlanPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [noPlan, setNoPlan] = useState(false);
+  const [planChoices, setPlanChoices] = useState<CarePlanRow[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [loaded, setLoaded] = useState<LoadedState | null>(null);
   const [signingOpen, setSigningOpen] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -152,7 +155,8 @@ export default function AdminResidentCarePlanPage() {
 
       if (plansResult.error) throw plansResult.error;
       const plans = plansResult.data ?? [];
-      const plan = pickCarePlan(plans);
+      setPlanChoices(plans);
+      const plan = plans.find((candidate) => candidate.id === selectedPlanId) ?? pickCarePlan(plans);
 
       if (!plan) {
         setNoPlan(true);
@@ -182,7 +186,7 @@ export default function AdminResidentCarePlanPage() {
     } finally {
       setLoading(false);
     }
-  }, [residentId, selectedFacilityId]);
+  }, [residentId, selectedFacilityId, selectedPlanId]);
 
   useEffect(() => {
     void load();
@@ -284,6 +288,8 @@ export default function AdminResidentCarePlanPage() {
           backLink={{ label: "Back to profile", href: `/admin/residents/${residentId}` }}
         />
 
+        {planChoices.length > 1 && <label>Plan version<select value={plan?.id ?? ""} onChange={(e) => setSelectedPlanId(e.target.value)} className="ml-3 rounded border p-2">{planChoices.map((choice) => <option key={choice.id} value={choice.id}>Version {choice.version} · {choice.status}</option>)}</select></label>}
+        {plan?.status !== "archived" && <CarePlanAuthor key={`${residentId}:${plan?.id ?? "new"}`} residentId={residentId} previousId={plan?.id} initialItems={items} onSaved={() => { setSelectedPlanId(""); void load(); }} />}
         {noPlan || !plan?.id ? (
           <AdminEmptyState
             title="No care plan on file"
@@ -507,6 +513,7 @@ export default function AdminResidentCarePlanPage() {
 function pickCarePlan(plans: CarePlanRow[]): CarePlanRow | null {
   if (plans.length === 0) return null;
   return [...plans].sort((a, b) => {
+    if (a.status !== "archived" && b.status !== "archived" && a.version !== b.version) return (b.version ?? 0) - (a.version ?? 0);
     const ra = STATUS_RANK[a.status ?? ""] ?? 99;
     const rb = STATUS_RANK[b.status ?? ""] ?? 99;
     if (ra !== rb) return ra - rb;

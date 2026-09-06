@@ -1,92 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { ThermometerSun, Mic } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
-export function VoiceModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [recording, setRecording] = useState(false);
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-xl bg-stone-900 ring-1 ring-stone-700 shadow-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ThermometerSun className="w-5 h-5 text-orange-400" />
-            <h2 className="text-base font-semibold text-white">Voice HACCP Log</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-stone-400 hover:text-white text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="p-8 flex flex-col items-center text-center">
-          <button
-            onMouseDown={() => setRecording(true)}
-            onMouseUp={() => setRecording(false)}
-            onMouseLeave={() => setRecording(false)}
-            onTouchStart={() => setRecording(true)}
-            onTouchEnd={() => setRecording(false)}
-            className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all select-none ${
-              recording
-                ? "bg-rose-500 scale-110 shadow-2xl shadow-rose-500/50"
-                : "bg-orange-500 hover:bg-orange-400 shadow-xl shadow-orange-500/40"
-            }`}
-          >
-            {recording && (
-              <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-40" />
-            )}
-            <Mic className="w-14 h-14 text-white relative" />
-          </button>
-
-          <h3 className="text-base font-semibold text-white mt-5">
-            {recording ? "Listening…" : "Hold to speak"}
-          </h3>
-          <p className="text-sm text-stone-400 mt-1 max-w-xs">
-            &quot;Beef stew, hot hold, one fifty-eight.&quot;
-          </p>
-
-          {recording && (
-            <div className="mt-5 flex items-end gap-1 h-10">
-              {[...Array(16)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-1 bg-rose-400 rounded-full animate-pulse"
-                  style={{
-                    height: `${18 + Math.abs(Math.sin(i * 0.7)) * 22}px`,
-                    animationDelay: `${i * 55}ms`,
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-6 w-full grid grid-cols-2 gap-2">
-            <button
-              onClick={onClose}
-              className="py-2.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-sm font-medium transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onClose}
-              className="py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-sm font-semibold transition"
-            >
-              Save log
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+/** Manual input shares the durable temperature log; voice is not simulated. */
+export function VoiceModal({ open, onClose, facilityId, onSaved }: { open: boolean; onClose: () => void; facilityId?: string | null; onSaved?: () => void }) {
+  const [id] = useState(() => crypto.randomUUID());
+  const [item, setItem] = useState("");
+  const [type, setType] = useState("hot_hold");
+  const [temperature, setTemperature] = useState("");
+  const [minimum, setMinimum] = useState("");
+  const [maximum, setMaximum] = useState("");
+  const [action, setAction] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  async function save() {
+    if (saving || !facilityId) return;
+    setSaving(true); setError(null);
+    try {
+      const response = await fetch("/api/dietary/temperature", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, facilityId, item, logType: type, temperature: Number(temperature), minimum: Number(minimum), maximum: Number(maximum), correctiveAction: action }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Temperature was not saved.");
+      setSaved(true); onSaved?.();
+    } catch (e) { setError(e instanceof Error ? e.message : "Temperature was not saved."); }
+    finally { setSaving(false); }
+  }
+  return <Dialog open={open} onOpenChange={(value) => { if (!value && !saving) onClose(); }}><DialogContent className="dark bg-background text-foreground">
+    <DialogHeader><DialogTitle>Record temperature</DialogTitle><DialogDescription>Enter the measured reading and the limits from your approved kitchen procedure.</DialogDescription></DialogHeader>
+    {saved ? <p role="status">Temperature log saved.</p> : <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+      <label className="block">Item<input className="block w-full rounded border p-2" required value={item} onChange={(e) => setItem(e.target.value)} /></label>
+      <label className="block">Check type<select className="block w-full rounded border p-2" value={type} onChange={(e) => setType(e.target.value)}>{["hot_hold","cold_hold","cooking","cooling","reheating","receiving","fridge_temp","freezer_temp","dishmachine","sanitizer"].map((v) => <option key={v} value={v}>{v.replaceAll("_", " ")}</option>)}</select></label>
+      <label className="block">Measured temperature °F<input className="block w-full rounded border p-2" type="number" step="0.1" required value={temperature} onChange={(e) => setTemperature(e.target.value)} /></label>
+      <label className="block">Approved minimum °F<input className="block w-full rounded border p-2" type="number" step="0.1" required value={minimum} onChange={(e) => setMinimum(e.target.value)} /></label>
+      <label className="block">Approved maximum °F<input className="block w-full rounded border p-2" type="number" step="0.1" required value={maximum} onChange={(e) => setMaximum(e.target.value)} /></label>
+      <label className="block">Corrective action<textarea className="block w-full rounded border p-2" value={action} onChange={(e) => setAction(e.target.value)} /></label>
+      {error && <p role="alert" className="text-destructive">{error}</p>}
+      <button className="rounded border px-3 py-2" disabled={saving || !facilityId} type="submit">{saving ? "Saving…" : "Save temperature log"}</button>
+    </form>}
+  </DialogContent></Dialog>;
 }

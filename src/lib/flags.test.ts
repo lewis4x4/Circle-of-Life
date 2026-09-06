@@ -181,7 +181,7 @@ describe("UI-V2 flags", () => {
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/thresholds")).toBe(true);
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/audit-log")).toBe(true);
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/users")).toBe(true);
-    expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/notifications")).toBe(true);
+    expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/notifications")).toBe(false);
   });
 
   it("rewrites every S11 settings route", () => {
@@ -196,7 +196,7 @@ describe("UI-V2 flags", () => {
     ).toBe("/admin/v2/settings/users");
     expect(
       resolveUiV2AdminRewritePath("/admin/settings/notifications", { enabled: true }),
-    ).toBe("/admin/v2/settings/notifications");
+    ).toBeNull();
   });
 
   it("does NOT rewrite settings paths the V2 build hasn't shipped", () => {

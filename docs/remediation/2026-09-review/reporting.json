@@ -1,0 +1,99 @@
+{
+  "lane": "reporting",
+  "mission_alignment": "pass",
+  "findings": [
+    {
+      "id": "N21",
+      "status": "implemented",
+      "change": "Template and pack results capture executed facility scope; print/CSV use that captured label and UI marks changed scope as needing rerun. Scoped roles must select an accessible facility.",
+      "evidence": [
+        "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx",
+        "src/lib/reports/run-persistence.ts",
+        "src/lib/reports/run-persistence.test.ts",
+        "supabase/tests/review_report_outputs.sql"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    },
+    {
+      "id": "N22",
+      "status": "implemented",
+      "change": "Schedule creation resolves template slug to the actual database template UUID before saving.",
+      "evidence": [
+        "src/app/(admin)/reports/scheduled/page.tsx",
+        "src/lib/reports/resolve-template-id.ts"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    },
+    {
+      "id": "N23",
+      "status": "implemented",
+      "change": "Authenticated scheduled runner calls existing report executors, persists output, rechecks schedule owner scope, and claims each occurrence uniquely before success. Edge configuration failures no longer fabricate completed reports.",
+      "evidence": [
+        "src/app/api/reports/scheduler/route.ts",
+        "supabase/functions/report-scheduler/index.ts",
+        "src/lib/reports/scheduler.test.ts",
+        "src/lib/reports/run-persistence.test.ts",
+        "docs/remediation/2026-09-review/REPORTING-OPERATIONS.md"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    },
+    {
+      "id": "N24",
+      "status": "implemented",
+      "change": "Validated frequency/day/time contract, facility timezone calendar calculation, next-three preview, DST gap handling, month-end clamping and calendar-quarter anchors replace elapsed-day recurrence.",
+      "evidence": [
+        "src/lib/reports/schedule-preview.ts",
+        "src/lib/reports/schedule-preview.test.ts",
+        "src/app/(admin)/reports/scheduled/page.tsx",
+        "src/components/reports/report-packs-hub.tsx"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    },
+    {
+      "id": "N25",
+      "status": "implemented",
+      "change": "Shared template runner records failed status/error on executor or output persistence failure and checks returned update row. Pack catches finalize created runs; scheduler detects interrupted occurrences.",
+      "evidence": [
+        "src/lib/reports/run-persistence.ts",
+        "src/lib/reports/run-persistence.test.ts",
+        "src/lib/reports/scheduler.test.ts",
+        "src/app/(admin)/reports/run/[sourceType]/[id]/page.tsx"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    },
+    {
+      "id": "N26",
+      "status": "implemented",
+      "change": "Report snapshots retain full outputs and provenance; History links to saved result details, CSV, and Run again. Older unsaved reports are labeled unavailable instead of reconstructed.",
+      "evidence": [
+        "src/app/(admin)/reports/history/page.tsx",
+        "src/app/(admin)/reports/history/[id]/page.tsx",
+        "supabase/migrations/20260906142243_review_report_outputs.sql",
+        "supabase/tests/review_report_outputs.sql"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    },
+    {
+      "id": "N27",
+      "status": "implemented",
+      "change": "Parent owns ordinary tabbable report navigation links.",
+      "evidence": [
+        "src/components/reports/reports-hub-nav.tsx"
+      ],
+      "verification_scope": "Local source and listed checks only; authenticated browser/deployed verification remains pending."
+    }
+  ],
+  "verification": {
+    "tests": "11 reporting behavioral tests passed: run-persistence(2), scheduler(4), calendar schedule-preview(5); existing report Eastern-date source contract(2) also passes",
+    "sql_probe": "PASS: rollback-only supabase/tests/review_report_outputs.sql on native PostgreSQL17.9 + pgvector, after full replay; vanilla Supabase auth/storage stubs, auth visibility adapters are transaction-local.",
+    "typecheck": "Final integrated typecheck is parent-owned; latest lane source tests, SQL probes and ESLint passed.",
+    "lint": "PASS: combined changed-source ESLint and final account UI/source reruns",
+    "independent_review": "INDEPENDENT-ROOT-REVIEW.md; root-reviewed scheduler advancement failure preserves completed output; service terminal receipt immutability verified in SQL"
+  },
+  "deployment_requirements": [
+    "Apply 20260906142243_review_report_outputs.sql before frontend",
+    "Deploy Next /api/reports/scheduler and Edge report-scheduler; configure shared REPORT_SCHEDULER_SECRET and canonical HTTPS REPORT_SCHEDULER_RUNNER_URL",
+    "Legacy recurrence strings and non-CSV schedules need explicit calendar review before resume; saved outputs are in-app with CSV download",
+    "Authenticated browser UAT and hosted scheduler executions remain unverified; no external delivery or production mutation performed"
+  ]
+}

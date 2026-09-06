@@ -23,6 +23,8 @@ type TaskInstance = {
   assigned_shift_date: string;
   assigned_shift: "day" | "evening" | "night";
   assigned_to: string | null;
+  signed_by?: string | null;
+  requires_dual_sign?: boolean;
   assigned_to_name: string | null;
   status: TaskStatus;
   due_at: string | null;
@@ -105,6 +107,8 @@ export default function OperationsTodayPage() {
   const [autoShiftApplied, setAutoShiftApplied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   // Redirect non-admin roles
@@ -176,35 +180,43 @@ export default function OperationsTodayPage() {
   }, [loadData, loadAdequacy]);
 
   const handleStartTask = async (taskId: string) => {
+    if (actionBusy) return;
+    setActionBusy(true); setActionError(null);
     try {
       const response = await fetch(`/api/admin/operations/tasks/${taskId}/start`, {
         method: "PATCH",
       });
+      if (!response.ok) { const result = await response.json(); throw new Error(result.error ?? "Task action failed"); }
       if (response.ok) {
         void loadData();
       }
-    } catch {
-      // Error toast would go here
-    }
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Task action failed");
+    } finally { setActionBusy(false); }
   };
 
   const handleCompleteTask = async (taskId: string) => {
+    if (actionBusy) return;
+    setActionBusy(true); setActionError(null);
     try {
       const response = await fetch(`/api/admin/operations/tasks/${taskId}/complete`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completion_notes: "Completed via Today view" }),
       });
+      if (!response.ok) { const result = await response.json(); throw new Error(result.error ?? "Task action failed"); }
       if (response.ok) {
         void loadData();
         void loadAdequacy();
       }
-    } catch {
-      // Error toast would go here
-    }
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Task action failed");
+    } finally { setActionBusy(false); }
   };
 
   const handleEscalateTask = async (taskId: string) => {
+    if (actionBusy) return;
+    setActionBusy(true); setActionError(null);
     try {
       const response = await fetch(`/api/admin/operations/tasks/${taskId}/escalate`, {
         method: "PATCH",
@@ -213,17 +225,20 @@ export default function OperationsTodayPage() {
           reason: "Manual escalation from operations queue",
         }),
       });
+      if (!response.ok) { const result = await response.json(); throw new Error(result.error ?? "Task action failed"); }
       if (response.ok) {
         void loadData();
       }
-    } catch {
-      // Error toast would go here
-    }
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Task action failed");
+    } finally { setActionBusy(false); }
   };
 
   const handleBulkComplete = async () => {
+    if (actionBusy) return;
+    setActionBusy(true); setActionError(null);
     const pendingTasks = tasks.filter((t: TaskInstance) => t.status === "pending" && t.assigned_to === user?.id);
-    if (pendingTasks.length === 0) return;
+    if (pendingTasks.length === 0) { setActionBusy(false); return; }
 
     try {
       const response = await fetch("/api/admin/operations/tasks/bulk-complete", {
@@ -234,13 +249,14 @@ export default function OperationsTodayPage() {
           completion_notes: "End of shift bulk complete",
         }),
       });
+      if (!response.ok) { const result = await response.json(); throw new Error(result.error ?? "Task action failed"); }
       if (response.ok) {
         void loadData();
         void loadAdequacy();
       }
-    } catch {
-      // Error toast would go here
-    }
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Task action failed");
+    } finally { setActionBusy(false); }
   };
 
   // Get adequacy badge color
@@ -339,6 +355,7 @@ export default function OperationsTodayPage() {
         </div>
       </div>
 
+      {actionError && <p role="alert" className="rounded border border-destructive p-3">{actionError}</p>}
       <OperationsViewNav />
 
       {/* Filters */}
@@ -425,14 +442,15 @@ export default function OperationsTodayPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{task.assigned_to_name || "Unassigned"}</span>
+                      <span>{task.assigned_to_name || "Unassigned role queue"}</span>
+                      {task.status === "in_progress" && task.requires_dual_sign && task.signed_by && <span className="text-warning">Awaiting another staff member&apos;s verification</span>}
                     </div>
                     <div className="flex gap-1">
                       <Button
                         size="sm"
                         variant="default"
+                        disabled={actionBusy || task.status !== "pending"}
                         onClick={() => handleStartTask(task.id)}
-                        disabled={task.status !== "pending"}
                       >
                         Start
                       </Button>
@@ -501,12 +519,14 @@ export default function OperationsTodayPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{task.assigned_to_name || "Unassigned"}</span>
+                      <span>{task.assigned_to_name || "Unassigned role queue"}</span>
+                      {task.status === "in_progress" && task.requires_dual_sign && task.signed_by && <span className="text-warning">Awaiting another staff member&apos;s verification</span>}
                     </div>
                     <div className="flex gap-1">
                       <Button
                         size="sm"
                         variant="default"
+                        disabled={actionBusy}
                         onClick={() => handleStartTask(task.id)}
                       >
                         Start
@@ -571,15 +591,17 @@ export default function OperationsTodayPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{task.assigned_to_name || "Unassigned"}</span>
+                      <span>{task.assigned_to_name || "Unassigned role queue"}</span>
+                      {task.status === "in_progress" && task.requires_dual_sign && task.signed_by && <span className="text-warning">Awaiting another staff member&apos;s verification</span>}
                     </div>
                     <div className="flex gap-1">
                       <Button
                         size="sm"
                         variant="default"
+                        disabled={actionBusy || (task.requires_dual_sign && task.signed_by === user?.id)}
                         onClick={() => handleCompleteTask(task.id)}
                       >
-                        Complete
+                        {task.requires_dual_sign && task.signed_by ? "Verify completion" : "Complete"}
                       </Button>
                       <Button
                         size="sm"

@@ -9,6 +9,7 @@ import {
 
 export interface MedPassItem {
   id: string;
+  residentId: string;
   resident: string;
   room: string;
   med: string;
@@ -17,6 +18,7 @@ export interface MedPassItem {
   status: "overdue" | "due" | "upcoming" | "hold" | "given";
   minutes: number;
   controlled: boolean;
+  witnessRequired: boolean;
   hold: string | null;
 }
 
@@ -58,7 +60,7 @@ export function PassCard({
             </span>
             {p.controlled && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-500/20 text-primary-300 text-[10px] font-semibold ring-1 ring-ring">
-                <ShieldCheck className="w-3 h-3" /> C-II · WITNESS
+                <ShieldCheck className="w-3 h-3" /> Controlled · witness
               </span>
             )}
             {isOverdue && (

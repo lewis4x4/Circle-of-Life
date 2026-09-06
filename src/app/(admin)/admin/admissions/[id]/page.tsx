@@ -1,5 +1,7 @@
 "use client";
 
+import { isForm1823Current } from "@/lib/admissions/form-1823-readiness";
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -208,6 +210,8 @@ export default function AdminAdmissionCaseDetailPage() {
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
   const [rateNotesDraft, setRateNotesDraft] = useState("");
   const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
+  const [arrivalDate, setArrivalDate] = useState("");
+  const [arrivalMessage, setArrivalMessage] = useState<string | null>(null);
   const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"]>("pending");
   const [form1823PhysicianDraft, setForm1823PhysicianDraft] = useState("");
   const [form1823ExamDateDraft, setForm1823ExamDateDraft] = useState("");
@@ -395,7 +399,12 @@ export default function AdminAdmissionCaseDetailPage() {
     }
   }
 
-  const form1823Satisfied = Boolean(form1823Record?.status === "received" && form1823ChecklistItem?.received_at);
+  async function confirmArrival() {
+    setArrivalMessage(null);
+    try { const response = await fetch(`/api/admin/workflows/admission-cases/${id}/confirm-arrival`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ arrival_date: arrivalDate }) }); const result=await response.json(); if(!response.ok)throw new Error(result.error ?? "Arrival was not recorded"); setArrivalMessage("Arrival confirmed. Resident is active and bed occupancy is recorded."); } catch(e) { setArrivalMessage(e instanceof Error ? e.message : "Arrival was not recorded"); }
+  }
+
+  const form1823Satisfied = isForm1823Current(form1823Record, form1823ChecklistItem);
   const readiness = row ? admissionReadinessChecklist(row, rateTerms, form1823Satisfied) : [];
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
   const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0 && form1823Satisfied);
@@ -506,6 +515,7 @@ export default function AdminAdmissionCaseDetailPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      {row && <div className="space-y-2 rounded border border-border p-4"><h2 className="font-semibold">Confirm actual arrival</h2><p>Ready for move-in and arrival are separate steps. This activates the resident census and records bed occupancy after readiness checks pass.</p><label>Actual arrival date<input type="date" value={arrivalDate} onChange={(e)=>setArrivalDate(e.target.value)} className="ml-3 rounded border p-2" /></label><Button disabled={!arrivalDate} onClick={()=>void confirmArrival()}>Confirm arrival</Button>{arrivalMessage&&<p role="status">{arrivalMessage}</p>}</div>}
       <></>
       
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)]">

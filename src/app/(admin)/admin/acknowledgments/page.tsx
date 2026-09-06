@@ -22,6 +22,7 @@ import {
   type StaffProfileMini,
 } from "@/lib/office/acknowledgments";
 import { fetchActorContext } from "@/lib/office/meetings";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
@@ -81,9 +82,11 @@ export default function AdminAcknowledgmentsDashboardPage() {
         .eq("facility_id", selectedFacilityId as string)
         .is("deleted_at", null)
         .limit(2000);
+      const accessRows = await readAllPages((from, to) => supabase.from("user_facility_access").select("user_id", { count: "exact" }).eq("facility_id", selectedFacilityId as string).is("revoked_at", null).order("user_id").range(from, to));
       const staffQ = supabase
         .from("user_profiles")
         .select("id, full_name, app_role, is_active")
+        .in("id", accessRows.data.map((access) => access.user_id))
         .is("deleted_at", null)
         .eq("is_active", true);
       const docsQ = supabase

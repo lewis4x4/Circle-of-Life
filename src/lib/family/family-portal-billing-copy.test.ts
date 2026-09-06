@@ -85,9 +85,10 @@ describe("family billing portal copy", () => {
     expect(formatFamilyLastPaymentAmount(null)).toBe("No payment posted");
     expect(formatFamilyLastPaymentDate(null)).toBe("No payment posted");
 
-    // Fixture amounts only — not production PHI; formatUsd passes through loaded integer values
+    // Stored invoice and payment amounts are integer cents.
     expect(formatFamilyLastPaymentAmount(0)).toBe("$0.00");
-    expect(formatFamilyLastPaymentAmount(12500)).toBe("$12,500.00");
+    expect(formatFamilyLastPaymentAmount(12500)).toBe("$125.00");
+    expect(formatFamilyLastPaymentAmount(12345)).toBe("$123.45");
     expect(formatFamilyLastPaymentDate("Jan 15, 2026")).toBe("Jan 15, 2026");
   });
 

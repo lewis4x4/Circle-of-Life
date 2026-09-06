@@ -201,14 +201,14 @@ export function CoordinatorDashboardPageClient({
           ) : (
             <div className="space-y-3">
               {brief?.carePlansDue.map((cp) => (
-                <div key={cp.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
+                <Link href={cp.residentId ? `/admin/residents/${cp.residentId}/care-plan` : "/admin/care-plans/reviews-due"} key={cp.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
                   <div>
                     <span className="text-[15px] font-semibold text-foreground">{cp.residentName}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">
                     {new Date(cp.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           )}
@@ -229,14 +229,14 @@ export function CoordinatorDashboardPageClient({
           ) : (
             <div className="space-y-3">
               {brief?.pendingAdmissions.map((a) => (
-                <div key={a.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
+                <Link href={`/admin/residents/${a.id}`} key={a.id} className="flex items-center justify-between p-4 rounded-[var(--radius)] bg-muted/40 border border-border">
                   <div>
                     <span className="text-[15px] font-semibold text-foreground">{a.name}</span>
                   </div>
                   <span className="text-xs font-medium text-info">
                     {a.daysSinceInquiry}d since inquiry
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           )}

@@ -5,7 +5,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 
 export type HousekeeperDashboardBrief = {
   roomsAssigned: number;
@@ -23,52 +23,25 @@ export type HousekeeperDashboardBrief = {
   }>;
 };
 
-type RoomRow = { id: string; room_number: string };
 type TimeRecordRow = { clock_in: string | null; clock_out: string | null };
-
-export async function fetchHousekeepingBrief(
-  facilityId: string | null,
-): Promise<HousekeeperDashboardBrief> {
-  const supabase = createClient();
-
-  const weekStart = new Date(Date.now() - 7 * 86400000).toISOString();
-
-  // Housekeeping tasks from transport_requests (repurposed for housekeeping)
-  // or a dedicated table. For now, aggregate from time_records and rooms.
-  let roomsQuery = supabase
-    .from("rooms" as never)
-    .select("id, room_number")
-    .is("deleted_at", null);
-  if (isValidFacilityIdForQuery(facilityId)) {
-    roomsQuery = roomsQuery.eq("facility_id", facilityId);
-  }
-  const roomsRes = await roomsQuery;
-  const roomsCount = ((roomsRes.data ?? []) as RoomRow[]).length;
-
-  // Time records for hours this week
-  let hoursQuery = supabase
-    .from("time_records" as never)
-    .select("clock_in, clock_out")
-    .gte("clock_in", weekStart)
-    .is("deleted_at", null);
-  if (isValidFacilityIdForQuery(facilityId)) {
-    hoursQuery = hoursQuery.eq("facility_id", facilityId);
-  }
-  const hoursRes = await hoursQuery;
-  let totalMinutes = 0;
-  for (const rec of (hoursRes.data ?? []) as TimeRecordRow[]) {
-    if (rec.clock_in && rec.clock_out) {
-      totalMinutes += (new Date(rec.clock_out).getTime() - new Date(rec.clock_in).getTime()) / 60000;
-    }
-  }
-  const hoursThisWeek = Math.round((totalMinutes / 60) * 10) / 10;
-
-  return {
-    roomsAssigned: roomsCount,
-    roomsCompleted: 0,
-    priorityCleans: 0,
-    hoursThisWeek,
-    completionPct: roomsCount > 0 ? 0 : 100,
-    tasks: [],
-  };
+export async function fetchHousekeepingBrief(): Promise<HousekeeperDashboardBrief> {
+ const supabase = createClient();
+ const { data: { user } } = await supabase.auth.getUser();
+ if (!user) throw new Error("Sign in to load assignments");
+ const scope = await loadCaregiverFacilityContext(supabase);
+ if (!scope.ok) throw new Error(scope.error);
+ const response = await fetch(`/api/admin/operations/tasks?facility_id=${scope.ctx.facilityId}&view=day`);
+ const payload = await response.json();
+ if (!response.ok) throw new Error(payload.error ?? "Assignments unavailable");
+ const tasks = (payload.tasks as Array<{ id: string; template_name: string; assigned_to: string | null; assigned_role: string | null; status: string; priority: string }>).filter((task) => task.assigned_to === user.id || (!task.assigned_to && task.assigned_role === "housekeeper")).map((task) => ({ id: task.id, roomNumber: "", residentName: "", taskType: task.template_name, status: task.status, isPriority: ["high", "critical"].includes(task.priority) }));
+ const staff = await supabase.from("staff").select("id").eq("user_id",user.id).is("deleted_at",null).maybeSingle();
+ if (staff.error) throw staff.error;
+ let minutes=0;
+ if (staff.data) {
+  const hours = await supabase.from("time_records").select("clock_in, clock_out").eq("staff_id",staff.data.id).eq("facility_id",scope.ctx.facilityId).gte("clock_in",new Date(Date.now()-7*86400000).toISOString()).is("deleted_at",null);
+  if (hours.error) throw hours.error;
+  for (const record of (hours.data ?? []) as TimeRecordRow[]) if(record.clock_in && record.clock_out) minutes += (new Date(record.clock_out).getTime()-new Date(record.clock_in).getTime())/60000;
+ }
+ const completed=tasks.filter((task)=>task.status==="completed").length;
+ return { roomsAssigned:tasks.length,roomsCompleted:completed,priorityCleans:tasks.filter((task)=>task.isPriority && task.status!=="completed").length,hoursThisWeek:Math.round(minutes/6)/10,completionPct:tasks.length?Math.round(completed/tasks.length*100):0,tasks };
 }

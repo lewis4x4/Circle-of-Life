@@ -1,0 +1,474 @@
+[
+  {
+    "id": "N01",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N02",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N03",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N04",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N06",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "O06",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/navigation/pillars.ts",
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/AppShellCommandPalette.tsx",
+      "src/components/layout/AppShellSectionsJumpList.tsx",
+      "src/lib/navigation/pillars.test.ts",
+      "src/components/layout/AppShell.test.tsx"
+    ],
+    "notes": "Role item filtering is applied to navigation and both page finders; business and office destinations are discoverable; Home/search labels are literal; mobile scope remains visible and changing scope on a facility record navigates to that facility.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N05",
+    "status": "implemented",
+    "evidence": [
+      "src/components/admin/AdminDashboardPageClient.tsx"
+    ],
+    "notes": "Today work queue and resident watchlist precede secondary summaries; internal workflow labels replaced with operator language. Existing detail links and distinct obligations retained.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N07",
+    "status": "implemented",
+    "evidence": [
+      "src/components/layout/AppShell.tsx",
+      "src/components/layout/CaregiverShell.tsx",
+      "src/components/layout/FamilyShell.tsx"
+    ],
+    "notes": "Decorative alert dots removed. Admin bell opens notification settings; family/caregiver inactive alert controls removed.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N08",
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N09",
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N10",
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N11",
+    "status": "implemented",
+    "evidence": [
+      "src/components/dietary/PassModal.tsx",
+      "src/components/dietary/VoiceModal.tsx",
+      "src/components/dietary/CommandDeck.tsx",
+      "src/hooks/dietary/useDietaryToday.ts",
+      "src/app/api/dietary/tray-pass/route.ts",
+      "src/app/api/dietary/temperature/route.ts",
+      "supabase/migrations/20260906142133_dietary_verified_actions.sql",
+      "src/components/dietary/PassModal.test.tsx",
+      "supabase/tests/review_dietary_integrity.sql"
+    ],
+    "notes": "Manual resident/food/liquid/allergen checks persist actor/time and reject changed orders and revoked access. Manual temperature logging uses measured inputs and approved limits; fake voice/override/fortification/vendor controls removed. Errors cannot produce all-clear; refresh/time and per-user facility/sign-out controls added. No automated clinical override is advertised.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N12",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N13",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N14",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N15",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N16",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/family/family-billing-data.ts",
+      "src/lib/family/family-feed.ts",
+      "src/lib/family/family-messages-data.ts",
+      "src/lib/family/family-calendar-data.ts",
+      "src/app/(family)/family/messages/page.tsx",
+      "src/lib/family/family-data-integrity.test.ts"
+    ],
+    "notes": "Integer cents render through shared currency formatting; balances traverse complete invoice history; newest messages and older-page navigation retain resident context; facility timestamps are labeled Eastern. Independent review reinforced paging against concurrent insertions.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N17",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/nurse-dashboard/page.tsx",
+      "src/components/coordinator/CoordinatorDashboardPageClient.tsx",
+      "src/lib/coordinator/dashboard-brief.ts",
+      "src/components/executive/CeoDashboardPageClient.tsx",
+      "src/lib/executive/load-ceo-dashboard-data.ts"
+    ],
+    "notes": "Nurse data remounts by facility and clears on failure; nurse/coordinator/CEO work rows link to the corresponding resident, care plan, or alert source.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N18",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/nurse-dashboard/page.tsx",
+      "src/components/coordinator/CoordinatorDashboardPageClient.tsx",
+      "src/lib/coordinator/dashboard-brief.ts",
+      "src/components/executive/CeoDashboardPageClient.tsx",
+      "src/lib/executive/load-ceo-dashboard-data.ts"
+    ],
+    "notes": "Nurse data remounts by facility and clears on failure; nurse/coordinator/CEO work rows link to the corresponding resident, care plan, or alert source.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N19",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/executive/scenarios/page.tsx"
+    ],
+    "notes": "Scenario baseline is explicitly illustrative and independently editable with date/source/scope and dollar units; no hardcoded value is called current facility data.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N20",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/haven-insight/HavenInsightContext.tsx",
+      "src/lib/haven-insight/citations.ts",
+      "src/lib/haven-insight/HavenInsightContext.test.tsx",
+      "src/components/haven-insight/HavenInsightPanel.tsx",
+      "src/app/(admin)/executive/nlq/page.tsx",
+      "src/app/(admin)/reports/nlq/page.tsx"
+    ],
+    "notes": "Compact Insight reuses server session IDs, hydrates saved conversation, preserves citations/fallback evidence and isolates user/facility changes. Compact/full views share citation normalization; authorized users can open the same session in full history. Local template search is labeled Find a report.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N28",
+    "status": "implemented",
+    "evidence": [
+      "src/hooks/useOnboardingStore.ts",
+      "src/hooks/useOnboardingStore.test.ts",
+      "src/components/layout/OnboardingShell.tsx",
+      "src/app/(onboarding)/onboarding/departments/page.tsx",
+      "src/app/(onboarding)/onboarding/questions/page.tsx"
+    ],
+    "notes": "Per-answer serialization and aggregate failure state preserve drafts; export/exit flush pending saves with retry. Hydration is generation guarded. Department links target actual assigned questions; URL navigation does not claim discovery completion.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N29",
+    "status": "implemented",
+    "evidence": [
+      "src/hooks/useOnboardingStore.ts",
+      "src/hooks/useOnboardingStore.test.ts",
+      "src/components/layout/OnboardingShell.tsx",
+      "src/app/(onboarding)/onboarding/departments/page.tsx",
+      "src/app/(onboarding)/onboarding/questions/page.tsx"
+    ],
+    "notes": "Per-answer serialization and aggregate failure state preserve drafts; export/exit flush pending saves with retry. Hydration is generation guarded. Department links target actual assigned questions; URL navigation does not claim discovery completion.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N30",
+    "status": "implemented",
+    "evidence": [
+      "src/components/layout/MedTechShell.tsx",
+      "src/components/layout/DietaryShell.tsx"
+    ],
+    "notes": "Specialist dark appearance is scoped locally without overwriting the global theme preference.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N31",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N32",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N33",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "C26",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "C27",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "C28",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "B-17",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/v2",
+      "src/lib/review-route-parity.test.ts"
+    ],
+    "notes": "Clinical lists/detail/forms, dashboards, finance ledger/trial balance, executive reports/standup/benchmarks and user management share their complete existing operational implementations through both route entry points. Placeholder replacement routes no longer displace those tasks. V2 settings with real implementations remain.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "N34",
+    "status": "implemented",
+    "evidence": [
+      "src/design-system/components/FilterBar/FilterBar.tsx",
+      "src/design-system/components/FilterBar/FilterBar.test.tsx"
+    ],
+    "notes": "Deleted fabricated saved-view receipts. Saving is shown only when the caller supplies a persistence operation and success waits for its acknowledgment.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "SYS-06",
+    "status": "implemented",
+    "evidence": [
+      "public/sw.js",
+      "src/lib/pwa/rounding-sync.ts",
+      "src/hooks/useRoundingOfflineSync.ts",
+      "src/app/api/rounding/tasks/[id]/complete/route.ts",
+      "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "src/components/rounding/RoundingOutbox.tsx",
+      "src/lib/pwa/rounding-sync-integrity.test.ts"
+    ],
+    "notes": "Offline observations retain original time/operator/org/facility; server rejects another operator replay; conflicts and unattributed legacy records are retained. Sensitive shared navigation/API caches removed; operator-scoped Outbox exposes pending work and errors. Supervisor reconciliation remains manual for genuine conflicts.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "SYS-07",
+    "status": "implemented",
+    "evidence": [
+      "public/sw.js",
+      "src/lib/pwa/rounding-sync.ts",
+      "src/hooks/useRoundingOfflineSync.ts",
+      "src/app/api/rounding/tasks/[id]/complete/route.ts",
+      "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "src/components/rounding/RoundingOutbox.tsx",
+      "src/lib/pwa/rounding-sync-integrity.test.ts"
+    ],
+    "notes": "Offline observations retain original time/operator/org/facility; server rejects another operator replay; conflicts and unattributed legacy records are retained. Sensitive shared navigation/API caches removed; operator-scoped Outbox exposes pending work and errors. Supervisor reconciliation remains manual for genuine conflicts.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "C14",
+    "status": "implemented",
+    "evidence": [
+      "public/sw.js",
+      "src/lib/pwa/rounding-sync.ts",
+      "src/hooks/useRoundingOfflineSync.ts",
+      "src/app/api/rounding/tasks/[id]/complete/route.ts",
+      "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+      "src/components/rounding/RoundingOutbox.tsx",
+      "src/lib/pwa/rounding-sync-integrity.test.ts"
+    ],
+    "notes": "Offline observations retain original time/operator/org/facility; server rejects another operator replay; conflicts and unattributed legacy records are retained. Sensitive shared navigation/API caches removed; operator-scoped Outbox exposes pending work and errors. Supervisor reconciliation remains manual for genuine conflicts.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "SYS-10",
+    "status": "implemented",
+    "evidence": [
+      "scripts/homewood/preflight.mjs",
+      "src/lib/preflight-integrity.test.ts"
+    ],
+    "notes": "Missing required operational prerequisites produce BLOCKED, missing/invalid audit evidence fails, and non-success exits nonzero without a strict flag.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  },
+  {
+    "id": "SYS-11",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/rounding/rounding-plans-display-copy.ts",
+      "src/lib/rounding/rounding-plans-display-copy.test.ts"
+    ],
+    "notes": "Date-only observation-plan dates preserve calendar date; instants are explicitly Eastern.",
+    "deployment": "Not deployed; authenticated browser UAT remains unverified."
+  }
+]

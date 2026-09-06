@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { WorkingFacilitySelector } from "@/components/caregiver/WorkingFacilitySelector";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -22,18 +23,14 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
  *  3. Full-viewport container
  */
 export function DietaryShell({ children }: { children: React.ReactNode }) {
-  const { setTheme } = useTheme();
   const router = useRouter();
-  const themeSet = useRef(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [workingId, setWorkingId] = useState("");
+  const [exitError, setExitError] = useState<string | null>(null);
   const [authorized, setAuthorized] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  useEffect(() => {
-    if (!themeSet.current) {
-      setTheme("dark");
-      themeSet.current = true;
-    }
-  }, [setTheme]);
+
 
   const checkAccess = useCallback(async () => {
     const supabase = createClient();
@@ -46,6 +43,7 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    setUserId(user.id);
     const role = getAppRoleFromClaims(user);
 
     // Dietary staff and any admin-eligible role can access
@@ -89,8 +87,14 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
   // above forces dark unconditionally so the surrounding chrome reads the
   // dark variant of every token regardless of system preference.
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground antialiased">
-      {children}
+    <div className="dark min-h-screen bg-background font-sans text-foreground antialiased">
+      <header className="flex items-center justify-between gap-4 border-b border-border p-3">
+        {userId && <WorkingFacilitySelector userId={userId} onResolved={setWorkingId} />}
+        <Link href="/dietary/acknowledgments" className="underline">Required reading</Link>
+        <button type="button" onClick={() => { void createClient().auth.signOut({ scope: "local" }).then(({ error }) => { if (error) setExitError(error.message); else router.replace("/login"); }); }}>Sign out</button>
+        {exitError && <p role="alert">{exitError}</p>}
+      </header>
+      {workingId ? <div key={workingId}>{children}</div> : <p className="p-4">Choose your working facility to open kitchen service.</p>}
     </div>
   );
 }

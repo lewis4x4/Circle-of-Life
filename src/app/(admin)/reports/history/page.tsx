@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
@@ -17,6 +18,8 @@ type RunHistoryRow = {
   status: string;
   started_at: string;
   completed_at: string | null;
+  report_title: string | null;
+  scope_label: string | null;
 };
 
 export default function ReportHistoryPage() {
@@ -35,7 +38,7 @@ export default function ReportHistoryPage() {
         if (!ctx.ok) throw new Error(ctx.error);
         const { data, error: queryErr } = await supabase
           .from("report_runs")
-          .select("id, source_type, source_id, status, started_at, completed_at")
+          .select("id, source_type, source_id, status, started_at, completed_at, report_title:result_snapshot_json->>title, scope_label:result_snapshot_json->>scopeLabel")
           .eq("organization_id", ctx.ctx.organizationId)
           .order("started_at", { ascending: false })
           .limit(100);
@@ -92,8 +95,9 @@ export default function ReportHistoryPage() {
                         <div className="flex flex-col min-w-[250px] gap-1 shrink-0">
                            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Source: <span className="font-semibold text-primary-600 dark:text-primary-400">{row.source_type}</span></span>
                            <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
-                              {row.source_id.replace(/-/g, ' ')}
+                              <Link href={`/admin/reports/history/${row.id}`} className="underline underline-offset-4">{row.report_title ?? "Report run — open details"}</Link>
                            </span>
+                           <span className="text-xs text-muted-foreground">{row.scope_label ?? "Scope recorded in run details"}</span>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full items-center">

@@ -53,12 +53,13 @@ export default function VendorInvoiceDetailPage() {
       return;
     }
     setInv(row as InvRow);
-    const { data: li } = await supabase
+    const { data: li, error: lineError } = await supabase
       .from("vendor_invoice_lines")
       .select("*")
       .eq("vendor_invoice_id", id)
       .is("deleted_at", null)
       .order("line_number");
+    if (lineError) { setLoadError(`Invoice lines could not be loaded: ${lineError.message}`); setLines([]); setLoading(false); return; }
     setLines((li ?? []) as LineRow[]);
     setLoading(false);
   }, [supabase, id, organizationId]);
@@ -68,7 +69,7 @@ export default function VendorInvoiceDetailPage() {
   }, [load]);
 
   async function patchStatus(status: InvRow["status"], withApproval?: boolean) {
-    if (!inv || !organizationId) return;
+    if (!inv || !organizationId || loading || loadError) return;
     setSaving(true);
     setLoadError(null);
     const payload: Record<string, unknown> = { status };
@@ -91,7 +92,7 @@ export default function VendorInvoiceDetailPage() {
       <VendorHubNav />
       {loadError && (
         <p className="text-sm text-destructive" role="alert">
-          {loadError}
+          {loadError} <button type="button" onClick={() => void load()} className="underline">Retry review</button>
         </p>
       )}
       {loading && !inv ? (
@@ -113,7 +114,7 @@ export default function VendorInvoiceDetailPage() {
                 <button
                   type="button"
                   className={cn(buttonVariants({ size: "sm" }))}
-                  disabled={saving}
+                  disabled={saving || loading || Boolean(loadError)}
                   onClick={() => void patchStatus("submitted")}
                 >
                   Submit
@@ -123,7 +124,7 @@ export default function VendorInvoiceDetailPage() {
                 <button
                   type="button"
                   className={cn(buttonVariants({ size: "sm" }))}
-                  disabled={saving}
+                  disabled={saving || loading || Boolean(loadError)}
                   onClick={() => void patchStatus("approved", true)}
                 >
                   Approve
@@ -133,7 +134,7 @@ export default function VendorInvoiceDetailPage() {
                 <button
                   type="button"
                   className={cn(buttonVariants({ size: "sm" }))}
-                  disabled={saving}
+                  disabled={saving || loading || Boolean(loadError)}
                   onClick={() => void patchStatus("matched", true)}
                 >
                   Mark matched
@@ -143,7 +144,7 @@ export default function VendorInvoiceDetailPage() {
                 <button
                   type="button"
                   className={cn(buttonVariants({ size: "sm" }))}
-                  disabled={saving}
+                  disabled={saving || loading || Boolean(loadError)}
                   onClick={() => void patchStatus("paid")}
                 >
                   Mark paid

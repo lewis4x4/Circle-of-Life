@@ -75,7 +75,8 @@ import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
 import { applyExecutiveCommandNavToItems } from "@/lib/auth/executive-nav-access";
 import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
 import {
-  PILLARS,
+  AUXILIARY_ROUTES,
+  pillarsForRole,
   REPORT_INCIDENT_HREF,
   findActivePillar,
   type Pillar,
@@ -375,9 +376,13 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     (facilityId: string | null) => {
       setSelectedFacility(facilityId);
       syncSelectedFacilityCookie(facilityId);
-      router.refresh();
+      if (/^\/admin\/facilities\/[^/]+/.test(pathname)) {
+        router.push(facilityId ? `/admin/facilities/${facilityId}` : "/admin/facilities");
+      } else {
+        router.refresh();
+      }
     },
-    [router, setSelectedFacility],
+    [pathname, router, setSelectedFacility],
   );
 
   const facilityControlLoading = authLoading || facilitiesLoading;
@@ -465,7 +470,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         title={facilityControlLoading ? undefined : facilityTriggerLabel}
         className={cn(
           WORKSPACE_WELL,
-          "hidden md:flex min-h-9 max-w-[220px] items-center gap-2 rounded-md px-2.5 py-1",
+          "flex min-h-9 max-w-[140px] md:max-w-[220px] items-center gap-2 rounded-md px-2.5 py-1",
           "text-[12px] font-medium transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
@@ -549,7 +554,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         aria-label="Open search (⌘K)"
       >
         <Search className="size-3.5 shrink-0" aria-hidden />
-        <span className="truncate">Search residents, staff…</span>
+        <span className="truncate">Find a page…</span>
         <kbd className={cn(WORKSPACE_KBD, "ml-auto")}>
           ⌘K
         </kbd>
@@ -608,7 +613,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     </button>
   );
 
-  const renderReportIncidentButton = () => (
+  const renderReportIncidentButton = () => visiblePillars.some((pillar) => pillar.items.some((item) => item.key === "incidents")) ? (
     // Self-labeled (visible "Report incident" text on sm+, accessible label on
     // mobile). No Tooltip wrapper: base-ui's useRender cannot disambiguate
     // when both the wrapping <TooltipTrigger> and the render-prop element
@@ -628,12 +633,13 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <ShieldAlert className="size-3.5" aria-hidden />
       <span className="hidden sm:inline">Report incident</span>
     </HavenNavLink>
-  );
+  ) : null;
 
   const renderNotificationsButton = () => (
     <Tooltip>
         <TooltipTrigger
-        aria-label="Notifications"
+        aria-label="Notification settings"
+        onClick={() => navigate("/admin/settings/notifications")}
         className={cn(
           WORKSPACE_ICON_LG,
           "relative",
@@ -642,9 +648,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         )}
       >
         <Bell className="size-4" aria-hidden />
-        <span className="absolute right-2 top-2 size-1.5 rounded-full bg-destructive" aria-hidden />
       </TooltipTrigger>
-      <TooltipContent side="bottom">Notifications</TooltipContent>
+      <TooltipContent side="bottom">Notification settings</TooltipContent>
     </Tooltip>
   );
 
@@ -714,30 +719,22 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   // role config doesn't list anything (e.g. owner / facility_admin). Legacy
   // role configs use group names ("Clinical Ops") — map them to pillar ids.
   const visiblePillars = useMemo(() => {
-    const roleGroups = roleConfig.visibleGroups;
-    let pillars = PILLARS;
-    if (roleGroups && roleGroups.length > 0) {
-      const allowed = new Set<string>();
-      for (const g of roleGroups) {
-        if (g === "Clinical Ops") allowed.add("clinical");
-        else if (g === "Quality & Risk") allowed.add("quality");
-        else if (g === "Finance") continue; // dropped from primary nav
-        else allowed.add(g.toLowerCase());
-      }
-      const filtered = PILLARS.filter((p) => allowed.has(p.id));
-      pillars = filtered.length > 0 ? filtered : PILLARS;
-    }
+    const pillars = pillarsForRole(roleConfig);
     return pillars.map((pillar) => ({
       ...pillar,
       items: applyExecutiveCommandNavToItems(pillar.items, appRole, authLoading),
     }));
-  }, [appRole, authLoading, roleConfig.visibleGroups]);
+  }, [appRole, authLoading, roleConfig]);
+
+  const visibleAuxiliary = useMemo(() => AUXILIARY_ROUTES.filter((item) =>
+    !roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(item.key) || item.key === "pilot-feedback" || item.key === "settings-notifications"
+  ), [roleConfig]);
 
   const activePillar = useMemo(
     () =>
       catalogActivePillar
         ? (visiblePillars.find((pillar) => pillar.id === catalogActivePillar.id) ??
-          catalogActivePillar)
+          null)
         : null,
     [catalogActivePillar, visiblePillars],
   );
@@ -770,6 +767,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           {sectionsJumpListMounted ? (
             <AppShellSectionsJumpListPanel
               pillars={visiblePillars}
+              auxiliary={visibleAuxiliary}
               onSelect={navigate}
               search={sectionsJumpListSearch}
               onSearchChange={setSectionsJumpListSearch}
@@ -953,6 +951,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           onSelect={handlePaletteSelect}
           onPrefetch={handleRoutePrefetch}
           pillars={visiblePillars}
+              auxiliary={visibleAuxiliary}
         />
       ) : null}
       <LazyOverlayShells />

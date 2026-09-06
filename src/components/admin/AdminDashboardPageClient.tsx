@@ -267,10 +267,10 @@ export function AdminDashboardPageClient({
         : "/admin/knowledge/admin#doctrine-blocked-review";
   const doctrinePrimaryTitle =
     workflows.doctrineOverdue > 0 || workflows.doctrineDueSoon > 0
-      ? "Doctrine SLA"
+      ? "Response deadlines"
       : workflows.doctrineReadyToPublish > 0
         ? "Ready To Publish"
-        : "Doctrine Review";
+        : "Policy review";
   const doctrinePrimaryValue =
     workflows.doctrineOverdue > 0
       ? workflows.doctrineOverdue
@@ -405,208 +405,6 @@ export function AdminDashboardPageClient({
         </div>
       </div>
 
-      {/* Facility priorities — slim inline strip. */}
-      <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card px-3 py-2.5 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Facility priorities
-          </p>
-          <h2 className="mt-0.5 truncate text-[13px] font-medium text-foreground">
-            {adminConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {adminConfig.primaryTaskLanes.map((lane) => (
-            <span
-              key={lane}
-              className="inline-flex h-6 items-center rounded border border-border/60 bg-secondary/60 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
-            >
-              {lane.replace(/_/g, " ")}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Urgent now — top exception row */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Urgent now</h2>
-            <p className="mt-1 text-[13px] text-muted-foreground">Facility-day exceptions that need immediate review.</p>
-          </div>
-        </div>
-      <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <MotionItem>
-          <TriageMetricCard 
-            title="Open Incidents" 
-            value={openIncidents} 
-            icon={ShieldAlert}
-            href="/admin/incidents?scope=open"
-            urgency={openIncidents > 0 ? "critical" : "normal"} 
-            subLabel={openIncidents > 0 ? "Open / investigating" : "No open incidents"}
-          />
-        </MotionItem>
-        <MotionItem>
-          <TriageMetricCard 
-            title="Staffing Gaps" 
-            value={staffingGaps} 
-            icon={UserCog}
-            href="/admin/staffing?compliance=non_compliant&window=24h"
-            urgency={staffingGaps > 0 ? "high" : "normal"} 
-            subLabel="Non-compliant snapshots (24h)"
-          />
-        </MotionItem>
-        <MotionItem>
-          <TriageMetricCard 
-            title="Med Exceptions" 
-            value={medExceptions} 
-            icon={Pill}
-            href="/admin/medications/errors?review=unreviewed"
-            urgency={medExceptions > 0 ? "medium" : "normal"} 
-            subLabel="Unreviewed medication errors"
-          />
-        </MotionItem>
-        <MotionItem>
-          <TriageMetricCard 
-            title="Compliance Risks" 
-            value={complianceAlerts} 
-            icon={FileWarning}
-            href="/admin/certifications?timeline=expiring_soon&dbStatus=active&window=30d"
-            urgency={complianceAlerts > 0 ? "high" : "normal"} 
-            subLabel="Certifications expiring (30d)"
-          />
-        </MotionItem>
-      </MotionList>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Workflow convergence</h2>
-            <p className="mt-1 text-[13px] text-muted-foreground">Cross-lane backlog across doctrine, incidents, admissions, referrals, discharge, and family.</p>
-          </div>
-        </div>
-        <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-          <MotionItem>
-            <TriageMetricCard
-              title={doctrinePrimaryTitle}
-              value={doctrinePrimaryValue}
-              icon={NotebookPen}
-              href={doctrinePrimaryHref}
-              urgency={workflows.doctrineOverdue > 0 ? "critical" : workflows.doctrineBlockedReview > 0 || workflows.doctrineDueSoon > 0 ? "high" : "normal"}
-              subLabel={`${workflows.doctrineBlockedReview} blocked · ${workflows.doctrineReadyToPublish} ready · ${workflows.doctrineDueSoon} due soon`}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title={incidentLifecycleBacklog > 0 ? "Incident Lifecycle" : "Incident Follow-Ups"}
-              value={incidentPrimaryValue}
-              icon={ClipboardList}
-              href={incidentPrimaryHref}
-              urgency={
-                workflows.incidentEscalatedFollowups > 0 || workflows.incidentOpenObligations > 0
-                  ? "critical"
-                  : workflows.incidentOverdueFollowups > 0 || workflows.incidentRootCausePending > 0 || workflows.incidentCarePlanPending > 0 || workflows.incidentUnassignedFollowups > 0
-                    ? "high"
-                    : "normal"
-              }
-              subLabel={`${workflows.incidentOverdueFollowups} overdue · ${workflows.incidentOpenObligations} obligations · ${workflows.incidentRootCausePending} RCA`}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title={admissionsPrimaryTitle}
-              value={admissionsPrimaryValue}
-              icon={DoorOpen}
-              href={admissionsPrimaryHref}
-              urgency={workflows.admissionsBlocked > 0 ? "high" : workflows.admissionsOnboardingPending > 0 ? "medium" : "normal"}
-              subLabel={`${workflows.admissionsMoveInReady} ready · ${workflows.admissionsOnboardingPending} onboarding`}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title={referralPrimaryTitle}
-              value={referralPrimaryValue}
-              icon={ArrowRightLeft}
-              href={referralPrimaryHref}
-              urgency={workflows.referralsBlockedHandoffs > 0 ? "high" : workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
-              subLabel={`${workflows.referralsBlockedHandoffs} blocked · ${workflows.referralsReadyHandoffs} ready · ${workflows.referralsOnboardingHandoffs} onboarding`}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title={dischargePrimaryTitle}
-              value={dischargePrimaryValue}
-              icon={DoorOpen}
-              href={dischargePrimaryHref}
-              urgency={workflows.dischargePlanning > 0 ? "high" : workflows.dischargePharmacistReview > 0 ? "medium" : workflows.dischargeReadyToComplete > 0 ? "normal" : "normal"}
-              subLabel={`${workflows.dischargePlanning} planning · ${workflows.dischargePharmacistReview} pharmacist · ${workflows.dischargeReadyToComplete} ready`}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title={familyPrimaryTitle}
-              value={familyPrimaryValue}
-              icon={MessageCircle}
-              href={familyPrimaryHref}
-              urgency={workflows.familyTriagePending > 0 ? "high" : workflows.familyConferencesUpcoming > 0 ? "medium" : "normal"}
-              subLabel={`${workflows.familyTriagePending} triage · ${workflows.familyConferencesUpcoming} conferences`}
-            />
-          </MotionItem>
-        </MotionList>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Smart rounding</h2>
-            <p className="mt-1 text-[13px] text-muted-foreground">Watch load, escalation pressure, integrity review, and safety-score risk.</p>
-          </div>
-        </div>
-        <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MotionItem>
-            <TriageMetricCard
-              title="Watch Center"
-              value={assurance.activeWatches > 0 ? assurance.activeWatches : assurance.pendingWatchApprovals}
-              icon={ShieldAlert}
-              href={assurance.pendingWatchApprovals > 0 ? "/admin/rounding/watches" : "/admin/rounding/watches"}
-              urgency={assurance.pendingWatchApprovals > 0 ? "high" : assurance.activeWatches > 0 ? "medium" : "normal"}
-              subLabel={`${assurance.activeWatches} active · ${assurance.pendingWatchApprovals} pending approval`}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title="Escalation Queue"
-              value={assurance.openEscalations}
-              icon={AlertCircle}
-              href="/admin/rounding/escalations"
-              urgency={assurance.openEscalations > 0 ? "critical" : "normal"}
-              subLabel={assurance.openEscalations > 0 ? "Overdue or missed checks need review" : "No active escalations"}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title="Integrity Review"
-              value={assurance.openIntegrityFlags}
-              icon={NotebookPen}
-              href="/admin/rounding/integrity"
-              urgency={assurance.openIntegrityFlags > 0 ? "high" : "normal"}
-              subLabel={assurance.openIntegrityFlags > 0 ? "Late-entry and evidence flags open" : "No open integrity flags"}
-            />
-          </MotionItem>
-          <MotionItem>
-            <TriageMetricCard
-              title="Safety Scores"
-              value={assurance.criticalSafetyResidents}
-              icon={HeartPulse}
-              href="/admin/rounding/safety"
-              urgency={assurance.criticalSafetyResidents > 0 ? "critical" : assurance.highOrCriticalSafetyResidents > 0 ? "high" : "normal"}
-              subLabel={`${assurance.highOrCriticalSafetyResidents} high or critical residents`}
-            />
-          </MotionItem>
-        </MotionList>
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-3 items-start">
 
         {/* Inbox feed — flat card, dense rows. */}
@@ -617,7 +415,7 @@ export function AdminDashboardPageClient({
                 <div className="flex items-center gap-2">
                   <Activity className="size-4 text-muted-foreground" />
                   <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    Primary inbox
+                    Today’s work
                   </h2>
                   {totalActionable > 0 && (
                     <span className="inline-flex h-5 items-center rounded border border-destructive/30 bg-destructive/10 px-1.5 text-[10px] font-medium tabular-nums text-destructive">
@@ -811,6 +609,210 @@ export function AdminDashboardPageClient({
           </div>
         </div>
       </div>
+
+      {/* Facility priorities — slim inline strip. */}
+      <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-card px-3 py-2.5 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Facility priorities
+          </p>
+          <h2 className="mt-0.5 truncate text-[13px] font-medium text-foreground">
+            {adminConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+          </h2>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {adminConfig.primaryTaskLanes.map((lane) => (
+            <span
+              key={lane}
+              className="inline-flex h-6 items-center rounded border border-border/60 bg-secondary/60 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+            >
+              {lane.replace(/_/g, " ")}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Urgent now — top exception row */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Urgent now</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">Facility-day exceptions that need immediate review.</p>
+          </div>
+        </div>
+      <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <MotionItem>
+          <TriageMetricCard
+            title="Open Incidents"
+            value={openIncidents}
+            icon={ShieldAlert}
+            href="/admin/incidents?scope=open"
+            urgency={openIncidents > 0 ? "critical" : "normal"}
+            subLabel={openIncidents > 0 ? "Open / investigating" : "No open incidents"}
+          />
+        </MotionItem>
+        <MotionItem>
+          <TriageMetricCard
+            title="Staffing Gaps"
+            value={staffingGaps}
+            icon={UserCog}
+            href="/admin/staffing?compliance=non_compliant&window=24h"
+            urgency={staffingGaps > 0 ? "high" : "normal"}
+            subLabel="Non-compliant snapshots (24h)"
+          />
+        </MotionItem>
+        <MotionItem>
+          <TriageMetricCard
+            title="Med Exceptions"
+            value={medExceptions}
+            icon={Pill}
+            href="/admin/medications/errors?review=unreviewed"
+            urgency={medExceptions > 0 ? "medium" : "normal"}
+            subLabel="Unreviewed medication errors"
+          />
+        </MotionItem>
+        <MotionItem>
+          <TriageMetricCard
+            title="Compliance Risks"
+            value={complianceAlerts}
+            icon={FileWarning}
+            href="/admin/certifications?timeline=expiring_soon&dbStatus=active&window=30d"
+            urgency={complianceAlerts > 0 ? "high" : "normal"}
+            subLabel="Certifications expiring (30d)"
+          />
+        </MotionItem>
+      </MotionList>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Workflow follow-up</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">Cross-lane backlog across doctrine, incidents, admissions, referrals, discharge, and family.</p>
+          </div>
+        </div>
+        <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <MotionItem>
+            <TriageMetricCard
+              title={doctrinePrimaryTitle}
+              value={doctrinePrimaryValue}
+              icon={NotebookPen}
+              href={doctrinePrimaryHref}
+              urgency={workflows.doctrineOverdue > 0 ? "critical" : workflows.doctrineBlockedReview > 0 || workflows.doctrineDueSoon > 0 ? "high" : "normal"}
+              subLabel={`${workflows.doctrineBlockedReview} blocked · ${workflows.doctrineReadyToPublish} ready · ${workflows.doctrineDueSoon} due soon`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title={incidentLifecycleBacklog > 0 ? "Incident Lifecycle" : "Incident Follow-Ups"}
+              value={incidentPrimaryValue}
+              icon={ClipboardList}
+              href={incidentPrimaryHref}
+              urgency={
+                workflows.incidentEscalatedFollowups > 0 || workflows.incidentOpenObligations > 0
+                  ? "critical"
+                  : workflows.incidentOverdueFollowups > 0 || workflows.incidentRootCausePending > 0 || workflows.incidentCarePlanPending > 0 || workflows.incidentUnassignedFollowups > 0
+                    ? "high"
+                    : "normal"
+              }
+              subLabel={`${workflows.incidentOverdueFollowups} overdue · ${workflows.incidentOpenObligations} obligations · ${workflows.incidentRootCausePending} RCA`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title={admissionsPrimaryTitle}
+              value={admissionsPrimaryValue}
+              icon={DoorOpen}
+              href={admissionsPrimaryHref}
+              urgency={workflows.admissionsBlocked > 0 ? "high" : workflows.admissionsOnboardingPending > 0 ? "medium" : "normal"}
+              subLabel={`${workflows.admissionsMoveInReady} ready · ${workflows.admissionsOnboardingPending} onboarding`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title={referralPrimaryTitle}
+              value={referralPrimaryValue}
+              icon={ArrowRightLeft}
+              href={referralPrimaryHref}
+              urgency={workflows.referralsBlockedHandoffs > 0 ? "high" : workflows.referralsInAdmissions > 0 ? "medium" : "normal"}
+              subLabel={`${workflows.referralsBlockedHandoffs} blocked · ${workflows.referralsReadyHandoffs} ready · ${workflows.referralsOnboardingHandoffs} onboarding`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title={dischargePrimaryTitle}
+              value={dischargePrimaryValue}
+              icon={DoorOpen}
+              href={dischargePrimaryHref}
+              urgency={workflows.dischargePlanning > 0 ? "high" : workflows.dischargePharmacistReview > 0 ? "medium" : workflows.dischargeReadyToComplete > 0 ? "normal" : "normal"}
+              subLabel={`${workflows.dischargePlanning} planning · ${workflows.dischargePharmacistReview} pharmacist · ${workflows.dischargeReadyToComplete} ready`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title={familyPrimaryTitle}
+              value={familyPrimaryValue}
+              icon={MessageCircle}
+              href={familyPrimaryHref}
+              urgency={workflows.familyTriagePending > 0 ? "high" : workflows.familyConferencesUpcoming > 0 ? "medium" : "normal"}
+              subLabel={`${workflows.familyTriagePending} triage · ${workflows.familyConferencesUpcoming} conferences`}
+            />
+          </MotionItem>
+        </MotionList>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Smart rounding</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">Watch load, escalation pressure, integrity review, and safety-score risk.</p>
+          </div>
+        </div>
+        <MotionList className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <MotionItem>
+            <TriageMetricCard
+              title="Watch Center"
+              value={assurance.activeWatches > 0 ? assurance.activeWatches : assurance.pendingWatchApprovals}
+              icon={ShieldAlert}
+              href={assurance.pendingWatchApprovals > 0 ? "/admin/rounding/watches" : "/admin/rounding/watches"}
+              urgency={assurance.pendingWatchApprovals > 0 ? "high" : assurance.activeWatches > 0 ? "medium" : "normal"}
+              subLabel={`${assurance.activeWatches} active · ${assurance.pendingWatchApprovals} pending approval`}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Escalation Queue"
+              value={assurance.openEscalations}
+              icon={AlertCircle}
+              href="/admin/rounding/escalations"
+              urgency={assurance.openEscalations > 0 ? "critical" : "normal"}
+              subLabel={assurance.openEscalations > 0 ? "Overdue or missed checks need review" : "No active escalations"}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Documentation review"
+              value={assurance.openIntegrityFlags}
+              icon={NotebookPen}
+              href="/admin/rounding/integrity"
+              urgency={assurance.openIntegrityFlags > 0 ? "high" : "normal"}
+              subLabel={assurance.openIntegrityFlags > 0 ? "Late-entry and evidence flags open" : "No open integrity flags"}
+            />
+          </MotionItem>
+          <MotionItem>
+            <TriageMetricCard
+              title="Safety Scores"
+              value={assurance.criticalSafetyResidents}
+              icon={HeartPulse}
+              href="/admin/rounding/safety"
+              urgency={assurance.criticalSafetyResidents > 0 ? "critical" : assurance.highOrCriticalSafetyResidents > 0 ? "high" : "normal"}
+              subLabel={`${assurance.highOrCriticalSafetyResidents} high or critical residents`}
+            />
+          </MotionItem>
+        </MotionList>
+      </div>
+
+
     </div>
   );
 }

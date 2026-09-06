@@ -22,8 +22,8 @@ import { cn } from "@/lib/utils";
 // ── COLORS (chart series — recharts requires hex; these are var(--chart-1…5) equivalents) ──
 const CC = { emerald: "#10b981", rose: "#f43f5e", amber: "#f59e0b", blue: "#3b82f6", indigo: "#6366f1", grid: "rgba(0,0,0,0.06)", axis: "hsl(var(--muted-foreground))" };
 
-// ── BASELINE (COL current approximations) ──
-const BASELINE = {
+// Illustrative starting assumptions, never loaded business records.
+const SAMPLE_BASELINE = {
   totalBeds: 423,
   occupancyPct: 91.8,
   blendedRate: 3800, // $/bed/month
@@ -57,7 +57,7 @@ const Panel = ({ children, className }: { children: React.ReactNode; className?:
 );
 
 // ── PROJECTION ENGINE ──
-function computeProjections(assumptions: typeof DEFAULT_ASSUMPTIONS) {
+function computeProjections(assumptions: typeof DEFAULT_ASSUMPTIONS, baseline: typeof SAMPLE_BASELINE) {
   const months: string[] = [];
   const data: Array<{ month: string; revenue: number; labor: number; noi: number; cashFlow: number; occupancy: number }> = [];
 
@@ -70,19 +70,19 @@ function computeProjections(assumptions: typeof DEFAULT_ASSUMPTIONS) {
     months.push(label);
 
     const pctMonth = i / assumptions.horizonMonths;
-    const projectedBeds = BASELINE.totalBeds + Math.round(assumptions.newBeds * pctMonth);
-    const projectedOccupancy = Math.min(Math.max((BASELINE.occupancyPct + assumptions.occupancyChange) / 100, 0.5), 1.0);
+    const projectedBeds = baseline.totalBeds + Math.round(assumptions.newBeds * pctMonth);
+    const projectedOccupancy = Math.min(Math.max((baseline.occupancyPct + assumptions.occupancyChange) / 100, 0.5), 1.0);
     const occupiedBeds = projectedBeds * projectedOccupancy;
 
     const monthlyRevGrowth = Math.pow(1 + assumptions.revenueGrowth / 100 / 12, i);
-    const revenue = occupiedBeds * BASELINE.blendedRate * monthlyRevGrowth;
+    const revenue = occupiedBeds * baseline.blendedRate * monthlyRevGrowth;
 
     const monthlyLaborGrowth = Math.pow(1 + assumptions.laborInflation / 100 / 12, i);
-    const labor = BASELINE.monthlyLabor * monthlyLaborGrowth;
+    const labor = baseline.monthlyLabor * monthlyLaborGrowth;
 
-    const otherOpex = revenue * (BASELINE.otherOpexPct / 100);
+    const otherOpex = revenue * (baseline.otherOpexPct / 100);
     const noi = revenue - labor - otherOpex;
-    const cashFlow = noi - BASELINE.monthlyDebtService;
+    const cashFlow = noi - baseline.monthlyDebtService;
 
     data.push({
       month: label,
@@ -145,9 +145,12 @@ function AssumptionSlider({ label, value, onChange, min, max, step, unit, descri
 
 // ══════════════════════════════════════════════════════════
 export default function ExecutiveScenariosPage() {
+  const [baseline, setBaseline] = useState(SAMPLE_BASELINE);
+  const [baselineSource, setBaselineSource] = useState("Illustrative assumptions; no live facility data loaded");
+  const [baselineDate, setBaselineDate] = useState("");
   const [assumptions, setAssumptions] = useState(DEFAULT_ASSUMPTIONS);
 
-  const projection = useMemo(() => computeProjections(assumptions), [assumptions]);
+  const projection = useMemo(() => computeProjections(assumptions, baseline), [assumptions, baseline]);
   const { data, summary } = projection;
 
   const update = (key: keyof typeof assumptions, value: number) => {
@@ -171,7 +174,7 @@ export default function ExecutiveScenariosPage() {
                 </div>
                 <div>
                   <TitleH1>Scenario Modeling</TitleH1>
-                  <Subtitle>Adjust assumptions and see projected KPIs update in real-time</Subtitle>
+                  <Subtitle>Illustrative scenario calculator using the editable baseline below</Subtitle>
                 </div>
               </div>
             </div>
@@ -180,6 +183,17 @@ export default function ExecutiveScenariosPage() {
 
         <div className="px-6 sm:px-12 pb-12 space-y-6">
 
+          <Panel>
+            <h2 className="mb-3 font-semibold">Baseline assumptions · independent of the facility filter</h2>
+            <p className="mb-4 text-sm">Sample values are illustrative. Replace them with a dated, reconciled baseline before using projections for a decision. Currency inputs are dollars.</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(Object.keys(baseline) as Array<keyof typeof baseline>).map((key) => <label key={key} className="text-sm">{({ totalBeds: "Beds", occupancyPct: "Occupancy %", blendedRate: "Monthly rate per bed $", monthlyLabor: "Monthly labor $", monthlyDebtService: "Monthly debt service $", otherOpexPct: "Other operating expense %" })[key]}
+                <input className="mt-1 block w-full rounded border border-border bg-background p-2" type="number" min="0" max={key.endsWith("Pct") ? 100 : undefined} step={key === "totalBeds" ? 1 : 0.01} value={baseline[key]} onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value >= 0 && (!key.endsWith("Pct") || value <= 100)) setBaseline((old) => ({ ...old, [key]: value })); }} />
+              </label>)}
+              <label className="text-sm">Baseline source and scope<input className="mt-1 block w-full rounded border p-2" value={baselineSource} onChange={(e) => setBaselineSource(e.target.value)} /></label>
+              <label className="text-sm">As-of date<input className="mt-1 block w-full rounded border p-2" type="date" value={baselineDate} onChange={(e) => setBaselineDate(e.target.value)} /></label>
+            </div>
+          </Panel>
           {/* Summary Cards */}
           <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
             <MetricCardMoonshot label="PROJECTED MONTHLY NOI" value={fmtK(summary.endNoi)} color="emerald" trend={summary.endNoi > 0 ? "up" : "down"} sparklineVariant={1} />
@@ -220,7 +234,7 @@ export default function ExecutiveScenariosPage() {
                   value={assumptions.occupancyChange}
                   onChange={v => update("occupancyChange", v)}
                   min={-15} max={10} step={0.5} unit="pp"
-                  description="Percentage point change from current 91.8%"
+                  description={`Percentage point change from the entered ${baseline.occupancyPct}% baseline`}
                 />
                 <AssumptionSlider
                   label="Revenue Growth"
@@ -286,7 +300,7 @@ export default function ExecutiveScenariosPage() {
               {/* Cash Flow */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Monthly Cash Flow</h3>
-                <p className="text-xs text-muted-foreground mb-4">NOI minus debt service ({fmtK(BASELINE.monthlyDebtService)}/mo)</p>
+                <p className="text-xs text-muted-foreground mb-4">NOI minus debt service ({fmtK(baseline.monthlyDebtService)}/mo)</p>
                 <div className="h-[200px] min-w-0">
                   <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 200 }}>
                     <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>

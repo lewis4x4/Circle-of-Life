@@ -20,10 +20,9 @@ export type FilterBarProps = {
   selectedRegionId?: string;
   onRegionChange?: (id: string | undefined) => void;
   onReset?: () => void;
+  onSaveView?: (view: { dashboardId: string; scope: Scope; statuses: string[]; regionId?: string }) => Promise<void>;
   className?: string;
 };
-
-type SaveViewResult = { success: true; savedViewId: string };
 
 export function FilterBar({
   dashboardId,
@@ -38,6 +37,7 @@ export function FilterBar({
   selectedRegionId,
   onRegionChange,
   onReset,
+  onSaveView,
   className,
 }: FilterBarProps) {
   const [urlScope, setUrlScope] = useScope();
@@ -68,23 +68,16 @@ export function FilterBar({
   }, [onRegionChange, onReset, onStatusChange, setScope]);
 
   const handleSaveView = useCallback(async () => {
-    // TODO(ui-v2-s6): wire /api/v2/preferences — S3 stubs save-view to unblock shell work.
+    if (!onSaveView) return;
     setSaveState("saving");
     try {
-      const stubbed = await stubbedSaveView({
-        dashboardId,
-        name: `View ${new Date().toISOString()}`,
-        scope,
-        statuses: selectedStatusIds,
-        regionId: selectedRegionId,
-      });
-      console.info("[ui-v2-s3] stubbed save-view", stubbed);
+      await onSaveView({ dashboardId, scope, statuses: selectedStatusIds, regionId: selectedRegionId });
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 1500);
     } catch {
       setSaveState("error");
     }
-  }, [dashboardId, scope, selectedRegionId, selectedStatusIds]);
+  }, [dashboardId, scope, selectedRegionId, selectedStatusIds, onSaveView]);
 
   return (
     <div
@@ -139,7 +132,7 @@ export function FilterBar({
           >
             Reset
           </button>
-          <button
+          {onSaveView && (          <button
             type="button"
             onClick={() => {
               void handleSaveView();
@@ -152,9 +145,10 @@ export function FilterBar({
               : saveState === "saved"
                 ? "Saved"
                 : "Save view"}
-          </button>
+          </button>)}
         </div>
       </div>
+      {saveState === "error" && <p role="alert">The view was not saved. Try again.</p>}
       <p
         aria-live="polite"
         className={cn(
@@ -362,19 +356,4 @@ function StatusChips({
       </div>
     </div>
   );
-}
-
-async function stubbedSaveView(payload: {
-  dashboardId: string;
-  name: string;
-  scope: Scope;
-  statuses: string[];
-  regionId: string | undefined;
-}): Promise<SaveViewResult> {
-  // TODO(ui-v2-s6): wire /api/v2/preferences — real persistence lands in S6.
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return {
-    success: true,
-    savedViewId: `stub-${payload.dashboardId}-${Date.now()}`,
-  };
 }

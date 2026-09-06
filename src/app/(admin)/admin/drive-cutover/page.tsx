@@ -22,6 +22,7 @@ import {
   type QueryResult,
 } from "@/lib/office/drive-cutover";
 import { fetchActorContext } from "@/lib/office/meetings";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -46,6 +47,7 @@ export default function AdminDriveCutoverPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const [actualCutoffDate, setActualCutoffDate] = useState("");
   const [readonlyConfirmed, setReadonlyConfirmed] = useState(false);
   const [attestNotes, setAttestNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -72,20 +74,20 @@ export default function AdminDriveCutoverPage() {
         setRole(profileRes.data?.app_role ?? null);
       }
 
-      const batchesRes = (await supabase
+      const batchesRes = (await readAllPages((from, to) => supabase
         .from("drive_import_batches" as never)
-        .select("id")
+        .select("id", { count: "exact" })
         .eq("facility_id", fid)
         .is("deleted_at", null)
-        .limit(1000)) as unknown as QueryResult<{ id: string }>;
+        .order("id").range(from, to))) as unknown as QueryResult<{ id: string }>;
       if (batchesRes.error) throw new Error(batchesRes.error.message);
 
-      const filesRes = (await supabase
+      const filesRes = (await readAllPages((from, to) => supabase
         .from("drive_import_files" as never)
-        .select("status")
+        .select("status", { count: "exact" })
         .eq("facility_id", fid)
         .is("deleted_at", null)
-        .limit(5000)) as unknown as QueryResult<{ status: string }>;
+        .order("id").range(from, to))) as unknown as QueryResult<{ status: string }>;
       if (filesRes.error) throw new Error(filesRes.error.message);
 
       const statusRollup = rollupFromStatuses((filesRes.data ?? []).map((f) => f.status));
@@ -113,6 +115,7 @@ export default function AdminDriveCutoverPage() {
 
   const attest = useCallback(async () => {
     if (!facilityReady) return;
+    if (!actualCutoffDate || !readonlyConfirmed) { setNotice("Enter the actual read-only date and confirm the Drive setting."); return; }
     setSaving(true);
     setNotice(null);
     try {
@@ -121,7 +124,7 @@ export default function AdminDriveCutoverPage() {
       const { error } = await supabase.from("drive_cutover_attestations" as never).insert({
         organization_id: actor.organizationId,
         facility_id: selectedFacilityId as string,
-        cutoff_date: DRIVE_CUTOFF_DATE,
+        cutoff_date: actualCutoffDate,
         drive_set_readonly: readonlyConfirmed,
         notes: attestNotes.trim() || null,
         attested_by: actor.userId,
@@ -138,7 +141,7 @@ export default function AdminDriveCutoverPage() {
     } finally {
       setSaving(false);
     }
-  }, [supabase, facilityReady, selectedFacilityId, readonlyConfirmed, attestNotes, load]);
+  }, [supabase, facilityReady, selectedFacilityId, readonlyConfirmed, actualCutoffDate, attestNotes, load]);
 
   const days = useMemo(() => daysUntilCutoff(), []);
   const complete = rollup ? migrationComplete(rollup) : false;
@@ -154,8 +157,7 @@ export default function AdminDriveCutoverPage() {
             Drive cutover
           </h2>
           <p className="text-sm text-muted-foreground max-w-2xl">
-            F0-5 hard cutoff: <strong>{DRIVE_CUTOFF_DATE}</strong> — Google Drive becomes a read-only
-            archive and Haven is the system of record.{" "}
+            Planned cutoff recorded in the rollout plan: <strong>{DRIVE_CUTOFF_DATE}</strong>. Confirm a current cutover date and verified content before relying on Haven as the sole document store.{" "}
             <Link href="/admin/drive-import" className="text-info hover:underline">
               Manage imports
             </Link>
@@ -182,6 +184,7 @@ export default function AdminDriveCutoverPage() {
 
         {facilityReady && !isLoading && !loadError ? (
           <>
+            <p className="text-sm text-muted-foreground">Import status tracks bookmarks. Copied content, readability and removal of Drive dependencies require separate verification; skipped files are not migrated content.</p>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
                 <p className="text-xs text-muted-foreground">Days to cutoff</p>
@@ -190,10 +193,10 @@ export default function AdminDriveCutoverPage() {
                 </p>
               </div>
               <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3">
-                <p className="text-xs text-muted-foreground">Migration</p>
+                <p className="text-xs text-muted-foreground">Content migration evidence</p>
                 <div className="mt-1">
                   <StatusPill tone={complete ? "success" : rollup && rollup.files > 0 ? "warning" : "muted"}>
-                    {complete ? "complete" : rollup && rollup.files > 0 ? "in progress" : "not started"}
+                    {complete ? "verified" : "not verified"}
                   </StatusPill>
                 </div>
               </div>
@@ -209,7 +212,7 @@ export default function AdminDriveCutoverPage() {
 
             {rollup ? (
               <div className="rounded-[var(--radius)] border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-                {rollup.batches} batch(es) · {rollup.files} file(s) · {rollup.imported} imported ·{" "}
+                {rollup.batches} batch(es) · {rollup.files} file(s) · {rollup.imported} bookmarks created ·{" "}
                 {rollup.mapped} mapped · {rollup.pending} pending · {rollup.skipped} skipped
                 {rollup.failed ? ` · ${rollup.failed} failed` : ""}
               </div>
@@ -217,13 +220,13 @@ export default function AdminDriveCutoverPage() {
 
             {showAttest ? (
               <div className="rounded-[var(--radius)] border border-border bg-card p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Record cutover sign-off</h3>
+                <h3 className="text-sm font-semibold text-foreground">Record Drive read-only attestation</h3>
                 {!complete ? (
                   <p className="rounded-[9px] border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-                    Imports are not fully resolved. You can still attest, but resolve pending/failed
-                    items first for a clean cutover.
+                    Content migration is not verified. This attestation records the Drive setting only; it does not establish completed content migration.
                   </p>
                 ) : null}
+                <label className="block text-sm">Actual Drive read-only date<input type="date" value={actualCutoffDate} onChange={(event) => setActualCutoffDate(event.target.value)} className="block border rounded p-2" /></label>
                 <label className="flex items-start gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
@@ -231,8 +234,7 @@ export default function AdminDriveCutoverPage() {
                     onChange={(e) => setReadonlyConfirmed(e.target.checked)}
                     className="mt-1"
                   />
-                  I confirm Google Drive has been set read-only for this facility and Haven is the
-                  system of record.
+                  I confirm Google Drive has been set read-only for this facility on the recorded date.
                 </label>
                 <textarea
                   value={attestNotes}

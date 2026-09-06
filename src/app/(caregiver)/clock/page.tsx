@@ -27,6 +27,7 @@ export default function CaregiverClockPage() {
   const supabase = useMemo(() => createClient(), []);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [workingFacilityId, setWorkingFacilityId] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const [staff, setStaff] = useState<StaffRow | null>(null);
   const [openPunch, setOpenPunch] = useState<OpenPunch | null>(null);
@@ -59,6 +60,7 @@ export default function CaregiverClockPage() {
         return;
       }
       setFacilityName(ctxRes.ctx.facilityName);
+      setWorkingFacilityId(ctxRes.ctx.facilityId);
 
       const st = await supabase
         .from("staff")
@@ -107,7 +109,7 @@ export default function CaregiverClockPage() {
   }, [refresh]);
 
   async function clockIn() {
-    if (!staff) return;
+    if (!staff || !workingFacilityId) return;
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -120,7 +122,7 @@ export default function CaregiverClockPage() {
     try {
       const row: Database["public"]["Tables"]["time_records"]["Insert"] = {
         staff_id: staff.id,
-        facility_id: staff.facility_id,
+        facility_id: workingFacilityId,
         organization_id: staff.organization_id,
         clock_in: new Date().toISOString(),
         clock_in_method: "mobile",

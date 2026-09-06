@@ -2,6 +2,8 @@ export type AckRequirementRow = {
   id: string;
   document_id: string;
   document_title: string;
+  document_content_snapshot?: string | null;
+  document_version_hash?: string | null;
   required_roles: string[];
   require_signature: boolean;
   due_date: string | null;

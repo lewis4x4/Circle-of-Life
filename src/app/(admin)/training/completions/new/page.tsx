@@ -57,6 +57,8 @@ export default function AdminNewTrainingCompletionPage() {
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [programList, setProgramList] = useState<ProgramOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [completionSaved, setCompletionSaved] = useState(false);
+  const [completionId] = useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -221,11 +223,10 @@ export default function AdminNewTrainingCompletionPage() {
       if (nt) payload.notes = nt;
       payload.evaluator_user_id = user.id;
 
-      const { data: inserted, error: insErr } = await supabase
+      const { error: insErr } = await supabase
         .from("staff_training_completions")
-        .insert(payload)
-        .select("id")
-        .single();
+        .upsert({ ...payload, id: completionId }, { onConflict: "id", ignoreDuplicates: true })
+        .select("id");
 
       if (insErr) {
         const msg = insErr.message ?? "";
@@ -237,10 +238,8 @@ export default function AdminNewTrainingCompletionPage() {
         }
         throw new Error(insErr.message);
       }
-      if (!inserted?.id) throw new Error("Could not create completion row.");
 
-      const completionId = inserted.id;
-
+      setCompletionSaved(true);
       if (certificatePdf) {
         const objectPath = trainingCompletionCertificatePath(
           orgId,
@@ -250,26 +249,13 @@ export default function AdminNewTrainingCompletionPage() {
         );
         const { error: upErr } = await supabase.storage
           .from(COMPETENCY_CERTIFICATE_BUCKET)
-          .upload(objectPath, certificatePdf, { contentType: "application/pdf", upsert: false });
-        if (upErr) {
-          await supabase
-            .from("staff_training_completions")
-            .update({ deleted_at: new Date().toISOString() })
-            .eq("id", completionId);
-          throw upErr;
-        }
+          .upload(objectPath, certificatePdf, { contentType: "application/pdf", upsert: true });
+        if (upErr) throw new Error(`Completion saved (${completionId}); certificate upload failed. Retry this form to attach the certificate to the same completion: ${upErr.message}`);
         const { error: pathErr } = await supabase
           .from("staff_training_completions")
           .update({ attachment_path: objectPath })
           .eq("id", completionId);
-        if (pathErr) {
-          await supabase.storage.from(COMPETENCY_CERTIFICATE_BUCKET).remove([objectPath]);
-          await supabase
-            .from("staff_training_completions")
-            .update({ deleted_at: new Date().toISOString() })
-            .eq("id", completionId);
-          throw pathErr;
-        }
+        if (pathErr) throw new Error(`Completion saved (${completionId}); certificate link was not saved. Retry this form to finish linking the same completion: ${pathErr.message}`);
       }
 
       router.push("/admin/training");
@@ -328,6 +314,7 @@ export default function AdminNewTrainingCompletionPage() {
               </p>
             )}
 
+            <fieldset disabled={completionSaved || submitting} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="staff">Staff</Label>
               <select
@@ -453,6 +440,7 @@ export default function AdminNewTrainingCompletionPage() {
               />
             </div>
 
+            </fieldset>
             <div className="space-y-2">
               <Label htmlFor="cert-pdf">Certificate PDF (optional)</Label>
               <Input
@@ -473,7 +461,7 @@ export default function AdminNewTrainingCompletionPage() {
                     Saving…
                   </>
                 ) : (
-                  "Save completion"
+                  completionSaved ? "Retry certificate attachment" : "Save completion"
                 )}
               </Button>
               <Link href="/admin/training" className={buttonVariants({ variant: "outline" })}>

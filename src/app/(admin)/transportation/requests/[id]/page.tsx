@@ -223,8 +223,8 @@ export default function EditResidentTransportRequestPage() {
     if (!driverStaffId) return true;
     const c = driverCredByStaff[driverStaffId];
     if (!c) return false;
-    return isCredentialDateValid(c.license_expires_on) || isCredentialDateValid(c.medical_card_expires_on);
-  }, [driverCredByStaff, driverStaffId]);
+    return isCredentialDateValid(c.license_expires_on, appointmentDate);
+  }, [driverCredByStaff, driverStaffId, appointmentDate]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -279,7 +279,7 @@ export default function EditResidentTransportRequestPage() {
 
       if (parsed.data.driver_staff_id && !driverLicenseOk) {
         throw new Error(
-          "Driver license (or medical card) on file appears expired. Update driver credentials before assigning.",
+          "Driver license is missing or expires before this trip. Update driver credentials before assigning.",
         );
       }
 

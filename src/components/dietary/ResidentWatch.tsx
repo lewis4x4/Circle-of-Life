@@ -1,30 +1,22 @@
 "use client";
 
-import { MessageSquare, X, Bell, Droplet, TrendingDown, Truck, FileText } from "lucide-react";
+import { MessageSquare, X, Bell, TrendingDown } from "lucide-react";
 import type { FortificationRec, NPOResident, RefusalEntry } from "./types";
 
 export function ResidentWatch({
   fortification,
   npo,
   refusals,
-  onFortifyApply,
 }: {
   fortification: FortificationRec[];
   npo: NPOResident[];
   refusals: RefusalEntry[];
-  onFortifyApply?: (id: string) => void;
 }) {
-  // Static hydration laggers — in production this would come from intake records
-  const hydrationText =
-    fortification.length > 0
-      ? `${fortification[0].resident_name} · Add fluid-rich items to trays`
-      : "No hydration alerts";
-
   return (
     <div className="w-[400px] shrink-0 border-l border-stone-800 bg-stone-950/40 flex flex-col overflow-hidden">
       <div className="px-5 py-3 border-b border-stone-800">
         <h2 className="text-sm font-semibold text-white">Resident Watch</h2>
-        <p className="text-xs text-stone-500">Live · driven by clinical + caregiver charting</p>
+        <p className="text-xs text-stone-500">Latest loaded clinical and caregiver records</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -53,17 +45,7 @@ export function ResidentWatch({
                     <span className="text-xs font-mono font-semibold text-amber-300">{f.cal} kcal</span>
                   </div>
                   <div className="text-xs text-stone-300 mt-1.5">{f.add}</div>
-                  <div className="flex gap-2 mt-2.5">
-                    <button
-                      onClick={() => onFortifyApply?.(f.id)}
-                      className="flex-1 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-semibold transition"
-                    >
-                      Apply to meal
-                    </button>
-                    <button className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs transition">
-                      Defer
-                    </button>
-                  </div>
+                  <p className="mt-2 text-xs text-stone-400">Ask the nurse to review this recommendation before changing the diet order.</p>
                 </div>
               ))}
             </div>
@@ -125,34 +107,15 @@ export function ResidentWatch({
           </section>
         )}
 
-        {/* ── Hydration ── */}
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <Droplet className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-xs font-semibold text-cyan-300 uppercase tracking-wider">Hydration Watch</h3>
-          </div>
-          <div className="rounded-lg bg-cyan-500/5 ring-1 ring-cyan-500/30 p-3 text-[11px] text-stone-300 leading-relaxed">
-            {hydrationText}
-          </div>
-        </section>
-
         {/* Empty state */}
         {fortification.length === 0 && npo.length === 0 && refusals.length === 0 && (
           <div className="text-center text-stone-600 text-xs py-10">
-            All clear — no active watch items
+            No watch items in the latest loaded records
           </div>
         )}
       </div>
 
-      {/* Footer actions */}
-      <div className="p-3 border-t border-stone-800 grid grid-cols-2 gap-2">
-        <button className="rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-medium py-2.5 flex items-center justify-center gap-1.5 ring-1 ring-stone-700 transition">
-          <Truck className="w-3.5 h-3.5" /> Vendor Order
-        </button>
-        <button className="rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-medium py-2.5 flex items-center justify-center gap-1.5 ring-1 ring-stone-700 transition">
-          <FileText className="w-3.5 h-3.5" /> Survey Pack
-        </button>
-      </div>
+
     </div>
   );
 }

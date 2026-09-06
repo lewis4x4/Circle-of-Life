@@ -68,6 +68,8 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = {
 
 const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
   ...DATE_FORMAT,
+  timeZone: "America/New_York",
+  timeZoneName: "short",
   hour: "numeric",
   minute: "2-digit",
 };
@@ -75,7 +77,7 @@ const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
 /** Effective-window date column — short month, numeric day/year. */
 export function formatRoundingPlanDateDisplay(value?: string | null): string {
   if (!value) return ROUNDING_PLAN_NO_DATE_COPY;
-  return new Intl.DateTimeFormat("en-US", DATE_FORMAT).format(new Date(value));
+  return new Intl.DateTimeFormat("en-US", { ...DATE_FORMAT, timeZone: "UTC" }).format(new Date(value));
 }
 
 /** Last-updated datetime column — date plus hour and minute. */

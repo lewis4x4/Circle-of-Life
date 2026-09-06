@@ -44,6 +44,7 @@ export default function NewJournalEntryPage() {
     { gl_account_id: "", debit: "", credit: "" },
     { gl_account_id: "", debit: "", credit: "" },
   ]);
+  const [draftId] = useState(() => crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +102,6 @@ export default function NewJournalEntryPage() {
     setBusy(true);
     setError(null);
     try {
-      const orgId = organizationId;
       const parsedLines = lines
         .map((l) => {
           const dc = parseDollarsToCents(l.debit);
@@ -130,37 +130,11 @@ export default function NewJournalEntryPage() {
         return;
       }
 
-      const ins: Database["public"]["Tables"]["journal_entries"]["Insert"] = {
-        organization_id: orgId,
-        entity_id: entityId,
-        facility_id: facilityId || null,
-        entry_date: entryDate,
-        memo: memo.trim() || null,
-        status: "draft",
-        source_type: "manual",
-      };
-
-      const { data: je, error: jeErr } = await supabase.from("journal_entries").insert(ins).select("id").single();
-      if (jeErr || !je) {
-        setError(jeErr?.message ?? "Insert failed");
-        return;
-      }
-      const jid = je.id as string;
-
-      const lineRows: Database["public"]["Tables"]["journal_entry_lines"]["Insert"][] = parsedLines.map((l) => ({
-        journal_entry_id: jid,
-        organization_id: orgId,
-        gl_account_id: l.gl_account_id,
-        line_number: l.line_number,
-        debit_cents: l.debit_cents,
-        credit_cents: l.credit_cents,
-      }));
-
-      const { error: lErr } = await supabase.from("journal_entry_lines").insert(lineRows);
-      if (lErr) {
-        setError(lErr.message);
-        return;
-      }
+      const { data: jid, error: saveError } = await supabase.rpc("save_journal_draft" as never, {
+        p_id: draftId, p_entity_id: entityId, p_facility_id: facilityId || null,
+        p_entry_date: entryDate, p_memo: memo.trim() || null, p_lines: parsedLines,
+      } as never);
+      if (saveError || !jid) { setError(saveError?.message ?? "Draft was not saved."); return; }
 
       router.push(`/admin/finance/journal-entries/${jid}`);
     } finally {
@@ -214,7 +188,7 @@ export default function NewJournalEntryPage() {
                 "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
               )}
               value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
+              onChange={(e) => { setEntityId(e.target.value); setFacilityId(""); setAccounts([]); setLines([{ gl_account_id: "", debit: "", credit: "" }, { gl_account_id: "", debit: "", credit: "" }]); }}
             >
               {entities.map((e) => (
                 <option key={e.id} value={e.id}>

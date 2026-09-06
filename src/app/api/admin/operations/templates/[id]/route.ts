@@ -137,40 +137,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Facility not found" }, { status: 404 });
   }
 
-  const { data: inserted, error: insertError } = await actor.admin
-    .from("operation_task_templates" as never)
-    .insert({
-      organization_id: actor.organization_id,
-      ...normalized,
-      version: (existing.version ?? 1) + 1,
-      previous_version_id: existing.id,
-      created_by: actor.id,
-      updated_by: actor.id,
-    } as never)
-    .select(TEMPLATE_SELECT)
-    .single();
-
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
-  }
-
-  const { error: deactivateError } = await actor.admin
-    .from("operation_task_templates" as never)
-    .update({
-      is_active: false,
-      updated_by: actor.id,
-    } as never)
-    .eq("organization_id", actor.organization_id)
-    .eq("id", existing.id);
-
-  if (deactivateError) {
-    return NextResponse.json({ error: deactivateError.message }, { status: 500 });
-  }
+  const { data: inserted, error: insertError } = await actor.admin.rpc("publish_operation_template_review" as never, { p_previous_id: existing.id, p_payload: { ...normalized, updated_by: actor.id, created_by: actor.id } } as never);
+  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 409 });
 
   return NextResponse.json({
     template: {
-      ...(inserted as object),
-      escalation_ladder: normalizeEscalationLadder((inserted as OperationTemplateRecord).escalation_ladder),
+      ...(inserted as unknown as object),
+      escalation_ladder: normalizeEscalationLadder((inserted as unknown as OperationTemplateRecord).escalation_ladder),
     },
     versioned: true,
     previous_template_id: existing.id,

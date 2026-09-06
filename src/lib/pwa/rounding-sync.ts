@@ -1,6 +1,7 @@
 "use client";
 
 import type { CompletionPayload } from "@/lib/rounding/types";
+import { createClient } from "@/lib/supabase/client";
 
 const FLUSH_COMMAND = "HAVEN_FLUSH_ROUNDING_QUEUE";
 const QUEUE_COMMAND = "HAVEN_QUEUE_ROUNDING_COMPLETION";
@@ -11,6 +12,9 @@ export type RoundingOfflineQueueItem = {
   id: string;
   taskId: string;
   residentId: string;
+  ownerUserId: string;
+  organizationId: string;
+  facilityId: string;
   payload: CompletionPayload;
   queuedAt: string;
   retryCount: number;
@@ -25,6 +29,7 @@ export type RoundingSyncState = {
   lastError: string | null;
   online: boolean;
   supported: boolean;
+  items?: Pick<RoundingOfflineQueueItem, "id" | "taskId" | "residentId" | "facilityId" | "queuedAt" | "lastError" | "payload">[];
 };
 
 type SyncCapableRegistration = ServiceWorkerRegistration & {
@@ -80,6 +85,14 @@ async function sendServiceWorkerCommand<TResponse>(
   }
 
   const { worker } = await getServiceWorkerEndpoint();
+  const { data } = await createClient().auth.getSession();
+  const ownerUserId = data.session?.user.id ?? null;
+  if (type === QUEUE_COMMAND) {
+    const item = payload.item as RoundingOfflineQueueItem | undefined;
+    if (!ownerUserId || item?.ownerUserId !== ownerUserId) {
+      throw new Error("The signed-in operator changed. Keep this draft and sign in as its original operator before queuing it.");
+    }
+  }
 
   return await new Promise<TResponse>((resolve, reject) => {
     const channel = new MessageChannel();
@@ -97,7 +110,7 @@ async function sendServiceWorkerCommand<TResponse>(
       resolve(event.data as TResponse);
     };
 
-    worker.postMessage({ type, ...payload }, [channel.port2]);
+    worker.postMessage({ type, ...payload, ownerUserId }, [channel.port2]);
   });
 }
 
@@ -115,7 +128,8 @@ function isLikelyNetworkError(error: unknown) {
   return /failed to fetch|network|load failed|abort/i.test(error.message);
 }
 
-export async function queueRoundingCompletion(taskId: string, residentId: string, payload: CompletionPayload) {
+export async function queueRoundingCompletion(taskId: string, residentId: string, payload: CompletionPayload,
+  owner: { ownerUserId: string; organizationId: string; facilityId: string }) {
   if (!supportsRoundingOfflineSync()) {
     throw new Error("Offline sync is not supported in this browser.");
   }
@@ -124,7 +138,8 @@ export async function queueRoundingCompletion(taskId: string, residentId: string
     id: crypto.randomUUID(),
     taskId,
     residentId,
-    payload,
+    ...owner,
+    payload: { ...payload, observedAt: payload.observedAt ?? new Date().toISOString() },
     queuedAt: new Date().toISOString(),
     retryCount: 0,
     lastError: null,
@@ -156,8 +171,8 @@ export async function requestRoundingSyncState() {
       online: navigator.onLine,
       supported: true,
     } satisfies RoundingSyncState;
-  } catch {
-    return defaultState();
+  } catch (error) {
+    return { ...defaultState(), lastError: error instanceof Error ? error.message : "Outbox status is unavailable. Saved observations remain on this device." };
   }
 }
 
@@ -176,21 +191,16 @@ export async function flushQueuedRounds() {
   } satisfies RoundingSyncState;
 }
 
-export function subscribeToRoundingSyncState(callback: (state: RoundingSyncState) => void) {
+export function subscribeToRoundingSyncState(callback: () => void) {
   if (!supportsRoundingOfflineSync()) {
-    callback(defaultState());
+    callback();
     return () => {};
   }
 
   const handleMessage = (event: MessageEvent) => {
     const data = event.data as { type?: string } & Partial<RoundingSyncState>;
     if (data?.type !== "HAVEN_ROUNDING_SYNC_STATE") return;
-    callback({
-      ...defaultState(),
-      ...data,
-      online: navigator.onLine,
-      supported: true,
-    });
+    callback();
   };
 
   navigator.serviceWorker.addEventListener("message", handleMessage);

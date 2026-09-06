@@ -47,6 +47,7 @@ export async function requireAdminApiActor(options?: {
     .select("id, organization_id, app_role")
     .eq("id", user.id)
     .is("deleted_at", null)
+    .eq("is_active", true)
     .maybeSingle();
 
   const actor = profile as AdminProfileRow | null;
@@ -141,13 +142,15 @@ export async function actorCanAccessTargetUser(actor: AdminApiActor, targetUserI
     return false;
   }
 
-  const { data } = await actor.admin
+  const { data, error } = await actor.admin
     .from("user_facility_access")
     .select("user_id")
     .eq("user_id", targetUserId)
     .in("facility_id", facilityIds)
+    .eq("organization_id", actor.organization_id)
     .is("revoked_at", null)
+    .limit(1)
     .maybeSingle();
 
-  return Boolean(data);
+  return !error && Boolean(data);
 }

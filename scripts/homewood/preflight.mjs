@@ -23,11 +23,11 @@ const GATES = [
   { name: "lint", cmd: "npm run lint" },
   { name: "build", cmd: "npm run build" },
   { name: "homewood:audit", cmd: "npm run homewood:audit", postCheck: "audit" },
-  { name: "homewood:verify-auth", cmd: "npm run homewood:verify-auth", optional: true, reasonIfMissing: "HOMEWOOD_LAUNCH_PASSWORD" },
-  { name: "homewood:verify-rbac", cmd: "npm run homewood:verify-rbac", optional: true, reasonIfMissing: "BASE_URL" },
-  { name: "homewood:test-launch", cmd: "npm run homewood:test-launch", optional: true, reasonIfMissing: "BASE_URL" },
+  { name: "homewood:verify-auth", cmd: "npm run homewood:verify-auth", reasonIfMissing: "HOMEWOOD_LAUNCH_PASSWORD" },
+  { name: "homewood:verify-rbac", cmd: "npm run homewood:verify-rbac", reasonIfMissing: "BASE_URL" },
+  { name: "homewood:test-launch", cmd: "npm run homewood:test-launch", reasonIfMissing: "BASE_URL" },
   { name: "homewood:perf-baseline", cmd: "npm run homewood:perf-baseline" },
-  { name: "homewood:a11y-baseline", cmd: "npm run homewood:a11y-baseline", optional: true, reasonIfMissing: "BASE_URL" },
+  { name: "homewood:a11y-baseline", cmd: "npm run homewood:a11y-baseline", reasonIfMissing: "BASE_URL" },
 ];
 
 function runGate(gate) {
@@ -55,11 +55,11 @@ function isPrereqMissing(gate) {
 
 function auditHasCritical() {
   const auditPath = path.join(ROOT, "docs", "homewood", "DATA_AUDIT.md");
-  if (!existsSync(auditPath)) return { found: true, critical: 0 };
+  if (!existsSync(auditPath)) return { found: false, critical: 0 };
   const text = readFileSync(auditPath, "utf8");
   // Severity summary table: "| CRITICAL | <cats> | <rows> |"
   const m = text.match(/^\|\s*CRITICAL\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/m);
-  if (!m) return { found: true, critical: 0 };
+  if (!m) return { found: false, critical: 0 };
   return { found: true, critical: parseInt(m[1], 10) };
 }
 
@@ -67,9 +67,9 @@ function main() {
   const results = [];
   let failed = false;
   for (const gate of GATES) {
-    if (gate.optional && isPrereqMissing(gate)) {
-      results.push({ gate: gate.name, status: "skipped", detail: `prerequisite env not set: ${gate.reasonIfMissing}`, durationMs: 0 });
-      console.log(`[preflight] SKIP ${gate.name} (missing ${gate.reasonIfMissing})`);
+    if (isPrereqMissing(gate)) {
+      results.push({ gate: gate.name, status: "blocked", detail: `prerequisite env not set: ${gate.reasonIfMissing}`, durationMs: 0 });
+      console.log(`[preflight] BLOCKED ${gate.name} (missing ${gate.reasonIfMissing})`);
       continue;
     }
     process.stdout.write(`[preflight] RUN  ${gate.name}\n`);
@@ -83,8 +83,8 @@ function main() {
     // Post-check: audit gate explicitly fails on CRITICAL severity rows
     if (gate.postCheck === "audit") {
       const audit = auditHasCritical();
-      if (audit.critical > 0) {
-        results.push({ gate: gate.name, status: "fail", detail: `DATA_AUDIT.md surfaces ${audit.critical} CRITICAL anomaly categor${audit.critical === 1 ? "y" : "ies"}`, durationMs: r.durationMs });
+      if (!audit.found || audit.critical > 0) {
+        results.push({ gate: gate.name, status: "fail", detail: !audit.found ? "DATA_AUDIT.md is missing or has no parseable severity summary" : `DATA_AUDIT.md surfaces ${audit.critical} CRITICAL anomaly categor${audit.critical === 1 ? "y" : "ies"}`, durationMs: r.durationMs });
         console.error(`[preflight] FAIL ${gate.name} (CRITICAL anomalies = ${audit.critical})`);
         failed = true;
         break;
@@ -94,7 +94,8 @@ function main() {
     console.log(`[preflight] PASS ${gate.name} (${(r.durationMs / 1000).toFixed(1)}s)`);
   }
 
-  const goNoGo = failed ? "NO-GO" : "GO";
+  const blocked = results.some((result) => result.status === "blocked");
+  const goNoGo = failed ? "NO-GO" : blocked ? "BLOCKED" : "GO";
   const lines = [];
   lines.push(`# Homewood Lodge ALF — Go-Live Report`);
   lines.push("");
@@ -104,6 +105,7 @@ function main() {
   lines.push("");
   lines.push(failed
     ? "One or more pre-flight gates failed. The detail below shows which gate, the exit code, and the tail of stderr/stdout. Resolve the failure and re-run \`npm run homewood:preflight\`."
+    : blocked ? "Required operational checks could not run. Supply the missing prerequisites and rerun before a launch decision."
     : "Every pre-flight gate passed. The Homewood launch is technically green. See `GO_LIVE_RUNBOOK.md` for the on-the-day procedure.");
   lines.push("");
   lines.push(`## Gate summary`);
@@ -140,15 +142,7 @@ function main() {
   writeFileSync(REPORT_PATH, `${lines.join("\n")}\n`);
   console.log(`[preflight] report: ${path.relative(ROOT, REPORT_PATH)}`);
   console.log(`[preflight] ${goNoGo}`);
-  // Default exit 0 — the GO / NO-GO recommendation lives at the top of the
-  // report, and the daily preflight is meant to keep writing the report
-  // regardless of state. Pass `--strict` to fail-fast on the first NO-GO,
-  // useful for CI gating once we're confident the report is consistently
-  // GO. Per the launch brief: "Report shows current state — likely some
-  // NO-GOs at this point, that's fine, the user resolves them between
-  // now and launch."
-  const strict = process.argv.includes("--strict");
-  process.exit(strict && failed ? 1 : 0);
+  process.exit(failed || blocked ? 1 : 0);
 }
 
 main();

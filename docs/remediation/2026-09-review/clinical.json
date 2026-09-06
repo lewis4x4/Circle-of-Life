@@ -1,0 +1,474 @@
+[
+  {
+    "id": "C01",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/emar-queue.ts",
+      "src/lib/caregiver/emar-queue.test.ts",
+      "src/app/(caregiver)/meds/page.tsx"
+    ],
+    "notes": "Unresolved scheduled doses remain urgent, including prior-day generated records. Calendar recurrence is honored; documented doses are joined by their scheduled instant.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C02",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/meds/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "PRN remains available after a dose, shows last administration and order restrictions, captures indication and separate actual-time records. Exact request receipts prevent duplicate retries. Witness-required orders use the witnessed med-tech pass.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C03",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/incident-draft/page.tsx",
+      "src/lib/caregiver/shift.ts"
+    ],
+    "notes": "Incident submission invokes Zod validation, requires explicit category/severity, derives an editable shift from facility-local occurrence time, and uses the chosen working facility.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C04",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/tasks/page.tsx",
+      "src/components/caregiver/ResidentAdlCard.tsx",
+      "src/app/(caregiver)/tasks/page.test.tsx"
+    ],
+    "notes": "ADL cards remain mounted and sorted consistently; failed writes and edits typed during a save retain drafts. Only the acknowledged note is cleared.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C05",
+    "status": "implemented",
+    "evidence": [
+      "src/components/caregiver/ResidentAdlCard.tsx",
+      "src/app/(caregiver)/tasks/page.tsx"
+    ],
+    "notes": "ADL counts are factual entries with neutral styling. Clinical Stable and count-derived priority are removed; declined-care documentation requires real circumstances.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C06",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/admissions/direct-intake-schema.ts",
+      "src/app/(admin)/admin/admissions/new/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Identifiable intake drafts allow missing DOB, gender and source without fabricated answers. Bed preference is retained without implying reservation; arrival enforces complete demographics.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C07",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/resident/[id]/page.tsx",
+      "src/app/(caregiver)/meds/page.tsx"
+    ],
+    "notes": "Resident eMAR links retain UUID scope and offer an explicit all-residents continuation.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C08",
+    "status": "implemented",
+    "evidence": [
+      "src/components/med-tech/MedPassFlow/MedPassModal.tsx",
+      "src/components/med-tech/MedPassFlow/MedPassModal.test.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Replaced simulation with actual MAR/pass/tape transaction and durable receipt. Human safety confirmation, live hold/order checks and independent authenticated witness signatures replace fabricated scans, vitals and signatures. Automatic scanning/voice/geofence verification are not claimed.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C09",
+    "status": "implemented",
+    "evidence": [
+      "src/components/med-tech/PassCard.tsx",
+      "src/components/med-tech/ResidentDrawer.tsx",
+      "src/hooks/med-tech/useShiftCurrent.ts"
+    ],
+    "notes": "Passes carry resident UUIDs; rail and drawer associations use UUIDs rather than surname prefixes.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C10",
+    "status": "implemented",
+    "evidence": [
+      "src/components/med-tech/IncidentModal.tsx"
+    ],
+    "notes": "Med-tech incident categories match stored enum values and require explicit severity, location and actual immediate actions. Removed nonfunctional photo attachment control.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C11",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/clinical-writes.ts",
+      "src/lib/caregiver/clinical-writes.test.ts",
+      "src/app/(caregiver)/resident/[id]/log/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Vital writes append timestamped observations and atomically patch only supplied daily summary fields. The shift log displays the measurement timeline.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C12",
+    "status": "implemented",
+    "evidence": [
+      "src/components/controlled-substance/ControlledCountConsole.tsx",
+      "src/components/medication/CountInitiationModal.tsx",
+      "src/components/controlled-substance/PendingCountReceipt.tsx",
+      "src/lib/medications/controlled-count-batch.ts",
+      "src/lib/medications/controlled-count-batch.test.ts"
+    ],
+    "notes": "Blank independent counts replace guessed stock quantities. Expected count comes from the verified inventory ledger. One atomic batch, stable request IDs, exact replay checks and persisted pending count receipts support interrupted co-sign recovery.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C13",
+    "status": "implemented",
+    "evidence": [
+      "src/components/medications/MedicationOrderEditor.tsx",
+      "src/app/(admin)/admin/medications/verbal-orders/[id]/page.tsx",
+      "src/components/medications/MedicationErrorReview.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql",
+      "src/components/medications/clinical-authoring.test.tsx"
+    ],
+    "notes": "Added authorized medication order creation/revision/discontinuation with historical lineage; verbal order receipt and implementation are separate finishable steps linked to resulting medication orders; medication errors have clinical review/evidence actions. Revisions preserve untouched stop dates, form, indication, PRN interval, pharmacy/document metadata and safety settings; authoring state is bound to resident/order identity and frozen while saving.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C15",
+    "status": "implemented",
+    "evidence": [
+      "src/components/caregiver/ShiftHandoffBoard.tsx",
+      "src/app/(caregiver)/handoff/page.tsx"
+    ],
+    "notes": "Caregiver handoff includes the same persisted shift_handoff_notes stream as office/nursing, with post and acknowledgement actions, while retaining prior shift_handoffs.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C16",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/admissions/new/page.tsx",
+      "src/app/api/admin/workflows/admission-cases/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Created resident identity survives partial intake failure. Case creation uses a stable request identity, exact payload hash and transaction lock; retries cannot create another resident/case or silently submit an existing draft.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C17",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/admissions/[id]/page.tsx",
+      "src/app/api/admin/workflows/admission-cases/[id]/confirm-arrival/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "A separate actual-arrival action validates current readiness and atomically activates resident census and bed occupancy. Bed-reserved transitions also hold the actual bed transactionally; intake creation only records a preference.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C18",
+    "status": "implemented",
+    "evidence": [
+      "src/components/care-plans/CarePlanAuthor.tsx",
+      "src/app/(admin)/residents/[id]/care-plan/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql",
+      "src/components/medications/clinical-authoring.test.tsx"
+    ],
+    "notes": "Structured care-plan authoring saves versioned needs/interventions for clinical review. Version selection preserves historical access; approval retires the prior active version before the unique active-plan constraint applies. Editor state is bound to resident/source version and frozen during persistence.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C19",
+    "status": "implemented",
+    "evidence": [
+      "src/components/discharge/DischargeMedicationReview.tsx",
+      "src/app/(admin)/admin/discharge/[id]/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Medication reconciliation captures current medications and explicit continue/change/stop decisions. Pharmacist evidence is recorded separately without impersonating the current operator; database completion requires evidence and complete decisions.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C20",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/infection-control/new/page.tsx",
+      "src/lib/infection-control/outbreak-detection.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Surveillance saves navigate to its durable record even if evaluation fails. Outbreak detection serializes facility/group linkage and derives distinct case totals atomically; retries cannot inflate outbreaks.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C21",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/infection-control/[id]/page.tsx",
+      "src/app/(admin)/admin/infection-control/outbreaks/[id]/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Surveillance shows resident/symptom context and supports confirmation/resolution with evidence. Outbreak actions support ownership and signed completion; containment/closure requires clinical evidence and closure rejects unfinished cases/actions.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C22",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx"
+    ],
+    "notes": "Assessment persistence and risk/care-plan follow-ups have separate outcomes. A saved assessment retains its follow-up context for retry without reinsertion; downstream query/update errors are surfaced.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C23",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/residents/[id]/vitals/page.tsx"
+    ],
+    "notes": "Vital and alert sources expose independent unavailable states and retry, retaining loaded data instead of displaying false empty charts.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C24",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/compliance-scan.ts"
+    ],
+    "notes": "Compliance scan returns the finalized persisted counts rather than the initially zeroed snapshot; execution comments now describe the actual server RPC.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C25",
+    "status": "mitigated",
+    "evidence": [
+      "src/app/(admin)/admin/compliance/rules/new/page.tsx"
+    ],
+    "notes": "Unconfigured presets are explicitly disabled configuration drafts; placeholder/comment-only queries cannot be enabled. A verified executable preset catalog is not delivered. The broad source descriptions (for example administrator accessibility and adequate care) lack measurable approved query definitions; custom configured checks remain available.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C29",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/admissions/form-1823-readiness.ts",
+      "src/lib/admissions/form-1823-readiness.test.ts",
+      "src/lib/workflows/workflow-events.ts",
+      "src/app/api/admin/workflows/admission-cases/[id]/form-1823/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Form1823 readiness fails closed on source errors and requires the latest received record, current validity, physician and evidence reference/physical-report verification. UI and arrival checks enforce the same meaning.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C30",
+    "status": "implemented",
+    "evidence": [
+      "src/components/compliance/SurveyVisitSearchOverlay.tsx"
+    ],
+    "notes": "Survey access is marked logged only after acknowledged insertion. Failed logging remains explicit and chart retrieval can be retried.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C31",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/office/survey-binder.ts",
+      "src/lib/office/survey-binder.test.ts",
+      "src/app/(admin)/admin/survey-binder/page.tsx"
+    ],
+    "notes": "Per-source binder evidence distinguishes null/unavailable from real zero, including survey-history availability. Manual readiness is named separately.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C32",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/housekeeper/dashboard-brief.ts",
+      "src/app/(caregiver)/caregiver/housekeeper/page.tsx",
+      "src/lib/operations/auth.ts",
+      "src/app/api/admin/operations/tasks/route.ts"
+    ],
+    "notes": "Housekeeping reads real assigned/role-queue tasks for the selected facility and signed-in worker, with start/done/cannot-complete actions and personal hours. Empty assignments show a setup gap instead of 100% completion.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C33",
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/operations/tasks/[id]/complete/route.ts",
+      "src/app/api/admin/operations/tasks/bulk-complete/route.ts",
+      "src/app/(admin)/admin/operations/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Dual-sign operations record the first signature as awaiting independent verification. Atomic completion and bulk outcomes distinguish pending verification; raw client writes cannot forge signatures or disable the requirement.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C34",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/operations/page.tsx",
+      "src/app/api/admin/operations/tasks/[id]/start/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "Operation actions have in-flight protection and visible errors; start uses state-conditioned updates and completion is locked/idempotent.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C35",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/operations/assets/page.tsx",
+      "src/app/(admin)/admin/operations/templates/page.tsx"
+    ],
+    "notes": "Asset shortcut opens a populated schedule editor with the true source interval and explicit cadence selection. Existing schedules can be revised; shortcut duplicate creation is blocked without preventing intentional advanced schedules.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C36",
+    "status": "implemented",
+    "evidence": [
+      "supabase/functions/oce-task-scheduler/index.ts",
+      "src/lib/operations/auth.ts",
+      "src/app/api/admin/operations/tasks/[id]/start/route.ts"
+    ],
+    "notes": "Recurring work remains in a qualified role queue until staff claim it, rather than being assigned alphabetically to potentially off-duty staff. Removed unnecessary profile/access-list scans. Automatic roster-based assignment is not claimed.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C37",
+    "status": "implemented",
+    "evidence": [
+      "src/app/api/admin/operations/templates/[id]/route.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Template publication locks the prior version and creates/retires versions atomically; competing publication returns a conflict instead of leaving two active versions.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "C38",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(admin)/admin/compliance/emergency-preparedness/page.tsx",
+      "src/app/(admin)/admin/compliance/emergency-preparedness/page.test.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Emergency evidence and next-due state commit together; stable requests support exact retries. Maintenance explicitly distinguishes partial work from ticket resolution and commits evidence/ticket status together.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "I-01",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/clinical-writes.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Duplicate of C11: partial vital entries preserve earlier values and individual timestamped measurements.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "I-02",
+    "status": "implemented",
+    "evidence": [
+      "src/app/(caregiver)/resident/[id]/log/page.tsx"
+    ],
+    "notes": "Vitals-save acknowledgement and alert-evaluation failure are separate. Saved observations retain an alert-check unavailable message with retry until evaluation succeeds.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "I-03",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/clinical-writes.ts",
+      "src/app/(caregiver)/resident/[id]/page.tsx",
+      "src/app/(caregiver)/resident/[id]/log/page.tsx",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql",
+      "supabase/tests/review_clinical_integrity.sql"
+    ],
+    "notes": "Both quick-note entry points use one atomic database append operation instead of browser read/merge/replace.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "I-04",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/caregiver/facility-context.ts",
+      "src/lib/caregiver/facility-context.test.ts",
+      "src/components/caregiver/WorkingFacilitySelector.tsx",
+      "src/components/layout/CaregiverShell.tsx",
+      "src/app/(caregiver)/clock/page.tsx"
+    ],
+    "notes": "Per-user working-facility selection is re-authorized against live grants, synchronized with shared facility state, and shown persistently. Auto-selection occurs only for one authorized facility. Roster, incidents, resident care and clock share it.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  },
+  {
+    "id": "I-05",
+    "status": "implemented",
+    "evidence": [
+      "src/lib/compliance-dashboard-snapshot.ts",
+      "supabase/migrations/20260906140928_clinical_review_integrity.sql"
+    ],
+    "notes": "RLS-preserving latest-per-resident/type aggregate counts assessments server-side, eliminating API history-cap truncation.",
+    "verification": "27 focused clinical regressions passed, including failed-save draft retention and frozen authoring during persistence. Typecheck passed; scoped ESLint passed. Native PostgreSQL 17.9 replay passed all 325 migrations and 9 SQL probes; clinical rollback fixture exercises authenticated-role writes, exact retries, preserved medication fields, MAR collision/reopen denial, independent operation signatures, admission reservation/arrival, care-plan activation and emergency/outbreak consistency. No hosted deployment or authenticated browser UAT.",
+    "mission_alignment": "risk pending integrated release gates, hosted migration/frontend parity and real-role clinical UAT; local transactional verification passed"
+  }
+]

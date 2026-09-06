@@ -11,6 +11,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { triggerCsvDownload } from "@/lib/csv-export";
 import {
+  payrollExportIssue,
   buildPayrollLinesCsvFlat,
   buildPayrollLinesCsvGeneric,
   buildPayrollLinesCsvHoursSplit,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/payroll/payroll-export-csv";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { payPeriodClockBoundsUtc } from "@/lib/payroll/pay-period-bounds";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -59,6 +61,7 @@ export default function AdminPayrollBatchDetailPage() {
   const [lines, setLines] = useState<LineWithStaff[]>([]);
   const [eligibleMileage, setEligibleMileage] = useState<MileageRow[]>([]);
   const [eligibleTimeRecords, setEligibleTimeRecords] = useState<TimeRecordRow[]>([]);
+  const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,47 +101,47 @@ export default function AdminPayrollBatchDetailPage() {
       }
       setBatch(b);
 
-      const { data: lineRows, error: lErr } = await supabase
+      const { data: lineRows, error: lErr } = await readAllPages((from, to) => supabase
         .from("payroll_export_lines")
-        .select("id, line_kind, amount_cents, idempotency_key, payload, staff(first_name, last_name)")
+        .select("id, line_kind, amount_cents, idempotency_key, payload, staff(first_name, last_name)", { count: "exact" })
         .eq("batch_id", batchId)
         .is("deleted_at", null)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: true }).order("id", { ascending: true }).range(from, to));
       if (lErr) throw lErr;
       setLines((lineRows ?? []) as LineWithStaff[]);
 
-      const { data: mileageRows, error: mErr } = await supabase
+      const { data: mileageRows, error: mErr } = await readAllPages((from, to) => supabase
         .from("mileage_logs")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("facility_id", b.facility_id)
         .is("deleted_at", null)
         .not("approved_at", "is", null)
         .is("payroll_export_id", null)
         .gte("trip_date", b.period_start)
         .lte("trip_date", b.period_end)
-        .order("trip_date", { ascending: false });
+        .order("trip_date", { ascending: false }).order("id", { ascending: true }).range(from, to));
       if (mErr) throw mErr;
       setEligibleMileage(mileageRows ?? []);
 
       const { startIso, endIso } = payPeriodClockBoundsUtc(b.period_start, b.period_end);
 
-      const { data: trRows, error: trErr } = await supabase
+      const { data: trRows, error: trErr } = await readAllPages((from, to) => supabase
         .from("time_records")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("facility_id", b.facility_id)
         .is("deleted_at", null)
         .eq("approved", true)
         .not("approved_at", "is", null)
         .gte("clock_in", startIso)
         .lte("clock_in", endIso)
-        .order("clock_in", { ascending: true });
+        .order("clock_in", { ascending: true }).order("id", { ascending: true }).range(from, to));
       if (trErr) throw trErr;
 
-      const { data: trKeyRows, error: trKeyErr } = await supabase
+      const { data: trKeyRows, error: trKeyErr } = await readAllPages((from, to) => supabase
         .from("payroll_export_lines")
-        .select("idempotency_key")
+        .select("idempotency_key", { count: "exact" })
         .is("deleted_at", null)
-        .like("idempotency_key", "time_record:%");
+        .like("idempotency_key", "time_record:%").order("id", { ascending: true }).range(from, to));
       if (trKeyErr) throw trKeyErr;
 
       const exportedTimeIds = new Set(
@@ -252,6 +255,8 @@ export default function AdminPayrollBatchDetailPage() {
       let added = 0;
       let skippedOtherBatch = 0;
 
+      const incomplete = eligibleTimeRecords.filter((tr) => !tr.clock_out || tr.actual_hours == null || tr.actual_hours <= 0);
+      if (incomplete.length) throw new Error(`${incomplete.length} approved punch(es) need hours calculated. Reopen and approve them in Time records before importing.`);
       for (const tr of eligibleTimeRecords) {
         const idempotencyKey = `time_record:${tr.id}`;
 
@@ -307,6 +312,25 @@ export default function AdminPayrollBatchDetailPage() {
       setImporting(false);
     }
   }
+
+  async function exportBatch(format: "full" | "flat" | "vendor" | "split") {
+    if (!batch || exporting) return;
+    setExporting(true); setError(null);
+    try {
+      const { data, error: snapshotError } = await supabase.rpc("payroll_export_snapshot" as never, { p_batch_id: batch.id } as never);
+      if (snapshotError) throw new Error(snapshotError.message);
+      const snapshot = data as unknown as { batch: BatchRow; lines: LineWithStaff[]; line_count: number };
+      if (!snapshot || snapshot.batch.facility_id !== selectedFacilityId || snapshot.lines.length !== snapshot.line_count) throw new Error("Payroll snapshot could not be reconciled. Reload before exporting.");
+      const rows = toExportRows(snapshot.lines);
+      const csv = format === "full" ? buildPayrollLinesCsvGeneric(rows) : format === "flat" ? buildPayrollLinesCsvFlat(rows) : format === "split" ? buildPayrollLinesCsvHoursSplit(rows, snapshot.batch) : buildPayrollLinesCsvVendorHandoff(rows, snapshot.batch);
+      triggerCsvDownload(`payroll-${format}_${snapshot.batch.period_start}_${snapshot.batch.period_end}_${snapshot.line_count}-lines.csv`, csv);
+      setLines(snapshot.lines);
+    } catch (error) { setError(error instanceof Error ? error.message : "Payroll export failed."); }
+    finally { setExporting(false); }
+  }
+
+  const exportIssue = payrollExportIssue(toExportRows(lines));
+  const splitIssue = payrollExportIssue(toExportRows(lines), true);
 
   if (!facilityReady) {
     return (
@@ -430,14 +454,8 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      const csv = buildPayrollLinesCsvGeneric(toExportRows(lines));
-                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
-                      triggerCsvDownload(
-                        `payroll-export_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
-                        csv,
-                      );
-                    }}
+                    disabled={exporting || Boolean(exportIssue)}
+                    onClick={() => void exportBatch("full")}
                   >
                     CSV (full)
                   </Button>
@@ -445,14 +463,8 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      const csv = buildPayrollLinesCsvFlat(toExportRows(lines));
-                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
-                      triggerCsvDownload(
-                        `payroll-export-flat_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
-                        csv,
-                      );
-                    }}
+                    disabled={exporting || Boolean(exportIssue)}
+                    onClick={() => void exportBatch("flat")}
                   >
                     CSV (flat)
                   </Button>
@@ -460,17 +472,8 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      const csv = buildPayrollLinesCsvVendorHandoff(toExportRows(lines), {
-                        period_start: batch.period_start,
-                        period_end: batch.period_end,
-                      });
-                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
-                      triggerCsvDownload(
-                        `payroll-export-vendor-handoff_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
-                        csv,
-                      );
-                    }}
+                    disabled={exporting || Boolean(exportIssue)}
+                    onClick={() => void exportBatch("vendor")}
                   >
                     CSV (vendor handoff)
                   </Button>
@@ -478,18 +481,9 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={exporting || Boolean(splitIssue)}
                     title="Regular / overtime / total hours for time lines; generic columns, not vendor-specific layouts."
-                    onClick={() => {
-                      const csv = buildPayrollLinesCsvHoursSplit(toExportRows(lines), {
-                        period_start: batch.period_start,
-                        period_end: batch.period_end,
-                      });
-                      const safeProv = batch.provider.replace(/[^a-zA-Z0-9._-]+/g, "_");
-                      triggerCsvDownload(
-                        `payroll-export-hours-split_${batch.period_start}_${batch.period_end}_${safeProv}.csv`,
-                        csv,
-                      );
-                    }}
+                    onClick={() => void exportBatch("split")}
                   >
                     CSV (hours split)
                   </Button>
@@ -497,6 +491,8 @@ export default function AdminPayrollBatchDetailPage() {
               ) : undefined
             }
           >
+            {exportIssue && <p role="alert" className="text-sm text-destructive">{exportIssue}</p>}
+            {!exportIssue && splitIssue && <p className="text-sm text-warning">{splitIssue} Total worked-hours exports remain available; workweek overtime allocation requires payroll review.</p>}
             {lines.length === 0 ? (
               <p className="text-sm text-muted-foreground">No lines yet.</p>
             ) : (

@@ -67,10 +67,9 @@ export async function fetchComplianceDashboardSnapshot(
 
   const { today, plus30: in30 } = getComplianceDashboardDateWindow(now);
 
-  let assessmentsQuery = supabase
-    .from("assessments")
-    .select("resident_id, assessment_type, assessment_date, next_due_date")
-    .is("deleted_at", null);
+  const assessmentsQuery = supabase.rpc("count_overdue_latest_assessments" as never, {
+    p_today: today, p_facility_id: facilityFilter ? selectedFacilityId : null,
+  } as never);
 
   let carePlansQuery = supabase
     .from("care_plans")
@@ -114,7 +113,6 @@ export async function fetchComplianceDashboardSnapshot(
     .in("status", ["open", "poc_submitted", "poc_accepted", "recited"]);
 
   if (facilityFilter) {
-    assessmentsQuery = assessmentsQuery.eq("facility_id", selectedFacilityId!);
     carePlansQuery = carePlansQuery.eq("facility_id", selectedFacilityId!);
     followupsQuery = followupsQuery.eq("facility_id", selectedFacilityId!);
     surveillanceQuery = surveillanceQuery.eq("facility_id", selectedFacilityId!);
@@ -161,18 +159,8 @@ export async function fetchComplianceDashboardSnapshot(
   if (deficienciesRes.error) throw deficienciesRes.error;
   if (sessionRes.error) throw sessionRes.error;
 
-  const assessmentRows = assessmentsRes.data ?? [];
-  const overdueAssessments = Array.isArray(assessmentRows)
-    ? countOverdueAssessments(
-        assessmentRows as {
-          resident_id: string;
-          assessment_type: string;
-          assessment_date: string;
-          next_due_date: string | null;
-        }[],
-        today,
-      )
-    : 0;
+  const overdueAssessments = Number(assessmentsRes.data);
+  if (!Number.isFinite(overdueAssessments)) throw new Error("Assessment counts unavailable");
 
   return {
     overdueAssessments,

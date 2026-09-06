@@ -19,22 +19,15 @@ async function requireUser(admin: any, req: Request) {
     .from("user_profiles")
     .select("app_role, organization_id")
     .eq("id", user.id)
+    .eq("is_active", true)
+    .is("deleted_at", null)
     .single();
+  if (!profile) return null;
   return {
     user,
     role: String(profile?.app_role ?? user.app_metadata?.app_role ?? "caregiver"),
     organizationId: profile?.organization_id as string | undefined,
   };
-}
-
-async function softDelete(admin: any, table: string, id: string, organizationId: string, userId: string) {
-  const { error } = await admin
-    .from(table)
-    .update({ deleted_at: new Date().toISOString(), updated_by: userId })
-    .eq("id", id)
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null);
-  if (error) throw new Error(error.message);
 }
 
 Deno.serve(async (req) => {
@@ -65,69 +58,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "run_id is required" }, 400, origin);
   }
 
-  const { data: run, error: runError } = await admin
-    .from("flow_workflow_runs")
-    .select("id,user_id,status,undo_deadline,undo_handler,result_payload,organization_id,metadata")
-    .eq("id", body.run_id)
-    .eq("organization_id", auth.organizationId)
-    .single();
-
-  if (runError || !run) {
-    return jsonResponse({ error: "run_not_found" }, 404, origin);
+  const { data, error } = await admin.rpc("undo_grace_action", { p_run_id: body.run_id, p_actor_id: auth.user.id });
+  if (error || !data?.ok) {
+    t.log({ event: "undo_failed", outcome: "error", run_id: body.run_id });
+    return jsonResponse({ ok: false, error: "Undo could not be completed. The record may have changed or be outside your facility access." }, 409, origin);
   }
-  if (run.user_id !== auth.user.id && !["owner", "org_admin", "facility_admin", "manager"].includes(auth.role)) {
-    return jsonResponse({ error: "forbidden" }, 403, origin);
-  }
-  if (run.status !== "succeeded") {
-    return jsonResponse({ error: "run_not_undoable" }, 400, origin);
-  }
-  if (!run.undo_deadline || new Date(run.undo_deadline).getTime() < Date.now()) {
-    return jsonResponse({ error: "undo_window_expired" }, 400, origin);
-  }
-
-  const resultPayload = (run.result_payload ?? {}) as Record<string, unknown>;
-  const log: Array<{ step: string; ok: boolean; detail?: string }> = [];
-
-  try {
-    switch (String(run.undo_handler ?? "")) {
-      case "delete_daily_log":
-        if (typeof resultPayload.daily_log_id !== "string") throw new Error("Missing daily log id");
-        await softDelete(admin, "daily_logs", resultPayload.daily_log_id, auth.organizationId, auth.user.id);
-        log.push({ step: "delete_daily_log", ok: true });
-        break;
-      case "delete_incident":
-        if (typeof resultPayload.incident_id !== "string") throw new Error("Missing incident id");
-        await softDelete(admin, "incidents", resultPayload.incident_id, auth.organizationId, auth.user.id);
-        log.push({ step: "delete_incident", ok: true });
-        break;
-      case "delete_assessment":
-        if (typeof resultPayload.assessment_id !== "string") throw new Error("Missing assessment id");
-        await softDelete(admin, "assessments", resultPayload.assessment_id, auth.organizationId, auth.user.id);
-        log.push({ step: "delete_assessment", ok: true });
-        break;
-      default:
-        throw new Error("Unsupported undo handler");
-    }
-
-    await admin
-      .from("flow_workflow_runs")
-      .update({
-        status: "undone",
-        metadata: {
-          ...(run.metadata ?? {}),
-          compensation_log: log,
-          undone_at: new Date().toISOString(),
-          undone_by: auth.user.id,
-        },
-        updated_by: auth.user.id,
-      })
-      .eq("id", run.id);
-
-    t.log({ event: "undo_ok", outcome: "success", run_id: run.id });
-    return jsonResponse({ ok: true, run_id: run.id, compensation_log: log }, 200, origin);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Grace undo failed";
-    t.log({ event: "undo_failed", outcome: "error", run_id: run.id, error_message: message });
-    return jsonResponse({ ok: false, error: message, compensation_log: log }, 200, origin);
-  }
+  t.log({ event: "undo_ok", outcome: "success", run_id: body.run_id });
+  return jsonResponse(data, 200, origin);
 });

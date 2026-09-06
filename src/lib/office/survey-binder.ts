@@ -60,14 +60,16 @@ export function binderStatusTone(
 }
 
 export type BinderEvidence = {
-  documentCount: number;
-  expiringSoonCount: number;
-  inservicesThisYear: number;
-  drillsDueSoon: number;
+  checkedAt: string;
+  lastSurveyAvailable: boolean;
+  documentCount: number | null;
+  expiringSoonCount: number | null;
+  inservicesThisYear: number | null;
+  drillsDueSoon: number | null;
   lastSurvey: { date: string; type: string; result: string } | null;
 };
 
-/** Windowed exact count that tolerates per-source errors (returns 0). */
+/** Preserve unknown separately from a confirmed zero count. */
 async function countWindow(
   supabase: SupabaseClient,
   table: string,
@@ -75,7 +77,7 @@ async function countWindow(
   column: string | null,
   startIso: string | null,
   endIso: string | null,
-): Promise<number> {
+): Promise<number | null> {
   try {
     let q = supabase
       .from(table)
@@ -85,10 +87,10 @@ async function countWindow(
     if (column && startIso) q = q.gte(column, startIso);
     if (column && endIso) q = q.lte(column, endIso);
     const res = (await q) as unknown as { count: number | null; error: unknown };
-    if (res.error) return 0;
-    return res.count ?? 0;
+    if (res.error) return null;
+    return res.count;
   } catch {
-    return 0;
+    return null;
   }
 }
 
@@ -124,6 +126,7 @@ export async function fetchBinderEvidence(
   ]);
 
   let lastSurvey: BinderEvidence["lastSurvey"] = null;
+  let lastSurveyAvailable = true;
   try {
     const res = (await supabase
       .from("facility_survey_history")
@@ -133,12 +136,15 @@ export async function fetchBinderEvidence(
       .order("survey_date", { ascending: false })
       .limit(1)) as unknown as {
       data: { survey_date: string; survey_type: string; result: string }[] | null;
+      error?: unknown;
     };
+    if (res.error) throw res.error;
     const row = res.data?.[0];
     if (row) lastSurvey = { date: row.survey_date, type: row.survey_type, result: row.result };
   } catch {
+    lastSurveyAvailable = false;
     lastSurvey = null;
   }
 
-  return { documentCount, expiringSoonCount, inservicesThisYear, drillsDueSoon, lastSurvey };
+  return { checkedAt: now.toISOString(), lastSurveyAvailable, documentCount, expiringSoonCount, inservicesThisYear, drillsDueSoon, lastSurvey };
 }

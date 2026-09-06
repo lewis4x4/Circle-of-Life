@@ -55,6 +55,8 @@ async function main() {
             timeout: 30_000,
           });
           const status = res?.status() ?? 0;
+          if (status < 200 || status >= 400) throw new Error(`HTTP ${status}`);
+          if (new URL(page.url()).pathname === "/login" && !["/", "/login"].includes(new URL(url).pathname)) throw new Error("Authentication required for requested route; screenshot would only cover login.");
           const title = await page.title();
           const fileSafe = `${route.replace(/\//g, "_") || "root"}-${vp.name}.png`.replace(
             /_+/g,
@@ -67,6 +69,7 @@ async function main() {
             viewport: vp.name,
             url,
             status,
+            finalUrl: page.url(),
             title,
             screenshot: path.relative(root, shotPath),
           });

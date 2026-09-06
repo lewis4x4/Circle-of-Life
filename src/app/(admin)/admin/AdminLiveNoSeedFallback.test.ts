@@ -1,3 +1,4 @@
+import { adminIncidentsGlobalEmptyNotice } from "@/lib/incidents/incidents-board-copy";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -50,13 +51,14 @@ describe("admin live surfaces seeded fallback removal", () => {
   it("keeps explicit empty live states instead of sample roster or incident rows", () => {
     const residentsSource = readSource("src/components/residents/AdminResidentsPageClient.tsx");
     const incidentsSource = readSource("src/components/incidents/AdminIncidentsPageClient.tsx");
-    const clinicalDeskSource = readSource("src/app/(admin)/assessments/overdue/page.tsx");
+    const clinicalDeskSource = readSource("src/components/assessments/AdminOverdueAssessmentsPageClient.tsx") + readSource("src/lib/assessments/load-overdue-assessments.ts");
 
     expect(residentsSource).toContain("Live resident roster returned no residents");
     expect(residentsSource).toContain("setRows(liveRows)");
     expect(residentsSource).toContain("!error && filteredRows.length > 0");
     expect(incidentsSource).toContain("setRows(liveRows)");
-    expect(incidentsSource).toContain("No live incident records returned for this scope");
+    expect(incidentsSource).toContain("adminIncidentsGlobalEmptyNotice");
+    expect(adminIncidentsGlobalEmptyNotice()).toContain("No live incident records for this scope");
     expect(clinicalDeskSource).toContain("No overdue assessments.");
     expect(clinicalDeskSource).toContain("No drafts awaiting review.");
     expect(clinicalDeskSource).toContain("No cross-facility fallback query is run.");

@@ -16,7 +16,7 @@ type AccountJoin = {
  * Requires a review id on the row (from Fusion import). Updates `reputation_replies` to `posted` on success.
  */
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const replyId = (await params).id;
@@ -67,13 +67,22 @@ export async function POST(
     );
   }
 
-  const body = row.reply_body?.trim() ?? "";
+  let submitted: { reply_body?: unknown; expected_reply_body?: unknown };
+  try { submitted = await request.json(); } catch { return NextResponse.json({ error: "The visible reply text is required." }, { status: 400 }); }
+  if (typeof submitted.reply_body !== "string" || typeof submitted.expected_reply_body !== "string") return NextResponse.json({ error: "Reply text and expected draft are required." }, { status: 400 });
+  if (submitted.expected_reply_body !== row.reply_body) return NextResponse.json({ error: "This draft changed. Reload and review before posting." }, { status: 409 });
+  const body = submitted.reply_body.trim();
   if (!body || body === YELP_IMPORTED_REPLY_PLACEHOLDER) {
     return NextResponse.json(
       { error: "Edit the reply text before posting (replace the imported placeholder)." },
       { status: 400 },
     );
   }
+
+  const { data: savedDraft, error: saveError } = await supabase.from("reputation_replies")
+    .update({ reply_body: body, updated_by: user.id }).eq("id", replyId).eq("status", "draft")
+    .eq("reply_body", submitted.expected_reply_body).select("id").maybeSingle();
+  if (saveError || !savedDraft) return NextResponse.json({ error: saveError?.message ?? "Draft changed before posting. Reload and review." }, { status: 409 });
 
   try {
     await postYelpPublicReviewResponse(reviewId, body);
@@ -83,7 +92,7 @@ export async function POST(
   }
 
   const now = new Date().toISOString();
-  const { error: upErr } = await supabase
+  const { data: postedRow, error: upErr } = await supabase
     .from("reputation_replies")
     .update({
       status: "posted",
@@ -91,11 +100,11 @@ export async function POST(
       posted_to_platform_at: now,
       updated_by: user.id,
     })
-    .eq("id", replyId);
+    .eq("id", replyId).eq("reply_body", body).eq("status", "draft").select("id").maybeSingle();
 
-  if (upErr) {
+  if (upErr || !postedRow) {
     return NextResponse.json(
-      { error: `Posted to Yelp but failed to update record: ${upErr.message}` },
+      { error: `Posted to Yelp but failed to update record: ${upErr?.message ?? "Draft changed during publication. Reconcile the public reply before retrying."}` },
       { status: 500 },
     );
   }

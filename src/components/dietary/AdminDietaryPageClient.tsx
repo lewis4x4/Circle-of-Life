@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Utensils, Cookie } from "lucide-react";
@@ -405,12 +406,34 @@ export function AdminDietaryPageClient({
     }
   }, [facilityReady, organizationId, selectedFacilityId, snackForm, supabase, load]);
 
+  const { appRole } = useHavenAuth();
+  const canActivateOrder = ["owner", "org_admin", "facility_admin", "nurse"].includes(appRole ?? "");
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  async function activateOrder(row: DietRow) {
+    if (!canActivateOrder || !globalThis.confirm("I have reviewed this diet order against the prescriber's instructions, IDDSI levels and allergies. Activate it and supersede the resident's previous active order?")) return;
+    setActivatingId(row.id); setError(null);
+    try {
+      const { error: activationError } = await supabase.rpc("activate_reviewed_diet_order" as never, { p_id: row.id, p_expected_updated_at: row.updated_at } as never);
+      if (activationError) throw new Error(activationError.message);
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : "Order was not activated."); }
+    finally { setActivatingId(null); }
+  }
+
   const snackPreviewFootnote = snackPassRecentPreviewFootnote(snackLogs.length);
   const dietOrderLoadCapNotice = dietOrdersHubLoadCapNotice(rows.length);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
+        {canActivateOrder && rows.some((row) => row.status === "draft") && <section className="rounded-lg border border-border p-4 space-y-3" aria-label="Diet orders awaiting clinical review">
+          <h2 className="font-semibold">Draft orders awaiting clinical review</h2>
+          {rows.filter((row) => row.status === "draft").map((row) => <div key={row.id} className="flex items-center justify-between gap-3">
+            <span>{row.residents?.first_name} {row.residents?.last_name} · Food {String(row.iddsi_food_level ?? "not assessed")} · {row.iddsi_fluid_level} · Allergies: {row.allergy_constraints?.join(", ") || "none recorded"}</span>
+            <Button size="sm" disabled={activatingId !== null} onClick={() => void activateOrder(row)}>Reviewed — activate order</Button>
+          </div>)}
+        </section>}
+
         
         {/* ─── MOONSHOT HEADER ─── */}
         <div className="flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
@@ -668,7 +691,7 @@ export function AdminDietaryPageClient({
                             {formatDietaryHubResidentDisplay(row.residents?.first_name, row.residents?.last_name)}
                           </span>
                           <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
-                            {row.iddsi_food_level.replace(/_/g, " ")}
+                            {String(row.iddsi_food_level ?? "not assessed").replace(/_/g, " ")}
                           </span>
                           <span className="flex-1 min-w-0 text-[12px] text-muted-foreground capitalize truncate">
                             {row.iddsi_fluid_level.replace(/_/g, " ")}

@@ -174,8 +174,10 @@ export function SurveyVisitSearchOverlay({
         record_description: description,
       });
       if (error) {
-        console.warn("[survey-visit] log insert failed", error.message);
+        setLoadError(`Access logging failed: ${error.message}. Retry loading this chart to record access.`);
+        return false;
       }
+      return true;
     },
     [facilityId, organizationId, sessionId, supabase, userId],
   );
@@ -274,11 +276,11 @@ export function SurveyVisitSearchOverlay({
       });
 
       const name = residentLabel(resident);
-      await logEntry("resident_chart", resident.id, `Survey visit — full chart retrieved: ${name}`);
+      const logged = await logEntry("resident_chart", resident.id, `Survey visit — full chart retrieved: ${name}`);
       if (requestId !== chartRequestRef.current) {
         return;
       }
-      setLoggedChartFor(resident.id);
+      setLoggedChartFor(logged ? resident.id : null);
     },
     [logEntry, residentLabel, supabase],
   );

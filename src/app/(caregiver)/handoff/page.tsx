@@ -1,4 +1,5 @@
 "use client";
+import { ShiftHandoffBoard } from "@/components/caregiver/ShiftHandoffBoard";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ClipboardList, Loader2, MessageSquare } from "lucide-react";
@@ -131,7 +132,7 @@ export default function CaregiverHandoffPage() {
               Shift handoff
             </h3>
             <p className="text-sm font-mono text-primary-200/60 mt-2 max-w-xl">
-              Recent recorded handoffs for your facility (read-only). Create or edit handoffs from the nurse lead workflow when enabled.
+              Shared shift notes and earlier recorded handoffs for your working facility.
             </p>
           </div>
           <Badge className="border-primary-500/40 bg-primary-500/20 text-primary-300 uppercase tracking-wider font-mono text-[10px] font-bold rounded-full px-4 py-1.5 shrink-0">
@@ -140,6 +141,7 @@ export default function CaregiverHandoffPage() {
         </div>
       </div>
 
+      <ShiftHandoffBoard />
       {rows.length === 0 ? (
         <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
           <p className="text-sm font-mono text-zinc-400">No shift handoffs on file yet.</p>

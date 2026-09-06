@@ -141,27 +141,8 @@ export default function AdminWorkspacePageDetail() {
     try {
       const actor = await fetchActorContext(supabase);
       if (!actor) throw new Error("Could not resolve your profile.");
-      const nextVersion = page.version + 1;
-      const { error: vErr } = await supabase.from("workspace_page_versions" as never).insert({
-        organization_id: actor.organizationId,
-        page_id: page.id,
-        owner_user_id: actor.userId,
-        version: nextVersion,
-        title: title.trim() || "Untitled",
-        body,
-        created_by: actor.userId,
-      } as never);
-      if (vErr) throw new Error(vErr.message);
-      const { error: pErr } = await supabase
-        .from("workspace_pages" as never)
-        .update({
-          title: title.trim() || "Untitled",
-          body,
-          version: nextVersion,
-          updated_by: actor.userId,
-        } as never)
-        .eq("id", page.id);
-      if (pErr) throw new Error(pErr.message);
+      const { error: saveError } = await supabase.rpc("save_workspace_page" as never, { p_id: page.id, p_expected_version: page.version, p_title: title.trim() || "Untitled", p_body: body } as never);
+      if (saveError) throw new Error(saveError.message);
       setNotice("Saved.");
       await load();
     } catch (err) {

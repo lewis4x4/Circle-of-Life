@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   formatVitalsBloodPressure,
@@ -24,7 +24,10 @@ import {
 export default function ResidentVitalsPage() {
   const params = useParams<{ id: string }>();
   const residentId = params?.id ?? "";
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<
     {
       id: string;
@@ -60,8 +63,11 @@ export default function ResidentVitalsPage() {
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
-    setLogs((daily.data ?? []) as never);
-    setAlerts((va.data ?? []) as never);
+    setLogsError(daily.error?.message ?? null);
+    setAlertsError(va.error?.message ?? null);
+    if (!daily.error) setLogs((daily.data ?? []) as never);
+    if (!va.error) setAlerts((va.data ?? []) as never);
+    setLoading(false);
   }, [supabase, residentId]);
 
   useEffect(() => {
@@ -72,6 +78,8 @@ export default function ResidentVitalsPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+      {loading && <p role="status">Loading clinical data…</p>}
+      {(logsError || alertsError) && <div role="alert" className="rounded border border-amber-500 p-4">{logsError && <p>Vitals unavailable: {logsError}</p>}{alertsError && <p>Alerts unavailable: {alertsError}</p>}<button onClick={() => void load()}>Retry</button></div>}
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)] ease-[var(--motion-ease)]">
         <RecordDetailHeader
           title="Vitals"
@@ -157,7 +165,7 @@ export default function ResidentVitalsPage() {
                         </div>
                       </MotionItem>
                     ))}
-                    {logs.length === 0 && (
+                    {!loading && !logsError && logs.length === 0 && (
                       <div className="p-8 text-center text-muted-foreground">No logs found.</div>
                     )}
                   </MotionList>
@@ -181,7 +189,7 @@ export default function ResidentVitalsPage() {
                     <span className="text-xs tabular-nums text-destructive/70 mt-2">{new Date(a.created_at).toLocaleString()}</span>
                   </li>
                 ))}
-                {alerts.length === 0 && (
+                {!loading && !alertsError && alerts.length === 0 && (
                   <li className="text-destructive/70 text-sm font-medium p-4 text-center">No alerts.</li>
                 )}
               </ul>

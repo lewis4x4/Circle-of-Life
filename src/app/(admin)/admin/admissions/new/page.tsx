@@ -54,6 +54,7 @@ import {
   directAdmitDobSchema,
   genderDisplayLabel,
   parseDirectAdmitForSubmit,
+  parseDirectAdmitDraft,
   type DirectAdmissionSourceValue,
 } from "@/lib/admissions/direct-intake-schema";
 import { digitsOnlyNanp, formatUsPhoneMask } from "@/lib/admissions/phone-us";
@@ -915,7 +916,7 @@ function AdmissionsNewInner() {
     !submitting &&
     ((origin === "inquiry" && !!residentId) ||
       (origin === "lead" && !!referralLeadId) ||
-      (origin === "direct" && directParsed.success));
+      (origin === "direct" && !!directFirstName.trim() && !!directLastName.trim()));
 
   async function handleCreateResidentModal() {
     const actionFacilityId = selectedFacilityId;
@@ -1061,7 +1062,12 @@ function AdmissionsNewInner() {
       let admissionCaseSource: Database["public"]["Enums"]["admission_case_source"] | null = null;
       let admissionCaseSourceOther: string | null = null;
 
-      if (origin === "inquiry") {
+      const resumeKey = `haven:intake:${user.id}:${selectedFacilityId}:${origin}:${origin === "lead" ? referralLeadId : `${directFirstName.trim()}:${directLastName.trim()}`}`;
+      const savedResidentId = sessionStorage.getItem(resumeKey);
+      if (savedResidentId && origin !== "inquiry") {
+        finalResidentId = savedResidentId;
+        payloadLeadId = origin === "lead" ? referralLeadId : null;
+      } else if (origin === "inquiry") {
         if (!residentId) {
           setError("Select an inquiry resident.");
           return;
@@ -1101,6 +1107,7 @@ function AdmissionsNewInner() {
           return;
         }
         finalResidentId = newRes.id;
+        sessionStorage.setItem(resumeKey, finalResidentId);
         payloadLeadId = referralLeadId;
         if (intent === "submit") {
           await supabase
@@ -1109,7 +1116,7 @@ function AdmissionsNewInner() {
             .eq("id", referralLeadId);
         }
       } else {
-        const parsed = parseDirectAdmitForSubmit({
+        const parsed = (intent === "draft" ? parseDirectAdmitDraft : parseDirectAdmitForSubmit)({
           firstName: directFirstName,
           lastName: directLastName,
           nameSuffix: directNameSuffix,
@@ -1146,8 +1153,8 @@ function AdmissionsNewInner() {
             last_name: d.lastName.trim(),
             name_suffix: d.nameSuffix?.trim() || null,
             preferred_name: d.preferredName?.trim() || null,
-            date_of_birth: d.dob.trim(),
-            gender: d.gender as Database["public"]["Enums"]["gender"],
+            date_of_birth: d.dob.trim() || null,
+            gender: (d.gender || null) as Database["public"]["Enums"]["gender"] | null,
             gender_other: d.gender === "other" ? (d.genderOther?.trim() || null) : null,
             primary_phone: phoneDigits.length === 10 ? phoneDigits : null,
             status: "inquiry",
@@ -1163,8 +1170,9 @@ function AdmissionsNewInner() {
           return;
         }
         finalResidentId = newRes.id;
+        sessionStorage.setItem(resumeKey, finalResidentId);
         payloadLeadId = null;
-        if (!srcTok.startsWith("src:")) {
+        if (srcTok && !srcTok.startsWith("src:")) {
           admissionCaseSource = srcTok as Database["public"]["Enums"]["admission_case_source"];
           admissionCaseSourceOther =
             srcTok === "other" ? (d.sourceOther?.trim() || null) : null;
@@ -1178,11 +1186,15 @@ function AdmissionsNewInner() {
       const payerOtherTxt =
         payerSrc === "other" ? anticipatedPayerOther.trim() || null : null;
 
+      const caseRequestKey = `${resumeKey}:case:${intent}`;
+      const caseRequestId = sessionStorage.getItem(caseRequestKey) ?? crypto.randomUUID();
+      sessionStorage.setItem(caseRequestKey, caseRequestId);
       const payload = {
+        create_request_id: caseRequestId,
         facility_id: selectedFacilityId,
         resident_id: finalResidentId,
         referral_lead_id: payloadLeadId,
-        bed_id: intent === "draft" ? null : bedId || null,
+        bed_id: bedId || null,
         target_move_in_date: intent === "draft" ? (targetMoveIn.trim() || null) : targetMoveIn.trim(),
         notes: notes.trim() || null,
         intake_program_type: intakeProgramType.trim() || null,
@@ -1204,16 +1216,18 @@ function AdmissionsNewInner() {
       });
       const result = (await response.json().catch(() => ({}))) as { id?: string; error?: string };
       if (!response.ok || !result?.id) {
-        setError(result?.error || "Could not create admission case.");
+        setError(`Resident saved. Retry to finish the admission case: ${result?.error || "case creation unavailable"}`);
         return;
       }
 
       if (intent === "draft") {
         toast.success("Draft saved.", { duration: 5000 });
       } else {
-        const toastBed = bedId ? "Bed reserved." : "Bed pending.";
+        const toastBed = bedId ? "Bed preference recorded; reservation follows clearance." : "Bed pending.";
         toast.success(`Case opened. ${toastBed}`, { duration: 6000 });
       }
+      sessionStorage.removeItem(resumeKey);
+      sessionStorage.removeItem(caseRequestKey);
       router.push(`/admin/admissions/${result.id}`);
       router.refresh();
     } finally {

@@ -1,0 +1,115 @@
+{
+  "scope": "Isolated operational branch; excludes pre-existing public-site draft",
+  "branch": "codex/haven-review-remediation-20260906",
+  "baseCommit": "1d5a74fa0f77a595db3e08cd15f6e9f022e5a52b",
+  "unit": {
+    "files": 486,
+    "passed": 2948,
+    "failed": 0,
+    "skipped": 0
+  },
+  "gate": {
+    "verdict": "PASS",
+    "artifact": "test-results/agent-gates/2026-09-06T16-43-22-404Z-REVIEW-20260906.json",
+    "checks": [
+      {
+        "id": "hygiene.env-example",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.tracked-secrets-scan",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.npm-audit",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "security.gitleaks",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.eslint",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migration-sequence",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.migrations-apply-postgres",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "qa.root-build",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "hygiene.nextjs-deprecation-signal",
+        "status": "passed",
+        "required": false
+      },
+      {
+        "id": "qa.web-build",
+        "status": "skipped",
+        "required": false
+      },
+      {
+        "id": "chaos.stress-suite",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.design-review",
+        "status": "passed",
+        "required": true
+      },
+      {
+        "id": "cdo.a11y-axe",
+        "status": "passed",
+        "required": true
+      }
+    ]
+  },
+  "database": {
+    "engine": "Native PostgreSQL17.9 with installed pgvector and repository Supabase stubs",
+    "migrations": 326,
+    "sqlProbes": 10,
+    "hostedMutations": false
+  },
+  "browser": {
+    "routes": [
+      "/ -> /login",
+      "/login"
+    ],
+    "screenshots": 8,
+    "axeSeriousCriticalViolations": 0,
+    "authenticatedOperationalUat": false
+  },
+  "publicDraft": {
+    "location": "/Users/brianlewis/Circle of Life/Circle-of-Life",
+    "includedInOperationalBranch": false,
+    "build": "PASS",
+    "axeRoutes": [
+      "/",
+      "/login"
+    ],
+    "axeSeriousCriticalViolations": 0,
+    "contentAndLayoutPreserved": true
+  },
+  "productionDeployment": false,
+  "openWorkflowEntries": [
+    "B-12",
+    "C25"
+  ],
+  "stagedSecretScan": "PASS: gitleaks git --pre-commit --staged --redact",
+  "changedFileCount": 320
+}

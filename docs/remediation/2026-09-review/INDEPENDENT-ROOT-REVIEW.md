@@ -1,0 +1,28 @@
+# Independent challenge of integrated root changes
+
+Reviewed the root-authored dietary, offline observation, onboarding, and family pagination changes after finishing the access/reporting lane. No hosted data was read or mutated. All reported defects below were reproduced before correction; existing valid workflows and root changes were retained.
+
+| Finding | Correction | Evidence |
+| --- | --- | --- |
+| Revoked dietary grants still authorized tray passes | RPC now requires an unrevoked grant | `review_dietary_integrity.sql` denies the revoked actor |
+| Browser INSERT could forge an already-passed tray | Signature trigger covers INSERT and UPDATE, protected checks and completed tray identity/content | SQL direct-insert denial |
+| Valid tray pass failed because generic timestamp trigger referenced a missing `updated_by` column | Tray-specific timestamp trigger preserves the actual schema; explicit verified-pass audit records actor | SQL valid pass and audit assertions |
+| Identical temperature retry after a lost response reported a duplicate-key failure | Existing same-actor/scope/measurement receipt is acknowledged; changed measurement remains a conflict | `temperature-idempotency.test.ts` (2 tests) |
+| Kitchen refresh could switch write facility before switching displayed data | Facility identity is committed alongside the loaded kitchen snapshot | `useDietaryToday-scope.test.tsx` |
+| Overlapping onboarding hydration exposed stale Ready state and could overwrite a newer edit | Hydration generations reject stale responses; session generations reject old save completions after sign-out | `useOnboardingStore-hydration.test.ts`; overlapping-edit test also verifies newest answer persists |
+| Offline queue trusted a page's old operator after another user signed in | Cached current operator must match before queue insertion; a failed enqueue keeps the visible draft and reports the error | `rounding-owner.test.ts` |
+| Displayed Outbox survived an auth change or late response from the prior operator | Auth transitions clear only displayed state; fresh scoped reads use generation guards; stored unsent work is retained | `useRoundingOfflineSync-identity.test.tsx` |
+| Offset paging could duplicate invoices in the balance total and repeat family updates | Stable invoice-ID and message timestamp/ID cursors replace shifting offsets; display ordering retained | `family-keyset.test.ts` (2 tests) |
+| Parent challenge: schedule advancement failure could relabel already-completed output Failed | Runner distinguishes output success; helpers update running receipts only; SQL prevents terminal receipt rewrites for service callers too | Scheduler failure regression and `review_report_outputs.sql` |
+
+Focused verification: 25 tests passed across 11 files for independent corrections and reporting; targeted ESLint passed with no output. The account lane and existing report Eastern-date contract are verified separately. Rollback-only PostgreSQL probes cover access, dietary, and report output. The dietary and reporting functions changed after the parent's initial schema replay; targeted validation temporarily reapplies the revised function/trigger inside the test transaction and rolls it back. The parent must replay the final source tree before its final integrated database gate.
+
+Current-source review found the per-question onboarding save serialization sound; the new overlap test confirms that the newest edit wins. Offline replay still preserves genuine 409 conflicts and requires the original operator at the API. The facility billing reader now retrieves all pages without counting a shifted row twice. Hosted deployment, authenticated browser UAT, external report delivery, clinical acceptance and shared physical-device acceptance remain separate checks.
+
+## Final controlled-count reachability challenge
+
+Parent found that the signed-off med-tech controlled-count route could not originate/read counts under the old RLS. Spec06 explicitly limits the independent incoming credential signer to nurse/caregiver, while the later signed-off Slice33/34 explicitly includes med-tech count origination. Clinical lane confirmed no newer witness-role authorization. Migration `20260906155657_review_med_tech_controlled_count_access.sql` therefore adds only active med-tech facility-scoped origin/read access, preserves existing nurse/caregiver incoming signatures, and rejects administrative outgoing actors in the API/RPC. The console, modal and med-tech route explain the witness requirement before credentials are entered. Existing batch IDs, atomic insert, pending receipt display and exact retry checks remain intact.
+
+Verification: eleven allowed/denied actual-handler role tests pass. Rollback-only `review_controlled_count_roles.sql` reproduces the original med-tech RLS denial, then verifies med-tech/nurse/caregiver origination, nurse/caregiver signing, med-tech incoming rejection, administrative origin rejection, and readable saved pending counts. This migration is additional to the parent's previous baseline replay and must be included in the final integrated replay.
+
+The same origin/witness distinction was also required in the newly introduced medication-pass witness endpoint: a legitimate med-tech pass owner can now request the nurse/caregiver witness without granting med-tech incoming-witness authority. Fourteen actual-handler role tests now pass (eleven counts, three medication-pass witnesses). The SQL role probe also creates real med-tech and nurse shifts/passes, verifies a nurse signature on the med-tech-owned pass, and rejects med-tech as an independent incoming signer. No staff competency or licensure attestation is inferred from these technical role tests.
