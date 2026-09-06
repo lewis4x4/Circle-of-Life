@@ -177,14 +177,14 @@ describe("UI-V2 flags", () => {
     );
   });
 
-  it("S11 W5 settings routes are registered as exact matches", () => {
+  it("production-ready settings routes are registered as exact matches", () => {
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/thresholds")).toBe(true);
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/audit-log")).toBe(true);
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/users")).toBe(true);
     expect(UI_V2_IMPLEMENTED_ROUTES.has("/settings/notifications")).toBe(false);
   });
 
-  it("rewrites every S11 settings route", () => {
+  it("rewrites ready settings routes while keeping notifications on its working V1 page", () => {
     expect(
       resolveUiV2AdminRewritePath("/admin/settings/thresholds", { enabled: true }),
     ).toBe("/admin/v2/settings/thresholds");

@@ -10,7 +10,9 @@ This repo runs **Next 16.2 + React 19.2** with Turbopack. APIs, conventions, and
 
 ## Mission ship-gate (state alignment in every segment handoff)
 
-Build **Haven** — a unified operations platform for ALF / home health / HCBS so multi-site, multi-entity operators run clinical workflows, compliance, workforce, family engagement, and business operations on **one secure, role-governed data layer**. Pilot client is **Circle of Life (COL)** — 5 Florida ALF facilities under AHCA Chapter 429 / FAC 59A-36; Oakridge ALF is the live pilot.
+> **North star:** Build **Haven** for Circle of Life: **Expand. Perfect. Secure. Multiply. Through enhanced management by virtual staff and real time, accurate access to the complete body of information upon which we thrive.** Support assisted living operations across facilities and legal entities on **one secure, role-governed data layer**, improving resident safety and quality, regulatory readiness, staff clarity, and owner visibility. AI must remain **subordinate to human judgment, licensure rules, and auditability**.
+
+Circle of Life operates five Florida ALF facilities. Homewood Lodge is the current acceptance and controlled launch facility; Oakridge seeded validation evidence remains historical.
 
 State **mission alignment** (`pass` | `risk` | `fail`) with one sentence in every segment handoff. Misalignment can block release even when tests pass. Full statement: `docs/mission-statement.md`.
 

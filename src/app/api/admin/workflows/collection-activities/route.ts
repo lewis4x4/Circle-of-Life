@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { logError } from "@/lib/observability/logger";
 
 const ALLOWED_ROLES = [
   "owner",
@@ -60,7 +61,14 @@ export async function POST(request: NextRequest) {
   if (body.id) {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)) return NextResponse.json({ error: "Invalid activity identity" }, { status: 400 });
     const { data: existing, error: existingError } = await actor.admin.from("collection_activities").select("*").eq("id", body.id).maybeSingle();
-    if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 });
+    if (existingError) {
+      logError("admin.workflows.collection-activities.create", existingError, {
+        action: "replay-lookup",
+        activityId: body.id,
+        facilityId: body.facility_id,
+      });
+      return NextResponse.json({ error: "Saved activity could not be checked. Retry the request." }, { status: 500 });
+    }
     if (existing) {
       if (existing.performed_by !== actor.id || existing.facility_id !== body.facility_id || existing.resident_id !== body.resident_id || existing.description !== body.description || existing.activity_type !== body.activity_type || existing.activity_date !== body.activity_date || existing.invoice_id !== (body.invoice_id ?? null) || existing.outcome !== (body.outcome ?? null) || existing.follow_up_date !== (body.follow_up_date ?? null) || existing.follow_up_notes !== (body.follow_up_notes ?? null)) return NextResponse.json({ error: "This activity identity was already saved with different values. Review the saved activity." }, { status: 409 });
       return NextResponse.json({ id: existing.id });
@@ -89,7 +97,14 @@ export async function POST(request: NextRequest) {
   const inserted = insertedData as { id: string } | null;
 
   if (insertError || !inserted) {
-    return NextResponse.json({ error: insertError?.message ?? "Failed to create collection activity" }, { status: 500 });
+    if (insertError) {
+      logError("admin.workflows.collection-activities.create", insertError, {
+        action: "insert",
+        activityId: body.id,
+        facilityId: body.facility_id,
+      });
+    }
+    return NextResponse.json({ error: "Failed to create collection activity" }, { status: 500 });
   }
 
   return NextResponse.json({ id: inserted.id });

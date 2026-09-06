@@ -1,3 +1,4 @@
+import { startStartupTrace, startupMark } from "@/lib/observability/startup-performance";
 import * as Sentry from "@sentry/nextjs";
 import {
   parseTraceSampleRate,
@@ -10,7 +11,12 @@ const traceSampleRate = parseTraceSampleRate(
   process.env.NODE_ENV === "production" ? 0.05 : 0,
 );
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+startStartupTrace();
+
+export const onRouterTransitionStart: typeof Sentry.captureRouterTransitionStart = (...args) => {
+  startupMark("route-transition");
+  return Sentry.captureRouterTransitionStart(...args);
+};
 
 /**
  * Known-noise drop list. Errors in this list are produced by Next.js itself

@@ -1,5 +1,6 @@
 {
   "scope": "Isolated operational branch; excludes pre-existing public-site draft",
+  "evidenceStatus": "Historical isolated-branch checkpoint; fresh integrated final gate pending",
   "branch": "codex/haven-review-remediation-20260906",
   "baseCommit": "1d5a74fa0f77a595db3e08cd15f6e9f022e5a52b",
   "unit": {
@@ -81,9 +82,10 @@
   },
   "database": {
     "engine": "Native PostgreSQL17.9 with installed pgvector and repository Supabase stubs",
-    "migrations": 326,
+    "historicalMigrationFileCount": 326,
     "sqlProbes": 10,
-    "hostedMutations": false
+    "hostedMutations": false,
+    "evidenceScope": "Historical isolated remediation branch before integration of deployed versions 317 and 318"
   },
   "browser": {
     "routes": [
@@ -111,7 +113,17 @@
     "C25"
   ],
   "stagedSecretScan": "PASS: gitleaks git --pre-commit --staged --redact",
-  "changedFileCount": 320,
-  "migrationVersions": "317\u2013323; seven new undeployed migrations continue the numbered chain",
+  "remediationOwnedPathCount": 320,
+  "integratedTreeChangedPathCount": null,
+  "integratedTreeChangedPathCountStatus": "Pending fresh final gate against the selected release base; do not reuse remediationOwnedPathCount as the integrated-tree count",
+  "integratedMigrationState": {
+    "fileCount": 328,
+    "numberedSequence": "001\u2013325",
+    "remoteRecordedThrough": "318",
+    "pendingRemediationVersions": "319\u2013325",
+    "nextFreeVersion": "326",
+    "freshIntegratedReplay": "pending"
+  },
+  "migrationVersions": "319\u2013325; seven remediation migrations pending hosted deployment",
   "migrationOrdering": "Ordinary filename ordering; no special tail ordering"
 }

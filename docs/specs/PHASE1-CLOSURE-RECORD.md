@@ -6,7 +6,7 @@
 
 **Do not overstate:** This document must distinguish **automated/repo verification** from **live UAT + RLS + production compliance**.
 
-**Last updated:** 2026-08-26 — **A5** (Pro / BAA / PITR) **PASS** and must not be listed as unsigned. **Phase 1 full acceptance still** pending §B–§E UAT depth (A3), PH1-A04, and waiver review as needed.
+**Last updated:** 2026-09-06 — **A5** (Pro / BAA / PITR) remains **PASS** on the owner-attested 2026-08-26 record and must not be listed as unsigned. A separate current-evidence refresh is required before PHI rollout. **Phase 1 full acceptance still** pending §B–§E UAT depth (A3), PH1-A04, and waiver review as needed.
 
 ---
 
@@ -17,11 +17,12 @@
 | **Engineering baseline** (lint, build, migration replay, secrets, audit, segment gates) | **PASS** — see § Gate evidence (includes **Track C** `track-c-workflow-hardening` gate, 2026-04-09) |
 | **Track C — workflow hardening** (Edge Functions + docs) | **PASS (repo)** — [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md); owner deploy + cron + UAT depth still required |
 | **Target `.env` / Supabase project alignment** | **PASS (owner)** — Brian Lewis confirmed active project **`manfqmasfqppukpobpld`**. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) and [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-P01**. |
-| **Remote migrations aligned** | **VERIFY** — Repo **001–120**; owner maintains `supabase migration list` parity on target |
+| **Remote migrations aligned** | **PENDING** — integrated repo has 328 files / sequence **001–325**; hosted ledger through **318**; deploy and verify remediation **319–325** |
 | **Seeded users + pilot login / correct shell** | **PASS (owner)** — 2026-04-09: `owner`, `facility_admin`, `caregiver`, `family` demo users reach `/admin`, `/admin`, `/caregiver`, `/family` respectively (after hosted Auth fix + migrations **`110`–`111`**). See [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md). |
 | **Checklist §A (routing)** / **§B–§E (depth UAT)** | **§A PASS** for pilot shells / **§B–§E PENDING** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) |
-| **RLS matrix** | **PASS (owner, single-facility pilot)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); **RLS-02** deferred until second facility on target |
+| **RLS matrix** | **PASS (owner, historical single-facility scope)** — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md); run **RLS-02** against the current multi-facility target before Oakridge goes live |
 | **Production compliance** (Pro, BAA before PHI, PITR) | **PASS (owner)** — Pro + BAA 2026-05-11; PITR 2026-08-19; re-attested 2026-08-26. [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Post-closeout PHI-launch evidence refresh** | **REQUIRED BEFORE PHI ROLLOUT; separate from A5** — owner/legal confirmation of current BAA coverage, HIPAA add-on, project controls, and PITR. A missing locally inspected contract is not proof of no BAA. |
 | **Waivers (known Phase 1 gaps)** | **APPROVED** — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) (review before final sign-off) |
 
 ### Overall Phase 1 full acceptance
@@ -31,11 +32,13 @@
 **Remaining blockers to full acceptance:**
 
 1. ~~**Auth remediation**~~ — **Cleared** for pilot JWTs and app routing (see [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) status).
-2. ~~**RLS**~~ — **PASS** (owner sign-off, single-facility); re-run **RLS-02** when second facility exists — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
+2. ~~**RLS**~~ — **PASS** (owner sign-off, historical single-facility scope); run **RLS-02** against the current multi-facility target before Oakridge goes live — [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md).
 3. **UAT:** Complete [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) sections **B–E** (and **F** as applicable) with evidence; **PH1-A04** route guards.
 4. **Environment / facility context:** **PH1-P04** and related rows as needed; [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 5. ~~**Production compliance:**~~ **PASS** — Pro / BAA / PITR attested (do not re-open A5).
 6. **Waiver review:** [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md).
+
+**Separate launch gate:** Refresh current BAA coverage, HIPAA add-on, required project controls, and PITR evidence before PHI rollout. This does not change A5's recorded PASS. Verified contrary evidence must update all authoritative A5 records atomically.
 
 **Waivers alone do not close Phase 1** while checklist UAT rows remain open.
 

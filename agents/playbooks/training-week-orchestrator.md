@@ -15,7 +15,7 @@
 ## Hard rules
 
 - One queue row = one branch = one commit = one gate artifact.
-- Do not re-open **A5** (Pro / BAA / PITR). It is closed 2026-08-26.
+- Preserve the **A5** owner attestation dated 2026-08-26. Investigate concrete contradictory evidence through `PHASE1-ENV-CONFIRMATION.md`; do not infer that the agreement is unsigned or invalid without reviewing the contract and current organization settings.
 - No personal data in notes.
 - Quiet Operator: name gaps; do not invent “Coming soon” pages to hide 404s.
 - Standing product: family portal is one-way; Jessica’s rounds times win; snack logs are time + passer only.

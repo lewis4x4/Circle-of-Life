@@ -1,0 +1,52 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`roster timestamp behavior > preserves labels across DST and year boundaries at 2026-01-01T02:00:00Z 1`] = `
+[
+  "No date posted",
+  "No date posted",
+  "No date posted",
+  "Mar 9 12:00a",
+  "Mar 8 11:59p",
+  "Mar 8 1:59a",
+  "Mar 8 3:00a",
+  "Mar 1 11:00a",
+  "Mar 1 10:59a",
+  "Nov 1 1:30a",
+  "Nov 1 1:30a",
+  "Mar 9 12:00a",
+]
+`;
+
+exports[`roster timestamp behavior > preserves labels across DST and year boundaries at 2026-03-09T16:00:00Z 1`] = `
+[
+  "No date posted",
+  "No date posted",
+  "No date posted",
+  "Today 12:00a",
+  "Yesterday 11:59p",
+  "Yesterday 1:59a",
+  "Yesterday 3:00a",
+  "Mar 1",
+  "Mar 1",
+  "Nov 1 1:30a",
+  "Nov 1 1:30a",
+  "Today 12:00a",
+]
+`;
+
+exports[`roster timestamp behavior > preserves labels across DST and year boundaries at 2026-11-02T17:00:00Z 1`] = `
+[
+  "No date posted",
+  "No date posted",
+  "No date posted",
+  "Mar 9",
+  "Mar 8",
+  "Mar 8",
+  "Mar 8",
+  "Mar 1",
+  "Mar 1",
+  "Yesterday 1:30a",
+  "Yesterday 1:30a",
+  "Mar 9",
+]
+`;

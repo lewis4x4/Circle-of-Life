@@ -2,19 +2,19 @@
 
 **This folder is the single source of truth for building Haven.** When spec content conflicts with the roadmap overview, trust these specs.
 
-**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**. Live migration position: **`001`–`316`**, next free **`317`**.
+**Unified forward roadmap (all tracks + proposed work):** [UNIFIED-ROADMAP.md](./UNIFIED-ROADMAP.md) — includes **Track F (Employee Workspace & Office Suite)**. The integrated repository has **328 migration files** covering numbered sequence **`001`–`325`**. The hosted ledger is recorded through **`318`**; remediation migrations **`319`–`325`** are pending. Next free: **`326`**.
 
 ## Supabase Project
 
 - **URL:** https://manfqmasfqppukpobpld.supabase.co
 - **Timezone:** America/New_York (all facilities in North Florida)
-- **A5 (closed 2026-08-26):** Pro plan, signed BAA, and Point-in-Time Recovery are owner-attested. Do not re-list as unsigned. Record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
+- **A5 (closed 2026-08-26):** Pro plan, signed BAA, and Point-in-Time Recovery are owner-attested. Do not re-list as unsigned. A separate evidence refresh for current BAA coverage, HIPAA add-on, project controls, and PITR is required before PHI rollout. Record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
-## Current state (reconciled 2026-08-19)
+## Current state (reconciled 2026-09-06)
 
-**Repo migrations:** **`001`–`316`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release. Next free file: **`317`**.
+**Repo migrations:** **328 files**, numbered sequence **`001`–`325`** — verify with `npm run migrations:check` and `npm run migrations:verify:pg` before release. Next free file: **`326`**.
 
-**Remote migration parity:** Tracking repaired through **`316`** on 2026-08-19 (`schema-drift-310-316-repair`). Re-run `npm run migrations:verify:remote` after any remote apply. Historical closeout notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
+**Remote migration parity:** The hosted ledger is recorded through **`318`**. Remediation migrations **`319`–`325`** are not yet deployed. Re-run `npm run migrations:verify:remote` after controlled apply. Historical closeout notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 
 **Repo lint baseline:** Warning-free as of **2026-04-22**. `npm run lint` is now a blocking zero-warning check (`eslint src --max-warnings 0`), so future cleanup debt must be fixed in-slice rather than deferred.
 
@@ -36,7 +36,7 @@
 
 **Important:** Code and migrations have **outpaced** formal Phase 1 acceptance. **Do not** treat “migrations applied” or “routes exist” as equivalent to **Track A closed** or **production-ready** for PHI.
 
-**Next free migration number:** **`317`** — use for all new DDL after updating this README and the relevant spec.
+**Next free migration number:** **`326`** — use for all new DDL after updating this README and the relevant spec.
 
 **Executive Standup status:** Board-packet track is in repo: workbook import jobs + importer script, packet archive + compare workflow, close/publish gating, premium board packet composition, authenticated PDF route, storage-backed packet PDF artifact persistence, and packet PDF smoke validation. Remote parity now depends on applying migrations `185`–`193`, especially the `report-exports` storage bucket in migration `193`.
 
@@ -45,10 +45,10 @@
 ### What to do next (closeout order)
 
 1. **Track A** — **A1** (auth) + **A2** (RLS) owner-verified **2026-04-09**; **A5** Pro/BAA/PITR **closed 2026-08-26**. Remaining: **A3** real-auth UAT depth; **A4** / **A6** as needed. Single roadmap: [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md).
-2. **Remote DB migration parity** — Repo sequence **`001`–`206`** (`npm run migrations:check`). Current linked remote matches through **`206`** (`supabase migration list` on 2026-04-22). Re-run after any migration-adding PR; historical early-environment notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
+2. **Remote DB migration parity** — Repo sequence **`001`–`325`** (`npm run migrations:check`); hosted ledger through **`318`**. Deploy and verify remediation migrations **`319`–`325`** in order; historical early-environment notes remain in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md).
 3. **Tracks B–C** — **Engineering complete (closed in repo)** per sections below. Remaining items are **operations** (deploy Edge functions, schedule crons, production monitoring) and **Track A UAT** — not open B/C code issues.
 4. **Track D** — **Segments D1–D10** (2026-04-09) + Enhanced **D12–D84** (incl. Module 11 hubs **D29** + **D80** (**staff roster CSV** **hub filter scope**) + **D30** + **D81** (**certifications CSV** **hub filter scope**) + **D31–D33** + **D82** (**schedule weeks CSV** **hub filter scope**) + **D32** + **D84** (**staffing snapshots CSV** **loaded batch scope**) + **D35–D36** + **D83** (**shift swap CSV** **hub filter scope**) + **D37** + **D60** (`/admin/time-records` **bulk approve**) + **D79** (**time-records CSV** **approval scope**), **D34** shared CSV helpers, payroll **D17–D18** + **D26** + **D73**–**D74** + **D58**–**D59** + **D64** + **D69** (`time_records` → lines + **hub batch filter/CSV/search** + **flat CSV** + **vendor handoff CSV** + **hours split CSV**), reputation **D19** + **D28** + **D44**–**D49** (Google OAuth + imports + cron + Yelp Fusion + **`POST /api/reputation/replies/[id]/post-google`** + **`POST /api/reputation/replies/[id]/post-yelp`**) + **D75** (**replies CSV** **status scope**), training **D20–D21** + **D38–D43** (catalog, completions, log form, **`117`** PDF RLS, **`118`** inservice tables + **hub / new session / inservice→completions**), referrals **D22** + **D27** + **D65**–**D68** + **D70**–**D72** (**HL7** queue **Copy raw** + **status filter** + **CSV respects filter** + **search**; **pipeline** **status filter** + **leads CSV** + **search**), dietary **D23** + **D77** (**hub status filter + CSV scope**) + **D50**–**D53** (`/admin/dietary/clinical-review` med–diet **hints** + **IDDSI labels in callouts**) + **D54**–**D55** (`next.config.ts` **`/<segment>` → `/admin/<segment>`** redirects for route-group hubs), transportation **D24–D25** + **D76** (**transport hub status filter + CSV scope**) + **D78** (**mileage approvals CSV scope**) + **D56**–**D57** + **D61**–**D66** (transport **calendar** month view + **`.ics` export** + request detail **Google + Outlook** + **single-trip `.ics`** + **calendar `?date=`** + **View on calendar**)) **shipped** (2026-04-09). Core operational visibility for Phase 6 modules 11, 12, 14, 15, 22, 23 is in repo. **Enhanced backlog (D85+):** [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md). Shipped history: [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md). Run `segment:gates` per segment.
-5. **Track E / later DDL** — New files start at migration **`317`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
+5. **Track E / later DDL** — New files start at migration **`326`** only after specs exist and Tracks A–D are appropriately satisfied for your risk tolerance.
 
 ---
 
@@ -306,7 +306,7 @@ Implement after predecessor migrations and specs exist.
 | 27 | `22-referral-crm.md` | Referral Source CRM | `091` | ✅ **Spec written.** `referral_hl7_inbound` queue; HL7 listener = Enhanced. |
 | 28 | `23-reputation.md` | Reputation Management | `092` | ✅ **Spec written.** `reputation_accounts`, `reputation_replies` (`posted_by_user_id`); API sync = Enhanced. |
 
-**Deferred (not yet in repo — migration numbers TBD, start at `110`+ when specced):**
+**Deferred (not yet in repo — migration numbers TBD, start at the current next free version, `326`, when specced):**
 
 | Spec file | Module | Notes |
 |-----------|--------|-------|
@@ -434,13 +434,13 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 
 **Next engineering steps (when resuming Track D–style work)**
 
-1. Confirm **remote migration parity** (`001`–`115`) and **owner priority** for the next Enhanced slice.
+1. Confirm **remote migration parity** (repo `001`–`325`; hosted ledger currently through `318`) and **owner priority** for the next Enhanced slice.
 2. Promote or extend the relevant **module spec** (COL Alignment Notes) so the slice is **bounded** (schema, RLS, acceptance).
 3. Implement **one segment**; run `npm run segment:gates -- --segment "<id>" --ui` when UI/routes change; record in [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) as **D11+** or a named track.
 
 #### Track E — Next roadmap DDL (after Tracks A–D and spec approval)
 
-**Resident Assurance, Reporting, Exec v3, and onboarding migrations `096`–`109` are already in the repo** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109). Track E is for **what comes next**, using migration numbers **`110`** and above (assign per spec when promoted).
+**Resident Assurance, Reporting, Exec v3, and onboarding migrations `096`–`109` are already in the repo** — see [Post–Phase 6 shipped work](#postphase-6-shipped-work-migrations-096109). Track E is for **what comes next**, using the current next free migration **`326`** and above (assign per spec when promoted).
 
 | Priority | Spec / theme | Notes |
 |----------|--------------|--------|
@@ -457,14 +457,14 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 | Order | Spec file | Module | Migration range (planned) | Repo status (2026-04-08) |
 |-------|-----------|--------|---------------------------|-------------------------|
 | 31 | `25-resident-assurance-engine.md` | Resident Assurance Engine | `098`–`101`, patch `107` | ✅ **Shipped** — schema, RLS, audit, seed, indexes patch; admin `/admin/rounding/*`, caregiver `/caregiver/rounds/*`, API under `src/app/api/rounding/`. Hardening / acceptance: Tracks B–D as applicable. |
-| 32 | `20-expansion-acquisition.md` | Expansion Planning | TBD (`110`+) | 🔲 Not migrated |
-| 33 | `28-regulatory-intelligence.md` (planned) | Regulatory Intelligence | TBD (`110`+) | 🔲 Spec not yet in `docs/specs/`; not migrated |
+| 32 | `20-expansion-acquisition.md` | Expansion Planning | TBD (`326`+) | 🔲 Not migrated |
+| 33 | `28-regulatory-intelligence.md` (planned) | Regulatory Intelligence | TBD (`326`+) | 🔲 Spec not yet in `docs/specs/`; not migrated |
 
 ---
 
 ### Phase 8 (planned) — migration numbers TBD
 
-**Warning:** Older drafts assigned moonshot DDL to migrations `106`–`111`. In **this** repo, **`106`** is `reporting_saved_views_backfill`, **`107`** is Resident Assurance patch, **`108`–`109`** are onboarding. **Phase 8 specs below have no reserved migration numbers until renumbered starting at `110+`.**
+**Warning:** Older drafts assigned moonshot DDL to migrations `106`–`111`. In **this** repo, **`106`** is `reporting_saved_views_backfill`, **`107`** is Resident Assurance patch, **`108`–`109`** are onboarding. **Phase 8 specs below have no reserved migration numbers until renumbered starting at the current next free version, `326`.**
 
 | Order | Spec file | Module / subsystem | Planned content (assign migrations when specced) |
 |-------|-----------|---------------------|--------------------------------------------------|
@@ -540,7 +540,7 @@ Per-org provider routing is stored in **`ai_invocation_policies`**.
 | `098`–`101`, `107` | Resident Assurance Engine (schema, RLS, audit, seed, patch) |
 | `102`–`106` | Reporting module (`26-reporting-module.md`) |
 | `108`–`109` | Onboarding (responses + question tiers) |
-| **`110`+** | **Next** — expansion, regulatory intel, maintenance, digital twin, Phase 8 AI/ambient (renumber specs before DDL) |
+| **`326`+** | **Next** — expansion, regulatory intel, maintenance, digital twin, Phase 8 AI/ambient (renumber specs before DDL) |
 
 Phase 3 Core (`047`–`049`) is **shipped**; the “Phase 3 remaining” wording is obsolete for execution — use the closeout tracks for acceptance and hardening.
 
@@ -566,20 +566,20 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 | 10 | Quality Metrics & Outcomes | 5 | `10-quality-metrics.md` — ✅ Core (`081`–`082`) |
 | 11 | Staff Management & Scheduling | 1 + 3.5 patch | `11-staff-management.md` — ✅; Phase 3.5 `059` |
 | 12 | Training & Competency Management | 6 | `12-training-competency.md` — ✅ Core (`086`–`087`, `115`–`117`); operational depth in Completion Track D |
-| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written; migration **TBD** (`110`+) — **`097` in repo is Exec Intelligence audit fix, not maintenance** |
+| 13 | Facility Maintenance & Environment | 6 | `13-maintenance.md` — not yet written; migration **TBD** (`326`+) — **`097` in repo is Exec Intelligence audit fix, not maintenance** |
 | 14 | Dietary & Nutrition Management | 6 | `14-dietary-nutrition.md` — ✅ Core (`089`); workflow depth in Completion Track D |
 | 15 | Transportation & Appointments | 6 | `15-transportation.md` — ✅ Core (`090`); workflow depth in Completion Track D |
 | 16 | Resident Billing & Collections | 1 + 3.5 patch | `16-billing.md` — ✅; Phase 3.5 `060` |
 | 17 | Entity & Facility Finance | 3 + 3.5 patch | `17-entity-facility-finance.md` — ✅ Core; Enhanced `048` + `065` |
 | 18 | Insurance & Risk Finance | 3 + 3.5 patch | `18-insurance-risk-finance.md` — ✅ Core; Enhanced `049` + `066` |
 | 19 | Vendor & Contract Management | 3 + 3.5 patch | `19-vendor-contract-management.md` — ✅; Phase 3.5 `067` |
-| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — **spec not yet in `docs/specs/`**; migration TBD (`110`+) — **`102` in repo is reporting schema, not expansion** |
+| 20 | Expansion & Acquisition Planning | 7 | `20-expansion-acquisition.md` — **spec not yet in `docs/specs/`**; migration TBD (`326`+) — **`102` in repo is reporting schema, not expansion** |
 | 21 | Family Portal | 5 | `21-family-portal.md` — ✅ Core (`083`–`084`); PHI / production readiness remains in Completion Track C |
 | 22 | Referral Source CRM | 6 | `22-referral-crm.md` — ✅ Core (`091`); HL7 automation remains in Completion Track D |
 | 23 | Reputation & Online Presence | 6 | `23-reputation.md` — ✅ Core (`092`); API sync remains in Completion Track D |
 | 24 | Executive Intelligence Layer | 3 (v1) + 5 (v2) + v3 patch | `24-executive-intelligence.md` — ✅ Core (`047`); v2: `24-executive-v2.md` — ✅ (`085`); **v3:** `096`–`097`; operational hardening remains in Completion Track C |
 | 25 | Resident Assurance Engine | 7 | `25-resident-assurance-engine.md` — ✅ Core DDL + patches (`098`–`101`, `107`); UI/API shipped — acceptance follows Track A + B–D |
-| 26 | Ambient Environment Intelligence (roadmap module 26) | 8 | `26-ambient-intelligence.md` — **not yet in repo**; migration TBD (`110`+) — **do not confuse with `26-reporting-module.md` below** |
+| 26 | Ambient Environment Intelligence (roadmap module 26) | 8 | `26-ambient-intelligence.md` — **not yet in repo**; migration TBD (`326`+) — **do not confuse with `26-reporting-module.md` below** |
 | 27 | Facility Digital Twin | 6 | `27-digital-twin.md` — **not yet in `docs/specs/`**; migration TBD — **`105` in repo is reporting seed, not digital twin** |
 | 28 | Regulatory Intelligence & Arbitrage | 7 | `28-regulatory-intelligence.md` — **not yet in `docs/specs/`**; migration TBD — **`103`–`104` in repo are reporting RLS/audit, not this module** |
 
@@ -589,14 +589,14 @@ Module numbers match the product roadmap, **not** the build sequence. Build orde
 |------|-----------|-----------|--------|
 | Reporting Module | `26-reporting-module.md` | `102`–`106` | ✅ **Shipped** — schema, RLS, audit, seed, saved-views backfill; admin `/admin/reports/*`. Distinct from roadmap “Module 26 Ambient” row above. |
 
-### Cross-cutting AI subsystems (Phase 8 — migrations **TBD**, start `110`+)
+### Cross-cutting AI subsystems (Phase 8 — migrations **TBD**, start `326`+)
 
 | ID | Name | Spec file | Notes |
 |----|------|-----------|-------|
 | AI-A | Cross-Resident Pattern Detection | `ai-A-pattern-detection.md` | `phi_class` gate via `ai_invocations`; **do not** assume migrations `106`–`107` (taken by Reporting backfill + Resident Assurance patch) |
 | AI-B | Cognitive Load Engine | `ai-B-cognitive-load.md` | **Do not** assume migration `108` (taken by onboarding responses) |
 | AI-C | Family Relationship Health | `ai-C-family-risk.md` | **Do not** assume migration `109` (taken by onboarding tiers); blocked on BAA or de-ID |
-| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | Next open number **`112`** as of 2026-04-09 — confirm before first DDL |
+| AI-D | Portfolio Placement Optimizer | `ai-D-placement-optimizer.md` | Next open number **`326`** as of 2026-09-06 — confirm before first DDL |
 
 ### Foundation addenda (not numbered modules)
 

@@ -1,16 +1,14 @@
-# COL unified operations SaaS — roadmap context (read-only)
+# Haven — Expand. Perfect. Secure. Multiply. — roadmap context
 
-**Purpose:** Give agents **broad orientation** to the product direction. **Do not treat this file as an implementation spec.** You will receive **phase-one deliverables and per-module depth** separately. The canonical, full roadmap (including operator-specific context) is maintained by the owner at:
+**Purpose:** Orientation for Circle of Life's assisted living operations. The current execution roadmap is [UNIFIED-ROADMAP.md](./specs/UNIFIED-ROADMAP.md); implementation scope comes from the module specs and owner decisions. The former Downloads moonshot roadmap is historical context, not an execution authority.
 
-`/Users/brianlewis/Downloads/COL_SaaS_Moonshot_Roadmap.md`
-
-Do **not** copy insured contacts, broker details, or premium figures from that document into the repo.
+The operating direction is enhanced management by virtual staff and real time, accurate access to the complete body of information. AI remains subordinate to human judgment, licensure rules, and auditability. This direction does not establish software ownership, a license, a valuation, or a sale agreement.
 
 ---
 
 ## What this product is
 
-A **multi-facility assisted living (ALF)** operations platform for **owner-operators** running **separate legal entities** (LLCs) under one organization—initial beachhead **Florida ALF / AHCA**, designed to scale beyond one operator. **Product name: Haven.**
+A **multi-facility assisted living (ALF)** operations platform for **owner-operators** running **separate legal entities** (LLCs) under one organization—current scope **Florida ALF / AHCA**, with future managed buildings, acquisitions, or additional states subject to owner direction and jurisdiction-specific validation. **Product name: Haven.**
 
 **Core gap the roadmap addresses:** No existing system unifies clinical ops, financial ops, regulatory compliance, insurance/risk, workforce, family engagement, and expansion planning in one **multi-tenant, multi-entity** stack built for ALFs (not SNF retrofits or IL property software).
 
@@ -72,7 +70,7 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 ## Implementation status in this repo (not the external roadmap file)
 
-*Last refreshed: 2026-04-10.* Track D D1–D84 shipped; migration parity 001–120 confirmed.
+*Last refreshed: 2026-09-06.* The integrated repository contains 328 migration files covering numbered sequence `001–325`. The hosted ledger is recorded through `318`; remediation migrations `319–325` still require controlled deployment and verification. Migration `326` is the next free numbered version.
 
 | Module | Spec File | Spec Status | Build Status |
 |--------|-----------|-------------|--------------|
@@ -130,11 +128,11 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 Current position: **closeout + acceptance before expanding scope.** Track D (D1–D84) has completed the Phase 6 completion pass for modules 11, 12, 13, 14, 15, 22, 23. Do not start new modules until:
 
-1. **Phase 1 acceptance closeout** — A1+A2 done (2026-04-09); A3 real-auth UAT depth, A4 env/seed, A5 Pro/BAA/PITR, A6 waiver review remain. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
+1. **Phase 1 acceptance closeout** — A1+A2 done (2026-04-09); A5 remains PASS on the owner-attested 2026-08-26 record; A3 real-auth UAT depth, A4 env/seed, and A6 waiver review remain. A separate current BAA/HIPAA controls evidence refresh is required before PHI rollout; it does not reopen A5. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
 2. **Phases 3–6 formal acceptance** — 47 UAT rows across 5 phase checklists, all PENDING owner walkthrough. See `PHASE3-6-ACCEPTANCE-EXECUTION-LOG.md`.
 3. **COL document collection** — 21 items identified in `docs/haven-gap-analysis.docx`. 5 CRITICAL items must be collected before compliance engine and admission modules can be fully activated.
 4. **Track D Enhanced backlog (D85+)** — optional staged improvements per `TRACK-D-ENHANCED-BACKLOG-PLAN.md`, one bounded slice at a time, owner priority.
-5. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules (Track E, migration `121+`).
+5. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules (Track E). Any new DDL starts at the next free migration, currently `326`; older `121+` guidance is obsolete.
 
 Use these delivery states consistently: **Spec written → Core shipped → Operationally hardened → Acceptance complete.**
 

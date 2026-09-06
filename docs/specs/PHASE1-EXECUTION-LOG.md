@@ -54,7 +54,7 @@ Rows that do not require a successful authenticated session were still executed 
 
 ## §B–§E — Prepared test steps (Track A A3 helper, 2026-04-10)
 
-Use **Oakridge** as the selected facility unless the row says otherwise. Sign in with the **role named in PHASE1-ACCEPTANCE-CHECKLIST** for that surface. Capture **URL + screenshot** for each PASS.
+Use **Homewood Lodge** as the current acceptance facility unless the row says otherwise. Historical Oakridge seeded evidence remains valid only for its original scope. Sign in with the **role named in PHASE1-ACCEPTANCE-CHECKLIST** for that surface. Capture **URL + screenshot** for each PASS.
 
 ### B1 `/admin` (PH1-B101–B102)
 
@@ -134,11 +134,13 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
 | PH1-P01 | `.env.local` → correct Supabase project | **PASS** | owner | 2026-04-06 | Brian Lewis confirmed active project **`manfqmasfqppukpobpld`** (Supabase Authentication UI, PRODUCTION). Repo canonical URL: `https://manfqmasfqppukpobpld.supabase.co` ([README.md](./README.md)). Owner still responsible to keep local `.env.local` host aligned (never commit secrets). |
-| PH1-P02 | Migrations applied / list aligned remote | **PASS** | agent | 2026-04-10 | Repo: `npm run migrations:check` **001–120** (see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md)). Remote: confirm **`manfqmasfqppukpobpld`** matches via `supabase migration list` after migration **`120`** is applied; re-verify after each migration PR. |
+| PH1-P02 | Migrations applied / list aligned remote | **PENDING** | agent | 2026-09-06 | Integrated repo: 328 migration files / sequence **001–325**. Hosted ledger: through **318**. Apply remediation migrations **319–325** in order and rerun `npm run migrations:verify:remote` before marking PASS. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). |
 | PH1-P03 | Seeded users + roles + facility access | **PASS** | owner | 2026-04-09 | Pilot users sign in; JWT includes `app_metadata.app_role` after **`110`**; `user_profiles` aligned per **`111`**. Confirmed live for owner, facility_admin, caregiver, family — see **Owner verification — 2026-04-09** above. |
 | PH1-P04 | Facility context in admin shell | PARTIAL | agent | 2026-08-19 | Production smoke `BASE_URL=https://circleoflifealf.netlify.app npm run demo:auth-smoke:real`: owner login landed `/admin/executive` with `admin_facility_filter_ok: true`. facility_admin session timed out at login (15s). Single-facility pilot still acceptable; finish after jessica session loads. |
 | PH1-P05 | Storage buckets (if/when uploads added) | **N/A** | | | No Storage in Phase 1 UI per checklist |
 | PH1-P06 | Pro plan, BAA before PHI, PITR (production) | **PASS** | Brian Lewis / agent | 2026-08-19 | Pro + BAA owner-confirmed 2026-05-11. PITR enabled 2026-08-19 (`pitr_7` on `ci_small`); CLI `pitr_enabled: true`. See PH1-OA04. |
+
+**Post-closeout PHI-launch evidence refresh (not A5): PENDING.** Before PHI rollout, owner/legal must confirm current BAA coverage for the relevant organization/project, HIPAA add-on, required project controls, and PITR. Absence of a locally inspected contract is not proof of no BAA. Preserve PH1-P06 and PH1-OA04 PASS unless verified contrary evidence is recorded atomically across the authoritative A5 documents.
 
 ---
 
@@ -157,7 +159,7 @@ Use `Tester` to record the human who ran the step. Use `Notes` to capture:
 
 | ID | Item | Result | Tester | Date | Notes |
 |----|------|--------|--------|------|-------|
-| PH1-RLS | RLS-01,03–07 on target; RLS-02 deferred (single facility) | **PASS** | Brian Lewis (owner) | 2026-04-09 | [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — owner attestation; re-run **RLS-02** when second facility on target |
+| PH1-RLS | RLS-01,03–07 on target; RLS-02 historically deferred | **PASS** | Brian Lewis (owner) | 2026-04-09 | [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — owner attestation for the historical scope; run **RLS-02** against the current multi-facility target before Oakridge goes live |
 
 ---
 

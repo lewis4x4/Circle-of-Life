@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Mission (non-negotiable ship gate)
 
-> **North star:** Build **Haven** — a unified operations platform for **assisted living facilities** (ALF), **home health**, and **home- and community-based care** — so multi-site, multi-entity operators can run clinical workflows, compliance, workforce, family engagement, and business operations on **one secure, role-governed data layer**. Improve **resident safety and quality**, **regulatory readiness**, **staff clarity**, and **owner visibility**. Use **AI** to reduce administrative burden and surface risk early; it must remain **subordinate to human judgment, licensure rules, and auditability**.
+> **North star:** Build **Haven** for Circle of Life: **Expand. Perfect. Secure. Multiply. Through enhanced management by virtual staff and real time, accurate access to the complete body of information upon which we thrive.** Support assisted living operations across facilities and legal entities on **one secure, role-governed data layer**, improving resident safety and quality, regulatory readiness, staff clarity, and owner visibility. AI must remain **subordinate to human judgment, licensure rules, and auditability**.
 
 Mission alignment (`pass` | `risk` | `fail`) must be recorded in every segment handoff. Misalignment can block release even when tests pass.
 
@@ -16,7 +16,7 @@ Mission alignment (`pass` | `risk` | `fail`) must be recorded in every segment h
 
 ## Who You Are Building For
 
-**Client:** Circle of Life (COL) — 5 Florida ALF facilities (Oakridge, Rising Oaks, Homewood Lodge, Plantation, Grande Cypress). Oakridge ALF was the original Phase 1 seeded validation pilot; Homewood Lodge ALF is the current controlled real-data launch facility. All facilities are in the America/New_York timezone and fall under Florida AHCA Chapter 429 / FAC 59A-36 regulations.
+**Client:** Circle of Life (COL) — 5 Florida ALF facilities (Oakridge, Rising Oaks, Homewood Lodge, Plantation, Grande Cypress). Homewood Lodge ALF is the current Phase 1 acceptance and controlled real-data launch facility. Oakridge ALF was the original seeded validation pilot; preserve its historical evidence. All facilities are in the America/New_York timezone and fall under Florida AHCA Chapter 429 / FAC 59A-36 regulations.
 
 **Supabase project:** https://manfqmasfqppukpobpld.supabase.co
 **Stack:** Next.js + TypeScript + Tailwind + Supabase (PostgreSQL, RLS, Edge Functions) + Netlify
@@ -109,9 +109,9 @@ Read `docs/specs/TRACK-A-CLOSEOUT-ROADMAP.md` in full before doing anything. Thi
 
 Blockers requiring owner action (not agent action):
 - ~~**A1 Auth unblock**~~ — **Cleared (2026-04-09)** for pilot JWTs + migrations `110`–`111`; see `docs/specs/PHASE1-AUTH-DEBUG-HANDOFF.md` if Auth regresses.
-- ~~**A2 RLS matrix**~~ — **PASS** (owner sign-off, single-facility pilot); re-run **RLS-02** when a second facility exists — `docs/specs/PHASE1-RLS-VALIDATION-RECORD.md`.
+- ~~**A2 RLS matrix**~~ — **PASS** (owner sign-off, single-facility pilot); run **RLS-02** against the current multi-facility target before Oakridge goes live — `docs/specs/PHASE1-RLS-VALIDATION-RECORD.md`.
 - ~~**A5 Pro/BAA/PITR**~~ — **PASS.** Pro + signed BAA owner-confirmed 2026-05-11; PITR `pitr_7` enabled 2026-08-19; owner re-attested 2026-08-26. Evidence: `docs/specs/PHASE1-ENV-CONFIRMATION.md` Production Compliance, `PHASE1-EXECUTION-LOG.md` PH1-P06 / PH1-OA04. **Do not re-open A5 as unsigned.**
-- **A3 Live UAT (depth):** Owner or delegated tester must complete `PHASE1-ACCEPTANCE-CHECKLIST.md` §B–§E rows in `PHASE1-EXECUTION-LOG.md` (§A + RLS owner-verified 2026-04-09).
+- **A3 Live UAT (depth):** Owner or delegated tester with Homewood staff must complete `PHASE1-ACCEPTANCE-CHECKLIST.md` §B–§E rows in `PHASE1-EXECUTION-LOG.md` (§A + RLS owner-verified 2026-04-09).
 
 Agent-executable steps: migration parity checks, script generation, gate recording, doc updates.
 
@@ -163,7 +163,7 @@ Then remaining strategic modules in order per owner direction.
 - **Form 1823** (FL AHCA Physician's Report) is the legal entry point for every ALF admission. It is a first-class tracked document in Module 02, not a footnote.
 - **DCF coordination** (Department of Children & Families) is a real workflow at COL for Medicaid residents — at admission (eligibility review) and discharge (DCF Form 2506 notice).
 - **Representative Payee / SSA-787** arrangements exist for some residents. Module 02 must model this.
-- **Facility sequencing:** Oakridge ALF (Lafayette County, FL, ~52 beds) remains the original Phase 1 seeded validation target. Homewood Lodge ALF is the current controlled launch facility for real-data readiness and UAT. Preserve historical Oakridge acceptance evidence; scope new launch verification to Homewood unless the owner directs otherwise.
+- **Facility sequencing:** Homewood Lodge is the current acceptance and controlled launch facility. Rollout order: Homewood, Oakridge, Rising Oaks, Grande Cypress, The Plantation on Summers. Preserve historical Oakridge seeded validation evidence; do not reuse it as Homewood depth UAT. Run RLS-02 against the current multi-facility target before Oakridge goes live. Display labels here do not authorize changes to legal entity records.
 
 ---
 

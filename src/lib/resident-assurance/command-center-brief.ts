@@ -340,60 +340,68 @@ export async function fetchResidentAssuranceFacilityTrendSeries(
   const dates = buildTrailingDates(days);
   const startDate = `${dates[0]}T00:00:00.000Z`;
 
-  const [facilitiesRes] = await Promise.all([
+  const results = await Promise.allSettled([
     supabase
       .from("facilities")
       .select("id, name")
       .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .order("name", { ascending: true }),
+    supabase
+      .from("resident_watch_instances" as never)
+      .select("facility_id, starts_at")
+      .eq("organization_id", organizationId)
+      .is("deleted_at", null)
+      .gte("starts_at", startDate) as unknown as Promise<{
+      data: Array<{ facility_id: string; starts_at: string }> | null;
+      error: { message: string } | null;
+    }>,
+    supabase
+      .from("resident_observation_escalations" as never)
+      .select("facility_id, triggered_at")
+      .eq("organization_id", organizationId)
+      .is("deleted_at", null)
+      .gte("triggered_at", startDate) as unknown as Promise<{
+      data: Array<{ facility_id: string; triggered_at: string }> | null;
+      error: { message: string } | null;
+    }>,
+    supabase
+      .from("resident_observation_integrity_flags" as never)
+      .select("facility_id, detected_at")
+      .eq("organization_id", organizationId)
+      .is("deleted_at", null)
+      .gte("detected_at", startDate) as unknown as Promise<{
+      data: Array<{ facility_id: string; detected_at: string }> | null;
+      error: { message: string } | null;
+    }>,
+    supabase
+      .from("resident_safety_scores" as never)
+      .select("facility_id, resident_id, risk_tier, computed_at")
+      .eq("organization_id", organizationId)
+      .is("deleted_at", null)
+      .gte("computed_at", startDate)
+      .order("computed_at", { ascending: false }) as unknown as Promise<{
+      data: Array<{
+        facility_id: string;
+        resident_id: string;
+        risk_tier: "low" | "moderate" | "high" | "critical";
+        computed_at: string;
+      }> | null;
+      error: { message: string } | null;
+    }>,
   ]);
 
-  const watchStartsRes = await (supabase
-    .from("resident_watch_instances" as never)
-    .select("facility_id, starts_at")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .gte("starts_at", startDate) as unknown as Promise<{
-    data: Array<{ facility_id: string; starts_at: string }> | null;
-    error: { message: string } | null;
-  }>);
-
-  const escalationsRes = await (supabase
-    .from("resident_observation_escalations" as never)
-    .select("facility_id, triggered_at")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .gte("triggered_at", startDate) as unknown as Promise<{
-    data: Array<{ facility_id: string; triggered_at: string }> | null;
-    error: { message: string } | null;
-  }>);
-
-  const integrityRes = await (supabase
-    .from("resident_observation_integrity_flags" as never)
-    .select("facility_id, detected_at")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .gte("detected_at", startDate) as unknown as Promise<{
-    data: Array<{ facility_id: string; detected_at: string }> | null;
-    error: { message: string } | null;
-  }>);
-
-  const safetyScoresRes = await (supabase
-    .from("resident_safety_scores" as never)
-    .select("facility_id, resident_id, risk_tier, computed_at")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .gte("computed_at", startDate)
-    .order("computed_at", { ascending: false }) as unknown as Promise<{
-    data: Array<{
-      facility_id: string;
-      resident_id: string;
-      risk_tier: "low" | "moderate" | "high" | "critical";
-      computed_at: string;
-    }> | null;
-    error: { message: string } | null;
-  }>);
+  // Preserve sequential rejection priority, then the existing response-error priority.
+  // allSettled also consumes every rejection from these independent reads.
+  function value<T>(result: PromiseSettledResult<T>): T {
+    if (result.status === "rejected") throw result.reason;
+    return result.value;
+  }
+  const facilitiesRes = value(results[0]);
+  const watchStartsRes = value(results[1]);
+  const escalationsRes = value(results[2]);
+  const integrityRes = value(results[3]);
+  const safetyScoresRes = value(results[4]);
 
   const firstError = [
     facilitiesRes.error,

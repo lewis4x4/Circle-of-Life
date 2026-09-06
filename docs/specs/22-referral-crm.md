@@ -65,3 +65,7 @@ Aligned with **`referral_leads`** (`076_referral_inquiry_rls_audit.sql`):
 ## Definition of done
 
 - Migration `091` applies; types updated; segment gates **PASS** when UI ships.
+
+## Declined prospects and facility turnaways
+
+Use the shared lead closure model in [Module 01](./01-referral-inquiry.md#col-referral-closure-outcomes-2026-09-05), migration `317`. COL-35 imports must distinguish prospect decisions from facility decisions and use Jessica's approved vocabulary. This schema foundation does not change HL7 processing or authorize automatic imports.

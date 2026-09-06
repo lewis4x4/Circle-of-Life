@@ -14,7 +14,9 @@ The 119 indexed review entries are accounted for: **117 corrected in source (inc
 
 ## Evidence
 
-Final verification is recorded in `verification.json` and the segment gate artifact. The isolated operational branch passed **2,948 tests across 486 files**, with no failures or skips. The full required segment gate bundle passed: lint/constitution checks, zero dependency advisories, secret scanning, migration replay, production build and anonymous entry/sign-in visual/accessibility checks. Native PostgreSQL 17.9 replay passed **326 migrations and 10 SQL probes**, using the repository's Supabase auth/storage stubs and rollback-only fixtures. Public entry/sign-in UI checks do not substitute for authenticated clinical UAT.
+Historical isolated-branch verification is recorded in `verification.json` and its segment gate artifact. That branch passed **2,948 tests across 486 files**, with no failures or skips. Its required gate bundle passed lint/constitution checks, zero dependency advisories, secret scanning, migration replay, production build and anonymous entry/sign-in visual/accessibility checks. At that checkpoint, native PostgreSQL 17.9 replay covered **326 migration files and 10 SQL probes**, using the repository's Supabase auth/storage stubs and rollback-only fixtures.
+
+The current integrated tree is different: it contains **328 migration files**, numbered sequence **`001`–`325`**. The hosted ledger is recorded through **`318`**, and remediation migrations **`319`–`325`** remain pending. A fresh integrated migration replay and final gate must supersede the historical 326-file artifact before release. Public entry/sign-in UI checks do not substitute for authenticated clinical UAT.
 
 - [Every finding and its evidence](findings.json)
 - [Independent final review](FINAL-INDEPENDENT-VERIFICATION.md)
@@ -28,7 +30,7 @@ Final verification is recorded in `verification.json` and the segment gate artif
 
 **C25: Executable compliance presets.** Unimplemented presets are disabled configuration drafts and cannot masquerade as enabled checks. A verified runnable preset catalog is not delivered. Custom configured checks remain available.
 
-The seven new migrations are numbered 317–323 and replay in the ordinary repository order. See [migration ordering](MIGRATION-ORDER.md).
+The seven remediation migrations are numbered **`319`–`325`** and replay in ordinary repository order. Migration **`326`** is the next free numbered version. See [migration ordering](MIGRATION-ORDER.md).
 
 ## Before operational use
 

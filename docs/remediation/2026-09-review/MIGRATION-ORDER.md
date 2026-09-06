@@ -1,7 +1,9 @@
 # Migration ordering
 
-The seven new migrations were created through the Supabase CLI, then assigned the repository's next unused numbered versions317–323 before any database deployment. This keeps them after the established001–316 chain under ordinary filename/version ordering. Their SQL behavior is unchanged. The three historical May timestamp migrations retain their original names and positions.
+The integrated repository contains **328 migration files** with numbered sequence **`001`–`325`**. The hosted ledger is recorded through **`318`**. Versions `317` and `318` are the deployed referral-closure and facility/entity-name migrations; preserve both their files and hosted history.
 
-The replay harness uses ordinary filename ordering again; it does not move new files to a special tail. Validate the target's migration history before rollout. No production migration history has been changed.
+The seven remediation migrations created through the Supabase CLI now use versions **`319`–`325`**. Their SQL behavior is unchanged by renaming. They remain pending for controlled hosted deployment. The next free numbered version is **`326`**.
 
-Supabase's CLI has documented mixed-length version-ordering issues: https://github.com/supabase/cli/issues/6036. Use a CLI incorporating the upstream fix when reconciling the repository's existing mixed history; do not repair production history merely to silence a mismatch.
+The replay harness uses ordinary filename ordering. The three historical May timestamp migrations retain their original names and positions. Production also records six historical August timestamp migrations, including numbered equivalents; do not replay these or alter their history merely to silence a CLI mismatch.
+
+Supabase CLI mixed-length ordering issue: https://github.com/supabase/cli/issues/6036. Inspect hosted history, deploy only the seven pending remediation migrations in ascending order, and rerun local replay plus remote parity checks before release.

@@ -16,6 +16,19 @@ import {
 const EM_DASH = "—";
 
 describe("formatRoundingPlanDateDisplay", () => {
+  it.each([["2026-03-08", "Mar 8, 2026"], ["2026-11-01", "Nov 1, 2026"], ["2026-01-01", "Jan 1, 2026"]])("preserves calendar date %s across host timezones", (value, expected) => {
+    expect(formatRoundingPlanDateDisplay(value)).toBe(expected);
+  });
+
+  it("uses Eastern dates for timestamp values near UTC midnight", () => {
+    expect(formatRoundingPlanDateDisplay("2026-03-15T03:59:00Z")).toBe("Mar 14, 2026");
+    expect(formatRoundingPlanDateDisplay("2026-03-15T04:00:00Z")).toBe("Mar 15, 2026");
+  });
+
+  it("names invalid date gaps instead of throwing during render", () => {
+    expect(formatRoundingPlanDateDisplay("invalid")).toBe(ROUNDING_PLAN_NO_DATE_COPY);
+  });
+
   it("names missing effective dates instead of an em dash", () => {
     expect(formatRoundingPlanDateDisplay(null)).toBe(ROUNDING_PLAN_NO_DATE_COPY);
     expect(formatRoundingPlanDateDisplay(undefined)).toBe(ROUNDING_PLAN_NO_DATE_COPY);
@@ -32,6 +45,14 @@ describe("formatRoundingPlanDateDisplay", () => {
 });
 
 describe("formatRoundingPlanDateTimeDisplay", () => {
+  it("uses the Eastern clock independently of the host timezone", () => {
+    expect(formatRoundingPlanDateTimeDisplay("2026-03-15T01:30:00Z")).toBe("Mar 14, 2026, 9:30 PM");
+  });
+
+  it("names invalid timestamp gaps instead of throwing during render", () => {
+    expect(formatRoundingPlanDateTimeDisplay("invalid")).toBe(ROUNDING_PLAN_NO_TIME_COPY);
+  });
+
   it("names missing last-updated timestamps instead of an em dash", () => {
     expect(formatRoundingPlanDateTimeDisplay(null)).toBe(ROUNDING_PLAN_NO_TIME_COPY);
     expect(formatRoundingPlanDateTimeDisplay(undefined)).toBe(ROUNDING_PLAN_NO_TIME_COPY);

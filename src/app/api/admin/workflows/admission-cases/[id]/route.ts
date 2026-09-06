@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { logError } from "@/lib/observability/logger";
 import {
   convertLeadOnMoveIn,
   emitWorkflowEvent,
@@ -141,7 +142,12 @@ export async function PATCH(
     .eq("facility_id", current.facility_id);
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    logError("admin.workflows.admission.update", updateError, {
+      action: "update",
+      admissionCaseId: current.id,
+      facilityId: current.facility_id,
+    });
+    return NextResponse.json({ error: "Admission changes could not be saved. Retry the update." }, { status: 500 });
   }
 
   if (patch.status && patch.status !== current.status) {

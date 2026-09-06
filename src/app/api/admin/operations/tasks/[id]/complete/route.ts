@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+
+const TRUSTED_COMPLETION_ERRORS = new Set([
+  "Task cannot be completed from this state",
+  "A different authorized staff member must verify this task",
+]);
 
 type TaskRow = {
   id: string;
@@ -49,6 +55,16 @@ export async function PATCH(
   }
 
   const result = await actor.admin.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: actor.id, p_actor_role: actor.appRole, p_notes: body.completion_notes ?? "", p_evidence: body.completion_evidence_paths ?? [] } as never);
-  if (result.error) return NextResponse.json({ error: result.error.message }, { status: 409 });
+  if (result.error) {
+    logError("admin.operations.tasks.complete", result.error, {
+      action: "rpc",
+      taskId: id,
+      facilityId: task.facility_id,
+    });
+    const error = TRUSTED_COMPLETION_ERRORS.has(result.error.message)
+      ? result.error.message
+      : "Task could not be completed. Refresh the task and retry.";
+    return NextResponse.json({ error }, { status: 409 });
+  }
   return NextResponse.json({ success: true, status: result.data });
 }

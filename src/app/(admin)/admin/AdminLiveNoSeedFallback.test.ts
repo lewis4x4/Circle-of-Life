@@ -1,7 +1,9 @@
-import { adminIncidentsGlobalEmptyNotice } from "@/lib/incidents/incidents-board-copy";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { NO_FACILITY_SOURCE_NOTICE } from "@/lib/assessments/load-overdue-assessments";
+import { adminIncidentsGlobalEmptyNotice } from "@/lib/incidents/incidents-board-copy";
 
 const repoRoot = process.cwd();
 const readSource = (relativePath: string) =>
@@ -11,6 +13,7 @@ const LIVE_ADMIN_SOURCES = [
   "src/components/residents/AdminResidentsPageClient.tsx",
   "src/components/incidents/AdminIncidentsPageClient.tsx",
   "src/app/(admin)/assessments/overdue/page.tsx",
+  "src/components/assessments/AdminOverdueAssessmentsPageClient.tsx",
   "src/app/(admin)/residents/page.tsx",
   "src/app/(admin)/incidents/page.tsx",
 ];
@@ -51,16 +54,19 @@ describe("admin live surfaces seeded fallback removal", () => {
   it("keeps explicit empty live states instead of sample roster or incident rows", () => {
     const residentsSource = readSource("src/components/residents/AdminResidentsPageClient.tsx");
     const incidentsSource = readSource("src/components/incidents/AdminIncidentsPageClient.tsx");
-    const clinicalDeskSource = readSource("src/components/assessments/AdminOverdueAssessmentsPageClient.tsx") + readSource("src/lib/assessments/load-overdue-assessments.ts");
+    const clinicalDeskSource = readSource("src/app/(admin)/assessments/overdue/page.tsx");
 
     expect(residentsSource).toContain("Live resident roster returned no residents");
     expect(residentsSource).toContain("setRows(liveRows)");
     expect(residentsSource).toContain("!error && filteredRows.length > 0");
     expect(incidentsSource).toContain("setRows(liveRows)");
-    expect(incidentsSource).toContain("adminIncidentsGlobalEmptyNotice");
-    expect(adminIncidentsGlobalEmptyNotice()).toContain("No live incident records for this scope");
-    expect(clinicalDeskSource).toContain("No overdue assessments.");
-    expect(clinicalDeskSource).toContain("No drafts awaiting review.");
-    expect(clinicalDeskSource).toContain("No cross-facility fallback query is run.");
+    expect(incidentsSource).toContain("{adminIncidentsGlobalEmptyNotice()}");
+    expect(adminIncidentsGlobalEmptyNotice()).toBe("No live incident records for this scope. Fallback incident cards are not shown.");
+    expect(clinicalDeskSource).toContain("<AdminOverdueAssessmentsPageClient");
+    expect(clinicalDeskSource).toContain("initialSourceNotice={initialSourceNotice}");
+    const clinicalDeskClient = readSource("src/components/assessments/AdminOverdueAssessmentsPageClient.tsx");
+    expect(clinicalDeskClient).toContain("No overdue assessments.");
+    expect(clinicalDeskClient).toContain("No drafts awaiting review.");
+    expect(NO_FACILITY_SOURCE_NOTICE).toContain("No cross-facility fallback query is run.");
   });
 });

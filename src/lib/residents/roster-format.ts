@@ -7,6 +7,25 @@ import type { Acuity, AdlStatus, ResidentRow } from "./load-residents";
 
 type ResidentRosterMetricCellTone = "muted" | "warning" | "danger" | "gap";
 
+// Fixed locale/timezone formatters are reusable; relative dates remain live per call.
+const rosterTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+const rosterDayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const rosterMonthDayFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  month: "short",
+  day: "numeric",
+});
+
 /**
  * Compact relative timestamps for roster "Updated" column (America/New_York oriented display).
  */
@@ -19,38 +38,15 @@ export function formatResidentRosterUpdatedAt(iso: string | null): string {
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) return RESIDENT_ROSTER_NO_DATE_COPY;
 
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  const dayKey = (d: Date) => {
-    const f = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/New_York",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    return f.format(d);
-  };
-
   const today = new Date();
   const yday = new Date(today);
   yday.setDate(yday.getDate() - 1);
 
-  const parsedKey = dayKey(parsed);
-  const todayKey = dayKey(today);
-  const ydayKey = dayKey(yday);
+  const parsedKey = rosterDayFormatter.format(parsed);
+  const todayKey = rosterDayFormatter.format(today);
+  const ydayKey = rosterDayFormatter.format(yday);
 
-  const monthDay = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    month: "short",
-    day: "numeric",
-  }).format(parsed);
-
-  const timeSuffix = formatter
+  const timeSuffix = rosterTimeFormatter
     .format(parsed)
     .replace(/\s+/g, "")
     .replace(/AM/i, "a")
@@ -60,6 +56,7 @@ export function formatResidentRosterUpdatedAt(iso: string | null): string {
   if (parsedKey === todayKey) return `Today ${timeSuffix}`;
   if (parsedKey === ydayKey) return `Yesterday ${timeSuffix}`;
 
+  const monthDay = rosterMonthDayFormatter.format(parsed);
   const cutoff = new Date(today);
   cutoff.setDate(cutoff.getDate() - 7);
   if (parsed >= cutoff) {
@@ -124,10 +121,14 @@ export function formatResidentRosterAdlExport(
 
 /** Group header average acuity; names empty groups instead of a silent em dash. */
 export function averageAcuity(rows: ResidentRow[]): string {
-  const posted = rows.filter((row) => isResidentRosterAcuityPosted(row.acuityLevel));
-  if (posted.length === 0) return RESIDENT_ROSTER_NO_ACUITY_COPY;
-  const sum = posted.reduce((acc, row) => acc + row.acuity, 0);
-  return (sum / posted.length).toFixed(1);
+  let sum = 0;
+  let count = 0;
+  rows.forEach((row) => {
+    if (!isResidentRosterAcuityPosted(row.acuityLevel)) return;
+    sum += row.acuity;
+    count += 1;
+  });
+  return count === 0 ? RESIDENT_ROSTER_NO_ACUITY_COPY : (sum / count).toFixed(1);
 }
 
 /** Deterministic accent for avatar dot / initials background (HSL). */

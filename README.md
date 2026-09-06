@@ -5,7 +5,7 @@
 ## Supabase Project
 - **URL:** https://manfqmasfqppukpobpld.supabase.co
 - **Timezone:** America/New_York (all facilities in North Florida)
-- **Critical:** Confirm Pro plan with signed BAA before any PHI enters. Confirm Point-in-Time Recovery enabled.
+- **PHI launch gate:** A5 remains historically closed on the owner's 2026-08-26 attestation. Before any new PHI rollout, owner/legal must refresh evidence of current BAA coverage, the HIPAA add-on, required project controls, and PITR for the production project. This refresh is separate from the recorded A5 PASS and does not rewrite it without verified contrary evidence.
 
 ## Build Execution Order
 
@@ -22,7 +22,7 @@ Claude Code executes migrations and builds features in this exact sequence. Do n
 | 5 | `11-staff-management.md` | Staff Management & Scheduling | 9-10 | staff, staff_certifications, schedules, shift_assignments, time_records, shift_swap_requests, staffing_ratio_snapshots |
 | 6 | `16-billing.md` | Resident Billing & Collections | 11-12 | rate_schedules, resident_payers, invoices, invoice_line_items, payments, collection_activities, invoice_sequences |
 
-**Phase 1 Milestone:** At Week 12, COL can run daily operations on the platform at 1 pilot facility (Oakridge ALF). Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view facility dashboard.
+**Phase 1 Milestone:** COL can run daily operations at one controlled facility. Homewood Lodge is the current acceptance and launch facility; Oakridge's earlier seeded validation remains historical evidence for its original scope. Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view the facility dashboard.
 
 ### Phase 2: Clinical Depth & Compliance (Weeks 13-20)
 
