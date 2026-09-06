@@ -27,6 +27,17 @@ vi.mock("@/lib/observability/logger", () => ({ logError }));
 
 import { POST } from "./route";
 
+const trustedArrivalErrors = [
+  "A cancelled or closed admission cannot confirm arrival",
+  "Choose an actual arrival date, not a future date",
+  "Complete financial, physician-order, bed and rate readiness first",
+  "Current Form 1823 and verified evidence are required",
+  "Complete resident date of birth and gender before confirming arrival",
+  "The selected bed is reserved for another admission",
+  "The selected bed is occupied by another resident",
+  "The bed is unavailable for arrival",
+];
+
 describe("admission arrival error boundary", () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -48,5 +59,17 @@ describe("admission arrival error boundary", () => {
       expect.objectContaining({ message: sentinel }),
       { action: "rpc", admissionCaseId: "admission", facilityId: "facility" },
     );
+  });
+
+  it.each(trustedArrivalErrors)("preserves the trusted arrival error: %s", async (errorMessage) => {
+    state.rpc.mockResolvedValue({ data: null, error: { message: errorMessage } });
+
+    const response = await POST(
+      new Request("https://local.test/arrival", { method: "POST", body: JSON.stringify({ arrival_date: "2026-09-06" }) }) as never,
+      { params: Promise.resolve({ id: "admission" }) },
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: errorMessage });
   });
 });

@@ -2,9 +2,11 @@
 
 Scope: bounded recheck of the clinical safety challenge and new clinical authoring flows; source/evidence-path coverage audit of all 119 indexed findings. The reviewer implemented the business/office lanes and therefore does not provide independent approval of those implementations. The lead owns their independent integration review. No production deployment or authenticated browser UAT was performed by this verifier.
 
-**Verdict: clinical source recheck passes the identified challenge; all 119 findings have lane dispositions. The merged ledger is complete; overall release verification remains incomplete until the lead records the final integrated gates.**
+**Verdict: clinical source recheck passes the identified challenge; all 119 findings have lane dispositions. The merged ledger is complete. The current integrated source gate and separate required native PostgreSQL replay pass; hosted deployment and authenticated operational acceptance remain open.**
 
-**Integration status (2026-09-06):** the current tree has 328 migration files covering numbered sequence `001`–`325`; hosted tracking is through `318`; remediation `319`–`325` is pending; `326` is next free. Earlier 326-file replay evidence is historical isolated-branch evidence and does not replace a fresh integrated replay.
+**Integration status (2026-09-06):** `test-results/agent-gates/2026-09-06T22-51-06-713Z-REVIEW-LIVE-MERGE-20260906.json` is the canonical UI-inclusive integrated PASS for required hygiene, secret, dependency-audit, lint, migration-sequence, production-build, stress, design-review, and accessibility checks. Design review passed 4 screenshots; axe passed 1 route. Full Vitest also passed 3,026 tests across 500 files, with 2 skipped and 0 failed, in 67.19 seconds; its source-map warning was nonfatal. The canonical gate's optional Docker replay returned a successful SKIP because Docker was unavailable. Separate required native PostgreSQL 17 proof passed all 328 migration files and 10 SQL probes through a repository run-owned socket path; the scratch cluster was stopped and cleaned afterward. The tree covers `001`–`325`; hosted tracking is through `318`; remediation `319`–`325` is pending; `326` is next free.
+
+The earlier non-UI artifact `test-results/agent-gates/2026-09-06T22-32-04-029Z-REVIEW-MERGE-20260906.json` remains prior evidence.
 
 ## Clinical challenge recheck
 
@@ -19,7 +21,7 @@ Scope: bounded recheck of the clinical safety challenge and new clinical authori
 | Medication revision dropped active-order semantics | Revision starts from the prior full row and explicitly carries untouched form, finite end date, indication, frequency detail, PRN follow-up, document and pharmacy fields. | Medication order RPC and field-preservation SQL regression |
 | New authoring lost in-flight or cross-resident drafts | Care-plan and medication editors disable their fieldsets while saving. Caller keys bind each editor to resident/source-version identity, preventing old draft contents from being submitted under new props. | `CarePlanAuthor.tsx`, `MedicationOrderEditor.tsx`, their resident-page call sites |
 
-Care plans, medication orders and discharge reconciliation use normal labeled fields, selectors and free-text clinical evidence. No raw JSON/config editor was found in these frontline authoring flows. The source changes require the final integrated SQL/UI checks; fixture presence alone is not a claim that the latest full gate passed.
+Care plans, medication orders and discharge reconciliation use normal labeled fields, selectors and free-text clinical evidence. No raw JSON/config editor was found in these frontline authoring flows. The integrated source and SQL checks now pass; fixture presence alone still does not establish hosted deployment or operator acceptance.
 
 ## Integration correction discovered during final review
 
@@ -49,6 +51,6 @@ Other local source implementations must retain their documented rollout limits, 
 
 ## Gate evidence limits
 
-Saved logs include earlier failed snapshots: `native-full-verification.log` contained an earlier clinical-fixture cast error; `unit-results.json` at the audit checkpoint reported 2,911 passed / 2 failed; `scoped-lint.log` and `root-followup-tests.log` also retained earlier failures. These are historical snapshots while final gates are running, not proof of current failure or success. Final reporting must identify a later successful integrated artifact, including the synchronized dependencies, latest clinical migration, corrected meeting route and UI/build checks.
+Saved logs include earlier failed snapshots: `native-full-verification.log` contained an earlier clinical-fixture cast error; `unit-results.json` at the audit checkpoint reported 2,911 passed / 2 failed; `scoped-lint.log` and `root-followup-tests.log` also retained earlier failures. These are historical snapshots, not proof of current failure. The canonical later successful artifact is `test-results/agent-gates/2026-09-06T22-51-06-713Z-REVIEW-LIVE-MERGE-20260906.json`; database proof is the separate native PostgreSQL 17 replay described above because the gate's optional Docker replay skipped.
 
 No migration deployment, external report delivery, live medication administration, resident-data mutation or customer readiness approval follows from this source audit.

@@ -14,9 +14,11 @@ The 119 indexed review entries are accounted for: **117 corrected in source (inc
 
 ## Evidence
 
-Historical isolated-branch verification is recorded in `verification.json` and its segment gate artifact. That branch passed **2,948 tests across 486 files**, with no failures or skips. Its required gate bundle passed lint/constitution checks, zero dependency advisories, secret scanning, migration replay, production build and anonymous entry/sign-in visual/accessibility checks. At that checkpoint, native PostgreSQL 17.9 replay covered **326 migration files and 10 SQL probes**, using the repository's Supabase auth/storage stubs and rollback-only fixtures.
+The current integrated release candidate passed the canonical UI-inclusive gate `test-results/agent-gates/2026-09-06T22-51-06-713Z-REVIEW-LIVE-MERGE-20260906.json`. Required hygiene, tracked-secret scanning, dependency audit, gitleaks, lint, migration sequence, production build, stress, design-review, and accessibility checks passed. Design review covered **4 screenshots**; axe covered **1 route**. Full Vitest also passed **3,026 tests across 500 files**, with **2 skipped**, **0 failed**, in **67.19 seconds**; its source-map warning was nonfatal. The canonical gate's Docker migration replay was optional and returned a successful **SKIP** because Docker was unavailable; it is not the database proof.
 
-The current integrated tree is different: it contains **328 migration files**, numbered sequence **`001`–`325`**. The hosted ledger is recorded through **`318`**, and remediation migrations **`319`–`325`** remain pending. A fresh integrated migration replay and final gate must supersede the historical 326-file artifact before release. Public entry/sign-in UI checks do not substitute for authenticated clinical UAT.
+The earlier non-UI PASS remains prior evidence at `test-results/agent-gates/2026-09-06T22-32-04-029Z-REVIEW-MERGE-20260906.json`.
+
+A separate required native PostgreSQL 17 replay passed all **328 migration files and 10 SQL probes** through a repository run-owned socket path. The scratch cluster was stopped and cleaned after proof. The integrated tree is numbered **`001`–`325`**; the hosted ledger is recorded through **`318`**, and remediation migrations **`319`–`325`** remain pending. Authenticated operational UAT remains separate from the passing UI checks above.
 
 - [Every finding and its evidence](findings.json)
 - [Independent final review](FINAL-INDEPENDENT-VERIFICATION.md)
@@ -40,4 +42,4 @@ Exercise the real roles and facility boundaries, failed-save/retry paths, two-pe
 
 ## Branch and existing work
 
-The operational branch is `codex/haven-review-remediation-20260906`, in the sibling `Haven Remediation 2026-09-06` worktree. It excludes the pre-existing public-site draft and original root layout/configuration changes. Those remain in the original working directory; their lint/image/contrast corrections preserve their content and layout. No production deployment is implied by branch publication.
+The operational branch is `codex/haven-review-remediation-20260906`, in the sibling `Haven Remediation 2026-09-06` worktree. The release candidate now includes the reconciled public-site and root layout/configuration changes; the current production build covers them. No production deployment is implied by the integrated PASS or branch publication.

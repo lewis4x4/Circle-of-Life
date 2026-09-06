@@ -2,7 +2,7 @@
 
 Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs and builds are **not** prerequisites for this testing.
 
-**Canonical milestone** (`docs/specs/README.md`): *At Week 12, COL can run daily operations on the platform at 1 pilot facility (Oakridge ALF). Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view facility dashboard.*
+**Canonical milestone** (`docs/specs/README.md`): *COL can run daily operations at one controlled facility. Homewood Lodge is the current acceptance and controlled launch facility. Oakridge's earlier seeded validation remains historical evidence for its original scope. Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view the facility dashboard.*
 
 ---
 
@@ -13,9 +13,9 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 | **Engineering baseline** | **PASS** — lint, build, migration replay, secrets, audit, segment gates; see §G and [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) |
 | **Track C — workflow hardening (repo)** | **PASS** — Edge automation + runbooks: [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md); evidence rows **PH1-TC1–TC5** in [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md); **§B–§E checklist rows** still owner UAT on target |
 | **Known gap waivers (§F)** | **PARTIALLY REMEDIATED** — W-RCA-01 / W-COLL-01 / W-BILL-EF-01 closed in repo; **W-ADMIN-01** remains — [PHASE1-WAIVER-LOG.md](./PHASE1-WAIVER-LOG.md) |
-| **Environment / remote migrations** | **VERIFY** — Repo **001–120** (reconciled **2026-04-10**); owner keeps **remote** aligned; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
+| **Environment / remote migrations** | **PENDING** — repo sequence **001–325**; hosted ledger through **318**; remediation migrations **319–325** require controlled deployment and remote parity verification; see [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) |
 | **§A — login → correct shell (pilot roles)** | **PASS (owner, 2026-04-09)** — owner, facility_admin, caregiver, family; see [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md) **PH1-A01** |
-| **RLS matrix (target)** | **PASS (owner, 2026-04-09)** — single-facility pilot; [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
+| **RLS matrix (target)** | **PASS (owner, 2026-04-09)** — historical single-facility scope; run RLS-02 against the current multi-facility target before Oakridge goes live; [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) |
 | **Full product acceptance** (§B–§E depth, PH1-A04 guards) | **NOT COMPLETE** — [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md). **A5 Pro/BAA/PITR is closed** (2026-08-26). |
 
 **Closure record:** [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md) — **NOT COMPLETE** until blockers in that file are cleared.
@@ -29,7 +29,7 @@ Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs 
 | Stage | What to do |
 |-------|------------|
 | **During development** | Smoke each feature as it lands (happy path + one failure path). |
-| **Before “Phase 1 complete”** | Full pass of this checklist with **real auth roles** and **seeded pilot data** (e.g. Oakridge demo users). |
+| **Before “Phase 1 complete”** | Full pass of this checklist with **real auth roles** and current **Homewood acceptance data**. Preserve Oakridge demo-user results only as historical evidence for their original scope. |
 | **Before production / external pilot** | Repeat checklist on the **target environment** (URLs, env vars, Supabase project) plus accessibility pass if you use `npm run segment:gates -- --segment "…" --ui`. |
 | **After any release candidate** | Re-run at least the **milestone-critical** rows (caregiver daily ops + admin billing/staff + dashboard). |
 
@@ -74,9 +74,9 @@ For local repeatability, `npm run demo:auth-smoke` can be used to re-check `PH1-
 
 If valid pilot-role login fails before shell routing, stop UAT and attach [PHASE1-AUTH-DEBUG-HANDOFF.md](./PHASE1-AUTH-DEBUG-HANDOFF.md) with the latest `npm run demo:auth-check` output. **As of 2026-04-09**, pilot JWTs and §A shell routing are owner-verified; proceed with §B–§E and RLS.
 
-### Single-facility pilot note
+### Current multi-facility target note
 
-The current remediation track is using a **single-facility pilot**. That is acceptable for UAT packet prep, but any scenario that depends on a second facility must be marked explicitly as deferred or not executable on the current target data rather than silently skipped.
+Homewood Lodge is the current acceptance and controlled launch facility, and the target now contains multiple facilities. Run cross-facility RLS-02 before Oakridge goes live. Do not reuse Oakridge's historical seeded validation as Homewood depth-UAT evidence.
 
 ---
 
@@ -284,5 +284,5 @@ Before closing Phase 1, record **mission alignment** `pass` | `risk` | `fail` wi
 
 ## I. RLS validation (owner)
 
-- [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — **PASS (2026-04-09)** — owner sign-off, single-facility pilot; **RLS-02** when second facility exists.
+- [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md) — **PASS (2026-04-09)** — owner sign-off for the historical single-facility scope; run **RLS-02** against the current multi-facility target before Oakridge goes live.
 - Procedure: [PHASE1-RLS-MANUAL-PROCEDURE.md](./PHASE1-RLS-MANUAL-PROCEDURE.md)

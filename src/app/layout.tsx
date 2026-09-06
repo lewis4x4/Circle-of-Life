@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Playfair_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const geistSans = Geist({
+const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
 });
 
 const geistMono = Geist_Mono({
@@ -46,10 +54,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      // `light` is the admin default per Quiet Operator (warm paper). Family
-      // route group hard-locks light at its layout; caregiver route group
-      // hard-locks dark. The user can toggle dark via the AppShell top bar.
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased light`}
+      className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${geistMono.variable} h-full antialiased light`}
     >
       <body className="min-h-full font-sans">
         <ThemeProvider

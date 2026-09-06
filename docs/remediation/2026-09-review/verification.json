@@ -1,17 +1,21 @@
 {
-  "scope": "Isolated operational branch; excludes pre-existing public-site draft",
-  "evidenceStatus": "Historical isolated-branch checkpoint; fresh integrated final gate pending",
+  "scope": "Integrated release candidate, including reconciled public-site and root changes",
+  "evidenceStatus": "Current integrated source gate PASS plus separate required native PostgreSQL replay PASS; hosted deployment and authenticated operational UAT remain open",
   "branch": "codex/haven-review-remediation-20260906",
   "baseCommit": "1d5a74fa0f77a595db3e08cd15f6e9f022e5a52b",
   "unit": {
-    "files": 486,
-    "passed": 2948,
+    "files": 500,
+    "passed": 3026,
     "failed": 0,
-    "skipped": 0
+    "skipped": 2,
+    "durationSeconds": 67.19,
+    "evidenceScope": "Full Vitest run on the live-tip integrated release candidate",
+    "sourceMapWarning": "Nonfatal; test run completed successfully"
   },
   "gate": {
     "verdict": "PASS",
-    "artifact": "test-results/agent-gates/2026-09-06T17-13-56-536Z-REVIEW-MIGRATION-ORDER.json",
+    "artifact": "test-results/agent-gates/2026-09-06T22-51-06-713Z-REVIEW-LIVE-MERGE-20260906.json",
+    "priorNonUiArtifact": "test-results/agent-gates/2026-09-06T22-32-04-029Z-REVIEW-MERGE-20260906.json",
     "checks": [
       {
         "id": "hygiene.env-example",
@@ -45,8 +49,9 @@
       },
       {
         "id": "qa.migrations-apply-postgres",
-        "status": "passed",
-        "required": true
+        "status": "skipped",
+        "required": false,
+        "note": "Command returned a successful skip because Docker was unavailable; separate required native PostgreSQL replay is the database proof"
       },
       {
         "id": "qa.root-build",
@@ -71,58 +76,66 @@
       {
         "id": "cdo.design-review",
         "status": "passed",
-        "required": true
+        "required": true,
+        "screenshots": 4
       },
       {
         "id": "cdo.a11y-axe",
         "status": "passed",
-        "required": true
+        "required": true,
+        "routes": 1
       }
     ]
   },
   "database": {
-    "engine": "Native PostgreSQL17.9 with installed pgvector and repository Supabase stubs",
-    "historicalMigrationFileCount": 326,
+    "engine": "Native PostgreSQL 17 with installed pgvector and repository Supabase stubs",
+    "verdict": "PASS",
+    "required": true,
+    "migrationFileCount": 328,
     "sqlProbes": 10,
     "hostedMutations": false,
-    "evidenceScope": "Historical isolated remediation branch before integration of deployed versions 317 and 318"
+    "socketPathOwnership": "Repository run-owned socket path",
+    "scratchClusterCleanup": "PASS: stopped and cleaned after proof",
+    "gateDockerReplay": {
+      "required": false,
+      "status": "skipped",
+      "reason": "Docker unavailable"
+    }
   },
   "browser": {
-    "routes": [
-      "/ -> /login",
-      "/login"
-    ],
-    "screenshots": 8,
-    "axeSeriousCriticalViolations": 0,
-    "authenticatedOperationalUat": false
+    "currentGateDesignReview": "PASS: 4 screenshots",
+    "currentGateAxe": "PASS: 1 route",
+    "authenticatedOperationalUat": false,
+    "historicalIsolatedBranchEvidence": {
+      "routes": [
+        "/ -> /login",
+        "/login"
+      ],
+      "screenshots": 8,
+      "axeSeriousCriticalViolations": 0
+    }
   },
-  "publicDraft": {
-    "location": "/Users/brianlewis/Circle of Life/Circle-of-Life",
-    "includedInOperationalBranch": false,
-    "build": "PASS",
-    "axeRoutes": [
-      "/",
-      "/login"
-    ],
-    "axeSeriousCriticalViolations": 0,
-    "contentAndLayoutPreserved": true
+  "publicSite": {
+    "includedInIntegratedReleaseCandidate": true,
+    "currentGateBuild": "PASS",
+    "currentGateVisualA11y": "PASS: design review 4 screenshots; axe 1 route"
   },
   "productionDeployment": false,
   "openWorkflowEntries": [
     "B-12",
     "C25"
   ],
-  "stagedSecretScan": "PASS: gitleaks git --pre-commit --staged --redact",
+  "stagedSecretScan": "PASS: current integrated gate security.gitleaks",
   "remediationOwnedPathCount": 320,
-  "integratedTreeChangedPathCount": null,
-  "integratedTreeChangedPathCountStatus": "Pending fresh final gate against the selected release base; do not reuse remediationOwnedPathCount as the integrated-tree count",
+  "integratedTreeChangedPathCount": 426,
+  "integratedTreeChangedPathCountBasis": "git diff --cached --name-only 1d5a74fa0f77a595db3e08cd15f6e9f022e5a52b -- on the staged release candidate, including the canonical UI-inclusive PASS artifact and prior non-UI PASS artifact",
   "integratedMigrationState": {
     "fileCount": 328,
     "numberedSequence": "001\u2013325",
     "remoteRecordedThrough": "318",
     "pendingRemediationVersions": "319\u2013325",
     "nextFreeVersion": "326",
-    "freshIntegratedReplay": "pending"
+    "freshIntegratedReplay": "PASS: native PostgreSQL 17, 328 migration files and 10 SQL probes; run-owned socket path; scratch cluster cleaned"
   },
   "migrationVersions": "319\u2013325; seven remediation migrations pending hosted deployment",
   "migrationOrdering": "Ordinary filename ordering; no special tail ordering"

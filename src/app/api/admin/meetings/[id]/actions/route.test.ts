@@ -10,7 +10,15 @@ vi.mock('@/lib/admin/api-auth',()=>({
 vi.mock('@/lib/observability/logger',()=>({logError}));
 import { POST } from './route';
 const body={id:'11111111-1111-4111-8111-111111111111',description:'Call supplier',assigned_to:null,due_date:'2026-09-07'};
-beforeEach(()=>{state.access=true;state.meetingOrg='org';state.rpc.mockReset().mockResolvedValue({data:body.id,error:null});});
+const trustedActionErrors = [
+ 'Actor, description and due date required',
+ 'Meeting unavailable',
+ 'Meeting action author is not authorized',
+ 'Meeting facility access required',
+ 'Action identity already saved with different values',
+ 'Assignee unavailable in meeting facility',
+];
+beforeEach(()=>{state.access=true;state.meetingOrg='org';state.rpc.mockReset().mockResolvedValue({data:body.id,error:null});logError.mockReset();});
 it('creates a meeting action using the authenticated manager identity',async()=>{
  const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'meeting'})});
  expect(response.status).toBe(200);expect(await response.json()).toEqual({id:body.id});
@@ -33,4 +41,10 @@ it('logs but does not return an unexpected database error',async()=>{
  expect(payload).toEqual({error:'Meeting action could not be saved. Review the meeting and retry.'});
  expect(JSON.stringify(payload)).not.toContain(sentinel);
  expect(logError).toHaveBeenCalledWith('admin.meetings.actions.create',expect.objectContaining({message:sentinel}),{action:'rpc',meetingId:'meeting'});
+});
+it.each(trustedActionErrors)('preserves the trusted meeting action error: %s',async(errorMessage)=>{
+ state.rpc.mockResolvedValue({data:null,error:{message:errorMessage}});
+ const response=await POST(new Request('https://local.test/actions',{method:'POST',body:JSON.stringify(body)}),{params:Promise.resolve({id:'meeting'})});
+ expect(response.status).toBe(409);
+ expect(await response.json()).toEqual({error:errorMessage});
 });
