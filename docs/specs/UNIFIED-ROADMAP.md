@@ -10,12 +10,12 @@
 
 ---
 
-## 1. Current position (2026-08-19)
+## 1. Current position (2026-09-06)
 
 | Fact | Value |
 |------|-------|
-| Repo migrations | `001`–`318` (`318_col_facility_entity_names.sql`; 317–318 local only, not deployed) — **next free migration: `319`** |
-| Remote tracking | `310`–`316` recorded on `manfqmasfqppukpobpld` (2026-08-19). Live Command Center projection is the `315`/`316` definition (manager allowlist). Repair SQL: `scripts/repair-remote-schema-migrations-310-316.sql`. |
+| Repo migrations | **328 files**, numbered sequence `001`–`325` (`325_review_med_tech_controlled_count_access.sql`) — **next free migration: `326`** |
+| Remote tracking | Hosted ledger recorded through `318` on `manfqmasfqppukpobpld`; remediation migrations `319`–`325` remain pending. Live Command Center projection remains the `315`/`316` definition (manager allowlist). Historical repair SQL: `scripts/repair-remote-schema-migrations-310-316.sql`. |
 | README "current state" drift | Reconcile `docs/specs/README.md` when the next DDL segment ships; treat **this file + the migrations folder** as current |
 | Pilot | Homewood Lodge is the current acceptance and controlled launch facility (`docs/homewood/`); preserve historical Oakridge seeded validation evidence. RLS-02 must run before Oakridge goes live. |
 | Production | Netlify auto-publish from `main` only |
@@ -24,7 +24,7 @@
 
 | Track | Scope | Status | Authoritative doc |
 |-------|-------|--------|-------------------|
-| **A** | Phase 1 acceptance closeout (auth, RLS, UAT, Pro/BAA/PITR, waivers) | **A5 CLOSED (2026-08-26).** Pro + BAA 2026-05-11; PITR 2026-08-19; owner re-attested. Remaining: A3 §B–§E depth UAT, A4 seed/env as needed, A6 waivers, RLS-02 when a second facility is in play | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
+| **A** | Phase 1 acceptance closeout (auth, RLS, UAT, Pro/BAA/PITR, waivers) | **A5 CLOSED (2026-08-26).** Pro + BAA 2026-05-11; PITR 2026-08-19; owner re-attested. Remaining: A3 §B–§E depth UAT, A4 seed/env as needed, A6 waivers, and RLS-02 before Oakridge goes live. A separate current BAA/HIPAA controls evidence refresh gates PHI rollout but does not reopen A5. | [TRACK-A-CLOSEOUT-ROADMAP.md](./TRACK-A-CLOSEOUT-ROADMAP.md) |
 | **B** | Platform hardening (CI, observability, Sentry) | Closed (engineering) 2026-04-09; ongoing work is operational | README §Track B |
 | **C** | Workflow hardening (Edge functions, lifecycle runbooks) | Closed (engineering) 2026-04-09; per-project deploy/crons are ops | [TRACK-C-WORKFLOW-HARDENING.md](./TRACK-C-WORKFLOW-HARDENING.md) |
 | **D** | Phase 6 completion pass + Enhanced backlog | Core D1–D10 + Enhanced D12–D84 shipped; D85+ optional per owner priority | [TRACK-D-ENHANCED-BACKLOG-PLAN.md](./TRACK-D-ENHANCED-BACKLOG-PLAN.md), [TRACK-D-PHASE6-PASS.md](./TRACK-D-PHASE6-PASS.md) |
@@ -33,9 +33,9 @@
 
 ### Standing gates that apply to everything below
 
-1. **A5 historical attestation is retained; current evidence needs reconciliation.** Resolve the reported dashboard/contract discrepancy in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md#a5-evidence-reconciliation--2026-09-05) before using the historical PASS for launch. A3 depth UAT remains open.
+1. **A5 remains PASS; current PHI-launch evidence must be refreshed separately.** Preserve the 2026-08-26 owner-attested closeout. Before PHI rollout, owner/legal must confirm current BAA coverage, HIPAA add-on, required project controls, and PITR as described in [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md#post-closeout-phi-launch-evidence-refresh--2026-09-06). Absence of a locally inspected contract is not evidence that no BAA exists. A3 depth UAT remains open.
 2. One bounded segment at a time; `npm run segment:gates -- --segment "<id>"` (+ `--ui` for routes/visuals); PASS artifact in `test-results/agent-gates/` before "done".
-3. New DDL takes the next free migration number (currently `319`) and updates this file.
+3. New DDL takes the next free migration number (currently `326`) and updates this file.
 4. Mission alignment (`pass` | `risk` | `fail`) recorded in every segment handoff.
 
 ---
@@ -145,7 +145,7 @@ Mostly new surfaces over existing data — cheap relative to impact.
 
 ## 3. What's next, in order
 
-1. **Finish remaining Track A UAT** (owner-led: A3 §B–§E depth, A6 waivers as needed). **A5 historical PASS requires the current evidence reconciliation above**, without inventing an unsigned-contract finding.
+1. **Finish remaining Track A UAT** (owner-led: A3 §B–§E depth, A6 waivers as needed). **A5 remains PASS.** Complete the separate current BAA/HIPAA controls evidence refresh before PHI rollout, without inferring that a missing local contract copy means no agreement exists.
 2. **Homewood acceptance and adoption:** resolve clinical source data and staff access with Homewood staff, then record depth UAT; run RLS-02 against the current multi-facility target before Oakridge goes live.
 3. **Records & Data:** resolve COL-34, then update the integration spec for curated SharePoint/Drive KB ingest. F0-1 through F0-4 are already ratified; F3-1, F3-2, and F3-4 stay frozen.
 4. **Remaining Track F:** eFax requires a vendor decision. Prioritize adoption of shipped workflow tools before expanding scope.

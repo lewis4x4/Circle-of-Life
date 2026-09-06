@@ -1,0 +1,9 @@
+# Reporting rollout checks
+
+Deploy the review_report_outputs migration before the updated frontend. The manual runner persists an immutable scope/output snapshot, and History opens that snapshot with CSV download. Existing runs without snapshots remain explicitly unavailable; they are not reconstructed from current data.
+
+The scheduled worker now delegates to the shared Next.js executors. Configure REPORT_SCHEDULER_RUNNER_URL on the Edge runtime as the canonical HTTPS application URL followed by /api/reports/scheduler. Configure the same REPORT_SCHEDULER_SECRET on the Edge runtime and Next.js server. Deploy both handlers. Missing configuration fails closed without changing run status. Confirm one owner-authorized test run in a nonproduction environment before relying on recurrence.
+
+Scheduled output is saved in-app and downloadable as CSV. Email delivery, XLSX and automatic PDF generation are not advertised. Legacy plain-text recurrence strings and older non-CSV output configurations require explicit calendar settings before resuming. Pack editing saves its actual chosen weekday/time; monthly/quarterly packs use the first of the month. The standalone schedule form supports a day of month, with short months clamped to their final day. Timezone is America/New_York for COL facilities.
+
+Each schedule occurrence has a unique database claim. Interrupted executions become failed after thirty minutes when the cron runner next observes them. A completed occurrence whose schedule pointer was not advanced is recovered without rerunning the report. Resuming a failed schedule computes a new future occurrence. Current owner role and facility scope are rechecked before execution. No hosted scheduler deployment, secret write, external delivery or authenticated UAT was performed in this source remediation.

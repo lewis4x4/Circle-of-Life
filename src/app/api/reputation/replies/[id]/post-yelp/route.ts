@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { postYelpPublicReviewResponse, yelpPartnerReviewPostKey } from "@/lib/reputation/yelp-partner-reviews";
 import { YELP_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/yelp-fusion";
+import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/lib/supabase/server";
 
 type AccountJoin = {
@@ -47,7 +48,11 @@ export async function POST(
     .maybeSingle();
 
   if (loadErr || !row) {
-    return NextResponse.json({ error: loadErr?.message ?? "Reply not found" }, { status: loadErr ? 500 : 404 });
+    if (loadErr) {
+      logError("reputation.replies.post-yelp", loadErr, { action: "load", replyId });
+      return NextResponse.json({ error: "Reply could not be loaded. Retry before posting." }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Reply not found" }, { status: 404 });
   }
 
   const acc = row.reputation_accounts as AccountJoin | null;
@@ -82,13 +87,16 @@ export async function POST(
   const { data: savedDraft, error: saveError } = await supabase.from("reputation_replies")
     .update({ reply_body: body, updated_by: user.id }).eq("id", replyId).eq("status", "draft")
     .eq("reply_body", submitted.expected_reply_body).select("id").maybeSingle();
-  if (saveError || !savedDraft) return NextResponse.json({ error: saveError?.message ?? "Draft changed before posting. Reload and review." }, { status: 409 });
+  if (saveError || !savedDraft) {
+    if (saveError) logError("reputation.replies.post-yelp", saveError, { action: "save-draft", replyId });
+    return NextResponse.json({ error: "Draft changed or could not be saved. Reload and review before posting." }, { status: 409 });
+  }
 
   try {
     await postYelpPublicReviewResponse(reviewId, body);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Yelp API error";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    logError("reputation.replies.post-yelp", e, { action: "publish", replyId });
+    return NextResponse.json({ error: "Yelp did not accept the reply. Review the connection and retry." }, { status: 502 });
   }
 
   const now = new Date().toISOString();
@@ -103,8 +111,9 @@ export async function POST(
     .eq("id", replyId).eq("reply_body", body).eq("status", "draft").select("id").maybeSingle();
 
   if (upErr || !postedRow) {
+    if (upErr) logError("reputation.replies.post-yelp", upErr, { action: "record-posted", replyId });
     return NextResponse.json(
-      { error: `Posted to Yelp but failed to update record: ${upErr?.message ?? "Draft changed during publication. Reconcile the public reply before retrying."}` },
+      { error: "Posted to Yelp, but Haven could not record the result. Reconcile the public reply before retrying." },
       { status: 500 },
     );
   }

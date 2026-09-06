@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { parseJsonBody } from "@/lib/http/json-body";
+import { logError } from "@/lib/observability/logger";
 import { OPERATIONS_TEMPLATE_AUTHOR_ROLES } from "@/lib/operations/constants";
 import {
   normalizeEscalationLadder,
@@ -63,7 +64,11 @@ export async function PATCH(
     .maybeSingle();
 
   if (existingError) {
-    return NextResponse.json({ error: existingError.message }, { status: 500 });
+    logError("admin.operations.templates.update", existingError, {
+      action: "load",
+      templateId: id,
+    });
+    return NextResponse.json({ error: "Failed to load operation template" }, { status: 500 });
   }
 
   const existing = existingData as unknown as OperationTemplateRecord | null;
@@ -92,7 +97,11 @@ export async function PATCH(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logError("admin.operations.templates.update", error, {
+        action: "update-status",
+        templateId: id,
+      });
+      return NextResponse.json({ error: "Failed to update operation template" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -138,7 +147,16 @@ export async function PATCH(
   }
 
   const { data: inserted, error: insertError } = await actor.admin.rpc("publish_operation_template_review" as never, { p_previous_id: existing.id, p_payload: { ...normalized, updated_by: actor.id, created_by: actor.id } } as never);
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 409 });
+  if (insertError) {
+    logError("admin.operations.templates.update", insertError, {
+      action: "publish-version",
+      templateId: id,
+    });
+    const error = insertError.message === "A newer template version already exists. Reload before editing"
+      ? insertError.message
+      : "Template could not be published. Review the current version and retry.";
+    return NextResponse.json({ error }, { status: 409 });
+  }
 
   return NextResponse.json({
     template: {

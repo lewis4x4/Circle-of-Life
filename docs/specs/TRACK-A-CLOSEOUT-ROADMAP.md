@@ -2,7 +2,7 @@
 
 **Purpose:** One place to **finish** Track A without hunting across a dozen files. This is the execution order and evidence map. Authoritative verdicts still live in [PHASE1-CLOSURE-RECORD.md](./PHASE1-CLOSURE-RECORD.md).
 
-**Last updated:** 2026-09-05
+**Last updated:** 2026-09-06
 
 ---
 
@@ -111,7 +111,7 @@ flowchart LR
 
 ## A5 — Pro plan, BAA before PHI, PITR
 
-**2026-09-05 evidence review:** The supplied brief reports a dashboard state that conflicts with the prior attestation. The signed agreement and current settings remain unverified. Reconcile [A5 evidence](./PHASE1-ENV-CONFIRMATION.md#a5-evidence-reconciliation--2026-09-05) before relying on the historical PASS for launch; do not assert an absent or invalid BAA without evidence.
+**A5 adjudication:** Preserve the owner-attested PASS recorded on 2026-08-26. September uncertainty is a separate post-closeout PHI-launch evidence refresh, not a reopened A5 item. Before PHI rollout, owner/legal must confirm current BAA coverage, HIPAA add-on, required project controls, and PITR. Absence of a locally inspected contract is not proof that no BAA exists. See [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md#post-closeout-phi-launch-evidence-refresh--2026-09-06).
 
 | Field | Content |
 |-------|---------|
@@ -119,6 +119,8 @@ flowchart LR
 | **Where** | Supabase dashboard + contracts |
 | **Record in** | [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md) and/or closure record |
 | **Done when** | **MET.** PH1-P06 / PH1-OA04 **PASS** — Pro + BAA (2026-05-11); PITR `pitr_7` on `ci_small` (2026-08-19); owner re-attested 2026-08-26. Record: [PHASE1-ENV-CONFIRMATION.md](./PHASE1-ENV-CONFIRMATION.md). **Do not re-open as unsigned.** |
+
+The separate PHI-launch refresh may block rollout without changing this closeout result. Only verified contrary evidence may change an authoritative A5 record, and any such change must update this roadmap, `PHASE1-CLOSURE-RECORD.md`, `PHASE1-EXECUTION-LOG.md`, and `PHASE1-ENV-CONFIRMATION.md` atomically.
 
 ---
 
@@ -147,7 +149,7 @@ flowchart LR
 
 **Progress (2026-08-26):** **A5 closed.** Owner: Pro, signed BAA, and PITR are taken care of. Do not list A5 as an open P0. **Next remaining:** **A3** §B–§E UAT + **PH1-A04**; **A4** / **A6** as needed for full acceptance.
 
-**Progress (2026-04-21, S0 closeout):** Track A reconciled with current repo state (**193 migrations**, **27 Edge Function folders**) and all 5 COL facilities now confirmed via insurance policy NSC101045. RLS-02's single-facility deferral no longer applies — multi-facility seed (migration `120`) has shipped. **A5 is no longer a remaining blocker** (closed 2026-08-26). Remaining: **A3** depth UAT; RLS-02 when a second facility is in play. A6 waiver review current (no new waivers). Finding: **pre-existing lint debt** — 60 `no-explicit-any` errors across 56 files, not from S0 scope; flagged for cleanup before S1 meaningful TypeScript lands.
+**Progress (2026-04-21, S0 closeout):** Track A reconciled with then-current repo state (**193 migrations**, **27 Edge Function folders**) and all 5 COL facilities were confirmed via insurance policy NSC101045. RLS-02's single-facility deferral no longer applies — multi-facility seed (migration `120`) has shipped. **A5 is no longer a remaining blocker** (closed 2026-08-26). Remaining: **A3** depth UAT; run RLS-02 against the current multi-facility target before Oakridge goes live. A6 waiver review current (no new waivers). Finding: **pre-existing lint debt** — 60 `no-explicit-any` errors across 56 files, not from S0 scope; flagged for cleanup before S1 meaningful TypeScript lands.
 
 ---
 

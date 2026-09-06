@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { actorCanAccessFacility, requireAdminApiActor } from '@/lib/admin/api-auth';
+import { logError } from '@/lib/observability/logger';
+
+const TRUSTED_ACTION_ERRORS = new Set([
+  'Actor, description and due date required',
+  'Meeting unavailable',
+  'Meeting action author is not authorized',
+  'Meeting facility access required',
+  'Action identity already saved with different values',
+  'Assignee unavailable in meeting facility',
+]);
 
 const actionSchema = z.object({
   id: z.uuid(), description: z.string().trim().min(1).max(8000),
@@ -24,6 +34,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     p_id: parsed.data.id, p_meeting_id: id, p_description: parsed.data.description,
     p_assigned_to: parsed.data.assigned_to, p_due_date: parsed.data.due_date, p_actor_id: actor.id,
   } as never)) as unknown as { data: string | null; error: { message: string } | null };
-  if (result.error || typeof result.data !== 'string') return NextResponse.json({ error: result.error?.message ?? 'No saved action identity returned' }, { status: 409 });
+  if (result.error || typeof result.data !== 'string') {
+    if (result.error) logError('admin.meetings.actions.create', result.error, { action: 'rpc', meetingId: id });
+    const error = result.error && TRUSTED_ACTION_ERRORS.has(result.error.message)
+      ? result.error.message
+      : 'Meeting action could not be saved. Review the meeting and retry.';
+    return NextResponse.json({ error }, { status: 409 });
+  }
   return NextResponse.json({ id: result.data });
 }

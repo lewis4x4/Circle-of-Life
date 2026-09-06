@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatInTimeZone } from "date-fns-tz";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { logError } from "@/lib/observability/logger";
 import { ensureForm1823Checklist, emitWorkflowEvent, syncLeadToApplicationPending } from "@/lib/workflows/workflow-events";
 
 const ALLOWED_ROLES = [
@@ -228,7 +229,20 @@ export async function POST(request: NextRequest) {
   const inserted = createdCase as unknown as { id: string; organization_id: string; facility_id: string; resident_id: string; referral_lead_id: string | null } | null;
 
   if (insertError || !inserted) {
-    return NextResponse.json({ error: insertError?.message ?? "Failed to create admission case" }, { status: 500 });
+    if (insertError) {
+      logError("admin.workflows.admission.create", insertError, {
+        action: "rpc",
+        facilityId: body.facility_id,
+      });
+    }
+    const duplicateCase = insertError?.message.match(
+      /^An admission case already exists \([0-9a-f-]{36}\)\. Open it to continue this intake$/i,
+    );
+    return NextResponse.json({
+      error: duplicateCase
+        ? "An admission case already exists. Open it to continue this intake."
+        : "Failed to create admission case",
+    }, { status: 500 });
   }
 
   if (intent === "submit") {

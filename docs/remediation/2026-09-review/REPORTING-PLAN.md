@@ -1,0 +1,3 @@
+# Reporting lane cleanup plan
+
+N21–N26: protect immutable scope/result pairs and failure outcomes with behavioral tests; reuse one executor/persistence path for manual and scheduled templates; persist result snapshots for history; use validated calendar frequency/day/time/timezone instead of elapsed-day recurrence; resolve template UUIDs before schedules. Expose only actually generated formats. Cron authenticates a server runner that validates current schedule-owner scope and uses existing report executors. Preserve packs and all existing template calculations. Root owns N27 keyboard navigation.

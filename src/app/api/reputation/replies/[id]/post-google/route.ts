@@ -7,6 +7,7 @@ import {
   resolveGoogleLocationParent,
 } from "@/lib/reputation/google-business-reviews";
 import { refreshAccessToken } from "@/lib/reputation/google-oauth";
+import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -46,7 +47,11 @@ export async function POST(
     .maybeSingle();
 
   if (loadErr || !row) {
-    return NextResponse.json({ error: loadErr?.message ?? "Reply not found" }, { status: loadErr ? 500 : 404 });
+    if (loadErr) {
+      logError("reputation.replies.post-google", loadErr, { action: "load", replyId });
+      return NextResponse.json({ error: "Reply could not be loaded. Retry before posting." }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Reply not found" }, { status: 404 });
   }
 
   const acc = row.reputation_accounts as AccountJoin | null;
@@ -81,12 +86,16 @@ export async function POST(
   const { data: savedDraft, error: saveError } = await supabase.from("reputation_replies")
     .update({ reply_body: body, updated_by: user.id }).eq("id", replyId).eq("status", "draft")
     .eq("reply_body", submitted.expected_reply_body).select("id").maybeSingle();
-  if (saveError || !savedDraft) return NextResponse.json({ error: saveError?.message ?? "Draft changed before posting. Reload and review." }, { status: 409 });
+  if (saveError || !savedDraft) {
+    if (saveError) logError("reputation.replies.post-google", saveError, { action: "save-draft", replyId });
+    return NextResponse.json({ error: "Draft changed or could not be saved. Reload and review before posting." }, { status: 409 });
+  }
 
   let admin;
   try {
     admin = createServiceRoleClient();
-  } catch {
+  } catch (error) {
+    logError("reputation.replies.post-google", error, { action: "create-service-client", replyId });
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 
@@ -96,7 +105,14 @@ export async function POST(
     .eq("organization_id", row.organization_id)
     .maybeSingle();
 
-  if (credErr || !cred?.refresh_token) {
+  if (credErr) {
+    logError("reputation.replies.post-google", credErr, { action: "load-credentials", replyId });
+    return NextResponse.json(
+      { error: "Google connection status could not be verified. Retry before posting." },
+      { status: 500 },
+    );
+  }
+  if (!cred?.refresh_token) {
     return NextResponse.json(
       { error: "Google is not connected. Use Integrations to connect OAuth first." },
       { status: 400 },
@@ -107,15 +123,21 @@ export async function POST(
   try {
     accessToken = (await refreshAccessToken(cred.refresh_token)).access_token;
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Token refresh failed";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    logError("reputation.replies.post-google", e, { action: "refresh-token", replyId });
+    return NextResponse.json({ error: "Google authorization could not be refreshed. Reconnect Google and retry." }, { status: 502 });
   }
 
-  const locationParent = await resolveGoogleLocationParent(
-    accessToken,
-    acc.external_place_id,
-    acc.label ?? "",
-  );
+  let locationParent: string | null;
+  try {
+    locationParent = await resolveGoogleLocationParent(
+      accessToken,
+      acc.external_place_id,
+      acc.label ?? "",
+    );
+  } catch (e) {
+    logError("reputation.replies.post-google", e, { action: "resolve-location", replyId });
+    return NextResponse.json({ error: "Google Business location could not be verified. Retry before posting." }, { status: 502 });
+  }
   if (!locationParent) {
     return NextResponse.json(
       {
@@ -130,8 +152,9 @@ export async function POST(
   try {
     reviewName = buildGoogleReviewResourceName(locationParent, extReview);
   } catch (e) {
+    logError("reputation.replies.post-google", e, { action: "build-review-reference", replyId });
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Invalid review reference" },
+      { error: "Google review reference is invalid. Re-import the review and retry." },
       { status: 400 },
     );
   }
@@ -139,8 +162,8 @@ export async function POST(
   try {
     await putGoogleReviewReply(accessToken, reviewName, body);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Google API error";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    logError("reputation.replies.post-google", e, { action: "publish", replyId });
+    return NextResponse.json({ error: "Google did not accept the reply. Review the connection and retry." }, { status: 502 });
   }
 
   const now = new Date().toISOString();
@@ -155,8 +178,9 @@ export async function POST(
     .eq("id", replyId).eq("reply_body", body).eq("status", "draft").select("id").maybeSingle();
 
   if (upErr || !postedRow) {
+    if (upErr) logError("reputation.replies.post-google", upErr, { action: "record-posted", replyId });
     return NextResponse.json(
-      { error: `Posted to Google but failed to update record: ${upErr?.message ?? "Draft changed during publication. Reconcile the public reply before retrying."}` },
+      { error: "Posted to Google, but Haven could not record the result. Reconcile the public reply before retrying." },
       { status: 500 },
     );
   }

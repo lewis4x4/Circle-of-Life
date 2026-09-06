@@ -70,7 +70,7 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 ## Implementation status in this repo (not the external roadmap file)
 
-*Last refreshed: 2026-04-10.* Track D D1–D84 shipped; migration parity 001–120 confirmed.
+*Last refreshed: 2026-09-06.* The integrated repository contains 328 migration files covering numbered sequence `001–325`. The hosted ledger is recorded through `318`; remediation migrations `319–325` still require controlled deployment and verification. Migration `326` is the next free numbered version.
 
 | Module | Spec File | Spec Status | Build Status |
 |--------|-----------|-------------|--------------|
@@ -128,11 +128,11 @@ Multi-entity architecture, insurance + clinical loop, AI-native workflows, **Flo
 
 Current position: **closeout + acceptance before expanding scope.** Track D (D1–D84) has completed the Phase 6 completion pass for modules 11, 12, 13, 14, 15, 22, 23. Do not start new modules until:
 
-1. **Phase 1 acceptance closeout** — A1+A2 done (2026-04-09); A3 real-auth UAT depth, A4 env/seed, A5 Pro/BAA/PITR, A6 waiver review remain. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
+1. **Phase 1 acceptance closeout** — A1+A2 done (2026-04-09); A5 remains PASS on the owner-attested 2026-08-26 record; A3 real-auth UAT depth, A4 env/seed, and A6 waiver review remain. A separate current BAA/HIPAA controls evidence refresh is required before PHI rollout; it does not reopen A5. See `TRACK-A-CLOSEOUT-ROADMAP.md`.
 2. **Phases 3–6 formal acceptance** — 47 UAT rows across 5 phase checklists, all PENDING owner walkthrough. See `PHASE3-6-ACCEPTANCE-EXECUTION-LOG.md`.
 3. **COL document collection** — 21 items identified in `docs/haven-gap-analysis.docx`. 5 CRITICAL items must be collected before compliance engine and admission modules can be fully activated.
 4. **Track D Enhanced backlog (D85+)** — optional staged improvements per `TRACK-D-ENHANCED-BACKLOG-PLAN.md`, one bounded slice at a time, owner priority.
-5. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules (Track E, migration `121+`).
+5. **Then** resume: Resident Assurance Engine (25), then remaining strategic/moonshot modules (Track E). Any new DDL starts at the next free migration, currently `326`; older `121+` guidance is obsolete.
 
 Use these delivery states consistently: **Spec written → Core shipped → Operationally hardened → Acceptance complete.**
 

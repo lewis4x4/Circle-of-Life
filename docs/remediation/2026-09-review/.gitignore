@@ -1,0 +1,4 @@
+*.log
+unit-results.json
+lint-results.json
+dependency-audit.json
