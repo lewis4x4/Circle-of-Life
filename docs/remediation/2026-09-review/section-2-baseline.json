@@ -102,5 +102,11 @@
     330,
     331,
     332
-  ]
+  ],
+  "final_hosted_metadata_recheck": {
+    "checked_at": "2026-09-07T21:46:46.266807+00:00",
+    "query": "READ ONLY version/name ledger entries with 3-digit version >=330",
+    "rows": [],
+    "section2_hosted_migrations_applied": false
+  }
 }

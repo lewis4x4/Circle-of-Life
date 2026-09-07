@@ -1,6 +1,6 @@
 # Haven Section 2 independent review handoff
 
-Status: implementation in progress; all corrected entries remain review-pending. Scope is exactly SYS-002, SYS-003, SYS-004, NAV-003, NAV-009, FL-015. Stop for independent GPT-6 Astra High review; no PR, merge, deployment, hosted migration application or Section 3.
+Status: implementation complete; all six corrected entries remain review-pending. Scope is exactly SYS-002, SYS-003, SYS-004, NAV-003, NAV-009, FL-015. Stop for independent GPT-6 Astra High review; no PR, merge, deployment, hosted migration application or Section 3.
 
 Approved baseline: `5686876cb7917c0a809f0adb7e9ba67b595a3e03`, independently approved per the user prerequisite. Freshly fetched origin Section 1 matched it before edits. Dedicated worktree `/Users/brianlewis/Circle of Life/Haven Section 2`, branch `codex/haven-section-2-database-rounding`. Original checkout and unrelated untracked Brand Guide / review gate files retained.
 
@@ -37,3 +37,39 @@ Validation on final segment source:
 - Public preview design checks cover four viewport screenshots of `/`; axe covers `/`. Authenticated rounding behavior is proven with rendered orchestration tests and local SQL, not claimed as authenticated browser/hosted acceptance.
 
 Limitations: paired migration/application deployment is required after independent review. New online requests without identity/time are rejected; existing legacy queued records are supported. Pre-migration completions have no retroactively fabricated receipt and may require outbox reconciliation. Observation timestamps must be finite and not future-dated relative to database time. Watch lifecycle/plan-save multi-statement workflows and external escalation delivery are unchanged. Hosted Auth/PostgREST, real device disconnection and clinical staff UAT remain unverified.
+
+## Segment 2C: NAV-003 and NAV-009
+
+Mission alignment: pass at source level. The resident index trigger now updates organization and facility in the same source transaction. Migration 332 repairs stale identity/scope/search content, backfills missing resident rows, mirrors soft deletion and retires orphan index entries without deleting history. It leaves other producers' rows intact. Resident index reads also require a matching, currently authorized resident row under caller RLS, including family linkage. A stale external index entry cannot authorize resident disclosure.
+
+Unified Search explicitly searches resident names only. Its supported-source catalog opens staff search, the vendor directory and incident records through verified canonical module paths. Those links remain available beside results. Empty results are resident-specific; database errors remain errors; obsolete query responses cannot replace the current results. Missing staff/vendor/incident indexing is disclosed and remains outside this resident index, rather than inventing unverified producers.
+
+`section-2-search-before.txt` reproduces a stale transfer scope and one former-facility identity disclosure. `section-2-search-ui-before.txt` retains four failing rendered assertions before correction. `section-2-search-after.txt` has **15 named PASS assertions** for facility/tenant transfers, current source equality, grants/revocation, stale index defense, family linkage and revocation, soft deletion/restoration, disable and no-profile access. `section-2-search-backfill.json` records **5 passed assertions against the actual migration SQL**: scope/content repair, missing-row creation, soft deletion, orphan retirement and byte-for-byte preservation of another producer's row.
+
+Final combined focused run: **33 files, 331 passed, 0 failed**. Final full Vitest: **528 files, 3,242 passed, 2 existing opt-in performance skips, 0 failed**. Repository typecheck passed. The final native replay passed **335 migrations and 17 SQL probes**. Strict final UI gate passed **12 checks, 0 failures, 1 absent-apps/web skip** at `test-results/agent-gates/2026-09-07T21-46-15-507Z-section-2c-search-final.json`.
+
+The failed `test-results/agent-gates/2026-09-07T21-42-38-327Z-section-2c-search.json` is retained: one required lint warning about a changing ref in effect cleanup. A shared cancellation callback replaced that cleanup pattern; focused tests, full suite, typecheck and the strict gate were rerun. No check was waived or downgraded. Its other 11 checks passed and do not replace the final gate.
+
+## Independent GPT-6 Astra High review request
+
+Review **only Section 2** on `codex/haven-section-2-database-rounding`, compared with approved source `5686876cb7917c0a809f0adb7e9ba67b595a3e03`. Use a fresh independent context. The implementation commits are bounded quality, rounding and search segments. Resolve and record the immutable review head with `git rev-parse origin/codex/haven-section-2-database-rounding` after fetching. Do not treat later branch movement as reviewed. The complete changed-file inventory and machine-readable checks are in `section-2-verification.json`.
+
+The prerequisite approval is the user's explicit attestation; this task verified the exact supplied Section 1 head against fetched origin before editing. Do not reinterpret the inherited Section 1 review-pending ledger labels as authorization to reopen or alter Section 1. Only the six requested Section 2 finding objects changed in roadmap-status.json; every other entry and top-level field is preserved, including inherited historical stop text. This handoff and the user's Section 2 instruction define this task's stop boundary.
+
+Review acceptance:
+
+1. Challenge quality-view caller RLS and correction ordering together. Verify tenant/facility/role boundaries and whether the documented `period_end DESC, created_at DESC, id DESC` correction rule is acceptable. Equal-time UUID ordering is a deterministic tie-break, not inferred clinical chronology; historical data remains intact.
+2. Inspect the preserved private rounding core and immutable receipt wrapper. Confirm current authority precedes replay; changed actor/task/payload conflicts; concurrent identical requests settle once; every integrity/audit failure rolls back all completion state. Challenge the request/task/staff lock order and the SQL translation of existing detection rules.
+3. Attempt ordinary role mutations of protected task/log/receipt fields. Confirm manager excusal and existing reassignment still function, terminal clinical evidence survives stale updates, and no untrusted request setting can authorize an internal command.
+4. Trace both online clients through lost response, retry, delayed reason recovery, offline queue delivery and acknowledgment. Pre-migration completed observations have no invented receipts; genuine legacy conflicts remain for reconciliation. Check finite/nonfuture time validation and clock-alignment implications.
+5. Verify actual resident transfer/backfill and live source authorization, including revoked family links; confirm other index producers' rows are preserved. Confirm source-specific search claims, failure/empty separation and real module navigation.
+
+Reproduce with `npm ci`, `npm run typecheck -- --incremental false`, `npx vitest run`, and `REQUIRE_PG_VERIFY=1 npm run migrations:verify:pg` in an isolated checkout. The latter supports a fresh Docker PostgreSQL 17 replay or a run-owned native cluster configured through `PG_VERIFY_NATIVE_SOCKET`, `PG_VERIFY_NATIVE_PORT` and `PG_VERIFY_NATIVE_BIN`. Native sockets must sit beneath `~/.hermes/tmp/agent-runs/<run-id>` with a private manifest containing matching `created_by: codex` and `run_id`; never use a hosted/application DSN. On that fresh native cluster, run `python3 scripts/verify-rounding-concurrency.py` and `python3 scripts/verify-search-backfill.py`. Each creates/drops only its own disposable databases. Run `npm run segment:gates -- --segment section-2-independent-review --ui` with required local replay configured. Inspect retained red artifacts before evaluating green receipts.
+
+Return APPROVE or REQUEST CHANGES with severity, reproducible trigger, source location, evidence and exact required correction. This handoff is an implementation submission, not its independent approval. Do not create a PR, merge, deploy, apply hosted migrations or begin Section 3.
+
+## Remaining boundaries
+
+All evidence is local source/runtime proof. The final read-only hosted ledger recheck still has no numbered migration 330 or later; Section 2 is unapplied. Hosted signed-token Auth/PostgREST behavior, real offline-device recovery, external producer compatibility and named-user clinical/customer UAT remain unverified. The UI gates cover the public preview root at four viewports plus root axe; rendered authenticated-workflow tests are not authenticated browser UAT. Existing module-specific searches remain separate until their indexing is deliberately implemented. Historical corrections, audit evidence and facility boundaries are retained.
+
+Run cleanup: the isolated PostgreSQL server was stopped. Storage Steward validated private manifests before exact run-owned deletion of 3,510 files and 28 empty directories. Private provenance/cleanup manifests remain; the review worktree, installed dependencies and build output are retained. See `section-2-cleanup.json`.

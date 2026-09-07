@@ -1,0 +1,43 @@
+BEGIN
+GRANT
+GRANT
+CREATE FUNCTION
+SELECT 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:32: NOTICE:  PASS: resident initially indexed in authorized facility
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+                probe                | stale
+-------------------------------------+-------
+ NAV-003 index retained former scope | t
+(1 row)
+
+SET
+                  probe                  | count
+-----------------------------------------+-------
+ NAV-003 former facility name disclosure |     1
+(1 row)
+
+psql:supabase/tests/review_section2_search.sql:38: ERROR:  FAIL: former facility cannot retrieve transferred resident
+CONTEXT:  PL/pgSQL function pg_temp_81.search_assert(boolean,text) line 2 at RAISE

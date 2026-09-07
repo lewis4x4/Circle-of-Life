@@ -42,8 +42,16 @@
       "id": "NAV-003",
       "severity": "P1",
       "title": "Resident search entries keep their former facility authorization scope",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/332_resident_search_current_scope.sql",
+        "supabase/tests/review_section2_search.sql",
+        "scripts/verify-search-backfill.py",
+        "src/app/(admin)/search/page.tsx",
+        "src/app/(admin)/search/page.test.tsx",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "NAV-004",
@@ -92,8 +100,16 @@
       "id": "NAV-009",
       "severity": "P2",
       "title": "Unified Search promises record types the repository never indexes",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/332_resident_search_current_scope.sql",
+        "supabase/tests/review_section2_search.sql",
+        "scripts/verify-search-backfill.py",
+        "src/app/(admin)/search/page.tsx",
+        "src/app/(admin)/search/page.test.tsx",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "NAV-010",

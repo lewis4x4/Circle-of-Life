@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -43,31 +43,14 @@ function hrefForSource(sourceTable: string, sourceId: string): string | null {
   }
 }
 
-const SUGGESTED_QUERIES = [
-  {
-    icon: Users,
-    label: "Residents",
-    text: "resident",
-    hint: "Try a resident, staff, vendor, incident, or facility term",
-  },
-  {
-    icon: UserCog,
-    label: "Staff",
-    text: "nurse",
-    hint: "Role or staff record",
-  },
-  {
-    icon: Truck,
-    label: "Vendors",
-    text: "pharmacy",
-    hint: "Vendor or service",
-  },
-  {
-    icon: ShieldAlert,
-    label: "Incidents",
-    text: "fall",
-    hint: "Incident keywords",
-  },
+// The repository maintains only resident index rows. Other sources remain
+// available through their existing modules until transactional indexing ships.
+const INDEXED_SOURCE = "residents";
+const SEARCH_SOURCES = [
+  { icon: Users, label: "Residents", source: INDEXED_SOURCE, mode: "indexed", href: "/admin/residents", hint: "Search names here or open resident directory" },
+  { icon: UserCog, label: "Staff", source: "staff", mode: "module", href: "/admin/staff", hint: "Open staff search" },
+  { icon: Truck, label: "Vendors", source: "vendors", mode: "module", href: "/admin/vendors/directory", hint: "Open vendor directory" },
+  { icon: ShieldAlert, label: "Incidents", source: "incidents", mode: "module", href: "/admin/incidents", hint: "Open incident records" },
 ] as const;
 
 function sourceLabel(table: string): string {
@@ -88,41 +71,49 @@ export default function AdminSearchPage() {
   const [rows, setRows] = useState<SearchDocRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestGeneration = useRef(0);
+  const cancelPendingSearch = useCallback(() => { requestGeneration.current++; }, []);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebounced(q.trim()), 320);
     return () => window.clearTimeout(t);
   }, [q]);
 
-  const runSearch = useCallback(async () => {
-    const query = debounced;
+  const runSearch = useCallback(async (query: string) => {
+    const generation = ++requestGeneration.current;
     if (query.length < 2) {
       setRows([]);
       setError(null);
+      setLoading(false);
       return;
     }
     setLoading(true);
+    setRows([]);
     setError(null);
     try {
       const supabase = createClient();
       const { data, error: qErr } = await supabase
         .from("search_documents")
         .select("id, source_table, source_id, label, facility_id, updated_at")
+        .eq("source_table", INDEXED_SOURCE)
         .textSearch("search_tsv", query, { type: "websearch", config: "english" })
         .limit(40);
+      if (generation !== requestGeneration.current) return;
       if (qErr) throw qErr;
-      setRows((data ?? []) as SearchDocRow[]);
+      setRows(((data ?? []) as SearchDocRow[]).filter((row) => row.source_table === INDEXED_SOURCE));
     } catch (e) {
+      if (generation !== requestGeneration.current) return;
       setRows([]);
       setError(e instanceof Error ? e.message : "Search failed.");
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
-  }, [debounced]);
+  }, []);
 
   useEffect(() => {
-    void runSearch();
-  }, [runSearch]);
+    void runSearch(debounced);
+    return cancelPendingSearch;
+  }, [debounced, runSearch, cancelPendingSearch]);
 
   const facName = (facilityId: string | null) => {
     if (!facilityId) return "Organization";
@@ -154,9 +145,7 @@ export default function AdminSearchPage() {
                   Unified Search
                 </h1>
                 <p className="max-w-xl text-base leading-relaxed text-zinc-400">
-                  Search indexed residents, staff, vendors, and incidents across your organization. This is{" "}
-                  <strong className="font-medium text-zinc-200">lexical</strong> (keyword) search over linked records—not
-                  generative Q&amp;A.
+                  Resident names are searched here across facilities your account can access. Staff, vendors and incidents are available in their own modules below.
                 </p>
               </div>
               <Link
@@ -188,19 +177,18 @@ export default function AdminSearchPage() {
                   <div>
                     <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">What are you looking for?</h2>
                     <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-zinc-500">
-                      Type at least two characters in the bar below, or start from a suggestion.
+                      Type at least two characters of a resident name, or open a record module.
                     </p>
                   </div>
                 </div>
 
                 <div className="grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                  {SUGGESTED_QUERIES.map((s) => {
+                  {SEARCH_SOURCES.map((s) => {
                     const Icon = s.icon;
                     return (
-                      <button
+                      <Link
                         key={s.label}
-                        type="button"
-                        onClick={() => setQ(s.text)}
+                        href={s.href}
                         className="group flex w-full flex-col items-start gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/60 px-5 py-4 text-left shadow-sm  transition hover:border-primary-500/50 hover:bg-primary-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <div className="flex w-full items-center gap-3">
@@ -209,9 +197,9 @@ export default function AdminSearchPage() {
                           </span>
                           <span className="text-sm font-semibold text-zinc-200">{s.label}</span>
                         </div>
-                        <p className="pl-12 text-sm font-medium leading-snug text-primary-300/90">&ldquo;{s.text}&rdquo;</p>
+                        <p className="pl-12 text-sm font-medium leading-snug text-primary-300/90">{s.mode === "indexed" ? "Available in this search" : "Available in its module"}</p>
                         <p className="pl-12 text-xs text-zinc-500 group-hover:text-zinc-400">{s.hint}</p>
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>
@@ -221,6 +209,14 @@ export default function AdminSearchPage() {
                   <span>Limited to records your account can access.</span>
                 </div>
               </div>
+            )}
+
+            {showResultsPanel && (
+              <nav aria-label="Other record modules" className="mb-5 flex flex-wrap gap-4 text-sm text-primary-300">
+                {SEARCH_SOURCES.filter((source) => source.mode === "module").map((source) => (
+                  <Link key={source.source} href={source.href} className="underline underline-offset-4">{source.hint}</Link>
+                ))}
+              </nav>
             )}
 
             {showResultsPanel && (
@@ -248,10 +244,9 @@ export default function AdminSearchPage() {
 
                 {!loading && !error && rows.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-zinc-700/80 bg-zinc-900/40 px-6 py-14 text-center">
-                    <p className="font-medium text-zinc-300">No matches</p>
+                    <p className="font-medium text-zinc-300">No matching residents</p>
                     <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
-                      Try another spelling, a shorter word, or search from the suggestions above. Knowledge Base answers
-                      policy questions; this index finds <span className="text-zinc-400">named records</span>.
+                      Try another spelling or a shorter resident name. Staff, vendors and incidents are searched or browsed in their own modules; this result does not check those records.
                     </p>
                   </div>
                 )}
@@ -313,9 +308,15 @@ export default function AdminSearchPage() {
               <Input
                 id="admin-search-q"
                 className="h-11 border-0 bg-transparent px-0 text-base text-zinc-100 shadow-none placeholder:text-zinc-600 focus-visible:ring-0"
-                placeholder="Search residents, staff, vendors, incidents…"
+                placeholder="Search resident names…"
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={(e) => {
+                  cancelPendingSearch();
+                  setRows([]);
+                  setError(null);
+                  setLoading(false);
+                  setQ(e.target.value);
+                }}
                 autoComplete="off"
                 aria-label="Unified search query"
               />
@@ -323,7 +324,7 @@ export default function AdminSearchPage() {
             <Button
               type="button"
               className="h-11 shrink-0 rounded-xl bg-primary-600 px-5 text-white hover:bg-primary-500 dark:bg-primary-600 dark:hover:bg-primary-500"
-              onClick={() => void runSearch()}
+              onClick={() => void runSearch(q.trim())}
               disabled={loading || q.trim().length < 2}
             >
               {loading ? (
