@@ -5,6 +5,7 @@ import {
   formatControlledMedicationIdentity,
   formatMedicationDose,
   formatResidentIdentity,
+  requireControlledMedicationResidentIdentities,
 } from "./ControlledCountConsole";
 import { PendingCountReceipt } from "./PendingCountReceipt";
 
@@ -42,5 +43,24 @@ describe("controlled medication identity", () => {
 
     expect(screen.getByText(label)).toBeInTheDocument();
     expect(screen.getByText(/expected 8, counted 7/)).toBeInTheDocument();
+  });
+
+  it("blocks an ambiguous medication record before staff can enter a count", () => {
+    expect(() =>
+      requireControlledMedicationResidentIdentities([
+        { id: "medication-record-ambiguous", residents: null },
+      ]),
+    ).toThrow("missing its resident identity");
+  });
+
+  it("keeps a stable medication-record identifier visible if a pending receipt cannot resolve its label", () => {
+    render(
+      <PendingCountReceipt
+        counts={[{ id: "count-2", resident_medication_id: "medication-record-unknown", count_date: "2026-09-07", shift: "evening", expected_count: 4, actual_count: 4 }]}
+        medicationLabels={new Map()}
+      />,
+    );
+
+    expect(screen.getByText("Medication record: medication-record-unknown")).toBeInTheDocument();
   });
 });

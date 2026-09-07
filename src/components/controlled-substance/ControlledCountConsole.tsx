@@ -88,9 +88,7 @@ export function ControlledCountConsole({
 
       if (medRes.error) throw medRes.error;
       const meds = (medRes.data ?? []) as ControlledMedication[];
-      if (meds.some((med) => !med.residents)) {
-        throw new Error("A controlled medication record is missing its resident identity. Do not count it until the record is corrected.");
-      }
+      requireControlledMedicationResidentIdentities(meds);
       const withExpected = await loadExpected(meds);
       setLines(withExpected);
       const { data: { user: author } } = await supabase.auth.getUser();
@@ -343,6 +341,14 @@ export function formatResidentIdentity(resident: ResidentIdentity | null): strin
     .join(" ");
   if (!legalName) return "Unavailable";
   return resident.preferred_name?.trim() ? `${legalName} (${resident.preferred_name.trim()})` : legalName;
+}
+
+export function requireControlledMedicationResidentIdentities(
+  medications: Array<Pick<MedRow, "id"> & { residents: ResidentIdentity | null }>,
+): void {
+  if (medications.some((medication) => !medication.residents)) {
+    throw new Error("A controlled medication record is missing its resident identity. Do not count it until the record is corrected.");
+  }
 }
 
 export function formatMedicationDose(medication: Pick<MedRow, "strength" | "form" | "route" | "frequency">): string {

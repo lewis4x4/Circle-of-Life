@@ -24,6 +24,9 @@ describe("canonical admin route repairs", () => {
   });
 
   it("keeps the actual redirect configuration for every legacy route segment", () => {
+    expect(nextConfigSource).toContain("source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true");
+    expect(nextConfigSource).toContain("source: `/${seg}`, destination: `/admin/${seg}`, permanent: true");
+
     for (const [legacyPathname, canonicalPathname] of CANONICAL_ADMIN_ROUTE_REPAIRS) {
       const segment = legacyPathname.split("/")[1];
       expect(nextConfigSource).toContain(`"${segment}"`);
