@@ -17,10 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type MedRow = Database["public"]["Tables"]["resident_medications"]["Row"];
+type ResidentIdentity = Pick<
+  Database["public"]["Tables"]["residents"]["Row"],
+  "first_name" | "middle_name" | "last_name" | "name_suffix" | "preferred_name"
+>;
+type ControlledMedication = MedRow & { residents: ResidentIdentity | null };
 
 type LineState = {
   id: string;
-  med: MedRow;
+  med: ControlledMedication;
   expected: string;
   actual: string;
 };
@@ -52,7 +57,7 @@ export function ControlledCountConsole({
   const [coError, setCoError] = useState<string | null>(null);
   const [coBusy, setCoBusy] = useState(false);
 
-  const loadExpected = useCallback(async (meds: MedRow[]): Promise<LineState[]> => meds.map((med) => ({ id: crypto.randomUUID(), med, expected: "", actual: "" })), []);
+  const loadExpected = useCallback(async (meds: ControlledMedication[]): Promise<LineState[]> => meds.map((med) => ({ id: crypto.randomUUID(), med, expected: "", actual: "" })), []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,14 +80,17 @@ export function ControlledCountConsole({
 
       const medRes = await supabase
         .from("resident_medications")
-        .select("*")
+        .select("*, residents!resident_medications_resident_id_fkey(first_name, middle_name, last_name, name_suffix, preferred_name)")
         .eq("facility_id", c.facilityId)
         .eq("status", "active")
         .neq("controlled_schedule", "non_controlled")
         .is("deleted_at", null);
 
       if (medRes.error) throw medRes.error;
-      const meds = (medRes.data ?? []) as MedRow[];
+      const meds = (medRes.data ?? []) as ControlledMedication[];
+      if (meds.some((med) => !med.residents)) {
+        throw new Error("A controlled medication record is missing its resident identity. Do not count it until the record is corrected.");
+      }
       const withExpected = await loadExpected(meds);
       setLines(withExpected);
       const { data: { user: author } } = await supabase.auth.getUser();
@@ -233,7 +241,10 @@ export function ControlledCountConsole({
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base text-white">{line.med.medication_name}</CardTitle>
                   <CardDescription className="text-xs text-zinc-500">
-                    Enter expected quantity from the verified inventory ledger; count actual stock independently.
+                    <span className="block">Resident: {formatResidentIdentity(line.med.residents)}</span>
+                    <span className="block">Dose: {formatMedicationDose(line.med)}</span>
+                    <span className="block">Medication record: {line.med.id}</span>
+                    <span className="mt-1 block">Enter expected quantity from the verified inventory ledger; count actual stock independently.</span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -274,7 +285,7 @@ export function ControlledCountConsole({
             <p className="mt-1 text-xs text-zinc-400">
               An independent nurse or caregiver with access to this facility must verify the saved counts. Enter their Haven login; this does not switch your session.
             </p>
-            <PendingCountReceipt counts={pendingCounts} medicationNames={new Map(lines.map((line) => [line.med.id, line.med.medication_name]))} />
+            <PendingCountReceipt counts={pendingCounts} medicationLabels={new Map(lines.map((line) => [line.med.id, formatControlledMedicationIdentity(line.med)]))} />
             {coError ? <p className="mt-2 text-sm text-red-400">{coError}</p> : null}
             <div className="mt-4 space-y-3">
               <div>
@@ -322,4 +333,23 @@ export function ControlledCountConsole({
       ) : null}
     </div>
   );
+}
+
+export function formatResidentIdentity(resident: ResidentIdentity | null): string {
+  if (!resident) return "Unavailable";
+  const legalName = [resident.first_name, resident.middle_name, resident.last_name, resident.name_suffix]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (!legalName) return "Unavailable";
+  return resident.preferred_name?.trim() ? `${legalName} (${resident.preferred_name.trim()})` : legalName;
+}
+
+export function formatMedicationDose(medication: Pick<MedRow, "strength" | "form" | "route" | "frequency">): string {
+  const dose = [medication.strength, medication.form].filter(Boolean).join(" ");
+  return [dose || "Dose not recorded", medication.route, medication.frequency].join(" · ");
+}
+
+export function formatControlledMedicationIdentity(medication: ControlledMedication): string {
+  return `Resident: ${formatResidentIdentity(medication.residents)} · ${medication.medication_name} · Dose: ${formatMedicationDose(medication)} · Medication record: ${medication.id}`;
 }
