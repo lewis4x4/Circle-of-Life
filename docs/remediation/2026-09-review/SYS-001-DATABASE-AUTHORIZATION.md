@@ -32,6 +32,10 @@ The new policies use scalar `SELECT haven.helper()` forms so PostgreSQL can buil
 
 Other Storage policies were scanned. Competency-certificate self-service already combines `auth.uid()` with current Haven organization/facility authority; report exports, knowledge-base objects, and facility documents already use Haven helpers. The auth-uid-only workspace owner policies were the non-Data-API gap corrected here.
 
+The final migration also replaces the service-only `complete_operation_task_review` implementation without changing its signature. While the task row is locked, it reloads and locks the active profile, live facility, and current nonrevoked facility grant; it rejects a stale claimed role, changed organization, or actor who is neither the task assignee/current assigned role nor a current operations mutation role. The bulk-completion RPC composes this command and inherits the same per-task atomic check.
+
+Task defer now uses the service-only `defer_operation_task_review` transaction instead of a route-side insert/update/audit sequence. The command locks the original task and current authority rows, validates current mutation scope, inserts exactly one replacement, marks the original deferred, and writes its audit receipt atomically. Hashing uses core `pg_catalog.sha256(pg_catalog.convert_to(...))` plus `pg_catalog.encode`, so the command does not depend on an extension schema appearing in `search_path`. A stable actor/task SHA-256 request key plus normalized payload hash and stored replacement ID resolve lost responses: exact committed retries return the stored replacement even after the requested defer time has passed, while changed payload under the same task request is rejected. Strict `deferred_until > clock_timestamp()` validation applies only to brand-new requests. The partial unique request-key index and original-row lock serialize concurrent retries.
+
 ## Rollback-only matrix
 
 `supabase/tests/review_authoritative_actor.sql` proves:
@@ -51,6 +55,13 @@ Other Storage policies were scanned. Competency-certificate self-service already
 | Family linked, unlinked, and revoked resident | Only current nonrevoked link allowed |
 | Workspace Storage owner SELECT/INSERT/UPDATE/DELETE | Current exact version required; stale version cannot read or mutate |
 | `SET ROLE service_role` plus service-only AI RPC | Preserved |
+| Service operation RPC with current caregiver falsely claimed as owner | Rejected atomically; task remains pending |
+| Same service operation RPC after current owner restoration | Accepted with current role recorded in audit |
+| Atomic defer identical replay | Returns the same replacement ID; one replacement and one operation audit exist |
+| Atomic defer exact replay after requested timestamp passes | Returns the same stored replacement receipt |
+| Brand-new past or equal-now defer | Rejected before replacement, original update, or audit |
+| Atomic defer retry with changed time/reason | Rejected as changed content; committed receipt remains unchanged |
+| Atomic defer audit failure injection | Replacement insert, original update, and receipt all roll back |
 | Representative resident policy plan | `InitPlan` present |
 | 500-row daily-log and report-run policy plans | Named Haven helper InitPlans execute with `loops=1` |
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
@@ -28,6 +28,7 @@ export async function PATCH(
     .from("operation_task_instances" as never)
     .select("id, organization_id, facility_id, assigned_to, assigned_role, status")
     .eq("id", id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -44,17 +45,27 @@ export async function PATCH(
   if (task.status === "in_progress") return NextResponse.json({ success: true });
   if (task.status !== "pending") return NextResponse.json({ error: "Only pending tasks can be started" }, { status: 409 });
 
+  const currentResult = await revalidateOperationsActor(actor);
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (!(await actorCanMutateTask(currentActor, task))) {
+    return NextResponse.json({ error: "Not authorized to start this task" }, { status: 403 });
+  }
+
   const now = new Date().toISOString();
-  const { error: updateError } = await actor.admin
+  const { error: updateError } = await currentActor.admin
     .from("operation_task_instances" as never)
     .update({
       status: "in_progress",
-      assigned_to: task.assigned_to ?? actor.id,
+      assigned_to: task.assigned_to ?? currentActor.id,
       started_at: now,
       updated_at: now,
-      updated_by: actor.id,
+      updated_by: currentActor.id,
     } as never)
-    .eq("id", id).eq("status", "pending").select("id").single();
+    .eq("id", id)
+    .eq("organization_id", currentActor.organizationId)
+    .eq("facility_id", task.facility_id)
+    .eq("status", "pending").select("id").single();
 
   if (updateError) {
     logError("admin.operations.tasks.start", updateError, {
@@ -65,15 +76,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to start task" }, { status: 500 });
   }
 
-  await actor.admin.from("operation_audit_log" as never).insert({
+  await currentActor.admin.from("operation_audit_log" as never).insert({
     organization_id: task.organization_id,
     facility_id: task.facility_id,
     task_instance_id: task.id,
     event_type: "started",
     from_status: task.status,
     to_status: "in_progress",
-    actor_id: actor.id,
-    actor_role: actor.appRole,
+    actor_id: currentActor.id,
+    actor_role: currentActor.appRole,
     event_notes: "Started via operations queue",
     event_data: { source: "admin-operations" },
   } as never);

@@ -516,5 +516,195 @@ CREATE POLICY report_runs_finalize_own ON public.report_runs FOR UPDATE TO authe
   AND generated_by_user_id=(SELECT haven.authorized_user_id())
   AND status IN ('completed','failed'));
 
+-- Service-role task completion must not trust route-supplied actor role. Re-read
+-- current profile, organization, facility, grant, and assignment/admin scope
+-- while the task row is locked in the same transaction as the mutation.
+CREATE OR REPLACE FUNCTION public.complete_operation_task_review(
+  p_task_id uuid,p_actor_id uuid,p_actor_role text,p_notes text,p_evidence text[] DEFAULT '{}'
+)
+RETURNS text LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$
+DECLARE
+  t public.operation_task_instances%ROWTYPE;
+  target text;
+  finalizer uuid;
+  v_current_role text;
+  v_current_organization uuid;
+BEGIN
+  SELECT * INTO STRICT t FROM public.operation_task_instances
+  WHERE id=p_task_id AND deleted_at IS NULL FOR UPDATE;
+  SELECT profile.app_role::text,profile.organization_id
+  INTO v_current_role,v_current_organization
+  FROM public.user_profiles AS profile
+  WHERE profile.id=p_actor_id AND profile.is_active AND profile.deleted_at IS NULL
+  FOR SHARE;
+  IF v_current_role IS NULL OR v_current_organization IS DISTINCT FROM t.organization_id
+     OR v_current_role IS DISTINCT FROM p_actor_role
+     OR NOT (
+       t.assigned_to=p_actor_id
+       OR (t.assigned_to IS NULL AND t.assigned_role=v_current_role)
+       OR v_current_role IN('owner','org_admin','facility_admin','manager','admin_assistant','coordinator','nurse','dietary','maintenance_role')
+     ) THEN
+    RAISE EXCEPTION 'Task actor is no longer authorized' USING ERRCODE='42501';
+  END IF;
+  PERFORM 1 FROM public.facilities AS facility
+  WHERE facility.id=t.facility_id AND facility.organization_id=v_current_organization AND facility.deleted_at IS NULL
+  FOR SHARE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Task actor is no longer authorized' USING ERRCODE='42501';
+  END IF;
+  IF v_current_role NOT IN('owner','org_admin') THEN
+    PERFORM 1 FROM public.user_facility_access AS access
+    WHERE access.user_id=p_actor_id AND access.organization_id=v_current_organization
+      AND access.facility_id=t.facility_id AND access.revoked_at IS NULL
+    FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Task actor is no longer authorized' USING ERRCODE='42501';
+    END IF;
+  END IF;
+  IF t.status='completed' THEN RETURN 'completed'; END IF;
+  IF t.status NOT IN('pending','in_progress','missed','deferred') THEN RAISE EXCEPTION 'Task cannot be completed from this state'; END IF;
+  IF t.signed_by IS NOT NULL AND t.requires_dual_sign THEN
+    IF t.signed_by=p_actor_id THEN RAISE EXCEPTION 'A different authorized staff member must verify this task'; END IF;
+    target:='completed'; finalizer:=p_actor_id;
+  ELSE
+    target:=CASE WHEN t.requires_dual_sign THEN 'in_progress' ELSE 'completed' END;
+    finalizer:=CASE WHEN t.requires_dual_sign THEN NULL ELSE p_actor_id END;
+  END IF;
+  UPDATE public.operation_task_instances SET status=target,signed_by=coalesce(t.signed_by,p_actor_id),
+    signed_at=coalesce(t.signed_at,now()),second_sign_by=CASE WHEN t.requires_dual_sign THEN finalizer END,
+    second_signed_at=CASE WHEN t.requires_dual_sign AND finalizer IS NOT NULL THEN now() END,
+    completed_at=coalesce(t.completed_at,now()),
+    completion_notes=CASE WHEN t.signed_by IS NULL THEN p_notes ELSE t.completion_notes END,
+    completion_evidence_paths=CASE WHEN t.signed_by IS NULL THEN p_evidence ELSE t.completion_evidence_paths END,
+    verified_by=finalizer,verified_at=CASE WHEN finalizer IS NOT NULL THEN now() END,
+    sla_met=(t.due_at IS NULL OR t.due_at>=coalesce(t.completed_at,now())),updated_by=p_actor_id
+  WHERE id=t.id;
+  INSERT INTO public.operation_audit_log(organization_id,facility_id,task_instance_id,event_type,from_status,to_status,actor_id,actor_role,event_notes,event_data)
+  VALUES(t.organization_id,t.facility_id,t.id,'completed',t.status,target,p_actor_id,v_current_role,p_notes,
+    jsonb_build_object('awaiting_second_verification',finalizer IS NULL,'independent_verification',t.signed_by IS NOT NULL));
+  RETURN CASE WHEN target='in_progress' THEN 'awaiting_verification' ELSE target END;
+END $$;
+REVOKE ALL ON FUNCTION public.complete_operation_task_review(uuid,uuid,text,text,text[]) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.complete_operation_task_review(uuid,uuid,text,text,text[]) TO service_role;
+
+ALTER TABLE public.operation_task_instances
+  ADD COLUMN defer_request_key text,
+  ADD COLUMN defer_request_hash text,
+  ADD COLUMN deferred_replacement_task_id uuid REFERENCES public.operation_task_instances(id);
+CREATE UNIQUE INDEX idx_operation_task_defer_request_key
+  ON public.operation_task_instances(defer_request_key)
+  WHERE defer_request_key IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.defer_operation_task_review(
+  p_task_id uuid,
+  p_actor_id uuid,
+  p_actor_role text,
+  p_deferred_until timestamptz,
+  p_cancellation_reason text,
+  p_request_key text
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$
+DECLARE
+  t public.operation_task_instances%ROWTYPE;
+  v_current_role text;
+  v_current_organization uuid;
+  v_reason text;
+  v_request_hash text;
+  v_expected_key text;
+  v_replacement_id uuid;
+  v_shift_date date;
+  v_shift text;
+BEGIN
+  SELECT * INTO STRICT t FROM public.operation_task_instances
+  WHERE id=p_task_id AND deleted_at IS NULL FOR UPDATE;
+
+  SELECT profile.app_role::text,profile.organization_id
+  INTO v_current_role,v_current_organization
+  FROM public.user_profiles AS profile
+  WHERE profile.id=p_actor_id AND profile.is_active AND profile.deleted_at IS NULL
+  FOR SHARE;
+  IF v_current_role IS NULL OR v_current_organization IS DISTINCT FROM t.organization_id
+     OR v_current_role IS DISTINCT FROM p_actor_role
+     OR NOT (
+       t.assigned_to=p_actor_id
+       OR (t.assigned_to IS NULL AND t.assigned_role=v_current_role)
+       OR v_current_role IN('owner','org_admin','facility_admin','manager','admin_assistant','coordinator','nurse','dietary','maintenance_role')
+     ) THEN
+    RAISE EXCEPTION 'Task actor is no longer authorized' USING ERRCODE='42501';
+  END IF;
+  PERFORM 1 FROM public.facilities AS facility
+  WHERE facility.id=t.facility_id AND facility.organization_id=v_current_organization AND facility.deleted_at IS NULL
+  FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Task actor is no longer authorized' USING ERRCODE='42501'; END IF;
+  IF v_current_role NOT IN('owner','org_admin') THEN
+    PERFORM 1 FROM public.user_facility_access AS access
+    WHERE access.user_id=p_actor_id AND access.organization_id=v_current_organization
+      AND access.facility_id=t.facility_id AND access.revoked_at IS NULL
+    FOR SHARE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Task actor is no longer authorized' USING ERRCODE='42501'; END IF;
+  END IF;
+
+  v_reason:=coalesce(nullif(trim(p_cancellation_reason),''),'Deferred to a later queue date');
+  v_expected_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+    'operation-defer-v1:'||p_actor_id::text||':'||p_task_id::text,'UTF8'
+  )),'hex');
+  IF p_request_key IS DISTINCT FROM v_expected_key THEN
+    RAISE EXCEPTION 'Invalid defer request key' USING ERRCODE='22023';
+  END IF;
+  v_request_hash:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_catalog.jsonb_build_object(
+    'task_id',p_task_id,'actor_id',p_actor_id,'deferred_until',p_deferred_until,'reason',v_reason
+  )::text,'UTF8')),'hex');
+
+  IF t.defer_request_key IS NOT NULL THEN
+    IF t.defer_request_key=p_request_key AND t.defer_request_hash=v_request_hash
+       AND t.deferred_replacement_task_id IS NOT NULL THEN
+      RETURN jsonb_build_object('new_task_id',t.deferred_replacement_task_id,'replayed',true);
+    END IF;
+    RAISE EXCEPTION 'This defer request was already saved with different content. Refresh the task before retrying';
+  END IF;
+  IF p_deferred_until IS NULL OR p_deferred_until<=pg_catalog.clock_timestamp() THEN
+    RAISE EXCEPTION 'Deferred time must be in the future';
+  END IF;
+  IF t.status NOT IN('pending','in_progress','missed') THEN
+    RAISE EXCEPTION 'Task cannot be deferred from this state';
+  END IF;
+
+  v_shift_date:=(p_deferred_until AT TIME ZONE 'America/New_York')::date;
+  v_shift:=CASE
+    WHEN extract(hour FROM p_deferred_until AT TIME ZONE 'America/New_York') BETWEEN 7 AND 14 THEN 'day'
+    WHEN extract(hour FROM p_deferred_until AT TIME ZONE 'America/New_York') BETWEEN 15 AND 22 THEN 'evening'
+    ELSE 'night'
+  END;
+  INSERT INTO public.operation_task_instances(
+    organization_id,facility_id,template_id,template_name,template_category,template_cadence_type,
+    assigned_shift_date,assigned_shift,assigned_to,assigned_role,status,priority,license_threatening,
+    estimated_minutes,requires_dual_sign,due_at,created_by,updated_by
+  ) VALUES(
+    t.organization_id,t.facility_id,t.template_id,t.template_name,t.template_category,t.template_cadence_type,
+    v_shift_date,v_shift,t.assigned_to,t.assigned_role,'pending',t.priority,t.license_threatening,
+    t.estimated_minutes,t.requires_dual_sign,p_deferred_until,p_actor_id,p_actor_id
+  ) RETURNING id INTO v_replacement_id;
+
+  UPDATE public.operation_task_instances SET
+    status='deferred',deferred_until=p_deferred_until,cancellation_reason=v_reason,
+    defer_request_key=p_request_key,defer_request_hash=v_request_hash,
+    deferred_replacement_task_id=v_replacement_id,updated_at=now(),updated_by=p_actor_id
+  WHERE id=t.id;
+
+  INSERT INTO public.operation_audit_log(
+    organization_id,facility_id,task_instance_id,event_type,from_status,to_status,
+    actor_id,actor_role,event_notes,event_data
+  ) VALUES(
+    t.organization_id,t.facility_id,t.id,'deferred',t.status,'deferred',
+    p_actor_id,v_current_role,v_reason,jsonb_build_object(
+      'deferred_to',p_deferred_until,'new_task_id',v_replacement_id,'source','admin-operations',
+      'request_key',p_request_key,'request_hash',v_request_hash,'receipt_version',1
+    )
+  );
+  RETURN jsonb_build_object('new_task_id',v_replacement_id,'replayed',false);
+END $$;
+REVOKE ALL ON FUNCTION public.defer_operation_task_review(uuid,uuid,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.defer_operation_task_review(uuid,uuid,text,timestamptz,text,text) TO service_role;
+
 NOTIFY pgrst, 'reload schema';
 NOTIFY pgrst, 'reload config';

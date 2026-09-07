@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 
 const TRUSTED_COMPLETION_ERRORS = new Set([
   "Task cannot be completed from this state",
@@ -41,6 +41,7 @@ export async function PATCH(
     .from("operation_task_instances" as never)
     .select("id, organization_id, facility_id, assigned_to, assigned_role, status, due_at")
     .eq("id", id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -49,12 +50,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
-  const canMutate = await actorCanMutateTask(actor, task);
+  const currentResult = await revalidateOperationsActor(actor);
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  const canMutate = await actorCanMutateTask(currentActor, task);
   if (!canMutate) {
     return NextResponse.json({ error: "Not authorized to complete this task" }, { status: 403 });
   }
 
-  const result = await actor.admin.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: actor.id, p_actor_role: actor.appRole, p_notes: body.completion_notes ?? "", p_evidence: body.completion_evidence_paths ?? [] } as never);
+  const result = await currentActor.admin.rpc("complete_operation_task_review" as never, { p_task_id: id, p_actor_id: currentActor.id, p_actor_role: currentActor.appRole, p_notes: body.completion_notes ?? "", p_evidence: body.completion_evidence_paths ?? [] } as never);
   if (result.error) {
     logError("admin.operations.tasks.complete", result.error, {
       action: "rpc",

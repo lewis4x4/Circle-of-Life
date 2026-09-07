@@ -1,26 +1,29 @@
-import { formatInTimeZone } from "date-fns-tz";
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
-import { FACILITY_OPERATOR_TZ, todayFacilityDateIso } from "@/lib/facility-wall-clock";
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
   id: string;
   organization_id: string;
   facility_id: string;
-  template_id: string | null;
-  template_name: string;
-  template_category: string;
-  template_cadence_type: string;
   assigned_to: string | null;
   assigned_role: string | null;
   status: string;
-  priority: "critical" | "high" | "normal" | "low";
-  license_threatening: boolean;
-  estimated_minutes: number | null;
-  requires_dual_sign: boolean;
 };
+
+const TRUSTED_DEFER_CONFLICTS = new Set([
+  "Deferred time must be in the future",
+  "Task cannot be deferred from this state",
+  "This defer request was already saved with different content. Refresh the task before retrying",
+]);
+
+function deferRequestKey(actorId: string, taskId: string) {
+  return createHash("sha256")
+    .update(`operation-defer-v1:${actorId}:${taskId}`, "utf8")
+    .digest("hex");
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -56,19 +59,12 @@ export async function PATCH(
       id,
       organization_id,
       facility_id,
-      template_id,
-      template_name,
-      template_category,
-      template_cadence_type,
       assigned_to,
       assigned_role,
-      status,
-      priority,
-      license_threatening,
-      estimated_minutes,
-      requires_dual_sign
+      status
     `)
     .eq("id", id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -82,88 +78,43 @@ export async function PATCH(
     return NextResponse.json({ error: "Not authorized to defer this task" }, { status: 403 });
   }
 
-  const deferredShift = inferShiftFromDate(deferredUntil);
-  const now = new Date().toISOString();
+  const currentResult = await revalidateOperationsActor(actor);
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (!(await actorCanMutateTask(currentActor, task))) {
+    return NextResponse.json({ error: "Not authorized to defer this task" }, { status: 403 });
+  }
 
-  const { data: newTaskData, error: insertError } = await actor.admin
-    .from("operation_task_instances" as never)
-    .insert({
-      organization_id: task.organization_id,
-      facility_id: task.facility_id,
-      template_id: task.template_id,
-      template_name: task.template_name,
-      template_category: task.template_category,
-      template_cadence_type: task.template_cadence_type,
-      assigned_shift_date: todayFacilityDateIso(deferredUntil),
-      assigned_shift: deferredShift,
-      assigned_to: task.assigned_to,
-      assigned_role: task.assigned_role,
-      status: "pending",
-      priority: task.priority,
-      license_threatening: task.license_threatening,
-      estimated_minutes: task.estimated_minutes,
-      requires_dual_sign: task.requires_dual_sign,
-      due_at: deferredUntil.toISOString(),
-      created_by: actor.id,
-      updated_by: actor.id,
-    } as never)
-    .select("id")
-    .single();
-
-  const newTask = newTaskData as unknown as { id: string } | null;
-  if (insertError || !newTask) {
-    logError("admin.operations.tasks.defer", insertError ?? "insert returned no row", {
-      action: "insert",
+  const { data: rpcData, error: rpcError } = await currentActor.admin.rpc(
+    "defer_operation_task_review" as never,
+    {
+      p_task_id: id,
+      p_actor_id: currentActor.id,
+      p_actor_role: currentActor.appRole,
+      p_deferred_until: deferredUntil.toISOString(),
+      p_cancellation_reason: body.cancellation_reason ?? "",
+      p_request_key: deferRequestKey(currentActor.id, id),
+    } as never,
+  );
+  if (rpcError) {
+    logError("admin.operations.tasks.defer", rpcError, {
+      action: "rpc",
       taskId: id,
       facilityId: task.facility_id,
     });
+    if (rpcError.code === "42501") {
+      return NextResponse.json({ error: "Not authorized to defer this task" }, { status: 403 });
+    }
+    const trusted = TRUSTED_DEFER_CONFLICTS.has(rpcError.message);
+    return NextResponse.json(
+      { error: trusted ? rpcError.message : "Failed to defer task" },
+      { status: trusted ? 409 : 500 },
+    );
+  }
+
+  const receipt = rpcData as unknown as { new_task_id?: string } | null;
+  if (!receipt?.new_task_id) {
     return NextResponse.json({ error: "Failed to defer task" }, { status: 500 });
   }
-
-  const { error: updateError } = await actor.admin
-    .from("operation_task_instances" as never)
-    .update({
-      status: "deferred",
-      deferred_until: deferredUntil.toISOString(),
-      cancellation_reason: body.cancellation_reason || "Deferred to a later queue date",
-      updated_at: now,
-      updated_by: actor.id,
-    } as never)
-    .eq("id", id);
-
-  if (updateError) {
-    logError("admin.operations.tasks.defer", updateError, {
-      action: "update",
-      taskId: id,
-      facilityId: task.facility_id,
-      newTaskId: newTask.id,
-    });
-    return NextResponse.json({ error: "Failed to update deferred task" }, { status: 500 });
-  }
-
-  await actor.admin.from("operation_audit_log" as never).insert({
-    organization_id: task.organization_id,
-    facility_id: task.facility_id,
-    task_instance_id: task.id,
-    event_type: "deferred",
-    from_status: task.status,
-    to_status: "deferred",
-    actor_id: actor.id,
-    actor_role: actor.appRole,
-    event_notes: body.cancellation_reason || `Deferred to ${deferredUntil.toISOString()}`,
-    event_data: {
-      deferred_to: deferredUntil.toISOString(),
-      new_task_id: newTask.id,
-      source: "admin-operations",
-    },
-  } as never);
-
-  return NextResponse.json({ success: true, new_task_id: newTask.id });
-}
-
-export function inferShiftFromDate(date: Date): "day" | "evening" | "night" {
-  const hour = Number(formatInTimeZone(date, FACILITY_OPERATOR_TZ, "H"));
-  if (hour >= 7 && hour < 15) return "day";
-  if (hour >= 15 && hour < 23) return "evening";
-  return "night";
+  return NextResponse.json({ success: true, new_task_id: receipt.new_task_id });
 }

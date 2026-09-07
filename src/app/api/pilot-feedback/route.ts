@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
+import { logError } from "@/lib/observability/logger";
+import { ALL_APP_ROLES, type AppRole } from "@/lib/rbac";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type FeedbackBody = {
@@ -16,14 +17,14 @@ type FeedbackBody = {
   status?: string;
 };
 
-const REVIEWER_ROLES = new Set(["owner", "org_admin", "facility_admin", "manager"]);
+const REVIEWER_ROLE_LIST = ["owner", "org_admin", "facility_admin", "manager"] as const;
+const REVIEWER_ROLES = new Set<AppRole>(REVIEWER_ROLE_LIST);
 const CATEGORIES = new Set(["bug", "confusion", "request", "friction", "praise"]);
 const SEVERITIES = new Set(["low", "medium", "high", "critical"]);
 const MAX_SHELL_KIND_LENGTH = 80;
 const MAX_ROUTE_LENGTH = 240;
 const MAX_TITLE_LENGTH = 180;
 const MAX_DETAIL_LENGTH = 4_000;
-const ORG_WIDE_ROLES = new Set(["owner", "org_admin"]);
 
 function trimToMax(value: string, max: number): string {
   return value.length > max ? value.slice(0, max) : value;
@@ -33,29 +34,10 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
-async function requireActor() {
-  const sessionClient = await createClient();
-  const {
-    data: { user },
-    error: sessionError,
-  } = await sessionClient.auth.getUser();
-
-  if (sessionError || !user) {
-    return { error: NextResponse.json({ error: "Not authenticated" }, { status: 401 }) };
-  }
-
-  const admin = createServiceRoleClient();
-  const { data: profile, error: profileError } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role, email, full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError || !profile?.organization_id || !profile.app_role) {
-    return { error: NextResponse.json({ error: "Profile not found" }, { status: 403 }) };
-  }
-
-  return { admin, user, profile };
+async function requireActor(allowedRoles: readonly AppRole[]) {
+  const result = await requireCurrentApiActor({ allowedRoles, scope: "pilot-feedback" });
+  if ("response" in result) return { error: result.response };
+  return result.actor;
 }
 
 export async function POST(request: Request) {
@@ -66,10 +48,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const actor = await requireActor();
+  const actor = await requireActor(ALL_APP_ROLES);
   if ("error" in actor) return actor.error;
 
-  const { admin, user, profile } = actor;
+  const { admin } = actor;
 
   const category = body.category?.trim() ?? "";
   const severity = body.severity?.trim() ?? "medium";
@@ -91,10 +73,9 @@ export async function POST(request: Request) {
 
   if (facilityId) {
     const canAccessFacility = await serviceRoleUserHasFacilityAccess(admin, {
-      userId: user.id,
+      userId: actor.id,
       facilityId,
-      organizationId: String(profile.organization_id),
-      appRole: String(profile.app_role),
+      organizationId: actor.organizationId,
     });
     if (!canAccessFacility) {
       return NextResponse.json({ error: "Facility not found" }, { status: 404 });
@@ -102,11 +83,11 @@ export async function POST(request: Request) {
   }
 
   const insertPayload = {
-    organization_id: profile.organization_id,
+    organization_id: actor.organizationId,
     facility_id: facilityId,
-    user_id: user.id,
-    user_email: user.email ?? profile.email ?? null,
-    app_role: profile.app_role,
+    user_id: actor.id,
+    user_email: actor.sessionEmail ?? actor.email,
+    app_role: actor.appRole,
     shell_kind: shellKind,
     route: trimToMax(route, MAX_ROUTE_LENGTH),
     category,
@@ -115,30 +96,55 @@ export async function POST(request: Request) {
     detail: trimToMax(detail, MAX_DETAIL_LENGTH),
     status: "new",
     metadata: {
-      full_name: profile.full_name ?? null,
+      full_name: actor.fullName,
     },
   };
 
-  const { data, error } = await admin
+  const currentResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: ALL_APP_ROLES,
+    scope: "pilot-feedback.create-revalidate",
+  });
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (facilityId) {
+    const stillCanAccessFacility = await serviceRoleUserHasFacilityAccess(currentActor.admin, {
+      userId: currentActor.id,
+      facilityId,
+      organizationId: currentActor.organizationId,
+    });
+    if (!stillCanAccessFacility) {
+      return NextResponse.json({ error: "Facility not found" }, { status: 404 });
+    }
+  }
+
+  const { data, error } = await currentActor.admin
     .from("pilot_feedback_submissions" as never)
-    .insert(insertPayload as never)
+    .insert({
+      ...insertPayload,
+      organization_id: currentActor.organizationId,
+      user_id: currentActor.id,
+      user_email: currentActor.sessionEmail ?? currentActor.email,
+      app_role: currentActor.appRole,
+      metadata: { full_name: currentActor.fullName },
+    } as never)
     .select("id, created_at")
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logError("pilot-feedback", error, { action: "create" });
+    return NextResponse.json({ error: "Could not save feedback" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, submission: data });
 }
 
 export async function GET(request: Request) {
-  const actor = await requireActor();
+  const actor = await requireActor(REVIEWER_ROLE_LIST);
   if ("error" in actor) return actor.error;
 
-  const { admin, profile } = actor;
-  const organizationId = String(profile.organization_id);
-  if (!REVIEWER_ROLES.has(profile.app_role)) {
+  const { admin } = actor;
+  const organizationId = actor.organizationId;
+  if (!REVIEWER_ROLES.has(actor.appRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -155,14 +161,11 @@ export async function GET(request: Request) {
     .limit(limit);
 
   if (facilityId) {
-    const canAccessFacility = ORG_WIDE_ROLES.has(String(profile.app_role))
-      ? true
-      : await serviceRoleUserHasFacilityAccess(admin, {
-          userId: actor.user.id,
-          facilityId,
-          organizationId,
-          appRole: String(profile.app_role),
-        });
+    const canAccessFacility = await serviceRoleUserHasFacilityAccess(admin, {
+      userId: actor.id,
+      facilityId,
+      organizationId,
+    });
     if (!canAccessFacility) {
       return NextResponse.json({ error: "Facility not found" }, { status: 404 });
     }
@@ -172,7 +175,8 @@ export async function GET(request: Request) {
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logError("pilot-feedback", error, { action: "list" });
+    return NextResponse.json({ error: "Could not load feedback" }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -192,11 +196,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const actor = await requireActor();
+  const actor = await requireActor(REVIEWER_ROLE_LIST);
   if ("error" in actor) return actor.error;
 
-  const { admin, user, profile } = actor;
-  if (!REVIEWER_ROLES.has(profile.app_role)) {
+  const { admin } = actor;
+  if (!REVIEWER_ROLES.has(actor.appRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -213,16 +217,34 @@ export async function PATCH(request: Request) {
 
   const { data: existing, error: existingError } = await admin
     .from("pilot_feedback_submissions" as never)
-    .select("id, organization_id, status, metadata")
+    .select("id, organization_id, facility_id, status, metadata")
     .eq("id", id)
+    .eq("organization_id", actor.organizationId)
     .maybeSingle();
 
   if (existingError || !existing) {
     return NextResponse.json({ error: "Feedback item not found" }, { status: 404 });
   }
 
-  if (String(asRecord(existing).organization_id) !== String(profile.organization_id)) {
-    return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
+  const existingFacilityId = asRecord(existing).facility_id;
+  const currentResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: REVIEWER_ROLE_LIST,
+    scope: "pilot-feedback.update-revalidate",
+  });
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (currentActor.organizationId !== actor.organizationId) {
+    return NextResponse.json({ error: "Feedback item not found" }, { status: 404 });
+  }
+  if (typeof existingFacilityId === "string") {
+    const canAccessFacility = await serviceRoleUserHasFacilityAccess(currentActor.admin, {
+      userId: currentActor.id,
+      facilityId: existingFacilityId,
+      organizationId: currentActor.organizationId,
+    });
+    if (!canAccessFacility) {
+      return NextResponse.json({ error: "Feedback item not found" }, { status: 404 });
+    }
   }
 
   const now = new Date().toISOString();
@@ -236,26 +258,32 @@ export async function PATCH(request: Request) {
         from: asRecord(existing).status ?? null,
         to: nextStatus,
         changed_at: now,
-        changed_by: user.id,
+        changed_by: currentActor.id,
       },
     ],
   };
 
-  const { data, error } = await admin
+  let updateQuery = currentActor.admin
     .from("pilot_feedback_submissions" as never)
     .update({
       status: nextStatus,
       updated_at: now,
       triaged_at: nextStatus === "new" ? null : now,
-      triaged_by: nextStatus === "new" ? null : user.id,
+      triaged_by: nextStatus === "new" ? null : currentActor.id,
       metadata: nextMetadata,
     } as never)
     .eq("id", id)
+    .eq("organization_id", currentActor.organizationId);
+  if (typeof existingFacilityId === "string") {
+    updateQuery = updateQuery.eq("facility_id", existingFacilityId);
+  }
+  const { data, error } = await updateQuery
     .select("*")
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logError("pilot-feedback", error, { action: "update", id });
+    return NextResponse.json({ error: "Could not update feedback" }, { status: 500 });
   }
 
   return NextResponse.json({

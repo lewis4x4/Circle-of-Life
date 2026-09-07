@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 import { logError } from "@/lib/observability/logger";
 
 type TaskRow = {
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     .from("operation_task_instances" as never)
     .select("id, organization_id, facility_id, assigned_to, status, due_at")
     .in("id", body.task_ids)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null);
 
   const tasks = (data ?? []) as unknown as TaskRow[];
@@ -46,9 +47,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
 
+  const currentResult = await revalidateOperationsActor(actor);
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
   const updatableTasks: TaskRow[] = [];
   for (const task of tasks) {
-    if (await actorCanMutateTask(actor, task)) {
+    if (await actorCanMutateTask(currentActor, task)) {
       updatableTasks.push(task);
     }
   }
@@ -62,12 +66,12 @@ export async function POST(request: NextRequest) {
   }
 
   const completedAt = new Date().toISOString();
-  const { data: completedRows, error: rpcError } = await actor.admin.rpc(
+  const { data: completedRows, error: rpcError } = await currentActor.admin.rpc(
     "bulk_complete_operation_tasks" as never,
     {
       p_task_ids: updatableTasks.map((task) => task.id),
-      p_actor_id: actor.id,
-      p_actor_role: actor.appRole,
+      p_actor_id: currentActor.id,
+      p_actor_role: currentActor.appRole,
       p_completion_notes: body.completion_notes || null,
       p_completed_at: completedAt,
     } as never,

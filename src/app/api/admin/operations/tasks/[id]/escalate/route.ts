@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 import { appendEscalationDelivery, normalizeEscalationHistory, parseEscalationLadder, resolveEscalation, type OperationEscalationTask } from "@/lib/operations/escalation";
+import { logError } from "@/lib/observability/logger";
 
 type TemplateRow = {
   escalation_ladder: unknown;
@@ -30,6 +31,7 @@ export async function PATCH(
     .from("operation_task_instances" as never)
     .select("id, organization_id, facility_id, template_id, template_name, assigned_to, assigned_role, status, current_escalation_level, escalation_history, license_threatening, due_at")
     .eq("id", id)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -51,6 +53,7 @@ export async function PATCH(
     .from("operation_task_templates" as never)
     .select("escalation_ladder")
     .eq("id", task.template_id)
+    .eq("organization_id", actor.organizationId)
     .maybeSingle();
 
   const template = templateData as unknown as TemplateRow | null;
@@ -63,11 +66,18 @@ export async function PATCH(
     return NextResponse.json({ error: "No escalation ladder configured for this task" }, { status: 409 });
   }
 
-  const resolution = await resolveEscalation(actor.admin, {
+  const currentResult = await revalidateOperationsActor(actor);
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (!(await actorCanMutateTask(currentActor, task))) {
+    return NextResponse.json({ error: "Not authorized to escalate this task" }, { status: 403 });
+  }
+
+  const resolution = await resolveEscalation(currentActor.admin, {
     task,
     escalationLadder,
     reason: body.reason || "Manual escalation from operations queue",
-    initiatedBy: actor.id,
+    initiatedBy: currentActor.id,
   });
 
   if (!resolution.nextStep) {
@@ -75,7 +85,7 @@ export async function PATCH(
   }
 
   const history = [...normalizeEscalationHistory(task.escalation_history), resolution.historyEntry];
-  const { error: updateError } = await actor.admin
+  const { error: updateError } = await currentActor.admin
     .from("operation_task_instances" as never)
     .update({
       assigned_to: resolution.assignedUserId,
@@ -85,23 +95,26 @@ export async function PATCH(
       escalation_history: history,
       due_at: resolution.nextDueAt,
       updated_at: new Date().toISOString(),
-      updated_by: actor.id,
+      updated_by: currentActor.id,
     } as never)
-    .eq("id", task.id);
+    .eq("id", task.id)
+    .eq("organization_id", currentActor.organizationId)
+    .eq("facility_id", task.facility_id);
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    logError("admin.operations.tasks.escalate", updateError, { action: "update", taskId: task.id });
+    return NextResponse.json({ error: "Failed to escalate task" }, { status: 500 });
   }
 
-  await actor.admin.from("operation_audit_log" as never).insert({
+  await currentActor.admin.from("operation_audit_log" as never).insert({
     organization_id: task.organization_id,
     facility_id: task.facility_id,
     task_instance_id: task.id,
     event_type: "escalated",
     from_status: task.status,
     to_status: task.status,
-    actor_id: actor.id,
-    actor_role: actor.appRole,
+    actor_id: currentActor.id,
+    actor_role: currentActor.appRole,
     event_notes: body.reason || "Manual escalation from operations queue",
     event_data: {
       escalation_level: resolution.nextLevel,
@@ -112,7 +125,7 @@ export async function PATCH(
     },
   } as never);
 
-  await appendEscalationDelivery(actor.admin, {
+  await appendEscalationDelivery(currentActor.admin, {
     organizationId: task.organization_id,
     facilityId: task.facility_id,
     taskInstanceId: task.id,
@@ -122,7 +135,7 @@ export async function PATCH(
     targetPhone: resolution.assignedUserPhone,
     channel: resolution.nextStep.channel,
     deliveryStatus: "queued",
-    createdBy: actor.id,
+    createdBy: currentActor.id,
     providerPayload: {
       source: "manual",
       queued_only: true,

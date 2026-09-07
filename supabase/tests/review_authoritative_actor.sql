@@ -14,7 +14,9 @@ SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,
   gen_random_uuid() onboarding_user,gen_random_uuid() onboarding_session,
   gen_random_uuid() legacy_user,gen_random_uuid() legacy_session,
   gen_random_uuid() mismatch_user,gen_random_uuid() mismatch_session,
-  gen_random_uuid() second_resident,gen_random_uuid() storage_object,gen_random_uuid() storage_object_two,gen_random_uuid() perf_marker,
+  gen_random_uuid() second_resident,gen_random_uuid() storage_object,gen_random_uuid() storage_object_two,
+  gen_random_uuid() operation_task,gen_random_uuid() defer_task,gen_random_uuid() defer_failure_task,
+  gen_random_uuid() perf_marker,
   f.id facility,f.organization_id organization,r.id resident
 FROM public.facilities f JOIN public.residents r
   ON r.facility_id=f.id AND r.organization_id=f.organization_id AND r.deleted_at IS NULL
@@ -46,6 +48,19 @@ INSERT INTO public.family_resident_links(user_id,resident_id,organization_id,rel
 SELECT family_user,resident,organization,'family' FROM actor_fixture;
 INSERT INTO public.onboarding_questions(id,prompt,department,importance,answer_type)
 VALUES('sys001.authorization','SYS-001 authorization probe','Security','critical','long_text');
+INSERT INTO public.operation_task_instances(
+  id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,status
+)
+SELECT operation_task,organization,facility,'SYS-001 service actor task','safety','daily',current_date,'pending'
+FROM actor_fixture;
+INSERT INTO public.operation_task_instances(
+  id,organization_id,facility_id,template_name,template_category,template_cadence_type,assigned_shift_date,status
+)
+SELECT defer_task,organization,facility,'SYS-001 atomic defer task','safety','daily',current_date,'pending'
+FROM actor_fixture
+UNION ALL
+SELECT defer_failure_task,organization,facility,'SYS-001 atomic defer failure task','safety','daily',current_date,'pending'
+FROM actor_fixture;
 
 GRANT SELECT ON actor_fixture TO authenticated, service_role;
 CREATE FUNCTION pg_temp.set_claims(p_user uuid,p_session uuid,p_version jsonb,p_claimed_role text)
@@ -231,14 +246,105 @@ SELECT pg_temp.expect_rejected('session user mismatch');
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA public, haven TO service_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT INSERT ON public.operation_audit_log TO service_role;
+GRANT UPDATE ON public.user_profiles,public.facilities,public.user_facility_access TO service_role;
 SELECT set_config('request.jwt.claims','{"role":"service_role"}',true);
 SET LOCAL ROLE service_role;
 DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
   PERFORM public.haven_assert_authorized_request();
   result:=public.ai_tool_facility_directory(f.organization,f.actor,'caregiver',ARRAY[f.facility],f.facility);
   IF result IS NULL THEN RAISE EXCEPTION 'Machine service RPC failed'; END IF;
+  BEGIN
+    PERFORM public.complete_operation_task_review(f.operation_task,f.actor,'owner','stale role attempt','{}');
+    RAISE EXCEPTION 'Service task RPC trusted stale actor role';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  IF (SELECT status FROM public.operation_task_instances WHERE id=f.operation_task)<>'pending' THEN
+    RAISE EXCEPTION 'Rejected stale actor mutated operation task';
+  END IF;
+  BEGIN
+    PERFORM public.defer_operation_task_review(
+      f.defer_task,f.actor,'owner',now()+interval '2 days','stale actor defer',
+      pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+        'operation-defer-v1:'||f.actor::text||':'||f.defer_task::text,'UTF8'
+      )),'hex')
+    );
+    RAISE EXCEPTION 'Service defer RPC trusted stale actor role';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  IF (SELECT status FROM public.operation_task_instances WHERE id=f.defer_task)<>'pending' THEN
+    RAISE EXCEPTION 'Rejected stale actor mutated deferred task';
+  END IF;
 END $$;
 RESET ROLE;
+UPDATE public.user_profiles SET app_role='owner' WHERE id=(SELECT actor FROM actor_fixture);
+SET LOCAL ROLE service_role;
+DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; request_key text; defer_at timestamptz:=pg_catalog.clock_timestamp()+interval '1 second'; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+  IF public.complete_operation_task_review(f.operation_task,f.actor,'owner','current owner completion','{}')<>'completed' THEN
+    RAISE EXCEPTION 'Current service task actor could not complete task';
+  END IF;
+  request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+    'operation-defer-v1:'||f.actor::text||':'||f.defer_task::text,'UTF8'
+  )),'hex');
+  first_result:=public.defer_operation_task_review(f.defer_task,f.actor,'owner',defer_at,'Atomic defer proof',request_key);
+  PERFORM pg_catalog.pg_sleep(1.1);
+  replay_result:=public.defer_operation_task_review(f.defer_task,f.actor,'owner',defer_at,'Atomic defer proof',request_key);
+  IF first_result->>'new_task_id' IS DISTINCT FROM replay_result->>'new_task_id'
+     OR coalesce((replay_result->>'replayed')::boolean,false) IS NOT TRUE
+     OR (SELECT status FROM public.operation_task_instances WHERE id=f.defer_task)<>'deferred'
+     OR (SELECT count(*) FROM public.operation_audit_log WHERE task_instance_id=f.defer_task AND event_type='deferred')<>1 THEN
+    RAISE EXCEPTION 'Atomic defer replay did not return its single committed receipt';
+  END IF;
+  BEGIN
+    PERFORM public.defer_operation_task_review(f.defer_task,f.actor,'owner',defer_at+interval '1 hour','Changed payload',request_key);
+    RAISE EXCEPTION 'Changed defer payload reused committed request key';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM<>'This defer request was already saved with different content. Refresh the task before retrying' THEN RAISE; END IF;
+  END;
+END $$;
+RESET ROLE;
+
+SET LOCAL ROLE service_role;
+DO $$ DECLARE f actor_fixture%ROWTYPE; request_key text; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+  request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+    'operation-defer-v1:'||f.actor::text||':'||f.defer_failure_task::text,'UTF8'
+  )),'hex');
+  BEGIN
+    PERFORM public.defer_operation_task_review(f.defer_failure_task,f.actor,'owner',pg_catalog.clock_timestamp()-interval '1 second','Past request',request_key);
+    RAISE EXCEPTION 'Brand-new past defer was accepted';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Deferred time must be in the future' THEN RAISE; END IF; END;
+  BEGIN
+    PERFORM public.defer_operation_task_review(f.defer_failure_task,f.actor,'owner',pg_catalog.clock_timestamp(),'Equal-now request',request_key);
+    RAISE EXCEPTION 'Brand-new equal-now defer was accepted';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'Deferred time must be in the future' THEN RAISE; END IF; END;
+END $$;
+RESET ROLE;
+
+CREATE FUNCTION pg_temp.fail_defer_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+  IF NEW.task_instance_id=(SELECT defer_failure_task FROM actor_fixture) THEN RAISE EXCEPTION 'injected defer audit failure'; END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER sys001_fail_defer_audit BEFORE INSERT ON public.operation_audit_log
+FOR EACH ROW EXECUTE FUNCTION pg_temp.fail_defer_audit();
+SET LOCAL ROLE service_role;
+DO $$ DECLARE f actor_fixture%ROWTYPE; request_key text; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+  request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+    'operation-defer-v1:'||f.actor::text||':'||f.defer_failure_task::text,'UTF8'
+  )),'hex');
+  BEGIN
+    PERFORM public.defer_operation_task_review(f.defer_failure_task,f.actor,'owner',now()+interval '3 days','Failure injection',request_key);
+    RAISE EXCEPTION 'Injected defer audit failure did not roll back';
+  EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected defer audit failure' THEN RAISE; END IF; END;
+END $$;
+RESET ROLE;
+DROP TRIGGER sys001_fail_defer_audit ON public.operation_audit_log;
+DO $$ BEGIN
+  IF EXISTS(SELECT 1 FROM public.operation_task_instances
+    WHERE id=(SELECT defer_failure_task FROM actor_fixture) AND (status<>'pending' OR deferred_replacement_task_id IS NOT NULL))
+    OR (SELECT count(*) FROM public.operation_task_instances WHERE template_name='SYS-001 atomic defer failure task')<>1 THEN
+    RAISE EXCEPTION 'Atomic defer failure left partial task state';
+  END IF;
+END $$;
 
 -- Function posture and representative RLS plans prove locked helpers + named InitPlans.
 DO $$ BEGIN

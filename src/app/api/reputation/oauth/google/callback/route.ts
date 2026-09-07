@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { exchangeAuthorizationCode } from "@/lib/reputation/google-oauth";
 import { verifyOAuthState } from "@/lib/reputation/oauth-state";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 function appOrigin(request: Request): string {
   const env = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -43,15 +42,32 @@ export async function GET(request: Request) {
     return baseRedirect(request, "/admin/reputation/integrations", { error: "invalid_state" });
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authErr,
-  } = await supabase.auth.getUser();
-  if (authErr || !user || user.id !== payload.userId) {
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: ["owner"],
+    scope: "reputation.oauth.google.callback",
+  });
+  if ("response" in actorResult) {
+    return baseRedirect(request, "/admin/reputation/integrations", { error: "session_mismatch" });
+  }
+  const { actor } = actorResult;
+  if (actor.id !== payload.userId || actor.organizationId !== payload.orgId) {
     return baseRedirect(request, "/admin/reputation/integrations", { error: "session_mismatch" });
   }
 
+  const exchangeActorResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: ["owner"],
+    scope: "reputation.oauth.google.callback.exchange-revalidate",
+  });
+  if (
+    "response" in exchangeActorResult ||
+    exchangeActorResult.actor.organizationId !== payload.orgId
+  ) {
+    return baseRedirect(request, "/admin/reputation/integrations", { error: "session_mismatch" });
+  }
+  const exchangeActor = exchangeActorResult.actor;
+
+  // Exchange is an irreversible provider-side action; current database authority
+  // and the state-bound user/organization must be proven first.
   let tokens: { access_token: string; refresh_token?: string; expires_in: number };
   try {
     tokens = await exchangeAuthorizationCode(code);
@@ -65,22 +81,27 @@ export async function GET(request: Request) {
     });
   }
 
-  let admin;
-  try {
-    admin = createServiceRoleClient();
-  } catch {
-    return baseRedirect(request, "/admin/reputation/integrations", { error: "server_misconfigured" });
-  }
-
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-  const { error: upsertErr } = await admin.from("reputation_google_oauth_credentials").upsert(
+  const saveActorResult = await revalidateCurrentApiActor(exchangeActor, {
+    allowedRoles: ["owner"],
+    scope: "reputation.oauth.google.callback.save-revalidate",
+  });
+  if (
+    "response" in saveActorResult ||
+    saveActorResult.actor.organizationId !== payload.orgId
+  ) {
+    return baseRedirect(request, "/admin/reputation/integrations", { error: "session_mismatch" });
+  }
+  const saveActor = saveActorResult.actor;
+
+  const { error: upsertErr } = await saveActor.admin.from("reputation_google_oauth_credentials").upsert(
     {
-      organization_id: payload.orgId,
+      organization_id: saveActor.organizationId,
       refresh_token: tokens.refresh_token,
       access_token: tokens.access_token,
       access_token_expires_at: expiresAt,
-      connected_by: user.id,
+      connected_by: saveActor.id,
       connected_at: new Date().toISOString(),
     },
     { onConflict: "organization_id" },

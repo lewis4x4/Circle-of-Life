@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import {
   buildStandupBoardPrintHtml,
   fetchPreviousPublishedStandupSnapshotDetail,
@@ -12,8 +13,6 @@ import {
   looksLikeStorageObjectPath,
   REPORT_EXPORT_BUCKET,
 } from "@/lib/reports/export-storage";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export const runtime = "nodejs";
 
@@ -26,41 +25,17 @@ export async function GET(
     return NextResponse.json({ error: "Standup week is required." }, { status: 400 });
   }
 
-  const sessionClient = await createClient();
-  const {
-    data: { user },
-    error: authErr,
-  } = await sessionClient.auth.getUser();
-  if (authErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  let admin: ReturnType<typeof createServiceRoleClient>;
-  try {
-    admin = createServiceRoleClient();
-  } catch (error) {
-    logError("executive.standup.pdf.service-role", error);
-    return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
-  }
-
-  const { data: profile, error: profileErr } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (profileErr || !profile?.organization_id) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  if (!["owner", "org_admin", "facility_admin"].includes(profile.app_role)) {
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin"],
+    scope: "executive.standup.pdf",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   const [detail, previous] = await Promise.all([
-    fetchStandupSnapshotDetail(admin, profile.organization_id, week),
-    fetchPreviousPublishedStandupSnapshotDetail(admin, profile.organization_id, week),
+    fetchStandupSnapshotDetail(admin, actor.organizationId, week),
+    fetchPreviousPublishedStandupSnapshotDetail(admin, actor.organizationId, week),
   ]);
 
   if (!detail) {
@@ -68,7 +43,7 @@ export async function GET(
   }
 
   const storagePath = executiveStandupPdfStoragePath(
-    profile.organization_id,
+    actor.organizationId,
     detail.snapshot.weekOf,
     detail.snapshot.publishedVersion,
   );
@@ -115,7 +90,16 @@ export async function GET(
         left: "0.35in",
       },
     });
-    const upload = await admin.storage
+    const storageActorResult = await revalidateCurrentApiActor(actor, {
+      allowedRoles: ["owner", "org_admin", "facility_admin"],
+      scope: "executive.standup.pdf.storage-revalidate",
+    });
+    if ("response" in storageActorResult) return storageActorResult.response;
+    const storageActor = storageActorResult.actor;
+    if (storageActor.organizationId !== actor.organizationId) {
+      return NextResponse.json({ error: "Standup packet not found" }, { status: 404 });
+    }
+    const upload = await storageActor.admin.storage
       .from(REPORT_EXPORT_BUCKET)
       .upload(storagePath, pdf, {
         contentType: "application/pdf",
@@ -124,24 +108,33 @@ export async function GET(
     if (upload.error) {
       logError("executive.standup.pdf.storage", upload.error, { week });
     } else {
-      await admin
+      await storageActor.admin
         .from("exec_standup_snapshots" as never)
         .update({
           pdf_attachment_path: storagePath,
         } as never)
         .eq("id", detail.snapshot.id)
-        .eq("organization_id", profile.organization_id);
+        .eq("organization_id", actor.organizationId);
     }
 
     if (reportId) {
-      const { data: runRow, error: runErr } = await admin
+      const reportActorResult = await revalidateCurrentApiActor(storageActor, {
+        allowedRoles: ["owner", "org_admin", "facility_admin"],
+        scope: "executive.standup.pdf.report-revalidate",
+      });
+      if ("response" in reportActorResult) return reportActorResult.response;
+      const reportActor = reportActorResult.actor;
+      if (reportActor.organizationId !== actor.organizationId) {
+        return NextResponse.json({ error: "Standup packet not found" }, { status: 404 });
+      }
+      const { data: runRow, error: runErr } = await reportActor.admin
         .from("report_runs")
         .insert({
-          organization_id: profile.organization_id,
+          organization_id: reportActor.organizationId,
           source_type: "pack",
           source_id: reportId,
           status: "completed",
-          generated_by_user_id: user.id,
+          generated_by_user_id: reportActor.id,
           runtime_classification: "standup_packet_pdf",
           run_scope_json: { weekOf: detail.snapshot.weekOf },
           filter_snapshot_json: { weekOf: detail.snapshot.weekOf },
@@ -151,8 +144,8 @@ export async function GET(
         .single();
 
       if (!runErr && runRow?.id) {
-        await admin.from("report_exports").insert({
-          organization_id: profile.organization_id,
+        await reportActor.admin.from("report_exports").insert({
+          organization_id: reportActor.organizationId,
           report_run_id: runRow.id,
           export_format: "pdf",
           file_name: `executive-standup-${detail.snapshot.weekOf}.pdf`,
@@ -166,14 +159,14 @@ export async function GET(
         });
       }
 
-      await admin
+      await reportActor.admin
         .from("exec_saved_reports")
         .update({
           last_generated_at: new Date().toISOString(),
           last_output_storage_path: upload.error ? `/api/executive/standup/${encodeURIComponent(detail.snapshot.weekOf)}/pdf` : storagePath,
         })
         .eq("id", reportId)
-        .eq("organization_id", profile.organization_id);
+        .eq("organization_id", reportActor.organizationId);
     }
 
     return new NextResponse(new Uint8Array(pdf), {
@@ -186,12 +179,8 @@ export async function GET(
     });
   } catch (error) {
     logError("executive.standup.pdf.render", error, { week });
-    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      {
-        error: "Could not generate standup PDF.",
-        detail: message,
-      },
+      { error: "Could not generate standup PDF." },
       { status: 500 },
     );
   } finally {

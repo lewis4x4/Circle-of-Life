@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { logError } from "@/lib/observability/logger";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 import { formatUploadedByProfile } from "@/lib/users/user-attribution";
 
@@ -10,7 +9,7 @@ type Body = {
 };
 
 const APPROVEABLE_STATUSES = new Set(["draft", "under_review"]);
-const APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
+const APPROVER_ROLES = ["owner", "org_admin", "facility_admin", "nurse"] as const;
 
 export async function POST(
   request: Request,
@@ -37,29 +36,13 @@ export async function POST(
     );
   }
 
-  const client = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await client.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json(
-      { error: "Not authenticated" },
-      { status: 401 }
-    );
-  }
-
-  let admin;
-  try {
-    admin = createServiceRoleClient();
-  } catch (e) {
-    logError("care-plans.approve", e, { action: "service_role_client" });
-    return NextResponse.json(
-      { error: "Server configuration error" },
-      { status: 503 }
-    );
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: APPROVER_ROLES,
+    scope: "care-plans.approve",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   // Fetch the care plan and verify user access
   const { data: carePlan, error: planError } = await admin
@@ -68,6 +51,7 @@ export async function POST(
       "id, resident_id, facility_id, organization_id, status, version, effective_date"
     )
     .eq("id", carePlanId)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -78,47 +62,10 @@ export async function POST(
     );
   }
 
-  // Verify user has facility access
-  const { data: userProfile, error: profileError } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role, full_name")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (profileError || !userProfile) {
-    return NextResponse.json(
-      { error: "User profile not found" },
-      { status: 403 }
-    );
-  }
-
-  if (!userProfile.organization_id) {
-    return NextResponse.json(
-      { error: "User profile missing organization" },
-      { status: 403 }
-    );
-  }
-
-  if (!APPROVER_ROLES.has(userProfile.app_role ?? "")) {
-    return NextResponse.json(
-      { error: "You do not have permission to approve care plans" },
-      { status: 403 }
-    );
-  }
-
-  if (carePlan.organization_id !== userProfile.organization_id) {
-    return NextResponse.json(
-      { error: "Care plan organization mismatch" },
-      { status: 403 }
-    );
-  }
-
   const hasAccess = await serviceRoleUserHasFacilityAccess(admin, {
-    userId: user.id,
+    userId: actor.id,
     facilityId: carePlan.facility_id,
-    organizationId: userProfile.organization_id,
-    appRole: userProfile.app_role,
+    organizationId: actor.organizationId,
   });
 
   if (!hasAccess) {
@@ -136,6 +83,24 @@ export async function POST(
     );
   }
 
+  const currentResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: APPROVER_ROLES,
+    scope: "care-plans.approve.revalidate",
+  });
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (currentActor.organizationId !== carePlan.organization_id) {
+    return NextResponse.json({ error: "Care plan not found" }, { status: 404 });
+  }
+  const stillHasAccess = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: currentActor.id,
+    facilityId: carePlan.facility_id,
+    organizationId: currentActor.organizationId,
+  });
+  if (!stillHasAccess) {
+    return NextResponse.json({ error: "You do not have access to this care plan" }, { status: 403 });
+  }
+
   // Approve the care plan
   const nowIso = new Date().toISOString();
   const { data: updatedCarePlan, error: updateError } = await admin
@@ -143,13 +108,13 @@ export async function POST(
     .update({
       status: "active",
       approved_at: nowIso,
-      approved_by: user.id,
+      approved_by: currentActor.id,
       signature_data: signature,
       updated_at: nowIso,
-      updated_by: user.id,
+      updated_by: currentActor.id,
     })
     .eq("id", carePlanId)
-    .eq("organization_id", userProfile.organization_id)
+    .eq("organization_id", currentActor.organizationId)
     .eq("facility_id", carePlan.facility_id)
     .eq("status", carePlan.status)
     .is("deleted_at", null)
@@ -183,7 +148,7 @@ export async function POST(
       version: carePlan.version,
       resident_id: carePlan.resident_id,
     },
-    user_id: user.id,
+    user_id: currentActor.id,
     organization_id: carePlan.organization_id,
     facility_id: carePlan.facility_id,
   });
@@ -197,10 +162,10 @@ export async function POST(
     carePlanId,
     approvedAt: nowIso,
     approvedBy: {
-      id: user.id,
+      id: currentActor.id,
       name: formatUploadedByProfile({
-        full_name: userProfile.full_name,
-        email: user.email,
+        full_name: currentActor.fullName,
+        email: currentActor.sessionEmail ?? currentActor.email ?? undefined,
       }),
     },
   });

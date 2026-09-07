@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { logError } from "@/lib/observability/logger";
-import { createClient } from "@/lib/supabase/server";
 import {
   checkFailureRateLimit,
   clearFailureRateLimit,
   recordFailureRateLimit,
 } from "@/lib/security/in-memory-failure-rate-limit";
 import { verifyWitnessCredentials } from "@/lib/supabase/witness-auth";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type Body = {
@@ -21,7 +20,7 @@ type Body = {
 };
 
 const ALLOWED_ROLES = new Set(["nurse", "caregiver"]);
-const OUTGOING_ROLES = new Set(["nurse", "caregiver", "med_tech"]);
+const OUTGOING_ROLES = ["nurse", "caregiver", "med_tech"] as const;
 const FAILURE_LIMIT = {
   maxFailures: 5,
   windowMs: 10 * 60 * 1000,
@@ -64,48 +63,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const sessionClient = await createClient();
-  const {
-    data: { user: outgoing },
-    error: sessionErr,
-  } = await sessionClient.auth.getUser();
-
-  if (sessionErr || !outgoing) {
-    return NextResponse.json({ verified: false, error: "Not authenticated" }, { status: 401 });
-  }
-
-  let admin;
-  try {
-    admin = createServiceRoleClient();
-  } catch (e) {
-    logError("controlled-substance.verify-co-sign", e, { action: "service_role_client" });
-    return NextResponse.json(
-      { verified: false, error: "Server configuration error" },
-      { status: 503 },
-    );
-  }
-
-  const { data: outgoingProfile, error: outProfErr } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", outgoing.id)
-    .eq("is_active", true)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (outProfErr || !outgoingProfile?.organization_id) {
-    return NextResponse.json({ verified: false, error: "Outgoing profile not found" }, { status: 403 });
-  }
-
-  if (!OUTGOING_ROLES.has(outgoingProfile.app_role)) {
-    return NextResponse.json({ verified: false, error: "Only a nurse, caregiver, or medication technician may originate a count" }, { status: 403 });
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: OUTGOING_ROLES,
+    scope: "controlled-substance.verify-co-sign",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   const okOutgoingFac = await serviceRoleUserHasFacilityAccess(admin, {
-    userId: outgoing.id,
+    userId: actor.id,
     facilityId,
-    organizationId: outgoingProfile.organization_id,
-    appRole: outgoingProfile.app_role,
+    organizationId: actor.organizationId,
   });
 
   if (!okOutgoingFac) {
@@ -115,9 +84,22 @@ export async function POST(request: Request) {
     );
   }
 
+  const { data: rows, error: rowErr } = await admin
+    .from("controlled_substance_counts")
+    .select("id, facility_id, organization_id, outgoing_staff_id, incoming_staff_id")
+    .in("id", countIds)
+    .eq("organization_id", actor.organizationId)
+    .eq("facility_id", facilityId)
+    .eq("outgoing_staff_id", actor.id)
+    .is("deleted_at", null);
+
+  if (rowErr || !rows?.length || rows.length !== countIds.length) {
+    return NextResponse.json({ verified: false, error: "Count record(s) not found" }, { status: 404 });
+  }
+
   const limiterKey = [
     getRequestIp(request),
-    outgoing.id,
+    actor.id,
     facilityId,
     email,
   ].join(":");
@@ -131,6 +113,27 @@ export async function POST(request: Request) {
           "Retry-After": String(rateLimit.retryAfterSeconds),
         },
       },
+    );
+  }
+
+  const providerActorResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: OUTGOING_ROLES,
+    scope: "controlled-substance.verify-co-sign.provider-revalidate",
+  });
+  if ("response" in providerActorResult) return providerActorResult.response;
+  const providerActor = providerActorResult.actor;
+  if (providerActor.organizationId !== actor.organizationId) {
+    return NextResponse.json({ verified: false, error: "Count record(s) not found" }, { status: 404 });
+  }
+  const stillHasOutgoingFacilityAccess = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: providerActor.id,
+    facilityId,
+    organizationId: providerActor.organizationId,
+  });
+  if (!stillHasOutgoingFacilityAccess) {
+    return NextResponse.json(
+      { verified: false, error: "Your session does not have access to this facility" },
+      { status: 403 },
     );
   }
 
@@ -152,7 +155,7 @@ export async function POST(request: Request) {
 
   const incomingId = authData.user.id;
 
-  if (incomingId === outgoing.id) {
+  if (incomingId === actor.id) {
     return NextResponse.json(
       { verified: false, error: "Incoming staff must be a different person than outgoing" },
       { status: 400 },
@@ -189,7 +192,6 @@ export async function POST(request: Request) {
     userId: incomingId,
     facilityId,
     organizationId: profile.organization_id,
-    appRole: profile.app_role,
   });
 
   if (!okIncomingFac) {
@@ -199,41 +201,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: rows, error: rowErr } = await admin
-    .from("controlled_substance_counts")
-    .select("id, facility_id, organization_id, outgoing_staff_id, incoming_staff_id")
-    .in("id", countIds)
-    .is("deleted_at", null);
-
-  if (rowErr || !rows?.length) {
-    return NextResponse.json({ verified: false, error: "Count record(s) not found" }, { status: 404 });
-  }
-
-  if (rows.length !== countIds.length) {
-    return NextResponse.json({ verified: false, error: "Some count IDs were not found" }, { status: 404 });
-  }
-
   const orgId = rows[0].organization_id;
-  if (orgId !== outgoingProfile.organization_id) {
-    return NextResponse.json({ verified: false, error: "Organization mismatch for session" }, { status: 403 });
-  }
 
   for (const row of rows) {
-    if (row.facility_id !== facilityId) {
-      return NextResponse.json({ verified: false, error: "Facility mismatch" }, { status: 400 });
-    }
-    if (row.organization_id !== orgId) {
-      return NextResponse.json({ verified: false, error: "Organization mismatch" }, { status: 400 });
-    }
     if (profile.organization_id !== row.organization_id) {
       return NextResponse.json(
         { verified: false, error: "Incoming staff organization does not match this count" },
-        { status: 403 },
-      );
-    }
-    if (row.outgoing_staff_id !== outgoing.id) {
-      return NextResponse.json(
-        { verified: false, error: "Only the outgoing staff who started these counts can complete co-sign" },
         { status: 403 },
       );
     }
@@ -245,9 +218,30 @@ export async function POST(request: Request) {
     }
   }
 
+  const mutationActorResult = await revalidateCurrentApiActor(providerActor, {
+    allowedRoles: OUTGOING_ROLES,
+    scope: "controlled-substance.verify-co-sign.mutation-revalidate",
+  });
+  if ("response" in mutationActorResult) return mutationActorResult.response;
+  const mutationActor = mutationActorResult.actor;
+  if (mutationActor.organizationId !== orgId) {
+    return NextResponse.json({ verified: false, error: "Count record(s) not found" }, { status: 404 });
+  }
+  const canStillMutateFacility = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: mutationActor.id,
+    facilityId,
+    organizationId: mutationActor.organizationId,
+  });
+  if (!canStillMutateFacility) {
+    return NextResponse.json(
+      { verified: false, error: "Your session does not have access to this facility" },
+      { status: 403 },
+    );
+  }
+
   const { error: upErr } = await admin.rpc("complete_verified_controlled_counts", {
     p_count_ids: countIds,
-    p_outgoing_id: outgoing.id,
+    p_outgoing_id: mutationActor.id,
     p_incoming_id: incomingId,
     p_facility_id: facilityId,
     p_organization_id: orgId,

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { runOutbreakDetectionAfterSurveillance } from "@/lib/infection-control/outbreak-detection";
-import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type Body = { surveillanceId?: string };
@@ -20,43 +18,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "surveillanceId is required" }, { status: 400 });
   }
 
-  const sessionClient = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await sessionClient.auth.getUser();
-
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  let admin;
-  try {
-    admin = createServiceRoleClient();
-  } catch (e) {
-    logError("infection-control.evaluate-outbreak.service-role", e);
-    return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
-  }
-
-  const { data: profile, error: profErr } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profErr || !profile?.organization_id) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  const allowed = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
-  if (!allowed.has(profile.app_role)) {
-    return NextResponse.json({ error: "Only nurse or admin may run outbreak detection" }, { status: 403 });
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "nurse"],
+    scope: "infection-control.evaluate-outbreak",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   const { data: surv, error: sErr } = await admin
     .from("infection_surveillance")
     .select("facility_id, organization_id")
     .eq("id", surveillanceId)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -64,22 +38,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Surveillance record not found" }, { status: 404 });
   }
 
-  if (surv.organization_id !== profile.organization_id) {
-    return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
-  }
-
   const okFac = await serviceRoleUserHasFacilityAccess(admin, {
-    userId: user.id,
+    userId: actor.id,
     facilityId: surv.facility_id,
-    organizationId: profile.organization_id,
-    appRole: profile.app_role,
+    organizationId: actor.organizationId,
   });
 
   if (!okFac) {
     return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
   }
 
-  const outcome = await runOutbreakDetectionAfterSurveillance(admin, surveillanceId, user.id);
+  const currentResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: ["owner", "org_admin", "facility_admin", "nurse"],
+    scope: "infection-control.evaluate-outbreak.revalidate",
+  });
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (currentActor.organizationId !== surv.organization_id) {
+    return NextResponse.json({ error: "Surveillance record not found" }, { status: 404 });
+  }
+  const stillHasAccess = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: currentActor.id,
+    facilityId: surv.facility_id,
+    organizationId: currentActor.organizationId,
+  });
+  if (!stillHasAccess) {
+    return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
+  }
+
+  const outcome = await runOutbreakDetectionAfterSurveillance(admin, surveillanceId, currentActor.id);
 
   return NextResponse.json({ ok: true, outcome: outcome.outcome });
 }

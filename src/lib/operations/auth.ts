@@ -1,25 +1,23 @@
 import { NextResponse } from "next/server";
 
 import type { AppRole } from "@/lib/rbac";
+import {
+  requireCurrentApiActor,
+  revalidateCurrentApiActor,
+  type CurrentApiActor,
+} from "@/lib/auth/current-api-actor";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
-import { createClient } from "@/lib/supabase/server";
 import { OPERATIONS_MUTATION_ADMIN_ROLE_SET, OPERATIONS_VIEW_ROLE_SET, ORG_WIDE_OPERATION_ROLES } from "@/lib/operations/constants";
 
 type AdminClient = ReturnType<typeof createServiceRoleClient>;
-
-type OperationsProfileRow = {
-  id: string;
-  organization_id: string | null;
-  app_role: AppRole | null;
-  is_active: boolean | null;
-};
 
 export type OperationsActor = {
   id: string;
   organizationId: string;
   appRole: AppRole;
   admin: AdminClient;
+  currentActor: CurrentApiActor;
 };
 
 type OperationTaskAccessShape = {
@@ -33,39 +31,34 @@ type OperationTaskAccessShape = {
 export async function requireOperationsActor(): Promise<
   { actor: OperationsActor } | { response: NextResponse }
 > {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: sessionError,
-  } = await supabase.auth.getUser();
-
-  if (sessionError || !user) {
-    return {
-      response: NextResponse.json({ error: "Not authenticated" }, { status: 401 }),
-    };
-  }
-
-  const admin = createServiceRoleClient();
-  const { data: profile, error: profileError } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role, is_active")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  const actor = profile as OperationsProfileRow | null;
-  if (profileError || !actor?.organization_id || !actor.app_role || actor.is_active === false) {
-    return {
-      response: NextResponse.json({ error: "Profile not found" }, { status: 403 }),
-    };
-  }
+  const result = await requireCurrentApiActor({ scope: "operations.api-auth" });
+  if ("response" in result) return result;
 
   return {
     actor: {
-      id: actor.id,
-      organizationId: actor.organization_id,
-      appRole: actor.app_role,
-      admin,
+      id: result.actor.id,
+      organizationId: result.actor.organizationId,
+      appRole: result.actor.appRole,
+      admin: result.actor.admin,
+      currentActor: result.actor,
+    },
+  };
+}
+
+export async function revalidateOperationsActor(
+  actor: OperationsActor,
+): Promise<{ actor: OperationsActor } | { response: NextResponse }> {
+  const result = await revalidateCurrentApiActor(actor.currentActor, {
+    scope: "operations.api-auth.revalidate",
+  });
+  if ("response" in result) return result;
+  return {
+    actor: {
+      id: result.actor.id,
+      organizationId: result.actor.organizationId,
+      appRole: result.actor.appRole,
+      admin: result.actor.admin,
+      currentActor: result.actor,
     },
   };
 }
@@ -105,7 +98,6 @@ export async function actorCanAccessFacility(actor: OperationsActor, facilityId:
     userId: actor.id,
     facilityId,
     organizationId: actor.organizationId,
-    appRole: actor.appRole,
   });
 }
 

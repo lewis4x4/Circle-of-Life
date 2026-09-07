@@ -8,6 +8,7 @@ import {
   reviewExcerptForRow,
 } from "@/lib/reputation/google-business-reviews";
 import { refreshAccessToken } from "@/lib/reputation/google-oauth";
+import { logError } from "@/lib/observability/logger";
 import type { Database } from "@/types/database";
 
 export type GoogleReviewSyncDetail = {
@@ -20,9 +21,18 @@ export type GoogleReviewSyncDetail = {
 
 export type GoogleReviewSyncResult =
   | { status: "success"; imported: number; accountsProcessed: number; details: GoogleReviewSyncDetail[] }
-  | { status: "no_credentials" }
+  | { status: "no_credentials"; reason?: "load_failed" }
   | { status: "token_refresh"; message: string }
-  | { status: "account_load"; message: string };
+  | { status: "account_load"; message: string; authorizationLost?: boolean };
+
+const DETAIL_LOCATION_NOT_FOUND =
+  "Could not match this Haven listing to a Google Business location. Review its External place ID.";
+const DETAIL_PROVIDER_LOAD_FAILED = "Could not load Google reviews for this listing.";
+const DETAIL_EXISTING_CHECK_FAILED = "Could not compare this listing with previously imported reviews.";
+const DETAIL_INSERT_FAILED = "Could not save imported reviews for this listing.";
+const TOKEN_REFRESH_FAILED = "Google authorization could not be refreshed. Reconnect Google and retry.";
+const ACCOUNT_LOAD_FAILED = "Google Business listings could not be loaded. Retry the import.";
+const AUTHORIZATION_LOST = "Your Haven access changed. Sign in again before importing reviews.";
 
 /**
  * Fetch Google reviews for org listings and insert new `reputation_replies` drafts.
@@ -35,8 +45,13 @@ export async function runGoogleReviewSync(params: {
   actorUserId: string;
   supabase: SupabaseClient<Database>;
   admin: SupabaseClient<Database>;
+  authorize?: (facilityId?: string) => Promise<boolean>;
 }): Promise<GoogleReviewSyncResult> {
-  const { organizationId, facilityId: facilityIdFilter, actorUserId, supabase, admin } = params;
+  const { organizationId, facilityId: facilityIdFilter, actorUserId, supabase, admin, authorize } = params;
+
+  if (authorize && !(await authorize(facilityIdFilter))) {
+    return { status: "account_load", message: AUTHORIZATION_LOST, authorizationLost: true };
+  }
 
   const { data: cred, error: credErr } = await admin
     .from("reputation_google_oauth_credentials")
@@ -44,19 +59,29 @@ export async function runGoogleReviewSync(params: {
     .eq("organization_id", organizationId)
     .maybeSingle();
 
-  if (credErr || !cred?.refresh_token) {
+  if (credErr) {
+    logError("reputation.sync.google", credErr, { action: "load_credentials" });
+    return { status: "no_credentials", reason: "load_failed" };
+  }
+  if (!cred?.refresh_token) {
     return { status: "no_credentials" };
   }
 
+  if (authorize && !(await authorize(facilityIdFilter))) {
+    return { status: "account_load", message: AUTHORIZATION_LOST, authorizationLost: true };
+  }
   let accessToken: string;
   try {
     const tok = await refreshAccessToken(cred.refresh_token);
     accessToken = tok.access_token;
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Token refresh failed";
-    return { status: "token_refresh", message: msg };
+    logError("reputation.sync.google", e, { action: "refresh_token" });
+    return { status: "token_refresh", message: TOKEN_REFRESH_FAILED };
   }
 
+  if (authorize && !(await authorize(facilityIdFilter))) {
+    return { status: "account_load", message: AUTHORIZATION_LOST, authorizationLost: true };
+  }
   let accQuery = supabase
     .from("reputation_accounts")
     .select("id, facility_id, label, external_place_id, organization_id")
@@ -71,7 +96,8 @@ export async function runGoogleReviewSync(params: {
   const { data: accounts, error: accLoadErr } = await accQuery;
 
   if (accLoadErr) {
-    return { status: "account_load", message: accLoadErr.message };
+    logError("reputation.sync.google", accLoadErr, { action: "load_accounts" });
+    return { status: "account_load", message: ACCOUNT_LOAD_FAILED };
   }
 
   const rows = accounts ?? [];
@@ -83,6 +109,9 @@ export async function runGoogleReviewSync(params: {
     let reviews: Awaited<ReturnType<typeof listAllReviewsForLocation>> = [];
 
     try {
+      if (authorize && !(await authorize(acc.facility_id))) {
+        return { status: "account_load", message: AUTHORIZATION_LOST, authorizationLost: true };
+      }
       const parent = await resolveGoogleLocationParent(accessToken, acc.external_place_id, acc.label ?? "");
       if (!parent) {
         details.push({
@@ -90,20 +119,23 @@ export async function runGoogleReviewSync(params: {
           label,
           fetched: 0,
           inserted: 0,
-          error:
-            "Could not resolve Google Business location. Set External place ID to the full resource name accounts/{account}/locations/{location}, a numeric location id, or match Listing label to the Google location title.",
+          error: DETAIL_LOCATION_NOT_FOUND,
         });
         continue;
       }
 
+      if (authorize && !(await authorize(acc.facility_id))) {
+        return { status: "account_load", message: AUTHORIZATION_LOST, authorizationLost: true };
+      }
       reviews = await listAllReviewsForLocation(accessToken, parent);
     } catch (e) {
+      logError("reputation.sync.google", e, { action: "load_listing_reviews", reputationAccountId: acc.id });
       details.push({
         reputationAccountId: acc.id,
         label,
         fetched: 0,
         inserted: 0,
-        error: e instanceof Error ? e.message : String(e),
+        error: DETAIL_PROVIDER_LOAD_FAILED,
       });
       continue;
     }
@@ -121,12 +153,13 @@ export async function runGoogleReviewSync(params: {
         .in("external_review_id", uniqueIds);
 
       if (exErr) {
+        logError("reputation.sync.google", exErr, { action: "load_existing_reviews", reputationAccountId: acc.id });
         details.push({
           reputationAccountId: acc.id,
           label,
           fetched: reviews.length,
           inserted: 0,
-          error: exErr.message,
+          error: DETAIL_EXISTING_CHECK_FAILED,
         });
         continue;
       }
@@ -156,14 +189,18 @@ export async function runGoogleReviewSync(params: {
 
     let inserted = 0;
     if (toInsert.length > 0) {
+      if (authorize && !(await authorize(acc.facility_id))) {
+        return { status: "account_load", message: AUTHORIZATION_LOST, authorizationLost: true };
+      }
       const { error: insErr } = await supabase.from("reputation_replies").insert(toInsert);
       if (insErr) {
+        logError("reputation.sync.google", insErr, { action: "insert_reviews", reputationAccountId: acc.id });
         details.push({
           reputationAccountId: acc.id,
           label,
           fetched: reviews.length,
           inserted: 0,
-          error: insErr.message,
+          error: DETAIL_INSERT_FAILED,
         });
         continue;
       }
