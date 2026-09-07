@@ -19,6 +19,10 @@ SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,
   gen_random_uuid() mismatch_user,gen_random_uuid() mismatch_session,
   gen_random_uuid() edge_admin,gen_random_uuid() edge_admin_session,
   gen_random_uuid() edge_facility_admin,gen_random_uuid() edge_facility_admin_session,
+  gen_random_uuid() restriction_target,gen_random_uuid() restriction_target_session,
+  gen_random_uuid() restriction_failure_target,gen_random_uuid() restriction_failure_session,
+  gen_random_uuid() expansion_failure_target,gen_random_uuid() expansion_failure_session,
+  gen_random_uuid() reactivation_target,gen_random_uuid() reactivation_target_session,
   gen_random_uuid() second_resident,gen_random_uuid() storage_object,gen_random_uuid() storage_object_two,
   gen_random_uuid() operation_task,gen_random_uuid() defer_task,gen_random_uuid() defer_failure_task,
   gen_random_uuid() rounding_task,gen_random_uuid() rounding_reassign_task,gen_random_uuid() rounding_terminal_task,
@@ -47,6 +51,11 @@ UNION ALL SELECT mismatch_user,mismatch_user||'@sys001.invalid','{}'::jsonb,'{}'
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
 SELECT edge_admin,edge_admin||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','owner'),'{}'::jsonb FROM actor_fixture
 UNION ALL SELECT edge_facility_admin,edge_facility_admin||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','facility_admin'),'{}'::jsonb FROM actor_fixture;
+INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+SELECT restriction_target,restriction_target||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','manager'),'{}'::jsonb FROM actor_fixture
+UNION ALL SELECT restriction_failure_target,restriction_failure_target||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','manager'),'{}'::jsonb FROM actor_fixture
+UNION ALL SELECT expansion_failure_target,expansion_failure_target||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','caregiver'),'{}'::jsonb FROM actor_fixture
+UNION ALL SELECT reactivation_target,reactivation_target||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','caregiver'),'{}'::jsonb FROM actor_fixture;
 
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
 SELECT actor,organization,actor||'@sys001.invalid','SYS-001 actor','owner'::public.app_role,true FROM actor_fixture
@@ -55,6 +64,11 @@ UNION ALL SELECT legacy_user,organization,legacy_user||'@sys001.invalid','SYS-00
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
 SELECT edge_admin,organization,edge_admin||'@sys001.invalid','SYS-001 Edge admin','owner'::public.app_role,true FROM actor_fixture
 UNION ALL SELECT edge_facility_admin,organization,edge_facility_admin||'@sys001.invalid','SYS-001 Edge facility admin','facility_admin'::public.app_role,true FROM actor_fixture;
+INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+SELECT restriction_target,organization,restriction_target||'@sys001.invalid','SYS-001 restriction target','manager'::public.app_role,true FROM actor_fixture
+UNION ALL SELECT restriction_failure_target,organization,restriction_failure_target||'@sys001.invalid','SYS-001 restriction rollback target','manager'::public.app_role,true FROM actor_fixture
+UNION ALL SELECT expansion_failure_target,organization,expansion_failure_target||'@sys001.invalid','SYS-001 expansion rollback target','caregiver'::public.app_role,true FROM actor_fixture
+UNION ALL SELECT reactivation_target,organization,reactivation_target||'@sys001.invalid','SYS-001 reactivation target','caregiver'::public.app_role,true FROM actor_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
 SELECT actor,facility,organization FROM actor_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
@@ -68,6 +82,16 @@ UNION ALL SELECT mismatch_session,mismatch_user FROM actor_fixture;
 INSERT INTO auth.sessions(id,user_id)
 SELECT edge_admin_session,edge_admin FROM actor_fixture
 UNION ALL SELECT edge_facility_admin_session,edge_facility_admin FROM actor_fixture;
+INSERT INTO auth.sessions(id,user_id)
+SELECT restriction_target_session,restriction_target FROM actor_fixture
+UNION ALL SELECT restriction_failure_session,restriction_failure_target FROM actor_fixture
+UNION ALL SELECT expansion_failure_session,expansion_failure_target FROM actor_fixture
+UNION ALL SELECT reactivation_target_session,reactivation_target FROM actor_fixture;
+INSERT INTO public.user_facility_access(user_id,facility_id,organization_id,is_primary,granted_by)
+SELECT restriction_target,facility,organization,true,actor FROM actor_fixture
+UNION ALL SELECT restriction_failure_target,facility,organization,true,actor FROM actor_fixture
+UNION ALL SELECT expansion_failure_target,facility,organization,true,actor FROM actor_fixture
+UNION ALL SELECT reactivation_target,facility,organization,true,actor FROM actor_fixture;
 INSERT INTO public.residents(id,facility_id,organization_id,first_name,last_name,date_of_birth,gender)
 SELECT second_resident,facility,organization,'SYS-001','Unlinked','1940-01-01','female' FROM actor_fixture;
 INSERT INTO public.family_resident_links(user_id,resident_id,organization_id,relationship)
@@ -230,6 +254,182 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; version integer; BEGIN
   END IF;
 END $$;
 
+-- An unmanaged onboarding identity above version one requires an explicit matching claim.
+UPDATE auth.users SET raw_app_meta_data=jsonb_set(raw_app_meta_data,'{auth_claim_version}','2')
+WHERE id=(SELECT onboarding_user FROM actor_fixture);
+SELECT pg_temp.set_claims(onboarding_user,onboarding_session,NULL,'onboarding') FROM actor_fixture;
+SELECT pg_temp.expect_rejected('missing onboarding claim above version one');
+UPDATE auth.users SET raw_app_meta_data=jsonb_set(raw_app_meta_data,'{auth_claim_version}','1')
+WHERE id=(SELECT onboarding_user FROM actor_fixture);
+
+-- Lifecycle authority and failure-injection tests. All records roll back.
+CREATE FUNCTION pg_temp.restrict_access(target uuid, operation text, role public.app_role DEFAULT NULL,
+  facility uuid DEFAULT NULL, request_key text DEFAULT gen_random_uuid()::text)
+RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.restrict_user_access_review(target,f.actor,f.actor_session,
+   (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,
+   operation,request_key,role,facility,'lifecycle proof') FROM actor_fixture f
+$$;
+CREATE FUNCTION pg_temp.prepare_access(target uuid, operation text, role public.app_role DEFAULT NULL,
+  facilities uuid[] DEFAULT '{}', primary_facility uuid DEFAULT NULL, request_key text DEFAULT gen_random_uuid()::text)
+RETURNS jsonb LANGUAGE sql AS $$
+ SELECT public.prepare_user_access_expansion_review(target,f.actor,f.actor_session,
+   (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,
+   operation,request_key,role,facilities,primary_facility,'lifecycle proof') FROM actor_fixture f
+$$;
+CREATE FUNCTION pg_temp.observe_auth_sync(job jsonb) RETURNS void LANGUAGE sql AS $$
+ UPDATE auth.users SET raw_app_meta_data=raw_app_meta_data||jsonb_build_object(
+   'app_role',job->>'desired_app_role','organization_id',job->>'organization_id',
+   'auth_claim_version',(job->>'desired_claim_version')::integer,'haven_auth_sync_job_id',job->>'id',
+   'haven_auth_ban_job_id',job->>'id','haven_auth_ban_version',(job->>'desired_claim_version')::integer),
+   banned_until=CASE WHEN (job->>'should_ban')::boolean THEN now()+interval '100 years' ELSE NULL END
+ WHERE id=(job->>'target_user_id')::uuid
+$$;
+CREATE FUNCTION pg_temp.finish_access(job jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE leased jsonb;
+BEGIN
+ leased:=public.claim_user_auth_sync_job((job->>'id')::uuid,60);
+ PERFORM public.validate_user_auth_sync_job((leased->>'id')::uuid,(leased->>'lease_token')::uuid);
+ PERFORM pg_temp.observe_auth_sync(leased);
+ PERFORM public.mark_user_auth_sync_succeeded((leased->>'id')::uuid,(leased->>'lease_token')::uuid);
+ RETURN public.finalize_user_auth_sync_job((leased->>'id')::uuid,(leased->>'lease_token')::uuid);
+END $$;
+
+CREATE TEMP TABLE lifecycle_versions AS
+SELECT restriction_target AS user_id,auth_claim_version AS old_version
+FROM actor_fixture JOIN public.user_profiles ON id=restriction_target;
+DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; leased jsonb; replay jsonb; BEGIN
+ SELECT * INTO STRICT f FROM actor_fixture;
+ result:=pg_temp.restrict_access(f.restriction_target,'demote','caregiver',NULL,'restrict-replay');
+ leased:=public.claim_user_auth_sync_job((result->>'id')::uuid,60);
+ PERFORM public.fail_user_auth_sync_job((leased->>'id')::uuid,(leased->>'lease_token')::uuid,'provider_unavailable');
+ replay:=pg_temp.restrict_access(f.restriction_target,'demote','caregiver',NULL,'restrict-replay');
+ IF replay->>'id'<>result->>'id' OR
+   (SELECT count(*) FROM public.user_management_audit_log WHERE target_user_id=f.restriction_target AND action='update_role')<>1
+   OR (SELECT app_role FROM public.user_profiles WHERE id=f.restriction_target)<>'caregiver'
+   OR NOT EXISTS(SELECT 1 FROM public.user_auth_sync_jobs WHERE id=(result->>'id')::uuid
+     AND phase='pending_auth' AND attempt_count=1 AND last_error_code='provider_unavailable') THEN
+   RAISE EXCEPTION 'Restriction/replay did not preserve atomic denial, audit, and retry'; END IF;
+ BEGIN
+   PERFORM pg_temp.restrict_access(f.restriction_target,'disable',NULL,NULL,'restrict-replay');
+   RAISE EXCEPTION 'Reused key accepted different payload';
+ EXCEPTION WHEN unique_violation THEN NULL; END;
+END $$;
+SELECT pg_temp.set_claims(f.restriction_target,f.restriction_target_session,to_jsonb(v.old_version),'manager')
+FROM actor_fixture f JOIN lifecycle_versions v ON v.user_id=f.restriction_target;
+SELECT pg_temp.expect_rejected('old JWT after demotion');
+
+CREATE FUNCTION pg_temp.fail_lifecycle_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+ IF NEW.target_user_id=(SELECT restriction_failure_target FROM actor_fixture) THEN
+   RAISE EXCEPTION 'injected lifecycle audit failure'; END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER sys001_fail_lifecycle_audit BEFORE INSERT ON public.user_management_audit_log
+FOR EACH ROW EXECUTE FUNCTION pg_temp.fail_lifecycle_audit();
+DO $$ DECLARE f actor_fixture%ROWTYPE; old_version integer; job jsonb; BEGIN
+ SELECT * INTO STRICT f FROM actor_fixture;
+ SELECT auth_claim_version INTO old_version FROM public.user_profiles WHERE id=f.restriction_failure_target;
+ BEGIN
+   PERFORM pg_temp.restrict_access(f.restriction_failure_target,'disable');
+   RAISE EXCEPTION 'Audit failure did not abort restriction';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected lifecycle audit failure' THEN RAISE; END IF; END;
+ IF NOT (SELECT is_active FROM public.user_profiles WHERE id=f.restriction_failure_target)
+   OR (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.restriction_failure_target)<>old_version
+   OR EXISTS(SELECT 1 FROM public.user_auth_sync_jobs WHERE target_user_id=f.restriction_failure_target) THEN
+   RAISE EXCEPTION 'Failed restriction audit left partial state'; END IF;
+ job:=pg_temp.prepare_access(f.restriction_failure_target,'promote','facility_admin');
+ BEGIN
+   PERFORM pg_temp.finish_access(job);
+   RAISE EXCEPTION 'Audit failure did not abort expansion';
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'injected lifecycle audit failure' THEN RAISE; END IF; END;
+ IF (SELECT app_role FROM public.user_profiles WHERE id=f.restriction_failure_target)<>'manager'
+   OR (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.restriction_failure_target)<>old_version THEN
+   RAISE EXCEPTION 'Failed expansion audit created authority'; END IF;
+END $$;
+DROP TRIGGER sys001_fail_lifecycle_audit ON public.user_management_audit_log;
+
+DO $$ DECLARE f actor_fixture%ROWTYPE; job jsonb; lease jsonb; old_token uuid; restored jsonb; BEGIN
+ SELECT * INTO STRICT f FROM actor_fixture;
+ job:=pg_temp.prepare_access(f.expansion_failure_target,'promote','nurse');
+ -- A concurrent second expansion cannot reserve the same authority version.
+ BEGIN
+   PERFORM pg_temp.prepare_access(f.expansion_failure_target,'promote','manager');
+   RAISE EXCEPTION 'Parallel expansion accepted';
+ EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL; END;
+ lease:=public.claim_user_auth_sync_job((job->>'id')::uuid,60);
+ old_token:=(lease->>'lease_token')::uuid;
+ IF public.claim_user_auth_sync_job((job->>'id')::uuid,60) IS NOT NULL THEN
+   RAISE EXCEPTION 'Live lease could be stolen'; END IF;
+ UPDATE public.user_auth_sync_jobs SET lease_expires_at=now()-interval '1 second' WHERE id=(job->>'id')::uuid;
+ lease:=public.claim_user_auth_sync_job((job->>'id')::uuid,60);
+ BEGIN
+   PERFORM public.mark_user_auth_sync_succeeded((job->>'id')::uuid,old_token);
+   RAISE EXCEPTION 'Expired lease wrote receipt';
+ EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL; END;
+ -- Restriction between provider preparation and finalization must defeat expansion.
+ PERFORM pg_temp.observe_auth_sync(lease);
+ PERFORM public.mark_user_auth_sync_succeeded((job->>'id')::uuid,(lease->>'lease_token')::uuid);
+ PERFORM pg_temp.restrict_access(f.expansion_failure_target,'demote','dietary_aide');
+ BEGIN
+   PERFORM public.finalize_user_auth_sync_job((job->>'id')::uuid,(lease->>'lease_token')::uuid);
+   RAISE EXCEPTION 'Stale expansion granted authority';
+ EXCEPTION WHEN serialization_failure THEN NULL; END;
+ BEGIN
+   PERFORM public.validate_user_auth_sync_job((job->>'id')::uuid,(lease->>'lease_token')::uuid);
+   RAISE EXCEPTION 'Stale Auth retry accepted';
+ EXCEPTION WHEN serialization_failure THEN NULL; END;
+ PERFORM public.fail_user_auth_sync_job((job->>'id')::uuid,(lease->>'lease_token')::uuid,'40001');
+ IF (SELECT phase FROM public.user_auth_sync_jobs WHERE id=(job->>'id')::uuid)<>'dead_letter' THEN
+   RAISE EXCEPTION 'Stale expansion remained retryable'; END IF;
+ -- Explicit reactivation restores only named facilities and matches reserved version.
+ PERFORM pg_temp.restrict_access(f.reactivation_target,'soft_delete');
+ BEGIN
+   PERFORM pg_temp.prepare_access(f.reactivation_target,'reactivate');
+   RAISE EXCEPTION 'Implicit facility restoration accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ job:=pg_temp.prepare_access(f.reactivation_target,'reactivate',NULL,ARRAY[f.facility],f.facility);
+ restored:=pg_temp.finish_access(job);
+ IF NOT (SELECT is_active FROM public.user_profiles WHERE id=f.reactivation_target)
+   OR (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.reactivation_target)<>(job->>'desired_claim_version')::integer
+   OR (SELECT count(*) FROM public.user_facility_access WHERE user_id=f.reactivation_target AND revoked_at IS NULL)<>1 THEN
+   RAISE EXCEPTION 'Explicit reactivation or reserved version failed'; END IF;
+ -- Choosing a primary facility uses exact-version synchronization even on an existing grant.
+ job:=pg_temp.prepare_access(f.reactivation_target,'grant_facility',NULL,ARRAY[f.facility],f.facility);
+ PERFORM pg_temp.finish_access(job);
+ -- Last-facility revoke disables access and preserves attribution/history.
+ PERFORM pg_temp.restrict_access(f.reactivation_target,'revoke_facility',NULL,f.facility);
+ IF (SELECT is_active FROM public.user_profiles WHERE id=f.reactivation_target)
+   OR EXISTS(SELECT 1 FROM public.user_facility_access WHERE user_id=f.reactivation_target AND revoked_at IS NULL) THEN
+   RAISE EXCEPTION 'Last-facility revoke retained authority'; END IF;
+ -- A repeated disable with a fresh command must cancel an already prepared reactivation.
+ job:=pg_temp.prepare_access(f.reactivation_target,'reactivate',NULL,ARRAY[f.facility],f.facility);
+ PERFORM pg_temp.restrict_access(f.reactivation_target,'disable');
+ BEGIN
+   PERFORM pg_temp.finish_access(job);
+   RAISE EXCEPTION 'Repeated disable did not fence prepared reactivation';
+ EXCEPTION WHEN serialization_failure THEN NULL; END;
+ PERFORM pg_temp.restrict_access(f.reactivation_target,'hard_delete');
+ IF NOT EXISTS(SELECT 1 FROM auth.users WHERE id=f.reactivation_target)
+   OR NOT EXISTS(SELECT 1 FROM public.user_profiles WHERE id=f.reactivation_target AND deleted_at IS NOT NULL)
+   OR NOT EXISTS(SELECT 1 FROM public.user_facility_access WHERE user_id=f.reactivation_target) THEN
+   RAISE EXCEPTION 'Login retirement removed durable identity/history'; END IF;
+ -- Promotion replay must remain a receipt even when a fresh role comparison now sees equality.
+ job:=pg_temp.prepare_access(f.restriction_target,'promote','nurse','{}',NULL,'promotion-replay');
+ PERFORM pg_temp.finish_access(job);
+ restored:=pg_temp.restrict_access(f.restriction_target,'demote','nurse',NULL,'promotion-replay');
+ IF restored->>'id'<>job->>'id' OR (SELECT auth_claim_version FROM public.user_profiles
+   WHERE id=f.restriction_target)<>(job->>'desired_claim_version')::integer THEN
+   RAISE EXCEPTION 'Promotion replay created a second authority change'; END IF;
+ -- Revoke actor session before an expansion finalizes; it must not grant authority.
+ job:=pg_temp.prepare_access(f.expansion_failure_target,'promote','nurse');
+ DELETE FROM auth.sessions WHERE id=f.actor_session;
+ BEGIN
+   PERFORM pg_temp.finish_access(job);
+   RAISE EXCEPTION 'Revoked actor authorized expansion';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ INSERT INTO auth.sessions(id,user_id) VALUES(f.actor_session,f.actor);
+END $$;
+
 -- Version-1 compatibility: missing claim passes only before any authority change.
 SELECT pg_temp.set_claims(legacy_user,legacy_session,NULL,'owner') FROM actor_fixture;
 SELECT public.haven_assert_authorized_request();
@@ -244,9 +444,10 @@ DO $$ BEGIN IF haven.app_role()<>'manager'::public.app_role THEN RAISE EXCEPTION
 SELECT pg_temp.set_claims(f.actor,f.actor_session,to_jsonb(p.auth_claim_version),'caregiver')
 FROM actor_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 SET LOCAL ROLE authenticated;
-DO $$ DECLARE f actor_fixture%ROWTYPE; edge_actor jsonb; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+DO $$ DECLARE f actor_fixture%ROWTYPE; edge_actor jsonb; shell_actor jsonb; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
   PERFORM public.haven_assert_authorized_request();
   edge_actor:=public.haven_current_edge_actor();
+  shell_actor:=public.haven_current_shell_actor();
   IF haven.app_role()<>'owner'::public.app_role OR haven.organization_id()<>f.organization
      OR NOT haven.has_facility_access(f.facility) OR NOT haven.can_access_resident(f.resident)
      OR NOT EXISTS(SELECT 1 FROM public.residents WHERE id=f.resident) THEN RAISE EXCEPTION 'Current owner authority failed'; END IF;
@@ -257,6 +458,10 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; edge_actor jsonb; BEGIN SELECT * INTO STR
      OR NOT (edge_actor->'accessible_facility_ids') @> pg_catalog.jsonb_build_array(f.facility) THEN
     RAISE EXCEPTION 'Atomic Edge actor snapshot incorrect';
   END IF;
+  IF shell_actor->>'user_id'<>f.actor::text OR shell_actor->>'app_role'<>'owner'
+     OR shell_actor->>'organization_id'<>f.organization::text OR (shell_actor->>'is_managed')::boolean IS NOT TRUE THEN
+    RAISE EXCEPTION 'Current shell actor snapshot incorrect';
+  END IF;
   PERFORM public.allocate_incident_number(f.facility);
 END $$;
 RESET ROLE;
@@ -266,6 +471,11 @@ DO $$ BEGIN
      OR has_function_privilege('service_role','public.haven_current_edge_actor()','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.haven_current_edge_actor()','EXECUTE') THEN
     RAISE EXCEPTION 'Edge actor RPC grants incorrect';
+  END IF;
+  IF has_function_privilege('anon','public.haven_current_shell_actor()','EXECUTE')
+     OR has_function_privilege('service_role','public.haven_current_shell_actor()','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.haven_current_shell_actor()','EXECUTE') THEN
+    RAISE EXCEPTION 'Shell actor RPC grants incorrect';
   END IF;
 END $$;
 
@@ -565,6 +775,39 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; BEGIN SELECT * INTO STRICT 
      OR EXISTS(SELECT 1 FROM public.resident_observation_logs WHERE task_id=f.rounding_task) THEN
     RAISE EXCEPTION 'Rejected stale assignee left a completion mutation';
   END IF;
+END $$;
+RESET ROLE;
+DO $$ DECLARE f actor_fixture%ROWTYPE; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+ BEGIN
+  PERFORM public.complete_operation_task_review(f.operation_task,f.actor,'caregiver','unassigned attempt','{}');
+  RAISE EXCEPTION 'Caregiver completed unassigned operation task';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  PERFORM public.defer_operation_task_review(f.defer_task,f.actor,'caregiver',now()+interval '2 days','unassigned attempt',
+    encode(sha256(convert_to('operation-defer-v1:'||f.actor::text||':'||f.defer_task::text,'UTF8')),'hex'));
+  RAISE EXCEPTION 'Caregiver deferred unassigned operation task';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN
+  PERFORM haven.assert_rounding_service_actor(f.actor,'caregiver',f.actor_session,NULL,
+    f.organization,f.facility,false,true);
+  RAISE EXCEPTION 'Rounding accepted missing claim at version above one';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ UPDATE public.user_facility_access SET revoked_at=now() WHERE user_id=f.actor AND facility_id=f.facility AND revoked_at IS NULL;
+ BEGIN
+  PERFORM haven.assert_rounding_service_actor(f.actor,'caregiver',f.actor_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility,false,true);
+  RAISE EXCEPTION 'Rounding accepted absent facility grant';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ UPDATE public.user_facility_access SET revoked_at=NULL WHERE user_id=f.actor AND facility_id=f.facility;
+ UPDATE public.resident_observation_tasks SET assigned_staff_id=NULL WHERE id=f.rounding_reassign_task;
+ UPDATE public.resident_observation_assignments SET released_at=now() WHERE task_id=f.rounding_reassign_task AND released_at IS NULL;
+ BEGIN
+  PERFORM public.complete_rounding_task_review(f.rounding_reassign_task,f.actor,'caregiver',f.actor_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility,
+    f.rounding_staff,pg_temp.rounding_completion_payload());
+  RAISE EXCEPTION 'Caregiver completed unassigned task';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ UPDATE public.resident_observation_tasks SET assigned_staff_id=f.rounding_staff WHERE id=f.rounding_reassign_task;
 END $$;
 RESET ROLE;
 UPDATE public.user_profiles SET app_role='owner' WHERE id=(SELECT actor FROM actor_fixture);

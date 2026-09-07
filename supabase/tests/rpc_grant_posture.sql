@@ -17,6 +17,17 @@ BEGIN
      OR NOT has_function_privilege('authenticated', 'public.haven_current_edge_actor()', 'EXECUTE') THEN
     RAISE EXCEPTION 'rpc_grant_posture: haven_current_edge_actor grants incorrect';
   END IF;
+  IF has_function_privilege('anon', 'public.haven_current_shell_actor()', 'EXECUTE')
+     OR has_function_privilege('service_role', 'public.haven_current_shell_actor()', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.haven_current_shell_actor()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: haven_current_shell_actor grants incorrect';
+  END IF;
+  IF has_function_privilege('authenticated','public.restrict_user_access_review(uuid,uuid,uuid,integer,uuid,text,text,public.app_role,uuid,text)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.restrict_user_access_review(uuid,uuid,uuid,integer,uuid,text,text,public.app_role,uuid,text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.prepare_user_access_expansion_review(uuid,uuid,uuid,integer,uuid,text,text,public.app_role,uuid[],uuid,text)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.prepare_user_access_expansion_review(uuid,uuid,uuid,integer,uuid,text,text,public.app_role,uuid[],uuid,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: lifecycle command grants incorrect';
+  END IF;
 
   IF has_function_privilege('anon', 'public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)', 'EXECUTE')
      OR has_function_privilege('authenticated', 'public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)', 'EXECUTE')

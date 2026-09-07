@@ -33,9 +33,9 @@ export function primeClientRoleContext(
 /**
  * Shared non-React role resolver for client mutation screens.
  *
- * The verified session claims normally carry both role and organization. This
- * avoids a getUser + user_profiles waterfall on every page. Older tokens
- * missing those claims use one profile fallback, cached per browser client.
+ * JWT claims identify the caller only. Current role, organization, session,
+ * status, and authorization version resolve through migration 326 before any
+ * client mutation screen may act.
  */
 export function loadClientRoleContext(
   supabase: SupabaseClient<Database>,
@@ -51,42 +51,29 @@ export function loadClientRoleContext(
     const userId = typeof claims?.sub === "string" ? claims.sub : null;
     if (!userId) return { ok: false, error: "Sign in required." };
 
-    const appMetadata = claims?.app_metadata as Record<string, unknown> | undefined;
-    const metadataRole = appMetadata?.app_role;
-    const metadataOrganizationId = appMetadata?.organization_id;
+    const { data: actorData, error: actorError } = await supabase.rpc(
+      "haven_current_edge_actor" as never,
+    );
+    if (actorError) return { ok: false, error: actorError.message };
+    const actor = actorData as {
+      user_id?: unknown;
+      organization_id?: unknown;
+      app_role?: unknown;
+    } | null;
     if (
-      typeof metadataRole === "string" &&
-      typeof metadataOrganizationId === "string" &&
-      metadataOrganizationId.length > 0
+      actor?.user_id !== userId ||
+      typeof actor.organization_id !== "string" ||
+      typeof actor.app_role !== "string"
     ) {
-      return {
-        ok: true,
-        ctx: {
-          userId,
-          organizationId: metadataOrganizationId,
-          appRole: metadataRole as Database["public"]["Enums"]["app_role"],
-        },
-      };
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("organization_id, app_role")
-      .eq("id", userId)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (profileError) return { ok: false, error: profileError.message };
-    if (!profile?.organization_id) {
-      return { ok: false, error: "Organization missing on profile." };
+      return { ok: false, error: "Current account authorization is unavailable." };
     }
 
     return {
       ok: true,
       ctx: {
         userId,
-        organizationId: profile.organization_id,
-        appRole: profile.app_role,
+        organizationId: actor.organization_id,
+        appRole: actor.app_role as Database["public"]["Enums"]["app_role"],
       },
     };
   })();

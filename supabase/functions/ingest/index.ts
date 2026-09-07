@@ -7,6 +7,7 @@
  * Pipeline: upload → type-specific extraction → Markdown conversion → semantic chunk → embed → summarize → audit
  */
 import { Buffer } from "node:buffer";
+import { commitIngestGeneration, failIngestGeneration } from "./generation.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import mammoth from "npm:mammoth@1.8.0";
 import pdfParse from "npm:pdf-parse@1.1.1";
@@ -712,6 +713,7 @@ async function ingestDocumentAuthorized(
   rawText: string,
   title: string,
   workspaceId: string,
+  conversionMethod?: string,
 ): Promise<number> {
   // Chunk the MARKDOWN, not raw text
   const rawChunks = semanticChunk(markdownText);
@@ -728,18 +730,9 @@ async function ingestDocumentAuthorized(
   const sectionChunks = chunks.filter((c) => c.type === "section");
   const paraChunks = chunks.filter((c) => c.type === "paragraph");
 
-  // Clear existing chunks for re-index
-  await actorAuth.revalidate();
-  const { error: startError } = await admin.rpc(
-    "start_kb_ingest_authorization_mutation",
-    { p_run_id: authorizationRunId },
-  );
-  if (startError) throw new Error("Could not start ingest mutation");
-  await actorAuth.revalidate();
-  await admin.from("chunks").delete().eq("document_id", documentId);
-
   const nowIso = new Date().toISOString();
   const sectionRows = sectionChunks.map((chunk, i) => ({
+    id: crypto.randomUUID(),
     document_id: documentId,
     workspace_id: workspaceId,
     chunk_index: i,
@@ -754,21 +747,10 @@ async function ingestDocumentAuthorized(
       Object.keys(chunk.redaction_patterns_hit).length > 0 ? chunk.redaction_patterns_hit : null,
   }));
 
-  const batchSize = 10;
-  const insertedSections: { id: string; chunk_index: number }[] = [];
-  for (let i = 0; i < sectionRows.length; i += batchSize) {
-    await actorAuth.revalidate();
-    const { data, error } = await admin
-      .from("chunks")
-      .insert(sectionRows.slice(i, i + batchSize))
-      .select("id, chunk_index");
-    if (error) throw new Error(`Section insert: ${error.message}`);
-    insertedSections.push(...((data ?? []) as { id: string; chunk_index: number }[]));
-  }
-
-  const sectionIdMap = new Map(insertedSections.map((s) => [s.chunk_index, s.id]));
+  const sectionIdMap = new Map(sectionRows.map((row) => [row.chunk_index, row.id]));
   const embeddingOffset = sectionChunks.length;
   const paraRows = paraChunks.map((chunk, i) => ({
+    id: crypto.randomUUID(),
     document_id: documentId,
     workspace_id: workspaceId,
     chunk_index: embeddingOffset + i,
@@ -785,25 +767,17 @@ async function ingestDocumentAuthorized(
       Object.keys(chunk.redaction_patterns_hit).length > 0 ? chunk.redaction_patterns_hit : null,
   }));
 
-  for (let i = 0; i < paraRows.length; i += batchSize) {
-    await actorAuth.revalidate();
-    const { error } = await admin.from("chunks").insert(paraRows.slice(i, i + batchSize));
-    if (error) throw new Error(`Paragraph insert: ${error.message}`);
-  }
-
-  // Summarize from markdown (better quality than raw text)
+  // Keep the prior complete index intact until every provider result is ready.
   const summary = await generateSummary(markdownText, title, actorAuth);
   await actorAuth.revalidate();
-  await admin
-    .from("documents")
-    .update({
-      summary,
-      word_count: rawText.split(/\s+/).filter(Boolean).length,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", documentId);
+  return await commitIngestGeneration(admin, {
+    runId: authorizationRunId,
+    chunks: [...sectionRows, ...paraRows],
+    summary,
+    wordCount: rawText.split(/\s+/).filter(Boolean).length,
+    markdown: conversionMethod ? { markdown_text: markdownText, raw_text: rawText, conversion_method: conversionMethod } : undefined,
+  });
 
-  return chunks.length;
 }
 
 async function markIngestAuthorizationFailure(
@@ -837,20 +811,6 @@ async function createIngestAuthorizationRun(
   return runId;
 }
 
-async function completeIngestAuthorizationRun(
-  admin: AdminClient,
-  actorAuth: CurrentActorAuthorization,
-  authorizationRunId: string,
-  status: "completed" | "failed",
-): Promise<void> {
-  await actorAuth.revalidate();
-  const { error } = await admin.rpc("complete_kb_ingest_authorization_run", {
-    p_run_id: authorizationRunId,
-    p_status: status,
-  });
-  if (error) throw new Error("Could not finalize ingest authorization receipt");
-}
-
 async function ingestDocument(
   admin: AdminClient,
   actorAuth: CurrentActorAuthorization,
@@ -860,6 +820,7 @@ async function ingestDocument(
   rawText: string,
   title: string,
   workspaceId: string,
+  conversionMethod?: string,
 ): Promise<number> {
   try {
     return await ingestDocumentAuthorized(
@@ -871,6 +832,7 @@ async function ingestDocument(
       rawText,
       title,
       workspaceId,
+      conversionMethod,
     );
   } catch (error) {
     if (error instanceof CurrentActorError) {
@@ -908,59 +870,9 @@ async function finalizeUploadedDocumentAuthorized(
   } catch (ingestErr: unknown) {
     if (ingestErr instanceof CurrentActorError) throw ingestErr;
     const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
-    // KB-NEXT-08: bump retry counter and schedule next attempt via the
-    // exponential backoff in _kb_ingest_request_retry. If that RPC reports
-    // max_attempts_exceeded we leave the doc in ingest_failed without
-    // ingest_retry_at so the owner has to take action manually.
     await actorAuth.revalidate();
-    const { data: failBumpRow } = await admin
-      .from("documents")
-      .select("ingest_attempt_count, ingest_max_attempts")
-      .eq("id", documentId)
-      .single();
-    const attempts = (failBumpRow?.ingest_attempt_count ?? 0) + 1;
-    const maxAttempts = failBumpRow?.ingest_max_attempts ?? 3;
-    await actorAuth.revalidate();
-    await admin
-      .from("documents")
-      .update({
-        status: "ingest_failed",
-        ingest_attempt_count: attempts,
-        ingest_last_error: msg.slice(0, 1000),
-      })
-      .eq("id", documentId);
-    if (attempts < maxAttempts) {
-      await actorAuth.revalidate();
-      const { error: retryErr } = await admin.rpc("_kb_ingest_request_retry", {
-        p_document_id: documentId,
-        p_caller_organization_id: workspaceId,
-      });
-      if (retryErr) {
-        t.log({
-          event: "ingest_retry_schedule_failed",
-          outcome: "error",
-          document_id: documentId,
-          error_message: retryErr.message,
-        });
-      }
-    }
-    await actorAuth.revalidate();
-    await admin.from("document_audit_events").insert({
-      actor_user_id: userId,
-      document_id: documentId,
-      document_title_snapshot: title,
-      event_type: "ingest_failed",
-      metadata: { error: msg, attempt: attempts, max_attempts: maxAttempts },
-    });
-    t.log({
-      event: "ingest_failed",
-      outcome: "error",
-      document_id: documentId,
-      error_message: msg,
-      attempt: attempts,
-      max_attempts: maxAttempts,
-    });
-    await completeIngestAuthorizationRun(admin, actorAuth, authorizationRunId, "failed");
+    await failIngestGeneration(admin, authorizationRunId);
+    t.log({ event: "ingest_failed", outcome: "error", document_id: documentId, error_message: msg });
     return;
   }
 
@@ -971,6 +883,7 @@ async function finalizeUploadedDocumentAuthorized(
     document_title_snapshot: title,
     event_type: "uploaded",
     metadata: {
+      authorization_run_id: authorizationRunId,
       chunk_count: chunkCount,
       file_type: kind,
       file_size: fileSize,
@@ -985,9 +898,9 @@ async function finalizeUploadedDocumentAuthorized(
     event_type: "doc_uploaded",
     user_id: userId,
     document_id: documentId,
-    metadata: { chunk_count: chunkCount, conversion_method: conversionMethod, background: true },
+    metadata: { authorization_run_id: authorizationRunId, chunk_count: chunkCount, conversion_method: conversionMethod, background: true },
   });
-  await completeIngestAuthorizationRun(admin, actorAuth, authorizationRunId, "completed");
+  await actorAuth.revalidate();
 
   t.log({
     event: "upload_ok",
@@ -1112,17 +1025,8 @@ Deno.serve(async (req) => {
           doc.id,
         );
 
-        // Update document with new markdown
-        await actorAuth.revalidate();
-        await admin.from("documents").update({
-          raw_text: rawText || doc.raw_text,
-          markdown_text: markdown,
-          conversion_method: method,
-          updated_at: new Date().toISOString(),
-        }).eq("id", document_id);
-
         // Re-ingest with new markdown
-        const chunkCount = await ingestDocument(admin, actorAuth, activeIngestAuthorizationRunId, doc.id, markdown, rawText || doc.raw_text, doc.title, doc.workspace_id);
+        const chunkCount = await ingestDocument(admin, actorAuth, activeIngestAuthorizationRunId, doc.id, markdown, rawText || doc.raw_text, doc.title, doc.workspace_id, method);
 
         await actorAuth.revalidate();
         await admin.from("document_audit_events").insert({
@@ -1130,14 +1034,9 @@ Deno.serve(async (req) => {
           document_id: doc.id,
           document_title_snapshot: doc.title,
           event_type: "markdown_regenerated",
-          metadata: { chunk_count: chunkCount, conversion_method: method },
+          metadata: { authorization_run_id: activeIngestAuthorizationRunId, chunk_count: chunkCount, conversion_method: method },
         });
-        await completeIngestAuthorizationRun(
-          admin,
-          actorAuth,
-          activeIngestAuthorizationRunId,
-          "completed",
-        );
+        await actorAuth.revalidate();
         activeIngestAuthorizationRunId = null;
 
         t.log({ event: "regenerate_md_ok", outcome: "success", document_id: doc.id, chunks: chunkCount, method });
@@ -1167,14 +1066,9 @@ Deno.serve(async (req) => {
         document_id: doc.id,
         document_title_snapshot: doc.title,
         event_type: "reindexed",
-        metadata: { chunk_count: chunkCount, source: doc.markdown_text ? "markdown_text" : "raw_text" },
+        metadata: { authorization_run_id: activeIngestAuthorizationRunId, chunk_count: chunkCount, source: doc.markdown_text ? "markdown_text" : "raw_text" },
       });
-      await completeIngestAuthorizationRun(
-        admin,
-        actorAuth,
-        activeIngestAuthorizationRunId,
-        "completed",
-      );
+      await actorAuth.revalidate();
       activeIngestAuthorizationRunId = null;
 
       t.log({ event: "reindex_ok", outcome: "success", document_id: doc.id, chunks: chunkCount });
@@ -1374,12 +1268,9 @@ Deno.serve(async (req) => {
       return currentActorErrorResponse(err, getCorsHeaders(origin));
     }
     if (activeIngestAuthorizationRunId) {
-      await completeIngestAuthorizationRun(
-        admin,
-        actorAuth,
-        activeIngestAuthorizationRunId,
-        "failed",
-      ).catch(() => undefined);
+      await failIngestGeneration(admin, activeIngestAuthorizationRunId).catch(() => {
+        t.log({ event: "ingest_failure_receipt_error", outcome: "error", authorization_run_id: activeIngestAuthorizationRunId });
+      });
     }
     const msg = err instanceof Error ? err.message : String(err);
     t.log({ event: "ingest_error", outcome: "error", error_message: msg });
