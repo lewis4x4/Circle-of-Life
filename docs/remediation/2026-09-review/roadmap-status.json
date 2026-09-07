@@ -223,8 +223,13 @@
       "id": "SYS-002",
       "severity": "P1",
       "title": "quality view bypasses tenant and role RLS",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
+        "supabase/tests/review_section2_quality.sql",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; independent review and hosted acceptance pending."
     },
     {
       "id": "SYS-003",
@@ -354,8 +359,13 @@
       "id": "FL-015",
       "severity": "P2",
       "title": "The latest quality-result view returns conflicting rows for a corrected period",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
+        "supabase/tests/review_section2_quality.sql",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; independent review and hosted acceptance pending."
     },
     {
       "id": "SUP-001",

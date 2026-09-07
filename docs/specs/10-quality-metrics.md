@@ -26,7 +26,7 @@ Applied migrations use **`haven.organization_id()`**, **`haven.app_role()`**, **
 ### Core (ship first)
 
 - Tables: **`quality_measures`**, **`quality_measure_results`**, **`pbj_export_batches`**.
-- **View:** `quality_latest_facility_measures` — latest non-deleted result row per `(facility_id, quality_measure_id)` by `period_end`.
+- **View:** `quality_latest_facility_measures` — latest non-deleted result row per `(facility_id, quality_measure_id)` by `period_end`, then `created_at DESC, id DESC` for same-period corrections. Corrections are inserted as new result rows; retain earlier rows and their audit history. Equal creation timestamps use descending UUID as a deterministic tie-break, not inferred clinical chronology. To supersede an exact-time tie, insert a correction with a later creation timestamp. The invoker view applies the base table's current actor, role and facility RLS (migration `330`).
 - **Admin UI:** facility-scoped hub; create **measure** (org admin); list results and PBJ batches (read-only rows until Enhanced import).
 
 ### Enhanced (defer)

@@ -1,0 +1,31 @@
+BEGIN
+GRANT
+GRANT
+CREATE FUNCTION
+SELECT 1
+ALTER TABLE
+UPDATE 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 5
+GRANT
+ set_config
+------------
+ {}
+(1 row)
+
+SET
+             probe              | count
+--------------------------------+-------
+ SYS-002 no-profile leaked rows |     4
+(1 row)
+
+RESET
+              probe              | count
+---------------------------------+-------
+ FL-015 conflicting current rows |     2
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_quality.sql:29: ERROR:  SYS-002: no-profile quality view disclosure
+CONTEXT:  PL/pgSQL function inline_code_block line 2 at RAISE
