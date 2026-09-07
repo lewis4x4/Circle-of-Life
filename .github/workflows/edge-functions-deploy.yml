@@ -6,10 +6,12 @@ on:
     paths:
       - "supabase/functions/**"
       - "supabase/config.toml"
+      - ".github/workflows/edge-functions-deploy.yml"
   pull_request:
     paths:
       - "supabase/functions/**"
       - "supabase/config.toml"
+      - ".github/workflows/edge-functions-deploy.yml"
 
 permissions:
   contents: read
@@ -63,7 +65,7 @@ jobs:
           git diff --name-only "$base" "$head" > /tmp/changed-files.txt
 
           direct_functions=$(
-            awk -F/ '$1=="supabase" && $2=="functions" && $3 != "_shared" && $3 != "" {print $3}' /tmp/changed-files.txt \
+            awk -F/ 'NF>=4 && $1=="supabase" && $2=="functions" && $3 != "_shared" && $3 != "" {print $3}' /tmp/changed-files.txt \
               | sort -u
           )
 
@@ -119,7 +121,11 @@ jobs:
             )
           fi
 
-          functions=$({ printf '%s\n' "$direct_functions"; printf '%s\n' "$dependent_functions"; printf '%s\n' "$config_functions"; } | sed '/^$/d' | sort -u)
+          # A top-level test/helper file is not a deployable function. Removed
+          # function directories also require explicit removal, never a deploy/prune.
+          functions=$({ printf '%s\n' "$direct_functions"; printf '%s\n' "$dependent_functions"; printf '%s\n' "$config_functions"; } | sed '/^$/d' | while IFS= read -r fn; do
+            if [[ -f "supabase/functions/$fn/index.ts" ]]; then printf '%s\n' "$fn"; fi
+          done | sort -u)
 
           {
             echo 'functions<<EOF'
