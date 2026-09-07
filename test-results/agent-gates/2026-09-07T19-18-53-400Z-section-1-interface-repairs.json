@@ -1,0 +1,121 @@
+{
+  "segment": "section-1-interface-repairs",
+  "timestamp": "2026-09-07T19:18:53.400Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 64,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 508,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 1641,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 11277,
+      "stdout": "[gitleaks] detector regression PASS: generic-api-key remains active\n[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n3:19PM INF 1885 commits scanned.\n3:19PM INF scanned ~51446017 bytes (51.45 MB) in 10.4s\n3:19PM INF no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 74746,
+      "stdout": "Constitution lint passed for smart-rounding scope (30 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 221,
+      "stdout": "[migrations:check] PASS: 332 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..329\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "skipped",
+      "duration_ms": 10414,
+      "stdout": "[migrations:verify:pg] SKIP: Docker not available (set REQUIRE_PG_VERIFY=1 in CI with Docker)\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 106494,
+      "stdout": "[migrations:check] PASS: 332 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..329\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.11 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 36.8s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 655ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/components/medication/CountInitiationModal.tsx:426:59\nType error: Type '{ counts: SavedControlledCount[]; medicationNames: Map<string, string>; }' is not assignable to type 'IntrinsicAttributes & { counts: SavedControlledCount[]; medicationLabels: Map<string, string>; }'.\n  Property 'medicationNames' does not exist on type 'IntrinsicAttributes & { counts: SavedControlledCount[]; medicationLabels: Map<string, string>; }'. Did you mean 'medicationLabels'?\n\n  \u001b[90m424 |\u001b[0m ...\n  \u001b[90m425 |\u001b[0m ...v className=\u001b[32m\"space-y-4 py-4\"\u001b[0m>\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m426 |\u001b[0m ...\u001b[33mPendingCountReceipt\u001b[0m counts={pendingCounts} medicationNames={\u001b[36mnew\u001b[0m \u001b[33mMap\u001b[0m(lines.map((line) =...\n  \u001b[90m    |\u001b[0m                                               \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m427 |\u001b[0m ...coError && (\n  \u001b[90m428 |\u001b[0m ... <div className=\u001b[32m\"rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm...\u001b[0m\n  \u001b[90m429 |\u001b[0m ...   <\u001b[33mAlertTriangle\u001b[0m className=\u001b[32m\"h-4 w-4 mt-0.5 flex-shrink-0\"\u001b[0m />\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 492,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 2,
+    "skipped": 2,
+    "blocking_failures": [
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-09-07T19-18-53-400Z-section-1-interface-repairs.json"
+  ]
+}

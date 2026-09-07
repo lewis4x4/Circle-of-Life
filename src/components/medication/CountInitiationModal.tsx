@@ -26,7 +26,14 @@ type MedRow = {
   medication_name: string;
   resident_id: string;
   resident_first_name: string;
+  resident_middle_name: string | null;
   resident_last_name: string;
+  resident_name_suffix: string | null;
+  resident_preferred_name: string | null;
+  strength: string | null;
+  form: string | null;
+  route: string;
+  frequency: string;
   room?: string | null;
 };
 
@@ -34,9 +41,16 @@ type ResidentMedicationQueryRow = {
   id: string;
   medication_name: string;
   resident_id: string;
+  strength: string | null;
+  form: string | null;
+  route: string;
+  frequency: string;
   residents: {
     first_name: string | null;
+    middle_name: string | null;
     last_name: string | null;
+    name_suffix: string | null;
+    preferred_name: string | null;
     bed_id: string | null;
     beds: {
       room_id: string | null;
@@ -97,9 +111,16 @@ export function CountInitiationModal({
           id,
           medication_name,
           resident_id,
+          strength,
+          form,
+          route,
+          frequency,
           residents!inner (
             first_name,
+            middle_name,
             last_name,
+            name_suffix,
+            preferred_name,
             bed_id,
             beds!inner (
               room_id,
@@ -121,7 +142,14 @@ export function CountInitiationModal({
         medication_name: row.medication_name,
         resident_id: row.resident_id,
         resident_first_name: row.residents?.first_name || "",
+        resident_middle_name: row.residents?.middle_name ?? null,
         resident_last_name: row.residents?.last_name || "",
+        resident_name_suffix: row.residents?.name_suffix ?? null,
+        resident_preferred_name: row.residents?.preferred_name ?? null,
+        strength: row.strength,
+        form: row.form,
+        route: row.route,
+        frequency: row.frequency,
         room: row.residents?.beds?.rooms?.room_number || null,
       })) as MedRow[];
 
@@ -333,7 +361,9 @@ export function CountInitiationModal({
                             )}
                           </CardTitle>
                           <CardDescription className="text-xs text-zinc-500">
-                            {line.med.resident_first_name} {line.med.resident_last_name}
+                            <span className="block">Resident: {formatResidentMedicationIdentity(line.med)}</span>
+                            <span className="block">Dose: {formatMedicationDose(line.med)}</span>
+                            <span className="block">Medication record: {line.med.id}</span>
                             {line.med.room && ` · Room ${line.med.room}`}
                           </CardDescription>
                         </CardHeader>
@@ -423,7 +453,7 @@ export function CountInitiationModal({
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              <PendingCountReceipt counts={pendingCounts} medicationNames={new Map(lines.map((line) => [line.med.id, line.med.medication_name]))} />
+              <PendingCountReceipt counts={pendingCounts} medicationLabels={new Map(lines.map((line) => [line.med.id, formatMedicationReceiptLabel(line.med)]))} />
               {coError && (
                 <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -490,4 +520,28 @@ export function CountInitiationModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+function formatResidentMedicationIdentity(medication: MedRow): string {
+  const legalName = [
+    medication.resident_first_name,
+    medication.resident_middle_name,
+    medication.resident_last_name,
+    medication.resident_name_suffix,
+  ]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  return medication.resident_preferred_name?.trim()
+    ? `${legalName} (${medication.resident_preferred_name.trim()})`
+    : legalName;
+}
+
+function formatMedicationDose(medication: MedRow): string {
+  const dose = [medication.strength, medication.form].filter(Boolean).join(" ");
+  return [dose || "Dose not recorded", medication.route, medication.frequency].join(" · ");
+}
+
+function formatMedicationReceiptLabel(medication: MedRow): string {
+  return `Resident: ${formatResidentMedicationIdentity(medication)} · ${medication.medication_name} · Dose: ${formatMedicationDose(medication)} · Medication record: ${medication.id}`;
 }

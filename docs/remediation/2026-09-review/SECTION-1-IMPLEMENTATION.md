@@ -42,9 +42,9 @@ Limit: The test uses a mocked retrieval failure; an authenticated RLS or network
 
 Status: `implemented_review_pending`.
 
-Controlled-substance count entry joins the supported resident identity and displays the legal name, optional preferred name, medication name, strength/form/route/frequency, and stable `resident_medications` record identifier. The witness receipt repeats this same identity. An absent resident join blocks the count rather than presenting an ambiguous record.
+Both controlled-substance count entry points join the supported resident identity and display the legal name, optional preferred name, medication name, strength/form/route/frequency, and stable `resident_medications` record identifier. The witness receipt repeats this same identity. An absent resident join blocks the shared-console count rather than presenting an ambiguous record.
 
-Evidence: `src/components/controlled-substance/ControlledCountConsole.tsx`, `src/components/controlled-substance/PendingCountReceipt.tsx`, and `controlled-medication-identity.test.tsx`.
+Evidence: `src/components/controlled-substance/ControlledCountConsole.tsx`, `src/components/medication/CountInitiationModal.tsx`, `src/components/controlled-substance/PendingCountReceipt.tsx`, and their focused tests.
 
 Command: `npx vitest run --reporter=verbose src/components/controlled-substance/controlled-medication-identity.test.tsx src/components/controlled-substance/ControlledCountConsole-wall-clock-source.test.ts`.
 

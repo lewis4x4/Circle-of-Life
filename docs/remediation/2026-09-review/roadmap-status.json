@@ -171,9 +171,11 @@
       "evidence": [
         "src/components/controlled-substance/ControlledCountConsole.tsx",
         "src/components/controlled-substance/PendingCountReceipt.tsx",
-        "src/components/controlled-substance/controlled-medication-identity.test.tsx"
+        "src/components/controlled-substance/controlled-medication-identity.test.tsx",
+        "src/components/medication/CountInitiationModal.tsx",
+        "src/components/medication/CountInitiationModal.source.test.ts"
       ],
-      "notes": "Count entry and witness receipt show supported resident name, medication dose details, and the stable resident_medications identifier. Missing resident identity blocks the count. Independent Astra clinical review remains pending; no live clinical workflow is claimed."
+      "notes": "Both controlled-count entry points and the witness receipt show supported resident name, medication dose details, and the stable resident_medications identifier. Missing resident identity blocks the shared console count. Independent Astra clinical review remains pending; no live clinical workflow is claimed."
     },
     {
       "id": "FL-010",
