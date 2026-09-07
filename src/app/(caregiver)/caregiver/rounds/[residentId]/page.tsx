@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -48,6 +48,7 @@ export default function CaregiverResidentRoundPage() {
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const requestRef = useRef<{ scope: string; requestId: string; observedAt: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,8 +106,12 @@ export default function CaregiverResidentRoundPage() {
   }, [load]);
 
   async function submitRound(payload: CompletionPayload) {
-    if (!task || !queueOwner) return;
-    payload = { ...payload, observedAt: payload.observedAt ?? new Date().toISOString() };
+    if (!task || !queueOwner || submitting) return;
+    const scope = `${queueOwner.ownerUserId}:${queueOwner.organizationId}:${queueOwner.facilityId}:${task.id}`;
+    if (requestRef.current?.scope !== scope) {
+      requestRef.current = { scope, requestId: crypto.randomUUID(), observedAt: payload.observedAt ?? new Date().toISOString() };
+    }
+    payload = { ...payload, requestId: requestRef.current.requestId, observedAt: requestRef.current.observedAt };
     setSubmitting(true);
     setLoadError(null);
     try {
@@ -125,7 +130,7 @@ export default function CaregiverResidentRoundPage() {
       const json = (await response.json()) as { error?: string };
       if (response.status === 409) {
         await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
-        setLoadError("This task was completed elsewhere. Your observation is retained in the Outbox for reconciliation.");
+        setLoadError("This observation conflicts with a saved completion. It is retained in the Outbox for reconciliation.");
         return;
       }
       if (!response.ok) {

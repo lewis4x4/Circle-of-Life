@@ -1,0 +1,45 @@
+{
+  "migration_files": 334,
+  "environment": "isolated native PostgreSQL with Supabase stubs",
+  "cases": [
+    {
+      "case": "six concurrent identical retries",
+      "successes": 6,
+      "unique_log_ids": 1,
+      "logs": 1,
+      "exceptions": 1,
+      "receipts": 1,
+      "flags": 1,
+      "completed_tasks": 1
+    },
+    {
+      "case": "two concurrent different request keys",
+      "successes": 1,
+      "conflicts": 1,
+      "logs": 1,
+      "exceptions": 1,
+      "receipts": 1,
+      "flags": 1,
+      "completed_tasks": 1
+    },
+    {
+      "case": "three different tasks concurrently cross staff velocity threshold",
+      "successes": 3,
+      "logs": 3,
+      "exceptions": 3,
+      "receipts": 3,
+      "flags": 4,
+      "completed_tasks": 3
+    },
+    {
+      "case": "grant revocation holds lock before concurrent completion",
+      "denied": 1,
+      "logs": 0,
+      "exceptions": 0,
+      "receipts": 0,
+      "flags": 0,
+      "completed_tasks": 0
+    }
+  ],
+  "verdict": "PASS"
+}

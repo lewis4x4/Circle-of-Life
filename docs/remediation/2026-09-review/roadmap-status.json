@@ -235,15 +235,29 @@
       "id": "SYS-003",
       "severity": "P1",
       "title": "observation completion is not atomic or replay-safe",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/331_rounding_completion_receipts.sql",
+        "supabase/tests/review_rounding_completion_receipts.sql",
+        "scripts/verify-rounding-concurrency.py",
+        "docs/remediation/2026-09-review/section-2-concurrency.json",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "SYS-004",
       "severity": "P1",
       "title": "direct observation writes bypass protected completion fields",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/331_rounding_completion_receipts.sql",
+        "supabase/tests/review_rounding_completion_receipts.sql",
+        "scripts/verify-rounding-concurrency.py",
+        "docs/remediation/2026-09-review/section-2-concurrency.json",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "SYS-005",

@@ -82,11 +82,14 @@ export function QuickCheckDrawer({
   const [fallHazard, setFallHazard] = useState(false);
   const [exceptionType, setExceptionType] = useState<ObservationExceptionType | "">("");
   const [note, setNote] = useState("");
+  const [lateReason, setLateReason] = useState("");
+  const [reasonRequired, setReasonRequired] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = "qc-drawer-title";
+  const requestRef = useRef<{ taskId: string; requestId: string; observedAt: string } | null>(null);
 
   const resetForm = useCallback(() => {
     setQuickStatus("awake");
@@ -98,6 +101,8 @@ export function QuickCheckDrawer({
     setFallHazard(false);
     setExceptionType("");
     setNote("");
+    setLateReason("");
+    setReasonRequired(false);
     setError(null);
     setJustCompleted(false);
   }, []);
@@ -129,11 +134,16 @@ export function QuickCheckDrawer({
   }, [open]);
 
   async function submitCheck() {
-    if (!task) return;
+    if (!task || submitting) return;
+    if (requestRef.current?.taskId !== task.id) {
+      requestRef.current = { taskId: task.id, requestId: crypto.randomUUID(), observedAt: new Date().toISOString() };
+    }
     setSubmitting(true);
     setError(null);
 
     const payload: CompletionPayload = {
+      requestId: requestRef.current.requestId,
+      observedAt: requestRef.current.observedAt,
       quickStatus,
       residentLocation: location,
       residentPosition: position,
@@ -145,6 +155,7 @@ export function QuickCheckDrawer({
       refusedAssistance: quickStatus === "refused",
       exceptionType: exceptionType || null,
       note: note.trim() || null,
+      lateReason: lateReason.trim() || null,
     };
 
     const completeLocally = !persistCompletion;
@@ -167,8 +178,11 @@ export function QuickCheckDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const json = (await res.json()) as { error?: string; ok?: boolean };
-      if (!res.ok) throw new Error(json.error ?? "Could not complete check");
+      const json = (await res.json()) as { error?: string; ok?: boolean; reasonRequired?: boolean };
+      if (!res.ok) {
+        if (json.reasonRequired) setReasonRequired(true);
+        throw new Error(json.error ?? "Could not complete check");
+      }
 
       setJustCompleted(true);
       onCompleted(task.id);
@@ -362,6 +376,18 @@ export function QuickCheckDrawer({
                 <InterventionToggle icon={<ShieldAlert className="h-3.5 w-3.5" />} label="Fall hazard" checked={fallHazard} onChange={setFallHazard} activeColor="rose" />
               </div>
             </div>
+
+            {reasonRequired && (
+              <label className="block text-sm text-slate-300">
+                Reason for delayed entry
+                <textarea
+                  className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-900 p-3 text-white"
+                  value={lateReason}
+                  onChange={(event) => setLateReason(event.target.value)}
+                  required
+                />
+              </label>
+            )}
 
             {/* Expanded detail section — only when abnormal */}
             {showDetails && (

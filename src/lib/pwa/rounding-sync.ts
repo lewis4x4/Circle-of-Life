@@ -134,12 +134,13 @@ export async function queueRoundingCompletion(taskId: string, residentId: string
     throw new Error("Offline sync is not supported in this browser.");
   }
 
+  const queueId = crypto.randomUUID();
   const item: RoundingOfflineQueueItem = {
-    id: crypto.randomUUID(),
+    id: queueId,
     taskId,
     residentId,
     ...owner,
-    payload: { ...payload, observedAt: payload.observedAt ?? new Date().toISOString() },
+    payload: { ...payload, requestId: payload.requestId ?? queueId, observedAt: payload.observedAt ?? new Date().toISOString() },
     queuedAt: new Date().toISOString(),
     retryCount: 0,
     lastError: null,

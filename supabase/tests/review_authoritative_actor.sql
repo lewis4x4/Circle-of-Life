@@ -225,7 +225,7 @@ BEGIN
 END $$;
 CREATE FUNCTION pg_temp.rounding_completion_payload() RETURNS jsonb LANGUAGE sql AS $$
   SELECT jsonb_build_object(
-    'observed_at',now(),'entered_at',now(),'entry_mode','live','quick_status','awake',
+    'request_id',gen_random_uuid(),'observed_at',now(),'entered_at',now(),'entry_mode','live','quick_status','awake',
     'distress_present',false,'breathing_concern',false,'pain_concern',false,
     'toileting_assisted',false,'hydration_offered',false,'repositioned',false,
     'skin_concern_observed',false,'fall_hazard_observed',false,'refused_assistance',false,

@@ -1,0 +1,6 @@
+{
+  "approved_core_source": "327_sys_001e_lifecycle_authorization.sql",
+  "preserved_core_sha256": "0ed9df11e44d17b65e7ac8f1419ec2e163662190a134c3f5d61869b0ce76cc84",
+  "body_exact_match": true,
+  "authoritative_helper_migrations_326_327_unchanged": true
+}

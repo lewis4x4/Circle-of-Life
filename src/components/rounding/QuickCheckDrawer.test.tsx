@@ -76,3 +76,36 @@ describe("QuickCheckDrawer persistence mode", () => {
     expect(screen.getByText("Preview complete — not saved")).toBeTruthy();
   });
 });
+
+describe("completion retry identity", () => {
+  it("reuses the original request and observation time after a lost response", async () => {
+    const fetchMock = vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { onCompleted } = renderDrawer();
+    fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+    await screen.findByText("Failed to fetch");
+    expect(onCompleted).not.toHaveBeenCalled();
+    const first = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(first.requestId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(Number.isNaN(Date.parse(first.observedAt))).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+    await waitFor(() => expect(onCompleted).toHaveBeenCalledOnce());
+    const retry = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(retry).toEqual(first);
+  });
+});
+
+it("allows a delayed unsaved request to gain its required reason without changing identity", async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ error: "Add a reason for this delayed entry, then retry.", reasonRequired: true }), { status: 400 }))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  vi.stubGlobal("fetch", fetchMock);
+  const { onCompleted } = renderDrawer();
+  fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+  fireEvent.change(await screen.findByLabelText("Reason for delayed entry"), { target: { value: "Connection interrupted during the original entry" } });
+  fireEvent.click(screen.getByRole("button", { name: /complete check/i }));
+  await waitFor(() => expect(onCompleted).toHaveBeenCalledOnce());
+  const first = JSON.parse(fetchMock.mock.calls[0][1].body);
+  const second = JSON.parse(fetchMock.mock.calls[1][1].body);
+  expect(second).toEqual({ ...first, lateReason: "Connection interrupted during the original entry" });
+});
