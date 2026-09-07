@@ -35,7 +35,7 @@ Evidence: `executive-hub-nav.test.tsx`, `executive-sections-pages.test.tsx` and 
 
 The certification regression now uses both rejected requests and plain PostgREST error responses. It verifies a second staff query with the same facility, active-employment and soft-delete filters; successful staff selection; a cleared error and enabled save action; and retention of category, credential name, issuing authority, issue date and expiration date. Separate rendered cases cover successful-empty after failure and repeated failure without displaying a false empty roster. The date regression awaits rendering and preserves an empty expiration date.
 
-The certification implementation is unchanged in this correction pass. These tests make the eighth independent review probe durable and extend it to meaningful failure cases.
+The certification implementation was unchanged in the initial c92076c2 correction. Those tests made the eighth independent review probe durable; the follow-up below changes the loader after the later deferred-response review.
 
 ## FL-009: shared identity and saved-reference recovery
 
@@ -45,7 +45,7 @@ Pending receipt identity is fetched by each saved `resident_medication_id`, with
 
 The existing batch-save helper, count receipt contract, independent co-sign API and database migrations remain unchanged. A saved batch is retained even when later identity resolution fails; retrying identity lookup does not insert another batch. Rendered tests cover full identity at both entry points and on saved receipts, blank legal names, null joins, inactive restored medications, failed/missing identity resolution and recovery, and unchanged count-save retry behavior.
 
-## Correction verification
+## Initial correction verification (c92076c2)
 
 - Final focused regressions: **15 files, 106 passed, 0 failed**. Includes the eight review probes as durable tests; 29 rendered controlled-count cases, five certification cases, canonical route imports/redirects, navigation/page integration and unchanged batch/facility/co-sign authorization regressions.
 - `npm run typecheck -- --incremental false`: **PASS** using `tsconfig.typecheck.json`.
@@ -63,7 +63,7 @@ The existing batch-save helper, count receipt contract, independent co-sign API 
 
 Tests use local fixtures and mocked database/authentication boundaries. No production resident data, live count, provider credentials, hosted RLS exploit, or named-user clinical UAT was used. The standard segment design/axe checks cover the local public route surface; authenticated Section 1 workflows are covered by rendered regressions and compiled route evidence, not claimed as authenticated browser certification. A fresh independent GPT-6 Astra High review remains required before approval.
 
-## Changed files in this correction
+## Initial correction changed files (c92076c2)
 
 - `docs/remediation/2026-09-review/SECTION-1-IMPLEMENTATION.md`
 - `docs/remediation/2026-09-review/roadmap-status.json`
@@ -88,3 +88,15 @@ Tests use local fixtures and mocked database/authentication boundaries. No produ
 - `src/lib/medications/controlled-count-identity.ts`
 - `src/lib/navigation/canonical-admin-route-registry.test.ts`
 - `test-results/agent-gates/2026-09-07T20-28-38-051Z-section-1-interface-corrections.json`
+
+## BUS-005 follow-up after independent review of c92076c2
+
+The independent review requested changes for certification roster races and reported NAV-001, NAV-006 and FL-009 passing within its scope. Their implementation is unchanged in this follow-up; all four entries remain review-pending until the fresh review verdict.
+
+Before changing the loader, four durable regressions failed: late A success overwrote B's empty roster; late A failure erased B's successful roster; a facility change retained A's selected staff; and obsolete finally cleared B's pending loading state. The prior correction gate is retained as passing evidence for its original scope, not proof that this race was covered.
+
+The loader now stamps each request with its generation and facility and checks both before success, error and finally state changes. Effect cleanup invalidates requests on facility change and unmount. Rendered roster/error visibility is also facility-bound. A new request clears staff selection; only a staff ID in the current visible roster can enable saving or pass the submission handler. An organization lookup started before a facility/request change cannot proceed to insertion. All five credential fields remain intact.
+
+Additional durable cases cover A-to-B-to-A (where comparing facility alone is insufficient) and a facility switch during the organization lookup before insertion. Final follow-up verification: certification regressions **11 passed**; complete Section 1 focused set **112 passed across 15 files**; full Vitest **3,216 passed, 2 existing opt-in performance skips across 526 files**; repository `npm run typecheck -- --incremental false`, targeted ESLint and staged diff/secret checks **passed**. `npm run segment:gates -- --segment section-1-bus005-facility-retry --ui` **passed: 12 checks passed, 0 failed, 1 optional skip**. Artifact: `test-results/agent-gates/2026-09-07T20-53-27-908Z-section-1-bus005-facility-retry.json`. Fresh production manifest verification passed **7/7**. Docker was available for this follow-up and all 332 migration files replayed successfully. The only optional skip was absent `apps/web`; design (four viewports) and axe (one route) cover local `/`, not authenticated staff UAT. No advisory overrides were used. No failed segment gate was produced in this follow-up; prior gate artifacts remain preserved.
+
+Follow-up changed files: `src/app/(admin)/certifications/new/page.tsx`, its `page.test.tsx`, this implementation record, BUS-005 notes in `roadmap-status.json`, and the new gate artifact. All navigation and controlled-count source files are unchanged against c92076c2. No PR, merge, deployment or Section 2 work was performed.

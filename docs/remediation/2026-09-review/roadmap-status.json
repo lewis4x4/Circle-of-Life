@@ -322,7 +322,7 @@
         "src/app/(admin)/certifications/new/page.tsx",
         "src/app/(admin)/certifications/new/page.test.tsx"
       ],
-      "notes": "Rendered regressions prove failure-to-success retry repeats facility, active-employment and soft-delete filters and retains category, credential name, issuing authority and both dates. Successful-empty and repeated failures remain distinct. Correction remains pending fresh independent review; no authenticated RLS acceptance is claimed."
+      "notes": "Retry recovery retains all credential fields and repeats facility, active-employment and soft-delete filters. A follow-up independent review identified stale facility responses; generation/facility guards now reject obsolete success/error/finally results, invalidate old staff selection, and require current-roster eligibility before save. Deferred-response regressions cover both reported races, pending loading, A-B-A and an in-flight organization lookup. Remains implemented_review_pending for fresh independent review; no authenticated RLS acceptance claimed."
     },
     {
       "id": "BUS-006",

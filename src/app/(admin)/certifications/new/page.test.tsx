@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   user: { id: "user-1" } as { id: string } | null,
   staffQuery: vi.fn(),
+  orgQuery: vi.fn(),
+  insert: vi.fn(),
   eq: vi.fn(),
   is: vi.fn(),
 }));
@@ -31,6 +33,9 @@ vi.mock("@/lib/supabase/client", () => ({
         is: (column: string, value: unknown) => { mocks.is(column, value); return query; },
         order: () => query,
         limit: mocks.staffQuery,
+        maybeSingle: mocks.orgQuery,
+        insert: (payload: unknown) => { mocks.insert(payload); return query; },
+        single: async () => ({ data: { id: "certification-1" }, error: null }),
       };
       return query;
     },
@@ -75,6 +80,7 @@ describe("AdminNewCertificationPage", () => {
     mocks.selectedFacilityId = facilityId;
     mocks.user = { id: "user-1" };
     mocks.staffQuery.mockReset().mockResolvedValue({ data: [], error: null });
+    mocks.orgQuery.mockReset().mockResolvedValue({ data: { organization_id: "org-1" }, error: null });
   });
 
   afterEach(() => {
@@ -144,4 +150,117 @@ describe("AdminNewCertificationPage", () => {
     expect(screen.queryByText("No active staff in this facility.")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save certification" })).toBeDisabled();
   });
+
+  it.each(["success", "failure"])("ignores a delayed facility A retry %s after facility B completes", async (outcome) => {
+    let resolveA!: (value: unknown) => void;
+    let rejectA!: (reason: Error) => void;
+    const delayedA = new Promise((resolve, reject) => { resolveA = resolve; rejectA = reject; });
+    const staffB = { id: "staff-b", first_name: "Bea", last_name: "Baker" };
+    mocks.staffQuery.mockRejectedValueOnce(new Error("Initial A failure"))
+      .mockReturnValueOnce(delayedA)
+      .mockResolvedValueOnce({ data: outcome === "success" ? [] : [staffB], error: null });
+    const view = render(<AdminNewCertificationPage />);
+    await screen.findByRole("button", { name: "Retry staff load" });
+    const expectRetained = enterCredential();
+    fireEvent.click(screen.getByRole("button", { name: "Retry staff load" }));
+    mocks.selectedFacilityId = "22222222-2222-2222-2222-222222222222";
+    view.rerender(<AdminNewCertificationPage />);
+    if (outcome === "success") {
+      await screen.findByText("No active staff in this facility.");
+    } else {
+      await screen.findByRole("option", { name: "Baker, Bea" });
+      fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: staffB.id } });
+    }
+    await act(async () => {
+      if (outcome === "success") resolveA({ data: [{ id: "staff-a", first_name: "Ada", last_name: "Adams" }], error: null });
+      else rejectA(new Error("Late facility A failure"));
+    });
+    expect(mocks.staffQuery).toHaveBeenCalledTimes(3);
+    expect(mocks.eq.mock.calls.filter(([column]) => column === "facility_id")).toEqual([
+      ["facility_id", facilityId], ["facility_id", facilityId], ["facility_id", mocks.selectedFacilityId],
+    ]);
+    expect(screen.queryByRole("option", { name: "Adams, Ada" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectRetained();
+    if (outcome === "success") {
+      expect(screen.getByText("No active staff in this facility.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save certification" })).toBeDisabled();
+    } else {
+      expect(screen.getByRole("option", { name: "Baker, Bea" })).toBeInTheDocument();
+      expect(screen.getAllByRole("combobox")[0]).toHaveValue(staffB.id);
+      expect(screen.getByRole("button", { name: "Save certification" })).toBeEnabled();
+    }
+  });
+
+  it("invalidates the previous facility's selected staff while retaining credential input", async () => {
+    let finishB!: (value: unknown) => void;
+    mocks.staffQuery.mockResolvedValueOnce({ data: [{ id: "staff-a", first_name: "Ada", last_name: "Adams" }], error: null })
+      .mockReturnValueOnce(new Promise((resolve) => { finishB = resolve; }));
+    const view = render(<AdminNewCertificationPage />);
+    await screen.findByRole("option", { name: "Adams, Ada" });
+    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "staff-a" } });
+    const expectRetained = enterCredential();
+    mocks.selectedFacilityId = "22222222-2222-2222-2222-222222222222";
+    view.rerender(<AdminNewCertificationPage />);
+    expect(screen.getAllByRole("combobox")[0]).toHaveValue("");
+    expect(screen.queryByRole("option", { name: "Adams, Ada" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save certification" })).toBeDisabled();
+    await act(async () => { finishB({ data: [{ id: "staff-b", first_name: "Bea", last_name: "Baker" }], error: null }); });
+    expect(screen.getAllByRole("combobox")[0]).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Save certification" })).toBeDisabled();
+    expectRetained();
+  });
+
+  it("does not let an obsolete request's finally clear the current facility's loading state", async () => {
+    let finishA!: (value: unknown) => void;
+    let finishB!: (value: unknown) => void;
+    mocks.staffQuery.mockReturnValueOnce(new Promise((resolve) => { finishA = resolve; }))
+      .mockReturnValueOnce(new Promise((resolve) => { finishB = resolve; }));
+    const view = render(<AdminNewCertificationPage />);
+    mocks.selectedFacilityId = "22222222-2222-2222-2222-222222222222";
+    view.rerender(<AdminNewCertificationPage />);
+    await act(async () => { finishA({ data: [], error: null }); });
+    expect(screen.getAllByRole("combobox")[0]).toBeDisabled();
+    expect(screen.queryByText("No active staff in this facility.")).not.toBeInTheDocument();
+    await act(async () => { finishB({ data: [], error: null }); });
+    expect(screen.getByText("No active staff in this facility.")).toBeInTheDocument();
+  });
+
+
+  it("rejects the old generation even when the operator switches A to B and back to A", async () => {
+    let finishOldA!: (value: unknown) => void;
+    mocks.staffQuery.mockReturnValueOnce(new Promise((resolve) => { finishOldA = resolve; }))
+      .mockResolvedValueOnce({ data: [], error: null })
+      .mockResolvedValueOnce({ data: [{ id: "new-a", first_name: "Current", last_name: "Roster" }], error: null });
+    const view = render(<AdminNewCertificationPage />);
+    mocks.selectedFacilityId = "22222222-2222-2222-2222-222222222222";
+    view.rerender(<AdminNewCertificationPage />);
+    await screen.findByText("No active staff in this facility.");
+    mocks.selectedFacilityId = facilityId;
+    view.rerender(<AdminNewCertificationPage />);
+    await screen.findByRole("option", { name: "Roster, Current" });
+    await act(async () => { finishOldA({ data: [{ id: "old-a", first_name: "Old", last_name: "Roster" }], error: null }); });
+    expect(screen.getByRole("option", { name: "Roster, Current" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Roster, Old" })).not.toBeInTheDocument();
+  });
+
+  it("does not insert a stale staff selection if facility changes while resolving its organization", async () => {
+    let finishOrg!: (value: unknown) => void;
+    mocks.orgQuery.mockReturnValueOnce(new Promise((resolve) => { finishOrg = resolve; }));
+    mocks.staffQuery.mockResolvedValueOnce({ data: [{ id: "staff-a", first_name: "Ada", last_name: "Adams" }], error: null });
+    const view = render(<AdminNewCertificationPage />);
+    await screen.findByRole("option", { name: "Adams, Ada" });
+    fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "staff-a" } });
+    const expectRetained = enterCredential();
+    fireEvent.click(screen.getByRole("button", { name: "Save certification" }));
+    expect(mocks.orgQuery).toHaveBeenCalledTimes(1);
+    mocks.selectedFacilityId = "22222222-2222-2222-2222-222222222222";
+    view.rerender(<AdminNewCertificationPage />);
+    await screen.findByText("No active staff in this facility.");
+    await act(async () => { finishOrg({ data: { organization_id: "org-a" }, error: null }); });
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Save certification" })).toBeDisabled();
+    expectRetained();
+  });
+
 });
