@@ -2,6 +2,8 @@
   "started": "2026-09-07",
   "scope": "48 independent review findings plus original remaining mitigations, integrated verification, merge and fresh comprehensive review",
   "baseline": "eb1d98f18e41b3950bb837702363efde1f3b3f1b",
+  "phase0_baseline": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+  "phase0_verification": "docs/remediation/2026-09-review/PHASE-0-VERIFICATION.md",
   "findings": [
     {
       "id": "NAV-001",
@@ -14,12 +16,16 @@
       "id": "NAV-002",
       "severity": "P1",
       "title": "Executive overview converts retrieval failures into an all-clear message",
-      "status": "source_corrected_verification_pending",
+      "status": "verified_resolved",
       "evidence": [
         "src/app/(admin)/executive/page.tsx",
-        "src/app/(admin)/executive/ExecutiveOverviewPageClient.tsx"
+        "src/components/executive/ExecutiveOverviewPageClient.tsx",
+        "src/lib/executive/load-executive-overview.test.ts",
+        "src/components/executive/ExecutiveOverviewPageClient.test.tsx",
+        "src/lib/executive/kpi-tile-copy.test.ts",
+        "docs/remediation/2026-09-review/PHASE-0-VERIFICATION.md"
       ],
-      "notes": "Original SSR partial-result trigger removed by 9a30b708; add focused required-source failure and optional-source honesty proof."
+      "notes": "Required executive reads use the strict client loader and surface Retry on failure; optional presence fallback and partial occupancy/KPI labels remain explicit. Focused regression: 30 passed, 0 failed across five files. No authenticated staff UAT claimed."
     },
     {
       "id": "NAV-003",
@@ -211,12 +217,14 @@
       "id": "SYS-005",
       "severity": "P1",
       "title": "signing integration authorizes organization but not facility",
-      "status": "source_corrected_verification_pending",
+      "status": "partially_resolved_section_4_assigned",
       "evidence": [
         "supabase/functions/boldsign-send-contract/index.ts",
-        "docs/remediation/2026-09-review/SYS-001D-EDGE-AUTHORIZATION.md"
+        "supabase/functions/boldsign-send-contract-handler.test.ts",
+        "docs/remediation/2026-09-review/SYS-001D-EDGE-AUTHORIZATION.md",
+        "docs/remediation/2026-09-review/PHASE-0-VERIFICATION.md"
       ],
-      "notes": "SYS001D resolves current facility before send/link and revalidates; hosted no-provider-call proof remains."
+      "notes": "Original same-organization cross-facility bypass is verified corrected: entry, pre-send and pre-link guards deny without returning signing data, and an authorized multi-site nurse remains supported. A focused actual-handler characterization reproduces a remaining in-flight final-link disclosure after facility revocation; assign that P1 gap to Section 4 with Astra High. No live provider or authenticated UAT claimed."
     },
     {
       "id": "SYS-006",
@@ -296,8 +304,13 @@
       "id": "DEP-001",
       "severity": "P1",
       "title": "Local remediation and hosted migration history are not a deployable matched baseline",
-      "status": "open",
-      "evidence": []
+      "status": "verified_resolved",
+      "evidence": [
+        "docs/remediation/2026-09-review/phase-0-release-parity.json",
+        "docs/remediation/2026-09-review/production-release-verification.json",
+        "docs/remediation/2026-09-review/PHASE-0-VERIFICATION.md"
+      ],
+      "notes": "Local HEAD, origin/main, GitHub main and published Netlify production matched at Phase 0 baseline 624e7712. Hosted migrations contain every local version; 319-329 match exact names/content, 317-318 match names and statements except local outer transaction wrappers/blank lines, and six hosted-only historical timestamps remain preserved. Auth, PostgREST and Edge release metadata match the paired release. Metadata does not claim hosted bundle equality, provider acceptance or named-user UAT."
     },
     {
       "id": "FL-014",
@@ -356,5 +369,5 @@
       "evidence": []
     }
   ],
-  "stop_boundary": "Finish SYS-001 and overlapping SYS-008 release then stop; remaining roadmap not started."
+  "stop_boundary": "Phase 0 only: verify NAV-002, SYS-005 and DEP-001, deliver their evidence, then stop. Sections 1 through 8 are not started."
 }

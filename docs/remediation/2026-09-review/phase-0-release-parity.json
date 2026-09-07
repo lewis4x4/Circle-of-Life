@@ -1,0 +1,298 @@
+{
+  "checked_at": "2026-09-07T17:43:50.072148+00:00",
+  "project": "manfqmasfqppukpobpld",
+  "git_local_head": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+  "git_origin_main": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+  "github_main": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+  "netlify": {
+    "site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+    "name": "circleoflifealf",
+    "url": "circleoflifealf.com",
+    "deploy": {
+      "id": "6a9ee9e122df6a00087d0ce3",
+      "state": "ready",
+      "commit_ref": "624e77120f1a7f5f6717a0981891d3b02cef80b1",
+      "published_at": "2026-09-07T16:46:39.986Z",
+      "context": "production"
+    }
+  },
+  "hosted_ledger_count": 338,
+  "local_migration_count": 332,
+  "local_versions_missing_hosted": [],
+  "hosted_versions_missing_local": [
+    "20260814153636",
+    "20260814200926",
+    "20260814201004",
+    "20260814201013",
+    "20260814201022",
+    "20260814201741"
+  ],
+  "historical_timestamp_entries": [
+    {
+      "version": "20260514180000",
+      "name": "staff_role_enum_values"
+    },
+    {
+      "version": "20260514180707",
+      "name": "homewood_round2_employee_seed"
+    },
+    {
+      "version": "20260514203302",
+      "name": "homewood_round2_ar_intake_may_2026"
+    },
+    {
+      "version": "20260814153636",
+      "name": "revoke_anon_security_definer_rpc_execute"
+    },
+    {
+      "version": "20260814200926",
+      "name": "family_portal_messages_one_way"
+    },
+    {
+      "version": "20260814201004",
+      "name": "col_discovery_round_cadence_jessica_2026_08_14"
+    },
+    {
+      "version": "20260814201013",
+      "name": "snack_logs_time_and_passer_only"
+    },
+    {
+      "version": "20260814201022",
+      "name": "revoke_anon_col_discovery_round_rpcs"
+    },
+    {
+      "version": "20260814201741",
+      "name": "pin_col_discovery_helper_search_path"
+    }
+  ],
+  "release_migration_exact_matches": [
+    {
+      "version": "319",
+      "name": "review_access_boundaries",
+      "name_matches": true,
+      "content_sha256": "6a1c95a70220c07a7365644a33d144888aabd59392e87c691e43a3b4174f0ae3",
+      "content_matches": true
+    },
+    {
+      "version": "320",
+      "name": "september_business_integrity",
+      "name_matches": true,
+      "content_sha256": "09ca9b6678042d4b3ec2a10ae6ca5093302dad67244d673a7c470207fb86a109",
+      "content_matches": true
+    },
+    {
+      "version": "321",
+      "name": "clinical_review_integrity",
+      "name_matches": true,
+      "content_sha256": "c188ae28f108370d1e5c040c45f05ee158807d474a4817178ba8d496af81ab16",
+      "content_matches": true
+    },
+    {
+      "version": "322",
+      "name": "dietary_verified_actions",
+      "name_matches": true,
+      "content_sha256": "ced8fe14b658f16a40ad39a63107e54610c1882c3408f221480fb35c65f96ccc",
+      "content_matches": true
+    },
+    {
+      "version": "323",
+      "name": "review_report_outputs",
+      "name_matches": true,
+      "content_sha256": "13b1c66fa79da8198fa1b705ff01a3a80f25bf80166368f41ebf2cffec299272",
+      "content_matches": true
+    },
+    {
+      "version": "324",
+      "name": "september_office_integrity",
+      "name_matches": true,
+      "content_sha256": "8be63a13efeda2905ec00a7f78e1061d216db4c6e2e79bfdd29336199c948c50",
+      "content_matches": true
+    },
+    {
+      "version": "325",
+      "name": "review_med_tech_controlled_count_access",
+      "name_matches": true,
+      "content_sha256": "66e98b30996c4bd1fd74ddf3e995ef6e7378d7966d89c759203dd66d35d67d07",
+      "content_matches": true
+    },
+    {
+      "version": "326",
+      "name": "sys_001_authoritative_actor_state",
+      "name_matches": true,
+      "content_sha256": "1ce412ff33690ee7deee064489bd063874f51e4cc3397997a39e577dab8b3869",
+      "content_matches": true
+    },
+    {
+      "version": "327",
+      "name": "sys_001e_lifecycle_authorization",
+      "name_matches": true,
+      "content_sha256": "b96c188c3255f5940e29210e0afac67b5408e7385e1e3a29fde56078d2538b5f",
+      "content_matches": true
+    },
+    {
+      "version": "328",
+      "name": "ingest_generation_integrity",
+      "name_matches": true,
+      "content_sha256": "4978f452fda7ceb9210d126284f2b9efabf24bfa00e52d1050f0b5e250f467aa",
+      "content_matches": true
+    },
+    {
+      "version": "329",
+      "name": "authorization_error_http_contract",
+      "name_matches": true,
+      "content_sha256": "53d804717389e4371f6b7a3a052784022b2fb9d34e78e75b2d1d4cdc4d473b8d",
+      "content_matches": true
+    }
+  ],
+  "auth_hook": {
+    "hook_custom_access_token_enabled": true,
+    "hook_custom_access_token_uri": "pg-functions://postgres/public/haven_custom_access_token_hook"
+  },
+  "database_contracts": {
+    "pre_request_hook": "t",
+    "lifecycle_browser_denied": "t",
+    "shell_actor_installed": "t"
+  },
+  "edge_metadata": [
+    {
+      "slug": "ingest",
+      "version": 38,
+      "status": "ACTIVE",
+      "updated_at": 1788798611915,
+      "verify_jwt": true
+    },
+    {
+      "slug": "document-admin",
+      "version": 36,
+      "status": "ACTIVE",
+      "updated_at": 1788798578688,
+      "verify_jwt": true
+    },
+    {
+      "slug": "boldsign-send-contract",
+      "version": 11,
+      "status": "ACTIVE",
+      "updated_at": 1788798574019,
+      "verify_jwt": true
+    }
+  ],
+  "original_conflicting_versions": [
+    {
+      "version": "317",
+      "name": "referral_lead_closure_reasons",
+      "local_file": "supabase/migrations/317_referral_lead_closure_reasons.sql",
+      "name_matches": true,
+      "content_sha256": "53344c0d1e415d90b6a86293c2acf73e5cb70ca58d8f79e20ac9085e15da173e",
+      "content_matches": false,
+      "content_matches_ignoring_outer_transaction_and_blank_lines": true,
+      "content_difference": "Local file adds outer BEGIN/COMMIT transaction wrapper and blank lines; every other line matches hosted statement content.",
+      "local_content_sha256": "958f87f31ee87717c4162491c50073552969a5ce8ff6d003119fa9206384139d"
+    },
+    {
+      "version": "318",
+      "name": "col_facility_entity_names",
+      "local_file": "supabase/migrations/318_col_facility_entity_names.sql",
+      "name_matches": true,
+      "content_sha256": "ea4fd06b778c48df8734c332c34487f71680cf1f2e148cdfd78c87725d4f0dd7",
+      "content_matches": false,
+      "content_matches_ignoring_outer_transaction_and_blank_lines": true,
+      "content_difference": "Local file adds outer BEGIN/COMMIT transaction wrapper and blank lines; every other line matches hosted statement content.",
+      "local_content_sha256": "a87d7989cc2017e5ee9dc1cf51ce3790816b4edfbc5a1ab6b72dc8a78f95a5b2"
+    }
+  ],
+  "original_missing_rpc_contracts": [
+    {
+      "name": "payroll_export_snapshot",
+      "arguments": "p_batch_id uuid",
+      "result": "jsonb",
+      "security_definer": false
+    },
+    {
+      "name": "save_inservice_session",
+      "arguments": "p_id uuid, p_session jsonb, p_staff_ids uuid[]",
+      "result": "uuid",
+      "security_definer": false
+    },
+    {
+      "name": "save_journal_draft",
+      "arguments": "p_id uuid, p_entity_id uuid, p_facility_id uuid, p_entry_date date, p_memo text, p_lines jsonb, p_expected_updated_at timestamp with time zone",
+      "result": "uuid",
+      "security_definer": false
+    }
+  ],
+  "edge_release_workflow": {
+    "url": "https://github.com/lewis4x4/Circle-of-Life/actions/runs/34143479710",
+    "head": "99f400965c843f58a9bb7941660e0fbf372170a8",
+    "overall_conclusion": "failure",
+    "deploy_result_lines": [
+      "2026-09-07T16:29:32.8945605Z deployed: ar-aging-check",
+      "2026-09-07T16:29:34.2544120Z deployed: boldsign-send-contract",
+      "2026-09-07T16:29:35.4218352Z deployed: boldsign-webhook",
+      "2026-09-07T16:29:37.5287203Z deployed: dispatch-push",
+      "2026-09-07T16:29:38.9008926Z deployed: document-admin",
+      "2026-09-07T16:29:40.0756342Z deployed: emar-missed-dose-check",
+      "2026-09-07T16:29:40.9298682Z deployed: exec-alert-evaluator",
+      "2026-09-07T16:29:41.9037179Z deployed: exec-kpi-snapshot",
+      "2026-09-07T16:29:43.4169512Z deployed: exec-nlq-executor",
+      "2026-09-07T16:29:45.0208974Z deployed: exec-report-generator",
+      "2026-09-07T16:29:46.4012074Z deployed: exec-scenario-solver",
+      "2026-09-07T16:29:47.2928591Z deployed: export-audit-log",
+      "2026-09-07T16:29:48.4714845Z deployed: facility-expiration-scanner",
+      "2026-09-07T16:29:50.1779128Z deployed: facility-launch-import",
+      "2026-09-07T16:29:51.9834141Z deployed: facility-launch-parser",
+      "2026-09-07T16:29:53.3662008Z deployed: facility-launch-promote",
+      "2026-09-07T16:29:54.4010247Z deployed: generate-emar-schedule",
+      "2026-09-07T16:29:55.3270944Z deployed: generate-monthly-invoices",
+      "2026-09-07T16:29:57.1988707Z deployed: grace-execute-flow-step",
+      "2026-09-07T16:29:58.9410996Z deployed: grace-orchestrator",
+      "2026-09-07T16:29:58.9785714Z failed: grace-provider-errors.test.ts",
+      "2026-09-07T16:29:59.6307912Z deployed: grace-redteam-nightly",
+      "2026-09-07T16:30:01.1426383Z deployed: grace-transcribe",
+      "2026-09-07T16:30:02.7899544Z deployed: grace-tts",
+      "2026-09-07T16:30:04.8099772Z deployed: grace-undo-flow-run",
+      "2026-09-07T16:30:06.7966769Z deployed: haven-ai-router",
+      "2026-09-07T16:30:14.4249782Z deployed: ingest",
+      "2026-09-07T16:30:18.3528108Z deployed: knowledge-agent",
+      "2026-09-07T16:30:19.4845292Z deployed: observation-escalation-engine",
+      "2026-09-07T16:30:20.5020532Z deployed: observation-task-generator",
+      "2026-09-07T16:30:21.5236857Z deployed: oce-escalation-scanner",
+      "2026-09-07T16:30:22.7912032Z deployed: oce-staffing-adequacy-computer",
+      "2026-09-07T16:30:23.7859010Z deployed: oce-task-scheduler",
+      "2026-09-07T16:30:24.8011780Z deployed: process-referral-hl7-inbound",
+      "2026-09-07T16:30:25.4260401Z deployed: report-scheduler",
+      "2026-09-07T16:30:26.2925123Z deployed: resident-assurance-ai",
+      "2026-09-07T16:30:27.3692912Z deployed: resident-safety-scorer",
+      "2026-09-07T16:30:28.3339790Z deployed: risk-nightly-scorer"
+    ],
+    "selector_correction_success_url": "https://github.com/lewis4x4/Circle-of-Life/actions/runs/34144628662",
+    "source_since_release": "",
+    "successful_function_count": 37
+  },
+  "preceding_pull_requests": [
+    {
+      "mergeCommit": {
+        "oid": "99f400965c843f58a9bb7941660e0fbf372170a8"
+      },
+      "mergedAt": "2026-09-07T16:29:09Z",
+      "number": 453,
+      "state": "MERGED",
+      "url": "https://github.com/lewis4x4/Circle-of-Life/pull/453"
+    },
+    {
+      "mergeCommit": {
+        "oid": "624e77120f1a7f5f6717a0981891d3b02cef80b1"
+      },
+      "mergedAt": "2026-09-07T16:44:15Z",
+      "number": 454,
+      "state": "MERGED",
+      "url": "https://github.com/lewis4x4/Circle-of-Life/pull/454"
+    }
+  ],
+  "evidence_limits": [
+    "Read-only hosted metadata and exact migration ledger comparisons were collected during Phase 0.",
+    "Deployed Edge provenance is supported by the preceding release workflow log, active metadata, and unchanged source; this is not a downloaded hosted bundle equality check.",
+    "Prior hosted-token-probe.json demonstrates earlier current/revoked owner-session behavior; Phase 0 does not claim fresh authenticated UAT or a live signing-provider test.",
+    "Original 317/318 raw hashes differ because repository files include outer transaction wrappers; all other nonblank lines match.",
+    "Six historical hosted-only timestamp entries are retained; no migrations were reapplied or history rewritten."
+  ]
+}
