@@ -2,7 +2,7 @@
 
 All four findings are prepared for independent review. This record reports local source and test evidence only. It does not claim authenticated staff acceptance, production deployment, or clinical sign-off.
 
-The final local UI gate passed with 11 required checks and no blocking failures: `test-results/agent-gates/2026-09-07T19-24-43-780Z-section-1-interface-repairs.json`. The earlier failed artifact, `test-results/agent-gates/2026-09-07T19-18-53-400Z-section-1-interface-repairs.json`, is retained as superseded evidence of the CountInitiationModal compile break that was corrected before the passing rerun. The gate used its local/default route surface with no supplied production base URL. No authenticated visual reference was available, so visual-verdict could not truthfully compare an implementation to a reference; rendered interaction tests and the UI/a11y gate provide the available local evidence.
+The final local UI gate passed with 11 required checks and no blocking failures: `test-results/agent-gates/2026-09-07T19-24-43-780Z-section-1-interface-repairs.json`. The earlier failed artifact, `test-results/agent-gates/2026-09-07T19-18-53-400Z-section-1-interface-repairs.json`, is retained as superseded evidence of the CountInitiationModal compile break that was corrected before the passing rerun. Full Vitest also passed: 525 files, 3,159 passed tests, 2 skipped, in 62.75 seconds. The gate used its local/default route surface with no supplied production base URL. No authenticated visual reference was available, so visual-verdict could not truthfully compare an implementation to a reference; rendered interaction tests and the UI/a11y gate provide the available local evidence.
 
 ## NAV-001
 
