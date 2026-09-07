@@ -1,8 +1,8 @@
 # Haven review remediation
 
-**Deployment update, 7 September2026:** SYS-001 and its routed facility-revocation overlap are merged to main in PR453. Haven's database is through329 with the exact token/pre-request hooks enabled. Production application commit99f40096 and all37 real selected Edge Functions deployed; the scheduled lifecycle worker executed naturally. Hosted current-owner access and revoked-session rejection passed in the application/Data API/Edge boundary. See [production verification](production-release-verification.json) and [current closeout](SYS-001-RESUMED-CLOSEOUT.md). The remaining independent-review roadmap and clinical/customer UAT are not declared complete.
+**Deployment update, 7 September 2026:** SYS-001 and its routed facility-revocation overlap are merged to main in PR #453. Haven's database is through 329 with the exact token/pre-request hooks enabled. Production application commit 99f40096 and all37 real selected Edge Functions deployed; the scheduled lifecycle worker executed naturally. Hosted current-owner access and revoked-session rejection passed in the application/Data API/Edge boundary. See [production verification](production-release-verification.json) and [current closeout](SYS-001-RESUMED-CLOSEOUT.md). The remaining independent-review roadmap and clinical/customer UAT are not declared complete.
 
-The sections below retain the original6September baseline evidence; their source-only deployment statements describe that earlier checkpoint.
+The sections below retain the original 6 September baseline evidence; their source-only deployment statements describe that earlier checkpoint.
 
 The 119 indexed review entries are accounted for: **117 corrected in source (including five locally verified access boundaries), two explicitly mitigated**. Production has not been deployed or populated by this work. Authenticated operational UAT remains open.
 
