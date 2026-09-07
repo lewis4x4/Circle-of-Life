@@ -9,17 +9,23 @@ CREATE TEMP TABLE count_role_fixture AS SELECT f.id facility,f.organization_id o
 DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM count_role_fixture) THEN RAISE EXCEPTION 'Local seed medication required'; END IF; END $$;
 INSERT INTO public.resident_medications(id,resident_id,facility_id,organization_id,medication_name,route,frequency,start_date,order_date,status,controlled_schedule)
  SELECT f.med,m.resident_id,f.facility,f.org,'Role test controlled medication',m.route,m.frequency,current_date,current_date,'active','ii' FROM count_role_fixture f JOIN public.resident_medications m ON m.id=f.source_med;
-CREATE TEMP TABLE count_test_actors AS SELECT gen_random_uuid() id,role FROM unnest(ARRAY['med_tech','nurse','caregiver','owner','manager','family']) role;
+CREATE TEMP TABLE count_test_actors AS SELECT gen_random_uuid() id,gen_random_uuid() session_id,NULL::integer claim_version,role FROM unnest(ARRAY['med_tech','nurse','caregiver','owner','manager','family']) role;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) SELECT a.id,a.id||'@count-review.invalid',jsonb_build_object('organization_id',f.org,'app_role',a.role),jsonb_build_object('full_name','Count role test') FROM count_test_actors a CROSS JOIN count_role_fixture f;
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active) SELECT a.id,f.org,a.id||'@count-review.invalid','Count role test',a.role::public.app_role,true FROM count_test_actors a CROSS JOIN count_role_fixture f
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT a.id,f.facility,f.org FROM count_test_actors a CROSS JOIN count_role_fixture f;
+INSERT INTO auth.sessions(id,user_id) SELECT session_id,id FROM count_test_actors;
+UPDATE count_test_actors a SET claim_version=p.auth_claim_version
+FROM public.user_profiles p WHERE p.id=a.id;
 GRANT SELECT ON count_test_actors,count_role_fixture TO authenticated;
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE a record; f record; BEGIN
  SELECT * INTO f FROM count_role_fixture;
  FOR a IN SELECT * FROM count_test_actors LOOP
-  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a.id,'role','authenticated','app_role',a.role,'organization_id',f.org,'app_metadata',jsonb_build_object('app_role',a.role,'organization_id',f.org))::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a.id,'session_id',a.session_id,
+    'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',a.claim_version,
+    'role','authenticated','app_role',a.role,'organization_id',f.org,
+    'app_metadata',jsonb_build_object('app_role',a.role,'organization_id',f.org))::text,true);
   IF a.role IN('med_tech','nurse','caregiver') THEN
    INSERT INTO public.controlled_substance_counts(resident_medication_id,facility_id,organization_id,count_date,shift,expected_count,actual_count,outgoing_staff_id)
     VALUES(f.med,f.facility,f.org,current_date,'day',2,2,a.id);

@@ -1,7 +1,7 @@
 -- Disposable PostgreSQL replay only. Fixture records and auth adaptation roll back.
 BEGIN;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
-CREATE TEMP TABLE business_fixture AS SELECT gen_random_uuid() actor, gen_random_uuid() account, gen_random_uuid() deposit,
+CREATE TEMP TABLE business_fixture AS SELECT gen_random_uuid() actor, gen_random_uuid() actor_session, gen_random_uuid() account, gen_random_uuid() deposit,
  gen_random_uuid() withdrawal,gen_random_uuid() journal,gen_random_uuid() debit_account,gen_random_uuid() credit_account,
  gen_random_uuid() employee,gen_random_uuid() punch,gen_random_uuid() resident,f.id facility,f.entity_id entity,f.organization_id org
  FROM public.facilities f WHERE f.deleted_at IS NULL AND f.entity_id IS NOT NULL LIMIT 1;
@@ -12,7 +12,12 @@ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_
  SELECT actor,actor||'@review.invalid','Review finance','owner',org,true FROM business_fixture
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,org FROM business_fixture;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','app_role','owner','organization_id',org,'app_metadata',jsonb_build_object('app_role','owner','organization_id',org))::text,true) FROM business_fixture;
+INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM business_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','owner','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','owner','organization_id',f.org))::text,true)
+FROM business_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 INSERT INTO public.gl_accounts(id,organization_id,entity_id,code,name,account_type)
  SELECT debit_account,org,entity,'review-'||debit_account,'Review debit','asset'::public.gl_account_type FROM business_fixture
  UNION ALL SELECT credit_account,org,entity,'review-'||credit_account,'Review credit','asset'::public.gl_account_type FROM business_fixture;

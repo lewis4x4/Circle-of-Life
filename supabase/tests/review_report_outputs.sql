@@ -3,11 +3,14 @@ BEGIN;
 -- The vanilla replay stub omits Supabase auth schema visibility.
 GRANT USAGE ON SCHEMA auth TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
-CREATE TEMP TABLE report_fixture AS SELECT p.id actor,p.organization_id org,gen_random_uuid() run_id,gen_random_uuid() source_id
+CREATE TEMP TABLE report_fixture AS SELECT p.id actor,p.organization_id org,p.auth_claim_version actor_version,gen_random_uuid() actor_session,gen_random_uuid() run_id,gen_random_uuid() source_id
   FROM public.user_profiles p WHERE p.app_role='owner' AND p.organization_id IS NOT NULL AND p.deleted_at IS NULL LIMIT 1;
 GRANT SELECT ON report_fixture TO authenticated;
 DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM report_fixture) THEN RAISE EXCEPTION 'Local seed owner required'; END IF; END $$;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','app_role','owner','organization_id',org,
+INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM report_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'session_id',actor_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',actor_version,
+  'role','authenticated','app_role','owner','organization_id',org,
   'app_metadata',jsonb_build_object('app_role','owner','organization_id',org))::text,true) FROM report_fixture;
 SET LOCAL ROLE authenticated;
 INSERT INTO public.report_runs(id,organization_id,source_type,source_id,status,run_scope_json)
