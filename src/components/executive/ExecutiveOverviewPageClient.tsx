@@ -365,9 +365,7 @@ export function ExecutiveOverviewPageClient({
             </p>
           ) : null}
         </div>
-        <div className="hidden md:block">
-          <ExecutiveHubNav />
-        </div>
+        <ExecutiveHubNav />
       </div>
 
       {organizationGapMessage ? (

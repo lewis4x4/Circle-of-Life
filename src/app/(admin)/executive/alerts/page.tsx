@@ -134,9 +134,7 @@ export default function ExecutiveAlertsPage() {
                 {roleConfig.roleLabel} drill-in: review open exceptions, decide the intervention lane, and move into finance, insurance, or incident risk without dropping back to the operator home.
               </p>
             </div>
-            <div className="hidden md:block">
-              <ExecutiveHubNav />
-            </div>
+            <ExecutiveHubNav />
           </div>
         </header>
 
