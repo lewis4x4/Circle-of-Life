@@ -1,0 +1,6 @@
+{
+  "scope": "CI selector excludes non-function files",
+  "actual_awk_fixture": "PASS",
+  "root_test_excluded": true,
+  "entrypoint_filter_present": true
+}

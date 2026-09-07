@@ -52,3 +52,11 @@ Migrations319–328 applied atomically with exact names/source hashes recorded i
 The full-history secret scan flagged two migration SHA256values and the intentionally synthetic detector string in63130958. Independent review confirmed all three; exact commit/path/rule/line exceptions preserve the enabled detector. Its regression and the1874-commit scan pass.
 
 Final release gate PASS: test-results/agent-gates/2026-09-07T16-20-04-890Z-SYS-001-RELEASE-FINAL.json. Required332-migration/14-probe native replay, full security/lint/build/stress/UI checks passed. Exact staged changes also passed a pipe secret scan. Hosted schema verification records319–329 and required protected grants/hooks. Current owner and revoked-session checks passed in the Data API, authenticated deploy-preview owner endpoint and deployed document-admin Edge boundary. The branch is ready for main integration and matched production application/remaining Edge deployment.
+
+## Main and production closeout
+
+PR453 merged as99f400965c843f58a9bb7941660e0fbf372170a8. Netlify production deploy6a9ee65746db310008e59105 published that exact commit; local main fast-forwarded to it.37real Edge Functions deployed successfully. The CI selector also attempted a root-level test filename and falsely failed the overall job; the bounded follow-up requires a directory path and actual index.ts before deployment, with actual-selector fixtures and independent approval. No application or worker behavior changes in that follow-up.
+
+Production authenticated owner API and current/revoked Data API/Edge probes passed. The native scheduled worker ran at16:35:11Z with zero pending jobs and no error. Monitoring of this unchanged runtime continues through the required post-release window. Older untracked main-checkout review evidence is preserved in local stash77880a741a05d2435b8295344449866e856f0bbc; unrelated brand material and historical untracked gate files remain untouched. The private backup is retained.
+
+No next roadmap item was started. Remaining independent P1/P2 findings, staffing-policy inputs, executable compliance presets and named-user operational UAT remain separate work.

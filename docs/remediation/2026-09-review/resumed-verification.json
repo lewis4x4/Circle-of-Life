@@ -21,6 +21,6 @@
   "integrated_gate": "test-results/agent-gates/2026-09-07T16-20-04-890Z-SYS-001-RELEASE-FINAL.json",
   "verdict": "PASS",
   "independent_source_reviews": "approved after all surfaced defects fixed",
-  "hosted_release": "Haven migrations319-329 and hooks verified; authenticated preview owner API and current/revoked Edge actor verified; main merge/production application pending",
+  "hosted_release": "PR453 merged/main and production99f40096; migrations319329+hooks+owner/current/revokedDataAPI/application/Edgeverified;37realEdgeFunctionsdeployed;workerexecutednaturally;pipeline-onlyselectorfollowup",
   "ui_scope": "public home 4 viewports +axe1route; component tests for editor; no authenticated clinical UAT"
 }

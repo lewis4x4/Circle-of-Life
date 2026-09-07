@@ -179,10 +179,12 @@
       "id": "SYS-001",
       "severity": "P1",
       "title": "account disabling leaves database authority active",
-      "status": "source_verified_release_pending",
+      "status": "implemented_deployed",
       "evidence": [
-        "docs/remediation/2026-09-review/resumed-verification.json"
-      ]
+        "docs/remediation/2026-09-review/resumed-verification.json",
+        "docs/remediation/2026-09-review/production-release-verification.json"
+      ],
+      "notes": "Isolated role/lifecycle/retry matrix and targeted hosted owner/current/revoked-session probes passed. Named-user operational UAT remains separate."
     },
     {
       "id": "SYS-002",
@@ -234,11 +236,12 @@
       "id": "SYS-008",
       "severity": "P2",
       "title": "facility revocation handler has no routable facility parameter",
-      "status": "source_verified_release_pending",
+      "status": "implemented_deployed",
       "evidence": [
-        "docs/remediation/2026-09-review/resumed-verification.json"
+        "docs/remediation/2026-09-review/resumed-verification.json",
+        "docs/remediation/2026-09-review/production-release-verification.json"
       ],
-      "notes": "Owned by lifecycle segment; repair routable facility parameter and verify exact HTTP route."
+      "notes": "Isolated role/lifecycle/retry matrix and targeted hosted owner/current/revoked-session probes passed. Named-user operational UAT remains separate."
     },
     {
       "id": "SYS-009",
