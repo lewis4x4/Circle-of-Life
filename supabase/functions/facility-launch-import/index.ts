@@ -29,6 +29,10 @@
  */
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 
 type AdminClient = SupabaseClient;
 
@@ -40,9 +44,6 @@ const ROUND1_MODULE_ALLOWLIST = new Set([
   "M1", "M2", "M3", "M6", "M10", "M11", "M13", "M14", "M16", "M17", "M18", "M19",
 ]);
 const ROUND2_GAPS = ["M4", "M5", "M7", "M8", "M9", "M12", "M15"];
-
-type Profile = { app_role?: string | null; organization_id?: string | null; is_active?: boolean | null };
-type Actor = { userId: string; profile: Profile };
 
 type State = {
   mvpData?: Record<string, Record<string, unknown>>;
@@ -216,67 +217,18 @@ function buildGapReport(state: State, payloadsByModule: Map<string, RowPayload[]
   return reports;
 }
 
-async function loadActor(admin: AdminClient, token: string): Promise<Actor | Response> {
-  const { data: { user }, error } = await admin.auth.getUser(token);
-  if (error || !user) return jsonResponse({ error: "Unauthorized" }, 401, null);
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id, is_active")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .single();
-  const role = profile?.app_role ?? "caregiver";
-  if (!ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number])) {
-    return jsonResponse({ error: "Forbidden: owner/org_admin/facility_admin only" }, 403, null);
-  }
-  if (profile?.is_active === false) return jsonResponse({ error: "Forbidden" }, 403, null);
-  if (!profile?.organization_id) return jsonResponse({ error: "Profile has no organization" }, 403, null);
-  return { userId: user.id, profile };
-}
-
-async function resolveFacilityAccess(admin: AdminClient, actor: Actor, requestedFacilityId: string | null): Promise<string | null | Response> {
-  const role = actor.profile.app_role ?? "";
-  const orgId = actor.profile.organization_id!;
-
-  // facility_admin must specify, and must have access to, a facility.
-  if (role === "facility_admin") {
-    if (!requestedFacilityId) return jsonResponse({ error: "facility_admin must specify facility_id" }, 400, null);
-    const { data, error } = await admin
-      .from("user_facility_access")
-      .select("facility_id")
-      .eq("user_id", actor.userId)
-      .eq("organization_id", orgId)
-      .eq("facility_id", requestedFacilityId)
-      .is("revoked_at", null)
-      .maybeSingle();
-    if (error) return jsonResponse({ error: "Failed to verify facility access" }, 500, null);
-    if (!data) return jsonResponse({ error: "Forbidden: no access to that facility" }, 403, null);
-    return requestedFacilityId;
-  }
-
-  // owner/org_admin: if facility_id supplied, confirm it belongs to their org.
-  if (requestedFacilityId) {
-    const { data, error } = await admin
-      .from("facilities")
-      .select("id")
-      .eq("id", requestedFacilityId)
-      .eq("organization_id", orgId)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (error) return jsonResponse({ error: "Failed to verify facility" }, 500, null);
-    if (!data) return jsonResponse({ error: "Facility not found in your organization" }, 404, null);
-  }
-  return requestedFacilityId;
-}
-
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(origin) });
   if (req.method !== "POST") return jsonResponse({ error: "POST only" }, 405, origin);
 
-  const auth = req.headers.get("authorization") ?? "";
-  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-  if (!token) return jsonResponse({ error: "Missing bearer token" }, 401, origin);
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ADMIN_ROLES });
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
+  const { actor } = actorAuth;
 
   let body: { state?: State; organization_id?: string; facility_id?: string; dry_run?: boolean };
   try {
@@ -293,18 +245,19 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const actor = await loadActor(admin, token);
-  if (actor instanceof Response) return actor;
-
   // Default the org to the actor's org. owners/org_admins can override only with a valid org.
-  const orgId = body.organization_id?.trim() || actor.profile.organization_id!;
-  if (orgId !== actor.profile.organization_id) {
+  const orgId = body.organization_id?.trim() || actor.organizationId;
+  if (orgId !== actor.organizationId) {
     return jsonResponse({ error: "Cross-org writes are not allowed" }, 403, origin);
   }
 
-  const facilityResolution = await resolveFacilityAccess(admin, actor, body.facility_id?.trim() || null);
-  if (facilityResolution instanceof Response) return facilityResolution;
-  const facilityId = facilityResolution;
+  const facilityId = body.facility_id?.trim() || null;
+  if (actor.role === "facility_admin" && !facilityId) {
+    return jsonResponse({ error: "facility_admin must specify facility_id" }, 400, origin);
+  }
+  if (facilityId && !actor.accessibleFacilityIds.includes(facilityId)) {
+    return jsonResponse({ error: "Forbidden" }, 403, origin);
+  }
 
   const dryRun = body.dry_run === true;
   const exportedAt =
@@ -349,6 +302,11 @@ Deno.serve(async (req) => {
   });
 
   if (!dryRun) {
+    try {
+      await actorAuth.revalidate(facilityId);
+    } catch (error) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     const inserts = plans.filter((p) => p.change === "insert").map((p) => p.payload);
     if (inserts.length > 0) {
       const { error } = await admin.from("facility_launch_module_values").insert(inserts);
@@ -356,6 +314,11 @@ Deno.serve(async (req) => {
     }
     for (const plan of plans) {
       if (plan.change !== "update" || !plan.existing) continue;
+      try {
+        await actorAuth.revalidate(facilityId);
+      } catch (error) {
+        return currentActorErrorResponse(error, getCorsHeaders(origin));
+      }
       const { error } = await admin
         .from("facility_launch_module_values")
         .update({

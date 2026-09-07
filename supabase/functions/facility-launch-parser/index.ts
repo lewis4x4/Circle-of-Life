@@ -6,6 +6,15 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import {
+  CurrentActorError,
+  type CurrentActorAuthorization,
+  canUseCurrentActorFacilityScope,
+  currentActorErrorResponse,
+  filterRowsToCurrentActorFacilities,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
 type AdminClient = SupabaseClient;
 
@@ -26,7 +35,6 @@ type RequestBody = {
   review_notes?: string | null;
 };
 
-type Profile = { app_role?: string | null; organization_id?: string | null };
 type DocumentRow = {
   id: string;
   workspace_id: string;
@@ -165,33 +173,36 @@ async function recordAiInvocation(admin: AdminClient, params: { orgId: string; u
   });
 }
 
-async function aiFacts(admin: AdminClient, doc: DocumentRow, orgId: string, userId: string): Promise<ExtractedFact[] | null> {
+async function aiFacts(admin: AdminClient, actorAuth: CurrentActorAuthorization, doc: DocumentRow, orgId: string, userId: string, facilityId?: string | null): Promise<ExtractedFact[] | null> {
   if (!ANTHROPIC_API_KEY) return null;
   const text = cleanText(doc.markdown_text || doc.raw_text || "");
   if (!text) return null;
   const input = text.slice(0, 24_000);
   const model = "claude-haiku-4-5-20251001";
   const prompt = `Extract Facility Launch onboarding facts from this document. Return JSON only, no markdown.\n\nSchema:\n{"facts":[{"artifact_type":"gl_cert|property_policy|loss_run|bond_certificate|state_license|floor_plan|emergency_plan|vendor_agreement|other","fact_key":"artifact_type|facility_name|entity_name|term_year|effective_date|expiration_date|insurance_carrier|policy_number|claim_history|vendor_name|emergency_plan|room_or_floor_plan","fact_label":"human label","normalized_value":"short value","extracted_value":{"value":"same or structured"},"confidence":0.0,"source_excerpt":"exact supporting excerpt","page_number":null,"proposed_module_code":"M1-M19","proposed_field_path":"dot.path"}]}\n\nRules: extract only facts with supporting evidence; facts must be reviewed by a human before app write.\n\nTitle: ${doc.title}\n\nDocument text:\n${input}`;
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
-    }),
-    signal: AbortSignal.timeout(45_000),
-  });
+  const res = await withCurrentActorRevalidation(actorAuth, () =>
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: AbortSignal.timeout(45_000),
+    }), facilityId);
   if (!res.ok) {
+    await actorAuth.revalidate(facilityId);
     await recordAiInvocation(admin, { orgId, userId, prompt, model, metadata: { outcome: "http_error", status: res.status } });
     return null;
   }
   const payload = await res.json();
   const raw = payload.content?.[0]?.text ?? "";
+  await actorAuth.revalidate(facilityId);
   await recordAiInvocation(admin, { orgId, userId, prompt, response: raw, model, metadata: { outcome: "success", document_id: doc.id } });
   const jsonText = String(raw).replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
   try {
@@ -221,18 +232,6 @@ async function aiFacts(admin: AdminClient, doc: DocumentRow, orgId: string, user
   }
 }
 
-async function loadActor(admin: AdminClient, token: string): Promise<{ userId: string; profile: Profile } | Response> {
-  const { data: { user }, error: authError } = await admin.auth.getUser(token);
-  if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401, null);
-  const { data: profile } = await admin.from("user_profiles").select("app_role, organization_id").eq("id", user.id).single();
-  const role = profile?.app_role ?? "caregiver";
-  if (!ADMIN_ROLES.includes(role as (typeof ADMIN_ROLES)[number])) {
-    return jsonResponse({ error: "Forbidden: owner/org_admin/facility_admin only" }, 403, null);
-  }
-  if (!profile?.organization_id) return jsonResponse({ error: "Profile has no organization" }, 403, null);
-  return { userId: user.id, profile };
-}
-
 async function loadDocument(admin: AdminClient, documentId: string, orgId: string): Promise<DocumentRow | Response> {
   const { data: doc, error } = await admin.from("documents").select("id, workspace_id, title, raw_text, markdown_text, metadata").eq("id", documentId).is("deleted_at", null).single();
   if (error || !doc) return jsonResponse({ error: "Document not found" }, 404, null);
@@ -244,12 +243,13 @@ function response(body: unknown, origin: string | null, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } });
 }
 
-async function parseDocument(admin: AdminClient, params: { documentId: string; facilityId?: string | null; userId: string; orgId: string; parserJobId?: string }) {
+async function parseDocument(admin: AdminClient, actorAuth: CurrentActorAuthorization, params: { documentId: string; facilityId?: string | null; userId: string; orgId: string; parserJobId?: string }) {
   const doc = await loadDocument(admin, params.documentId, params.orgId);
   if (doc instanceof Response) return doc;
 
   let jobId = params.parserJobId;
   if (!jobId) {
+    await actorAuth.revalidate(params.facilityId);
     const { data: job, error } = await admin.from("document_parser_jobs").insert({
       organization_id: params.orgId,
       facility_id: params.facilityId || null,
@@ -264,12 +264,14 @@ async function parseDocument(admin: AdminClient, params: { documentId: string; f
     if (error || !job) return response({ error: `Job insert failed: ${error?.message}` }, null, 500);
     jobId = job.id;
   } else {
+    await actorAuth.revalidate(params.facilityId);
     await admin.from("document_parser_jobs").update({ status: "running", started_at: new Date().toISOString() }).eq("id", jobId);
   }
 
   try {
+    await actorAuth.revalidate(params.facilityId);
     await admin.from("document_extracted_facts").update({ approval_status: "superseded" }).eq("document_id", params.documentId).eq("approval_status", "pending");
-    const extracted = (await aiFacts(admin, doc, params.orgId, params.userId)) || heuristicFacts(doc);
+    const extracted = (await aiFacts(admin, actorAuth, doc, params.orgId, params.userId, params.facilityId)) || heuristicFacts(doc);
     const rows = extracted.map((fact) => ({
       organization_id: params.orgId,
       facility_id: params.facilityId || null,
@@ -288,11 +290,14 @@ async function parseDocument(admin: AdminClient, params: { documentId: string; f
       proposed_field_path: fact.proposed_field_path,
     }));
     if (rows.length) {
+      await actorAuth.revalidate(params.facilityId);
       const { error } = await admin.from("document_extracted_facts").insert(rows);
       if (error) throw new Error(error.message);
     }
     const summary = `Extracted ${rows.length} reviewable fact(s); ${ANTHROPIC_API_KEY ? "AI parser" : "heuristic parser"} used.`;
+    await actorAuth.revalidate(params.facilityId);
     await admin.from("document_parser_jobs").update({ status: "completed", completed_at: new Date().toISOString(), result_summary: summary }).eq("id", jobId);
+    await actorAuth.revalidate(params.facilityId);
     await admin.from("document_audit_events").insert({
       actor_user_id: params.userId,
       document_id: params.documentId,
@@ -302,9 +307,11 @@ async function parseDocument(admin: AdminClient, params: { documentId: string; f
     });
     return response({ success: true, parser_job_id: jobId, document_id: params.documentId, fact_count: rows.length, summary }, null);
   } catch (error) {
+    if (error instanceof CurrentActorError) throw error;
     const message = error instanceof Error ? error.message : String(error);
+    await actorAuth.revalidate(params.facilityId);
     await admin.from("document_parser_jobs").update({ status: "failed", completed_at: new Date().toISOString(), error_message: message }).eq("id", jobId);
-    return response({ error: message, parser_job_id: jobId }, null, 500);
+    return response({ error: "Parser operation failed", parser_job_id: jobId }, null, 500);
   }
 }
 
@@ -314,11 +321,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(origin) });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405, origin);
 
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ADMIN_ROLES });
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
+  const { actor } = actorAuth;
+  const orgId = actor.organizationId;
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "");
-  const actor = await loadActor(admin, token);
-  if (actor instanceof Response) return actor;
-  const orgId = actor.profile.organization_id!;
 
   let body: RequestBody;
   try {
@@ -331,7 +342,13 @@ Deno.serve(async (req) => {
     switch (body.action) {
       case "parse_document": {
         if (!body.document_id) return jsonResponse({ error: "document_id required" }, 400, origin);
-        const res = await parseDocument(admin, { documentId: body.document_id, facilityId: body.facility_id, userId: actor.userId, orgId });
+        if (actor.role === "facility_admin" && !body.facility_id) {
+          return jsonResponse({ error: "facility_id required" }, 400, origin);
+        }
+        if (!canUseCurrentActorFacilityScope(actor, body.facility_id, { allowOrganizationWide: true })) {
+          return jsonResponse({ error: "Forbidden" }, 403, origin);
+        }
+        const res = await parseDocument(admin, actorAuth, { documentId: body.document_id, facilityId: body.facility_id, userId: actor.userId, orgId });
         const payload = await res.json();
         return response(payload, origin, res.status);
       }
@@ -339,7 +356,10 @@ Deno.serve(async (req) => {
         if (!body.parser_job_id) return jsonResponse({ error: "parser_job_id required" }, 400, origin);
         const { data: job, error } = await admin.from("document_parser_jobs").select("id, document_id, organization_id, facility_id").eq("id", body.parser_job_id).single();
         if (error || !job || job.organization_id !== orgId) return jsonResponse({ error: "Parser job not found" }, 404, origin);
-        const res = await parseDocument(admin, { documentId: job.document_id, facilityId: job.facility_id, userId: actor.userId, orgId, parserJobId: job.id });
+        if (!canUseCurrentActorFacilityScope(actor, job.facility_id, { allowOrganizationWide: true })) {
+          return jsonResponse({ error: "Forbidden" }, 403, origin);
+        }
+        const res = await parseDocument(admin, actorAuth, { documentId: job.document_id, facilityId: job.facility_id, userId: actor.userId, orgId, parserJobId: job.id });
         const payload = await res.json();
         return response(payload, origin, res.status);
       }
@@ -347,63 +367,53 @@ Deno.serve(async (req) => {
         if (!body.document_id) return jsonResponse({ error: "document_id required" }, 400, origin);
         const doc = await loadDocument(admin, body.document_id, orgId);
         if (doc instanceof Response) return doc;
-        const { data, error } = await admin.from("document_extracted_facts").select("*").eq("document_id", body.document_id).is("deleted_at", null).order("created_at", { ascending: false });
-        if (error) return jsonResponse({ error: error.message }, 500, origin);
-        return response({ data: data ?? [] }, origin);
+        if (actor.accessibleFacilityIds.length === 0 && !["owner", "org_admin"].includes(actor.role)) {
+          return response({ data: [] }, origin);
+        }
+        let factQuery = admin.from("document_extracted_facts").select("*")
+          .eq("document_id", body.document_id)
+          .eq("organization_id", orgId)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false });
+        factQuery = ["owner", "org_admin"].includes(actor.role)
+          ? factQuery.or(actor.accessibleFacilityIds.length > 0
+            ? `facility_id.is.null,facility_id.in.(${actor.accessibleFacilityIds.join(",")})`
+            : "facility_id.is.null")
+          : factQuery.in("facility_id", [...actor.accessibleFacilityIds]);
+        const { data, error } = await factQuery;
+        if (error) return jsonResponse({ error: "Could not load document facts" }, 500, origin);
+        return response({ data: filterRowsToCurrentActorFacilities(actor, data ?? [], { includeOrganizationWide: true }) }, origin);
       }
       case "approve_fact":
       case "reject_fact":
       case "apply_fact":
       case "approve_and_apply_fact": {
         if (!body.fact_id) return jsonResponse({ error: "fact_id required" }, 400, origin);
-        const { data: fact, error } = await admin.from("document_extracted_facts").select("*").eq("id", body.fact_id).is("deleted_at", null).single();
-        if (error || !fact || fact.organization_id !== orgId) return jsonResponse({ error: "Fact not found" }, 404, origin);
-        if (body.action === "reject_fact") {
-          await admin.from("document_extracted_facts").update({ approval_status: "rejected", reviewed_by: actor.userId, reviewed_at: new Date().toISOString(), review_notes: body.review_notes || null }).eq("id", body.fact_id);
-          return response({ success: true, fact_id: body.fact_id, approval_status: "rejected" }, origin);
+        await actorAuth.revalidate();
+        const { data, error } = await admin.rpc("review_facility_launch_fact", {
+          p_fact_id: body.fact_id,
+          p_action: body.action,
+          p_review_notes: body.review_notes || null,
+          p_actor_id: actor.userId,
+          p_session_id: actor.sessionId,
+          p_claim_version: actor.claimVersion,
+          p_organization_id: orgId,
+        });
+        if (error) {
+          const status = error.code === "55000" ? 409 : error.code === "42501" ? 403 : 404;
+          return jsonResponse({ error: status === 409 ? "Fact must be approved before apply" : status === 403 ? "Forbidden" : "Fact not found" }, status, origin);
         }
-        if (body.action === "approve_fact") {
-          await admin.from("document_extracted_facts").update({ approval_status: "approved", reviewed_by: actor.userId, reviewed_at: new Date().toISOString(), review_notes: body.review_notes || null }).eq("id", body.fact_id);
-          return response({ success: true, fact_id: body.fact_id, approval_status: "approved" }, origin);
-        }
-        if (body.action === "approve_and_apply_fact" && fact.approval_status === "pending") {
-          await admin.from("document_extracted_facts").update({ approval_status: "approved", reviewed_by: actor.userId, reviewed_at: new Date().toISOString(), review_notes: body.review_notes || null }).eq("id", body.fact_id);
-        } else if (body.action === "apply_fact" && fact.approval_status !== "approved") {
-          return jsonResponse({ error: "Fact must be approved before apply" }, 409, origin);
-        }
-        await admin.from("facility_launch_module_values").update({ superseded_at: new Date().toISOString() })
-          .eq("organization_id", orgId)
-          .eq("facility_id", fact.facility_id)
-          .eq("module_code", fact.proposed_module_code)
-          .eq("field_path", fact.proposed_field_path)
-          .is("superseded_at", null)
-          .is("deleted_at", null);
-        const { data: applied, error: applyError } = await admin.from("facility_launch_module_values").insert({
-          organization_id: orgId,
-          facility_id: fact.facility_id,
-          module_code: fact.proposed_module_code,
-          field_path: fact.proposed_field_path,
-          value: fact.extracted_value,
-          source_document_id: fact.document_id,
-          source_fact_id: fact.id,
-          provenance: {
-            confidence: fact.confidence,
-            source_excerpt: fact.source_excerpt,
-            parser_job_id: fact.parser_job_id,
-            parser_version: PARSER_VERSION,
-          },
-          applied_by: actor.userId,
-        }).select("id").single();
-        if (applyError) return jsonResponse({ error: applyError.message }, 500, origin);
-        await admin.from("document_extracted_facts").update({ approval_status: "applied", applied_by: actor.userId, applied_at: new Date().toISOString() }).eq("id", body.fact_id);
-        return response({ success: true, fact_id: body.fact_id, applied_value_id: applied?.id, approval_status: "applied" }, origin);
+        return response(data, origin);
       }
       default:
         return jsonResponse({ error: `Unknown action: ${body.action ?? "missing"}` }, 400, origin);
     }
   } catch (error) {
+    if (error instanceof CurrentActorError) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     const message = error instanceof Error ? error.message : String(error);
     t.log({ event: "parser_error", outcome: "error", error_message: message });
-    return jsonResponse({ error: message }, 500, origin);
+    return jsonResponse({ error: "Parser operation failed" }, 500, origin);
   }
 });

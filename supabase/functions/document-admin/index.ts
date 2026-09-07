@@ -5,6 +5,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import {
+  CurrentActorError,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -22,30 +28,15 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ADMIN_ROLES });
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
+  const user = { id: actorAuth.actor.userId };
+  const orgId = actorAuth.actor.organizationId;
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
-  }
-
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-
-  const userRole = profile?.app_role ?? "caregiver";
-  const orgId = profile?.organization_id as string | undefined;
-
-  if (!ADMIN_ROLES.includes(userRole as (typeof ADMIN_ROLES)[number])) {
-    return jsonResponse({ error: "Forbidden: admin/owner only" }, 403, origin);
-  }
 
   let body: {
     action?: string;
@@ -134,6 +125,7 @@ Deno.serve(async (req) => {
         }
 
         if (Object.keys(updates).length > 0) {
+          await actorAuth.revalidate(doc.facility_id ?? null);
           updates.updated_at = new Date().toISOString();
           const { error: updateErr } = await admin.from("documents").update(
             updates,
@@ -141,6 +133,7 @@ Deno.serve(async (req) => {
           if (updateErr) throw updateErr;
         }
 
+        await actorAuth.revalidate(doc.facility_id ?? null);
         await admin.from("document_audit_events").insert({
           actor_user_id: user.id,
           document_id,
@@ -159,6 +152,7 @@ Deno.serve(async (req) => {
       }
 
       case "delete": {
+        await actorAuth.revalidate(doc.facility_id ?? null);
         const meta = doc.metadata as {
           storage_path?: string;
           storage_bucket?: string;
@@ -169,12 +163,14 @@ Deno.serve(async (req) => {
           ]);
         }
 
+        await actorAuth.revalidate(doc.facility_id ?? null);
         const { error: delErr } = await admin
           .from("documents")
           .update({ deleted_at: new Date().toISOString(), status: "archived" })
           .eq("id", document_id);
         if (delErr) throw delErr;
 
+        await actorAuth.revalidate(doc.facility_id ?? null);
         await admin.from("document_audit_events").insert({
           actor_user_id: user.id,
           document_id,
@@ -199,15 +195,19 @@ Deno.serve(async (req) => {
         // Trigger the ingest function's regenerate_markdown path
         const ingestUrl = `${SUPABASE_URL}/functions/v1/ingest`;
         const authHeader = req.headers.get("authorization") ?? "";
-        const ingestRes = await fetch(ingestUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": authHeader,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ document_id, action: "regenerate_markdown" }),
-          signal: AbortSignal.timeout(180_000),
-        });
+        const ingestRes = await withCurrentActorRevalidation(
+          actorAuth,
+          () => fetch(ingestUrl, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${actorAuth.accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ document_id, action: "regenerate_markdown" }),
+            signal: AbortSignal.timeout(180_000),
+          }),
+          doc.facility_id ?? null,
+        );
 
         const ingestResult = await ingestRes.json();
         if (!ingestRes.ok) {
@@ -242,12 +242,15 @@ Deno.serve(async (req) => {
         );
     }
   } catch (err: unknown) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     const msg = err instanceof Error ? err.message : String(err);
     t.log({
       event: "document_admin_error",
       outcome: "error",
       error_message: msg,
     });
-    return jsonResponse({ error: msg }, 500, origin);
+    return jsonResponse({ error: "Document operation failed" }, 500, origin);
   }
 });

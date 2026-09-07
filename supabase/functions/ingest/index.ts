@@ -15,6 +15,13 @@ import TurndownService from "npm:turndown@7.2.0";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { redactStringWithCounts } from "../_shared/redact-pii.ts";
+import {
+  CurrentActorError,
+  type CurrentActorAuthorization,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -196,9 +203,9 @@ async function docxToMarkdown(buffer: ArrayBuffer): Promise<{ markdown: string; 
  * Sends extracted text to Claude Haiku to detect and apply heading levels,
  * tables, lists, and emphasis.
  */
-async function textPdfToMarkdown(rawText: string, title: string): Promise<{ markdown: string; method: string }> {
+async function textPdfToMarkdown(rawText: string, title: string, actorAuth: CurrentActorAuthorization): Promise<{ markdown: string; method: string }> {
   if (rawText.length <= LLM_MD_MAX_CHARS_PER_PASS) {
-    const md = await llmTextToMarkdown(rawText, title);
+    const md = await llmTextToMarkdown(rawText, title, actorAuth);
     return { markdown: md, method: "llm_text_to_md" };
   }
 
@@ -206,7 +213,7 @@ async function textPdfToMarkdown(rawText: string, title: string): Promise<{ mark
   const pages = splitTextForBatching(rawText, LLM_MD_MAX_CHARS_PER_PASS);
   const parts: string[] = [];
   for (let i = 0; i < pages.length; i++) {
-    const md = await llmTextToMarkdown(pages[i]!, `${title} (section ${i + 1}/${pages.length})`);
+    const md = await llmTextToMarkdown(pages[i]!, `${title} (section ${i + 1}/${pages.length})`, actorAuth);
     parts.push(md);
   }
   return { markdown: parts.join("\n\n"), method: "llm_text_to_md" };
@@ -216,11 +223,11 @@ async function textPdfToMarkdown(rawText: string, title: string): Promise<{ mark
  * Scanned PDF → send PDF bytes to Claude vision → Markdown.
  * Uses the Anthropic document content type for native PDF reading.
  */
-async function scannedPdfToMarkdown(buffer: ArrayBuffer, title: string): Promise<{ markdown: string; method: string }> {
+async function scannedPdfToMarkdown(buffer: ArrayBuffer, title: string, actorAuth: CurrentActorAuthorization): Promise<{ markdown: string; method: string }> {
   const pdfBase64 = Buffer.from(buffer).toString("base64");
 
   // Process in a single call if under ~25 pages. Claude handles multi-page PDFs natively.
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await withCurrentActorRevalidation(actorAuth, () => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "x-api-key": ANTHROPIC_API_KEY,
@@ -265,7 +272,7 @@ Document title for context: "${title}"`,
       ],
     }),
     signal: AbortSignal.timeout(180_000), // 3 min for large scanned docs
-  });
+  }));
 
   if (!res.ok) {
     const errText = await res.text();
@@ -322,8 +329,8 @@ function spreadsheetToMarkdown(buffer: ArrayBuffer): { markdown: string; method:
 // ---------------------------------------------------------------------------
 // LLM helper: text → Markdown (for text-based PDFs and plain text)
 // ---------------------------------------------------------------------------
-async function llmTextToMarkdown(text: string, title: string): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+async function llmTextToMarkdown(text: string, title: string, actorAuth: CurrentActorAuthorization): Promise<string> {
+  const res = await withCurrentActorRevalidation(actorAuth, () => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "x-api-key": ANTHROPIC_API_KEY,
@@ -358,7 +365,7 @@ ${text}`,
       ],
     }),
     signal: AbortSignal.timeout(60_000),
-  });
+  }));
 
   if (!res.ok) {
     // Fallback: return raw text if LLM fails (still better than nothing)
@@ -405,6 +412,7 @@ async function convertToMarkdown(
   kind: FileKind,
   title: string,
   rawText: string,
+  actorAuth: CurrentActorAuthorization,
 ): Promise<{ markdown: string; rawText: string; method: string }> {
   switch (kind) {
     case "docx": {
@@ -415,13 +423,13 @@ async function convertToMarkdown(
     case "pdf": {
       if (isScannedPdf(rawText)) {
         // Scanned PDF: use Claude vision on the PDF bytes directly
-        const { markdown, method } = await scannedPdfToMarkdown(buffer, title);
+        const { markdown, method } = await scannedPdfToMarkdown(buffer, title, actorAuth);
         // For scanned PDFs, the markdown IS the raw text (no text was extractable)
         const effectiveRawText = rawText.trim().length < SCANNED_PDF_MIN_CHARS ? markdown : rawText;
         return { markdown, rawText: effectiveRawText, method };
       }
       // Text-based PDF: structure the extracted text into Markdown via LLM
-      const { markdown, method } = await textPdfToMarkdown(rawText, title);
+      const { markdown, method } = await textPdfToMarkdown(rawText, title, actorAuth);
       return { markdown, rawText, method };
     }
     case "spreadsheet": {
@@ -438,7 +446,7 @@ async function convertToMarkdown(
       const text = new TextDecoder().decode(buffer);
       // For plain text > 500 chars, try LLM structuring; otherwise pass through
       if (text.trim().length > 500) {
-        const md = await llmTextToMarkdown(text, title);
+        const md = await llmTextToMarkdown(text, title, actorAuth);
         return { markdown: md, rawText: text, method: "llm_text_to_md" };
       }
       return { markdown: text, rawText: text, method: "passthrough_text" };
@@ -621,12 +629,12 @@ function splitMarkdownBlocks(text: string): string[] {
 // ---------------------------------------------------------------------------
 // Embeddings
 // ---------------------------------------------------------------------------
-async function generateEmbeddings(texts: string[]): Promise<number[][]> {
+async function generateEmbeddings(texts: string[], actorAuth: CurrentActorAuthorization): Promise<number[][]> {
   const batchSize = 20;
   const all: number[][] = [];
   for (let i = 0; i < texts.length; i += batchSize) {
     const batch = texts.slice(i, i + batchSize);
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
+    const res = await withCurrentActorRevalidation(actorAuth, () => fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
@@ -634,7 +642,7 @@ async function generateEmbeddings(texts: string[]): Promise<number[][]> {
       },
       body: JSON.stringify({ model: EMBEDDING_MODEL, input: batch }),
       signal: AbortSignal.timeout(60_000),
-    });
+    }));
     if (!res.ok) throw new Error(`Embedding API: ${res.status}`);
     const data = await res.json();
     all.push(...data.data.map((d: { embedding: number[] }) => d.embedding));
@@ -645,9 +653,9 @@ async function generateEmbeddings(texts: string[]): Promise<number[][]> {
 // ---------------------------------------------------------------------------
 // Summary generation
 // ---------------------------------------------------------------------------
-async function generateSummary(text: string, title: string): Promise<string | null> {
+async function generateSummary(text: string, title: string, actorAuth: CurrentActorAuthorization): Promise<string | null> {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await withCurrentActorRevalidation(actorAuth, () => fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": ANTHROPIC_API_KEY,
@@ -665,11 +673,12 @@ async function generateSummary(text: string, title: string): Promise<string | nu
         ],
       }),
       signal: AbortSignal.timeout(30_000),
-    });
+    }));
     if (!res.ok) return null;
     const data = await res.json();
     return data.content?.[0]?.text?.trim() ?? null;
-  } catch {
+  } catch (error) {
+    if (error instanceof CurrentActorError) throw error;
     return null;
   }
 }
@@ -694,8 +703,10 @@ function resolveGovernance(
 // ---------------------------------------------------------------------------
 // Ingest pipeline (chunk → embed → store → summarize)
 // ---------------------------------------------------------------------------
-async function ingestDocument(
+async function ingestDocumentAuthorized(
   admin: AdminClient,
+  actorAuth: CurrentActorAuthorization,
+  authorizationRunId: string,
   documentId: string,
   markdownText: string,
   rawText: string,
@@ -713,11 +724,18 @@ async function ingestDocument(
     return { ...c, content: r.text, redaction_patterns_hit: r.patterns_hit };
   });
 
-  const embeddings = await generateEmbeddings(chunks.map((c) => c.content));
+  const embeddings = await generateEmbeddings(chunks.map((c) => c.content), actorAuth);
   const sectionChunks = chunks.filter((c) => c.type === "section");
   const paraChunks = chunks.filter((c) => c.type === "paragraph");
 
   // Clear existing chunks for re-index
+  await actorAuth.revalidate();
+  const { error: startError } = await admin.rpc(
+    "start_kb_ingest_authorization_mutation",
+    { p_run_id: authorizationRunId },
+  );
+  if (startError) throw new Error("Could not start ingest mutation");
+  await actorAuth.revalidate();
   await admin.from("chunks").delete().eq("document_id", documentId);
 
   const nowIso = new Date().toISOString();
@@ -739,6 +757,7 @@ async function ingestDocument(
   const batchSize = 10;
   const insertedSections: { id: string; chunk_index: number }[] = [];
   for (let i = 0; i < sectionRows.length; i += batchSize) {
+    await actorAuth.revalidate();
     const { data, error } = await admin
       .from("chunks")
       .insert(sectionRows.slice(i, i + batchSize))
@@ -767,12 +786,14 @@ async function ingestDocument(
   }));
 
   for (let i = 0; i < paraRows.length; i += batchSize) {
+    await actorAuth.revalidate();
     const { error } = await admin.from("chunks").insert(paraRows.slice(i, i + batchSize));
     if (error) throw new Error(`Paragraph insert: ${error.message}`);
   }
 
   // Summarize from markdown (better quality than raw text)
-  const summary = await generateSummary(markdownText, title);
+  const summary = await generateSummary(markdownText, title, actorAuth);
+  await actorAuth.revalidate();
   await admin
     .from("documents")
     .update({
@@ -785,8 +806,87 @@ async function ingestDocument(
   return chunks.length;
 }
 
-async function finalizeUploadedDocument(
+async function markIngestAuthorizationFailure(
   admin: AdminClient,
+  authorizationRunId: string,
+): Promise<void> {
+  const { error } = await admin.rpc("fail_kb_ingest_authority_change", {
+    p_run_id: authorizationRunId,
+  });
+  if (error) throw new Error("Could not record ingest authorization failure");
+}
+
+async function createIngestAuthorizationRun(
+  admin: AdminClient,
+  actorAuth: CurrentActorAuthorization,
+  documentId: string,
+  facilityId: string | null = null,
+): Promise<string> {
+  await actorAuth.revalidate(facilityId);
+  const runId = crypto.randomUUID();
+  const { data, error } = await admin.rpc("create_kb_ingest_authorization_run", {
+    p_run_id: runId,
+    p_document_id: documentId,
+    p_actor_id: actorAuth.actor.userId,
+    p_session_id: actorAuth.actor.sessionId,
+    p_claim_version: actorAuth.actor.claimVersion,
+    p_organization_id: actorAuth.actor.organizationId,
+    p_facility_id: facilityId,
+  });
+  if (error || data !== runId) throw new Error("Could not create ingest authorization receipt");
+  return runId;
+}
+
+async function completeIngestAuthorizationRun(
+  admin: AdminClient,
+  actorAuth: CurrentActorAuthorization,
+  authorizationRunId: string,
+  status: "completed" | "failed",
+): Promise<void> {
+  await actorAuth.revalidate();
+  const { error } = await admin.rpc("complete_kb_ingest_authorization_run", {
+    p_run_id: authorizationRunId,
+    p_status: status,
+  });
+  if (error) throw new Error("Could not finalize ingest authorization receipt");
+}
+
+async function ingestDocument(
+  admin: AdminClient,
+  actorAuth: CurrentActorAuthorization,
+  authorizationRunId: string,
+  documentId: string,
+  markdownText: string,
+  rawText: string,
+  title: string,
+  workspaceId: string,
+): Promise<number> {
+  try {
+    return await ingestDocumentAuthorized(
+      admin,
+      actorAuth,
+      authorizationRunId,
+      documentId,
+      markdownText,
+      rawText,
+      title,
+      workspaceId,
+    );
+  } catch (error) {
+    if (error instanceof CurrentActorError) {
+      await markIngestAuthorizationFailure(
+        admin,
+        authorizationRunId,
+      );
+    }
+    throw error;
+  }
+}
+
+async function finalizeUploadedDocumentAuthorized(
+  admin: AdminClient,
+  actorAuth: CurrentActorAuthorization,
+  authorizationRunId: string,
   params: {
     userId: string;
     workspaceId: string;
@@ -804,13 +904,15 @@ async function finalizeUploadedDocument(
 
   let chunkCount = 0;
   try {
-    chunkCount = await ingestDocument(admin, documentId, markdown, rawText, title, workspaceId);
+    chunkCount = await ingestDocument(admin, actorAuth, authorizationRunId, documentId, markdown, rawText, title, workspaceId);
   } catch (ingestErr: unknown) {
+    if (ingestErr instanceof CurrentActorError) throw ingestErr;
     const msg = ingestErr instanceof Error ? ingestErr.message : String(ingestErr);
     // KB-NEXT-08: bump retry counter and schedule next attempt via the
     // exponential backoff in _kb_ingest_request_retry. If that RPC reports
     // max_attempts_exceeded we leave the doc in ingest_failed without
     // ingest_retry_at so the owner has to take action manually.
+    await actorAuth.revalidate();
     const { data: failBumpRow } = await admin
       .from("documents")
       .select("ingest_attempt_count, ingest_max_attempts")
@@ -818,6 +920,7 @@ async function finalizeUploadedDocument(
       .single();
     const attempts = (failBumpRow?.ingest_attempt_count ?? 0) + 1;
     const maxAttempts = failBumpRow?.ingest_max_attempts ?? 3;
+    await actorAuth.revalidate();
     await admin
       .from("documents")
       .update({
@@ -827,6 +930,7 @@ async function finalizeUploadedDocument(
       })
       .eq("id", documentId);
     if (attempts < maxAttempts) {
+      await actorAuth.revalidate();
       const { error: retryErr } = await admin.rpc("_kb_ingest_request_retry", {
         p_document_id: documentId,
         p_caller_organization_id: workspaceId,
@@ -840,6 +944,7 @@ async function finalizeUploadedDocument(
         });
       }
     }
+    await actorAuth.revalidate();
     await admin.from("document_audit_events").insert({
       actor_user_id: userId,
       document_id: documentId,
@@ -855,9 +960,11 @@ async function finalizeUploadedDocument(
       attempt: attempts,
       max_attempts: maxAttempts,
     });
+    await completeIngestAuthorizationRun(admin, actorAuth, authorizationRunId, "failed");
     return;
   }
 
+  await actorAuth.revalidate();
   await admin.from("document_audit_events").insert({
     actor_user_id: userId,
     document_id: documentId,
@@ -872,6 +979,7 @@ async function finalizeUploadedDocument(
     },
   });
 
+  await actorAuth.revalidate();
   await admin.from("kb_analytics_events").insert({
     workspace_id: workspaceId,
     event_type: "doc_uploaded",
@@ -879,6 +987,7 @@ async function finalizeUploadedDocument(
     document_id: documentId,
     metadata: { chunk_count: chunkCount, conversion_method: conversionMethod, background: true },
   });
+  await completeIngestAuthorizationRun(admin, actorAuth, authorizationRunId, "completed");
 
   t.log({
     event: "upload_ok",
@@ -888,6 +997,42 @@ async function finalizeUploadedDocument(
     conversion_method: conversionMethod,
     background: true,
   });
+}
+
+async function finalizeUploadedDocument(
+  admin: AdminClient,
+  actorAuth: CurrentActorAuthorization,
+  authorizationRunId: string,
+  params: {
+    userId: string;
+    workspaceId: string;
+    documentId: string;
+    title: string;
+    kind: FileKind;
+    fileSize: number;
+    markdown: string;
+    rawText: string;
+    conversionMethod: string;
+  },
+  t: ReturnType<typeof withTiming>,
+): Promise<void> {
+  try {
+    await finalizeUploadedDocumentAuthorized(
+      admin,
+      actorAuth,
+      authorizationRunId,
+      params,
+      t,
+    );
+  } catch (error) {
+    if (error instanceof CurrentActorError) {
+      await markIngestAuthorizationFailure(
+        admin,
+        authorizationRunId,
+      );
+    }
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -904,39 +1049,21 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: UPLOAD_ROLES });
+  } catch (error) {
+    t.log({ event: "auth_failed", outcome: "blocked" });
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId };
+  const userRole = actor.role;
+  const orgId = actor.organizationId;
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Auth
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
-    t.log({ event: "auth_failed", outcome: "blocked", error_message: authError?.message });
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
-  }
-
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-
-  const userRole = profile?.app_role ?? "caregiver";
-  const orgId = profile?.organization_id as string | undefined;
-
-  if (!orgId) {
-    t.log({ event: "no_org", outcome: "blocked" });
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
-
-  if (!UPLOAD_ROLES.includes(userRole as (typeof UPLOAD_ROLES)[number])) {
-    return jsonResponse({ error: "Forbidden: insufficient role" }, 403, origin);
-  }
-
   const contentType = req.headers.get("content-type") ?? "";
+  let activeIngestAuthorizationRunId: string | null = null;
 
   try {
     // -----------------------------------------------------------------------
@@ -974,13 +1101,19 @@ Deno.serve(async (req) => {
         const buffer = await fileData.arrayBuffer();
         const kind = (meta.upload_kind as FileKind) || "text";
         const rawText = await extractRawText(buffer, kind);
-        const { markdown, method } = await convertToMarkdown(buffer, kind, doc.title, rawText);
+        const { markdown, method } = await convertToMarkdown(buffer, kind, doc.title, rawText, actorAuth);
 
         if (!markdown.trim()) {
           return jsonResponse({ error: "Markdown conversion produced empty result" }, 400, origin);
         }
+        activeIngestAuthorizationRunId = await createIngestAuthorizationRun(
+          admin,
+          actorAuth,
+          doc.id,
+        );
 
         // Update document with new markdown
+        await actorAuth.revalidate();
         await admin.from("documents").update({
           raw_text: rawText || doc.raw_text,
           markdown_text: markdown,
@@ -989,8 +1122,9 @@ Deno.serve(async (req) => {
         }).eq("id", document_id);
 
         // Re-ingest with new markdown
-        const chunkCount = await ingestDocument(admin, doc.id, markdown, rawText || doc.raw_text, doc.title, doc.workspace_id);
+        const chunkCount = await ingestDocument(admin, actorAuth, activeIngestAuthorizationRunId, doc.id, markdown, rawText || doc.raw_text, doc.title, doc.workspace_id);
 
+        await actorAuth.revalidate();
         await admin.from("document_audit_events").insert({
           actor_user_id: user.id,
           document_id: doc.id,
@@ -998,6 +1132,13 @@ Deno.serve(async (req) => {
           event_type: "markdown_regenerated",
           metadata: { chunk_count: chunkCount, conversion_method: method },
         });
+        await completeIngestAuthorizationRun(
+          admin,
+          actorAuth,
+          activeIngestAuthorizationRunId,
+          "completed",
+        );
+        activeIngestAuthorizationRunId = null;
 
         t.log({ event: "regenerate_md_ok", outcome: "success", document_id: doc.id, chunks: chunkCount, method });
         return new Response(JSON.stringify({
@@ -1012,9 +1153,15 @@ Deno.serve(async (req) => {
       if (!textForChunking) {
         return jsonResponse({ error: "No text to re-index (no markdown_text or raw_text)" }, 400, origin);
       }
+      activeIngestAuthorizationRunId = await createIngestAuthorizationRun(
+        admin,
+        actorAuth,
+        doc.id,
+      );
 
-      const chunkCount = await ingestDocument(admin, doc.id, textForChunking, doc.raw_text || textForChunking, doc.title, doc.workspace_id);
+      const chunkCount = await ingestDocument(admin, actorAuth, activeIngestAuthorizationRunId, doc.id, textForChunking, doc.raw_text || textForChunking, doc.title, doc.workspace_id);
 
+      await actorAuth.revalidate();
       await admin.from("document_audit_events").insert({
         actor_user_id: user.id,
         document_id: doc.id,
@@ -1022,6 +1169,13 @@ Deno.serve(async (req) => {
         event_type: "reindexed",
         metadata: { chunk_count: chunkCount, source: doc.markdown_text ? "markdown_text" : "raw_text" },
       });
+      await completeIngestAuthorizationRun(
+        admin,
+        actorAuth,
+        activeIngestAuthorizationRunId,
+        "completed",
+      );
+      activeIngestAuthorizationRunId = null;
 
       t.log({ event: "reindex_ok", outcome: "success", document_id: doc.id, chunks: chunkCount });
       return new Response(JSON.stringify({ success: true, document_id: doc.id, chunks: chunkCount }), {
@@ -1039,7 +1193,10 @@ Deno.serve(async (req) => {
       const audience = (formData.get("audience") as string) || undefined;
       const status = (formData.get("status") as string) || undefined;
       const requestedWs = (formData.get("workspace_id") as string) || undefined;
-      const workspaceId = requestedWs && requestedWs === orgId ? requestedWs : orgId;
+      if (requestedWs && requestedWs !== orgId) {
+        return jsonResponse({ error: "Forbidden" }, 403, origin);
+      }
+      const workspaceId = orgId;
 
       if (!file) {
         return jsonResponse({ error: "No file provided" }, 400, origin);
@@ -1066,12 +1223,13 @@ Deno.serve(async (req) => {
       let conversionMethod: string;
       let rawText = rawTextPre;
       try {
-        const result = await convertToMarkdown(fileBuffer, kind, title, rawTextPre);
+        const result = await convertToMarkdown(fileBuffer, kind, title, rawTextPre, actorAuth);
         markdown = result.markdown;
         conversionMethod = result.method;
         // Update rawText if scanned PDF provided better text
         rawText = result.rawText;
       } catch (convErr: unknown) {
+        if (convErr instanceof CurrentActorError) throw convErr;
         // If Markdown conversion fails, fall back to raw text
         const msg = convErr instanceof Error ? convErr.message : String(convErr);
         console.error(`Markdown conversion failed, falling back to raw text: ${msg}`);
@@ -1092,6 +1250,7 @@ Deno.serve(async (req) => {
 
       // Step 3: Upload original file to storage
       const storagePath = `kb/${workspaceId}/${crypto.randomUUID()}-${file.name}`;
+      await actorAuth.revalidate();
       const { error: storageErr } = await admin.storage
         .from("documents")
         .upload(storagePath, fileBuffer, { contentType: file.type });
@@ -1114,6 +1273,7 @@ Deno.serve(async (req) => {
       }
 
       // Step 4: Insert document record with both raw_text and markdown_text
+      await actorAuth.revalidate();
       const { data: doc, error: docInsertErr } = await admin
         .from("documents")
         .insert({
@@ -1135,7 +1295,13 @@ Deno.serve(async (req) => {
       if (docInsertErr || !doc) {
         return jsonResponse({ error: `Insert failed: ${docInsertErr?.message}` }, 500, origin);
       }
+      activeIngestAuthorizationRunId = await createIngestAuthorizationRun(
+        admin,
+        actorAuth,
+        doc.id,
+      );
 
+      await actorAuth.revalidate();
       await admin.from("document_audit_events").insert({
         actor_user_id: user.id,
         document_id: doc.id,
@@ -1151,6 +1317,8 @@ Deno.serve(async (req) => {
 
       const backgroundTask = finalizeUploadedDocument(
         admin,
+        actorAuth,
+        activeIngestAuthorizationRunId,
         {
           userId: user.id,
           workspaceId: doc.workspace_id,
@@ -1165,8 +1333,10 @@ Deno.serve(async (req) => {
         t,
       );
       const queued = queueBackgroundTask(backgroundTask);
+      if (queued) activeIngestAuthorizationRunId = null;
       if (!queued) {
         await backgroundTask;
+        activeIngestAuthorizationRunId = null;
       }
 
       t.log({
@@ -1194,8 +1364,25 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ error: "Unsupported content type" }, 400, origin);
   } catch (err: unknown) {
+    if (err instanceof CurrentActorError) {
+      if (activeIngestAuthorizationRunId) {
+        await markIngestAuthorizationFailure(
+          admin,
+          activeIngestAuthorizationRunId,
+        ).catch(() => undefined);
+      }
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
+    if (activeIngestAuthorizationRunId) {
+      await completeIngestAuthorizationRun(
+        admin,
+        actorAuth,
+        activeIngestAuthorizationRunId,
+        "failed",
+      ).catch(() => undefined);
+    }
     const msg = err instanceof Error ? err.message : String(err);
     t.log({ event: "ingest_error", outcome: "error", error_message: msg });
-    return jsonResponse({ error: msg }, 500, origin);
+    return jsonResponse({ error: "Ingest operation failed" }, 500, origin);
   }
 });

@@ -1,3 +1,5 @@
+import { CurrentActorError } from "./current-actor.ts";
+
 /**
  * router-intent — Claude-Haiku intent classifier for haven-ai-router (KB-NEXT-01).
  *
@@ -190,7 +192,12 @@ export const intentCache = new IntentCache();
  */
 export async function classifyIntent(
   question: string,
-  opts: { surfaceContext?: string; userRole?: string } = {},
+  opts: {
+    surfaceContext?: string;
+    userRole?: string;
+    revalidate?: () => Promise<void>;
+    fetcher?: typeof fetch;
+  } = {},
 ): Promise<IntentClassification> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) {
@@ -208,7 +215,8 @@ export async function classifyIntent(
 
   let response: Response;
   try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
+    await opts.revalidate?.();
+    response = await (opts.fetcher ?? fetch)("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
@@ -229,7 +237,8 @@ export async function classifyIntent(
       }),
       signal: AbortSignal.timeout(CLASSIFIER_TIMEOUT_MS),
     });
-  } catch (_err) {
+  } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     return {
       intent: "mixed",
       confidence: 0.3,

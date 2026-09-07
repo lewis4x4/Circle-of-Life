@@ -389,6 +389,16 @@ async function main() {
       npmRun("migrations:verify:pg", root, {
         label: "qa.migrations-apply-postgres",
       }),
+    mapResult: (result) => {
+      const combinedOutput = `${result.stdout}\n${result.stderr}`;
+      const skipped = /^\[migrations:verify:pg\] SKIP:/m.test(combinedOutput);
+      return {
+        status: skipped ? "skipped" : result.code === 0 ? "passed" : "failed",
+        duration_ms: result.duration_ms,
+        stdout: result.stdout,
+        stderr: result.stderr,
+      };
+    },
   });
 
   const build = await executeCommandCheck(checks, advisoryCheckIds, {

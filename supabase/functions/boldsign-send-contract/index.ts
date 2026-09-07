@@ -1,6 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { boldSignFetch, getTemplateId } from "../_shared/boldsign.ts";
+import {
+  currentActorOrProviderErrorResponse,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -28,24 +34,34 @@ type SignerRow = {
   routing_order: number;
 };
 
-Deno.serve(async (req) => {
+export function boldSignProviderFailureResponse(
+  error: unknown,
+  origin: string | null,
+  message = "BoldSign send failed",
+): Response {
+  return currentActorOrProviderErrorResponse(error, {
+    status: 502,
+    message,
+    headers: getCorsHeaders(origin),
+  });
+}
+
+export async function handleBoldSignSend(req: Request): Promise<Response> {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(origin) });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405, origin);
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "");
-  const { data: { user }, error: authError } = await admin.auth.getUser(token);
-  if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401, origin);
-
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-  if (!profile || !ALLOWED_ROLES.has(String(profile.app_role))) {
-    return jsonResponse({ error: "Forbidden" }, 403, origin);
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, {
+      allowedRoles: [...ALLOWED_ROLES],
+    });
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId };
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   let body: { contract_id?: string; template_id?: string; disable_emails?: boolean; get_embedded_links?: boolean };
   try {
@@ -62,7 +78,10 @@ Deno.serve(async (req) => {
     .is("deleted_at", null)
     .single<ContractRow>();
   if (contractErr || !contract) return jsonResponse({ error: "Contract not found" }, 404, origin);
-  if (contract.organization_id !== profile.organization_id) return jsonResponse({ error: "Forbidden" }, 403, origin);
+  if (
+    contract.organization_id !== actor.organizationId ||
+    !actor.accessibleFacilityIds.includes(contract.facility_id)
+  ) return jsonResponse({ error: "Forbidden" }, 403, origin);
   if (contract.provider !== "boldsign") return jsonResponse({ error: "Contract provider is not boldsign" }, 400, origin);
   if (!["draft", "ready_to_send"].includes(contract.status)) {
     return jsonResponse({ error: `Contract status must be draft/ready_to_send, got ${contract.status}` }, 409, origin);
@@ -105,12 +124,26 @@ Deno.serve(async (req) => {
     disableEmails,
   };
 
-  const sendResponse = await boldSignFetch(`/v1/template/send?templateId=${encodeURIComponent(templateId)}`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  let sendResponse: Response;
+  try {
+    sendResponse = await withCurrentActorRevalidation(
+      actorAuth,
+      () => boldSignFetch(`/v1/template/send?templateId=${encodeURIComponent(templateId)}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+      contract.facility_id,
+    );
+  } catch (error) {
+    return boldSignProviderFailureResponse(error, origin);
+  }
   const sendJson = await sendResponse.json().catch(() => ({}));
   if (!sendResponse.ok) {
+    try {
+      await actorAuth.revalidate(contract.facility_id);
+    } catch (error) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     await admin.from("resident_contract_events").insert({
       organization_id: contract.organization_id,
       facility_id: contract.facility_id,
@@ -122,14 +155,19 @@ Deno.serve(async (req) => {
       raw_payload: sendJson,
       metadata: { http_status: sendResponse.status },
     });
-    return jsonResponse({ error: "BoldSign send failed", details: sendJson }, 502, origin);
+    return jsonResponse({ error: "BoldSign send failed" }, 502, origin);
   }
 
   const documentId = sendJson.documentId ?? sendJson.documentID ?? sendJson.id;
   if (!documentId || typeof documentId !== "string") {
-    return jsonResponse({ error: "BoldSign response did not include documentId", details: sendJson }, 502, origin);
+    return jsonResponse({ error: "BoldSign response did not include documentId" }, 502, origin);
   }
 
+  try {
+    await actorAuth.revalidate(contract.facility_id);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
   const now = new Date().toISOString();
   await admin.from("resident_contracts").update({
     provider_template_id: templateId,
@@ -158,7 +196,20 @@ Deno.serve(async (req) => {
   const links: Record<string, string> = {};
   if (body.get_embedded_links ?? disableEmails) {
     for (const signer of signerRows) {
-      const linkResponse = await boldSignFetch(`/v1/document/getEmbeddedSignLink?documentId=${encodeURIComponent(documentId)}&signerEmail=${encodeURIComponent(signer.signer_email!)}`);
+      let linkResponse: Response;
+      try {
+        linkResponse = await withCurrentActorRevalidation(
+          actorAuth,
+          () => boldSignFetch(`/v1/document/getEmbeddedSignLink?documentId=${encodeURIComponent(documentId)}&signerEmail=${encodeURIComponent(signer.signer_email!)}`),
+          contract.facility_id,
+        );
+      } catch (error) {
+        return boldSignProviderFailureResponse(
+          error,
+          origin,
+          "BoldSign link request failed",
+        );
+      }
       if (linkResponse.ok) {
         const linkJson = await linkResponse.json().catch(() => ({}));
         if (typeof linkJson.signLink === "string") links[signer.id] = linkJson.signLink;
@@ -167,4 +218,6 @@ Deno.serve(async (req) => {
   }
 
   return jsonResponse({ success: true, contract_id: contract.id, document_id: documentId, embedded_links: links }, 200, origin);
-});
+}
+
+if (import.meta.main) Deno.serve(handleBoldSignSend);

@@ -244,6 +244,440 @@ $function$;
 
 REVOKE ALL ON FUNCTION haven.current_authorized_actor() FROM PUBLIC, anon, authenticated, service_role;
 
+-- Edge Functions must establish current user authority without first creating a
+-- service-role client. This authenticated-only RPC returns one atomic snapshot
+-- of the current profile, Auth session/version, organization, role, and live
+-- facility scope. The JWT contributes identity/session/version only; all
+-- authority fields are loaded from current database state.
+CREATE OR REPLACE FUNCTION public.haven_current_edge_actor()
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT pg_catalog.jsonb_build_object(
+    'user_id', actor.actor_user_id,
+    'session_id', NULLIF(auth.jwt() ->> 'session_id', '')::uuid,
+    'email', (
+      SELECT auth_user.email
+      FROM auth.users AS auth_user
+      WHERE auth_user.id = actor.actor_user_id
+    ),
+    'organization_id', actor.actor_organization_id,
+    'app_role', actor.actor_role_text,
+    'auth_claim_version', actor.actor_claim_version,
+    'accessible_facility_ids', COALESCE((
+      SELECT pg_catalog.jsonb_agg(scope.facility_id ORDER BY scope.facility_id)
+      FROM (
+        SELECT facility.id AS facility_id
+        FROM public.facilities AS facility
+        WHERE actor.actor_app_role IN ('owner', 'org_admin')
+          AND facility.organization_id = actor.actor_organization_id
+          AND facility.deleted_at IS NULL
+        UNION
+        SELECT access.facility_id
+        FROM public.user_facility_access AS access
+        JOIN public.facilities AS facility
+          ON facility.id = access.facility_id
+         AND facility.organization_id = actor.actor_organization_id
+         AND facility.deleted_at IS NULL
+        WHERE actor.actor_app_role NOT IN ('owner', 'org_admin')
+          AND access.user_id = actor.actor_user_id
+          AND access.organization_id = actor.actor_organization_id
+          AND access.revoked_at IS NULL
+      ) AS scope
+    ), '[]'::jsonb)
+  )
+  FROM haven.current_authorized_actor() AS actor
+  WHERE actor.actor_is_managed
+  LIMIT 1
+$function$;
+
+REVOKE ALL ON FUNCTION public.haven_current_edge_actor() FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.haven_current_edge_actor() TO authenticated;
+
+CREATE OR REPLACE FUNCTION haven.assert_edge_service_actor(
+  p_actor_id uuid,
+  p_session_id uuid,
+  p_claim_version integer,
+  p_organization_id uuid,
+  p_facility_id uuid,
+  p_allowed_roles text[],
+  p_allow_organization_wide boolean DEFAULT false
+)
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_role text;
+BEGIN
+  SELECT profile.app_role::text INTO v_role
+  FROM public.user_profiles AS profile
+  JOIN auth.users AS auth_user ON auth_user.id = profile.id
+  JOIN auth.sessions AS session
+    ON session.id = p_session_id AND session.user_id = profile.id
+  WHERE profile.id = p_actor_id
+    AND profile.organization_id = p_organization_id
+    AND profile.auth_claim_version = p_claim_version
+    AND profile.is_active
+    AND profile.deleted_at IS NULL
+    AND auth_user.deleted_at IS NULL
+    AND (auth_user.banned_until IS NULL OR auth_user.banned_until <= pg_catalog.now());
+  IF v_role IS NULL OR NOT (v_role = ANY(p_allowed_roles)) THEN
+    RAISE EXCEPTION 'Edge actor is no longer authorized' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_facility_id IS NULL THEN
+    IF NOT p_allow_organization_wide THEN
+      RAISE EXCEPTION 'Edge actor facility is no longer authorized' USING ERRCODE = '42501';
+    END IF;
+  ELSIF NOT EXISTS (
+    SELECT 1
+    FROM public.facilities AS facility
+    WHERE facility.id = p_facility_id
+      AND facility.organization_id = p_organization_id
+      AND facility.deleted_at IS NULL
+      AND (
+        v_role IN ('owner', 'org_admin')
+        OR EXISTS (
+          SELECT 1 FROM public.user_facility_access AS access
+          WHERE access.user_id = p_actor_id
+            AND access.organization_id = p_organization_id
+            AND access.facility_id = facility.id
+            AND access.revoked_at IS NULL
+        )
+      )
+  ) THEN
+    RAISE EXCEPTION 'Edge actor facility is no longer authorized' USING ERRCODE = '42501';
+  END IF;
+  RETURN v_role;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION haven.assert_edge_service_actor(uuid,uuid,integer,uuid,uuid,text[],boolean)
+  FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.review_facility_launch_fact(
+  p_fact_id uuid,
+  p_action text,
+  p_review_notes text,
+  p_actor_id uuid,
+  p_session_id uuid,
+  p_claim_version integer,
+  p_organization_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_fact public.document_extracted_facts;
+  v_role text;
+  v_value_id uuid;
+  v_title text;
+BEGIN
+  IF p_action NOT IN ('approve_fact','reject_fact','apply_fact','approve_and_apply_fact') THEN
+    RAISE EXCEPTION 'Unsupported fact action' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT * INTO STRICT v_fact
+  FROM public.document_extracted_facts AS fact
+  WHERE fact.id = p_fact_id
+    AND fact.organization_id = p_organization_id
+    AND fact.deleted_at IS NULL
+  FOR UPDATE;
+
+  v_role := haven.assert_edge_service_actor(
+    p_actor_id,p_session_id,p_claim_version,p_organization_id,v_fact.facility_id,
+    ARRAY['owner','org_admin','facility_admin'],true
+  );
+  IF v_fact.facility_id IS NULL AND v_role = 'facility_admin' THEN
+    RAISE EXCEPTION 'Facility-scoped actor cannot review organization-wide fact' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_action = 'reject_fact' AND v_fact.approval_status = 'rejected'
+     OR p_action = 'approve_fact' AND v_fact.approval_status IN ('approved','applied') THEN
+    RETURN pg_catalog.jsonb_build_object(
+      'success',true,'fact_id',v_fact.id,'approval_status',v_fact.approval_status,'replay',true
+    );
+  END IF;
+
+  IF p_action IN ('apply_fact','approve_and_apply_fact') AND v_fact.approval_status = 'applied' THEN
+    SELECT value_row.id INTO v_value_id
+    FROM public.facility_launch_module_values AS value_row
+    WHERE value_row.source_fact_id = v_fact.id
+      AND value_row.organization_id = p_organization_id
+      AND value_row.deleted_at IS NULL
+      AND value_row.superseded_at IS NULL
+    ORDER BY value_row.applied_at DESC
+    LIMIT 1;
+    RETURN pg_catalog.jsonb_build_object(
+      'success',true,'fact_id',v_fact.id,'approval_status','applied',
+      'applied_value_id',v_value_id,'replay',true
+    );
+  END IF;
+
+  IF p_action = 'apply_fact' AND v_fact.approval_status <> 'approved' THEN
+    RAISE EXCEPTION 'Fact must be approved before apply' USING ERRCODE = '55000';
+  END IF;
+
+  IF p_action IN ('approve_fact','reject_fact') THEN
+    UPDATE public.document_extracted_facts AS fact
+    SET approval_status = CASE WHEN p_action='approve_fact' THEN 'approved' ELSE 'rejected' END,
+        reviewed_by = p_actor_id,
+        reviewed_at = pg_catalog.now(),
+        review_notes = p_review_notes
+    WHERE fact.id = v_fact.id;
+  ELSE
+    IF v_fact.proposed_module_code IS NULL OR v_fact.proposed_field_path IS NULL THEN
+      RAISE EXCEPTION 'Fact has no proposed destination' USING ERRCODE = '22023';
+    END IF;
+    UPDATE public.facility_launch_module_values AS value_row
+    SET superseded_at = pg_catalog.now()
+    WHERE value_row.organization_id = p_organization_id
+      AND value_row.facility_id IS NOT DISTINCT FROM v_fact.facility_id
+      AND value_row.module_code = v_fact.proposed_module_code
+      AND value_row.field_path = v_fact.proposed_field_path
+      AND value_row.superseded_at IS NULL
+      AND value_row.deleted_at IS NULL;
+
+    INSERT INTO public.facility_launch_module_values(
+      organization_id,facility_id,module_code,field_path,value,
+      source_document_id,source_fact_id,provenance,applied_by
+    ) VALUES (
+      p_organization_id,v_fact.facility_id,v_fact.proposed_module_code,
+      v_fact.proposed_field_path,v_fact.extracted_value,v_fact.document_id,v_fact.id,
+      pg_catalog.jsonb_build_object(
+        'confidence',v_fact.confidence,
+        'source_excerpt',v_fact.source_excerpt,
+        'parser_job_id',v_fact.parser_job_id,
+        'parser_version',v_fact.evidence ->> 'parser_version'
+      ),p_actor_id
+    ) RETURNING id INTO v_value_id;
+
+    UPDATE public.document_extracted_facts AS fact
+    SET approval_status = 'applied',
+        reviewed_by = COALESCE(fact.reviewed_by,p_actor_id),
+        reviewed_at = COALESCE(fact.reviewed_at,pg_catalog.now()),
+        review_notes = COALESCE(p_review_notes,fact.review_notes),
+        applied_by = p_actor_id,
+        applied_at = pg_catalog.now()
+    WHERE fact.id = v_fact.id;
+  END IF;
+
+  SELECT document.title INTO v_title
+  FROM public.documents AS document WHERE document.id = v_fact.document_id;
+  INSERT INTO public.document_audit_events(
+    actor_user_id,document_id,document_title_snapshot,event_type,metadata
+  ) VALUES (
+    p_actor_id,v_fact.document_id,v_title,
+    CASE WHEN p_action IN ('apply_fact','approve_and_apply_fact')
+      THEN 'facility_launch_fact_applied' ELSE 'facility_launch_fact_reviewed' END,
+    pg_catalog.jsonb_build_object(
+      'fact_id',v_fact.id,'action',p_action,'facility_id',v_fact.facility_id,
+      'applied_value_id',v_value_id
+    )
+  );
+
+  RETURN pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
+    'success',true,'fact_id',v_fact.id,
+    'approval_status',CASE WHEN p_action='reject_fact' THEN 'rejected'
+      WHEN p_action='approve_fact' THEN 'approved' ELSE 'applied' END,
+    'applied_value_id',v_value_id,'replay',false
+  ));
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)
+  TO service_role;
+
+CREATE TABLE public.ingest_authorization_runs (
+  id uuid PRIMARY KEY,
+  organization_id uuid NOT NULL REFERENCES public.organizations(id),
+  facility_id uuid REFERENCES public.facilities(id),
+  document_id uuid NOT NULL REFERENCES public.documents(id),
+  actor_user_id uuid NOT NULL REFERENCES auth.users(id),
+  session_id uuid NOT NULL,
+  claim_version integer NOT NULL CHECK (claim_version > 0),
+  status text NOT NULL DEFAULT 'processing'
+    CHECK (status IN ('processing','completed','failed','authorization_changed')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  mutation_started boolean NOT NULL DEFAULT false,
+  finished_at timestamptz,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX idx_ingest_authorization_runs_document
+  ON public.ingest_authorization_runs(document_id,created_at DESC);
+ALTER TABLE public.ingest_authorization_runs ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.ingest_authorization_runs FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.create_kb_ingest_authorization_run(
+  p_run_id uuid,
+  p_document_id uuid,
+  p_actor_id uuid,
+  p_session_id uuid,
+  p_claim_version integer,
+  p_organization_id uuid,
+  p_facility_id uuid DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_run public.ingest_authorization_runs;
+BEGIN
+  PERFORM haven.assert_edge_service_actor(
+    p_actor_id,p_session_id,p_claim_version,p_organization_id,p_facility_id,
+    ARRAY['owner','org_admin','facility_admin'],true
+  );
+  IF NOT EXISTS (
+    SELECT 1 FROM public.documents AS document
+    WHERE document.id=p_document_id AND document.workspace_id=p_organization_id
+      AND document.deleted_at IS NULL
+  ) THEN RAISE EXCEPTION 'Ingest document not found' USING ERRCODE='P0002'; END IF;
+
+  INSERT INTO public.ingest_authorization_runs(
+    id,organization_id,facility_id,document_id,actor_user_id,session_id,claim_version
+  ) VALUES (
+    p_run_id,p_organization_id,p_facility_id,p_document_id,p_actor_id,p_session_id,p_claim_version
+  ) ON CONFLICT (id) DO NOTHING;
+
+  SELECT * INTO STRICT v_run FROM public.ingest_authorization_runs WHERE id=p_run_id FOR UPDATE;
+  IF v_run.organization_id<>p_organization_id OR v_run.document_id<>p_document_id
+     OR v_run.actor_user_id<>p_actor_id OR v_run.session_id<>p_session_id
+     OR v_run.claim_version<>p_claim_version
+     OR v_run.facility_id IS DISTINCT FROM p_facility_id THEN
+    RAISE EXCEPTION 'Ingest authorization replay mismatch' USING ERRCODE='23505';
+  END IF;
+  RETURN v_run.id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.complete_kb_ingest_authorization_run(
+  p_run_id uuid,
+  p_status text DEFAULT 'completed'
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_run public.ingest_authorization_runs;
+BEGIN
+  IF p_status NOT IN ('completed','failed') THEN
+    RAISE EXCEPTION 'Invalid ingest authorization terminal status' USING ERRCODE='22023';
+  END IF;
+  SELECT * INTO STRICT v_run FROM public.ingest_authorization_runs WHERE id=p_run_id FOR UPDATE;
+  IF v_run.status=p_status THEN RETURN; END IF;
+  IF v_run.status<>'processing' THEN
+    RAISE EXCEPTION 'Ingest authorization run is not completable' USING ERRCODE='55000';
+  END IF;
+  PERFORM haven.assert_edge_service_actor(
+    v_run.actor_user_id,v_run.session_id,v_run.claim_version,v_run.organization_id,v_run.facility_id,
+    ARRAY['owner','org_admin','facility_admin'],true
+  );
+  UPDATE public.ingest_authorization_runs
+  SET status=p_status,finished_at=pg_catalog.now() WHERE id=v_run.id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.start_kb_ingest_authorization_mutation(p_run_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_run public.ingest_authorization_runs;
+BEGIN
+  SELECT * INTO STRICT v_run FROM public.ingest_authorization_runs WHERE id=p_run_id FOR UPDATE;
+  IF v_run.status<>'processing' THEN
+    RAISE EXCEPTION 'Ingest authorization run is not active' USING ERRCODE='55000';
+  END IF;
+  PERFORM haven.assert_edge_service_actor(
+    v_run.actor_user_id,v_run.session_id,v_run.claim_version,v_run.organization_id,v_run.facility_id,
+    ARRAY['owner','org_admin','facility_admin'],true
+  );
+  UPDATE public.ingest_authorization_runs SET mutation_started=true WHERE id=v_run.id;
+END;
+$function$;
+
+-- Cleanup is authorized by the durable initiating receipt rather than the
+-- document uploader, which may legitimately be null or a different user.
+CREATE OR REPLACE FUNCTION public.fail_kb_ingest_authority_change(p_run_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_run public.ingest_authorization_runs;
+  v_document public.documents;
+BEGIN
+  SELECT * INTO STRICT v_run
+  FROM public.ingest_authorization_runs WHERE id=p_run_id FOR UPDATE;
+  IF v_run.status='authorization_changed' THEN RETURN; END IF;
+  IF v_run.status='completed' THEN RETURN; END IF;
+
+  SELECT * INTO STRICT v_document
+  FROM public.documents AS document
+  WHERE document.id = v_run.document_id
+    AND document.workspace_id = v_run.organization_id
+    AND document.deleted_at IS NULL
+  FOR UPDATE;
+
+  IF v_run.mutation_started THEN
+    DELETE FROM public.chunks AS chunk
+    WHERE chunk.document_id = v_document.id
+      AND chunk.workspace_id = v_run.organization_id;
+  END IF;
+
+  UPDATE public.documents AS document
+  SET status = 'ingest_failed',
+      ingest_attempt_count = CASE
+        WHEN document.status = 'ingest_failed'
+         AND document.ingest_last_error = 'authorization_changed'
+          THEN COALESCE(document.ingest_attempt_count, 0)
+        ELSE COALESCE(document.ingest_attempt_count, 0) + 1
+      END,
+      ingest_last_error = 'authorization_changed',
+      ingest_retry_at = NULL,
+      updated_at = pg_catalog.now()
+  WHERE document.id = v_document.id;
+  UPDATE public.ingest_authorization_runs
+  SET status='authorization_changed',finished_at=pg_catalog.now(),
+      metadata=metadata||'{"reason":"authorization_changed"}'::jsonb
+  WHERE id=v_run.id;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)
+  TO service_role;
+REVOKE ALL ON FUNCTION public.complete_kb_ingest_authorization_run(uuid,text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.complete_kb_ingest_authorization_run(uuid,text)
+  TO service_role;
+REVOKE ALL ON FUNCTION public.start_kb_ingest_authorization_mutation(uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.start_kb_ingest_authorization_mutation(uuid)
+  TO service_role;
+REVOKE ALL ON FUNCTION public.fail_kb_ingest_authority_change(uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.fail_kb_ingest_authority_change(uuid)
+  TO service_role;
+
 CREATE OR REPLACE FUNCTION haven.authorized_user_id()
 RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $function$
   SELECT actor.actor_user_id FROM haven.current_authorized_actor() AS actor WHERE actor.actor_is_managed LIMIT 1

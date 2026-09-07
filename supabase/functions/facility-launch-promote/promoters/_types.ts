@@ -57,6 +57,7 @@ export type PromotionContext = {
   run_id: string | null;
   run_item_id: string | null;
   module_value_ids_by_path: Record<string, string>;
+  revalidate: () => Promise<void>;
 };
 
 export type ReadinessCheck = { ready: boolean; missing: string[] };

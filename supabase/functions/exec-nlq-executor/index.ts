@@ -18,6 +18,12 @@ import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { isRateLimited } from "../_shared/rate-limit.ts";
 import { formatFacilityFactsBlock, loadFacilityFacts } from "../_shared/facility-facts.ts";
+import {
+  CurrentActorError,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Env                                                               */
@@ -224,17 +230,16 @@ Deno.serve(async (req) => {
   }
 
   // --- Auth ---
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ALLOWED_ROLES });
+  } catch (error) {
     t.log({ event: "auth_failed", outcome: "blocked" });
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId };
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   // --- Rate limit (10 req/min per user) ---
   if (isRateLimited(user.id)) {
@@ -261,23 +266,8 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "question exceeds 2000 characters" }, 400, origin);
   }
 
-  // --- Profile + role check ---
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-
-  const role = String(profile?.app_role ?? user.app_metadata?.app_role ?? "caregiver");
-  const organizationId = profile?.organization_id as string | undefined;
-
-  if (!organizationId) {
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
-  if (!ALLOWED_ROLES.includes(role)) {
-    t.log({ event: "role_denied", outcome: "blocked", role });
-    return jsonResponse({ error: "Insufficient permissions — owner or org_admin required" }, 403, origin);
-  }
+  const role = actor.role;
+  const organizationId = actor.organizationId;
 
   // --- Load context in parallel ---
   let facilities: FacilityRow[];
@@ -290,7 +280,9 @@ Deno.serve(async (req) => {
       .eq("organization_id", organizationId)
       .is("deleted_at", null);
     if (facErr) throw new Error(facErr.message);
-    facilities = (facData ?? []) as FacilityRow[];
+    facilities = ((facData ?? []) as FacilityRow[]).filter((facility) =>
+      actor.accessibleFacilityIds.includes(facility.id)
+    );
   } catch (err) {
     t.log({ event: "facilities_load_failed", outcome: "error", error_message: String(err) });
     return jsonResponse({ error: "Failed to load facilities" }, 500, origin);
@@ -304,6 +296,9 @@ Deno.serve(async (req) => {
   const selectedFacilityId = facilities.some((f) => f.id === body.facility_id)
     ? body.facility_id
     : null;
+  if (body.facility_id && !selectedFacilityId) {
+    return jsonResponse({ error: "Forbidden" }, 403, origin);
+  }
   const userRole = role;
 
   let portfolioKpi: ExecKpiPayload;
@@ -358,21 +353,22 @@ Deno.serve(async (req) => {
 
   let anthropicJson: Record<string, unknown>;
   try {
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_ANSWER_TOKENS,
-        system: systemPrompt,
-        messages: [{ role: "user", content: `<user_question>\n${question}\n</user_question>` }],
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
+    const anthropicRes = await withCurrentActorRevalidation(actorAuth, () =>
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: MAX_ANSWER_TOKENS,
+          system: systemPrompt,
+          messages: [{ role: "user", content: `<user_question>\n${question}\n</user_question>` }],
+        }),
+        signal: AbortSignal.timeout(60_000),
+      }), selectedFacilityId);
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text();
@@ -382,6 +378,9 @@ Deno.serve(async (req) => {
 
     anthropicJson = (await anthropicRes.json()) as Record<string, unknown>;
   } catch (err) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     t.log({ event: "anthropic_timeout", outcome: "error", error_message: String(err) });
     return jsonResponse({ error: "AI service timeout" }, 504, origin);
   }
@@ -402,6 +401,7 @@ Deno.serve(async (req) => {
   // --- Persist ai_invocations audit row ---
   let aiInvocationId: string | null = null;
   try {
+    await actorAuth.revalidate(selectedFacilityId);
     const { data: invRow, error: invErr } = await admin
       .from("ai_invocations")
       .insert({
@@ -428,6 +428,9 @@ Deno.serve(async (req) => {
       aiInvocationId = invRow?.id as string | null;
     }
   } catch (err) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     t.log({ event: "ai_invocation_insert_error", outcome: "error", error_message: String(err) });
   }
 
@@ -442,6 +445,7 @@ Deno.serve(async (req) => {
   };
 
   try {
+    await actorAuth.revalidate(selectedFacilityId);
     if (sessionId) {
       // Update existing session
       const { error: updErr } = await admin
@@ -464,6 +468,7 @@ Deno.serve(async (req) => {
     }
 
     if (!sessionId) {
+      await actorAuth.revalidate(selectedFacilityId);
       // Create new session
       const title = question.length > 100 ? question.slice(0, 97) + "..." : question;
       const { data: sessRow, error: sessErr } = await admin
@@ -488,6 +493,9 @@ Deno.serve(async (req) => {
       }
     }
   } catch (err) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     t.log({ event: "session_persist_error", outcome: "error", error_message: String(err) });
   }
 
@@ -501,6 +509,11 @@ Deno.serve(async (req) => {
     facilities_count: facilities.length,
   });
 
+  try {
+    await actorAuth.revalidate(selectedFacilityId);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
   return jsonResponse(
     {
       ok: true,

@@ -4,7 +4,8 @@ import ts from "typescript";
 import { expect, it, vi } from "vitest";
 // Execute actual Edge functions without a network or Deno server.
 function load(name: string) {
-  const source = readFileSync(`supabase/functions/${name}/index.ts`, "utf8").replace(/^import .*;$/gm, "");
+  const source = readFileSync(`supabase/functions/${name}/index.ts`, "utf8")
+    .replace(/^import(?:[\s\S]*?from\s+)?["'][^"']+["'];\s*$/gm, "");
   const js = ts.transpile(source, {module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2022});
   const context = vm.createContext({ Deno: {env: {get: () => "local"}, serve: vi.fn()}, Date, Error, String, Number, Array, JSON });
   vm.runInContext(js, context);

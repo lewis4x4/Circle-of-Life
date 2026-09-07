@@ -3,6 +3,7 @@ import {
   assertEquals,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createHandler } from "../index.ts";
+import { CurrentActorError } from "../../_shared/current-actor.ts";
 import { valuesDiffer } from "../promoters/_helpers.ts";
 
 const ORG_ID = "00000000-0000-4000-8000-000000000001";
@@ -213,7 +214,10 @@ class FakeAdminClient {
     this.rpcCalls.push({ fn, args });
     if (fn === "promote_facility_launch_scalar_config") {
       if (this.failScalarRpc) {
-        return { data: null, error: { message: "Injected scalar RPC failure" } };
+        return {
+          data: null,
+          error: { message: "Injected scalar RPC failure" },
+        };
       }
       return this.runScalarRpc(args);
     }
@@ -253,7 +257,9 @@ class FakeAdminClient {
     const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
 
     const snapshot = this.tables[table].map((row) => ({ ...row }));
-    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((
+      row,
+    ) => ({ ...row }));
     const tableCounter = this.counters[table] ?? 0;
     const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
 
@@ -274,7 +280,8 @@ class FakeAdminClient {
         const updatePayload = {
           value: rawRow.value,
           provenance: rawRow.provenance,
-          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ??
+            null,
           updated_by: args.p_actor_user_id,
         };
 
@@ -318,7 +325,10 @@ class FakeAdminClient {
             existing.promoted_from_module_value_id ?? null,
             updatePayload.promoted_from_module_value_id ?? null,
           ) ||
-          valuesDiffer(existing.updated_by ?? null, updatePayload.updated_by ?? null);
+          valuesDiffer(
+            existing.updated_by ?? null,
+            updatePayload.updated_by ?? null,
+          );
 
         if (!changed) {
           noop += 1;
@@ -365,7 +375,9 @@ class FakeAdminClient {
       : "kpi_name";
 
     const snapshot = this.tables[table].map((row) => ({ ...row }));
-    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((
+      row,
+    ) => ({ ...row }));
     const tableCounter = this.counters[table] ?? 0;
     const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
 
@@ -384,13 +396,16 @@ class FakeAdminClient {
           (row.deleted_at === null || row.deleted_at === undefined)
         );
         if (matches.length > 1) {
-          throw new Error(`Duplicate active ${table} rows for ${naturalKey} ${keyValue}`);
+          throw new Error(
+            `Duplicate active ${table} rows for ${naturalKey} ${keyValue}`,
+          );
         }
         const existing = matches[0];
 
         const updatePayload = {
           ...rawRow,
-          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ??
+            null,
           updated_by: args.p_actor_user_id,
         };
 
@@ -403,8 +418,12 @@ class FakeAdminClient {
             deleted_at: null,
           });
           created += 1;
-          if (this.failCollectionRpcAfterFirstWrite && created + updated === 1) {
-            throw new Error("Injected simple collection RPC failure after first write");
+          if (
+            this.failCollectionRpcAfterFirstWrite && created + updated === 1
+          ) {
+            throw new Error(
+              "Injected simple collection RPC failure after first write",
+            );
           }
           if (runItemId) {
             this.insert("facility_launch_promotion_run_links", {
@@ -438,7 +457,9 @@ class FakeAdminClient {
         Object.assign(existing, updatePayload);
         updated += 1;
         if (this.failCollectionRpcAfterFirstWrite && created + updated === 1) {
-          throw new Error("Injected simple collection RPC failure after first write");
+          throw new Error(
+            "Injected simple collection RPC failure after first write",
+          );
         }
         if (runItemId) {
           this.insert("facility_launch_promotion_run_links", {
@@ -470,7 +491,9 @@ class FakeAdminClient {
     const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
 
     const snapshot = this.tables.facility_vendors.map((row) => ({ ...row }));
-    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((
+      row,
+    ) => ({ ...row }));
     const vendorCounter = this.counters.facility_vendors ?? 0;
     const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
 
@@ -480,28 +503,34 @@ class FakeAdminClient {
       let noop = 0;
 
       for (const rawRow of rows) {
-        const sourceVendorId = typeof rawRow.source_vendor_id === "string" && rawRow.source_vendor_id.trim().length > 0
+        const sourceVendorId = typeof rawRow.source_vendor_id === "string" &&
+            rawRow.source_vendor_id.trim().length > 0
           ? rawRow.source_vendor_id.trim()
           : null;
-        const organization = typeof rawRow.organization === "string" && rawRow.organization.trim().length > 0
+        const organization = typeof rawRow.organization === "string" &&
+            rawRow.organization.trim().length > 0
           ? rawRow.organization.trim()
           : null;
-        const category = typeof rawRow.category === "string" && rawRow.category.trim().length > 0
+        const category = typeof rawRow.category === "string" &&
+            rawRow.category.trim().length > 0
           ? rawRow.category.trim()
           : null;
-        const phone = typeof rawRow.phone === "string" && rawRow.phone.trim().length > 0
-          ? rawRow.phone.trim()
-          : null;
+        const phone =
+          typeof rawRow.phone === "string" && rawRow.phone.trim().length > 0
+            ? rawRow.phone.trim()
+            : null;
 
         const matches = this.tables.facility_vendors.filter((row) => {
           const sameOrg = row.organization_id === args.p_organization_id;
           const sameFacility = row.facility_id === args.p_facility_id;
-          const active = row.deleted_at === null || row.deleted_at === undefined;
+          const active = row.deleted_at === null ||
+            row.deleted_at === undefined;
           if (!sameOrg || !sameFacility || !active) return false;
           if (sourceVendorId) {
             return row.source_vendor_id === sourceVendorId;
           }
-          return (row.source_vendor_id === null || row.source_vendor_id === undefined) &&
+          return (row.source_vendor_id === null ||
+            row.source_vendor_id === undefined) &&
             row.organization === organization &&
             (row.category ?? null) === category &&
             (row.phone ?? null) === phone;
@@ -523,7 +552,8 @@ class FakeAdminClient {
           insurance_required: rawRow.insurance_required ?? null,
           escalation_owner: rawRow.escalation_owner ?? null,
           provenance: rawRow.provenance ?? {},
-          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ?? null,
+          promoted_from_module_value_id: rawRow.promoted_from_module_value_id ??
+            null,
           updated_by: args.p_actor_user_id,
         };
 
@@ -603,8 +633,12 @@ class FakeAdminClient {
     const runItemId = args.p_run_item_id ? String(args.p_run_item_id) : null;
     const rows = Array.isArray(args.p_rows) ? args.p_rows as Row[] : [];
 
-    const snapshot = this.tables.rate_schedule_versions.map((row) => ({ ...row }));
-    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((row) => ({ ...row }));
+    const snapshot = this.tables.rate_schedule_versions.map((row) => ({
+      ...row,
+    }));
+    const linksSnapshot = this.tables.facility_launch_promotion_run_links.map((
+      row,
+    ) => ({ ...row }));
     const ratesCounter = this.counters.rate_schedule_versions ?? 0;
     const linkCounter = this.counters.facility_launch_promotion_run_links ?? 0;
 
@@ -617,12 +651,18 @@ class FakeAdminClient {
         const rateType = String(rawRow.rate_type ?? "");
         const effectiveFrom = String(rawRow.effective_from ?? "");
         const amountCents = Number(rawRow.amount_cents ?? NaN);
-        if (!rateType) throw new Error("M6 rates promotion row missing rate_type");
+        if (!rateType) {
+          throw new Error("M6 rates promotion row missing rate_type");
+        }
         if (effectiveFrom !== "2026-01-01") {
-          throw new Error(`M6 rates promotion expects effective_from=2026-01-01 for rate_type ${rateType}`);
+          throw new Error(
+            `M6 rates promotion expects effective_from=2026-01-01 for rate_type ${rateType}`,
+          );
         }
         if (!Number.isFinite(amountCents) || amountCents < 0) {
-          throw new Error(`M6 rates promotion requires non-negative amount_cents for rate_type ${rateType}`);
+          throw new Error(
+            `M6 rates promotion requires non-negative amount_cents for rate_type ${rateType}`,
+          );
         }
 
         const exactRows = this.tables.rate_schedule_versions.filter((row) =>
@@ -633,11 +673,15 @@ class FakeAdminClient {
           (row.deleted_at === null || row.deleted_at === undefined)
         );
         if (exactRows.length > 1) {
-          throw new Error(`Duplicate active exact rate_schedule_versions rows for rate_type ${rateType}`);
+          throw new Error(
+            `Duplicate active exact rate_schedule_versions rows for rate_type ${rateType}`,
+          );
         }
 
         const existing = exactRows[0];
-        const candidateTo = rawRow.effective_to ? String(rawRow.effective_to) : null;
+        const candidateTo = rawRow.effective_to
+          ? String(rawRow.effective_to)
+          : null;
         const hasOverlap = this.tables.rate_schedule_versions.some((row) => {
           if (
             row.organization_id !== args.p_organization_id ||
@@ -652,7 +696,9 @@ class FakeAdminClient {
             "2026-01-01" < (to ?? "9999-12-31");
         });
         if (hasOverlap) {
-          throw new Error(`Overlapping active rate exists for rate_type ${rateType} candidate range starting 2026-01-01`);
+          throw new Error(
+            `Overlapping active rate exists for rate_type ${rateType} candidate range starting 2026-01-01`,
+          );
         }
 
         if (!existing) {
@@ -710,9 +756,16 @@ class FakeAdminClient {
           approved_at: rawRow.approved_at ?? null,
           notes: rawRow.notes ?? null,
         };
-        const changed = valuesDiffer(existing.amount_cents, updatePayload.amount_cents) ||
-          valuesDiffer(existing.effective_to ?? null, updatePayload.effective_to) ||
-          valuesDiffer(existing.rate_confirmed ?? null, updatePayload.rate_confirmed) ||
+        const changed =
+          valuesDiffer(existing.amount_cents, updatePayload.amount_cents) ||
+          valuesDiffer(
+            existing.effective_to ?? null,
+            updatePayload.effective_to,
+          ) ||
+          valuesDiffer(
+            existing.rate_confirmed ?? null,
+            updatePayload.rate_confirmed,
+          ) ||
           valuesDiffer(existing.notes ?? null, updatePayload.notes);
         if (!changed) {
           noop += 1;
@@ -798,6 +851,23 @@ function request(modules: string[], dryRun = false) {
 
 function handler(admin: FakeAdminClient) {
   return createHandler({
+    authorizeActor: async () => ({
+      actor: {
+        userId: USER_ID,
+        sessionId: "30000000-0000-4000-8000-000000000001",
+        email: null,
+        organizationId: ORG_ID,
+        role: "owner",
+        claimVersion: 1,
+        accessibleFacilityIds: [FACILITY_ID],
+      },
+      accessToken: "valid",
+      revalidate: async (facilityId) => {
+        if (facilityId && facilityId !== FACILITY_ID) {
+          throw new CurrentActorError(403, "Forbidden");
+        }
+      },
+    }),
     createAdminClient: () => admin as never,
     now: () => new Date("2026-05-14T12:00:00.000Z"),
   });
@@ -1072,8 +1142,14 @@ Deno.test("m18 source_vendor_id aliases normalize into payload source_vendor_id"
 
   await apply(admin, ["M18"]);
 
-  const ids = admin.select("facility_vendors").map((row) => row.source_vendor_id);
-  assertEquals(ids, ["vendor-id-alias", "vendor-camel-alias", "vendor-snake-alias"]);
+  const ids = admin.select("facility_vendors").map((row) =>
+    row.source_vendor_id
+  );
+  assertEquals(ids, [
+    "vendor-id-alias",
+    "vendor-camel-alias",
+    "vendor-snake-alias",
+  ]);
 });
 
 Deno.test("m18 keeps same organization/category/phone contacts distinct when source ids differ", async () => {
@@ -1123,7 +1199,10 @@ Deno.test("m18 updates existing source-key row by source_vendor_id", async () =>
   await apply(admin, ["M18"]);
 
   assertEquals(admin.select("facility_vendors").length, 1);
-  assertEquals(admin.select("facility_vendors")[0].primary_contact, "New Contact");
+  assertEquals(
+    admin.select("facility_vendors")[0].primary_contact,
+    "New Contact",
+  );
 });
 
 Deno.test("m18 updates fallback-key row when source_vendor_id is absent", async () => {
@@ -1149,7 +1228,10 @@ Deno.test("m18 updates fallback-key row when source_vendor_id is absent", async 
   await apply(admin, ["M18"]);
 
   assertEquals(admin.select("facility_vendors").length, 1);
-  assertEquals(admin.select("facility_vendors")[0].primary_contact, "New Contact");
+  assertEquals(
+    admin.select("facility_vendors")[0].primary_contact,
+    "New Contact",
+  );
 });
 
 Deno.test("m18 dry-run fallback preview does not cross-match source-key rows", async () => {
@@ -1171,9 +1253,9 @@ Deno.test("m18 dry-run fallback preview does not cross-match source-key rows", a
   });
 
   const body = await apply(admin, ["M18"], true);
-  const vendorTable = body.modules_promoted[0].tables_touched.find((table: Row) =>
-    table.table === "facility_vendors"
-  );
+  const vendorTable = body.modules_promoted[0].tables_touched.find((
+    table: Row,
+  ) => table.table === "facility_vendors");
 
   assertEquals(vendorTable?.rows_created, 1);
   assertEquals(vendorTable?.rows_updated, 0);
@@ -1247,7 +1329,11 @@ Deno.test("m18 duplicate active source-key matches fail", async () => {
   const body = await response.json();
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "Duplicate active",
+    ),
+  );
 });
 
 Deno.test("m18 duplicate active fallback-key matches fail", async () => {
@@ -1281,7 +1367,11 @@ Deno.test("m18 duplicate active fallback-key matches fail", async () => {
   const body = await response.json();
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "Duplicate active",
+    ),
+  );
 });
 
 Deno.test("round2 collection warnings mark a module partial even when config writes", async () => {
@@ -1343,7 +1433,10 @@ Deno.test("round2 scalar config apply uses bounded rpc calls", async () => {
   assertEquals(admin.queryCount("facility_dining_config", "select"), 0);
   assertEquals(admin.queryCount("facility_maintenance_config", "select"), 0);
   assertEquals(admin.queryCount("facility_admissions_config", "select"), 0);
-  assertEquals(admin.queryCount("facility_launch_scoreboard_config", "select"), 0);
+  assertEquals(
+    admin.queryCount("facility_launch_scoreboard_config", "select"),
+    0,
+  );
 });
 
 Deno.test("round2 dry-run does not call scalar config rpc", async () => {
@@ -1416,7 +1509,9 @@ Deno.test("m6 exact effective_from rows update without duplicate inserts and cre
 
   assertEquals(admin.select("rate_schedule_versions").length, 2);
   assertEquals(
-    admin.select("rate_schedule_versions").find((row) => row.rate_type === "private_room")?.amount_cents,
+    admin.select("rate_schedule_versions").find((row) =>
+      row.rate_type === "private_room"
+    )?.amount_cents,
     555000,
   );
   assertEquals(
@@ -1430,9 +1525,10 @@ Deno.test("m6 exact effective_from rows update without duplicate inserts and cre
 Deno.test("m6 idempotent rerun creates no additional rate links", async () => {
   const admin = new FakeAdminClient(scalarRows);
   await apply(admin, ["M6"]);
-  const rateLinkCount = admin.select("facility_launch_promotion_run_links").filter((row) =>
-    row.target_table === "rate_schedule_versions"
-  ).length;
+  const rateLinkCount =
+    admin.select("facility_launch_promotion_run_links").filter((row) =>
+      row.target_table === "rate_schedule_versions"
+    ).length;
 
   await apply(admin, ["M6"]);
 
@@ -1476,7 +1572,11 @@ Deno.test("m6 rate rpc failure rolls back rate rows and links", async () => {
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("rate RPC failed"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "rate RPC failed",
+    ),
+  );
   assertEquals(admin.select("rate_schedule_versions").length, 0);
   assertEquals(
     admin.select("facility_launch_promotion_run_links").filter((row) =>
@@ -1504,9 +1604,15 @@ Deno.test("m6 future overlap guard fails cleanly with no new rows or links", asy
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Overlapping active rate exists"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "Overlapping active rate exists",
+    ),
+  );
   assertEquals(
-    admin.select("rate_schedule_versions").filter((row) => row.rate_type === "semi_private_room").length,
+    admin.select("rate_schedule_versions").filter((row) =>
+      row.rate_type === "semi_private_room"
+    ).length,
     0,
   );
   assertEquals(
@@ -1535,7 +1641,9 @@ Deno.test("m6 dry-run future overlap fails like apply mode", async () => {
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("overlap failed"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes("overlap failed"),
+  );
   assertEquals(admin.select("rate_schedule_versions").length, 1);
 });
 
@@ -1557,9 +1665,15 @@ Deno.test("m6 overlap guard fails cleanly with no new rows or links", async () =
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Overlapping active rate exists"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "Overlapping active rate exists",
+    ),
+  );
   assertEquals(
-    admin.select("rate_schedule_versions").filter((row) => row.rate_type === "semi_private_room").length,
+    admin.select("rate_schedule_versions").filter((row) =>
+      row.rate_type === "semi_private_room"
+    ).length,
     0,
   );
   assertEquals(
@@ -1579,7 +1693,11 @@ Deno.test("round2 scalar config rpc failure writes no config rows/links", async 
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("scalar RPC failed"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "scalar RPC failed",
+    ),
+  );
   assertEquals(admin.select("facility_billing_config").length, 0);
   assertEquals(admin.select("facility_launch_promotion_run_links").length, 0);
 });
@@ -1595,10 +1713,17 @@ Deno.test("round2 simple collection apply uses bounded rpc calls for M16/M19", a
   assertEquals(collectionRpcCalls.length, 2);
   const workflowInsertLink = admin.select("facility_launch_promotion_run_links")
     .find((row) =>
-      row.target_table === "incident_workflow_templates" && row.action === "insert"
+      row.target_table === "incident_workflow_templates" &&
+      row.action === "insert"
     );
-  assertEquals((workflowInsertLink?.after_value as Row)?.organization_id, ORG_ID);
-  assertEquals((workflowInsertLink?.after_value as Row)?.facility_id, FACILITY_ID);
+  assertEquals(
+    (workflowInsertLink?.after_value as Row)?.organization_id,
+    ORG_ID,
+  );
+  assertEquals(
+    (workflowInsertLink?.after_value as Row)?.facility_id,
+    FACILITY_ID,
+  );
   const kpiInsertLink = admin.select("facility_launch_promotion_run_links")
     .find((row) =>
       row.target_table === "facility_kpi_definitions" && row.action === "insert"
@@ -1654,7 +1779,11 @@ Deno.test("m18 vendor rpc failure rolls back vendor rows and links", async () =>
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("collection RPC failed"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "collection RPC failed",
+    ),
+  );
   assertEquals(admin.select("facility_vendors").length, 0);
   assertEquals(
     admin.select("facility_launch_promotion_run_links").filter((row) =>
@@ -1673,7 +1802,11 @@ Deno.test("round2 simple collection rpc failure writes no rows/links", async () 
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("collection RPC failed"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "collection RPC failed",
+    ),
+  );
   assertEquals(admin.select("incident_workflow_templates").length, 0);
   assertEquals(
     admin.select("facility_launch_promotion_run_links").filter((row) =>
@@ -1764,7 +1897,11 @@ Deno.test("round2 simple collection rpc rejects duplicate active natural keys", 
 
   assertEquals(response.status, 200);
   assertEquals(body.modules_promoted[0].status, "failed");
-  assert(String(body.modules_promoted[0].errors[0] ?? "").includes("Duplicate active"));
+  assert(
+    String(body.modules_promoted[0].errors[0] ?? "").includes(
+      "Duplicate active",
+    ),
+  );
 });
 
 Deno.test("round2 simple collection idempotency for M16/M19 suppresses noop links", async () => {
@@ -1776,7 +1913,13 @@ Deno.test("round2 simple collection idempotency for M16/M19 suppresses noop link
 
   await apply(admin, ["M16", "M19"]);
 
-  assertEquals(admin.select("facility_launch_promotion_run_links").length, linkCount);
-  assertEquals(admin.select("incident_workflow_templates").length, workflowCount);
+  assertEquals(
+    admin.select("facility_launch_promotion_run_links").length,
+    linkCount,
+  );
+  assertEquals(
+    admin.select("incident_workflow_templates").length,
+    workflowCount,
+  );
   assertEquals(admin.select("facility_kpi_definitions").length, kpiCount);
 });

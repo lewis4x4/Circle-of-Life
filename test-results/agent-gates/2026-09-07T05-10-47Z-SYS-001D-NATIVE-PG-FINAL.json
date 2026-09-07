@@ -1,0 +1,29 @@
+{
+  "segment": "SYS-001D-EDGE-AUTHORIZATION",
+  "check": "native-postgresql-migration-replay",
+  "timestamp": "2026-09-07T05:10:47Z",
+  "status": "passed",
+  "runtime": {
+    "database": "PostgreSQL 17.9",
+    "transport": "run-owned local unix socket",
+    "network_database": false
+  },
+  "command": "PG_VERIFY_NATIVE_SOCKET=<run-owned-socket> PG_VERIFY_NATIVE_BIN=/opt/homebrew/opt/postgresql@17/bin PG_VERIFY_NATIVE_PORT=52264 npm run migrations:verify:pg",
+  "evidence": {
+    "migration_files": 329,
+    "sequence": "001..326",
+    "sql_probes": 11,
+    "supabase_stubs": true,
+    "atomic_parser_apply_and_replay": true,
+    "parser_audit_failure_rollback": true,
+    "parser_null_and_revoked_facility_denial": true,
+    "ingest_receipt_null_and_different_uploader_cleanup": true,
+    "ingest_receipt_replay_and_cleanup_idempotency": true,
+    "unique_replay_database_dropped": true
+  },
+  "stdout": "[migrations:verify:pg] PASS (329 migration files, 11 SQL probes; native PostgreSQL with Supabase stubs)",
+  "limitations": [
+    "This is an isolated local replay, not hosted Supabase acceptance.",
+    "Docker replay was not used because the Docker daemon was unresponsive."
+  ]
+}

@@ -17,12 +17,18 @@ SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,
   gen_random_uuid() onboarding_user,gen_random_uuid() onboarding_session,
   gen_random_uuid() legacy_user,gen_random_uuid() legacy_session,
   gen_random_uuid() mismatch_user,gen_random_uuid() mismatch_session,
+  gen_random_uuid() edge_admin,gen_random_uuid() edge_admin_session,
+  gen_random_uuid() edge_facility_admin,gen_random_uuid() edge_facility_admin_session,
   gen_random_uuid() second_resident,gen_random_uuid() storage_object,gen_random_uuid() storage_object_two,
   gen_random_uuid() operation_task,gen_random_uuid() defer_task,gen_random_uuid() defer_failure_task,
   gen_random_uuid() rounding_task,gen_random_uuid() rounding_reassign_task,gen_random_uuid() rounding_terminal_task,
   gen_random_uuid() rounding_terminal_log,gen_random_uuid() rounding_terminal_assignment,
   gen_random_uuid() rounding_staff,gen_random_uuid() rounding_other_staff,
   gen_random_uuid() rounding_plan,gen_random_uuid() rounding_rule,gen_random_uuid() rounding_flag,
+  gen_random_uuid() ingest_document,gen_random_uuid() ingest_chunk,gen_random_uuid() ingest_authorization_run,
+  gen_random_uuid() ingest_document_two,gen_random_uuid() ingest_chunk_two,gen_random_uuid() ingest_authorization_run_two,
+  gen_random_uuid() parser_fact,gen_random_uuid() parser_null_fact,gen_random_uuid() parser_fail_fact,
+  gen_random_uuid() parser_old_value,gen_random_uuid() parser_fail_old_value,
   gen_random_uuid() perf_marker,
   f.id facility,f.organization_id organization,r.id resident
 FROM public.facilities f JOIN public.residents r
@@ -38,19 +44,30 @@ UNION ALL SELECT family_user,family_user||'@sys001.invalid',jsonb_build_object('
 UNION ALL SELECT onboarding_user,onboarding_user||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','onboarding','auth_claim_version',1),'{}'::jsonb FROM actor_fixture
 UNION ALL SELECT legacy_user,legacy_user||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','caregiver'),'{}'::jsonb FROM actor_fixture
 UNION ALL SELECT mismatch_user,mismatch_user||'@sys001.invalid','{}'::jsonb,'{}'::jsonb FROM actor_fixture;
+INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+SELECT edge_admin,edge_admin||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','owner'),'{}'::jsonb FROM actor_fixture
+UNION ALL SELECT edge_facility_admin,edge_facility_admin||'@sys001.invalid',jsonb_build_object('organization_id',organization,'app_role','facility_admin'),'{}'::jsonb FROM actor_fixture;
 
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
 SELECT actor,organization,actor||'@sys001.invalid','SYS-001 actor','owner'::public.app_role,true FROM actor_fixture
 UNION ALL SELECT family_user,organization,family_user||'@sys001.invalid','SYS-001 family','family'::public.app_role,true FROM actor_fixture
 UNION ALL SELECT legacy_user,organization,legacy_user||'@sys001.invalid','SYS-001 legacy','caregiver'::public.app_role,true FROM actor_fixture;
+INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+SELECT edge_admin,organization,edge_admin||'@sys001.invalid','SYS-001 Edge admin','owner'::public.app_role,true FROM actor_fixture
+UNION ALL SELECT edge_facility_admin,organization,edge_facility_admin||'@sys001.invalid','SYS-001 Edge facility admin','facility_admin'::public.app_role,true FROM actor_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
 SELECT actor,facility,organization FROM actor_fixture;
+INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
+SELECT edge_facility_admin,facility,organization FROM actor_fixture;
 INSERT INTO auth.sessions(id,user_id)
 SELECT actor_session,actor FROM actor_fixture
 UNION ALL SELECT family_session,family_user FROM actor_fixture
 UNION ALL SELECT onboarding_session,onboarding_user FROM actor_fixture
 UNION ALL SELECT legacy_session,legacy_user FROM actor_fixture
 UNION ALL SELECT mismatch_session,mismatch_user FROM actor_fixture;
+INSERT INTO auth.sessions(id,user_id)
+SELECT edge_admin_session,edge_admin FROM actor_fixture
+UNION ALL SELECT edge_facility_admin_session,edge_facility_admin FROM actor_fixture;
 INSERT INTO public.residents(id,facility_id,organization_id,first_name,last_name,date_of_birth,gender)
 SELECT second_resident,facility,organization,'SYS-001','Unlinked','1940-01-01','female' FROM actor_fixture;
 INSERT INTO public.family_resident_links(user_id,resident_id,organization_id,relationship)
@@ -135,6 +152,35 @@ INSERT INTO public.resident_observation_integrity_flags(
 )
 SELECT rounding_flag,organization,facility,resident,rounding_staff,'sys001_authority','medium','open'
 FROM actor_fixture;
+INSERT INTO public.documents(id,workspace_id,title,status,uploaded_by,ingest_attempt_count)
+SELECT ingest_document,organization,'SYS-001 interrupted ingest null uploader','processing',NULL,0 FROM actor_fixture
+UNION ALL
+SELECT ingest_document_two,organization,'SYS-001 interrupted ingest different uploader','processing',edge_facility_admin,0 FROM actor_fixture;
+INSERT INTO public.chunks(id,document_id,workspace_id,chunk_index,content,chunk_type)
+SELECT ingest_chunk,ingest_document,organization,0,'partial chunk','paragraph' FROM actor_fixture
+UNION ALL
+SELECT ingest_chunk_two,ingest_document_two,organization,0,'partial chunk two','paragraph' FROM actor_fixture;
+INSERT INTO public.document_extracted_facts(
+  id,organization_id,facility_id,document_id,fact_key,fact_label,extracted_value,
+  confidence,source_excerpt,evidence,proposed_module_code,proposed_field_path,approval_status
+)
+SELECT parser_fact,organization,facility,ingest_document,'parser_current','Parser current',
+  '{"value":"current"}'::jsonb,0.9,'current excerpt','{"parser_version":"test"}'::jsonb,
+  'M17','sys001.parser','pending' FROM actor_fixture
+UNION ALL
+SELECT parser_null_fact,organization,NULL,ingest_document,'parser_null','Parser null',
+  '{"value":"org-wide"}'::jsonb,0.8,'null excerpt','{"parser_version":"test"}'::jsonb,
+  'M17','sys001.null','pending' FROM actor_fixture
+UNION ALL
+SELECT parser_fail_fact,organization,facility,ingest_document,'parser_fail','Parser fail',
+  '{"value":"replacement"}'::jsonb,0.7,'fail excerpt','{"parser_version":"test"}'::jsonb,
+  'M17','sys001.fail','pending' FROM actor_fixture;
+INSERT INTO public.facility_launch_module_values(
+  id,organization_id,facility_id,module_code,field_path,value,source_document_id,applied_by
+)
+SELECT parser_old_value,organization,facility,'M17','sys001.parser','{"value":"old"}'::jsonb,ingest_document,edge_admin FROM actor_fixture
+UNION ALL
+SELECT parser_fail_old_value,organization,facility,'M17','sys001.fail','{"value":"preserve"}'::jsonb,ingest_document,edge_admin FROM actor_fixture;
 
 GRANT SELECT ON actor_fixture TO authenticated, service_role;
 CREATE FUNCTION pg_temp.set_claims(p_user uuid,p_session uuid,p_version jsonb,p_claimed_role text)
@@ -198,14 +244,30 @@ DO $$ BEGIN IF haven.app_role()<>'manager'::public.app_role THEN RAISE EXCEPTION
 SELECT pg_temp.set_claims(f.actor,f.actor_session,to_jsonb(p.auth_claim_version),'caregiver')
 FROM actor_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 SET LOCAL ROLE authenticated;
-DO $$ DECLARE f actor_fixture%ROWTYPE; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+DO $$ DECLARE f actor_fixture%ROWTYPE; edge_actor jsonb; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
   PERFORM public.haven_assert_authorized_request();
+  edge_actor:=public.haven_current_edge_actor();
   IF haven.app_role()<>'owner'::public.app_role OR haven.organization_id()<>f.organization
      OR NOT haven.has_facility_access(f.facility) OR NOT haven.can_access_resident(f.resident)
      OR NOT EXISTS(SELECT 1 FROM public.residents WHERE id=f.resident) THEN RAISE EXCEPTION 'Current owner authority failed'; END IF;
+  IF (edge_actor->>'user_id')::uuid<>f.actor
+     OR (edge_actor->>'session_id')::uuid<>f.actor_session
+     OR (edge_actor->>'organization_id')::uuid<>f.organization
+     OR edge_actor->>'app_role'<>'owner'
+     OR NOT (edge_actor->'accessible_facility_ids') @> pg_catalog.jsonb_build_array(f.facility) THEN
+    RAISE EXCEPTION 'Atomic Edge actor snapshot incorrect';
+  END IF;
   PERFORM public.allocate_incident_number(f.facility);
 END $$;
 RESET ROLE;
+
+DO $$ BEGIN
+  IF has_function_privilege('anon','public.haven_current_edge_actor()','EXECUTE')
+     OR has_function_privilege('service_role','public.haven_current_edge_actor()','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.haven_current_edge_actor()','EXECUTE') THEN
+    RAISE EXCEPTION 'Edge actor RPC grants incorrect';
+  END IF;
+END $$;
 
 -- Workspace Storage owner policies require the current actor, not auth.uid alone.
 SET LOCAL ROLE authenticated;
@@ -305,6 +367,9 @@ SELECT pg_temp.set_claims(f.actor,f.actor_session,to_jsonb(p.auth_claim_version)
 FROM actor_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 DELETE FROM auth.sessions WHERE id=(SELECT actor_session FROM actor_fixture);
 SELECT pg_temp.expect_rejected('missing session');
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN IF public.haven_current_edge_actor() IS NOT NULL THEN RAISE EXCEPTION 'Edge actor accepted missing session'; END IF; END $$;
+RESET ROLE;
 INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM actor_fixture;
 SELECT public.haven_assert_authorized_request();
 UPDATE auth.users SET banned_until='infinity' WHERE id=(SELECT actor FROM actor_fixture);
@@ -326,11 +391,21 @@ FROM actor_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 SELECT pg_temp.expect_rejected('session user mismatch');
 
 -- PostgREST assertion bypasses machine identities; a service-only RPC remains callable.
+CREATE OR REPLACE FUNCTION pg_temp.fail_parser_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.metadata->>'fact_id'=(SELECT parser_fail_fact::text FROM actor_fixture) THEN
+    RAISE EXCEPTION 'injected parser audit failure';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER sys001_fail_parser_audit BEFORE INSERT ON public.document_audit_events
+FOR EACH ROW EXECUTE FUNCTION pg_temp.fail_parser_audit();
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA public, haven TO service_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT INSERT ON public.operation_audit_log TO service_role;
-GRANT UPDATE ON public.user_profiles,public.facilities,public.user_facility_access TO service_role;
+GRANT UPDATE ON public.user_profiles,public.facilities,public.user_facility_access,public.documents TO service_role;
+GRANT DELETE ON public.chunks TO service_role;
 UPDATE public.resident_observation_assignments SET released_at=now()
 WHERE task_id=(SELECT rounding_task FROM actor_fixture) AND staff_id=(SELECT rounding_staff FROM actor_fixture);
 INSERT INTO public.resident_observation_assignments(
@@ -343,6 +418,103 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; BEGIN SELECT * INTO STRICT 
   PERFORM public.haven_assert_authorized_request();
   result:=public.ai_tool_facility_directory(f.organization,f.actor,'caregiver',ARRAY[f.facility],f.facility);
   IF result IS NULL THEN RAISE EXCEPTION 'Machine service RPC failed'; END IF;
+  result:=public.review_facility_launch_fact(
+    f.parser_fact,'approve_and_apply_fact','approved',f.edge_admin,f.edge_admin_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization
+  );
+  IF result->>'approval_status'<>'applied' OR result->>'replay'<>'false'
+     OR NOT EXISTS(SELECT 1 FROM public.facility_launch_module_values
+       WHERE source_fact_id=f.parser_fact AND superseded_at IS NULL) THEN
+    RAISE EXCEPTION 'Parser atomic apply failed';
+  END IF;
+  result:=public.review_facility_launch_fact(
+    f.parser_fact,'approve_and_apply_fact','approved',f.edge_admin,f.edge_admin_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization
+  );
+  IF result->>'replay'<>'true'
+     OR (SELECT count(*) FROM public.facility_launch_module_values WHERE source_fact_id=f.parser_fact)<>1
+     OR (SELECT count(*) FROM public.document_audit_events WHERE metadata->>'fact_id'=f.parser_fact::text)<>1 THEN
+    RAISE EXCEPTION 'Parser exact replay was not idempotent';
+  END IF;
+  BEGIN
+    PERFORM public.review_facility_launch_fact(
+      f.parser_null_fact,'approve_fact',NULL,f.edge_facility_admin,f.edge_facility_admin_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_facility_admin),f.organization
+    );
+    RAISE EXCEPTION 'Facility admin reviewed organization-wide fact';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  result:=public.review_facility_launch_fact(
+    f.parser_null_fact,'approve_fact','owner org-wide review',f.edge_admin,f.edge_admin_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization
+  );
+  IF result->>'approval_status'<>'approved' THEN
+    RAISE EXCEPTION 'Owner could not review organization-wide fact';
+  END IF;
+  BEGIN
+    PERFORM public.review_facility_launch_fact(
+      f.parser_fail_fact,'approve_and_apply_fact','must roll back',f.edge_admin,f.edge_admin_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization
+    );
+    RAISE EXCEPTION 'Parser audit failure did not abort';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM<>'injected parser audit failure' THEN RAISE; END IF;
+  END;
+  IF (SELECT approval_status FROM public.document_extracted_facts WHERE id=f.parser_fail_fact)<>'pending'
+     OR NOT EXISTS(SELECT 1 FROM public.facility_launch_module_values WHERE id=f.parser_fail_old_value AND superseded_at IS NULL)
+     OR EXISTS(SELECT 1 FROM public.facility_launch_module_values WHERE source_fact_id=f.parser_fail_fact) THEN
+    RAISE EXCEPTION 'Parser audit failure did not roll back all writes';
+  END IF;
+  UPDATE public.user_facility_access SET revoked_at=now() WHERE user_id=f.edge_facility_admin AND facility_id=f.facility;
+  BEGIN
+    PERFORM public.review_facility_launch_fact(
+      f.parser_fact,'approve_fact',NULL,f.edge_facility_admin,f.edge_facility_admin_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_facility_admin),f.organization
+    );
+    RAISE EXCEPTION 'Revoked facility admin retained parser authority';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  PERFORM public.create_kb_ingest_authorization_run(
+    f.ingest_authorization_run,f.ingest_document,f.edge_admin,f.edge_admin_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization,NULL
+  );
+  PERFORM public.create_kb_ingest_authorization_run(
+    f.ingest_authorization_run,f.ingest_document,f.edge_admin,f.edge_admin_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization,NULL
+  );
+  BEGIN
+    PERFORM public.create_kb_ingest_authorization_run(
+      f.ingest_authorization_run,f.ingest_document_two,f.edge_admin,f.edge_admin_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization,NULL
+    );
+    RAISE EXCEPTION 'Ingest receipt replay mismatch accepted';
+  EXCEPTION WHEN unique_violation THEN NULL;
+  END;
+  PERFORM public.start_kb_ingest_authorization_mutation(f.ingest_authorization_run);
+  PERFORM public.fail_kb_ingest_authority_change(f.ingest_authorization_run);
+  IF EXISTS(SELECT 1 FROM public.chunks WHERE id=f.ingest_chunk)
+     OR NOT EXISTS(SELECT 1 FROM public.documents WHERE id=f.ingest_document
+       AND status='ingest_failed' AND ingest_last_error='authorization_changed'
+       AND ingest_attempt_count=1 AND ingest_retry_at IS NULL)
+     OR NOT EXISTS(SELECT 1 FROM public.ingest_authorization_runs
+       WHERE id=f.ingest_authorization_run AND status='authorization_changed') THEN
+    RAISE EXCEPTION 'Interrupted ingest cleanup failed';
+  END IF;
+  PERFORM public.fail_kb_ingest_authority_change(f.ingest_authorization_run);
+  IF (SELECT ingest_attempt_count FROM public.documents WHERE id=f.ingest_document)<>1 THEN
+    RAISE EXCEPTION 'Interrupted ingest cleanup was not idempotent';
+  END IF;
+  PERFORM public.create_kb_ingest_authorization_run(
+    f.ingest_authorization_run_two,f.ingest_document_two,f.edge_admin,f.edge_admin_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.edge_admin),f.organization,NULL
+  );
+  PERFORM public.start_kb_ingest_authorization_mutation(f.ingest_authorization_run_two);
+  PERFORM public.fail_kb_ingest_authority_change(f.ingest_authorization_run_two);
+  IF EXISTS(SELECT 1 FROM public.chunks WHERE id=f.ingest_chunk_two)
+     OR NOT EXISTS(SELECT 1 FROM public.documents WHERE id=f.ingest_document_two
+       AND status='ingest_failed' AND ingest_last_error='authorization_changed') THEN
+    RAISE EXCEPTION 'Receipt cleanup depended on document uploader';
+  END IF;
   BEGIN
     PERFORM public.complete_operation_task_review(f.operation_task,f.actor,'owner','stale role attempt','{}');
     RAISE EXCEPTION 'Service task RPC trusted stale actor role';

@@ -14,6 +14,10 @@ import {
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { isRateLimited } from "../_shared/rate-limit.ts";
+import {
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 
 type Template = "ops_weekly" | "financial_monthly" | "board_quarterly" | "custom";
 type FacilityKpi = { name: string; id: string; kpi: ExecKpiPayload };
@@ -145,21 +149,19 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(origin) });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405, origin);
 
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ["owner", "org_admin"] });
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId };
+  if (isRateLimited(user.id)) return jsonResponse({ error: "Rate limit exceeded." }, 429, origin);
   const url = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const admin = createClient(url, serviceKey);
-
-  // Auth
-  const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "");
-  const { data: { user }, error: authErr } = await admin.auth.getUser(token);
-  if (authErr || !user) return jsonResponse({ error: "Unauthorized" }, 401, origin);
-  if (isRateLimited(user.id)) return jsonResponse({ error: "Rate limit exceeded." }, 429, origin);
-
-  const { data: profile } = await admin.from("user_profiles").select("organization_id, app_role").eq("id", user.id).maybeSingle();
-  if (!profile?.organization_id) return jsonResponse({ error: "Organization not found" }, 403, origin);
-  if (!["owner", "org_admin"].includes(profile.app_role)) return jsonResponse({ error: "Insufficient role" }, 403, origin);
-
-  const orgId = profile.organization_id;
+  const orgId = actor.organizationId;
 
   // Parse body
   let body: { template?: string; facility_id?: string };
@@ -169,7 +171,13 @@ Deno.serve(async (req) => {
   if (!TEMPLATES[template]) return jsonResponse({ error: "Invalid template" }, 400, origin);
 
   // Load data
-  const allFacilities = await loadFacilitiesForOrganization(admin, orgId);
+  const allFacilities = (await loadFacilitiesForOrganization(admin, orgId)).filter((facility) =>
+    actor.accessibleFacilityIds.includes(facility.id) &&
+    (!body.facility_id || facility.id === body.facility_id)
+  );
+  if (body.facility_id && allFacilities.length === 0) {
+    return jsonResponse({ error: "Forbidden" }, 403, origin);
+  }
   const portfolioKpi = await computeKpiForFacilityIds(admin, orgId, allFacilities);
 
   const facilityKpis: FacilityKpi[] = [];
@@ -199,6 +207,11 @@ Deno.serve(async (req) => {
 
   t.log({ event: "complete", outcome: "success", template, facilities: allFacilities.length });
 
+  try {
+    await actorAuth.revalidate(body.facility_id ?? null);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
   return new Response(JSON.stringify({ ok: true, html, generated_at: new Date().toISOString() }), {
     status: 200,
     headers: {

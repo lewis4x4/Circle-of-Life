@@ -379,6 +379,33 @@ verify_jwt = true
 [functions."facility-launch-import"]
 verify_jwt = true
 
+[functions."boldsign-send-contract"]
+verify_jwt = true
+
+[functions."exec-nlq-executor"]
+verify_jwt = true
+
+[functions."exec-report-generator"]
+verify_jwt = true
+
+[functions."exec-scenario-solver"]
+verify_jwt = true
+
+[functions."grace-orchestrator"]
+verify_jwt = true
+
+[functions."grace-execute-flow-step"]
+verify_jwt = true
+
+[functions."grace-undo-flow-run"]
+verify_jwt = true
+
+[functions."grace-transcribe"]
+verify_jwt = true
+
+[functions."grace-tts"]
+verify_jwt = true
+
 [functions.dispatch-push]
 verify_jwt = false
 

@@ -3,6 +3,42 @@
 
 DO $$
 BEGIN
+  IF has_function_privilege('service_role', 'haven.assert_edge_service_actor(uuid,uuid,integer,uuid,uuid,text[],boolean)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'haven.assert_edge_service_actor(uuid,uuid,integer,uuid,uuid,text[],boolean)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: internal edge actor verifier is executable';
+  END IF;
+  IF has_table_privilege('authenticated','public.ingest_authorization_runs','SELECT')
+     OR has_table_privilege('service_role','public.ingest_authorization_runs','INSERT') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: ingest authorization receipt table exposed directly';
+  END IF;
+
+  IF has_function_privilege('anon', 'public.haven_current_edge_actor()', 'EXECUTE')
+     OR has_function_privilege('service_role', 'public.haven_current_edge_actor()', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.haven_current_edge_actor()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: haven_current_edge_actor grants incorrect';
+  END IF;
+
+  IF has_function_privilege('anon', 'public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.create_kb_ingest_authorization_run(uuid,uuid,uuid,uuid,integer,uuid,uuid)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.start_kb_ingest_authorization_mutation(uuid)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.start_kb_ingest_authorization_mutation(uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.start_kb_ingest_authorization_mutation(uuid)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.complete_kb_ingest_authorization_run(uuid,text)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.complete_kb_ingest_authorization_run(uuid,text)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.complete_kb_ingest_authorization_run(uuid,text)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.fail_kb_ingest_authority_change(uuid)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.fail_kb_ingest_authority_change(uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.fail_kb_ingest_authority_change(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: fail_kb_ingest_authority_change grants incorrect';
+  END IF;
+
+  IF has_function_privilege('anon', 'public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.review_facility_launch_fact(uuid,text,text,uuid,uuid,integer,uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'rpc_grant_posture: review_facility_launch_fact grants incorrect';
+  END IF;
+
   IF has_function_privilege(
     'anon',
     'public.haven_create_invoice_with_line_items(uuid, uuid, text, date, date, date, date, integer, integer, integer, integer, integer, integer, text, text, text, jsonb)',

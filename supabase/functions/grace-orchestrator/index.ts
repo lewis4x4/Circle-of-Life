@@ -1,5 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+  CurrentActorError,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { redactString, redactValue } from "../_shared/redact-pii.ts";
 import { isOrgRateLimited, isRateLimited } from "../_shared/rate-limit.ts";
@@ -212,17 +218,16 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req);
+  } catch (error) {
     t.log({ event: "auth_failed", outcome: "blocked" });
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId };
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   let body: RequestBody;
   try {
@@ -236,17 +241,8 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "text is required" }, 400, origin);
   }
 
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-
-  const role = String(profile?.app_role ?? user.app_metadata?.app_role ?? "caregiver");
-  const organizationId = profile?.organization_id as string | undefined;
-  if (!organizationId) {
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
+  const role = actor.role;
+  const organizationId = actor.organizationId;
 
   // KB-NEXT-03: per-user + per-org rate limiting so a single user (or all
   // users on one org) can't flood Grace and burn budget. Defaults are the
@@ -279,21 +275,30 @@ Deno.serve(async (req) => {
   const flows = await loadAllowedFlows(admin, organizationId, role);
 
   const system = buildSystemPrompt(flows, body.route);
-  const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 600,
-      system,
-      messages: [{ role: "user", content: text }],
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
+  let anthropicRes: Response;
+  try {
+    anthropicRes = await withCurrentActorRevalidation(actorAuth, () =>
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 600,
+          system,
+          messages: [{ role: "user", content: text }],
+        }),
+        signal: AbortSignal.timeout(60_000),
+      }));
+  } catch (error) {
+    if (error instanceof CurrentActorError) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
+    return jsonResponse({ error: "Grace classifier failed" }, 502, origin);
+  }
 
   if (!anthropicRes.ok) {
     const errText = await anthropicRes.text();
@@ -309,6 +314,11 @@ Deno.serve(async (req) => {
   const classification = normalizeClassification(parsed, flows, text);
   const selectedFlow = flows.find((flow) => flow.id === classification.flow_id) ?? null;
 
+  try {
+    await actorAuth.revalidate();
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
   const conversationId = await ensureConversation(
     admin,
     user.id,

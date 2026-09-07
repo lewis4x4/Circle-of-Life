@@ -140,6 +140,7 @@ export const M3_PROMOTER: ModulePromoter = {
     );
 
     if (!ctx.dry_run) {
+      await ctx.revalidate();
       const { data, error } = await ctx.admin.rpc("promote_facility_launch_m3", {
         p_organization_id: ctx.organization_id,
         p_facility_id: ctx.facility_id,

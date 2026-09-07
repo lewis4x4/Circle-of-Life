@@ -1,8 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import {
+  CurrentActorError,
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const UNDO_WINDOW_MS = 60_000;
 
@@ -21,55 +27,6 @@ type AuthContext = {
   role: string;
   organizationId: string;
 };
-
-async function requireUser(admin: any, req: Request) {
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error,
-  } = await admin.auth.getUser(token);
-  if (error || !user) return null;
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .eq("is_active", true)
-    .is("deleted_at", null)
-    .single();
-  if (!profile) return null;
-  return {
-    user,
-    accessToken: token,
-    role: String(profile?.app_role ?? user.app_metadata?.app_role ?? "caregiver"),
-    organizationId: profile?.organization_id as string | undefined,
-  };
-}
-
-async function resolveAccessibleFacilityIds(
-  admin: any,
-  organizationId: string,
-  userId: string,
-  role: string,
-): Promise<string[]> {
-  if (role === "owner" || role === "org_admin") {
-    const { data } = await admin
-      .from("facilities")
-      .select("id")
-      .eq("organization_id", organizationId)
-      .is("deleted_at", null);
-    return (data ?? []).map((row: { id: string }) => row.id);
-  }
-
-  const { data } = await admin
-    .from("user_facility_access")
-    .select("facility_id")
-    .eq("organization_id", organizationId)
-    .eq("user_id", userId)
-    .is("revoked_at", null);
-
-  return (data ?? []).map((row: { facility_id: string }) => row.facility_id);
-}
 
 async function requireConversation(
   admin: any,
@@ -246,24 +203,27 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authResult = await requireUser(admin, req);
-  if (!authResult?.user || !authResult.organizationId) {
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
+  const { actor } = actorAuth;
   const auth: AuthContext = {
-    user: { id: authResult.user.id },
-    accessToken: authResult.accessToken,
-    role: authResult.role,
-    organizationId: authResult.organizationId,
+    user: { id: actor.userId },
+    accessToken: actorAuth.accessToken,
+    role: actor.role,
+    organizationId: actor.organizationId,
   };
-  const userScoped = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  const userScoped = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
       headers: {
         Authorization: `Bearer ${auth.accessToken}`,
       },
     },
   });
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   let body: RequestBody;
   try {
@@ -275,10 +235,9 @@ Deno.serve(async (req) => {
   if (!body.flow_id || !body.conversation_id || !body.idempotency_key || !body.slots) {
     return jsonResponse({ error: "flow_id, conversation_id, idempotency_key, and slots are required" }, 400, origin);
   }
-  let accessibleFacilityIds: string[] = [];
+  let accessibleFacilityIds: string[] = [...actor.accessibleFacilityIds];
   try {
     await requireConversation(admin, body.conversation_id, auth.user.id, auth.organizationId);
-    accessibleFacilityIds = await resolveAccessibleFacilityIds(admin, auth.organizationId, auth.user.id, auth.role);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Grace request failed";
     return jsonResponse({ error: message }, message === "Grace conversation not found" ? 404 : 403, origin);
@@ -358,6 +317,11 @@ Deno.serve(async (req) => {
   }
 
   const undoDeadline = new Date(Date.now() + UNDO_WINDOW_MS).toISOString();
+  try {
+    await actorAuth.revalidate();
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
+  }
   const { data: run, error: runError } = existingRun?.id ? { data: existingRun, error: null } : await admin
     .from("flow_workflow_runs")
     .insert({
@@ -388,6 +352,7 @@ Deno.serve(async (req) => {
 
   let executionResult: { result: Record<string, unknown>; undo_handler: string | null; undo_deadline: string };
   try {
+    await actorAuth.revalidate();
     switch (String(flowDef.slug)) {
       case "log_daily_note":
         executionResult = await createDailyLog(admin, auth, accessibleFacilityIds, body.slots, run.id);
@@ -423,8 +388,11 @@ Deno.serve(async (req) => {
       origin,
     );
   } catch (error) {
+    if (error instanceof CurrentActorError) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     const errorMessage = error instanceof Error ? error.message : "Grace flow execution failed";
     t.log({ event: "flow_failed", outcome: "error", error_message: errorMessage, flow_slug: flowDef.slug, run_id: run.id });
-    return jsonResponse({ ok: false, error: errorMessage, run_id: run.id, retryable: true, failed_step: String(flowDef.slug) }, 503, origin);
+    return jsonResponse({ ok: false, error: "Grace flow execution failed", run_id: run.id, retryable: true, failed_step: String(flowDef.slug) }, 503, origin);
   }
 });

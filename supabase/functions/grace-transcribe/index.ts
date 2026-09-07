@@ -1,12 +1,24 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+  type CurrentActorAuthorization,
+  currentActorOrProviderErrorResponse,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
 
-Deno.serve(async (req) => {
+type HandlerOptions = {
+  authorizeActor?: (req: Request) => Promise<CurrentActorAuthorization>;
+  fetcher?: typeof fetch;
+};
+
+export async function handleGraceTranscribe(
+  req: Request,
+  options: HandlerOptions = {},
+): Promise<Response> {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(origin) });
@@ -15,15 +27,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+  let actorAuth;
+  try {
+    actorAuth = await (options.authorizeActor ?? requireCurrentActor)(req);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
 
   const form = await req.formData();
@@ -39,13 +47,23 @@ Deno.serve(async (req) => {
   openAiForm.append("file", audio, audio.name || "grace-input.webm");
   openAiForm.append("model", "whisper-1");
 
-  const openAiRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: openAiForm,
-  });
+  let openAiRes: Response;
+  try {
+    openAiRes = await withCurrentActorRevalidation(actorAuth, () =>
+      (options.fetcher ?? fetch)("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: openAiForm,
+      }));
+  } catch (error) {
+    return currentActorOrProviderErrorResponse(error, {
+      status: 502,
+      message: "Transcription failed",
+      headers: getCorsHeaders(origin),
+    });
+  }
 
   if (!openAiRes.ok) {
     return jsonResponse({ error: `Transcription failed (${openAiRes.status})` }, 502, origin);
@@ -53,4 +71,6 @@ Deno.serve(async (req) => {
 
   const payload = await openAiRes.json();
   return jsonResponse({ ok: true, text: String(payload.text ?? "") }, 200, origin);
-});
+}
+
+if (import.meta.main) Deno.serve((req) => handleGraceTranscribe(req));

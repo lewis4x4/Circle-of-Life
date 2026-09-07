@@ -148,6 +148,7 @@ export async function promoteConfigFields(
   if (rows.length === 0) return counts;
 
   if (!ctx.dry_run) {
+    await ctx.revalidate();
     const { data, error } = await ctx.admin.rpc(
       "promote_facility_launch_scalar_config",
       {
@@ -241,6 +242,7 @@ export async function promoteCollectionRows(
       : null);
 
   if (!ctx.dry_run && collectionRpc && eligibleRows.length > 0) {
+    await ctx.revalidate();
     const { data, error } = await ctx.admin.rpc(collectionRpc, {
       p_organization_id: ctx.organization_id,
       p_facility_id: ctx.facility_id,
@@ -275,6 +277,7 @@ export async function promoteCollectionRows(
     if (!existing) {
       counts.created += 1;
       if (!ctx.dry_run) {
+        await ctx.revalidate();
         const { data, error } = await ctx.admin.from(spec.table).insert({
           ...payload,
           created_by: ctx.actor_user_id,
@@ -306,6 +309,7 @@ export async function promoteCollectionRows(
     if (payloadDiffers(existing, updatePayload)) {
       counts.updated += 1;
       if (!ctx.dry_run) {
+        await ctx.revalidate();
         const { error } = await ctx.admin.from(spec.table).update(updatePayload)
           .eq("id", existing.id);
         if (error) {

@@ -16,6 +16,12 @@ import {
   isResidentCountOnlyQuestion as isResidentCountOnlyQuestionSafe,
 } from "./safe-mode.ts";
 import { rewriteGraceFollowupQuestion } from "./followup.ts";
+import {
+  CurrentActorError,
+  type CurrentActorAuthorization,
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -181,6 +187,7 @@ type ToolContext = {
   userId: string;
   userEmail: string | null;
   accessibleFacilityIds: string[];
+  revalidate: CurrentActorAuthorization["revalidate"];
   route?: string;
   memoryContext?: GraceMemoryRuntimeContext;
 };
@@ -758,6 +765,7 @@ async function logSearchAudit(
   durationMs: number,
 ) {
   try {
+    await ctx.revalidate();
     await ctx.admin.from("search_audit_log").insert({
       organization_id: ctx.workspaceId,
       facility_id: null,
@@ -779,7 +787,8 @@ async function logSearchAudit(
       results_count: countToolResults(result),
       duration_ms: durationMs,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof CurrentActorError) throw error;
     // Non-blocking: audit logging should not break operator search.
   }
 }
@@ -2436,6 +2445,7 @@ async function executeTool(
         query,
         ...runtimeContext.matchedAliases.slice(0, 6),
       ]).join(" | ");
+      await ctx.revalidate();
       const embRes = await fetch("https://api.openai.com/v1/embeddings", {
         method: "POST",
         headers: {
@@ -2515,6 +2525,7 @@ async function executeTool(
       // KB-NEXT-05: Cohere reranker as the final pass over the (over-fetched)
       // RRF candidates. Falls back to RRF order when COHERE_API_KEY isn't set
       // or the API errors out, so this stays safe to deploy without the key.
+      await ctx.revalidate();
       const reranked = await rerankWithCohere(query, filteredRows, {
         topN: matchCount,
         onWarn: (msg, meta) => {
@@ -2533,7 +2544,7 @@ async function executeTool(
       });
 
       if (reranked.length > 3) {
-        return await rerankResults(reranked, query);
+        return await rerankResults(reranked, query, ctx);
       }
 
       return reranked;
@@ -3136,8 +3147,10 @@ async function rerankResults(
     chunk_id?: string;
   }[],
   query: string,
+  ctx: ToolContext,
 ): Promise<typeof results> {
   try {
+    await ctx.revalidate();
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -3165,6 +3178,9 @@ async function rerankResults(
       return indices.map((i: number) => results[i]).filter(Boolean);
     }
   } catch {
+    // Current authority changes must never degrade into an unguarded rerank.
+    // The outer stream handler converts this into a sanitized denial.
+    await ctx.revalidate();
     /* fallback */
   }
   return results;
@@ -3189,6 +3205,62 @@ function chunkTextForStream(text: string): string[] {
     if (tail.trim()) parts.push(tail);
   }
   return parts.length > 0 ? parts : [text];
+}
+
+export async function emitAuthorizedKnowledgeResult(args: {
+  controller: Pick<ReadableStreamDefaultController<Uint8Array>, "enqueue">;
+  encoder: TextEncoder;
+  revalidate: CurrentActorAuthorization["revalidate"];
+  result: Awaited<ReturnType<typeof runAgentLoop>>;
+  traceId: string;
+  conversationId: string;
+  kbEmpty: boolean;
+}): Promise<void> {
+  await args.revalidate();
+  const result = args.result;
+  args.controller.enqueue(
+    args.encoder.encode(
+      `data: ${JSON.stringify({
+        meta: {
+          trace_id: args.traceId,
+          conversation_id: args.conversationId,
+          model: result.model,
+          answer_mode: result.answer_mode ?? null,
+          resolved_domain: result.provenance?.resolved_domain ?? null,
+          resolved_scope_label: result.provenance
+            ? formatScopeLabel(result.provenance.resolved_scope)
+            : null,
+          resolved_time_window_label: result.provenance
+            ? formatTimeWindowChip(result.provenance.resolved_scope)
+            : null,
+        },
+      })}\n\n`,
+    ),
+  );
+  const outgoing = result.text.trim().length > 0
+    ? chunkTextForStream(result.text)
+    : [
+      "I did not get a text answer from the model. Please try again, or rephrase your question.",
+    ];
+  for (const chunk of outgoing) {
+    if (chunk.length === 0) continue;
+    args.controller.enqueue(
+      args.encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`),
+    );
+  }
+  if (result.sources.length > 0) {
+    args.controller.enqueue(
+      args.encoder.encode(
+        `data: ${JSON.stringify({ sources: result.sources })}\n\n`,
+      ),
+    );
+  }
+  if (args.kbEmpty) {
+    args.controller.enqueue(
+      args.encoder.encode(`data: ${JSON.stringify({ kb_empty: true })}\n\n`),
+    );
+  }
+  args.controller.enqueue(args.encoder.encode("data: [DONE]\n\n"));
 }
 
 function buildSystemPrompt(userRole: string, tools: ToolDefinition[]): string {
@@ -3426,6 +3498,7 @@ async function runAgentLoop(
       break;
     }
 
+    await ctx.revalidate();
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -3558,7 +3631,7 @@ async function runAgentLoop(
   };
 }
 
-Deno.serve(async (req) => {
+export async function handleKnowledgeRequest(req: Request): Promise<Response> {
   const t = withTiming("knowledge-agent");
   const origin = req.headers.get("origin");
 
@@ -3569,30 +3642,18 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req);
+  } catch (error) {
     t.log({ event: "auth_failed", outcome: "blocked" });
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
-
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-
-  const userRole = profile?.app_role ?? "caregiver";
-  const orgId = profile?.organization_id as string | undefined;
-  if (!orgId) {
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId, email: actor.email };
+  const userRole = actor.role;
+  const orgId = actor.organizationId;
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   // KB-NEXT-03 G3: per-user + per-org rate limits so the KB chat surface can't
   // burn org budget via a single user or a fan-out script.
@@ -3618,9 +3679,12 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Message required" }, 400, origin);
   }
 
-  const workspaceId = bodyWorkspaceId && bodyWorkspaceId === orgId ? bodyWorkspaceId : orgId;
+  if (bodyWorkspaceId && bodyWorkspaceId !== orgId) {
+    return jsonResponse({ error: "Forbidden" }, 403, origin);
+  }
+  const workspaceId = orgId;
   const traceId = crypto.randomUUID();
-  const accessibleFacilityIds = await resolveAccessibleFacilityIds(admin, workspaceId, user.id, userRole);
+  const accessibleFacilityIds = [...actor.accessibleFacilityIds];
   const availableTools = await applyPolicyOverrides(
     admin,
     workspaceId,
@@ -3634,6 +3698,7 @@ Deno.serve(async (req) => {
     userId: user.id,
     userEmail: user.email ?? null,
     accessibleFacilityIds,
+    revalidate: actorAuth.revalidate,
     route,
   };
 
@@ -3644,6 +3709,11 @@ Deno.serve(async (req) => {
 
   let conversationId = conversation_id;
   if (!conversationId) {
+    try {
+      await actorAuth.revalidate();
+    } catch (error) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     const { data: conv, error: convErr } = await admin
       .from(conversationTable)
       .insert(
@@ -3733,37 +3803,6 @@ Deno.serve(async (req) => {
 
         const result = await runAgentLoop(message, history, toolContext, availableTools);
 
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              meta: {
-                trace_id: traceId,
-                conversation_id: conversationId,
-                model: result.model,
-                answer_mode: result.answer_mode ?? null,
-                resolved_domain: result.provenance?.resolved_domain ?? null,
-                resolved_scope_label: result.provenance ? formatScopeLabel(result.provenance.resolved_scope) : null,
-                resolved_time_window_label: result.provenance ? formatTimeWindowChip(result.provenance.resolved_scope) : null,
-              },
-            })}\n\n`,
-          ),
-        );
-
-        const outgoing =
-          result.text.trim().length > 0
-            ? chunkTextForStream(result.text)
-            : [
-                "I did not get a text answer from the model. Please try again, or rephrase your question.",
-              ];
-        for (const chunk of outgoing) {
-          if (chunk.length === 0) continue;
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
-        }
-
-        if (result.sources.length > 0) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ sources: result.sources })}\n\n`));
-        }
-
         const userMessageBase = grace
           ? {
             conversation_id: conversationId,
@@ -3822,6 +3861,7 @@ Deno.serve(async (req) => {
             trace_id: traceId,
           };
 
+        await actorAuth.revalidate();
         const { error: insertErr } = await admin.from(messageTable).insert([
           userMessageBase,
           assistantMessageBase,
@@ -3841,6 +3881,7 @@ Deno.serve(async (req) => {
             p_tokens_in: result.tokensIn,
             p_tokens_out: result.tokensOut,
           };
+        await actorAuth.revalidate();
         const { error: usageErr } = await admin.rpc(usageRpc, usageArgs);
         if (usageErr) {
           t.log({
@@ -3851,7 +3892,8 @@ Deno.serve(async (req) => {
           });
         }
 
-        if (result.kbSearchMiss) {
+        const kbEmpty = result.kbSearchMiss;
+        if (kbEmpty) {
           // KB-NEXT-11: switch to _kb_record_gap so the chat surface
           // merges into the same dedupe/frequency keyspace as the router
           // and the thumbs-down trigger. log_knowledge_gap is left for
@@ -3861,6 +3903,7 @@ Deno.serve(async (req) => {
           // The KB tables (documents, chunks, knowledge_gaps, chat_*) all
           // store workspace_id as text; the function was patched 2026-05-17
           // (commit 8aca7c8) to match. Pass a string; do not cast to uuid.
+          await actorAuth.revalidate();
           const { error: gapErr } = await admin.rpc("_kb_record_gap", {
             p_workspace_id: workspaceId,
             p_user_id: user.id,
@@ -3879,9 +3922,9 @@ Deno.serve(async (req) => {
               error_message: gapErr.message,
             });
           }
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ kb_empty: true })}\n\n`));
         }
 
+        await actorAuth.revalidate();
         const { error: analyticsErr } = await admin.from("kb_analytics_events").insert({
           workspace_id: workspaceId,
           event_type: "chat_query",
@@ -3911,6 +3954,7 @@ Deno.serve(async (req) => {
           const promptHash = [...new Uint8Array(promptDigest)].map((b) => b.toString(16).padStart(2, "0")).join("");
           const responseDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(result.text ?? ""));
           const responseHash = [...new Uint8Array(responseDigest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+          await actorAuth.revalidate();
           const { error: invErr } = await admin.from("ai_invocations").insert({
             organization_id: workspaceId,
             model: MODEL_FULL,
@@ -3938,6 +3982,7 @@ Deno.serve(async (req) => {
             });
           }
         } catch (invHashErr) {
+          if (invHashErr instanceof CurrentActorError) throw invHashErr;
           t.log({
             event: "ai_invocation_insert_threw",
             outcome: "error",
@@ -3946,13 +3991,37 @@ Deno.serve(async (req) => {
           });
         }
 
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        await emitAuthorizedKnowledgeResult({
+          controller,
+          encoder,
+          revalidate: actorAuth.revalidate,
+          result,
+          traceId,
+          conversationId: conversationId!,
+          kbEmpty,
+        });
         controller.close();
 
         t.log({ event: "chat_ok", outcome: "success", trace_id: traceId });
       } catch (err: unknown) {
+        if (err instanceof CurrentActorError) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Unauthorized" })}\n\n`));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          t.log({ event: "authority_revoked", outcome: "blocked" });
+          return;
+        }
         const msg = err instanceof Error ? err.message : String(err);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
+        try {
+          await actorAuth.revalidate();
+        } catch (authError) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Unauthorized" })}\n\n`));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          t.log({ event: "authority_revoked", outcome: "blocked" });
+          return;
+        }
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Knowledge request failed" })}\n\n`));
 
         const { error: insertErr } = await admin.from(messageTable).insert([
           grace
@@ -4006,4 +4075,8 @@ Deno.serve(async (req) => {
       ...getCorsHeaders(origin),
     },
   });
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handleKnowledgeRequest);
+}

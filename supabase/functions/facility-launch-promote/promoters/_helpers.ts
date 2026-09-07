@@ -212,6 +212,7 @@ export async function insertPromotionLink(
   if (ctx.dry_run || !ctx.run_item_id) return;
   // Re-runs should not create new ledger rows for no-op operational rows.
   if (input.action === "noop") return;
+  await ctx.revalidate();
   const { error } = await ctx.admin.from("facility_launch_promotion_run_links")
     .insert({
       run_item_id: ctx.run_item_id,

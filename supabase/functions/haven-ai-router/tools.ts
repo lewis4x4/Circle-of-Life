@@ -29,6 +29,7 @@ import {
   validateToolInput,
 } from "../_shared/tool-registry.ts";
 import { pickRedacted } from "../_shared/redact-pii.ts";
+import { CurrentActorError } from "../_shared/current-actor.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -61,6 +62,8 @@ export type ToolLoopArgs = {
   model?: string;
   /** Max output tokens per Claude call (default 1024). */
   maxTokensPerCall?: number;
+  revalidate: (facilityId?: string | null) => Promise<void>;
+  fetcher?: typeof fetch;
 };
 
 export type ToolLoopResult = {
@@ -178,9 +181,12 @@ async function callAnthropicWithTools(args: {
   messages: AnthropicMessage[];
   tools: ReturnType<typeof getAnthropicToolDefs>;
   maxTokens: number;
+  revalidate: () => Promise<void>;
+  fetcher?: typeof fetch;
 }): Promise<AnthropicResponse | null> {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    await args.revalidate();
+    const res = await (args.fetcher ?? fetch)("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": args.apiKey,
@@ -203,6 +209,7 @@ async function callAnthropicWithTools(args: {
     }
     return (await res.json()) as AnthropicResponse;
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     logError("anthropic_threw", err);
     return null;
   }
@@ -237,6 +244,7 @@ async function callRpc(
   rpcName: string,
   caller: ToolCallerContext,
   domainArgs: Record<string, unknown>,
+  revalidate: (facilityId?: string | null) => Promise<void>,
 ): Promise<RpcOutcome> {
   // Caller context is injected on EVERY call. The model never supplies these.
   const params: Record<string, unknown> = {
@@ -252,6 +260,7 @@ async function callRpc(
   }
 
   try {
+    await revalidate();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
     let result;
@@ -271,6 +280,7 @@ async function callRpc(
     }
     return { ok: true, data, toolName };
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     logError("rpc_threw", err, { tool: toolName, rpc: rpcName });
     return { ok: false, error: "rpc_failed", toolName };
   }
@@ -373,8 +383,11 @@ export async function runToolLoop(args: ToolLoopArgs): Promise<ToolLoopResult> {
       messages,
       tools: toolDefs,
       maxTokens: maxTokensPerCall,
+      revalidate: args.revalidate,
+      fetcher: args.fetcher,
     });
     if (!resp) {
+      await args.revalidate();
       return {
         answer: finalAnswer,
         citations,
@@ -402,6 +415,7 @@ export async function runToolLoop(args: ToolLoopArgs): Promise<ToolLoopResult> {
     if (textBits.length > 0) finalAnswer = textBits.join("\n").trim();
 
     if (resp.stop_reason !== "tool_use" || toolUses.length === 0) {
+      await args.revalidate();
       logEvent("tool_loop_complete", { turns: turn + 1, tools_used: [...toolsUsed] });
       return {
         answer: finalAnswer,
@@ -445,7 +459,14 @@ export async function runToolLoop(args: ToolLoopArgs): Promise<ToolLoopResult> {
         continue;
       }
 
-      const outcome = await callRpc(args.admin, tu.name, desc.rpc, args.caller, validated);
+      const outcome = await callRpc(
+        args.admin,
+        tu.name,
+        desc.rpc,
+        args.caller,
+        validated,
+        args.revalidate,
+      );
       toolsUsed.add(tu.name);
 
       if (!outcome.ok) {
@@ -472,6 +493,7 @@ export async function runToolLoop(args: ToolLoopArgs): Promise<ToolLoopResult> {
   }
 
   logEvent("tool_loop_max_turns_exhausted", { tools_used: [...toolsUsed] });
+  await args.revalidate();
   return {
     answer:
       finalAnswer ||
