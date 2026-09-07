@@ -1,36 +1,41 @@
-import { existsSync } from "node:fs";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+/// <reference types="vite/client" />
 
-import { describe, expect, it } from "vitest";
+import { normalizeAppPath } from "next/dist/shared/lib/router/utils/app-paths";
+import { describe, expect, it, vi } from "vitest";
 
-const nextConfigSource = readFileSync(path.resolve(process.cwd(), "next.config.ts"), "utf8");
+import nextConfig from "../../../next.config";
+import { repairedRoutes, resolveRedirect } from "../../../scripts/verify-section-1-routes.mjs";
 
-const CANONICAL_ADMIN_ROUTE_REPAIRS = [
-  ["/finance/forecast", "/admin/finance/forecast", "src/app/(admin)/finance/forecast/page.tsx"],
-  ["/finance/close", "/admin/finance/close", "src/app/(admin)/finance/close/page.tsx"],
-  ["/finance/trust", "/admin/finance/trust", "src/app/(admin)/finance/trust/page.tsx"],
-  ["/reports/history/:id", "/admin/reports/history/:id", "src/app/(admin)/reports/history/[id]/page.tsx"],
-  ["/training/inservice/new", "/admin/training/inservice/new", "src/app/(admin)/training/inservice/new/page.tsx"],
-  ["/transportation/requests/new", "/admin/transportation/requests/new", "src/app/(admin)/transportation/requests/new/page.tsx"],
-  ["/transportation/requests/:id", "/admin/transportation/requests/:id", "src/app/(admin)/transportation/requests/[id]/page.tsx"],
-] as const;
+// Keep application dependencies out of this route-module contract. Each canonical
+// import must expose the existing page component itself, with no second implementation.
+vi.mock("@sentry/nextjs", () => ({ withSentryConfig: (config: unknown) => config }));
+vi.mock("@next/bundle-analyzer", () => ({ default: () => (config: unknown) => config }));
+vi.mock("@/app/(admin)/finance/forecast/page", () => ({ default: () => "forecast" }));
+vi.mock("@/app/(admin)/finance/close/page", () => ({ default: () => "close" }));
+vi.mock("@/app/(admin)/finance/trust/page", () => ({ default: () => "trust" }));
+vi.mock("@/app/(admin)/reports/history/[id]/page", () => ({ default: () => "report" }));
+vi.mock("@/app/(admin)/training/inservice/new/page", () => ({ default: () => "inservice" }));
+vi.mock("@/app/(admin)/transportation/requests/new/page", () => ({ default: () => "new trip" }));
+vi.mock("@/app/(admin)/transportation/requests/[id]/page", () => ({ default: () => "trip" }));
+
+const pageModules = import.meta.glob("/src/app/**/page.tsx");
 
 describe("canonical admin route repairs", () => {
-  it("keeps every repaired canonical destination backed by one page module", () => {
-    for (const [, canonicalPathname, pageModulePath] of CANONICAL_ADMIN_ROUTE_REPAIRS) {
-      expect(existsSync(path.resolve(process.cwd(), pageModulePath)), canonicalPathname).toBe(true);
-    }
+  it.each(repairedRoutes)("resolves %s to its existing implementation through the actual canonical module", async (route) => {
+    const canonicalKey = `/src/app/(admin)/admin/${route}/page.tsx`;
+    const legacyKey = `/src/app/(admin)/${route}/page.tsx`;
+    expect(pageModules[canonicalKey], `missing canonical page ${canonicalKey}`).toBeTypeOf("function");
+    const canonical = await pageModules[canonicalKey]() as { default: unknown };
+    const legacy = await pageModules[legacyKey]() as { default: unknown };
+    expect(canonical.default).toBe(legacy.default);
+    expect(normalizeAppPath(`/(admin)/admin/${route}/page`)).toBe(`/admin/${route}`);
   });
 
-  it("keeps the actual redirect configuration for every legacy route segment", () => {
-    expect(nextConfigSource).toContain("source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true");
-    expect(nextConfigSource).toContain("source: `/${seg}`, destination: `/admin/${seg}`, permanent: true");
-
-    for (const [legacyPathname, canonicalPathname] of CANONICAL_ADMIN_ROUTE_REPAIRS) {
-      const segment = legacyPathname.split("/")[1];
-      expect(nextConfigSource).toContain(`"${segment}"`);
-      expect(canonicalPathname).toBe(`/admin${legacyPathname}`);
-    }
+  it.each(repairedRoutes)("resolves the configured legacy redirect to %s without another redirect", async (route) => {
+    const redirects = await nextConfig.redirects!();
+    const legacy = `/${route.replace("[id]", "section-1-record")}`;
+    const destination = resolveRedirect(redirects, legacy);
+    expect(destination).toBe(`/admin${legacy}`);
+    expect(resolveRedirect(redirects, destination!)).toBeNull();
   });
 });

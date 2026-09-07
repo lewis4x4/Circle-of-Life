@@ -2,7 +2,7 @@
 import { COUNT_RECEIPT_COLUMNS, saveControlledCountBatch, type SavedControlledCount } from "@/lib/medications/controlled-count-batch";
 import { PendingCountReceipt } from "@/components/controlled-substance/PendingCountReceipt";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Shield, ChevronDown, Loader2, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,20 +20,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
+import { formatResidentIdentity, formatMedicationDose, requireControlledMedicationResidentIdentities, usePendingCountIdentities, type ControlledMedicationIdentity } from "@/lib/medications/controlled-count-identity";
 
-type MedRow = {
-  id: string;
-  medication_name: string;
+type MedRow = ControlledMedicationIdentity & {
   resident_id: string;
-  resident_first_name: string;
-  resident_middle_name: string | null;
-  resident_last_name: string;
-  resident_name_suffix: string | null;
-  resident_preferred_name: string | null;
-  strength: string | null;
-  form: string | null;
-  route: string;
-  frequency: string;
   room?: string | null;
 };
 
@@ -87,6 +77,7 @@ export function CountInitiationModal({
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [lines, setLines] = useState<LineState[]>([]);
   const [shift, setShift] = useState<Shift>("evening");
   const [saving, setSaving] = useState(false);
@@ -97,12 +88,22 @@ export function CountInitiationModal({
   const [coPassword, setCoPassword] = useState("");
   const [coError, setCoError] = useState<string | null>(null);
   const [coBusy, setCoBusy] = useState(false);
+  const loadGeneration = useRef(0);
+  const [loadedFacilityId, setLoadedFacilityId] = useState<string | null>(null);
+  const receiptIdentity = usePendingCountIdentities(supabase, open && loadedFacilityId === facilityId ? facilityId : null, pendingCounts);
 
   const loadExpected = useCallback(async (meds: MedRow[]): Promise<LineState[]> => meds.map((med) => ({ id: crypto.randomUUID(), med, expected: "", actual: "" })), []);
 
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current;
+    setLoadedFacilityId(null);
+    setLines([]);
+    setPendingCounts([]);
+    setPendingCountIds([]);
+    setShowCoSign(false);
     if (!open || !facilityId) return;
     setLoading(true);
+    setSaveError(null);
     setLoadError(null);
     try {
       const medRes = await supabase
@@ -115,16 +116,16 @@ export function CountInitiationModal({
           form,
           route,
           frequency,
-          residents!inner (
+          residents!resident_medications_resident_id_fkey (
             first_name,
             middle_name,
             last_name,
             name_suffix,
             preferred_name,
             bed_id,
-            beds!inner (
+            beds (
               room_id,
-              rooms!inner (
+              rooms (
                 room_number
               )
             )
@@ -135,17 +136,15 @@ export function CountInitiationModal({
         .neq("controlled_schedule", "non_controlled")
         .is("deleted_at", null);
 
+      if (generation !== loadGeneration.current) return;
       if (medRes.error) throw medRes.error;
 
+      requireControlledMedicationResidentIdentities((medRes.data ?? []) as ResidentMedicationQueryRow[]);
       const meds = ((medRes.data ?? []) as ResidentMedicationQueryRow[]).map((row) => ({
         id: row.id,
         medication_name: row.medication_name,
         resident_id: row.resident_id,
-        resident_first_name: row.residents?.first_name || "",
-        resident_middle_name: row.residents?.middle_name ?? null,
-        resident_last_name: row.residents?.last_name || "",
-        resident_name_suffix: row.residents?.name_suffix ?? null,
-        resident_preferred_name: row.residents?.preferred_name ?? null,
+        residents: row.residents,
         strength: row.strength,
         form: row.form,
         route: row.route,
@@ -154,44 +153,54 @@ export function CountInitiationModal({
       })) as MedRow[];
 
       const withExpected = await loadExpected(meds);
+      if (generation !== loadGeneration.current) return;
       setLines(withExpected);
       const { data: { user: author } } = await supabase.auth.getUser();
       if (author) {
         const pending = await supabase.from("controlled_substance_counts").select(COUNT_RECEIPT_COLUMNS).eq("facility_id", facilityId).eq("outgoing_staff_id", author.id).is("incoming_signed_at", null).is("deleted_at", null);
+        if (generation !== loadGeneration.current) return;
         if (pending.error) throw pending.error;
         setPendingCounts(pending.data ?? []);
         setPendingCountIds((pending.data ?? []).map((row) => row.id));
         if (pending.data?.length) setShowCoSign(true);
       }
+      if (generation === loadGeneration.current) setLoadedFacilityId(facilityId);
     } catch (e: unknown) {
+      if (generation !== loadGeneration.current) return;
       setLoadError(e instanceof Error ? e.message : "Failed to load");
       setLines([]);
     } finally {
-      setLoading(false);
+      if (generation === loadGeneration.current) setLoading(false);
     }
   }, [open, facilityId, supabase, loadExpected]);
 
   useEffect(() => {
     void load();
+    return () => { loadGeneration.current += 1; };
   }, [load]);
 
   const submitCounts = async () => {
-    if (saving) return;
+    if (saving || loading || loadedFacilityId !== facilityId) return;
     if (pendingCountIds.length) { setShowCoSign(true); return; }
+    if (loadError || !lines.length) return;
+    const generation = loadGeneration.current;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoadError("Not signed in.");
       return;
     }
+    if (generation !== loadGeneration.current) return;
     setSaving(true);
-    setLoadError(null);
+    setSaveError(null);
     try {
+      requireControlledMedicationResidentIdentities(lines.map((line) => line.med));
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("organization_id")
         .eq("id", user.id)
         .single();
 
+      if (generation !== loadGeneration.current) return;
       if (!profile?.organization_id) {
         throw new Error("Could not determine organization");
       }
@@ -218,6 +227,7 @@ export function CountInitiationModal({
           };
       });
       const receipt = await saveControlledCountBatch(supabase, rows);
+      if (generation !== loadGeneration.current) return;
       const ids = receipt.map((row) => row.id);
       setPendingCounts(receipt);
       setPendingCountIds(ids);
@@ -225,13 +235,15 @@ export function CountInitiationModal({
       setCoPassword("");
       setCoError(null);
     } catch (e: unknown) {
-      setLoadError(e instanceof Error ? e.message : "Save failed");
+      if (generation === loadGeneration.current) setSaveError(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
   };
 
   const submitCoSign = async () => {
+    if (coBusy || !open || loadedFacilityId !== facilityId || !receiptIdentity.ready || !pendingCountIds.length) return;
+    const generation = loadGeneration.current;
     setCoBusy(true);
     setCoError(null);
     try {
@@ -246,6 +258,7 @@ export function CountInitiationModal({
         }),
       });
       const json = (await res.json()) as { verified?: boolean; error?: string };
+      if (generation !== loadGeneration.current) return;
       if (!res.ok || !json.verified) {
         throw new Error(json.error ?? "Verification failed");
       }
@@ -256,7 +269,7 @@ export function CountInitiationModal({
       onSuccess?.();
       onOpenChange(false);
     } catch (e: unknown) {
-      setCoError(e instanceof Error ? e.message : "Verification failed");
+      if (generation === loadGeneration.current) setCoError(e instanceof Error ? e.message : "Verification failed");
     } finally {
       setCoBusy(false);
     }
@@ -289,6 +302,8 @@ export function CountInitiationModal({
               </DialogDescription>
             </DialogHeader>
 
+            {saveError ? <p role="alert" className="text-sm text-rose-200">{saveError}</p> : null}
+            {pendingCountIds.length > 0 ? <Button onClick={() => setShowCoSign(true)}>Resume saved count verification</Button> : null}
             {loadError ? (
               <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -361,7 +376,7 @@ export function CountInitiationModal({
                             )}
                           </CardTitle>
                           <CardDescription className="text-xs text-zinc-500">
-                            <span className="block">Resident: {formatResidentMedicationIdentity(line.med)}</span>
+                            <span className="block">Resident: {formatResidentIdentity(line.med.residents)}</span>
                             <span className="block">Dose: {formatMedicationDose(line.med)}</span>
                             <span className="block">Medication record: {line.med.id}</span>
                             {line.med.room && ` · Room ${line.med.room}`}
@@ -375,6 +390,7 @@ export function CountInitiationModal({
                           <div className="flex-1">
                             <Label className="text-[10px] text-zinc-400">Actual</Label>
                             <Input
+                              aria-label="Actual count on hand"
                               type="number"
                               inputMode="numeric"
                               value={line.actual}
@@ -453,7 +469,9 @@ export function CountInitiationModal({
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              <PendingCountReceipt counts={pendingCounts} medicationLabels={new Map(lines.map((line) => [line.med.id, formatMedicationReceiptLabel(line.med)]))} />
+              <PendingCountReceipt counts={pendingCounts} medicationLabels={receiptIdentity.labels} />
+              {!receiptIdentity.ready && !receiptIdentity.error ? <p role="status">Resolving saved count identities…</p> : null}
+              {receiptIdentity.error ? <div role="alert"><p>{receiptIdentity.error}</p><Button variant="outline" onClick={receiptIdentity.retry}>Retry identity lookup</Button></div> : null}
               {coError && (
                 <div className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -502,7 +520,7 @@ export function CountInitiationModal({
               </Button>
               <Button
                 onClick={submitCoSign}
-                disabled={coBusy}
+                disabled={coBusy || !receiptIdentity.ready}
                 className="bg-emerald-700 text-white hover:bg-emerald-600"
               >
                 {coBusy ? (
@@ -520,28 +538,4 @@ export function CountInitiationModal({
       </DialogContent>
     </Dialog>
   );
-}
-
-function formatResidentMedicationIdentity(medication: MedRow): string {
-  const legalName = [
-    medication.resident_first_name,
-    medication.resident_middle_name,
-    medication.resident_last_name,
-    medication.resident_name_suffix,
-  ]
-    .map((part) => part?.trim())
-    .filter(Boolean)
-    .join(" ");
-  return medication.resident_preferred_name?.trim()
-    ? `${legalName} (${medication.resident_preferred_name.trim()})`
-    : legalName;
-}
-
-function formatMedicationDose(medication: MedRow): string {
-  const dose = [medication.strength, medication.form].filter(Boolean).join(" ");
-  return [dose || "Dose not recorded", medication.route, medication.frequency].join(" · ");
-}
-
-function formatMedicationReceiptLabel(medication: MedRow): string {
-  return `Resident: ${formatResidentMedicationIdentity(medication)} · ${medication.medication_name} · Dose: ${formatMedicationDose(medication)} · Medication record: ${medication.id}`;
 }

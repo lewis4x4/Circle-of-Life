@@ -9,18 +9,19 @@
       "id": "NAV-001",
       "severity": "P1",
       "title": "Seven implemented workflows redirect or link to missing canonical pages",
-      "status": "source_verified_review_pending",
+      "status": "implemented_review_pending",
       "evidence": [
         "src/lib/navigation/canonical-admin-route-registry.test.ts",
-        "src/app/(admin)/finance/forecast/page.tsx",
-        "src/app/(admin)/finance/close/page.tsx",
-        "src/app/(admin)/finance/trust/page.tsx",
-        "src/app/(admin)/reports/history/[id]/page.tsx",
-        "src/app/(admin)/training/inservice/new/page.tsx",
-        "src/app/(admin)/transportation/requests/new/page.tsx",
-        "src/app/(admin)/transportation/requests/[id]/page.tsx"
+        "scripts/verify-section-1-routes.mjs",
+        "src/app/(admin)/admin/finance/forecast/page.tsx",
+        "src/app/(admin)/admin/finance/close/page.tsx",
+        "src/app/(admin)/admin/finance/trust/page.tsx",
+        "src/app/(admin)/admin/reports/history/[id]/page.tsx",
+        "src/app/(admin)/admin/training/inservice/new/page.tsx",
+        "src/app/(admin)/admin/transportation/requests/new/page.tsx",
+        "src/app/(admin)/admin/transportation/requests/[id]/page.tsx"
       ],
-      "notes": "All seven canonical page modules and the configured legacy redirect segments are present in the reconciled source baseline. Path-existence and redirect-configuration regression passes. Independent review remains pending; no authenticated browser navigation is claimed."
+      "notes": "Independent review found the prior registry checked legacy modules. Seven canonical /admin wrappers now reuse those implementations; actual imports, redirect resolution and production manifest checks replace the shallow assertions. Correction remains pending fresh independent review; no authenticated navigation acceptance is claimed."
     },
     {
       "id": "NAV-002",
@@ -68,9 +69,10 @@
         "src/app/(admin)/executive/executive-hub-nav.test.tsx",
         "src/app/(admin)/executive/executive-hub-nav.source.test.ts",
         "src/components/executive/ExecutiveOverviewPageClient.tsx",
-        "src/app/(admin)/executive/alerts/page.tsx"
+        "src/app/(admin)/executive/alerts/page.tsx",
+        "src/app/(admin)/executive/executive-sections-pages.test.tsx"
       ],
-      "notes": "Primary route links use normal keyboard focus and aria-current. Overview and alerts mount the responsive navigation directly, including its mobile trigger. Independent review remains pending; no authenticated narrow-viewport browser session is claimed."
+      "notes": "A single most-specific permitted destination is current; Overview matches exactly. Rendered tests open the mobile drawer on Alerts and Standup history and mount the real navigation through both Overview and Alerts pages. Role filtering and keyboard focus remain supported. Correction remains pending fresh independent review."
     },
     {
       "id": "NAV-007",
@@ -169,13 +171,14 @@
       "title": "Controlled-substance count cards omit the resident and dose identity",
       "status": "implemented_review_pending",
       "evidence": [
+        "src/lib/medications/controlled-count-identity.ts",
         "src/components/controlled-substance/ControlledCountConsole.tsx",
-        "src/components/controlled-substance/PendingCountReceipt.tsx",
-        "src/components/controlled-substance/controlled-medication-identity.test.tsx",
         "src/components/medication/CountInitiationModal.tsx",
-        "src/components/medication/CountInitiationModal.source.test.ts"
+        "src/components/controlled-substance/PendingCountReceipt.tsx",
+        "src/components/controlled-substance/controlled-count-entry-points.test.tsx",
+        "src/components/controlled-substance/controlled-medication-identity.test.tsx"
       ],
-      "notes": "Both controlled-count entry points and the witness receipt show supported resident name, medication dose details, and the stable resident_medications identifier. Missing resident identity blocks the shared console count. Independent Astra clinical review remains pending; no live clinical workflow is claimed."
+      "notes": "Both entry points use shared usable legal-name validation. Saved count identities are resolved by persisted medication references within facility scope, including inactive medications. Unresolved identity blocks co-signing with retry recovery. Correction remains pending fresh independent Astra clinical review; no live clinical action or hosted acceptance is claimed."
     },
     {
       "id": "FL-010",
@@ -319,7 +322,7 @@
         "src/app/(admin)/certifications/new/page.tsx",
         "src/app/(admin)/certifications/new/page.test.tsx"
       ],
-      "notes": "The staff selector distinguishes successful-empty from failed retrieval, exposes retry, and retains entered form input. Independent review remains pending; no authenticated RLS failure is claimed."
+      "notes": "Rendered regressions prove failure-to-success retry repeats facility, active-employment and soft-delete filters and retains category, credential name, issuing authority and both dates. Successful-empty and repeated failures remain distinct. Correction remains pending fresh independent review; no authenticated RLS acceptance is claimed."
     },
     {
       "id": "BUS-006",

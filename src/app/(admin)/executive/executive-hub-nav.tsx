@@ -44,12 +44,8 @@ const SECONDARY = [
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
 ] as const;
 
-function isPrimaryHrefActive(pathname: string, href: string) {
+function isHrefActive(pathname: string, href: string) {
   if (href === "/admin/executive") return pathname === "/admin/executive";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function isSecondaryHrefActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -72,10 +68,14 @@ export function ExecutiveHubNav() {
     return SECONDARY.filter((item) => canOpenExecutiveHubHref(appRole, item.href));
   }, [appRole, authLoading]);
 
-  const activeSecondary = useMemo(
-    () => secondaryItems.find((item) => isSecondaryHrefActive(pathname, item.href)),
-    [pathname, secondaryItems],
+  // Choose once across both groups so a child destination wins over its parent.
+  const activeHref = useMemo(
+    () => [...primaryItems, ...secondaryItems]
+      .filter((item) => isHrefActive(pathname, item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href,
+    [pathname, primaryItems, secondaryItems],
   );
+  const activeSecondary = secondaryItems.find((item) => item.href === activeHref);
 
   return (
     <>
@@ -87,7 +87,7 @@ export function ExecutiveHubNav() {
         )}
       >
         {primaryItems.map((item) => {
-          const active = isPrimaryHrefActive(pathname, item.href);
+          const active = item.href === activeHref;
           return (
             <Link
               key={item.href}
@@ -129,7 +129,7 @@ export function ExecutiveHubNav() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-1">
               {secondaryItems.map((item) => {
-                const active = isSecondaryHrefActive(pathname, item.href);
+                const active = item.href === activeHref;
                 return (
                   <DropdownMenuItem
                     key={item.href}
@@ -182,9 +182,7 @@ export function ExecutiveHubNav() {
             onClick={() => setMobileOpen(false)}
           >
             {[...primaryItems, ...secondaryItems].map((item) => {
-              const active =
-                isPrimaryHrefActive(pathname, item.href) ||
-                isSecondaryHrefActive(pathname, item.href);
+              const active = item.href === activeHref;
               return (
                 <Link
                   key={item.href}

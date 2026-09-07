@@ -6,7 +6,7 @@ import {
   formatMedicationDose,
   formatResidentIdentity,
   requireControlledMedicationResidentIdentities,
-} from "./ControlledCountConsole";
+} from "@/lib/medications/controlled-count-identity";
 import { PendingCountReceipt } from "./PendingCountReceipt";
 
 describe("controlled medication identity", () => {
@@ -48,7 +48,7 @@ describe("controlled medication identity", () => {
   it("blocks an ambiguous medication record before staff can enter a count", () => {
     expect(() =>
       requireControlledMedicationResidentIdentities([
-        { id: "medication-record-ambiguous", residents: null },
+        { residents: null },
       ]),
     ).toThrow("missing its resident identity");
   });

@@ -23,7 +23,7 @@ describe("ExecutiveHubNav role filter", () => {
     expect(source).toContain('aria-current={active ? "page" : undefined}');
     expect(overviewSource).toContain("<ExecutiveHubNav />");
     expect(alertsSource).toContain("<ExecutiveHubNav />");
-    expect(overviewSource).not.toMatch(/hidden md:block[\\s\\S]{0,120}<ExecutiveHubNav/);
-    expect(alertsSource).not.toMatch(/hidden md:block[\\s\\S]{0,120}<ExecutiveHubNav/);
+    expect(overviewSource).not.toMatch(/hidden md:block[\s\S]{0,120}<ExecutiveHubNav/);
+    expect(alertsSource).not.toMatch(/hidden md:block[\s\S]{0,120}<ExecutiveHubNav/);
   });
 });
