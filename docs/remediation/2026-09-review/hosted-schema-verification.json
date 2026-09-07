@@ -1,0 +1,8 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "ledger": "319|review_access_boundaries\n320|september_business_integrity\n321|clinical_review_integrity\n322|dietary_verified_actions\n323|review_report_outputs\n324|september_office_integrity\n325|review_med_tech_controlled_count_access\n326|sys_001_authoritative_actor_state\n327|sys_001e_lifecycle_authorization\n328|ingest_generation_integrity\n329|authorization_error_http_contract",
+  "pre_request_hook": "t",
+  "lifecycle_browser_denied": "t",
+  "shell_actor_installed": "t",
+  "ingest_commit_installed": "t"
+}

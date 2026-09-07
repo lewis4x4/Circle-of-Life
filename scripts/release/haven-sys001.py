@@ -41,7 +41,7 @@ def sql(query):
     return result.stdout.strip()
 
 
-def http(url, headers, body=None, method=None):
+def http(url, headers, body=None, method=None, expected_error=None):
     config = 'url = ' + json.dumps(url) + '\nuser-agent = "SupabaseCLI/2.101.0"\n'
     for key, value in headers.items():
         config += 'header = ' + json.dumps(f'{key}: {value}') + '\n'
@@ -54,6 +54,8 @@ def http(url, headers, body=None, method=None):
     if result.returncode:
         try:
             error = json.loads(result.stdout)
+            if expected_error and error.get('error') == expected_error:
+                return {'expected_error_verified': True}
             code = error.get('error_code') or error.get('code') or error.get('error')
             safe_code = str(code) if str(code).replace('_', '').isalnum() else 'unclassified'
         except (ValueError, AttributeError):
@@ -97,7 +99,7 @@ def quote(value):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('action', choices=['inspect', 'backup', 'prepare-hook', 'enable-hook', 'probe', 'probe-links', 'probe-owner', 'apply', 'verify'])
+parser.add_argument('action', choices=['inspect', 'backup', 'prepare-hook', 'enable-hook', 'probe', 'probe-links', 'probe-owner', 'apply', 'repair-http-error', 'verify'])
 args = parser.parse_args()
 
 if args.action == 'inspect':
@@ -185,6 +187,22 @@ elif args.action in ('probe', 'probe-links', 'probe-owner'):
                              {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Authorization': 'Bearer ' + access, 'Content-Type': 'application/json'}, {}, 'POST')
                 assert actor['user_id'] == claims['sub'] and actor['app_role'] == claims['app_role']
                 proof['current_actor_rpc_verified'] = True
+                app_url = os.environ.get('HAVEN_PROBE_APP_URL')
+                if app_url:
+                    assert app_url in ('https://circleoflifealf.com', 'https://deploy-preview-453--circleoflifealf.netlify.app')
+                    encoded = 'base64-' + base64.urlsafe_b64encode(json.dumps(token, separators=(',', ':')).encode()).decode().rstrip('=')
+                    key = 'sb-' + PROJECT + '-auth-token'
+                    chunks = [encoded[i:i + 3180] for i in range(0, len(encoded), 3180)]
+                    cookies = '; '.join((key if len(chunks) == 1 else key + '.' + str(index)) + '=' + chunk for index, chunk in enumerate(chunks))
+                    detail = http(app_url + '/api/admin/users/' + claims['sub'], {'Cookie': cookies})
+                    assert detail['data']['id'] == claims['sub'] and detail['data']['app_role'] == claims['app_role']
+                    proof['matched_app_owner_api_verified'] = app_url
+            if os.environ.get('HAVEN_PROBE_EDGE') == '1':
+                edge = http(f'https://{PROJECT}.supabase.co/functions/v1/document-admin',
+                            {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Authorization': 'Bearer ' + access, 'Content-Type': 'application/json'},
+                            {}, 'POST', expected_error='document_id required')
+                assert edge.get('expected_error_verified') is True
+                proof['edge_current_actor_reached_validation'] = True
             rows.append(proof)
         finally:
             http(f'https://{PROJECT}.supabase.co/auth/v1/logout?scope=local',
@@ -197,6 +215,12 @@ elif args.action in ('probe', 'probe-links', 'probe-owner'):
             except RuntimeError as error:
                 assert 'HAVEN_AUTHORIZATION_STALE' in str(error), 'Expected authoritative stale-session rejection'
                 rows[-1]['revoked_session_token_rejected'] = True
+        if os.environ.get('HAVEN_PROBE_EDGE') == '1':
+            edge = http(f'https://{PROJECT}.supabase.co/functions/v1/document-admin',
+                        {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Authorization': 'Bearer ' + access, 'Content-Type': 'application/json'},
+                        {}, 'POST', expected_error='Unauthorized')
+            assert edge.get('expected_error_verified') is True
+            rows[-1]['edge_revoked_session_rejected'] = True
     record('hosted-token-probe.json', {'project': PROJECT, 'existing_pilot_signins': rows, 'new_fixtures': False, 'sign_in_method': args.action, 'email_sent': False})
 elif args.action == 'apply':
     prerequisites()
@@ -219,15 +243,24 @@ elif args.action == 'apply':
     statements += ["NOTIFY pgrst,'reload config'; NOTIFY pgrst,'reload schema'; COMMIT;"]
     sql('\n'.join(statements))
     record('hosted-migrations-applied.json', {'project': PROJECT, 'migrations': migrations, 'transactional_batch': True})
+elif args.action == 'repair-http-error':
+    prerequisites()
+    assert sql("SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version IN ('319','320','321','322','323','324','325','326','327','328');") == '10'
+    assert sql("SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='329';") == '0'
+    file = ROOT / 'supabase/migrations/329_authorization_error_http_contract.sql'
+    source = file.read_text()
+    sql("BEGIN; SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='120s';\n" + source +
+        "\nINSERT INTO supabase_migrations.schema_migrations(version,name,statements) VALUES ('329','authorization_error_http_contract',ARRAY[" + quote(source) + "]::text[]); COMMIT;")
+    record('hosted-http-contract-fix.json', {'project': PROJECT, 'version': '329', 'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'transactional': True})
 elif args.action == 'verify':
     result = {
         'project': PROJECT,
-        'ledger': sql("SELECT version,name FROM supabase_migrations.schema_migrations WHERE version IN ('319','320','321','322','323','324','325','326','327','328') ORDER BY version;"),
+        'ledger': sql("SELECT version,name FROM supabase_migrations.schema_migrations WHERE version IN ('319','320','321','322','323','324','325','326','327','328','329') ORDER BY version;"),
         'pre_request_hook': sql("SELECT 'pgrst.db_pre_request=public.haven_assert_authorized_request'=ANY(rolconfig) FROM pg_roles WHERE rolname='authenticator';"),
         'lifecycle_browser_denied': sql("SELECT NOT has_table_privilege('authenticated','public.user_auth_sync_jobs','SELECT');"),
         'shell_actor_installed': sql("SELECT to_regprocedure('public.haven_current_shell_actor()') IS NOT NULL;"),
         'ingest_commit_installed': sql("SELECT to_regprocedure('public.commit_kb_ingest_generation(uuid,jsonb,text,integer,jsonb)') IS NOT NULL;"),
         }
-    assert len(result['ledger'].splitlines()) == 10
+    assert len(result['ledger'].splitlines()) == 11
     assert all(result[key] == 't' for key in ['pre_request_hook', 'lifecycle_browser_denied', 'shell_actor_installed', 'ingest_commit_installed'])
     record('hosted-schema-verification.json', result)

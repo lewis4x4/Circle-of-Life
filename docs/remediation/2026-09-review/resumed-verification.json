@@ -14,13 +14,13 @@
   },
   "ingest_typecheck": "PASS cached dependencies nodeModulesDir=none; no dependency or lock changes",
   "database": {
-    "migrations": 331,
-    "probes": 13,
+    "migrations": 332,
+    "probes": 14,
     "engine": "native PostgreSQL17 with Supabase stubs"
   },
-  "integrated_gate": "test-results/agent-gates/2026-09-07T15-38-13-899Z-SYS-001-RESUMED-VERIFIED.json",
+  "integrated_gate": "test-results/agent-gates/2026-09-07T16-20-04-890Z-SYS-001-RELEASE-FINAL.json",
   "verdict": "PASS",
   "independent_source_reviews": "approved after all surfaced defects fixed",
-  "hosted_release": "pending exact matched rollout",
+  "hosted_release": "Haven migrations319-329 and hooks verified; authenticated preview owner API and current/revoked Edge actor verified; main merge/production application pending",
   "ui_scope": "public home 4 viewports +axe1route; component tests for editor; no authenticated clinical UAT"
 }

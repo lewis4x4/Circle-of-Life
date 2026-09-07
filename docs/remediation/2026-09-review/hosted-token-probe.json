@@ -4,7 +4,12 @@
     {
       "role": "owner",
       "numeric_version_matches_profile": true,
-      "has_session_id": true
+      "has_session_id": true,
+      "current_actor_rpc_verified": true,
+      "matched_app_owner_api_verified": "https://deploy-preview-453--circleoflifealf.netlify.app",
+      "edge_current_actor_reached_validation": true,
+      "revoked_session_token_rejected": true,
+      "edge_revoked_session_rejected": true
     }
   ],
   "new_fixtures": false,

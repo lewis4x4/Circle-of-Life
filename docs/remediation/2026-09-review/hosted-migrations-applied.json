@@ -1,0 +1,56 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "migrations": [
+    {
+      "version": "319",
+      "name": "review_access_boundaries",
+      "sha256": "6a1c95a70220c07a7365644a33d144888aabd59392e87c691e43a3b4174f0ae3"
+    },
+    {
+      "version": "320",
+      "name": "september_business_integrity",
+      "sha256": "09ca9b6678042d4b3ec2a10ae6ca5093302dad67244d673a7c470207fb86a109"
+    },
+    {
+      "version": "321",
+      "name": "clinical_review_integrity",
+      "sha256": "c188ae28f108370d1e5c040c45f05ee158807d474a4817178ba8d496af81ab16"
+    },
+    {
+      "version": "322",
+      "name": "dietary_verified_actions",
+      "sha256": "ced8fe14b658f16a40ad39a63107e54610c1882c3408f221480fb35c65f96ccc"
+    },
+    {
+      "version": "323",
+      "name": "review_report_outputs",
+      "sha256": "13b1c66fa79da8198fa1b705ff01a3a80f25bf80166368f41ebf2cffec299272"
+    },
+    {
+      "version": "324",
+      "name": "september_office_integrity",
+      "sha256": "8be63a13efeda2905ec00a7f78e1061d216db4c6e2e79bfdd29336199c948c50"
+    },
+    {
+      "version": "325",
+      "name": "review_med_tech_controlled_count_access",
+      "sha256": "66e98b30996c4bd1fd74ddf3e995ef6e7378d7966d89c759203dd66d35d67d07"
+    },
+    {
+      "version": "326",
+      "name": "sys_001_authoritative_actor_state",
+      "sha256": "1ce412ff33690ee7deee064489bd063874f51e4cc3397997a39e577dab8b3869"
+    },
+    {
+      "version": "327",
+      "name": "sys_001e_lifecycle_authorization",
+      "sha256": "b96c188c3255f5940e29210e0afac67b5408e7385e1e3a29fde56078d2538b5f"
+    },
+    {
+      "version": "328",
+      "name": "ingest_generation_integrity",
+      "sha256": "4978f452fda7ceb9210d126284f2b9efabf24bfa00e52d1050f0b5e250f467aa"
+    }
+  ],
+  "transactional_batch": true
+}
