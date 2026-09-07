@@ -1,0 +1,23 @@
+
+> circle-of-life@0.1.0 migrations:verify:pg
+> node scripts/pg-verify-migrations.mjs
+
+file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/scripts/pg-verify-migrations.mjs:60
+      if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || "SQL failed"}`);
+                                     ^
+
+Error: review_rounding_completion_receipts.sql: psql:/Users/brianlewis/Circle of Life/Haven Section 2/supabase/tests/review_rounding_completion_receipts.sql:117: ERROR:  FAIL: whitespace-only late reason rejected: 9 unexpectedly succeeded
+CONTEXT:  PL/pgSQL function pg_temp_49.round_reject(text,text,text) line 6 at RAISE
+SQL statement "SELECT pg_temp.round_reject(format(
+   'SELECT pg_temp.round_complete((SELECT rollback_task FROM rounding_fixture),pg_temp.round_payload(gen_random_uuid())||jsonb_build_object(''late_reason'',%L))',reason),
+   '22023','whitespace-only late reason rejected: '||CASE WHEN code_point=0 THEN 'tab/newline/NBSP' ELSE code_point::text END)"
+PL/pgSQL function inline_code_block line 5 at PERFORM
+
+    at nativeVerification (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/scripts/pg-verify-migrations.mjs:60:38)
+    at main (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/scripts/pg-verify-migrations.mjs:79:46)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/scripts/pg-verify-migrations.mjs:205:7
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.22.3

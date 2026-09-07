@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccessibleRoundingFacilityIds, getRoundingRequestContext, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
+import { getAccessibleRoundingFacilityIds, getRoundingRequestContext, revalidateRoundingRequestContext, type RoundingRequestContext } from "@/lib/rounding/auth";
 import { logError } from "@/lib/observability/logger";
 import type { CompletionPayload, ObservationExceptionType, ObservationQuickStatus } from "@/lib/rounding/types";
 
@@ -17,6 +17,11 @@ function inferExceptionType(payload: CompletionPayload): ObservationExceptionTyp
     return "environmental_hazard_present";
   }
   return null;
+}
+
+function retryOwnerMatches(owner: NonNullable<CompletionPayload["retryOwner"]>, context: RoundingRequestContext) {
+  return owner.userId === context.userId && owner.sessionId === context.sessionId
+    && owner.organizationId === context.organizationId;
 }
 
 export async function POST(
@@ -38,6 +43,17 @@ export async function POST(
 
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "Invalid completion payload" }, { status: 400 });
+  }
+  if (body.retryOwner !== undefined) {
+    const owner = body.retryOwner;
+    if (!owner || typeof owner !== "object" || Array.isArray(owner)
+      || ["userId", "sessionId", "organizationId", "facilityId"].some((key) =>
+        typeof owner[key as keyof typeof owner] !== "string" || !owner[key as keyof typeof owner])) {
+      return NextResponse.json({ error: "Invalid original retry owner" }, { status: 400 });
+    }
+    if (!retryOwnerMatches(owner, context)) {
+      return NextResponse.json({ error: "This observation belongs to a different operator or session. Reconciliation required." }, { status: 403 });
+    }
   }
   const requestId = body.requestId ?? body.offline?.queueId;
   if (typeof requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)) {
@@ -107,6 +123,9 @@ export async function POST(
   if (body.offline && (!body.observedAt || body.offline.facilityId !== task.facility_id)) {
     return NextResponse.json({ error: "Offline observation scope or original time is missing or does not match." }, { status: 409 });
   }
+  if (body.retryOwner && body.retryOwner.facilityId !== task.facility_id) {
+    return NextResponse.json({ error: "The original observation facility no longer matches. Reconciliation required." }, { status: 409 });
+  }
 
   // The locked command checks receipts before terminal/time-dependent rules.
   // An acknowledged-lost live submission must still replay hours later.
@@ -116,6 +135,9 @@ export async function POST(
   const freshAuth = await revalidateRoundingRequestContext(context, { facilityId: task.facility_id });
   if ("response" in freshAuth) return freshAuth.response;
   context = freshAuth.context;
+  if (body.retryOwner && !retryOwnerMatches(body.retryOwner, context)) {
+    return NextResponse.json({ error: "This observation belongs to a different operator or session. Reconciliation required." }, { status: 403 });
+  }
   const freshStaffId = context.currentStaffId;
   if (!freshStaffId) {
     return NextResponse.json({ error: "A staff profile is required to complete a task" }, { status: 422 });

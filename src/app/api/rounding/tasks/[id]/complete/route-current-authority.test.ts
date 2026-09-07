@@ -141,6 +141,34 @@ describe("completion receipt HTTP contract", () => {
     expect((await POST(request(), { params: Promise.resolve({ id: "task-1" }) })).status).toBe(403);
     expect(current.rpc).not.toHaveBeenCalled();
   });
+  const retryOwner = { userId: "user-1", sessionId: "session-1", organizationId: "org-1", facilityId: "facility-1" };
+  it.each(["userId", "sessionId", "organizationId", "facilityId"])("rejects a retry with changed original %s before mutation", async (field) => {
+    const current = install();
+    const response = await POST(request({ retryOwner: { ...retryOwner, [field]: "different" } }), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(field === "facilityId" ? 409 : 403);
+    expect(current.rpc).not.toHaveBeenCalled();
+  });
+  it.each(["userId", "sessionId", "organizationId"])("rechecks retry %s after authority revalidation", async (field) => {
+    const current = install();
+    mocks.revalidate.mockResolvedValue({ context: { ...current.value, [field]: "changed-during-request" } });
+    const response = await POST(request({ retryOwner }), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(403);
+    expect(current.rpc).not.toHaveBeenCalled();
+  });
+  it.each([null, [], {}, "invalid", { ...retryOwner, sessionId: null }])("rejects malformed retry owner %j", async (owner) => {
+    const current = install();
+    const response = await POST(request({ retryOwner: owner }), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(400);
+    expect(current.rpc).not.toHaveBeenCalled();
+  });
+  it("accepts the original retry owner and preserves the clinical command", async () => {
+    const current = install();
+    current.rpc.mockResolvedValue({ data: { log_id: "original-log", replayed: true }, error: null });
+    const response = await POST(request({ retryOwner, quickStatus: "distressed", note: "Synthetic original note" }), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(200);
+    expect(current.rpc.mock.calls[0][1].p_payload).toMatchObject({ quick_status: "distressed", note: "Synthetic original note" });
+    expect(current.rpc.mock.calls[0][1].p_payload).not.toHaveProperty("retryOwner");
+  });
   it.each([{ requestId: undefined }, { observedAt: undefined }, { interventionCodes: [false] }, { distressPresent: "false" }])("rejects incomplete or mistyped command input %j", async (payload) => {
     const current = install();
     expect((await POST(request(payload), { params: Promise.resolve({ id: "task-1" }) })).status).toBe(400);

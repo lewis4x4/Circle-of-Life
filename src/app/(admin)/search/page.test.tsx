@@ -56,3 +56,73 @@ describe("truthful supported search", () => {
     expect(screen.getByRole("link", { name: "Current result" })).toBeTruthy();
   });
 });
+
+describe("equivalent query edits", () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  async function debounce() {
+    await act(async () => { await vi.advanceTimersByTimeAsync(320); });
+  }
+
+  it("preserves settled results when only surrounding whitespace changes", async () => {
+    mocks.limit.mockResolvedValue({ data: [resident("Synthetic Person")], error: null });
+    render(<Page />); search("Synthetic");
+    await debounce();
+    expect(screen.getByRole("link", { name: "Synthetic Person" })).toBeTruthy();
+
+    search(" Synthetic \t");
+    expect(screen.queryByRole("link", { name: "Synthetic Person" })).not.toBeNull();
+    await debounce();
+    expect(mocks.limit).toHaveBeenCalledOnce();
+    expect(screen.queryByText("No matching residents")).toBeNull();
+  });
+
+  it("preserves an in-flight request when only surrounding whitespace changes", async () => {
+    let resolve!: (value: { data: ReturnType<typeof resident>[]; error: null }) => void;
+    mocks.limit.mockImplementationOnce(() => new Promise((r) => { resolve = r; }));
+    render(<Page />); search("Synthetic");
+    await debounce();
+
+    search("Synthetic ");
+    expect(screen.queryByText("No matching residents")).toBeNull();
+    await act(async () => { resolve({ data: [resident("Synthetic Person")], error: null }); });
+    await debounce();
+    expect(mocks.limit).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("link", { name: "Synthetic Person" })).not.toBeNull();
+  });
+
+  it("replaces settled results after editing away and returning before debounce", async () => {
+    mocks.limit.mockResolvedValueOnce({ data: [resident("Initial Person")], error: null })
+      .mockResolvedValue({ data: [resident("Updated Person")], error: null });
+    render(<Page />); search("Synthetic");
+    await debounce();
+    expect(screen.getByRole("link", { name: "Initial Person" })).toBeTruthy();
+
+    search("Syntheti");
+    search("Synthetic");
+    await debounce();
+    expect(mocks.limit).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("link", { name: "Updated Person" })).not.toBeNull();
+    expect(screen.queryByText("No matching residents")).toBeNull();
+  });
+
+  it("replaces a canceled in-flight request after returning before debounce and ignores its late response", async () => {
+    let resolveOld!: (value: { data: ReturnType<typeof resident>[]; error: null }) => void;
+    mocks.limit.mockImplementationOnce(() => new Promise((r) => { resolveOld = r; }))
+      .mockResolvedValue({ data: [resident("Current Person")], error: null });
+    render(<Page />); search("Synthetic");
+    await debounce();
+
+    search("Syntheti");
+    search("Synthetic");
+    await debounce();
+    expect(mocks.limit).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("link", { name: "Current Person" })).not.toBeNull();
+
+    await act(async () => { resolveOld({ data: [resident("Obsolete Person")], error: null }); });
+    expect(screen.queryByRole("link", { name: "Obsolete Person" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Current Person" })).toBeTruthy();
+    expect(screen.queryByText("No matching residents")).toBeNull();
+  });
+});

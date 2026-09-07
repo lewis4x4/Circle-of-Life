@@ -97,6 +97,26 @@ CREATE FUNCTION pg_temp.round_reject(p_sql text,p_code text,p_label text) RETURN
  END;
  RAISE EXCEPTION 'FAIL: % unexpectedly succeeded',p_label;
 END $$;
+-- S2-R3: execute the real completion command for every ECMAScript trim code
+-- point, including the independently reproduced tab/newline/NBSP combination.
+-- Rejection must leave task, receipt, clinical evidence, and audit unchanged.
+SET LOCAL ROLE service_role;
+DO $$ DECLARE code_point integer; reason text; audit_before bigint; BEGIN
+ SELECT count(*) INTO audit_before FROM public.audit_log;
+ FOREACH code_point IN ARRAY ARRAY[9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279,0] LOOP
+  reason:=CASE WHEN code_point=0 THEN E'\t\n'||chr(160) ELSE chr(code_point) END;
+  PERFORM pg_temp.round_reject(format(
+   'SELECT pg_temp.round_complete((SELECT rollback_task FROM rounding_fixture),pg_temp.round_payload(gen_random_uuid())||jsonb_build_object(''late_reason'',%L))',reason),
+   '22023','whitespace-only late reason rejected: '||CASE WHEN code_point=0 THEN 'tab/newline/NBSP' ELSE code_point::text END);
+  PERFORM pg_temp.round_assert(
+   NOT EXISTS(SELECT 1 FROM public.resident_observation_logs WHERE task_id=(SELECT rollback_task FROM rounding_fixture))
+   AND NOT EXISTS(SELECT 1 FROM public.rounding_completion_receipts WHERE task_id=(SELECT rollback_task FROM rounding_fixture))
+   AND (SELECT status='upcoming' AND completed_log_id IS NULL FROM public.resident_observation_tasks WHERE id=(SELECT rollback_task FROM rounding_fixture))
+   AND (SELECT count(*) FROM public.audit_log)=audit_before,'blank reason rejection leaves no partial state: '||code_point);
+ END LOOP;
+END $$;
+RESET ROLE;
+
 CREATE TEMP TABLE rounding_results(first_result jsonb);
 GRANT SELECT,INSERT ON rounding_results TO service_role;
 GRANT SELECT ON rounding_results TO authenticated;
@@ -217,4 +237,66 @@ DO $$ DECLARE role_name text; column_name text; BEGIN
   RESET ROLE;
  END LOOP;
 END $$;
+-- S2-R3: each group completes three actual resident tasks. Different location
+-- suffixes isolate the groups without changing the threshold or time windows.
+CREATE TEMP TABLE rounding_pattern_cases AS
+SELECT scenario,n,gen_random_uuid() resident_id,gen_random_uuid() plan_id,
+ gen_random_uuid() rule_id,gen_random_uuid() task_id,gen_random_uuid() request_id
+FROM unnest(ARRAY['control','resident_location','resident_position','resident_state','all_whitespace']) scenario
+CROSS JOIN generate_series(1,3) n;
+INSERT INTO public.residents(id,organization_id,facility_id,first_name,last_name,date_of_birth,gender,status)
+SELECT c.resident_id,f.organization,f.facility,'Synthetic','Trim '||c.scenario||c.n,'1940-01-01','female','active'
+FROM rounding_pattern_cases c CROSS JOIN rounding_fixture f;
+INSERT INTO public.resident_observation_plans(id,organization_id,facility_id,resident_id,status,source_type,effective_from,rationale)
+SELECT c.plan_id,f.organization,f.facility,c.resident_id,'active','manual',now(),'Section 2 whitespace normalization regression'
+FROM rounding_pattern_cases c CROSS JOIN rounding_fixture f;
+INSERT INTO public.resident_observation_plan_rules(id,plan_id,organization_id,facility_id,resident_id,interval_type,interval_minutes,grace_minutes)
+SELECT c.rule_id,c.plan_id,f.organization,f.facility,c.resident_id,'fixed_minutes',60,15
+FROM rounding_pattern_cases c CROSS JOIN rounding_fixture f;
+INSERT INTO public.resident_observation_tasks(id,organization_id,facility_id,resident_id,plan_id,plan_rule_id,assigned_staff_id,scheduled_for,due_at,grace_ends_at,status)
+SELECT c.task_id,f.organization,f.facility,c.resident_id,c.plan_id,c.rule_id,f.staff_id,now()-interval '1 hour',now(),now()+interval '15 minutes','upcoming'
+FROM rounding_pattern_cases c CROSS JOIN rounding_fixture f;
+GRANT SELECT ON rounding_pattern_cases TO service_role;
+SET LOCAL ROLE service_role;
+DO $$ DECLARE c record; payload jsonb; result jsonb; edge text; field text; expected_flags integer; all_whitespace text; BEGIN
+ SELECT string_agg(chr(code_point),'') INTO all_whitespace
+ FROM unnest(ARRAY[9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279]) code_point;
+ FOR c IN SELECT * FROM rounding_pattern_cases ORDER BY scenario,n LOOP
+  payload:=pg_temp.round_payload(c.request_id)||jsonb_build_object(
+   'resident_location','Bed '||c.scenario,'resident_position','Lying','resident_state','Alert',
+   'late_reason',E'\tResident checked during earlier outage\n'||chr(160));
+  IF c.scenario<>'control' AND c.n>1 THEN
+   edge:=CASE WHEN c.scenario='all_whitespace' THEN all_whitespace WHEN c.n=2 THEN E'\t\n' ELSE chr(160) END;
+   FOREACH field IN ARRAY ARRAY['resident_location','resident_position','resident_state'] LOOP
+    IF c.scenario=field OR c.scenario='all_whitespace' THEN
+     payload:=payload||jsonb_build_object(field,edge||upper(payload->>field)||edge);
+    END IF;
+   END LOOP;
+  END IF;
+  result:=pg_temp.round_complete(c.task_id,payload);
+  expected_flags:=CASE WHEN c.n=3 THEN 1 ELSE 0 END;
+  PERFORM pg_temp.round_assert((SELECT count(*)=expected_flags FROM public.resident_observation_integrity_flags
+   WHERE flag_type='identical_payload_multi_resident' AND log_id IN(
+    SELECT id FROM public.resident_observation_logs WHERE task_id IN(SELECT task_id FROM rounding_pattern_cases WHERE scenario=c.scenario))),
+   c.scenario||' identical pattern flags after resident '||c.n||': '||expected_flags);
+  PERFORM pg_temp.round_assert((SELECT resident_location=payload->>'resident_location'
+    AND resident_position=payload->>'resident_position' AND resident_state=payload->>'resident_state'
+    AND late_reason=payload->>'late_reason' FROM public.resident_observation_logs WHERE id=(result->>'log_id')::uuid),
+   'clinical whitespace remains verbatim: '||c.scenario||'/'||c.n);
+  PERFORM pg_temp.round_assert((SELECT payload->>'resident_location'=c_payload->>'resident_location' FROM
+    (SELECT r.payload c_payload FROM public.rounding_completion_receipts r WHERE r.id=c.request_id) receipt),
+   'receipt preserves untrimmed input: '||c.scenario||'/'||c.n);
+  PERFORM pg_temp.round_assert((pg_temp.round_complete(c.task_id,payload)->>'replayed')::boolean,
+   'exact whitespace-bearing request replays: '||c.scenario||'/'||c.n);
+  PERFORM pg_temp.round_reject(format('SELECT pg_temp.round_complete(%L::uuid,%L::jsonb)',c.task_id,
+    payload||jsonb_build_object('resident_location',' '||(payload->>'resident_location'))),
+   '23505','pattern equivalence does not weaken receipt equivalence: '||c.scenario||'/'||c.n);
+ END LOOP;
+ PERFORM pg_temp.round_assert((SELECT count(*)=15 FROM public.resident_observation_logs WHERE task_id IN(SELECT task_id FROM rounding_pattern_cases)),
+  'all fifteen whitespace pattern transactions completed');
+ PERFORM pg_temp.round_assert((SELECT count(*)=5 AND bool_and(severity='high') FROM public.resident_observation_integrity_flags
+  WHERE flag_type='identical_payload_multi_resident' AND log_id IN(SELECT id FROM public.resident_observation_logs WHERE task_id IN(SELECT task_id FROM rounding_pattern_cases))),
+  'five isolated groups reach the unchanged three-resident high-severity threshold');
+END $$;
+RESET ROLE;
 ROLLBACK;

@@ -40,6 +40,8 @@ import { cn } from "@/lib/utils";
 
 type LiveTaskRow = {
   id: string;
+  organization_id: string;
+  facility_id: string;
   due_at: string;
   status: string;
   residents?: {
@@ -151,6 +153,8 @@ function toDrawerTask(task: LiveTaskRow): QuickCheckTask {
   const room = (task.residents as LiveTaskRow["residents"] & { room_number?: string | null })?.room_number;
   return {
     id: task.id,
+    organizationId: task.organization_id,
+    facilityId: task.facility_id,
     residentName: formatLiveRoundingResidentDisplay(task.residents),
     roomLabel: room ? `RM ${room}` : null,
     dueAt: task.due_at,
@@ -265,7 +269,7 @@ export default function AdminRoundingLivePage() {
       const { data, error } = await supabase
         .from("resident_observation_tasks")
         .select(
-          "id, due_at, status, residents ( first_name, last_name, preferred_name, room_number ), staff:assigned_staff_id ( first_name, last_name, preferred_name ), shift_assignments ( shift_type )",
+          "id, organization_id, facility_id, due_at, status, residents ( first_name, last_name, preferred_name, room_number ), staff:assigned_staff_id ( first_name, last_name, preferred_name ), shift_assignments ( shift_type )",
         )
         .eq("facility_id", selectedFacilityId)
         .is("deleted_at", null)
@@ -709,7 +713,7 @@ export default function AdminRoundingLivePage() {
 
       <QuickCheckDrawer
         task={drawerTask}
-        open={drawerOpen}
+        open={drawerOpen && drawerTask?.facilityId === selectedFacilityId}
         onClose={handleDrawerClose}
         onCompleted={handleCompleted}
         queuePosition={

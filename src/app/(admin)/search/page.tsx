@@ -73,11 +73,7 @@ export default function AdminSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const requestGeneration = useRef(0);
   const cancelPendingSearch = useCallback(() => { requestGeneration.current++; }, []);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebounced(q.trim()), 320);
-    return () => window.clearTimeout(t);
-  }, [q]);
+  const normalizedQuery = q.trim();
 
   const runSearch = useCallback(async (query: string) => {
     const generation = ++requestGeneration.current;
@@ -111,9 +107,16 @@ export default function AdminSearchPage() {
   }, []);
 
   useEffect(() => {
-    void runSearch(debounced);
-    return cancelPendingSearch;
-  }, [debounced, runSearch, cancelPendingSearch]);
+    // Schedule from the input, even when it returns to the previous search.
+    const timer = window.setTimeout(() => {
+      setDebounced(normalizedQuery);
+      void runSearch(normalizedQuery);
+    }, 320);
+    return () => {
+      window.clearTimeout(timer);
+      cancelPendingSearch();
+    };
+  }, [normalizedQuery, runSearch, cancelPendingSearch]);
 
   const facName = (facilityId: string | null) => {
     if (!facilityId) return "Organization";
@@ -311,11 +314,14 @@ export default function AdminSearchPage() {
                 placeholder="Search resident names…"
                 value={q}
                 onChange={(e) => {
-                  cancelPendingSearch();
-                  setRows([]);
-                  setError(null);
-                  setLoading(false);
-                  setQ(e.target.value);
+                  const next = e.target.value;
+                  if (next.trim() !== normalizedQuery) {
+                    cancelPendingSearch();
+                    setRows([]);
+                    setError(null);
+                    setLoading(false);
+                  }
+                  setQ(next);
                 }}
                 autoComplete="off"
                 aria-label="Unified search query"

@@ -1,0 +1,44 @@
+{
+  "finding": "S2-R2",
+  "date": "2026-09-07",
+  "scope": "Rendered production search component with mocked Supabase responses; local behavior only",
+  "command": "npm test -- 'src/app/(admin)/search/page.test.tsx'",
+  "red": {
+    "vitest_start_at": "18:59:57",
+    "duration_seconds": 2.46,
+    "exit_code": 1,
+    "passed": 5,
+    "failed": 4,
+    "baseline_source": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+    "failures": [
+      "Settled surrounding-whitespace edit: resident link unexpectedly null",
+      "In-flight surrounding-whitespace edit: No matching residents unexpectedly visible",
+      "Settled edit-away-return before debounce: expected 2 requests, observed 1",
+      "In-flight edit-away-return before debounce: expected 2 requests, observed 1"
+    ]
+  },
+  "green": {
+    "vitest_start_at": "19:00:19",
+    "duration_seconds": 2.20,
+    "exit_code": 0,
+    "passed": 9,
+    "failed": 0,
+    "assertions_include": [
+      "Equivalent whitespace preserves settled results without another request",
+      "Equivalent whitespace preserves in-flight response eligibility without another request",
+      "Returning to the prior query after a real edit schedules a replacement",
+      "Returning to the prior query after canceling an in-flight request schedules a replacement and ignores the obsolete late response"
+    ]
+  },
+  "lint": {
+    "command": "npx eslint 'src/app/(admin)/search/page.tsx' 'src/app/(admin)/search/page.test.tsx' --max-warnings 0",
+    "exit_code": 0
+  },
+  "diff_check": { "command": "git diff --check", "exit_code": 0 },
+  "diagnostics": {
+    "tool": "mcp__omx_code_intel__lsp_diagnostics",
+    "page_error_count": 0,
+    "test_note": "Test-file invocation returned 15 project diagnostics from other billing, executive, resident-billing and caregiver tests, with no diagnostic naming the search page or search test. This is not a project-wide typecheck pass."
+  },
+  "evidence_note": "Compact transcription of exact terminal tool results; Vitest start times are recorded as emitted. Full segment verification is recorded separately."
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import {
   CheckCircle2,
@@ -14,11 +14,14 @@ import {
   RotateCw,
 } from "lucide-react";
 
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { CompletionPayload, ObservationQuickStatus, ObservationExceptionType } from "@/lib/rounding/types";
 
 export type QuickCheckTask = {
   id: string;
+  organizationId: string;
+  facilityId: string;
   residentName: string;
   roomLabel: string | null;
   dueAt: string;
@@ -64,7 +67,70 @@ function isAbnormal(status: ObservationQuickStatus) {
   return status === "agitated" || status === "confused" || status === "distressed" || status === "not_found" || status === "refused";
 }
 
-export function QuickCheckDrawer({
+type RetryOwner = NonNullable<CompletionPayload["retryOwner"]>;
+type PendingCheck = { payload: CompletionPayload; busy: boolean; reasonRequired: boolean; error: string | null };
+// Clinical details stay in this tab's memory, never in browser storage. Records
+// survive drawer unmounts and remain isolated by the original signed session.
+const pendingChecks = new Map<string, PendingCheck>();
+const acknowledgedChecks = new Set<string>();
+const pendingListeners = new Set<() => void>();
+function updatePending(key: string, pending: PendingCheck | null) {
+  if (pending) pendingChecks.set(key, pending);
+  else pendingChecks.delete(key);
+  pendingListeners.forEach((listener) => listener());
+}
+function subscribePending(listener: () => void) {
+  pendingListeners.add(listener);
+  return () => { pendingListeners.delete(listener); };
+}
+function ownerKey(owner: RetryOwner) {
+  return JSON.stringify([owner.userId, owner.sessionId, owner.organizationId, owner.facilityId]);
+}
+async function currentOwner(task: QuickCheckTask): Promise<RetryOwner> {
+  const { data, error } = await createClient().rpc("haven_current_edge_actor" as never);
+  const actor = data as { user_id?: string; session_id?: string; organization_id?: string } | null;
+  if (error || !actor?.user_id || !actor.session_id || actor.organization_id !== task.organizationId || !task.facilityId) {
+    throw new Error("Current account authorization is unavailable. Reopen this check after signing in.");
+  }
+  return { userId: actor.user_id, sessionId: actor.session_id, organizationId: actor.organization_id, facilityId: task.facilityId };
+}
+
+export function QuickCheckDrawer(props: QuickCheckDrawerProps) {
+  const { task, open, persistCompletion = true } = props;
+  const [owner, setOwner] = useState<RetryOwner | null>(null);
+  const [authorityError, setAuthorityError] = useState<string | null>(null);
+  const scope = task ? JSON.stringify([task.organizationId, task.facilityId, task.id]) : "";
+  useEffect(() => {
+    if (!persistCompletion || !open || !task) return;
+    let generation = 0;
+    let active = true;
+    function resolveOwner() {
+      const attempt = ++generation;
+      setOwner(null);
+      setAuthorityError(null);
+      // Defer out of Supabase's auth callback before invoking another auth-backed RPC.
+      void Promise.resolve().then(() => currentOwner(task!)).then((next) => {
+        if (active && attempt === generation) setOwner(next);
+      }).catch((error: unknown) => {
+        if (active && attempt === generation) setAuthorityError(error instanceof Error ? error.message : "Sign in required.");
+      });
+    }
+    resolveOwner();
+    const { data: { subscription } } = createClient().auth.onAuthStateChange((event) => {
+      if (event !== "TOKEN_REFRESHED" && event !== "INITIAL_SESSION") resolveOwner();
+    });
+    return () => { active = false; subscription.unsubscribe(); };
+    // Task object refreshes must not reset an observation or its form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, scope, persistCompletion]);
+  if (!open || !task) return null;
+  if (persistCompletion && (!owner || owner.organizationId !== task.organizationId || owner.facilityId !== task.facilityId)) {
+    return <div role="status">{authorityError ?? "Checking account authorization…"} <button onClick={props.onClose}>Close</button></div>;
+  }
+  return <ScopedQuickCheckDrawer {...props} key={`${owner ? ownerKey(owner) : "preview"}:${task.id}`} owner={owner} />;
+}
+
+function ScopedQuickCheckDrawer({
   task,
   open,
   onClose,
@@ -72,47 +138,51 @@ export function QuickCheckDrawer({
   queuePosition,
   onNextTask,
   persistCompletion = true,
-}: QuickCheckDrawerProps) {
-  const [quickStatus, setQuickStatus] = useState<ObservationQuickStatus>("awake");
-  const [location, setLocation] = useState<string>("in room");
-  const [position, setPosition] = useState<string>("in bed");
-  const [hydration, setHydration] = useState(false);
-  const [toileting, setToileting] = useState(false);
-  const [repositioned, setRepositioned] = useState(false);
-  const [fallHazard, setFallHazard] = useState(false);
-  const [exceptionType, setExceptionType] = useState<ObservationExceptionType | "">("");
-  const [note, setNote] = useState("");
-  const [lateReason, setLateReason] = useState("");
-  const [reasonRequired, setReasonRequired] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [justCompleted, setJustCompleted] = useState(false);
+  owner,
+}: QuickCheckDrawerProps & { owner: RetryOwner | null }) {
+  const key = `${owner ? ownerKey(owner) : "preview"}:${task!.id}`;
+  const pending = useSyncExternalStore(subscribePending, () => pendingChecks.get(key), () => undefined);
+  const acknowledged = useSyncExternalStore(subscribePending, () => acknowledgedChecks.has(key), () => false);
+  const initial = useMemo(() => pendingChecks.get(key)?.payload, [key]);
+  const activeRef = useRef(true);
+  useEffect(() => { activeRef.current = true; return () => { activeRef.current = false; }; }, []);
+  const [quickStatus, setQuickStatus] = useState<ObservationQuickStatus>(initial?.quickStatus ?? "awake");
+  const [location, setLocation] = useState<string>(initial?.residentLocation ?? "in room");
+  const [position, setPosition] = useState<string>(initial?.residentPosition ?? "in bed");
+  const [hydration, setHydration] = useState(initial?.hydrationOffered ?? false);
+  const [toileting, setToileting] = useState(initial?.toiletingAssisted ?? false);
+  const [repositioned, setRepositioned] = useState(initial?.repositioned ?? false);
+  const [fallHazard, setFallHazard] = useState(initial?.fallHazardObserved ?? false);
+  const [exceptionType, setExceptionType] = useState<ObservationExceptionType | "">(initial?.exceptionType ?? "");
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [lateReason, setLateReason] = useState(initial?.lateReason ?? "");
+  const reasonRequired = pending?.reasonRequired ?? false;
+  const submitting = pending?.busy ?? false;
+  const [previewCompleted, setPreviewCompleted] = useState(false);
+  const justCompleted = previewCompleted || acknowledged;
+  const completionNotified = useRef(false);
+  const completionAdvance = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (justCompleted && task && !completionNotified.current) {
+      completionNotified.current = true;
+      // onCompleted can remove this task from the parent's queue immediately.
+      // Preserve that queue's next resident before notifying the board.
+      completionAdvance.current = onNextTask && queuePosition && queuePosition.current < queuePosition.total ? onNextTask : null;
+      onCompleted(task.id);
+    }
+  }, [justCompleted, task, onCompleted, onNextTask, queuePosition]);
+  useEffect(() => {
+    if (!justCompleted || !completionAdvance.current) return;
+    const advance = completionAdvance.current;
+    const timer = setTimeout(() => { if (activeRef.current) advance(); }, 800);
+    return () => clearTimeout(timer);
+  }, [justCompleted]);
   const [error, setError] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = "qc-drawer-title";
-  const requestRef = useRef<{ taskId: string; requestId: string; observedAt: string } | null>(null);
-
-  const resetForm = useCallback(() => {
-    setQuickStatus("awake");
-    setLocation("in room");
-    setPosition("in bed");
-    setHydration(false);
-    setToileting(false);
-    setRepositioned(false);
-    setFallHazard(false);
-    setExceptionType("");
-    setNote("");
-    setLateReason("");
-    setReasonRequired(false);
-    setError(null);
-    setJustCompleted(false);
-  }, []);
-
   useEffect(() => {
-    if (open && task) {
-      resetForm();
-      requestAnimationFrame(() => panelRef.current?.focus());
-    }
-  }, [open, task, resetForm]);
+    if (open) requestAnimationFrame(() => panelRef.current?.focus());
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -135,15 +205,17 @@ export function QuickCheckDrawer({
 
   async function submitCheck() {
     if (!task || submitting) return;
-    if (requestRef.current?.taskId !== task.id) {
-      requestRef.current = { taskId: task.id, requestId: crypto.randomUUID(), observedAt: new Date().toISOString() };
-    }
-    setSubmitting(true);
     setError(null);
-
-    const payload: CompletionPayload = {
-      requestId: requestRef.current.requestId,
-      observedAt: requestRef.current.observedAt,
+    const previous = pendingChecks.get(key);
+    if (previous?.busy) return;
+    const payload: CompletionPayload = previous ? {
+      ...previous.payload,
+      // Only the server's explicit unsaved late-reason rejection allows amendment.
+      ...(previous.reasonRequired ? { lateReason: lateReason.trim() || null } : {}),
+    } : {
+      requestId: crypto.randomUUID(),
+      observedAt: new Date().toISOString(),
+      ...(owner ? { retryOwner: owner } : {}),
       quickStatus,
       residentLocation: location,
       residentPosition: position,
@@ -159,20 +231,21 @@ export function QuickCheckDrawer({
     };
 
     const completeLocally = !persistCompletion;
+    let reasonMayChange = false;
 
     try {
       if (completeLocally) {
-        setJustCompleted(true);
-        onCompleted(task.id);
-
-        if (onNextTask && queuePosition && queuePosition.current < queuePosition.total) {
-          setTimeout(() => {
-            onNextTask();
-          }, 800);
-        }
+        setPreviewCompleted(true);
         return;
       }
 
+      updatePending(key, { payload, busy: true, reasonRequired: false, error: null });
+      if (!owner || ownerKey(await currentOwner(task)) !== ownerKey(owner)) {
+        throw new Error("The account or session changed. Sign in as the original operator to retry this observation.");
+      }
+      if (!activeRef.current) {
+        throw new Error("Observation retained. Reopen this check to retry.");
+      }
       const res = await fetch(`/api/rounding/tasks/${task.id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -180,22 +253,19 @@ export function QuickCheckDrawer({
       });
       const json = (await res.json()) as { error?: string; ok?: boolean; reasonRequired?: boolean };
       if (!res.ok) {
-        if (json.reasonRequired) setReasonRequired(true);
+        reasonMayChange = res.status === 400 && json.reasonRequired === true;
         throw new Error(json.error ?? "Could not complete check");
       }
 
-      setJustCompleted(true);
-      onCompleted(task.id);
-
-      if (onNextTask && queuePosition && queuePosition.current < queuePosition.total) {
-        setTimeout(() => {
-          onNextTask();
-        }, 800);
-      }
+      if (json.ok !== true) throw new Error("Save acknowledgment was incomplete. Retry the original observation.");
+      // Keep only the acknowledgment identity after discarding clinical details.
+      // A remounted drawer consumes this success instead of creating a new UUID.
+      acknowledgedChecks.add(key);
+      updatePending(key, null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save. Try again.");
-    } finally {
-      setSubmitting(false);
+      const message = err instanceof Error ? err.message : "Failed to save. Try again.";
+      if (persistCompletion) updatePending(key, { payload, busy: false, reasonRequired: reasonMayChange, error: message });
+      else setError(message);
     }
   }
 
@@ -286,13 +356,15 @@ export function QuickCheckDrawer({
           </div>
         ) : (
           <div className="min-w-0 space-y-5 px-3 py-4 sm:px-5">
-            {error && (
+            {(pending?.error || error) && (
               <div role="alert" className="flex items-center gap-2 rounded-lg border border-rose-700/50 bg-rose-950/30 px-3 py-2 text-sm text-rose-200">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
-                {error}
+                {pending?.error || error}
               </div>
             )}
 
+            {pending && <p role="status" className="text-sm text-amber-200">Original observation retained. Retry sends the same details and observation time. A new observation requires reconciliation of this request.</p>}
+            <fieldset disabled={!!pending} className="min-w-0 space-y-5">
             {/* Step 1: Quick Status — the most important tap */}
             <div className="min-w-0">
               <label className="mb-2 block text-[10px] font-mono uppercase tracking-wider text-slate-500">Status</label>
@@ -377,18 +449,6 @@ export function QuickCheckDrawer({
               </div>
             </div>
 
-            {reasonRequired && (
-              <label className="block text-sm text-slate-300">
-                Reason for delayed entry
-                <textarea
-                  className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-900 p-3 text-white"
-                  value={lateReason}
-                  onChange={(event) => setLateReason(event.target.value)}
-                  required
-                />
-              </label>
-            )}
-
             {/* Expanded detail section — only when abnormal */}
             {showDetails && (
               <div className="min-w-0 space-y-3 rounded-xl border border-amber-700/30 bg-amber-950/10 p-3 sm:p-4">
@@ -431,6 +491,20 @@ export function QuickCheckDrawer({
               </div>
             )}
 
+            </fieldset>
+
+            {reasonRequired && (
+              <label className="block text-sm text-slate-300">
+                Reason for delayed entry
+                <textarea
+                  className="mt-2 w-full rounded-lg border border-slate-600 bg-slate-900 p-3 text-white"
+                  value={lateReason}
+                  onChange={(event) => setLateReason(event.target.value)}
+                  required
+                />
+              </label>
+            )}
+
             {/* SUBMIT — the big green button */}
             <button
               type="button"
@@ -452,7 +526,7 @@ export function QuickCheckDrawer({
               ) : (
                 <span className="flex items-center justify-center gap-2">
                   <CheckCircle2 className="h-5 w-5" />
-                  Complete Check
+                  {pending ? "Retry original check" : "Complete Check"}
                   {onNextTask && queuePosition && queuePosition.current < queuePosition.total && (
                     <ChevronRight className="h-4 w-4 ml-1 opacity-60" />
                   )}

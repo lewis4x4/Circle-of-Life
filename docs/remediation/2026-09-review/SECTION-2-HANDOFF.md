@@ -1,5 +1,7 @@
 # Haven Section 2 independent review handoff
 
+Follow-up to the independent REQUEST CHANGES review of `6d90e3197ac59e757addd2ac3e401dcbd12865f1`: see [Section 2 corrections](SECTION-2-CORRECTIONS.md) and `section-2-corrections-verification.json` for the S2-R1/R2/R3 fixes and fresh evidence. The original implementation evidence below is retained as history; the correction packet supplements its retry and whitespace claims.
+
 Status: implementation complete; all six corrected entries remain review-pending. Scope is exactly SYS-002, SYS-003, SYS-004, NAV-003, NAV-009, FL-015. Stop for independent GPT-6 Astra High review; no PR, merge, deployment, hosted migration application or Section 3.
 
 Approved baseline: `5686876cb7917c0a809f0adb7e9ba67b595a3e03`, independently approved per the user prerequisite. Freshly fetched origin Section 1 matched it before edits. Dedicated worktree `/Users/brianlewis/Circle of Life/Haven Section 2`, branch `codex/haven-section-2-database-rounding`. Original checkout and unrelated untracked Brand Guide / review gate files retained.
