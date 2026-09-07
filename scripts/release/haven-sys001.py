@@ -52,7 +52,13 @@ def http(url, headers, body=None, method=None):
     result = subprocess.run(['curl', '-sS', '--fail-with-body', '--max-time', '30', '--config', '-'],
                             input=config, capture_output=True, text=True, timeout=35)
     if result.returncode:
-        raise RuntimeError(f'HTTP request failed ({result.returncode}); response withheld')
+        try:
+            error = json.loads(result.stdout)
+            code = error.get('error_code') or error.get('code') or error.get('error')
+            safe_code = str(code) if str(code).replace('_', '').isalnum() else 'unclassified'
+        except (ValueError, AttributeError):
+            safe_code = 'unclassified'
+        raise RuntimeError(f'HTTP request failed ({result.returncode}, {safe_code}); response withheld')
     return json.loads(result.stdout) if result.stdout.strip() else None
 
 
@@ -91,7 +97,7 @@ def quote(value):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('action', choices=['inspect', 'backup', 'prepare-hook', 'enable-hook', 'probe', 'apply', 'verify'])
+parser.add_argument('action', choices=['inspect', 'backup', 'prepare-hook', 'enable-hook', 'probe', 'probe-links', 'probe-owner', 'apply', 'verify'])
 args = parser.parse_args()
 
 if args.action == 'inspect':
@@ -142,26 +148,56 @@ elif args.action == 'enable-hook':
     current = management('config/auth')
     assert all(current.get(k) == v for k, v in desired.items())
     record('hosted-hook-enabled.json', {'project': PROJECT, **desired, 'site_url': current.get('site_url')})
-elif args.action == 'probe':
+elif args.action in ('probe', 'probe-links', 'probe-owner'):
     # Existing repository-documented pilot identities only. No messages or data fixtures.
     password = ENV.get('PHASE1_DEMO_PASSWORD')
-    assert password, 'Configured pilot password required'
+    assert password or args.action != 'probe', 'Configured pilot password required'
     rows = []
-    for email in ['milton@circleoflife.demo', 'jessica@circleoflife.demo', 'maria.garcia@circleoflife.demo', 'robert.sullivan@family.demo']:
-        token = http(f'https://{PROJECT}.supabase.co/auth/v1/token?grant_type=password',
-                     {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Content-Type': 'application/json'},
-                     {'email': email, 'password': password}, 'POST')
+    emails = ['milton@circleoflife.demo', 'jessica@circleoflife.demo', 'maria.garcia@circleoflife.demo', 'robert.sullivan@family.demo']
+    if args.action == 'probe-owner':
+        emails = sql("SELECT email FROM public.user_profiles WHERE email='blewis@lewisinsurance.com' AND app_role='owner' AND is_active AND deleted_at IS NULL;").splitlines()
+        assert len(emails) == 1, 'A unique existing owner identity for the task user is required'
+    for email in emails:
+        verify_actor = sql("SELECT to_regprocedure('public.haven_current_shell_actor()') IS NOT NULL;") == 't'
+        if args.action != 'probe':
+            # Never create an account or remove a security hold for a probe.
+            assert sql("SELECT count(*) FROM auth.users WHERE email=" + quote(email) +
+                       " AND deleted_at IS NULL AND (banned_until IS NULL OR banned_until<=now());") == '1'
+            link = http(f'https://{PROJECT}.supabase.co/auth/v1/admin/generate_link',
+                        {'apikey': ENV['SUPABASE_SERVICE_ROLE_KEY'], 'Authorization': 'Bearer ' + ENV['SUPABASE_SERVICE_ROLE_KEY'], 'Content-Type': 'application/json'},
+                        {'type': 'magiclink', 'email': email}, 'POST')
+            token = http(f'https://{PROJECT}.supabase.co/auth/v1/verify',
+                         {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Content-Type': 'application/json'},
+                         {'type': 'magiclink', 'token_hash': link['hashed_token']}, 'POST')
+        else:
+            token = http(f'https://{PROJECT}.supabase.co/auth/v1/token?grant_type=password',
+                         {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Content-Type': 'application/json'},
+                         {'email': email, 'password': password}, 'POST')
         access = token['access_token']
         try:
             claims = json.loads(base64.urlsafe_b64decode(access.split('.')[1] + '=='))
             version = claims.get('auth_claim_version')
             profile_version = int(sql('SELECT auth_claim_version FROM public.user_profiles WHERE id=' + quote(claims['sub']) + ';'))
             assert type(version) is int and version == profile_version
-            rows.append({'role': claims.get('app_role'), 'numeric_version_matches_profile': True, 'has_session_id': bool(claims.get('session_id'))})
+            proof = {'role': claims.get('app_role'), 'numeric_version_matches_profile': True, 'has_session_id': bool(claims.get('session_id'))}
+            if verify_actor:
+                actor = http(f'https://{PROJECT}.supabase.co/rest/v1/rpc/haven_current_shell_actor',
+                             {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Authorization': 'Bearer ' + access, 'Content-Type': 'application/json'}, {}, 'POST')
+                assert actor['user_id'] == claims['sub'] and actor['app_role'] == claims['app_role']
+                proof['current_actor_rpc_verified'] = True
+            rows.append(proof)
         finally:
             http(f'https://{PROJECT}.supabase.co/auth/v1/logout?scope=local',
                  {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Authorization': 'Bearer ' + access}, method='POST')
-    record('hosted-token-probe.json', {'project': PROJECT, 'existing_pilot_signins': rows, 'new_fixtures': False})
+        if verify_actor:
+            try:
+                http(f'https://{PROJECT}.supabase.co/rest/v1/rpc/haven_current_shell_actor',
+                     {'apikey': ENV['NEXT_PUBLIC_SUPABASE_ANON_KEY'], 'Authorization': 'Bearer ' + access, 'Content-Type': 'application/json'}, {}, 'POST')
+                raise AssertionError('Signed token remained usable after its session was revoked')
+            except RuntimeError as error:
+                assert 'HAVEN_AUTHORIZATION_STALE' in str(error), 'Expected authoritative stale-session rejection'
+                rows[-1]['revoked_session_token_rejected'] = True
+    record('hosted-token-probe.json', {'project': PROJECT, 'existing_pilot_signins': rows, 'new_fixtures': False, 'sign_in_method': args.action, 'email_sent': False})
 elif args.action == 'apply':
     prerequisites()
     assert json.loads((EVIDENCE / 'hosted-token-probe.json').read_text())['existing_pilot_signins']

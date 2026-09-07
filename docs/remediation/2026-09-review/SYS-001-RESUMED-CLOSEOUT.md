@@ -36,3 +36,11 @@ PASS: test-results/agent-gates/2026-09-07T15-38-13-899Z-SYS-001-RESUMED-VERIFIED
 All independent source-review findings in the current task are addressed and approved. The last convergence defect was fixed using an explicit latest-command pointer; identical-timestamp tests remain unchanged.
 
 The owner clarified that release work must use Haven's connected services, with no personal Docker use or separate project. Managed PITR is enabled; existing profiles are all version1 and incompatible witness methods count0. Release proceeds through an independently reviewed fixed-project script with TLS, exact reviewed SQL hashes, verified private backup preserving ownership/ACL, exact hook patch, existing pilot sign-in verification/local signout and one transactional migration batch. Hosted mutation steps are recorded separately when executed.
+
+## Connected Haven release progress
+
+Source commit63130958 is pushed. Private native backup completed and archive contents/ownership/ACL plus hash verified (hosted-backup.json); managed PITR also confirmed. The exact Auth token hook was installed and enabled without changing site URLs or broader configuration. Old documented demo credentials/identities were unavailable; no account was created or password changed. The confirmed existing task-owner identity was verified through a no-email temporary sign-in and locally signed out. Its token carried the correct numeric authorization version and session ID (hosted-token-probe.json).
+
+Netlify preview6a9edeba76ec55000801b613 failed after compilation because the TypeScript worker exceeded its roughly2GiB V8 heap. GitHub gates and bundle-size checks passed. A bounded4GiB build-only NODE_OPTIONS setting is being verified; no typecheck bypass or paid compute-plan change. Database batch remains pending until the application candidate can deploy.
+
+The production Next build passed with NODE_OPTIONS=--max-old-space-size=4096. The setting is restricted to Netlify build configuration and retains TypeScript checking. The owner-token probe confirms the enabled hosted hook; matched database deployment and preview/production checks follow.

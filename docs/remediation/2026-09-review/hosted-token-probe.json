@@ -1,0 +1,13 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "existing_pilot_signins": [
+    {
+      "role": "owner",
+      "numeric_version_matches_profile": true,
+      "has_session_id": true
+    }
+  ],
+  "new_fixtures": false,
+  "sign_in_method": "probe-owner",
+  "email_sent": false
+}
