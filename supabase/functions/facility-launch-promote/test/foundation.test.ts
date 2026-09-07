@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createHandler } from "../index.ts";
+import { CurrentActorError } from "../../_shared/current-actor.ts";
 
 const ORG_X = "00000000-0000-4000-8000-000000000001";
 const ORG_Y = "00000000-0000-4000-8000-000000000002";
@@ -201,12 +202,16 @@ class FakeAdminClient {
   }
 
   async rpc(fn: string, args: Record<string, unknown>) {
-    if (fn !== "promote_facility_launch_m3") return { data: null, error: { message: `unknown rpc ${fn}` } };
+    if (fn !== "promote_facility_launch_m3") {
+      return { data: null, error: { message: `unknown rpc ${fn}` } };
+    }
 
     const orgId = String(args.p_organization_id);
     const facilityId = String(args.p_facility_id);
     const runItemId = String(args.p_run_item_id);
-    const moduleValueId = args.p_module_value_id ? String(args.p_module_value_id) : null;
+    const moduleValueId = args.p_module_value_id
+      ? String(args.p_module_value_id)
+      : null;
     const units = Array.isArray(args.p_units) ? args.p_units as Row[] : [];
     const rooms = Array.isArray(args.p_rooms) ? args.p_rooms as Row[] : [];
     const beds = Array.isArray(args.p_beds) ? args.p_beds as Row[] : [];
@@ -219,42 +224,126 @@ class FakeAdminClient {
     let bedsNoop = 0;
 
     for (const unit of units) {
-      const existing = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === unit.name);
+      const existing = this.tables.units.find((row) =>
+        row.deleted_at == null && row.organization_id === orgId &&
+        row.facility_id === facilityId && row.name === unit.name
+      );
       if (!existing) {
-        const inserted = this.insert("units", { organization_id: orgId, facility_id: facilityId, name: unit.name, floor_number: unit.floor_number, sort_order: unit.sort_order });
+        const inserted = this.insert("units", {
+          organization_id: orgId,
+          facility_id: facilityId,
+          name: unit.name,
+          floor_number: unit.floor_number,
+          sort_order: unit.sort_order,
+        });
         unitsCreated += 1;
-        this.insert("facility_launch_promotion_run_links", { run_item_id: runItemId, organization_id: orgId, facility_id: facilityId, module_value_id: moduleValueId, target_table: "units", target_row_id: String(inserted.id), action: "insert", before_value: null, after_value: unit });
+        this.insert("facility_launch_promotion_run_links", {
+          run_item_id: runItemId,
+          organization_id: orgId,
+          facility_id: facilityId,
+          module_value_id: moduleValueId,
+          target_table: "units",
+          target_row_id: String(inserted.id),
+          action: "insert",
+          before_value: null,
+          after_value: unit,
+        });
       } else {
         unitsNoop += 1;
       }
     }
 
     for (const room of rooms) {
-      const existing = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === room.room_number);
-      const unit = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === room.unit_name);
+      const existing = this.tables.rooms.find((row) =>
+        row.deleted_at == null && row.organization_id === orgId &&
+        row.facility_id === facilityId && row.room_number === room.room_number
+      );
+      const unit = this.tables.units.find((row) =>
+        row.deleted_at == null && row.organization_id === orgId &&
+        row.facility_id === facilityId && row.name === room.unit_name
+      );
       if (!existing) {
-        const inserted = this.insert("rooms", { organization_id: orgId, facility_id: facilityId, unit_id: unit?.id ?? null, room_number: room.room_number, room_type: room.room_type, max_occupancy: room.max_occupancy, floor_number: room.floor_number, sort_order: room.sort_order, launch_profile_metadata: room.launch_profile_metadata });
+        const inserted = this.insert("rooms", {
+          organization_id: orgId,
+          facility_id: facilityId,
+          unit_id: unit?.id ?? null,
+          room_number: room.room_number,
+          room_type: room.room_type,
+          max_occupancy: room.max_occupancy,
+          floor_number: room.floor_number,
+          sort_order: room.sort_order,
+          launch_profile_metadata: room.launch_profile_metadata,
+        });
         roomsCreated += 1;
-        this.insert("facility_launch_promotion_run_links", { run_item_id: runItemId, organization_id: orgId, facility_id: facilityId, module_value_id: moduleValueId, target_table: "rooms", target_row_id: String(inserted.id), action: "insert", before_value: null, after_value: room });
+        this.insert("facility_launch_promotion_run_links", {
+          run_item_id: runItemId,
+          organization_id: orgId,
+          facility_id: facilityId,
+          module_value_id: moduleValueId,
+          target_table: "rooms",
+          target_row_id: String(inserted.id),
+          action: "insert",
+          before_value: null,
+          after_value: room,
+        });
       } else {
         roomsNoop += 1;
       }
     }
 
     for (const bed of beds) {
-      const room = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === bed.room_number);
-      if (!room) return { data: null, error: { message: `room missing for bed ${String(bed.room_number)}` } };
-      const existing = this.tables.beds.find((row) => row.deleted_at == null && row.room_id === room.id && row.bed_label === bed.bed_label);
+      const room = this.tables.rooms.find((row) =>
+        row.deleted_at == null && row.organization_id === orgId &&
+        row.facility_id === facilityId && row.room_number === bed.room_number
+      );
+      if (!room) {
+        return {
+          data: null,
+          error: { message: `room missing for bed ${String(bed.room_number)}` },
+        };
+      }
+      const existing = this.tables.beds.find((row) =>
+        row.deleted_at == null && row.room_id === room.id &&
+        row.bed_label === bed.bed_label
+      );
       if (!existing) {
-        const inserted = this.insert("beds", { room_id: room.id, organization_id: orgId, facility_id: facilityId, bed_label: bed.bed_label, bed_type: bed.bed_type, status: bed.status });
+        const inserted = this.insert("beds", {
+          room_id: room.id,
+          organization_id: orgId,
+          facility_id: facilityId,
+          bed_label: bed.bed_label,
+          bed_type: bed.bed_type,
+          status: bed.status,
+        });
         bedsCreated += 1;
-        this.insert("facility_launch_promotion_run_links", { run_item_id: runItemId, organization_id: orgId, facility_id: facilityId, module_value_id: moduleValueId, target_table: "beds", target_row_id: String(inserted.id), action: "insert", before_value: null, after_value: bed });
+        this.insert("facility_launch_promotion_run_links", {
+          run_item_id: runItemId,
+          organization_id: orgId,
+          facility_id: facilityId,
+          module_value_id: moduleValueId,
+          target_table: "beds",
+          target_row_id: String(inserted.id),
+          action: "insert",
+          before_value: null,
+          after_value: bed,
+        });
       } else {
         bedsNoop += 1;
       }
     }
 
-    return { data: { units_created: unitsCreated, units_noop: unitsNoop, rooms_created: roomsCreated, rooms_noop: roomsNoop, beds_created: bedsCreated, beds_noop: bedsNoop, warnings: [] }, error: null };
+    return {
+      data: {
+        units_created: unitsCreated,
+        units_noop: unitsNoop,
+        rooms_created: roomsCreated,
+        rooms_noop: roomsNoop,
+        beds_created: bedsCreated,
+        beds_noop: bedsNoop,
+        warnings: [],
+      },
+      error: null,
+    };
   }
 }
 
@@ -270,6 +359,41 @@ function makeRequest(body: Row, token?: string) {
 
 function makeHandler(admin: FakeAdminClient) {
   return createHandler({
+    authorizeActor: async (req) => {
+      if (req.headers.get("authorization") !== "Bearer valid") {
+        throw new CurrentActorError(401, "Unauthorized");
+      }
+      const profile = admin.tables.user_profiles[0];
+      const role = String(profile?.app_role ?? "caregiver");
+      if (!["owner", "org_admin", "facility_admin"].includes(role)) {
+        throw new CurrentActorError(403, "Forbidden");
+      }
+      const organizationId = String(profile.organization_id);
+      const facilityIds = role === "owner" || role === "org_admin"
+        ? admin.tables.facilities.filter((row) =>
+          row.organization_id === organizationId
+        ).map((row) => String(row.id))
+        : admin.tables.user_facility_access.filter((row) =>
+          row.organization_id === organizationId && row.revoked_at == null
+        ).map((row) => String(row.facility_id));
+      return {
+        actor: {
+          userId: USER_ID,
+          sessionId: "30000000-0000-4000-8000-000000000001",
+          email: null,
+          organizationId,
+          role,
+          claimVersion: 1,
+          accessibleFacilityIds: facilityIds,
+        },
+        accessToken: "valid",
+        revalidate: async (facilityId) => {
+          if (facilityId && !facilityIds.includes(facilityId)) {
+            throw new CurrentActorError(403, "Forbidden");
+          }
+        },
+      };
+    },
     createAdminClient: () => admin as never,
     now: () => new Date("2026-05-13T17:27:00.000Z"),
   });
@@ -282,6 +406,55 @@ Deno.test("unauthorized_without_jwt", async () => {
   );
   assertEquals(res.status, 401);
   assertEquals(admin.tables.facility_launch_promotion_runs.length, 0);
+});
+
+Deno.test("denial does not construct the service-role client", async () => {
+  let serviceClientConstructed = false;
+  const handler = createHandler({
+    authorizeActor: async () => {
+      throw new CurrentActorError(401, "Unauthorized");
+    },
+    createAdminClient: () => {
+      serviceClientConstructed = true;
+      return new FakeAdminClient("valid", { role: "owner" }) as never;
+    },
+  });
+  const res = await handler(makeRequest({ facility_id: FACILITY_ID }));
+  assertEquals(res.status, 401);
+  assertEquals(serviceClientConstructed, false);
+});
+
+Deno.test("mid-sequence revocation stops before run item and promoter writes", async () => {
+  const admin = new FakeAdminClient("valid", { role: "owner" });
+  let checks = 0;
+  const handler = createHandler({
+    authorizeActor: async () => ({
+      actor: {
+        userId: USER_ID,
+        sessionId: "30000000-0000-4000-8000-000000000001",
+        email: null,
+        organizationId: ORG_X,
+        role: "owner",
+        claimVersion: 1,
+        accessibleFacilityIds: [FACILITY_ID],
+      },
+      accessToken: "valid",
+      revalidate: async () => {
+        checks += 1;
+        if (checks >= 4) throw new CurrentActorError(403, "Forbidden");
+      },
+    }),
+    createAdminClient: () => admin as never,
+  });
+
+  const res = await handler(
+    makeRequest({ facility_id: FACILITY_ID }, "valid"),
+  );
+  assertEquals(res.status, 403);
+  assertEquals(admin.tables.facility_launch_promotion_runs.length, 1);
+  assertEquals(admin.tables.facility_launch_promotion_run_items.length, 0);
+  assertEquals(admin.tables.rooms.length, 0);
+  assertEquals(admin.tables.beds.length, 0);
 });
 
 Deno.test("forbidden_for_caregiver_role", async () => {

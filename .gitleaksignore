@@ -54,3 +54,13 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 # in facility launch center catalog files (2026-05-05 history).
 97bde70ebcae59ec2d53024e565e4400871b2955:facility-launch-center/src/intakeCatalog.js:generic-api-key:210
 8e11ba9605045104cc0fc915c0880f5bc31778f9:public/facility-launch-static/src/intakeCatalog.js:generic-api-key:210
+
+# Historical false positive: prose describing malformed credentials and revoked sessions.
+# Exact commit/path/rule/line fingerprint only; the generic-api-key rule remains enabled.
+5e0a0264f9f3fbb8475b397e3a14a2c7935af6a3:docs/remediation/2026-09-review/SYS-001D-EDGE-AUTHORIZATION.md:generic-api-key:9
+
+# Verified non-secret SHA256 migration evidence and intentionally synthetic detector fixture.
+# Each exception is restricted to the original commit/path/rule/line; no rule/path suppression.
+631309587cc278b48f21c10deabed4eabf815f92:docs/remediation/2026-09-review/hosted-preflight.json:generic-api-key:4
+631309587cc278b48f21c10deabed4eabf815f92:docs/remediation/2026-09-review/hosted-preflight.json:generic-api-key:10
+631309587cc278b48f21c10deabed4eabf815f92:scripts/run-gitleaks.mjs:generic-api-key:66

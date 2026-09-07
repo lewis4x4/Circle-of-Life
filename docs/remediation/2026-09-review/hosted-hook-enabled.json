@@ -1,0 +1,6 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "hook_custom_access_token_enabled": true,
+  "hook_custom_access_token_uri": "pg-functions://postgres/public/haven_custom_access_token_hook",
+  "site_url": "https://circleoflifealf.com"
+}

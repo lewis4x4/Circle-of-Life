@@ -24,6 +24,7 @@ type AuthAdminSnapshot = {
   email: string;
   last_sign_in_at: string | null;
   app_role: string | null;
+  auth_claim_version: number | null;
   banned_until: string | null;
 };
 
@@ -140,6 +141,10 @@ export async function adminGetAuthSnapshotsByIds(
       email: user.email ?? "",
       last_sign_in_at: user.last_sign_in_at ?? null,
       app_role: typeof user.app_metadata?.app_role === "string" ? user.app_metadata.app_role : null,
+      auth_claim_version:
+        typeof user.app_metadata?.auth_claim_version === "number"
+          ? user.app_metadata.auth_claim_version
+          : null,
       banned_until: user.banned_until ?? null,
     };
     return acc;
@@ -205,7 +210,7 @@ export async function adminUpdateUserRole(
  */
 export async function adminUpdateUserAccessMetadata(
   userId: string,
-  updates: { app_role: string; organization_id: string },
+  updates: { app_role: string; organization_id: string; auth_claim_version?: number },
 ): Promise<void> {
   const supabase = createServiceRoleClient();
 
@@ -213,6 +218,9 @@ export async function adminUpdateUserAccessMetadata(
     app_metadata: {
       app_role: updates.app_role,
       organization_id: updates.organization_id,
+      ...(updates.auth_claim_version === undefined
+        ? {}
+        : { auth_claim_version: updates.auth_claim_version }),
     },
   });
 

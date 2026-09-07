@@ -1,21 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(),
-}));
-
-vi.mock("@/lib/supabase/service-role", () => ({
-  createServiceRoleClient: vi.fn(),
+vi.mock("@/lib/auth/current-api-actor", () => ({
+  requireCurrentApiActor: vi.fn(),
+  revalidateCurrentApiActor: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/service-role-facility-access", () => ({
   serviceRoleUserHasFacilityAccess: vi.fn(),
 }));
 
-import { GET, POST } from "./route";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { GET, PATCH, POST } from "./route";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
-import { createClient } from "@/lib/supabase/server";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const ORGANIZATION_ID = "00000000-0000-0000-0000-000000000001";
@@ -41,6 +37,7 @@ function createQuery(response: () => QueryResponse) {
     return query;
   });
   query.update = vi.fn(() => query);
+  query.maybeSingle = vi.fn(() => Promise.resolve({ data: (response().data as unknown[])?.[0] ?? null, error: response().error }));
   query.single = vi.fn(() => Promise.resolve({ data: { id: "feedback-1", created_at: "2026-05-03T12:00:00.000Z" }, error: null }));
   query.then = (onFulfilled: (value: QueryResponse) => unknown, onRejected?: (reason: unknown) => unknown) =>
     Promise.resolve(response()).then(onFulfilled, onRejected);
@@ -81,17 +78,20 @@ describe("/api/pilot-feedback", () => {
       }),
     };
 
-    vi.mocked(createClient).mockResolvedValue({
-      auth: {
-        getUser: vi.fn(() =>
-          Promise.resolve({
-            data: { user: { id: USER_ID, email: "session@example.com" } },
-            error: null,
-          }),
-        ),
-      },
-    } as never);
-    vi.mocked(createServiceRoleClient).mockReturnValue(admin as never);
+    vi.mocked(requireCurrentApiActor).mockImplementation(async ({ allowedRoles }) =>
+      (allowedRoles as readonly string[]).includes(profile.app_role)
+        ? { actor: {
+        id: USER_ID,
+        organizationId: ORGANIZATION_ID,
+        appRole: profile.app_role,
+        email: profile.email,
+        fullName: profile.full_name,
+        sessionEmail: "session@example.com",
+        client: {},
+        admin,
+      } }
+        : { response: Response.json({ error: "Insufficient permissions" }, { status: 403 }) } as never);
+    vi.mocked(revalidateCurrentApiActor).mockImplementation(async (actor) => ({ actor }) as never);
     vi.mocked(serviceRoleUserHasFacilityAccess).mockResolvedValue(true);
   });
 
@@ -120,7 +120,6 @@ describe("/api/pilot-feedback", () => {
         userId: USER_ID,
         facilityId: FACILITY_ID,
         organizationId: ORGANIZATION_ID,
-        appRole: "manager",
       }),
     );
     expect(feedbackQuery.insert).not.toHaveBeenCalled();
@@ -170,21 +169,46 @@ describe("/api/pilot-feedback", () => {
         userId: USER_ID,
         facilityId: FACILITY_ID,
         organizationId: ORGANIZATION_ID,
-        appRole: "manager",
       }),
     );
   });
 
-  it("allows org-wide reviewers to list facility-scoped feedback without per-facility lookup", async () => {
+  it("requires a current facility lookup for org-wide reviewers", async () => {
     profile.app_role = "owner";
-    vi.mocked(serviceRoleUserHasFacilityAccess).mockResolvedValue(false);
+    vi.mocked(serviceRoleUserHasFacilityAccess).mockResolvedValue(true);
 
     const response = await GET(new Request(`http://localhost/api/pilot-feedback?facilityId=${FACILITY_ID}&limit=25`));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
     expect(payload.feedback).toHaveLength(1);
-    expect(serviceRoleUserHasFacilityAccess).not.toHaveBeenCalled();
+    expect(serviceRoleUserHasFacilityAccess).toHaveBeenCalled();
     expect(feedbackQuery.eq).toHaveBeenCalledWith("facility_id", FACILITY_ID);
+  });
+
+  it("passes reviewer roles before constructing a service-backed actor", async () => {
+    profile.app_role = "family";
+
+    const response = await GET(new Request("http://localhost/api/pilot-feedback"));
+
+    expect(response.status).toBe(403);
+    expect(requireCurrentApiActor).toHaveBeenCalledWith(expect.objectContaining({
+      allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
+    }));
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it("returns the same not-found response for a cross-organization PATCH id", async () => {
+    feedbackRows = [];
+
+    const response = await PATCH(new Request("http://localhost/api/pilot-feedback", {
+      method: "PATCH",
+      body: JSON.stringify({ id: "foreign-feedback", status: "triaged" }),
+    }));
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Feedback item not found" });
+    expect(feedbackQuery.eq).toHaveBeenCalledWith("organization_id", ORGANIZATION_ID);
+    expect(feedbackQuery.update).not.toHaveBeenCalled();
   });
 });

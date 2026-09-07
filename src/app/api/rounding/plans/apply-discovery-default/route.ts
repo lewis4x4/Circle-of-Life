@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 import { getColDiscoveryCadenceProfile, resolveColDiscoveryCadenceKey } from "@/lib/rounding/col-discovery-round-cadence";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -22,7 +22,7 @@ function mapRpcError(message: string): { error: string; status: number } {
     return { error: "This facility is not configured for COL discovery-round cadence.", status: 409 };
   }
 
-  if (normalized.includes("facility access denied") || normalized.includes("insufficient role")) {
+  if (normalized.includes("facility access denied") || normalized.includes("insufficient role") || normalized.includes("no longer authorized")) {
     return { error: "You do not have permission to apply discovery-round defaults.", status: 403 };
   }
 
@@ -30,12 +30,10 @@ function mapRpcError(message: string): { error: string; status: number } {
 }
 
 export async function POST(request: Request) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can apply discovery defaults" }, { status: 403 });
   }
@@ -102,9 +100,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "residentId must belong to the selected facility" }, { status: 400 });
   }
 
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+
   const { data, error: rpcError } = await context.admin.rpc(
     "apply_col_discovery_round_observation_plan" as never,
-    { p_resident_id: residentId } as never,
+    {
+      p_resident_id: residentId,
+      p_actor_id: context.userId,
+      p_actor_role: context.appRole,
+      p_session_id: context.sessionId,
+      p_claim_version: context.authClaimVersion,
+    } as never,
   );
 
   if (rpcError) {

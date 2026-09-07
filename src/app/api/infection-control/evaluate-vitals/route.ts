@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { evaluateVitalSignAlertsForDailyLog } from "@/lib/infection-control/evaluate-vitals";
-import { logError } from "@/lib/observability/logger";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 import type { Database } from "@/types/database";
 
@@ -21,38 +19,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "dailyLogId is required" }, { status: 400 });
   }
 
-  const sessionClient = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await sessionClient.auth.getUser();
-
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  let admin;
-  try {
-    admin = createServiceRoleClient();
-  } catch (e) {
-    logError("infection-control.evaluate-vitals.service-role", e);
-    return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
-  }
-
-  const { data: profile, error: profErr } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profErr || !profile?.organization_id) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: ["owner", "org_admin", "facility_admin", "nurse", "caregiver"],
+    scope: "infection-control.evaluate-vitals",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   const { data: log, error: logErr } = await admin
     .from("daily_logs")
     .select("id, organization_id, facility_id, resident_id, log_date, logged_by, temperature, blood_pressure_systolic, blood_pressure_diastolic, pulse, respiration, oxygen_saturation, weight_lbs")
     .eq("id", dailyLogId)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -62,24 +41,36 @@ export async function POST(request: Request) {
 
   const row = log as Database["public"]["Tables"]["daily_logs"]["Row"];
 
-  if (row.organization_id !== profile.organization_id) {
-    return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
-  }
-
   const okFac = await serviceRoleUserHasFacilityAccess(admin, {
-    userId: user.id,
+    userId: actor.id,
     facilityId: row.facility_id,
-    organizationId: profile.organization_id,
-    appRole: profile.app_role,
+    organizationId: actor.organizationId,
   });
 
   if (!okFac) {
     return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
   }
 
-  const role = profile.app_role;
+  const currentResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: ["owner", "org_admin", "facility_admin", "nurse", "caregiver"],
+    scope: "infection-control.evaluate-vitals.revalidate",
+  });
+  if ("response" in currentResult) return currentResult.response;
+  const currentActor = currentResult.actor;
+  if (currentActor.organizationId !== row.organization_id) {
+    return NextResponse.json({ error: "Daily log not found" }, { status: 404 });
+  }
+  const stillHasAccess = await serviceRoleUserHasFacilityAccess(admin, {
+    userId: currentActor.id,
+    facilityId: row.facility_id,
+    organizationId: currentActor.organizationId,
+  });
+  if (!stillHasAccess) {
+    return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
+  }
+
   const adminRoles = new Set(["owner", "org_admin", "facility_admin", "nurse"]);
-  if (!adminRoles.has(role) && row.logged_by !== user.id) {
+  if (!adminRoles.has(currentActor.appRole) && row.logged_by !== currentActor.id) {
     return NextResponse.json({ error: "Not allowed to evaluate vitals for this log" }, { status: 403 });
   }
 

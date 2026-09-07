@@ -36,6 +36,7 @@ import {
   prependConversationHistory,
 } from "./router-context.ts";
 import { pickRedacted } from "./redact-pii.ts";
+import { CurrentActorError } from "./current-actor.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Public types                                                      */
@@ -74,6 +75,8 @@ export type DispatchArgs = {
    */
   facilityIds?: string[];
   conversationContext?: ConversationContext;
+  revalidate: (facilityId?: string | null) => Promise<void>;
+  fetcher?: typeof fetch;
 };
 
 export type DispatchResult = {
@@ -223,6 +226,8 @@ async function callAnthropic(args: {
   userContent: string;
   maxTokens?: number;
   conversationContext?: ConversationContext;
+  revalidate: () => Promise<void>;
+  fetcher?: typeof fetch;
 }): Promise<
   { answer: string; tokensIn: number; tokensOut: number; ok: boolean }
 > {
@@ -231,7 +236,8 @@ async function callAnthropic(args: {
     return { answer: "", tokensIn: 0, tokensOut: 0, ok: false };
   }
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    await args.revalidate();
+    const res = await (args.fetcher ?? fetch)("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
@@ -274,16 +280,22 @@ async function callAnthropic(args: {
       ok: true,
     };
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     logError("anthropic_threw", err);
     return { answer: "", tokensIn: 0, tokensOut: 0, ok: false };
   }
 }
 
-async function embedQuestion(question: string): Promise<number[] | null> {
+async function embedQuestion(
+  question: string,
+  revalidate: () => Promise<void>,
+  fetcher?: typeof fetch,
+): Promise<number[] | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) return null;
   try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
+    await revalidate();
+    const res = await (fetcher ?? fetch)("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -299,6 +311,7 @@ async function embedQuestion(question: string): Promise<number[] | null> {
     const json = (await res.json()) as { data?: { embedding?: number[] }[] };
     return json.data?.[0]?.embedding ?? null;
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     logError("embedding_threw", err);
     return null;
   }
@@ -522,6 +535,8 @@ Keep your response to 2–3 short sentences. Do not fabricate any data.`;
     conversationContext: args.conversationContext,
     userContent: args.question,
     maxTokens: 256,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
   });
 
   if (!result.ok) {
@@ -623,6 +638,8 @@ INSTRUCTIONS:
     systemPrompt,
     conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
   });
 
   if (!result.ok) {
@@ -676,6 +693,8 @@ INSTRUCTIONS:
     ),
     userQuestion: args.question,
     caller,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
     allowedToolNames: [
       "facility_directory",
       "staff_directory",
@@ -767,6 +786,8 @@ INSTRUCTIONS:
       ),
       userQuestion: `<user_question>\n${args.question}\n</user_question>`,
       caller,
+      revalidate: args.revalidate,
+      fetcher: args.fetcher,
       allowedToolNames: [
         "active_alerts",
         "incident_summary",
@@ -814,6 +835,8 @@ INSTRUCTIONS:
     systemPrompt,
     conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
   });
 
   if (!result.ok) {
@@ -854,8 +877,10 @@ async function retrieveKbEvidence(
   organizationId: string,
   question: string,
   userRole: string,
+  revalidate: () => Promise<void>,
+  fetcher?: typeof fetch,
 ): Promise<EvidenceRow[]> {
-  const embedding = await embedQuestion(question);
+  const embedding = await embedQuestion(question, revalidate, fetcher);
   if (!embedding || embedding.length === 0) {
     logEvent("kb_no_embedding", { has_question: question.length > 0 });
     return [];
@@ -887,6 +912,7 @@ async function logKnowledgeGap(args: {
   question: string;
   intent?: string | null;
   facilityId?: string | null;
+  revalidate: (facilityId?: string | null) => Promise<void>;
 }): Promise<void> {
   // KB-NEXT-11: route through _kb_record_gap so frequency / merging happens
   // server-side. Signal=router_no_grounded_source identifies router-tier
@@ -897,6 +923,7 @@ async function logKnowledgeGap(args: {
   // workspace_id as text; the function was patched 2026-05-17 (commit
   // 8aca7c8) to match. Pass a string; do not cast to uuid.
   try {
+    await args.revalidate(args.facilityId);
     const { error } = await args.admin.rpc("_kb_record_gap", {
       p_workspace_id: args.organizationId,
       p_user_id: args.userId,
@@ -911,6 +938,7 @@ async function logKnowledgeGap(args: {
       logError("knowledge_gap_insert_failed", error);
     }
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     logError("knowledge_gap_insert_threw", err);
   }
 }
@@ -939,6 +967,8 @@ async function dispatchKbBranch(
     args.organizationId,
     args.question,
     args.userRole,
+    args.revalidate,
+    args.fetcher,
   );
   const goodRows = rows.filter((r) =>
     typeof r.confidence === "number" && r.confidence >= KB_MIN_SCORE
@@ -950,6 +980,7 @@ async function dispatchKbBranch(
       organizationId: args.organizationId,
       userId: args.userId,
       question: args.question,
+      revalidate: args.revalidate,
     });
     const tool = variant === "policy" ? "kb_policy" : "kb_regulatory";
     return emptyResult(
@@ -993,6 +1024,8 @@ INSTRUCTIONS:
     systemPrompt,
     conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
   });
 
   if (!result.ok) {
@@ -1064,6 +1097,7 @@ async function dispatchClinicalRecord(
       organizationId: args.organizationId,
       userId: args.userId,
       question: args.question,
+      revalidate: args.revalidate,
     });
     return emptyResult(
       "I can't complete a resident lookup right now — your facility scope is missing. Please retry.",
@@ -1101,6 +1135,8 @@ PHI rules:
     ),
     userQuestion: args.question,
     caller,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
     allowedToolNames: ["resident_summary", "med_orders", "incident_summary"],
   });
 
@@ -1110,6 +1146,7 @@ PHI rules:
       organizationId: args.organizationId,
       userId: args.userId,
       question: args.question,
+      revalidate: args.revalidate,
     });
   }
   return toolLoopToDispatchResult(loop, ["clinical_record"]);
@@ -1130,6 +1167,7 @@ async function dispatchHistorical(args: DispatchArgs): Promise<DispatchResult> {
     organizationId: args.organizationId,
     userId: args.userId,
     question: args.question,
+    revalidate: args.revalidate,
   });
   return emptyResult(
     "Audit log lookup isn't wired yet — that ships in KB-NEXT-04 with the historical tool layer. I've logged this question as a gap for follow-up.",
@@ -1206,6 +1244,8 @@ INSTRUCTIONS:
       ),
       userQuestion: `<user_question>\n${args.question}\n</user_question>`,
       caller,
+      revalidate: args.revalidate,
+      fetcher: args.fetcher,
       allowedToolNames: [
         "facility_directory",
         "staff_directory",
@@ -1256,6 +1296,8 @@ INSTRUCTIONS:
     systemPrompt,
     conversationContext: args.conversationContext,
     userContent: `<user_question>\n${args.question}\n</user_question>`,
+    revalidate: args.revalidate,
+    fetcher: args.fetcher,
   });
 
   if (!result.ok) {
@@ -1296,33 +1338,45 @@ INSTRUCTIONS:
 
 export async function dispatch(args: DispatchArgs): Promise<DispatchResult> {
   const intent: RouterIntent = args.intent.intent;
+  let result: DispatchResult;
   switch (intent) {
     case "metric":
-      return await dispatchMetric(args);
+      result = await dispatchMetric(args);
+      break;
     case "directory":
-      return await dispatchDirectory(args);
+      result = await dispatchDirectory(args);
+      break;
     case "policy":
-      return await dispatchKbBranch(args, "policy");
+      result = await dispatchKbBranch(args, "policy");
+      break;
     case "regulatory":
-      return await dispatchKbBranch(args, "regulatory");
+      result = await dispatchKbBranch(args, "regulatory");
+      break;
     case "clinical_record":
-      return await dispatchClinicalRecord(args);
+      result = await dispatchClinicalRecord(args);
+      break;
     case "historical":
-      return await dispatchHistorical(args);
+      result = await dispatchHistorical(args);
+      break;
     case "mixed":
-      return await dispatchMixed(args);
+      result = await dispatchMixed(args);
+      break;
     case "chitchat":
-      return await dispatchChitchat(args);
+      result = await dispatchChitchat(args);
+      break;
     case "refuse":
-      return dispatchRefuse(args);
+      result = dispatchRefuse(args);
+      break;
     default: {
       // Exhaustiveness guard. Should never fire — TypeScript narrows the union.
       const _exhaustive: never = intent;
-      return emptyResult(CANNED_REFUSAL, {
+      result = emptyResult(CANNED_REFUSAL, {
         refusal: true,
         refusalReason: `unknown_intent_${String(_exhaustive)}`,
         toolsUsed: ["refuse"],
       });
     }
   }
+  await args.revalidate(args.selectedFacilityId);
+  return result;
 }

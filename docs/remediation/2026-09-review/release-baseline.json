@@ -1,0 +1,26 @@
+{
+  "verified_at": "2026-09-07",
+  "github_main": "f3345c32fb17880a2a59e5c91949c8b82465cf4f",
+  "netlify": {
+    "site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+    "name": "circleoflifealf",
+    "url": "https://circleoflifealf.com",
+    "production_deploy": "6a9df313b3e3a0000876cd51",
+    "state": "ready",
+    "commit": "f3345c32fb17880a2a59e5c91949c8b82465cf4f",
+    "published_at": "2026-09-06T23:13:45.438Z"
+  },
+  "supabase_project": "manfqmasfqppukpobpld",
+  "notes": [
+    "GitHub main and published Netlify commit currently match.",
+    "SYS001 branch eb1d98f1 remains in open PR453 with uncommitted lifecycle continuation.",
+    "No hosted mutation performed by this resumed segment.",
+    "Migration CLI mixed-length ordering must not be treated as trustworthy apply sequence.",
+    "Owner directed connected Haven release; personal Docker excluded. Managed PITR and private native backup verified before hook preparation."
+  ],
+  "supabase_pre_request_before": [
+    "session_preload_libraries=safeupdate",
+    "statement_timeout=8s",
+    "lock_timeout=8s"
+  ]
+}

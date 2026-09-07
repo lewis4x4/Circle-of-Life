@@ -1,5 +1,9 @@
-import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { createHandler } from "../index.ts";
+import { CurrentActorError } from "../../_shared/current-actor.ts";
 
 const ORG_ID = "00000000-0000-4000-8000-000000000001";
 const FACILITY_ID = "10000000-0000-4000-8000-000000000001";
@@ -57,35 +61,55 @@ class FakeQuery {
   async maybeSingle() {
     const result = this.execute();
     if (result.error) return result;
-    const data = Array.isArray(result.data) ? result.data[0] ?? null : result.data ?? null;
+    const data = Array.isArray(result.data)
+      ? result.data[0] ?? null
+      : result.data ?? null;
     return { data, error: null };
   }
 
   then<TResult1 = { data: Row[]; error: null }, TResult2 = never>(
-    onfulfilled?: ((value: { data: Row[]; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+    onfulfilled?:
+      | ((
+        value: { data: Row[]; error: null },
+      ) => TResult1 | PromiseLike<TResult1>)
+      | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ) {
-    return Promise.resolve(this.execute() as { data: Row[]; error: null }).then(onfulfilled, onrejected);
+    return Promise.resolve(this.execute() as { data: Row[]; error: null }).then(
+      onfulfilled,
+      onrejected,
+    );
   }
 
   private execute(): { data: Row[]; error: null } {
     if (this.operation === "insert") {
-      const rows = (Array.isArray(this.payload) ? this.payload : [this.payload]).map((row) => this.db.insert(this.table, row as Row));
+      const rows = (Array.isArray(this.payload) ? this.payload : [this.payload])
+        .map((row) => this.db.insert(this.table, row as Row));
       return { data: rows, error: null };
     }
     if (this.operation === "update") {
-      const rows = this.db.select(this.table).filter((row) => this.matches(row));
+      const rows = this.db.select(this.table).filter((row) =>
+        this.matches(row)
+      );
       for (const row of rows) Object.assign(row, this.payload as Row);
       return { data: rows, error: null };
     }
-    return { data: this.db.select(this.table).filter((row) => this.matches(row)), error: null };
+    return {
+      data: this.db.select(this.table).filter((row) => this.matches(row)),
+      error: null,
+    };
   }
 
   private matches(row: Row): boolean {
     return this.filters.every((filter) => {
       const actual = row[filter.column];
-      if (filter.kind === "is" && filter.value === null) return actual === null || actual === undefined;
-      if (filter.kind === "in") return Array.isArray(filter.value) && filter.value.includes(actual as never);
+      if (filter.kind === "is" && filter.value === null) {
+        return actual === null || actual === undefined;
+      }
+      if (filter.kind === "in") {
+        return Array.isArray(filter.value) &&
+          filter.value.includes(actual as never);
+      }
       return actual === filter.value;
     });
   }
@@ -95,16 +119,26 @@ class FakeAdminClient {
   public rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   public failM3RpcAfterUnits = false;
   public auth = {
-    getUser: (token: string) => token === "valid"
-      ? Promise.resolve({ data: { user: { id: USER_ID } }, error: null })
-      : Promise.resolve({ data: { user: null }, error: { message: "bad token" } }),
+    getUser: (token: string) =>
+      token === "valid"
+        ? Promise.resolve({ data: { user: { id: USER_ID } }, error: null })
+        : Promise.resolve({
+          data: { user: null },
+          error: { message: "bad token" },
+        }),
   };
   private counters: Record<string, number> = {};
   public tables: Record<string, Row[]>;
 
   constructor(moduleValues: Row[], facilityPatch: Row = {}) {
     this.tables = {
-      user_profiles: [{ id: USER_ID, app_role: "owner", organization_id: ORG_ID, is_active: true, deleted_at: null }],
+      user_profiles: [{
+        id: USER_ID,
+        app_role: "owner",
+        organization_id: ORG_ID,
+        is_active: true,
+        deleted_at: null,
+      }],
       facilities: [{
         id: FACILITY_ID,
         organization_id: ORG_ID,
@@ -116,7 +150,13 @@ class FakeAdminClient {
         deleted_at: null,
         ...facilityPatch,
       }],
-      organizations: [{ id: ORG_ID, name: "Circle of Life", timezone: "America/New_York", launch_profile_metadata: {}, deleted_at: null }],
+      organizations: [{
+        id: ORG_ID,
+        name: "Circle of Life",
+        timezone: "America/New_York",
+        launch_profile_metadata: {},
+        deleted_at: null,
+      }],
       user_facility_access: [],
       facility_launch_module_values: moduleValues,
       facility_launch_promotion_runs: [],
@@ -150,7 +190,9 @@ class FakeAdminClient {
 
   async rpc(fn: string, args: Record<string, unknown>) {
     this.rpcCalls.push({ fn, args });
-    if (fn !== "promote_facility_launch_m3") return { data: null, error: { message: `unknown rpc ${fn}` } };
+    if (fn !== "promote_facility_launch_m3") {
+      return { data: null, error: { message: `unknown rpc ${fn}` } };
+    }
 
     const snapshotTables = structuredClone(this.tables);
     const snapshotCounters = structuredClone(this.counters);
@@ -158,7 +200,9 @@ class FakeAdminClient {
       const orgId = String(args.p_organization_id);
       const facilityId = String(args.p_facility_id);
       const runItemId = String(args.p_run_item_id);
-      const moduleValueId = args.p_module_value_id ? String(args.p_module_value_id) : null;
+      const moduleValueId = args.p_module_value_id
+        ? String(args.p_module_value_id)
+        : null;
       const units = Array.isArray(args.p_units) ? args.p_units as Row[] : [];
       const rooms = Array.isArray(args.p_rooms) ? args.p_rooms as Row[] : [];
       const beds = Array.isArray(args.p_beds) ? args.p_beds as Row[] : [];
@@ -172,7 +216,10 @@ class FakeAdminClient {
       let bedsNoop = 0;
 
       for (const unit of units) {
-        const existing = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === unit.name);
+        const existing = this.tables.units.find((row) =>
+          row.deleted_at == null && row.organization_id === orgId &&
+          row.facility_id === facilityId && row.name === unit.name
+        );
         if (!existing) {
           const inserted = this.insert("units", {
             organization_id: orgId,
@@ -204,11 +251,19 @@ class FakeAdminClient {
         }
       }
 
-      if (this.failM3RpcAfterUnits) throw new Error("simulated late M3 failure");
+      if (this.failM3RpcAfterUnits) {
+        throw new Error("simulated late M3 failure");
+      }
 
       for (const room of rooms) {
-        const existing = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === room.room_number);
-        const unit = this.tables.units.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.name === room.unit_name);
+        const existing = this.tables.rooms.find((row) =>
+          row.deleted_at == null && row.organization_id === orgId &&
+          row.facility_id === facilityId && row.room_number === room.room_number
+        );
+        const unit = this.tables.units.find((row) =>
+          row.deleted_at == null && row.organization_id === orgId &&
+          row.facility_id === facilityId && row.name === room.unit_name
+        );
         if (!existing) {
           const inserted = this.insert("rooms", {
             organization_id: orgId,
@@ -249,9 +304,17 @@ class FakeAdminClient {
       }
 
       for (const bed of beds) {
-        const room = this.tables.rooms.find((row) => row.deleted_at == null && row.organization_id === orgId && row.facility_id === facilityId && row.room_number === bed.room_number);
-        if (!room) throw new Error(`room missing for bed ${String(bed.room_number)}`);
-        const existing = this.tables.beds.find((row) => row.deleted_at == null && row.room_id === room.id && row.bed_label === bed.bed_label);
+        const room = this.tables.rooms.find((row) =>
+          row.deleted_at == null && row.organization_id === orgId &&
+          row.facility_id === facilityId && row.room_number === bed.room_number
+        );
+        if (!room) {
+          throw new Error(`room missing for bed ${String(bed.room_number)}`);
+        }
+        const existing = this.tables.beds.find((row) =>
+          row.deleted_at == null && row.room_id === room.id &&
+          row.bed_label === bed.bed_label
+        );
         if (!existing) {
           const inserted = this.insert("beds", {
             room_id: room.id,
@@ -286,13 +349,26 @@ class FakeAdminClient {
       }
 
       return {
-        data: { units_created: unitsCreated, units_noop: unitsNoop, rooms_created: roomsCreated, rooms_noop: roomsNoop, beds_created: bedsCreated, beds_noop: bedsNoop, warnings },
+        data: {
+          units_created: unitsCreated,
+          units_noop: unitsNoop,
+          rooms_created: roomsCreated,
+          rooms_noop: roomsNoop,
+          beds_created: bedsCreated,
+          beds_noop: bedsNoop,
+          warnings,
+        },
         error: null,
       };
     } catch (error) {
       this.tables = snapshotTables;
       this.counters = snapshotCounters;
-      return { data: null, error: { message: error instanceof Error ? error.message : String(error) } };
+      return {
+        data: null,
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
     }
   }
 }
@@ -313,13 +389,41 @@ function mv(module_code: string, field_path: string, value: unknown): Row {
 function request(modules: string[], dryRun = false) {
   return new Request("http://localhost/facility-launch-promote", {
     method: "POST",
-    headers: { Authorization: "Bearer valid", "Content-Type": "application/json" },
-    body: JSON.stringify({ facility_id: FACILITY_ID, modules, dry_run: dryRun }),
+    headers: {
+      Authorization: "Bearer valid",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      facility_id: FACILITY_ID,
+      modules,
+      dry_run: dryRun,
+    }),
   });
 }
 
-function handler(admin: FakeAdminClient) {
+function handler(
+  admin: FakeAdminClient,
+  revalidate: (facilityId?: string | null) => Promise<void> = async () => {},
+) {
   return createHandler({
+    authorizeActor: async () => ({
+      actor: {
+        userId: USER_ID,
+        sessionId: "30000000-0000-4000-8000-000000000001",
+        email: null,
+        organizationId: ORG_ID,
+        role: "owner",
+        claimVersion: 1,
+        accessibleFacilityIds: [FACILITY_ID],
+      },
+      accessToken: "valid",
+      revalidate: async (facilityId) => {
+        if (facilityId && facilityId !== FACILITY_ID) {
+          throw new CurrentActorError(403, "Forbidden");
+        }
+        await revalidate(facilityId);
+      },
+    }),
     createAdminClient: () => admin as never,
     now: () => new Date("2026-05-13T17:27:00.000Z"),
   });
@@ -334,7 +438,10 @@ const m1Rows = [
   mv("M1", "timeZone", "America/New_York"),
   mv("M1", "corporateContact", "Crystal Ducksworth"),
   mv("M1", "billingContact", "Charlene Elmore"),
-  mv("M1", "legalEntities", [{ name: "Sorensen, Smith & Bay LLC", role: "operating" }]),
+  mv("M1", "legalEntities", [{
+    name: "Sorensen, Smith & Bay LLC",
+    role: "operating",
+  }]),
 ];
 
 const m2Rows = [
@@ -381,29 +488,57 @@ const m3Rows = [mv("M3", "rooms", homewoodRooms())];
 
 function docs(): Row[] {
   return [
-    ["doc-gl-cert", "HOMEWOOD GL CERT.pdf", "gl_cert", "Sorensen, Smith & Bay LLC"],
-    ["doc-property-policy", "HOMEWOOD PROPERTY Policy.pdf", "property_policy", "Homewood Property Company LLC"],
-    ["doc-bond-certificate", "HOMEWOOD BOND CERTIFICATE.pdf", "bond_certificate", "Sorensen, Smith & Bay LLC"],
-    ["doc-loss-run", "Smith & Sorensen Loss Run.pdf", "loss_run", "Sorensen, Smith & Bay LLC"],
-  ].map(([id, title, artifactType, entityAssociation]) => mv("M17", `documents.${id}`, {
-    id,
-    title,
-    originalFilename: title,
-    artifactType,
-    entityAssociation,
-    effectiveDate: "",
-    expirationDate: "",
-    term: "Current file present in Drive; term metadata pending document custodian review.",
-    version: "round1-source-file",
-    isSourceOfTruth: true,
-    custodianApprovalStatus: "pending_review",
-    confidence: "source_present",
-    notes: "Imported from resolved Homewood insurance source-of-truth artifact.",
-  }));
+    [
+      "doc-gl-cert",
+      "HOMEWOOD GL CERT.pdf",
+      "gl_cert",
+      "Sorensen, Smith & Bay LLC",
+    ],
+    [
+      "doc-property-policy",
+      "HOMEWOOD PROPERTY Policy.pdf",
+      "property_policy",
+      "Homewood Property Company LLC",
+    ],
+    [
+      "doc-bond-certificate",
+      "HOMEWOOD BOND CERTIFICATE.pdf",
+      "bond_certificate",
+      "Sorensen, Smith & Bay LLC",
+    ],
+    [
+      "doc-loss-run",
+      "Smith & Sorensen Loss Run.pdf",
+      "loss_run",
+      "Sorensen, Smith & Bay LLC",
+    ],
+  ].map(([id, title, artifactType, entityAssociation]) =>
+    mv("M17", `documents.${id}`, {
+      id,
+      title,
+      originalFilename: title,
+      artifactType,
+      entityAssociation,
+      effectiveDate: "",
+      expirationDate: "",
+      term:
+        "Current file present in Drive; term metadata pending document custodian review.",
+      version: "round1-source-file",
+      isSourceOfTruth: true,
+      custodianApprovalStatus: "pending_review",
+      confidence: "source_present",
+      notes:
+        "Imported from resolved Homewood insurance source-of-truth artifact.",
+    })
+  );
 }
 
 const m17Rows = [
-  mv("M17", "reviewNotes", "Round 1 imported resolved Homewood GL/property/bond/loss-run source files."),
+  mv(
+    "M17",
+    "reviewNotes",
+    "Round 1 imported resolved Homewood GL/property/bond/loss-run source files.",
+  ),
   ...docs(),
 ];
 
@@ -441,11 +576,16 @@ Deno.test("m2_updates_facility_full", async () => {
 });
 
 Deno.test("m2_partial_safe", async () => {
-  const admin = new FakeAdminClient([mv("M2", "executiveDirector", "Jackie Rameriz")], {
+  const admin = new FakeAdminClient([
+    mv("M2", "executiveDirector", "Jackie Rameriz"),
+  ], {
     executive_director_name: "Manual Override",
   });
   const payload = await apply(admin, ["M2"]);
-  assertEquals(admin.tables.facilities[0].executive_director_name, "Manual Override");
+  assertEquals(
+    admin.tables.facilities[0].executive_director_name,
+    "Manual Override",
+  );
   assertEquals(payload.modules_promoted[0].warnings, [
     "executive_director_name has existing value 'Manual Override'; intake value 'Jackie Rameriz' was skipped. Set force_overwrite=true to override.",
   ]);
@@ -458,9 +598,19 @@ Deno.test("m3_creates_units_rooms_beds", async () => {
   assertEquals(admin.tables.units[0].name, "Main");
   assertEquals(admin.tables.rooms.length, 20);
   assertEquals(admin.tables.beds.length, 36);
-  assertEquals(admin.tables.rooms.filter((row) => row.room_type === "private").length, 4);
-  assertEquals(admin.tables.rooms.filter((row) => row.room_type === "semi_private").length, 16);
-  assertEquals(admin.rpcCalls.filter((call) => call.fn === "promote_facility_launch_m3").length, 1);
+  assertEquals(
+    admin.tables.rooms.filter((row) => row.room_type === "private").length,
+    4,
+  );
+  assertEquals(
+    admin.tables.rooms.filter((row) => row.room_type === "semi_private").length,
+    16,
+  );
+  assertEquals(
+    admin.rpcCalls.filter((call) => call.fn === "promote_facility_launch_m3")
+      .length,
+    1,
+  );
 });
 
 Deno.test("m3_apply_rpc_failure_rolls_back_partial_rows", async () => {
@@ -480,18 +630,32 @@ Deno.test("m17_registers_facility_documents", async () => {
   const admin = new FakeAdminClient(m17Rows);
   await apply(admin, ["M17"]);
   assertEquals(admin.tables.facility_documents.length, 4);
-  assert(admin.tables.facility_documents.every((row) => row.pending_upload === true));
-  assert(admin.tables.facility_documents.every((row) => row.is_source_of_truth === true));
-  assertEquals(admin.tables.facility_documents.map((row) => row.artifact_type).sort(), [
-    "bond_certificate",
-    "gl_cert",
-    "loss_run",
-    "property_policy",
-  ]);
+  assert(
+    admin.tables.facility_documents.every((row) => row.pending_upload === true),
+  );
+  assert(
+    admin.tables.facility_documents.every((row) =>
+      row.is_source_of_truth === true
+    ),
+  );
+  assertEquals(
+    admin.tables.facility_documents.map((row) => row.artifact_type).sort(),
+    [
+      "bond_certificate",
+      "gl_cert",
+      "loss_run",
+      "property_policy",
+    ],
+  );
 });
 
 Deno.test("tier1_idempotent", async () => {
-  const admin = new FakeAdminClient([...m1Rows, ...m2Rows, ...m3Rows, ...m17Rows]);
+  const admin = new FakeAdminClient([
+    ...m1Rows,
+    ...m2Rows,
+    ...m3Rows,
+    ...m17Rows,
+  ]);
   await apply(admin, ["M1", "M2", "M3", "M17"]);
   const firstCounts = {
     units: admin.tables.units.length,
@@ -505,12 +669,26 @@ Deno.test("tier1_idempotent", async () => {
   assertEquals(admin.tables.rooms.length, firstCounts.rooms);
   assertEquals(admin.tables.beds.length, firstCounts.beds);
   assertEquals(admin.tables.facility_documents.length, firstCounts.docs);
-  assertEquals(admin.tables.facility_launch_promotion_run_links.length, firstCounts.links);
-  assert(second.modules_promoted.every((result: Row) => String(result.summary).includes("already current") || String(result.summary).includes("already current") || result.module_code === "M2"));
+  assertEquals(
+    admin.tables.facility_launch_promotion_run_links.length,
+    firstCounts.links,
+  );
+  assert(
+    second.modules_promoted.every((result: Row) =>
+      String(result.summary).includes("already current") ||
+      String(result.summary).includes("already current") ||
+      result.module_code === "M2"
+    ),
+  );
 });
 
 Deno.test("tier1_dry_run_writes_nothing", async () => {
-  const admin = new FakeAdminClient([...m1Rows, ...m2Rows, ...m3Rows, ...m17Rows]);
+  const admin = new FakeAdminClient([
+    ...m1Rows,
+    ...m2Rows,
+    ...m3Rows,
+    ...m17Rows,
+  ]);
   const res = await handler(admin)(request(["M1", "M2", "M3", "M17"], true));
   const payload = await res.json();
   assertEquals(res.status, 200, JSON.stringify(payload));
@@ -528,9 +706,47 @@ Deno.test("tier1_dry_run_writes_nothing", async () => {
 
 Deno.test("m3_preserves_existing_bed_status", async () => {
   const admin = new FakeAdminClient([mv("M3", "rooms", [homewoodRooms()[0]])]);
-  admin.tables.units.push({ id: "unit-existing", facility_id: FACILITY_ID, organization_id: ORG_ID, name: "Main", floor_number: 1, sort_order: 0, deleted_at: null });
-  admin.tables.rooms.push({ id: "room-existing", facility_id: FACILITY_ID, organization_id: ORG_ID, unit_id: "unit-existing", room_number: "1", room_type: "private", max_occupancy: 1, floor_number: 1, sort_order: 0, launch_profile_metadata: { facility_launch: { source_room_id: "room-homewood-1", wing: "None — single floor", unit_type: "Private single", care_designation: "Standard facility", source_status: "active" } }, deleted_at: null });
-  admin.tables.beds.push({ id: "bed-existing", room_id: "room-existing", facility_id: FACILITY_ID, organization_id: ORG_ID, bed_label: "A", bed_type: "alf_intermediate", status: "occupied", current_resident_id: "resident-1", deleted_at: null });
+  admin.tables.units.push({
+    id: "unit-existing",
+    facility_id: FACILITY_ID,
+    organization_id: ORG_ID,
+    name: "Main",
+    floor_number: 1,
+    sort_order: 0,
+    deleted_at: null,
+  });
+  admin.tables.rooms.push({
+    id: "room-existing",
+    facility_id: FACILITY_ID,
+    organization_id: ORG_ID,
+    unit_id: "unit-existing",
+    room_number: "1",
+    room_type: "private",
+    max_occupancy: 1,
+    floor_number: 1,
+    sort_order: 0,
+    launch_profile_metadata: {
+      facility_launch: {
+        source_room_id: "room-homewood-1",
+        wing: "None — single floor",
+        unit_type: "Private single",
+        care_designation: "Standard facility",
+        source_status: "active",
+      },
+    },
+    deleted_at: null,
+  });
+  admin.tables.beds.push({
+    id: "bed-existing",
+    room_id: "room-existing",
+    facility_id: FACILITY_ID,
+    organization_id: ORG_ID,
+    bed_label: "A",
+    bed_type: "alf_intermediate",
+    status: "occupied",
+    current_resident_id: "resident-1",
+    deleted_at: null,
+  });
   await apply(admin, ["M3"]);
   assertEquals(admin.tables.beds.length, 1);
   assertEquals(admin.tables.beds[0].status, "occupied");
@@ -552,18 +768,55 @@ Deno.test("m17_does_not_downgrade_uploaded_document", async () => {
     deleted_at: null,
   });
   const payload = await apply(admin, ["M17"]);
-  const existing = admin.tables.facility_documents.find((row) => row.id === "existing-doc")!;
+  const existing = admin.tables.facility_documents.find((row) =>
+    row.id === "existing-doc"
+  )!;
   assertEquals(existing.document_id, "real-document-id");
   assertEquals(existing.pending_upload, false);
   assertEquals(existing.file_path, "real/upload/path.pdf");
-  assert(payload.modules_promoted[0].warnings.some((warning: string) => warning.includes("already has an uploaded document")));
+  assert(
+    payload.modules_promoted[0].warnings.some((warning: string) =>
+      warning.includes("already has an uploaded document")
+    ),
+  );
+});
+
+Deno.test("m17 revocation after first target write prevents later writes and links", async () => {
+  const admin = new FakeAdminClient([
+    mv("M17", "documents.first", {
+      artifactType: "state_license",
+      originalFilename: "first.pdf",
+      title: "First",
+    }),
+    mv("M17", "documents.second", {
+      artifactType: "state_license",
+      originalFilename: "second.pdf",
+      title: "Second",
+    }),
+  ]);
+  let checks = 0;
+  const response = await handler(admin, async () => {
+    checks += 1;
+    if (checks >= 7) throw new CurrentActorError(403, "Forbidden");
+  })(request(["M17"]));
+  assertEquals(response.status, 403);
+  assertEquals(admin.tables.facility_documents.length, 1);
+  assertEquals(admin.tables.facility_launch_promotion_run_links.length, 0);
 });
 
 Deno.test("tier1_links_written", async () => {
-  const admin = new FakeAdminClient([...m1Rows, ...m2Rows, ...m3Rows, ...m17Rows]);
+  const admin = new FakeAdminClient([
+    ...m1Rows,
+    ...m2Rows,
+    ...m3Rows,
+    ...m17Rows,
+  ]);
   await apply(admin, ["M1", "M2", "M3", "M17"]);
   const links = admin.tables.facility_launch_promotion_run_links;
-  assert(links.length >= 57 + 4, `expected at least M3+M17 links, got ${links.length}`);
+  assert(
+    links.length >= 57 + 4,
+    `expected at least M3+M17 links, got ${links.length}`,
+  );
   assert(links.every((link) => typeof link.run_item_id === "string"));
   assert(links.every((link) => typeof link.module_value_id === "string"));
   const targets = new Set(links.map((link) => link.target_table));

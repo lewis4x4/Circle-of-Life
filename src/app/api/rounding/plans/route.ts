@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 import { validateObservationPlanPayload } from "@/lib/rounding/observation-plan-validation";
 import type { ObservationPlanInput } from "@/lib/rounding/types";
 
@@ -10,9 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export async function GET(request: Request) {
   const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if ("response" in auth) return auth.response;
 
   const { context } = auth;
   const { searchParams } = new URL(request.url);
@@ -31,6 +29,10 @@ export async function GET(request: Request) {
     }
   }
 
+  const accessibleFacilityIds = planId && !facilityId
+    ? await getAccessibleRoundingFacilityIds(context)
+    : [];
+
   let query = context.admin
     .from("resident_observation_plans")
     .select(`
@@ -44,6 +46,7 @@ export async function GET(request: Request) {
 
   if (planId) {
     query = query.eq("id", planId);
+    if (!facilityId) query = query.in("facility_id", accessibleFacilityIds);
   }
   if (facilityId) {
     query = query.eq("facility_id", facilityId);
@@ -72,12 +75,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can manage plans" }, { status: 403 });
   }
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
   if (residentError || !resident) {
     return NextResponse.json({ error: "residentId must belong to the selected facility" }, { status: 400 });
   }
+  const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
 
   const now = new Date().toISOString();
   let planId = body.id?.trim() || null;
@@ -137,7 +139,7 @@ export async function POST(request: Request) {
   let replacedExistingRules = false;
   const planPayload = {
     organization_id: context.organizationId,
-    entity_id: body.entityId ?? facility.entity_id ?? null,
+    entity_id: facility.entity_id ?? null,
     facility_id: body.facilityId,
     resident_id: body.residentId,
     status: body.status ?? "draft",
@@ -147,12 +149,18 @@ export async function POST(request: Request) {
     rationale: body.rationale?.trim() ?? "",
   };
 
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId: body.facilityId });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+
   if (planId) {
-    const { data: existingPlan, error: existingPlanError } = await context.admin
+    const { data: existingPlan, error: existingPlanError } = await context.actor.client
       .from("resident_observation_plans")
       .select("facility_id")
       .eq("id", planId)
       .eq("organization_id", context.organizationId)
+      .eq("facility_id", body.facilityId)
+      .in("facility_id", accessibleFacilityIds)
       .is("deleted_at", null)
       .maybeSingle();
 
@@ -164,11 +172,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Cannot move plan to a different facility" }, { status: 403 });
     }
 
-    const { error: updateError } = await context.admin
+    const { error: updateError } = await context.actor.client
       .from("resident_observation_plans")
       .update(planPayload)
       .eq("id", planId)
       .eq("organization_id", context.organizationId)
+      .eq("facility_id", body.facilityId)
       .is("deleted_at", null);
 
     if (updateError) {
@@ -176,11 +185,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not update observation plan" }, { status: 500 });
     }
 
-    const { error: ruleDeleteError } = await context.admin
+    const { error: ruleDeleteError } = await context.actor.client
       .from("resident_observation_plan_rules")
       .update({ deleted_at: now })
       .eq("plan_id", planId)
       .eq("organization_id", context.organizationId)
+      .eq("facility_id", body.facilityId)
       .is("deleted_at", null);
 
     if (ruleDeleteError) {
@@ -189,7 +199,7 @@ export async function POST(request: Request) {
     }
     replacedExistingRules = true;
   } else {
-    const { data: createdPlan, error: insertError } = await context.admin
+    const { data: createdPlan, error: insertError } = await context.actor.client
       .from("resident_observation_plans")
       .insert(planPayload)
       .select("id")
@@ -207,7 +217,7 @@ export async function POST(request: Request) {
   const rulesPayload = body.rules.map((rule, index) => ({
     plan_id: planId,
     organization_id: context.organizationId,
-    entity_id: body.entityId ?? facility.entity_id ?? null,
+    entity_id: facility.entity_id ?? null,
     facility_id: body.facilityId,
     resident_id: body.residentId,
     interval_type: rule.intervalType,
@@ -223,25 +233,27 @@ export async function POST(request: Request) {
     active: rule.active ?? true,
   }));
 
-  const { error: rulesInsertError } = await context.admin
+  const { error: rulesInsertError } = await context.actor.client
     .from("resident_observation_plan_rules")
     .insert(rulesPayload as never);
 
   if (rulesInsertError) {
     logError("rounding.plans.rules.insert", rulesInsertError, { planId });
     if (createdPlanInRequest) {
-      const { error: rollbackPlanError } = await context.admin
+      const { error: rollbackPlanError } = await context.actor.client
         .from("resident_observation_plans")
         .update({ deleted_at: now })
         .eq("id", planId)
-        .eq("organization_id", context.organizationId);
+        .eq("organization_id", context.organizationId)
+        .eq("facility_id", body.facilityId);
       if (rollbackPlanError) logError("rounding.plans.rollback", rollbackPlanError, { planId });
     } else if (replacedExistingRules) {
-      const { error: restoreRulesError } = await context.admin
+      const { error: restoreRulesError } = await context.actor.client
         .from("resident_observation_plan_rules")
         .update({ deleted_at: null })
         .eq("plan_id", planId)
         .eq("organization_id", context.organizationId)
+        .eq("facility_id", body.facilityId)
         .eq("deleted_at", now);
       if (restoreRulesError) logError("rounding.plans.rules.restore", restoreRulesError, { planId });
     }

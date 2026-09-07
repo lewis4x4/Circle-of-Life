@@ -1,0 +1,9 @@
+Account disable, role/facility changes and stale sessions could retain usable authority across database, application and Edge boundaries. This change makes current profile/session/version/facility state authoritative, adds durable and replay-safe lifecycle synchronization, and prevents delayed Auth writes or superseded document-ingest runs from undoing newer work.
+
+The lifecycle worker serializes target jobs, observes actual Auth state, preserves independent security holds, and exposes pending versus terminal outcomes. Login retirement preserves identity and all historical attribution. Editor retries retain the original operation, reactivation requires explicit current facility selection, and transient access-check failures do not revoke healthy sessions. Forward migrations327–329 close nullable authorization checks and atomically replace each document ingest generation.
+
+Validation:3,148 application tests passed with2existing skips;88Edge tests passed with runtime network denied;332migration files and14SQL probes replayed successfully. Full lint/typecheck, build, audit, secret scanning, stress, four responsive public-page screenshots and one-route axe checks passed. Independent source reviews approved all surfaced corrections. Authenticated clinical/customer UAT is separate.
+
+The exact Haven Auth token hook and migrations319–329 are now deployed and verified. The signed owner session works through the preview API and deployed Edge guard; the same token is denied after local signout. Main merge releases the matched application, worker and remaining Edge functions. The bounded release script preserves prior migration history, uses a private ownership/ACL-preserving backup and verifies exact SQL hashes. Release evidence is recorded in SYS-001-RESUMED-CLOSEOUT.md and hosted-*.json.
+
+Scope is the current SYS-001 task and SYS-008 routed revocation overlap. The remaining independent-review roadmap is not declared complete.

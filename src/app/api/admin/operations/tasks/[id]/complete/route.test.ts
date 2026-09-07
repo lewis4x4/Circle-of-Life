@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/operations/auth", () => ({
   requireOperationsActor: vi.fn(),
+  revalidateOperationsActor: vi.fn(),
   actorCanMutateTask: vi.fn(),
 }));
 const logError = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/observability/logger", () => ({ logError }));
 
 import { PATCH } from "./route";
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 
 const task = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -22,6 +23,7 @@ const task = {
 const rpc = vi.fn();
 const actor = {
   id: "actor",
+  organizationId: "org",
   appRole: "manager",
   admin: {
     from: vi.fn(() => {
@@ -41,6 +43,7 @@ describe("operation task completion error boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
+    vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor } as never);
     vi.mocked(actorCanMutateTask).mockResolvedValue(true as never);
   });
 
@@ -73,5 +76,40 @@ describe("operation task completion error boundary", () => {
     );
 
     expect(await response.json()).toEqual({ error: "Task cannot be completed from this state" });
+  });
+
+  it("does not call the RPC after an owner is demoted to caregiver with facility access retained", async () => {
+    const demotedActor = { ...actor, appRole: "caregiver" };
+    vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor: demotedActor } as never);
+    vi.mocked(actorCanMutateTask).mockResolvedValue(false as never);
+
+    const response = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: "{}" }) as never,
+      { params: Promise.resolve({ id: task.id }) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(actorCanMutateTask).toHaveBeenLastCalledWith(demotedActor, task);
+  });
+
+  it("returns generic not found for a cross-organization task id", async () => {
+    const foreignQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    actor.admin.from.mockReturnValueOnce(foreignQuery as never);
+
+    const response = await PATCH(
+      new Request("https://local.test/task", { method: "PATCH", body: "{}" }) as never,
+      { params: Promise.resolve({ id: "foreign-task" }) },
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Task not found" });
+    expect(foreignQuery.eq).toHaveBeenCalledWith("organization_id", actor.organizationId);
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

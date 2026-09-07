@@ -107,6 +107,7 @@ export const M1_PROMOTER: ModulePromoter = {
 
     const rowsNoop = changedFieldPaths.length === 0 ? 1 : 0;
     if (!ctx.dry_run && Object.keys(patch).length > 0 && changedFieldPaths.length > 0) {
+      await ctx.revalidate();
       const { error: updateError } = await ctx.admin
         .from("organizations")
         .update({ ...patch, updated_by: ctx.actor_user_id })

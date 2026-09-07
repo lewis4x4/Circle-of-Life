@@ -111,9 +111,22 @@ export const deleteUserSchema = z.object({
 
 // ── Reactivate User (optional body) ───────────────────────────────
 
-export const reactivateUserSchema = z.object({
-  reason: z.string().max(500).optional(),
-});
+export const reactivateUserSchema = z
+  .object({
+    reason: z.string().max(500).optional(),
+    facilities: z
+      .array(z.object({ facility_id: uuidStringSchema, is_primary: z.boolean() }))
+      .default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.facilities.length > 0 && data.facilities.filter((row) => row.is_primary).length !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Exactly one explicitly restored facility must be primary",
+        path: ["facilities"],
+      });
+    }
+  });
 
 // ── Hard Delete User (DELETE body) ────────────────────────────────
 

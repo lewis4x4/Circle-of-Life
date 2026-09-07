@@ -22,6 +22,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
     CREATE ROLE anon NOLOGIN;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_auth_admin') THEN
+    CREATE ROLE supabase_auth_admin NOLOGIN;
+  END IF;
 END
 $do$;
 
@@ -60,6 +63,8 @@ CREATE TABLE auth.users (
   raw_user_meta_data jsonb,
   aud text,
   role text,
+  banned_until timestamptz,
+  deleted_at timestamptz,
   created_at timestamptz,
   updated_at timestamptz,
   confirmation_token text,

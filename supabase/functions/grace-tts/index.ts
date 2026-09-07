@@ -1,13 +1,25 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+  type CurrentActorAuthorization,
+  currentActorOrProviderErrorResponse,
+  currentActorErrorResponse,
+  requireCurrentActor,
+  withCurrentActorRevalidation,
+} from "../_shared/current-actor.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
 const MAX_TTS_CHARACTERS = 4000;
 const ALLOWED_VOICES = new Set(["alloy", "verse", "aria", "sage", "coral"]);
 
-Deno.serve(async (req) => {
+type HandlerOptions = {
+  authorizeActor?: (req: Request) => Promise<CurrentActorAuthorization>;
+  fetcher?: typeof fetch;
+};
+
+export async function handleGraceTts(
+  req: Request,
+  options: HandlerOptions = {},
+): Promise<Response> {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(origin) });
@@ -16,15 +28,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405, origin);
   }
 
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+  let actorAuth;
+  try {
+    actorAuth = await (options.authorizeActor ?? requireCurrentActor)(req);
+  } catch (error) {
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
 
   let body: { text?: string; voice?: string };
@@ -46,19 +54,29 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "voice is not supported" }, 400, origin);
   }
 
-  const openAiRes = await fetch("https://api.openai.com/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini-tts",
-      voice,
-      input: text,
-      format: "mp3",
-    }),
-  });
+  let openAiRes: Response;
+  try {
+    openAiRes = await withCurrentActorRevalidation(actorAuth, () =>
+      (options.fetcher ?? fetch)("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini-tts",
+          voice,
+          input: text,
+          format: "mp3",
+        }),
+      }));
+  } catch (error) {
+    return currentActorOrProviderErrorResponse(error, {
+      status: 502,
+      message: "TTS failed",
+      headers: getCorsHeaders(origin),
+    });
+  }
 
   if (!openAiRes.ok) {
     return jsonResponse({ error: `TTS failed (${openAiRes.status})` }, 502, origin);
@@ -77,4 +95,6 @@ Deno.serve(async (req) => {
     200,
     origin,
   );
-});
+}
+
+if (import.meta.main) Deno.serve((req) => handleGraceTts(req));

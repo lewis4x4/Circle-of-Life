@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 
 type Action = "start_review" | "resolve" | "dismiss";
 
@@ -14,12 +14,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can manage rounding escalations" }, { status: 403 });
   }
@@ -45,11 +43,13 @@ export async function PATCH(
   }
 
   const escalationId = (await params).id;
+  const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: escalation, error: escalationError } = await context.admin
     .from("resident_observation_escalations")
     .select("id, organization_id, facility_id, status")
     .eq("id", escalationId)
     .eq("organization_id", context.organizationId)
+    .in("facility_id", accessibleFacilityIds)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -104,11 +104,17 @@ export async function PATCH(
       break;
   }
 
-  const { error: updateError } = await context.admin
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId: escalation.facility_id });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+  patch.updated_by = context.userId;
+
+  const { error: updateError } = await context.actor.client
     .from("resident_observation_escalations")
     .update(patch)
     .eq("id", escalation.id)
-    .eq("organization_id", context.organizationId);
+    .eq("organization_id", context.organizationId)
+    .eq("facility_id", escalation.facility_id);
 
   if (updateError) {
     logError("rounding.escalations.update", updateError, { escalationId: escalation.id, action });

@@ -3,12 +3,13 @@ GRANT USAGE ON SCHEMA auth TO authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT INSERT,UPDATE ON public.tray_tickets TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
-CREATE TEMP TABLE dietary_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() resident,gen_random_uuid() ticket,gen_random_uuid() service,
+CREATE TEMP TABLE dietary_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() resident,gen_random_uuid() ticket,gen_random_uuid() service,
  id facility,organization_id org FROM public.facilities WHERE deleted_at IS NULL LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) SELECT actor,actor||'@dietary-review.invalid',jsonb_build_object('organization_id',org,'app_role','dietary'),jsonb_build_object('full_name','Dietary test') FROM dietary_fixture;
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active) SELECT actor,org,actor||'@dietary-review.invalid','Dietary test','dietary',true FROM dietary_fixture
  ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id,revoked_at) SELECT actor,facility,org,now() FROM dietary_fixture;
+INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM dietary_fixture;
 INSERT INTO public.residents(id,facility_id,organization_id,first_name,last_name,date_of_birth,gender) SELECT resident,facility,org,'Dietary','Test','1940-01-01','female' FROM dietary_fixture;
 INSERT INTO public.diet_orders(organization_id,facility_id,resident_id,diet_type,iddsi_food_level,iddsi_liquid_level,allergies,status)
  SELECT org,facility,resident,'regular',7,0,ARRAY['egg'],'active' FROM dietary_fixture;
@@ -34,7 +35,11 @@ DO $$ DECLARE f record; BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.audit_log WHERE record_id=f.ticket AND user_id=f.actor AND new_data->>'event'='tray_pass_verified') THEN RAISE EXCEPTION 'Verified pass audit missing'; END IF;
 END $$;
 GRANT SELECT ON dietary_fixture TO authenticated;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','app_role','dietary','organization_id',org,'app_metadata',jsonb_build_object('app_role','dietary','organization_id',org))::text,true) FROM dietary_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','dietary','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','dietary','organization_id',f.org))::text,true)
+FROM dietary_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE f record; BEGIN
  SELECT * INTO f FROM dietary_fixture;

@@ -1,0 +1,357 @@
+{
+  "started": "2026-09-07",
+  "scope": "48 independent review findings plus original remaining mitigations, integrated verification, merge and fresh comprehensive review",
+  "baseline": "eb1d98f18e41b3950bb837702363efde1f3b3f1b",
+  "findings": [
+    {
+      "id": "NAV-001",
+      "severity": "P1",
+      "title": "Seven implemented workflows redirect or link to missing canonical pages",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-002",
+      "severity": "P1",
+      "title": "Executive overview converts retrieval failures into an all-clear message",
+      "status": "source_corrected_verification_pending",
+      "evidence": [
+        "src/app/(admin)/executive/page.tsx",
+        "src/app/(admin)/executive/ExecutiveOverviewPageClient.tsx"
+      ],
+      "notes": "Original SSR partial-result trigger removed by 9a30b708; add focused required-source failure and optional-source honesty proof."
+    },
+    {
+      "id": "NAV-003",
+      "severity": "P1",
+      "title": "Resident search entries keep their former facility authorization scope",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-004",
+      "severity": "P2",
+      "title": "Saved report variants cannot be run from their own Run Report link",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-005",
+      "severity": "P1",
+      "title": "Full reporting exports are built from truncated preview data",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-006",
+      "severity": "P2",
+      "title": "Executive subsection navigation excludes keyboard and hides its mobile fallback",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-007",
+      "severity": "P2",
+      "title": "The med-tech cockpit is offered to administrators whom the proxy immediately sends home",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-008",
+      "severity": "P1",
+      "title": "Standup draft creation can reserve the whole week with missing or partial metrics",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-009",
+      "severity": "P2",
+      "title": "Unified Search promises record types the repository never indexes",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-010",
+      "severity": "P2",
+      "title": "Executive date-range preferences save but never affect any KPI view",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "NAV-011",
+      "severity": "P2",
+      "title": "The overtime report counts unapproved punches while labeling the result approved",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-001",
+      "severity": "P1",
+      "title": "The med-tech shift and pass queue has no operational producer",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-002",
+      "severity": "P1",
+      "title": "The kitchen command deck has no daily service/ticket creation workflow",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-003",
+      "severity": "P1",
+      "title": "A family bulletin draft can follow the operator to a different resident",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-004",
+      "severity": "P2",
+      "title": "Staff bulletin history hides new messages once a resident exceeds 200 notes",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-005",
+      "severity": "P2",
+      "title": "Email/SMS/call delivery selections only save a label",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-006",
+      "severity": "P1",
+      "title": "Entering a historical assessment can overwrite the resident's current fall risk",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-007",
+      "severity": "P1",
+      "title": "Official discharge leaves the old bed occupied",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-008",
+      "severity": "P2",
+      "title": "The discharge workspace has no durable notice/recipient checklist",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-009",
+      "severity": "P1",
+      "title": "Controlled-substance count cards omit the resident and dose identity",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-010",
+      "severity": "P2",
+      "title": "An interrupted compliance scan becomes the latest scored scan",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-011",
+      "severity": "P2",
+      "title": "Saving one referral section erases unsaved work in the others",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-012",
+      "severity": "P2",
+      "title": "A complete reconciliation can retain its complete label after required evidence is erased",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-013",
+      "severity": "P2",
+      "title": "Medication queue urgency freezes while the cockpit remains open",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SYS-001",
+      "severity": "P1",
+      "title": "account disabling leaves database authority active",
+      "status": "source_verified_release_pending",
+      "evidence": [
+        "docs/remediation/2026-09-review/resumed-verification.json"
+      ]
+    },
+    {
+      "id": "SYS-002",
+      "severity": "P1",
+      "title": "quality view bypasses tenant and role RLS",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SYS-003",
+      "severity": "P1",
+      "title": "observation completion is not atomic or replay-safe",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SYS-004",
+      "severity": "P1",
+      "title": "direct observation writes bypass protected completion fields",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SYS-005",
+      "severity": "P1",
+      "title": "signing integration authorizes organization but not facility",
+      "status": "source_corrected_verification_pending",
+      "evidence": [
+        "supabase/functions/boldsign-send-contract/index.ts",
+        "docs/remediation/2026-09-review/SYS-001D-EDGE-AUTHORIZATION.md"
+      ],
+      "notes": "SYS001D resolves current facility before send/link and revalidates; hosted no-provider-call proof remains."
+    },
+    {
+      "id": "SYS-006",
+      "severity": "P2",
+      "title": "signing retries and webhook duplicates can corrupt local contract state",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SYS-007",
+      "severity": "P2",
+      "title": "audit export marks a truncated page as a completed export",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SYS-008",
+      "severity": "P2",
+      "title": "facility revocation handler has no routable facility parameter",
+      "status": "source_verified_release_pending",
+      "evidence": [
+        "docs/remediation/2026-09-review/resumed-verification.json"
+      ],
+      "notes": "Owned by lifecycle segment; repair routable facility parameter and verify exact HTTP route."
+    },
+    {
+      "id": "SYS-009",
+      "severity": "P2",
+      "title": "publication receipts are neither immutable nor constrained to the submit transition",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "BUS-001",
+      "severity": "P1",
+      "title": "Payment success does not confirm invoice application",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "BUS-002",
+      "severity": "P2",
+      "title": "A failed PO line save leaves an orphan header and duplicates on retry",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "BUS-003",
+      "severity": "P1",
+      "title": "Retry treats an unposted journal draft as already posted",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "BUS-004",
+      "severity": "P2",
+      "title": "Insurance review and publication stamps can describe different text",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "BUS-005",
+      "severity": "P2",
+      "title": "Certification staff-load failures are presented as an empty selector",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "BUS-006",
+      "severity": "P2",
+      "title": "Payroll exports can retain superseded approved punch values",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "DEP-001",
+      "severity": "P1",
+      "title": "Local remediation and hosted migration history are not a deployable matched baseline",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-014",
+      "severity": "P2",
+      "title": "Activity confirmation has no operational session creation or attendance journey",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "FL-015",
+      "severity": "P2",
+      "title": "The latest quality-result view returns conflicting rows for a corrected period",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SUP-001",
+      "severity": "P2",
+      "title": "Public inquiry and tour forms confirm work that was never sent or saved",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SUP-002",
+      "severity": "P2",
+      "title": "HL7 lead conversion can persist a lead while leaving its inbox item unlinked",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "SUP-003",
+      "severity": "P2",
+      "title": "Knowledge review completion can succeed without the review event",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "OPS-001",
+      "severity": "P1",
+      "title": "Manual escalation advances the task without delivering its configured SMS or voice notification",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "OPS-002",
+      "severity": "P2",
+      "title": "Maintenance work orders persist but lack assignment, worker handoff and a complete backlog",
+      "status": "open",
+      "evidence": []
+    },
+    {
+      "id": "OPS-003",
+      "severity": "P2",
+      "title": "Completing asset service does not update the asset\u2019s service lifecycle",
+      "status": "open",
+      "evidence": []
+    }
+  ],
+  "stop_boundary": "Finish SYS-001 and overlapping SYS-008 release then stop; remaining roadmap not started."
+}

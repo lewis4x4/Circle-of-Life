@@ -2,14 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/operations/auth", () => ({
   requireOperationsActor: vi.fn(),
+  revalidateOperationsActor: vi.fn(),
   actorCanMutateTask: vi.fn(),
 }));
 
 import { POST } from "./route";
-import { actorCanMutateTask, requireOperationsActor } from "@/lib/operations/auth";
+import { actorCanMutateTask, requireOperationsActor, revalidateOperationsActor } from "@/lib/operations/auth";
 
 const actor = {
   id: "00000000-0000-0000-0000-000000000001",
+  organizationId: "org-1",
   appRole: "owner",
   admin: {
     from: vi.fn(),
@@ -21,6 +23,7 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireOperationsActor).mockResolvedValue({ actor } as never);
+    vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor } as never);
   });
 
   it.each([["completed", 1, 0], ["awaiting_verification", 0, 1]] as const)("filters authorized tasks and reports %s separately", async (outcome, completedCount, awaitingCount) => {
@@ -46,6 +49,7 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     const queryChain = {
       select: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockResolvedValue({ data: loadedTasks, error: null }),
       update: vi.fn(),
       insert: vi.fn(),
@@ -93,6 +97,7 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     const queryChain = {
       select: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockResolvedValue({ data: [loadedTask], error: null }),
       update: vi.fn(),
       insert: vi.fn(),
@@ -130,6 +135,7 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     const queryChain = {
       select: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockResolvedValue({ data: [loadedTask], error: null }),
       update: vi.fn(),
       insert: vi.fn(),
@@ -153,5 +159,35 @@ describe("/api/admin/operations/tasks/bulk-complete", () => {
     expect(payload.error).toBe("Failed to complete tasks");
     expect(queryChain.update).not.toHaveBeenCalled();
     expect(queryChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("does not call the bulk RPC after owner authority is demoted", async () => {
+    const loadedTask = {
+      id: "11111111-1111-1111-1111-111111111111",
+      organization_id: "org-1",
+      facility_id: "fac-1",
+      assigned_to: null,
+      status: "pending",
+      due_at: null,
+    };
+    const queryChain = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockResolvedValue({ data: [loadedTask], error: null }),
+    };
+    actor.admin.from.mockReturnValue(queryChain as never);
+    const demotedActor = { ...actor, appRole: "caregiver" };
+    vi.mocked(revalidateOperationsActor).mockResolvedValue({ actor: demotedActor } as never);
+    vi.mocked(actorCanMutateTask).mockResolvedValue(false as never);
+
+    const response = await POST(new Request("http://localhost/api/admin/operations/tasks/bulk-complete", {
+      method: "POST",
+      body: JSON.stringify({ task_ids: [loadedTask.id] }),
+    }) as never);
+
+    expect(response.status).toBe(403);
+    expect(actor.admin.rpc).not.toHaveBeenCalled();
+    expect(actorCanMutateTask).toHaveBeenCalledWith(demotedActor, loadedTask);
   });
 });

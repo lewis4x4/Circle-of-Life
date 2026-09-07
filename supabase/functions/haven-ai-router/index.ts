@@ -38,6 +38,12 @@ import {
   loadConversationContext,
   renderConversationHistory,
 } from "../_shared/router-context.ts";
+import {
+  CurrentActorError,
+  type CurrentActorAuthorization,
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Per-token pricing (Sonnet 4.5) — used for token-budget accounting */
@@ -113,6 +119,7 @@ type PersistRouterResponseArgs = {
   parsedAnswerMetadata: ParsedAnswerMetadata;
   streamed: boolean;
   shouldAutoTitle: boolean;
+  revalidate: CurrentActorAuthorization["revalidate"];
 };
 
 type StreamFinalAnswerResult = {
@@ -525,6 +532,7 @@ async function persistRouterResponse(
     dispatchResult,
   } = args;
   const phiClass = intent.intent === "clinical_record" ? "phi" : "limited";
+  await args.revalidate();
   const [promptHash, responseHash] = await Promise.all([
     sha256Hex(`${intent.intent}::${question}`),
     sha256Hex(dispatchResult.answer),
@@ -532,6 +540,7 @@ async function persistRouterResponse(
 
   const persistAiInvocation = async (): Promise<string | null> => {
     try {
+      await args.revalidate();
       const { data: invRow, error: invErr } = await admin
         .from("ai_invocations")
         .insert({
@@ -571,6 +580,7 @@ async function persistRouterResponse(
       }
       return (invRow?.id as string | null) ?? null;
     } catch (err) {
+      if (err instanceof CurrentActorError) throw err;
       t.log({
         event: "ai_invocation_insert_threw",
         outcome: "error",
@@ -615,6 +625,7 @@ async function persistRouterResponse(
         }
       }
       if (!sessionId) {
+        await args.revalidate();
         const { data: sessRow, error: sessErr } = await admin
           .from("exec_nlq_sessions")
           .insert({
@@ -640,6 +651,7 @@ async function persistRouterResponse(
         }
       }
     } catch (err) {
+      if (err instanceof CurrentActorError) throw err;
       t.log({
         event: "session_persist_threw",
         outcome: "error",
@@ -664,6 +676,7 @@ async function persistRouterResponse(
   let assistantMessageId: string | null = null;
   if (sessionId) {
     try {
+      await args.revalidate();
       assistantMessageId = await insertTurnMessages({
         admin,
         t,
@@ -678,6 +691,7 @@ async function persistRouterResponse(
         fallbackUsed: !args.primaryIntentOnlyWhenSpeculative,
       });
     } catch (err) {
+      if (err instanceof CurrentActorError) throw err;
       t.log({
         event: "thread_message_insert_threw",
         outcome: "error",
@@ -698,6 +712,7 @@ async function persistRouterResponse(
       ? args.parsedAnswerMetadata.threadTitle ?? fallbackThreadTitle(question)
       : null;
     const now = new Date().toISOString();
+    await args.revalidate();
     const { data: updatedSession, error: updErr } = await admin
       .from("exec_nlq_sessions")
       .update({
@@ -776,6 +791,7 @@ async function refreshRollingSummary(args: {
   t: RouterLogger;
   sessionId: string;
   organizationId: string;
+  revalidate: CurrentActorAuthorization["revalidate"];
 }): Promise<void> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return;
@@ -813,6 +829,7 @@ async function refreshRollingSummary(args: {
   if (!transcript) return;
 
   try {
+    await args.revalidate();
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -845,6 +862,7 @@ async function refreshRollingSummary(args: {
       .slice(0, 500);
     if (!summary) return;
 
+    await args.revalidate();
     const { error: updateErr } = await args.admin
       .from("exec_nlq_sessions")
       .update({
@@ -870,6 +888,7 @@ async function refreshRollingSummary(args: {
       model: HAIKU_MODEL,
     });
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     args.t.log({
       event: "rolling_summary_refresh_failed",
       outcome: "error",
@@ -884,6 +903,7 @@ async function maybeRefreshRollingSummary(args: {
   t: RouterLogger;
   persistResult: PersistRouterResponseResult;
   organizationId: string;
+  revalidate: CurrentActorAuthorization["revalidate"];
 }): Promise<void> {
   const sessionId = args.persistResult.sessionId;
   if (!sessionId || args.persistResult.messageCount <= 12) return;
@@ -902,6 +922,7 @@ async function maybeRefreshRollingSummary(args: {
     t: args.t,
     sessionId,
     organizationId: args.organizationId,
+    revalidate: args.revalidate,
   });
 }
 
@@ -1013,6 +1034,8 @@ async function streamAnthropicFinalAnswer(args: {
   conversationContext: ConversationContext;
   isFirstTurn: boolean;
   onTextDelta: (text: string) => void;
+  revalidate: CurrentActorAuthorization["revalidate"];
+  fetcher?: typeof fetch;
 }): Promise<StreamFinalAnswerResult> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return { rawAnswer: "", tokensIn: 0, tokensOut: 0, ok: false };
@@ -1023,7 +1046,8 @@ async function streamAnthropicFinalAnswer(args: {
   let tokensOut = 0;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    await args.revalidate();
+    const res = await (args.fetcher ?? fetch)("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
@@ -1082,6 +1106,7 @@ async function streamAnthropicFinalAnswer(args: {
     buffer += decoder.decode();
     return { rawAnswer, tokensIn, tokensOut, ok: rawAnswer.trim().length > 0 };
   } catch (err) {
+    if (err instanceof CurrentActorError) throw err;
     console.error("[haven-ai-router] streamFinalAnswer failed", String(err));
     return { rawAnswer, tokensIn, tokensOut, ok: false };
   }
@@ -1109,7 +1134,7 @@ function emitAnswerInChunks(
   }
 }
 
-function streamResponse(args: {
+export function streamResponse(args: {
   origin: string | null;
   admin: SupabaseClient;
   t: RouterLogger;
@@ -1123,15 +1148,16 @@ function streamResponse(args: {
   dispatchResult: DispatchResult;
   conversationContext: ConversationContext;
   primaryIntentOnlyWhenSpeculative: boolean;
+  revalidate: CurrentActorAuthorization["revalidate"];
+  fetcher?: typeof fetch;
 }): Response {
-  let emittedVisibleToken = false;
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
+        let pendingVisibleText = "";
         const filteredEmitter = createMetadataAwareEmitter((content) => {
           if (!content) return;
-          emittedVisibleToken = true;
-          enqueueSse(controller, { type: "token", content });
+          pendingVisibleText += content;
         });
         const streamed = await streamAnthropicFinalAnswer({
           question: args.question,
@@ -1140,6 +1166,8 @@ function streamResponse(args: {
           conversationContext: args.conversationContext,
           isFirstTurn: args.conversationContext.messageCount === 0,
           onTextDelta: filteredEmitter.push,
+          revalidate: args.revalidate,
+          fetcher: args.fetcher,
         });
         filteredEmitter.flush();
 
@@ -1147,9 +1175,8 @@ function streamResponse(args: {
           ? streamed.rawAnswer
           : args.dispatchResult.answer;
         const parsed = parseAnswerMetadata(rawAnswer);
-        if (!emittedVisibleToken && parsed.answer) {
-          emitAnswerInChunks(controller, parsed.answer);
-        }
+        await args.revalidate();
+        const visibleAnswer = pendingVisibleText || parsed.answer;
 
         const finalResult = streamed.ok
           ? withAdditionalTokens(
@@ -1159,6 +1186,7 @@ function streamResponse(args: {
             parsed.answer,
           )
           : mergeDispatchAnswer(args.dispatchResult, parsed);
+        await args.revalidate();
         await reconcileTokenBudget(
           args.admin,
           args.t,
@@ -1181,14 +1209,18 @@ function streamResponse(args: {
           parsedAnswerMetadata: parsed,
           streamed: true,
           shouldAutoTitle: args.conversationContext.messageCount === 0,
+          revalidate: args.revalidate,
         });
         enqueueBackgroundTask(maybeRefreshRollingSummary({
           admin: args.admin,
           t: args.t,
           persistResult,
           organizationId: args.organizationId,
+          revalidate: args.revalidate,
         }));
 
+        await args.revalidate();
+        if (visibleAnswer) emitAnswerInChunks(controller, visibleAnswer);
         enqueueSse(controller, {
           type: "meta",
           session_id: persistResult.sessionId,
@@ -1204,6 +1236,15 @@ function streamResponse(args: {
         });
         enqueueSse(controller, "[DONE]");
       } catch (err) {
+        if (err instanceof CurrentActorError) {
+          enqueueSse(controller, {
+            type: "error",
+            code: "unauthorized",
+            message: "Authorization changed. Sign in again.",
+          });
+          enqueueSse(controller, "[DONE]");
+          return;
+        }
         captureException(err, {
           event: "router_stream_failed",
           organization_id: args.organizationId,
@@ -1232,7 +1273,7 @@ function streamResponse(args: {
 /*  Main handler                                                      */
 /* ------------------------------------------------------------------ */
 
-Deno.serve(async (req) => {
+export async function handleRequest(req: Request): Promise<Response> {
   const t = withTiming("haven-ai-router");
   const origin = req.headers.get("origin");
   try {
@@ -1247,39 +1288,16 @@ Deno.serve(async (req) => {
   }
 
   // --- Auth ---
-  let admin;
+  let actorAuth;
   try {
-    admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ALLOWED_ROLES });
   } catch (err) {
-    t.log({
-      event: "client_create_failed",
-      outcome: "error",
-      error_message: String(err),
-    });
-    captureException(err, { event: "router_init_failed" });
-    return routerFailureResponse(origin, "Router initialization failed");
+    t.log({ event: "auth_failed", outcome: "blocked" });
+    return currentActorErrorResponse(err, getCorsHeaders(origin));
   }
-
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-
-  let userId: string | null = null;
-  try {
-    const { data, error } = await admin.auth.getUser(token);
-    if (error || !data.user) {
-      t.log({ event: "auth_failed", outcome: "blocked" });
-      return jsonResponse({ error: "Unauthorized" }, 401, origin);
-    }
-    userId = data.user.id;
-  } catch (err) {
-    t.log({
-      event: "auth_threw",
-      outcome: "error",
-      error_message: String(err),
-    });
-    captureException(err, { event: "router_auth_failed" });
-    return routerFailureResponse(origin, "Auth check failed");
-  }
+  const { actor } = actorAuth;
+  const userId = actor.userId;
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   // --- Rate limit (per-user + per-org, KB-NEXT-03 G3) ---
   if (isRateLimited(userId)) {
@@ -1320,39 +1338,8 @@ Deno.serve(async (req) => {
 
   const routeContext = body.route ?? null;
   const moduleContext = body.module ?? null;
-  // --- Profile lookup ---
-  let role = "caregiver";
-  let organizationId: string | null = null;
-  try {
-    const { data: profile } = await admin
-      .from("user_profiles")
-      .select("app_role, organization_id")
-      .eq("id", userId)
-      .is("deleted_at", null)
-      .single();
-    role = String(profile?.app_role ?? "caregiver");
-    organizationId = (profile?.organization_id ?? null) as string | null;
-  } catch (err) {
-    t.log({
-      event: "profile_lookup_failed",
-      outcome: "error",
-      error_message: String(err),
-    });
-    captureException(err, { event: "router_profile_lookup_failed" });
-    return routerFailureResponse(origin, "Profile lookup failed");
-  }
-
-  if (!organizationId) {
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
-  if (!ALLOWED_ROLES.includes(role)) {
-    t.log({ event: "role_denied", outcome: "blocked", role });
-    return jsonResponse(
-      { error: "Insufficient permissions for Haven AI" },
-      403,
-      origin,
-    );
-  }
+  const role = actor.role;
+  const organizationId = actor.organizationId;
 
   if (isOrgRateLimited(organizationId)) {
     t.log({
@@ -1374,6 +1361,7 @@ Deno.serve(async (req) => {
   // refuse with 429 + Sentry alert. Falls open if the RPC errors out — safer
   // than blocking on infra hiccups.
   try {
+    await actorAuth.revalidate();
     const { data: budgetData, error: budgetErr } = await admin.rpc(
       "_ai_token_budget_check",
       {
@@ -1431,6 +1419,9 @@ Deno.serve(async (req) => {
       }
     }
   } catch (budgetThrew) {
+    if (budgetThrew instanceof CurrentActorError) {
+      return currentActorErrorResponse(budgetThrew, getCorsHeaders(origin));
+    }
     t.log({
       event: "budget_check_threw",
       outcome: "error",
@@ -1444,60 +1435,22 @@ Deno.serve(async (req) => {
   // the haven.accessible_facility_ids() helper. Other roles see whatever rows
   // user_facility_access grants them. This is computed once and passed into
   // dispatch / runToolLoop on every tool RPC.
-  let facilityIds: string[] = [];
-  try {
-    if (role === "owner" || role === "org_admin") {
-      const { data, error } = await admin
-        .from("facilities")
-        .select("id")
-        .eq("organization_id", organizationId)
-        .is("deleted_at", null);
-      if (error) {
-        t.log({
-          event: "facility_lookup_failed",
-          outcome: "error",
-          error_message: error.message,
-        });
-      } else {
-        facilityIds = ((data ?? []) as { id: string }[]).map((r) => r.id);
-      }
-    } else {
-      const { data, error } = await admin
-        .from("user_facility_access")
-        .select("facility_id")
-        .eq("user_id", userId)
-        .eq("organization_id", organizationId)
-        .is("revoked_at", null);
-      if (error) {
-        t.log({
-          event: "facility_lookup_failed",
-          outcome: "error",
-          error_message: error.message,
-        });
-      } else {
-        facilityIds = ((data ?? []) as { facility_id: string }[]).map((r) =>
-          r.facility_id
-        );
-      }
-    }
-  } catch (err) {
-    t.log({
-      event: "facility_lookup_threw",
-      outcome: "error",
-      error_message: String(err),
-    });
-  }
+  const facilityIds = [...actor.accessibleFacilityIds];
 
   const selectedFacilityId =
     body.facility_id && facilityIds.includes(body.facility_id)
       ? body.facility_id
       : null;
+  if (body.facility_id && !selectedFacilityId) {
+    return jsonResponse({ error: "Forbidden" }, 403, origin);
+  }
 
   // --- Classify intent (with cache) ---
   let intent: IntentClassification;
   const cacheKey = `${role}::${normalizeQuestion(question)}`;
   const cached = intentCache.get(cacheKey);
   if (cached) {
+    await actorAuth.revalidate(selectedFacilityId);
     intent = cached;
     t.log({
       event: "intent_cache_hit",
@@ -1506,9 +1459,11 @@ Deno.serve(async (req) => {
     });
   } else {
     try {
+      await actorAuth.revalidate();
       intent = await classifyIntent(question, {
         surfaceContext: routeContext ?? undefined,
         userRole: role,
+        revalidate: actorAuth.revalidate,
       });
       intentCache.set(cacheKey, intent);
       t.log({
@@ -1518,6 +1473,9 @@ Deno.serve(async (req) => {
         secondary: intent.secondary ?? null,
       });
     } catch (err) {
+      if (err instanceof CurrentActorError) {
+        return currentActorErrorResponse(err, getCorsHeaders(origin));
+      }
       t.log({
         event: "classify_threw",
         outcome: "error",
@@ -1533,6 +1491,7 @@ Deno.serve(async (req) => {
 
   // --- Dry-run path: classification-only for eval harness ---
   if (dryRun === "intent_only") {
+    await actorAuth.revalidate(selectedFacilityId);
     return jsonResponse(
       {
         ok: true,
@@ -1597,6 +1556,7 @@ Deno.serve(async (req) => {
   let dispatchResult: DispatchResult;
   let primaryIntentOnlyWhenSpeculative = true;
   try {
+    await actorAuth.revalidate(selectedFacilityId);
     dispatchResult = await dispatch({
       admin,
       intent,
@@ -1608,6 +1568,7 @@ Deno.serve(async (req) => {
       moduleContext,
       facilityIds,
       conversationContext,
+      revalidate: actorAuth.revalidate,
     });
 
     const lowConfidence = intent.confidence < SPECULATIVE_DISPATCH_THRESHOLD;
@@ -1620,6 +1581,7 @@ Deno.serve(async (req) => {
         confidence: intent.confidence,
         reasoning: "speculative_fallback_after_refusal",
       };
+      await actorAuth.revalidate(selectedFacilityId);
       const fallbackResult = await dispatch({
         admin,
         intent: fallbackIntent,
@@ -1631,6 +1593,7 @@ Deno.serve(async (req) => {
         moduleContext,
         facilityIds,
         conversationContext,
+        revalidate: actorAuth.revalidate,
       });
       if (!fallbackResult.refusal && fallbackResult.answer.length > 0) {
         dispatchResult = fallbackResult;
@@ -1638,6 +1601,9 @@ Deno.serve(async (req) => {
       }
     }
   } catch (err) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     t.log({
       event: "dispatch_threw",
       outcome: "error",
@@ -1655,6 +1621,7 @@ Deno.serve(async (req) => {
   if (dispatchResult.phiBlocked) {
     const parsed = parseAnswerMetadata(dispatchResult.answer);
     dispatchResult = mergeDispatchAnswer(dispatchResult, parsed);
+    await actorAuth.revalidate();
     await reconcileTokenBudget(admin, t, organizationId, dispatchResult);
     const persistResult = await persistRouterResponse({
       admin,
@@ -1671,12 +1638,14 @@ Deno.serve(async (req) => {
       parsedAnswerMetadata: parsed,
       streamed: false,
       shouldAutoTitle: conversationContext.messageCount === 0,
+      revalidate: actorAuth.revalidate,
     });
     enqueueBackgroundTask(maybeRefreshRollingSummary({
       admin,
       t,
       persistResult,
       organizationId,
+      revalidate: actorAuth.revalidate,
     }));
     t.log({
       event: "phi_blocked",
@@ -1684,6 +1653,7 @@ Deno.serve(async (req) => {
       intent: intent.intent,
       user_id: userId,
     });
+    await actorAuth.revalidate(selectedFacilityId);
     return jsonResponse(
       {
         ok: false,
@@ -1719,11 +1689,13 @@ Deno.serve(async (req) => {
       dispatchResult,
       conversationContext,
       primaryIntentOnlyWhenSpeculative,
+      revalidate: actorAuth.revalidate,
     });
   }
 
   const parsed = parseAnswerMetadata(dispatchResult.answer);
   dispatchResult = mergeDispatchAnswer(dispatchResult, parsed);
+  await actorAuth.revalidate();
   await reconcileTokenBudget(admin, t, organizationId, dispatchResult);
   const persistResult = await persistRouterResponse({
     admin,
@@ -1740,12 +1712,14 @@ Deno.serve(async (req) => {
     parsedAnswerMetadata: parsed,
     streamed: false,
     shouldAutoTitle: conversationContext.messageCount === 0,
+    revalidate: actorAuth.revalidate,
   });
   enqueueBackgroundTask(maybeRefreshRollingSummary({
     admin,
     t,
     persistResult,
     organizationId,
+    revalidate: actorAuth.revalidate,
   }));
 
   t.log({
@@ -1759,6 +1733,7 @@ Deno.serve(async (req) => {
     refusal: dispatchResult.refusal ?? false,
   });
 
+  await actorAuth.revalidate(selectedFacilityId);
   return jsonResponse(
     {
       ok: true,
@@ -1780,6 +1755,9 @@ Deno.serve(async (req) => {
     origin,
   );
   } catch (err) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     t.log({
       event: "router_unhandled",
       outcome: "error",
@@ -1788,4 +1766,8 @@ Deno.serve(async (req) => {
     captureException(err, { event: "router_unhandled" });
     return routerFailureResponse(origin, "Internal router error");
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handleRequest);
+}

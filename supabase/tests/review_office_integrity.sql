@@ -1,6 +1,6 @@
 BEGIN;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
-CREATE TEMP TABLE office_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() reader,gen_random_uuid() manager,gen_random_uuid() outsider,gen_random_uuid() meeting,gen_random_uuid() action,
+CREATE TEMP TABLE office_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,gen_random_uuid() reader,gen_random_uuid() reader_session,gen_random_uuid() manager,gen_random_uuid() manager_session,gen_random_uuid() outsider,gen_random_uuid() outsider_session,gen_random_uuid() meeting,gen_random_uuid() action,
  gen_random_uuid() team,gen_random_uuid() page,gen_random_uuid() file,gen_random_uuid() document,gen_random_uuid() requirement,
  f.id facility,f.organization_id org FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
@@ -23,7 +23,16 @@ INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT manager,facility,org FROM office_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT reader,facility,org FROM office_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,org FROM office_fixture;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','app_role','owner','organization_id',org,'app_metadata',jsonb_build_object('app_role','owner','organization_id',org))::text,true) FROM office_fixture;
+INSERT INTO auth.sessions(id,user_id)
+SELECT actor_session,actor FROM office_fixture
+UNION ALL SELECT reader_session,reader FROM office_fixture
+UNION ALL SELECT manager_session,manager FROM office_fixture
+UNION ALL SELECT outsider_session,outsider FROM office_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','owner','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','owner','organization_id',f.org))::text,true)
+FROM office_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 INSERT INTO public.meetings(id,organization_id,facility_id,title,scheduled_at,created_by) SELECT meeting,org,facility,'Review meeting',now(),actor FROM office_fixture;
 INSERT INTO public.workspace_pages(id,organization_id,owner_user_id,title,body) SELECT page,org,actor,'Original page','Original body' FROM office_fixture;
 INSERT INTO public.workspace_files(id,organization_id,owner_user_id,name,original_filename,storage_path) SELECT file,org,actor,'Review file','review.txt',actor||'/'||file||'/review.txt' FROM office_fixture;
@@ -35,7 +44,11 @@ GRANT SELECT ON public.user_profiles,public.facilities,public.user_facility_acce
 GRANT SELECT,UPDATE ON public.meetings TO service_role;
 GRANT SELECT,INSERT ON public.operation_task_instances,public.meeting_action_items TO service_role;
 GRANT SELECT ON office_fixture TO service_role;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',manager,'role','authenticated','app_role','manager','organization_id',org,'app_metadata',jsonb_build_object('app_role','manager','organization_id',org))::text,true) FROM office_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.manager,'session_id',f.manager_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','manager','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','manager','organization_id',f.org))::text,true)
+FROM office_fixture f JOIN public.user_profiles p ON p.id=f.manager;
 SET LOCAL ROLE service_role;
 DO $$ DECLARE f record; created_action uuid:=gen_random_uuid(); BEGIN SELECT * INTO f FROM office_fixture;
  PERFORM public.create_meeting_action(created_action,f.meeting,'Authorized manager action',f.manager,current_date,f.manager);
@@ -45,7 +58,11 @@ DO $$ DECLARE f record; created_action uuid:=gen_random_uuid(); BEGIN SELECT * I
 END $$;
 RESET ROLE;
 DO $$ BEGIN IF has_function_privilege('authenticated','public.create_meeting_action(uuid,uuid,text,uuid,date,uuid)','EXECUTE') THEN RAISE EXCEPTION 'Browser may forge meeting action actor'; END IF; END $$;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','app_role','owner','organization_id',org,'app_metadata',jsonb_build_object('app_role','owner','organization_id',org))::text,true) FROM office_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','owner','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','owner','organization_id',f.org))::text,true)
+FROM office_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 
 DO $$ DECLARE f record; BEGIN SELECT * INTO f FROM office_fixture;
  PERFORM public.create_meeting_action(f.action,f.meeting,'Review action',f.actor,'2026-09-06',f.actor);
@@ -100,7 +117,11 @@ DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM public.workspace_files WHERE id=(SELECT 
 RESET ROLE;
 GRANT SELECT ON public.document_acknowledgment_requirements TO authenticated;
 GRANT SELECT,INSERT ON public.document_acknowledgments TO authenticated;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',reader,'role','authenticated','app_role','caregiver','organization_id',org,'app_metadata',jsonb_build_object('app_role','caregiver','organization_id',org))::text,true) FROM office_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.reader,'session_id',f.reader_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','caregiver','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','caregiver','organization_id',f.org))::text,true)
+FROM office_fixture f JOIN public.user_profiles p ON p.id=f.reader;
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.document_acknowledgment_requirements WHERE id=(SELECT requirement FROM office_fixture) AND document_content_snapshot='Issued version') THEN RAISE EXCEPTION 'Floor reader cannot reach issued content'; END IF;

@@ -88,6 +88,7 @@ export const M17_PROMOTER: ModulePromoter = {
         if (valuesDiffer(beforeMetadata, afterMetadata)) {
           facilitiesUpdated = 1;
           if (!ctx.dry_run) {
+            await ctx.revalidate();
             const { error } = await ctx.admin.from("facilities").update({
               launch_profile_metadata: afterMetadata,
               updated_by: ctx.actor_user_id,
@@ -164,6 +165,7 @@ export const M17_PROMOTER: ModulePromoter = {
         if (ctx.dry_run) {
           docsCreated += 1;
         } else {
+          await ctx.revalidate();
           const { data, error } = await ctx.admin.from("facility_documents").insert(payload).select("id").single();
           if (error || !data?.id) throw new Error(`M17 facility_document insert failed for ${filename}: ${error?.message ?? "missing id"}`);
           docsCreated += 1;
@@ -205,6 +207,7 @@ export const M17_PROMOTER: ModulePromoter = {
         if (payloadDiffers(existing, updatePayload)) {
           docsUpdated += 1;
           if (!ctx.dry_run) {
+            await ctx.revalidate();
             const { error } = await ctx.admin.from("facility_documents").update(updatePayload).eq("id", existing.id);
             if (error) throw new Error(`M17 facility_document update failed for ${filename}: ${error.message}`);
             await insertPromotionLink(ctx, {

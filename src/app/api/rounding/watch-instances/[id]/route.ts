@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 
 type WatchAction = "approve" | "pause" | "resume" | "end" | "cancel";
 
@@ -31,12 +31,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can manage watch instances" }, { status: 403 });
   }
@@ -59,11 +57,13 @@ export async function PATCH(
   }
 
   const watchInstanceId = (await params).id;
+  const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: watch, error: watchError } = await context.admin
     .from("resident_watch_instances")
     .select("id, organization_id, entity_id, facility_id, resident_id, protocol_id, status, starts_at, ends_at")
     .eq("id", watchInstanceId)
     .eq("organization_id", context.organizationId)
+    .in("facility_id", accessibleFacilityIds)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -136,11 +136,19 @@ export async function PATCH(
       break;
   }
 
-  const { error: updateError } = await context.admin
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId: watch.facility_id });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+  patch.updated_by = context.userId;
+  if (action === "approve") patch.approved_by = context.userId;
+  if (action === "end" || action === "cancel") patch.ended_by = context.userId;
+
+  const { error: updateError } = await context.actor.client
     .from("resident_watch_instances")
     .update(patch)
     .eq("id", watch.id)
-    .eq("organization_id", context.organizationId);
+    .eq("organization_id", context.organizationId)
+    .eq("facility_id", watch.facility_id);
 
   if (updateError) {
     logError("rounding.watch-instances", updateError, { action: "update_watch", watchInstanceId: watch.id, watchAction: action });
@@ -149,11 +157,12 @@ export async function PATCH(
 
   let excusedTaskCount = 0;
   if (updateFutureTasks) {
-    const { data: openTasks, error: openTasksError } = await context.admin
+    const { data: openTasks, error: openTasksError } = await context.actor.client
       .from("resident_observation_tasks")
       .select("id, status")
       .eq("watch_instance_id", watch.id)
       .eq("organization_id", context.organizationId)
+      .eq("facility_id", watch.facility_id)
       .is("deleted_at", null)
       .gte("due_at", now);
 
@@ -165,7 +174,7 @@ export async function PATCH(
         .map((task) => task.id);
 
       if (taskIdsToExcuse.length > 0) {
-        const { error: taskUpdateError } = await context.admin
+        const { error: taskUpdateError } = await context.actor.client
           .from("resident_observation_tasks")
           .update({
             status: "excused",
@@ -174,7 +183,8 @@ export async function PATCH(
             updated_by: context.userId,
           })
           .in("id", taskIdsToExcuse)
-          .eq("organization_id", context.organizationId);
+          .eq("organization_id", context.organizationId)
+          .eq("facility_id", watch.facility_id);
 
         if (taskUpdateError) {
           logError("rounding.watch-instances", taskUpdateError, { action: "excuse_future_tasks", watchInstanceId: watch.id, taskCount: taskIdsToExcuse.length });
@@ -185,7 +195,7 @@ export async function PATCH(
     }
   }
 
-  const { error: eventError } = await context.admin
+  const { error: eventError } = await context.actor.client
     .from("resident_watch_events")
     .insert({
       organization_id: context.organizationId,

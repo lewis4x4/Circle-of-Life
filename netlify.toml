@@ -1,3 +1,7 @@
 [build]
   command = "npm run build"
   publish = ".next"
+
+[build.environment]
+  # The Next TypeScript worker exceeds the default ~2 GiB V8 heap.
+  NODE_OPTIONS = "--max-old-space-size=4096"

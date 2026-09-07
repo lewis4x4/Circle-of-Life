@@ -68,24 +68,18 @@ describe("HavenAuthProvider", () => {
     const currentSession = sessionFor("current-user", "current-organization");
     let onAuthStateChange: (() => void) | undefined;
 
-    const profileQuery = {
-      select: vi.fn(),
-      eq: vi.fn(),
-      is: vi.fn(),
-      maybeSingle: vi.fn().mockResolvedValue({
+    const rpc = vi.fn().mockResolvedValue({
         data: {
+          user_id: "current-user",
           app_role: "facility_admin",
           organization_id: "current-organization",
           full_name: "Current User",
           avatar_url: null,
-          organizations: { name: "Current Organization" },
+          organization_name: "Current Organization",
+          is_managed: true,
         },
         error: null,
-      }),
-    };
-    profileQuery.select.mockReturnValue(profileQuery);
-    profileQuery.eq.mockReturnValue(profileQuery);
-    profileQuery.is.mockReturnValue(profileQuery);
+      });
 
     const supabase = {
       auth: {
@@ -98,7 +92,7 @@ describe("HavenAuthProvider", () => {
           return { data: { subscription: { unsubscribe: vi.fn() } } };
         }),
       },
-      from: vi.fn(() => profileQuery),
+      rpc,
     };
     authMocks.createClient.mockReturnValue(supabase);
 
@@ -137,11 +131,36 @@ describe("HavenAuthProvider", () => {
       await staleSession.promise;
     });
 
-    expect(supabase.from).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledTimes(1);
     expect(authMocks.primeClientRoleContext).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("user-id")).toHaveTextContent("current-user");
     expect(screen.getByTestId("organization-id")).toHaveTextContent(
       "current-organization",
     );
+  });
+
+  it("clears a session whose current actor no longer resolves", async () => {
+    const supabase = {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({
+          data: { session: sessionFor("stale-user", "stale-organization") },
+          error: null,
+        }),
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+      },
+      rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    authMocks.createClient.mockReturnValue(supabase);
+
+    render(
+      <HavenAuthProvider>
+        <AuthStateProbe />
+      </HavenAuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("false"));
+    expect(screen.getByTestId("user-id")).toHaveTextContent("none");
+    expect(screen.getByTestId("organization-id")).toHaveTextContent("none");
+    expect(authMocks.primeClientRoleContext).not.toHaveBeenCalled();
   });
 });

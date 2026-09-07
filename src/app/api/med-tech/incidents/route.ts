@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { requireCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 type Body = {
   shiftId?: string;
 };
 
-const ALLOWED_ROLES = new Set(["owner", "org_admin", "facility_admin", "nurse", "caregiver", "med_tech"]);
+const ALLOWED_ROLES = ["owner", "org_admin", "facility_admin", "nurse", "caregiver", "med_tech"] as const;
 
 function incidentPrefix(facilityName: string, settings: Record<string, unknown> | null | undefined) {
   const fromSettings = typeof settings?.incident_report_prefix === "string" ? settings.incident_report_prefix.trim() : "";
@@ -17,16 +16,6 @@ function incidentPrefix(facilityName: string, settings: Record<string, unknown> 
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
-  }
-
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -39,36 +28,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "shiftId is required" }, { status: 400 });
   }
 
-  const admin = createServiceRoleClient();
-
-  const { data: profile, error: profileError } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role, full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError || !profile?.organization_id || !ALLOWED_ROLES.has(profile.app_role)) {
-    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: ALLOWED_ROLES,
+    scope: "med-tech.incidents",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   const { data: shift, error: shiftError } = await admin
     .from("med_tech_shifts" as never)
     .select("id, user_id, organization_id, facility_id")
     .eq("id", shiftId)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
   const safeShift = shift as { id: string; user_id: string; organization_id: string; facility_id: string } | null;
-  if (shiftError || !safeShift || safeShift.user_id !== user.id || safeShift.organization_id !== profile.organization_id) {
+  if (shiftError || !safeShift || safeShift.user_id !== actor.id) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
   const facilityId = safeShift.facility_id;
   const hasFacilityAccess = await serviceRoleUserHasFacilityAccess(admin, {
-    userId: user.id,
+    userId: actor.id,
     facilityId,
-    organizationId: profile.organization_id,
-    appRole: profile.app_role,
+    organizationId: actor.organizationId,
   });
   if (!hasFacilityAccess) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -81,7 +66,7 @@ export async function POST(request: Request) {
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (facilityError || !facility || facility.organization_id !== profile.organization_id) {
+  if (facilityError || !facility || facility.organization_id !== actor.organizationId) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
@@ -104,7 +89,7 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
   if (latestIncident.error) {
-    return NextResponse.json({ ok: false, error: latestIncident.error.message }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Could not generate incident number" }, { status: 500 });
   }
 
   const currentLast = (() => {
@@ -121,7 +106,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     facilityId,
-    organizationId: profile.organization_id,
+    organizationId: actor.organizationId,
     incidentNumber,
   });
 }

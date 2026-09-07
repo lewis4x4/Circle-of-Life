@@ -7,18 +7,30 @@ import type { Database } from "@/types/database";
  */
 export async function serviceRoleUserHasFacilityAccess(
   admin: SupabaseClient<Database>,
-  args: { userId: string; facilityId: string; organizationId: string; appRole: string | null },
+  args: { userId: string; facilityId: string; organizationId: string; appRole?: string | null },
 ): Promise<boolean> {
-  const role = args.appRole ?? "";
+  const { data: profile } = await admin
+    .from("user_profiles")
+    .select("app_role")
+    .eq("id", args.userId)
+    .eq("organization_id", args.organizationId)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!profile?.app_role) return false;
+
+  const { data: facility } = await admin
+    .from("facilities")
+    .select("id")
+    .eq("id", args.facilityId)
+    .eq("organization_id", args.organizationId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!facility) return false;
+
+  const role = profile.app_role;
   if (role === "owner" || role === "org_admin") {
-    const { data } = await admin
-      .from("facilities")
-      .select("id")
-      .eq("id", args.facilityId)
-      .eq("organization_id", args.organizationId)
-      .is("deleted_at", null)
-      .maybeSingle();
-    return !!data;
+    return true;
   }
   const { data } = await admin
     .from("user_facility_access")

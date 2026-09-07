@@ -169,6 +169,7 @@ export const M2_PROMOTER: ModulePromoter = {
     }
 
     if (!ctx.dry_run && Object.keys(patch).length > 0) {
+      await ctx.revalidate();
       const { error: updateError } = await ctx.admin
         .from("facilities")
         .update({ ...patch, updated_by: ctx.actor_user_id })

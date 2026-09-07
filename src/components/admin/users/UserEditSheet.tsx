@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, type ElementType } from "react";
+import { useState, useEffect, useCallback, useRef, type ElementType } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ import { FacilityAccessManager } from "./FacilityAccessManager";
 import { UserStatusBadge } from "./UserStatusBadge";
 import { canActorHardDeleteTarget, canActorManageTarget, ROLE_LABELS } from "@/lib/rbac";
 import { useAuth } from "@/hooks/useAuth";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { LifecycleRequestClient, type PendingLifecycleRequest } from "@/lib/admin/lifecycle-request";
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
@@ -76,6 +78,7 @@ interface UserData {
     facility_id: string;
     facility_name: string;
     is_primary: boolean;
+    revoked_at?: string | null;
   }>;
 }
 
@@ -86,11 +89,6 @@ interface AuditEntry {
   changes: { before: Record<string, unknown>; after: Record<string, unknown> };
   reason: string | null;
   created_at: string;
-}
-
-interface HardDeleteReference {
-  table: string;
-  column: string;
 }
 
 const TABS: { key: Tab; label: string; icon: ElementType }[] = [
@@ -122,6 +120,10 @@ function ErrorAlert({ children, className }: { children: string; className?: str
 
 export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   const { user: currentUser } = useAuth();
+  const { availableFacilities } = useFacilityStore();
+  const [pendingLifecycle, setPendingLifecycle] = useState<PendingLifecycleRequest | null>(null);
+  const lifecycleClient = useRef<LifecycleRequestClient | null>(null);
+  if (!lifecycleClient.current) lifecycleClient.current = new LifecycleRequestClient(setPendingLifecycle);
   const currentRole = (currentUser?.app_metadata?.app_role as string) ?? "";
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [user, setUser] = useState<UserData | null>(null);
@@ -135,8 +137,10 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   const [hardDeleteConfirmEmail, setHardDeleteConfirmEmail] = useState("");
   const [isHardDeleting, setIsHardDeleting] = useState(false);
   const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
-  const [hardDeleteReferences, setHardDeleteReferences] = useState<HardDeleteReference[]>([]);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [restoreFacilityIds, setRestoreFacilityIds] = useState<string[]>([]);
+  const [restorePrimaryFacilityId, setRestorePrimaryFacilityId] = useState("");
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [resetPasswordMode, setResetPasswordMode] = useState<ResetPasswordMode>("email");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -162,17 +166,20 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     user && currentUser?.id !== user.id && canActorHardDeleteTarget(currentRole, user.app_role),
   );
   const hardDeleteDisabledReason = !user
-    ? "Load the user before permanently deleting."
+    ? "Load the user before retiring the login."
     : currentRole !== "owner"
-      ? "Only owners can permanently delete users."
+      ? "Only owners can retire users."
       : user.app_role === "owner" || user.app_role === "org_admin"
-        ? "Cannot permanently delete owners or org admins."
+        ? "Cannot retire owners or org admins."
         : currentUser?.id === user.id
-          ? "Cannot permanently delete your own account."
+          ? "Cannot retire your own account."
           : "";
   const hardDeleteEmailMatches = Boolean(
     user && normalizeEmail(hardDeleteConfirmEmail) === normalizeEmail(user.email),
   );
+  const reactivationFacilityCandidates = availableFacilities.map((facility) => ({
+    facility_id: facility.id, facility_name: facility.name,
+  }));
   const canResetPassword = Boolean(
     user &&
       !user.deleted_at &&
@@ -193,11 +200,13 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
       setPhone(data.phone ?? "");
       setJobTitle(data.job_title ?? "");
       setAppRole(data.app_role);
-      setFacilityIds(data.facilities.map((f) => f.facility_id));
-      const primary = data.facilities.find((f) => f.is_primary);
+      setFacilityIds(data.facilities.filter((f) => !f.revoked_at).map((f) => f.facility_id));
+      const primary = data.facilities.find((f) => !f.revoked_at && f.is_primary);
       setPrimaryFacilityId(primary?.facility_id ?? "");
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load user");
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -215,6 +224,20 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
       .then((json) => setAuditEntries(json.data ?? []))
       .catch(() => setAuditEntries([]));
   }, [activeTab, userId]);
+
+  const retryPendingLifecycle = async () => {
+    const pending = lifecycleClient.current?.pending;
+    if (!pending) return;
+    setIsSaving(true);
+    try {
+      const response = await lifecycleClient.current!.request(pending.path, { method: pending.method, body: pending.body });
+      if (!response.ok) throw new Error("The account change could not be reconciled. Review current access before retrying.");
+      if (response.status === 202) toast.info("Account synchronization is still pending.");
+      else { toast.success("Account change confirmed."); await fetchUser(); }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Account change is still unconfirmed.");
+    } finally { setIsSaving(false); }
+  };
 
   // Save profile
   const handleSaveProfile = async () => {
@@ -249,18 +272,54 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     setIsSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await lifecycleClient.current!.request(`/api/admin/users/${userId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ app_role: appRole }),
       });
       if (!res.ok) {
         const json = await res.json();
         throw new Error(json.error ?? "Failed to update role");
       }
-      await fetchUser();
+      if (res.status === 202) toast.info("Role synchronization is pending. Use Retry pending change to check the same request.");
+      else await fetchUser();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save role");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveFacilities = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      const current = user.facilities.filter((facility) => !facility.revoked_at);
+      const removed = current.filter((facility) => !facilityIds.includes(facility.facility_id));
+      const added = facilityIds.filter((id) => !current.some((facility) => facility.facility_id === id));
+      // Grant selected replacement scope first so a facility transfer does not
+      // accidentally disable a user's account by removing its final grant.
+      const primaryChanged = primaryFacilityId && !added.includes(primaryFacilityId)
+        && !current.some((facility) => facility.facility_id === primaryFacilityId && facility.is_primary);
+      for (const facilityId of [...added, ...(primaryChanged ? [primaryFacilityId] : [])]) {
+        const response = await lifecycleClient.current!.request(`/api/admin/users/${userId}/facility-access`, {
+          method: "POST",
+          body: JSON.stringify({ facility_id: facilityId, is_primary: facilityId === primaryFacilityId }),
+        });
+        if (response.status === 202) throw new Error("Facility synchronization is pending. Review current access before continuing.");
+        if (!response.ok) throw new Error((await response.json()).error ?? "Facility access could not be granted");
+      }
+      for (const facility of removed) {
+        const response = await lifecycleClient.current!.request(`/api/admin/users/${userId}/facility-access/${facility.facility_id}`, {
+          method: "DELETE",
+        });
+        if (response.status === 202) throw new Error("Facility access was revoked; sign-in synchronization is pending. Review current access before continuing.");
+        if (!response.ok) throw new Error((await response.json()).error ?? "Facility access could not be revoked");
+      }
+      toast.success("Facility access saved.");
+      await fetchUser();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Facility access update failed. Review current access before retrying.");
     } finally {
       setIsSaving(false);
     }
@@ -270,13 +329,13 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   const handleDeactivate = async () => {
     setIsDeactivating(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await lifecycleClient.current!.request(`/api/admin/users/${userId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: deactivateReason || undefined }),
       });
       if (!res.ok) throw new Error("Failed to deactivate");
-      toast.success("Deactivated.");
+      if (res.status === 202) toast.info("Access disabled. Sign-in synchronization is pending.");
+      else toast.success("Deactivated.");
       setShowDeactivateDialog(false);
       onClose();
     } catch (err) {
@@ -289,14 +348,21 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
   const handleReactivate = async () => {
     setIsReactivating(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/reactivate`, {
+      const res = await lifecycleClient.current!.request(`/api/admin/users/${userId}/reactivate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Reactivated via admin UI" }),
+        body: JSON.stringify({
+          reason: "Reactivated via admin UI",
+          facilities: restoreFacilityIds.map((facilityId) => ({
+            facility_id: facilityId,
+            is_primary: facilityId === restorePrimaryFacilityId,
+          })),
+        }),
       });
       if (!res.ok) throw new Error("Failed to reactivate");
       await fetchUser();
-      toast.success("Reactivated.");
+      if (res.status === 202) toast.info("Reactivation is pending synchronization. Access has not been restored.");
+      else toast.success("Reactivated.");
+      if (res.status !== 202) setShowReactivateDialog(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to reactivate");
     } finally {
@@ -304,10 +370,19 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     }
   };
 
+  const openReactivateDialog = () => {
+    setRestoreFacilityIds([]);
+    setRestorePrimaryFacilityId("");
+    if (["owner", "org_admin"].includes(user?.app_role ?? "")) {
+      void handleReactivate();
+      return;
+    }
+    setShowReactivateDialog(true);
+  };
+
   const openHardDeleteDialog = () => {
     setHardDeleteConfirmEmail("");
     setHardDeleteError(null);
-    setHardDeleteReferences([]);
     setShowHardDeleteDialog(true);
   };
 
@@ -315,37 +390,30 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     setShowHardDeleteDialog(false);
     setHardDeleteConfirmEmail("");
     setHardDeleteError(null);
-    setHardDeleteReferences([]);
   };
 
   const handleHardDelete = async () => {
-    if (!user || !hardDeleteEmailMatches || hardDeleteReferences.length > 0) return;
+    if (!user || !hardDeleteEmailMatches) return;
     setIsHardDeleting(true);
     setHardDeleteError(null);
-    setHardDeleteReferences([]);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/hard-delete`, {
+      const res = await lifecycleClient.current!.request(`/api/admin/users/${userId}/hard-delete`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirm_email: hardDeleteConfirmEmail }),
       });
       const json = await res.json().catch(() => ({}));
 
-      if (res.status === 409 && json.reason === "has_history") {
-        setHardDeleteReferences(Array.isArray(json.references) ? json.references : []);
-        return;
-      }
-
       if (!res.ok) {
         const reason = typeof json.reason === "string" ? json.reason.replace(/_/g, " ") : null;
-        throw new Error(typeof json.error === "string" ? json.error : reason ?? "Failed to permanently delete user");
+        throw new Error(typeof json.error === "string" ? json.error : reason ?? "Failed to retire user");
       }
 
-      toast.success("User permanently deleted");
+      if (res.status === 202) toast.info("Access retired. Sign-in synchronization is pending; identity and history remain.");
+      else toast.success("Login retired; identity and history retained");
       closeHardDeleteDialog();
       onClose();
     } catch (err) {
-      setHardDeleteError(err instanceof Error ? err.message : "Failed to permanently delete user");
+      setHardDeleteError(err instanceof Error ? err.message : "Failed to retire user");
     } finally {
       setIsHardDeleting(false);
     }
@@ -431,7 +499,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
         <Button
           type="button"
           variant="default"
-          onClick={handleReactivate}
+          onClick={openReactivateDialog}
           disabled={isReactivating}
           className="min-h-11 shrink-0"
         >
@@ -445,9 +513,9 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
     <div className={cn(bordered && "border-t border-destructive/20 pt-4")}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <span className="block text-sm font-medium text-destructive">Permanently delete this user.</span>
+          <span className="block text-sm font-medium text-destructive">Retire login for this user.</span>
           <p className="text-xs text-muted-foreground">
-            Removes the user from Haven and Supabase Auth only when no protected clinical, financial, audit, or admin history exists.
+            Disables sign-in and revokes facility access. The identity and all history remain. An authorized administrator can restore access explicitly.
           </p>
         </div>
         {canHardDeleteTarget ? (
@@ -457,7 +525,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
             onClick={openHardDeleteDialog}
             className="min-h-11 shrink-0"
           >
-            Permanently delete
+            Retire login
           </Button>
         ) : (
           <TooltipProvider delay={250}>
@@ -471,7 +539,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                       disabled
                       className="min-h-11 shrink-0"
                     >
-                      Permanently delete
+                      Retire login
                     </Button>
                   </span>
                 }
@@ -517,6 +585,21 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
           </button>
         </SheetHeader>
 
+        {pendingLifecycle && (
+          <div role="status" className="mx-6 my-3 rounded-lg border p-3 text-sm">
+            {pendingLifecycle.terminal
+              ? "The account change could not complete. Review current access before making another change."
+              : "An account change is pending or unconfirmed. Retry uses the original request."}
+            <Button type="button" variant="outline" onClick={pendingLifecycle.terminal ? async () => {
+              if (await fetchUser()) {
+                lifecycleClient.current!.acknowledgeTerminal();
+                setError(null);
+              }
+            } : retryPendingLifecycle} disabled={isSaving} className="mt-2 block">
+              {pendingLifecycle.terminal ? "Review current access" : "Retry pending change"}
+            </Button>
+          </div>
+        )}
         {user?.identity_sync_status === "retry_required" ? (
           <div role="alert" className="mx-6 mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
             Account identity needs synchronization. Review sign-in email and role, and retry the account change that failed before confirming access.
@@ -604,12 +687,17 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                   {isDeactivated ? (
                     <DeactivatedBanner />
                   ) : (
+                    <div className="space-y-4">
                     <FacilityAccessManager
                       selected={facilityIds}
                       onChange={setFacilityIds}
                       primaryId={primaryFacilityId}
                       onPrimaryChange={setPrimaryFacilityId}
                     />
+                    {canManageTarget && <Button onClick={handleSaveFacilities} disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save facility access"}
+                    </Button>}
+                    </div>
                   )}
                 </TabsContent>
 
@@ -671,7 +759,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                         <div className="space-y-1">
                           <span className="block text-sm">Deactivate this user. They will lose access immediately.</span>
                           <p className="text-xs text-muted-foreground">
-                            Deactivates the user — they stop appearing in Haven and are signed out. Their history stays in audit logs.
+                            Deactivates the user — their existing Haven sessions lose access. Their history stays in audit logs.
                           </p>
                         </div>
                         {canManageTarget && (
@@ -707,7 +795,7 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
           <DialogHeader>
             <DialogTitle>Deactivate user?</DialogTitle>
             <DialogDescription>
-              Deactivates the user — they stop appearing in Haven and are signed out. Their history stays in audit logs. Use Permanently delete for test or family accounts you actually want gone.
+              Deactivates the user — their existing Haven sessions lose access. Their identity and all history remain. An authorized administrator can restore access explicitly.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -744,28 +832,67 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Restore facility access</DialogTitle>
+            <DialogDescription>
+              Reactivation does not silently restore old memberships. Select the facilities this user should regain now.
+            </DialogDescription>
+          </DialogHeader>
+          {reactivationFacilityCandidates.length === 0 && (
+            <ErrorAlert>No current facilities are available. Refresh facility access before reactivating this user.</ErrorAlert>
+          )}
+          <div className="max-h-72 space-y-2 overflow-y-auto">
+            {reactivationFacilityCandidates.map((facility) => {
+              const checked = restoreFacilityIds.includes(facility.facility_id);
+              return (
+                <label key={facility.facility_id} className="flex items-center gap-3 rounded-md border p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(event) => {
+                      const next = event.target.checked
+                        ? [...restoreFacilityIds, facility.facility_id]
+                        : restoreFacilityIds.filter((id) => id !== facility.facility_id);
+                      setRestoreFacilityIds(next);
+                      if (!next.includes(restorePrimaryFacilityId)) setRestorePrimaryFacilityId(next[0] ?? "");
+                    }}
+                  />
+                  <span className="min-w-0 flex-1">{facility.facility_name}</span>
+                  {checked && (
+                    <input
+                      type="radio"
+                      name="reactivate-primary-facility"
+                      aria-label={`Make ${facility.facility_name} primary`}
+                      checked={restorePrimaryFacilityId === facility.facility_id}
+                      onChange={() => setRestorePrimaryFacilityId(facility.facility_id)}
+                    />
+                  )}
+                </label>
+              );
+            })}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={() => setShowReactivateDialog(false)} disabled={isReactivating}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleReactivate} disabled={isReactivating || restoreFacilityIds.length === 0 || !restorePrimaryFacilityId}>
+              {isReactivating ? "Reactivating..." : "Reactivate with selected access"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showHardDeleteDialog} onOpenChange={(open) => (open ? setShowHardDeleteDialog(true) : closeHardDeleteDialog())}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Permanently delete {user?.full_name ?? "this user"}?</DialogTitle>
+            <DialogTitle>Retire login for {user?.full_name ?? "this user"}?</DialogTitle>
             <DialogDescription>
-              This cannot be undone. The user record will be removed from Haven and Supabase Auth. Audit logs of this action will remain.
+              Sign-in and facility access will be disabled. The identity, clinical records, staff records, and audit history remain. An authorized administrator can reactivate the account and select the access to restore.
             </DialogDescription>
           </DialogHeader>
 
-          {hardDeleteReferences.length > 0 ? (
-            <div className="space-y-3 rounded-lg border border-warning/30 bg-warning/10 p-3">
-              <p className="text-sm font-medium text-warning">This user has protected history and cannot be permanently deleted.</p>
-              <p className="text-sm text-muted-foreground">Use Deactivate instead so clinical, financial, audit, and admin records remain attributable.</p>
-              <ul className="max-h-48 space-y-1 overflow-y-auto text-sm text-muted-foreground">
-                {hardDeleteReferences.map((ref) => (
-                  <li key={`${ref.table}.${ref.column}`} className="font-mono text-xs">
-                    {ref.table}.{ref.column}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
             <div className="space-y-3">
               <label htmlFor="hard-delete-confirm-email" className="text-sm font-medium">
                 Type <strong>{user?.email}</strong> to confirm:
@@ -778,7 +905,6 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                 autoComplete="off"
               />
             </div>
-          )}
 
           {hardDeleteError && <ErrorAlert>{hardDeleteError}</ErrorAlert>}
 
@@ -790,9 +916,8 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
               disabled={isHardDeleting}
               className="min-h-11"
             >
-              {hardDeleteReferences.length > 0 ? "Close" : "Cancel"}
+              Cancel
             </Button>
-            {hardDeleteReferences.length === 0 && (
               <Button
                 type="button"
                 variant="destructive"
@@ -800,9 +925,8 @@ export function UserEditSheet({ userId, onClose }: UserEditSheetProps) {
                 disabled={isHardDeleting || !hardDeleteEmailMatches}
                 className="min-h-11"
               >
-                {isHardDeleting ? "Deleting..." : "Permanently delete"}
+                {isHardDeleting ? "Retiring..." : "Retire login"}
               </Button>
-            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

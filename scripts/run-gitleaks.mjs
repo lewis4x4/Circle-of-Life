@@ -62,6 +62,58 @@ function gitleaksArgs() {
   return base;
 }
 
+const GENERIC_API_KEY_PROBE =
+  'const apiKey = "zQ7mN2vR8xP4kT9sW6yC3dF5gH1jL0bA";\n';
+
+function detectorProbeArgs(configPath) {
+  return [
+    "detect",
+    "--pipe",
+    "--config",
+    configPath,
+    "--enable-rule",
+    "generic-api-key",
+    "--report-format",
+    "json",
+    "--report-path",
+    "-",
+    "--exit-code",
+    "73",
+    "--no-banner",
+    "--no-color",
+  ];
+}
+
+function assertGenericApiKeyDetector(useBinary) {
+  const result = useBinary
+    ? spawnSync(
+        "gitleaks",
+        detectorProbeArgs(path.join(root, ".gitleaks.toml")),
+        { cwd: root, encoding: "utf8", input: GENERIC_API_KEY_PROBE },
+      )
+    : spawnSync(
+        "docker",
+        [
+          "run",
+          "--rm",
+          "-i",
+          "-v",
+          `${root}:/repo`,
+          "-w",
+          "/repo",
+          "zricethezav/gitleaks:v8.21.2",
+          ...detectorProbeArgs("/repo/.gitleaks.toml"),
+        ],
+        { cwd: root, encoding: "utf8", input: GENERIC_API_KEY_PROBE },
+      );
+  const report = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  if (result.status !== 73 || !report.includes('"RuleID": "generic-api-key"')) {
+    console.error("[gitleaks] FAIL: generic-api-key detector regression probe was not detected");
+    process.exit(1);
+  }
+  console.log("[gitleaks] detector regression PASS: generic-api-key remains active");
+}
+
 function runGitleaksBinary() {
   return spawnSync("gitleaks", gitleaksArgs(), {
     encoding: "utf8",
@@ -123,6 +175,8 @@ function main() {
     console.log("[gitleaks] SKIP: install gitleaks or start Docker to enable secret scanning");
     process.exit(0);
   }
+
+  assertGenericApiKeyDetector(bin);
 
   const r = bin ? runGitleaksBinary() : runGitleaksDocker();
   if (r.status !== 0) {

@@ -44,19 +44,10 @@ export default function UserManagementPage() {
     }
   }, []);
 
-  const handleReactivate = useCallback(async (userId: string) => {
-    if (!confirm("Reactivate this user?")) return;
-    try {
-      const res = await fetch(`/api/admin/users/${userId}/reactivate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Reactivated via admin UI" }),
-      });
-      if (!res.ok) throw new Error("Failed to reactivate");
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reactivate user");
-    }
+  const handleReactivate = useCallback((userId: string) => {
+    // Reactivation requires an explicit facility-restoration choice, which is
+    // collected in the edit sheet rather than silently restoring old grants.
+    setSelectedUserId(userId);
   }, []);
 
   return (
@@ -113,6 +104,7 @@ export default function UserManagementPage() {
         {/* Edit Sheet */}
         {selectedUserId && (
           <UserEditSheet
+            key={selectedUserId}
             userId={selectedUserId}
             onClose={handleUserUpdated}
           />

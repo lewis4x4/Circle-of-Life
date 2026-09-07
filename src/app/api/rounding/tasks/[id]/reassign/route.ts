@@ -1,22 +1,29 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 
 type Body = {
   newStaffId?: string;
   reason?: string;
 };
 
+const REASSIGNABLE_STATUSES = new Set([
+  "upcoming",
+  "due_soon",
+  "due_now",
+  "overdue",
+  "critically_overdue",
+  "reassigned",
+]);
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can reassign tasks" }, { status: 403 });
   }
@@ -35,11 +42,13 @@ export async function POST(
   }
 
   const taskId = (await params).id;
+  const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: task, error: taskError } = await context.admin
     .from("resident_observation_tasks")
-    .select("id, organization_id, entity_id, facility_id, resident_id, assigned_staff_id, shift_assignment_id")
+    .select("id, organization_id, entity_id, facility_id, resident_id, assigned_staff_id, shift_assignment_id, status, completed_log_id")
     .eq("id", taskId)
     .eq("organization_id", context.organizationId)
+    .in("facility_id", accessibleFacilityIds)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -54,6 +63,9 @@ export async function POST(
   if (!hasAccess) {
     return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
   }
+  if (task.completed_log_id || !REASSIGNABLE_STATUSES.has(task.status)) {
+    return NextResponse.json({ error: `Task cannot be reassigned from status ${task.status}` }, { status: 409 });
+  }
 
   const { data: newStaff, error: staffError } = await context.admin
     .from("staff")
@@ -61,6 +73,7 @@ export async function POST(
     .eq("id", newStaffId)
     .eq("facility_id", task.facility_id)
     .eq("organization_id", context.organizationId)
+    .eq("employment_status", "active")
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -68,56 +81,35 @@ export async function POST(
     return NextResponse.json({ error: "New staff member not found in this facility" }, { status: 404 });
   }
 
-  const releasedAt = new Date().toISOString();
-  if (task.assigned_staff_id) {
-    const { error: releaseError } = await context.admin
-      .from("resident_observation_assignments")
-      .update({ released_at: releasedAt })
-      .eq("task_id", task.id)
-      .eq("staff_id", task.assigned_staff_id)
-      .is("released_at", null);
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId: task.facility_id });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
 
-    if (releaseError) {
-      logError("rounding.tasks.reassign.release", releaseError, { taskId: task.id });
-      return NextResponse.json({ error: "Could not release current assignment" }, { status: 500 });
-    }
-  }
-
-  const { error: assignmentError } = await context.admin
-    .from("resident_observation_assignments")
-    .insert({
-      organization_id: context.organizationId,
-      entity_id: task.entity_id,
-      facility_id: task.facility_id,
-      resident_id: task.resident_id,
-      task_id: task.id,
-      shift_assignment_id: task.shift_assignment_id,
-      staff_id: newStaffId,
-      assignment_type: "reassignment",
-      assigned_at: releasedAt,
-      reason,
-      created_by: context.userId,
-    });
-
-  if (assignmentError) {
-    logError("rounding.tasks.reassign.insert", assignmentError, { taskId: task.id });
-    return NextResponse.json({ error: "Could not create reassignment history" }, { status: 500 });
-  }
-
-  const { error: taskUpdateError } = await context.admin
-    .from("resident_observation_tasks")
-    .update({
-      assigned_staff_id: newStaffId,
-      reassigned_from_staff_id: task.assigned_staff_id,
-      reassignment_reason: reason,
-      status: "reassigned",
-    })
-    .eq("id", task.id)
-    .eq("organization_id", context.organizationId);
+  const { error: taskUpdateError } = await context.admin.rpc(
+    "reassign_rounding_task_review" as never,
+    {
+      p_task_id: task.id,
+      p_new_staff_id: newStaffId,
+      p_reason: reason,
+      p_actor_id: context.userId,
+      p_actor_role: context.appRole,
+      p_session_id: context.sessionId,
+      p_claim_version: context.authClaimVersion,
+      p_organization_id: context.organizationId,
+      p_facility_id: task.facility_id,
+    } as never,
+  );
 
   if (taskUpdateError) {
     logError("rounding.tasks.reassign.update", taskUpdateError, { taskId: task.id });
-    return NextResponse.json({ error: "Could not reassign observation task" }, { status: 500 });
+    return NextResponse.json(
+      { error: taskUpdateError.code === "42501"
+        ? "No longer authorized to reassign this task"
+        : taskUpdateError.code === "P0001"
+          ? "Task is no longer available for reassignment"
+          : "Could not reassign observation task" },
+      { status: taskUpdateError.code === "42501" ? 403 : taskUpdateError.code === "P0001" ? 409 : 500 },
+    );
   }
 
   return NextResponse.json({ ok: true, taskId: task.id, assignedStaffId: newStaffId, status: "reassigned" });

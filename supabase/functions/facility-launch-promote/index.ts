@@ -4,6 +4,12 @@ import {
 } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { pickRedacted } from "../_shared/redact-pii.ts";
+import {
+  CurrentActorError,
+  type CurrentActorAuthorization,
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 import { PROMOTERS } from "./promoters/index.ts";
 import type {
   ModulePromotionResult,
@@ -22,13 +28,6 @@ type RequestBody = {
   dry_run?: boolean;
 };
 
-type Profile = {
-  app_role?: string | null;
-  organization_id?: string | null;
-  is_active?: boolean | null;
-  deleted_at?: string | null;
-};
-
 type Actor = {
   userId: string;
   role: string;
@@ -37,6 +36,7 @@ type Actor = {
 
 type HandlerOptions = {
   createAdminClient?: () => AdminClient;
+  authorizeActor?: (req: Request) => Promise<CurrentActorAuthorization>;
   now?: () => Date;
 };
 
@@ -60,12 +60,6 @@ function response(
     status,
     headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
   });
-}
-
-function bearerToken(req: Request): string | null {
-  const header = req.headers.get("authorization") ?? "";
-  const match = header.match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() || null;
 }
 
 function normalizeModules(modules?: string[] | null): string[] | null {
@@ -118,87 +112,6 @@ function finalRunStatus(
   if (results.some((result) => result.status === "failed")) return "partial";
   if (results.some((result) => result.status === "not_implemented")) return "partial";
   return "succeeded";
-}
-
-async function loadActor(
-  admin: AdminClient,
-  token: string,
-  origin: string | null,
-): Promise<Actor | Response> {
-  const { data: { user }, error: authError } = await admin.auth.getUser(token);
-  if (authError || !user) {
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
-  }
-
-  const { data: profile, error: profileError } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id, is_active, deleted_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError || !profile) {
-    return jsonResponse({ error: "Profile not found" }, 403, origin);
-  }
-  const typedProfile = profile as Profile;
-  const role = typedProfile.app_role ?? "caregiver";
-  if (!ADMIN_ROLES.has(role)) {
-    return jsonResponse(
-      { error: "Forbidden: owner/org_admin/facility_admin only" },
-      403,
-      origin,
-    );
-  }
-  if (!typedProfile.organization_id) {
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
-  if (typedProfile.is_active === false || typedProfile.deleted_at) {
-    return jsonResponse({ error: "Profile inactive" }, 403, origin);
-  }
-
-  return {
-    userId: user.id,
-    role,
-    organizationId: typedProfile.organization_id,
-  };
-}
-
-async function ensureFacilityAccess(
-  admin: AdminClient,
-  actor: Actor,
-  facilityId: string,
-  origin: string | null,
-): Promise<Response | null> {
-  const { data: facility, error: facilityError } = await admin
-    .from("facilities")
-    .select("id, organization_id")
-    .eq("id", facilityId)
-    .eq("organization_id", actor.organizationId)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  if (facilityError || !facility) {
-    return jsonResponse(
-      { error: "Facility not found or forbidden" },
-      403,
-      origin,
-    );
-  }
-
-  if (actor.role !== "facility_admin") return null;
-
-  const { data: grant, error: grantError } = await admin
-    .from("user_facility_access")
-    .select("id")
-    .eq("user_id", actor.userId)
-    .eq("facility_id", facilityId)
-    .eq("organization_id", actor.organizationId)
-    .is("revoked_at", null)
-    .maybeSingle();
-
-  if (grantError || !grant) {
-    return jsonResponse({ error: "Facility access required" }, 403, origin);
-  }
-  return null;
 }
 
 async function loadModuleValues(
@@ -322,15 +235,19 @@ async function promoteModules(params: {
   modulesToProcess: string[];
   dryRun: boolean;
   runId: string | null;
+  actorAuth: CurrentActorAuthorization;
 }): Promise<ModulePromotionResult[]> {
   const results: ModulePromotionResult[] = [];
   for (const moduleCode of params.modulesToProcess) {
+    await params.actorAuth.revalidate(params.facilityId);
     const rows = params.grouped.get(moduleCode) ?? [];
     const promoter = PROMOTERS[moduleCode];
     if (!promoter) {
       const result = notImplementedResult(moduleCode);
       if (!params.dryRun && params.runId) {
+        await params.actorAuth.revalidate(params.facilityId);
         const itemId = await insertRunItem(params.admin, params.runId, params.actor, params.facilityId, moduleCode);
+        await params.actorAuth.revalidate(params.facilityId);
         await updateRunItem(params.admin, itemId, result);
       }
       results.push(result);
@@ -350,7 +267,9 @@ async function promoteModules(params: {
         prerequisites_unmet: readiness.missing,
       };
       if (!params.dryRun && params.runId) {
+        await params.actorAuth.revalidate(params.facilityId);
         const itemId = await insertRunItem(params.admin, params.runId, params.actor, params.facilityId, moduleCode);
+        await params.actorAuth.revalidate(params.facilityId);
         await updateRunItem(params.admin, itemId, result);
       }
       results.push(result);
@@ -359,6 +278,7 @@ async function promoteModules(params: {
 
     let runItemId: string | null = null;
     if (!params.dryRun && params.runId) {
+      await params.actorAuth.revalidate(params.facilityId);
       runItemId = await insertRunItem(params.admin, params.runId, params.actor, params.facilityId, moduleCode);
     }
 
@@ -372,11 +292,17 @@ async function promoteModules(params: {
         run_id: params.runId,
         run_item_id: runItemId,
         module_value_ids_by_path: moduleValueIdsByPath(rows),
+        revalidate: () => params.actorAuth.revalidate(params.facilityId),
       };
+      await params.actorAuth.revalidate(params.facilityId);
       const result = await promoter.promote(context, moduleValues);
-      if (!params.dryRun && runItemId) await updateRunItem(params.admin, runItemId, result);
+      if (!params.dryRun && runItemId) {
+        await params.actorAuth.revalidate(params.facilityId);
+        await updateRunItem(params.admin, runItemId, result);
+      }
       results.push(result);
     } catch (error) {
+      if (error instanceof CurrentActorError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       const result: ModulePromotionResult = {
         module_code: moduleCode,
@@ -387,7 +313,10 @@ async function promoteModules(params: {
         errors: [message],
         prerequisites_unmet: [],
       };
-      if (!params.dryRun && runItemId) await updateRunItem(params.admin, runItemId, result);
+      if (!params.dryRun && runItemId) {
+        await params.actorAuth.revalidate(params.facilityId);
+        await updateRunItem(params.admin, runItemId, result);
+      }
       results.push(result);
     }
   }
@@ -446,13 +375,10 @@ async function handlePromotion(
   req: Request,
   admin: AdminClient,
   now: () => Date,
+  actorAuth: CurrentActorAuthorization,
 ): Promise<Response> {
   const origin = req.headers.get("origin");
-  const token = bearerToken(req);
-  if (!token) return jsonResponse({ error: "Unauthorized" }, 401, origin);
-
-  const actor = await loadActor(admin, token, origin);
-  if (actor instanceof Response) return actor;
+  const actor: Actor = actorAuth.actor;
 
   let body: RequestBody;
   try {
@@ -475,13 +401,9 @@ async function handlePromotion(
     );
   }
 
-  const accessError = await ensureFacilityAccess(
-    admin,
-    actor,
-    facilityId,
-    origin,
-  );
-  if (accessError) return accessError;
+  if (!actorAuth.actor.accessibleFacilityIds.includes(facilityId)) {
+    return jsonResponse({ error: "Facility not found or forbidden" }, 403, origin);
+  }
 
   const requestedModules = normalizeModules(body.modules);
   const dryRun = body.dry_run === true;
@@ -497,6 +419,7 @@ async function handlePromotion(
     const { grouped, modulesToProcess, gapModules } = prepareModulePlan(values, requestedModules);
 
     if (!dryRun) {
+      await actorAuth.revalidate(facilityId);
       runId = await insertRun(admin, {
         actor,
         facilityId,
@@ -508,6 +431,7 @@ async function handlePromotion(
       });
     }
 
+    if (!dryRun) await actorAuth.revalidate(facilityId);
     const results = await promoteModules({
       admin,
       organizationId: actor.organizationId,
@@ -517,10 +441,12 @@ async function handlePromotion(
       modulesToProcess,
       dryRun,
       runId,
+      actorAuth,
     });
     const summary = summarize(results, gapModules, mode);
 
     if (!dryRun && runId) {
+      await actorAuth.revalidate(facilityId);
       const status = finalRunStatus(results);
       await updateRun(admin, runId, {
         status,
@@ -545,8 +471,16 @@ async function handlePromotion(
     };
     return response(payload, origin);
   } catch (error) {
+    if (error instanceof CurrentActorError) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     const message = error instanceof Error ? error.message : String(error);
     if (!dryRun && runId) {
+      try {
+        await actorAuth.revalidate(facilityId);
+      } catch (authError) {
+        return currentActorErrorResponse(authError, getCorsHeaders(origin));
+      }
       await updateRun(admin, runId, {
         status: "failed",
         finished_at: now().toISOString(),
@@ -573,6 +507,8 @@ export function createHandler(
   options: HandlerOptions = {},
 ): (req: Request) => Promise<Response> {
   const adminFactory = options.createAdminClient ?? defaultCreateAdminClient;
+  const authorizeActor = options.authorizeActor ?? ((req) =>
+    requireCurrentActor(req, { allowedRoles: [...ADMIN_ROLES] }));
   const now = options.now ?? (() => new Date());
   return async (req: Request): Promise<Response> => {
     const origin = req.headers.get("origin");
@@ -583,14 +519,19 @@ export function createHandler(
       return jsonResponse({ error: "Method not allowed" }, 405, origin);
     }
 
+    let actorAuth: CurrentActorAuthorization;
+    try {
+      actorAuth = await authorizeActor(req);
+    } catch (error) {
+      return currentActorErrorResponse(error, getCorsHeaders(origin));
+    }
     let admin: AdminClient;
     try {
       admin = adminFactory();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return jsonResponse({ error: message }, 500, origin);
+    } catch {
+      return jsonResponse({ error: "Promotion initialization failed" }, 500, origin);
     }
-    return handlePromotion(req, admin, now);
+    return handlePromotion(req, admin, now, actorAuth);
   };
 }
 

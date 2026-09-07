@@ -34,7 +34,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const { response, user } = await updateSession(request);
+  const { response, user, unavailable } = await updateSession(request);
+  if (unavailable) {
+    const retry = new NextResponse("Haven could not verify access right now. Please retry shortly.", {
+      status: 503, headers: { "Retry-After": "5", "Cache-Control": "no-store" },
+    });
+    mergeSetCookieHeaders(response, retry);
+    return retry;
+  }
 
   if (isAdminShellPath(pathname)) {
     const redirect = adminShellAccessRedirect(request, user);

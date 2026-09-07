@@ -21,7 +21,7 @@ import type { Database } from "@/types/database";
 export type HavenAuthContextValue = {
   user: User | null;
   session: Session | null;
-  /** Resolved from `user_profiles.app_role` when available, else JWT metadata */
+  /** Resolved from migration 326 current actor state; never JWT role metadata. */
   appRole: string;
   organizationId: string | null;
   orgName: string | null;
@@ -64,12 +64,13 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
 
       if (generation !== loadGenerationRef.current) return;
 
-      setUser(user);
-      setSession(session ?? null);
+      setUser(null);
+      setSession(null);
+      setAppRole("");
 
       if (!user) {
         clearClientRoleContext(supabase);
-        setAppRole("facility_admin");
+        setAppRole("");
         setOrganizationId(null);
         setOrgName(null);
         setFullName(null);
@@ -77,53 +78,58 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Single joined select collapses the previous two serial round-trips
-      // (user_profiles -> organizations) into one request; org name is read
-      // from the embedded `organizations` relation.
-      const { data: profile, error: profileError } = await supabase
-        .from("user_profiles")
-        .select("app_role, organization_id, full_name, avatar_url, organizations(name)")
-        .eq("id", user.id)
-        .is("deleted_at", null)
-        .maybeSingle();
+      const { data: actorData, error: actorError } = await supabase.rpc(
+        "haven_current_shell_actor" as never,
+      );
 
       if (generation !== loadGenerationRef.current) return;
 
       startupMark("profile-ready");
-      if (profileError) {
-        const errObj = profileError as unknown as Record<string, unknown>;
-        console.error("[HavenAuth] user_profiles query failed", {
-          message: profileError.message,
+      if (actorError) {
+        const errObj = actorError as unknown as Record<string, unknown>;
+        console.error("[HavenAuth] current actor query failed", {
+          message: actorError.message,
           code: errObj.code,
           hint: errObj.hint,
           userId: user.id,
         });
       }
+      const actor = actorData as {
+        user_id?: unknown;
+        organization_id?: unknown;
+        app_role?: unknown;
+        full_name?: unknown;
+        avatar_url?: unknown;
+        organization_name?: unknown;
+        is_managed?: unknown;
+      } | null;
+      if (
+        actorError ||
+        actor?.user_id !== user.id ||
+        typeof actor.organization_id !== "string" ||
+        typeof actor.app_role !== "string"
+      ) {
+        clearClientRoleContext(supabase);
+        setSession(null);
+        setUser(null);
+        setAppRole("");
+        setOrganizationId(null);
+        setOrgName(null);
+        setFullName(null);
+        setAvatarUrl(null);
+        return;
+      }
 
-      const profileOrganizationId =
-        (profile?.organization_id as string | null | undefined) ?? null;
-      const organizationIdFromProfile =
-        profileOrganizationId ??
-        (typeof user.app_metadata?.organization_id === "string"
-          ? user.app_metadata.organization_id
-          : null);
-      // PostgREST returns the embedded relation as an object or array depending
-      // on cardinality inference; normalize both shapes before reading `name`.
-      const embeddedOrg = (profile as { organizations?: unknown } | null)?.organizations;
-      const organizationRecord = (Array.isArray(embeddedOrg) ? embeddedOrg[0] : embeddedOrg) as
-        | { name?: string | null }
-        | null
-        | undefined;
-      const organizationName: string | null = organizationRecord?.name ?? null;
-
-      const roleFromMeta = user.app_metadata?.app_role as string | undefined;
-      const resolvedRole = (profile?.app_role as string) ?? roleFromMeta ?? "facility_admin";
+      setUser(user);
+      setSession(session ?? null);
+      const organizationIdFromProfile = actor.organization_id;
+      const resolvedRole = actor.app_role;
       setAppRole(resolvedRole);
       setOrganizationId(organizationIdFromProfile);
-      setOrgName(organizationName);
-      setFullName((profile?.full_name as string | null | undefined) ?? null);
-      setAvatarUrl((profile?.avatar_url as string | null | undefined) ?? null);
-      if (organizationIdFromProfile) {
+      setOrgName(typeof actor.organization_name === "string" ? actor.organization_name : null);
+      setFullName(typeof actor.full_name === "string" ? actor.full_name : null);
+      setAvatarUrl(typeof actor.avatar_url === "string" ? actor.avatar_url : null);
+      if (actor.is_managed !== false) {
         primeClientRoleContext(supabase, {
           userId: user.id,
           organizationId: organizationIdFromProfile,
@@ -136,7 +142,7 @@ export function HavenAuthProvider({ children }: { children: React.ReactNode }) {
       clearClientRoleContext(supabase);
       setSession(null);
       setUser(null);
-      setAppRole("facility_admin");
+      setAppRole("");
       setOrganizationId(null);
       setOrgName(null);
       setFullName(null);

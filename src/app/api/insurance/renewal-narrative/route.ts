@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { requireCurrentApiActor, revalidateCurrentApiActor } from "@/lib/auth/current-api-actor";
 import type { RenewalPackagePayload } from "@/lib/insurance/assemble-renewal-package-payload";
 import { buildTemplateRenewalNarrative } from "@/lib/insurance/renewal-narrative-template";
 import { logError } from "@/lib/observability/logger";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { Database } from "@/types/database";
 
 type Body = { renewalDataPackageId?: string };
@@ -27,42 +26,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "renewalDataPackageId is required" }, { status: 400 });
   }
 
-  const sessionClient = await createClient();
-  const {
-    data: { user },
-    error: sessionErr,
-  } = await sessionClient.auth.getUser();
-
-  if (sessionErr || !user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  let admin: ReturnType<typeof createServiceRoleClient>;
-  try {
-    admin = createServiceRoleClient();
-  } catch (e) {
-    logError("insurance.renewal-narrative", e, { action: "service_role_client" });
-    return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
-  }
-
-  const { data: profile, error: profErr } = await admin
-    .from("user_profiles")
-    .select("organization_id, app_role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profErr || !profile?.organization_id) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  if (profile.app_role !== "owner" && profile.app_role !== "org_admin") {
-    return NextResponse.json({ error: "Only owner or org admin can generate renewal narratives" }, { status: 403 });
-  }
+  const actorResult = await requireCurrentApiActor({
+    allowedRoles: ["owner", "org_admin"],
+    scope: "insurance.renewal-narrative",
+  });
+  if ("response" in actorResult) return actorResult.response;
+  const { actor } = actorResult;
+  const admin = actor.admin;
 
   const { data: pkg, error: pkgErr } = await admin
     .from("renewal_data_packages")
     .select("*, insurance_policies(policy_number, carrier_name)")
     .eq("id", renewalDataPackageId)
+    .eq("organization_id", actor.organizationId)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -73,10 +49,6 @@ export async function POST(request: Request) {
   const row = pkg as Database["public"]["Tables"]["renewal_data_packages"]["Row"] & {
     insurance_policies: { policy_number: string; carrier_name: string } | null;
   };
-
-  if (row.organization_id !== profile.organization_id) {
-    return NextResponse.json({ error: "Organization mismatch" }, { status: 403 });
-  }
 
   const policy = row.insurance_policies;
   if (!policy) {
@@ -103,6 +75,14 @@ export async function POST(request: Request) {
   let source: "openai" | "template";
 
   if (apiKey) {
+    const providerActorResult = await revalidateCurrentApiActor(actor, {
+      allowedRoles: ["owner", "org_admin"],
+      scope: "insurance.renewal-narrative.provider-revalidate",
+    });
+    if ("response" in providerActorResult) return providerActorResult.response;
+    if (providerActorResult.actor.organizationId !== row.organization_id) {
+      return NextResponse.json({ error: "Renewal package not found" }, { status: 404 });
+    }
     try {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -152,14 +132,22 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString();
-  const { error: upErr } = await admin
+  const currentResult = await revalidateCurrentApiActor(actor, {
+    allowedRoles: ["owner", "org_admin"],
+    scope: "insurance.renewal-narrative.save-revalidate",
+  });
+  if ("response" in currentResult) return currentResult.response;
+  if (currentResult.actor.organizationId !== row.organization_id) {
+    return NextResponse.json({ error: "Renewal package not found" }, { status: 404 });
+  }
+  const { error: upErr } = await currentResult.actor.admin
     .from("renewal_data_packages")
     .update({
       ai_narrative_draft: draftText,
       ai_narrative_generated_at: now,
     })
     .eq("id", renewalDataPackageId)
-    .eq("organization_id", profile.organization_id);
+    .eq("organization_id", currentResult.actor.organizationId);
 
   if (upErr) {
     logError("insurance.renewal-narrative", upErr, { action: "update_package", renewalDataPackageId });

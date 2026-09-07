@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-const state = vi.hoisted(() => ({ platform: 'google_business', stored: 'Old draft', saveFails: false, finalizeFails: false, serviceClientFails: false, serviceClientError: 'service client failed', saveErrorMessage: 'save failed', credential: {refresh_token:'local-test-token'} as {refresh_token:string}|null, credentialError: null as string|null, updates: [] as Record<string, unknown>[], buildGoogle: vi.fn(), refreshGoogle: vi.fn(), resolveGoogle: vi.fn(), publishGoogle: vi.fn(), publishYelp: vi.fn() }));
+const state = vi.hoisted(() => ({ platform: 'google_business', stored: 'Old draft', saveFails: false, finalizeFails: false, serviceClientFails: false, serviceClientError: 'service client failed', facilityAccess: true, facilityAccessSequence: [] as boolean[], revalidateSequence: [] as boolean[], saveErrorMessage: 'save failed', credential: {refresh_token:'local-test-token'} as {refresh_token:string}|null, credentialError: null as string|null, updates: [] as Record<string, unknown>[], buildGoogle: vi.fn(), refreshGoogle: vi.fn(), resolveGoogle: vi.fn(), publishGoogle: vi.fn(), publishYelp: vi.fn() }));
 const logError = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
  auth: { getUser: async () => ({data:{user:{id:'actor'}},error:null}) },
@@ -16,6 +16,13 @@ vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => {
  if (state.serviceClientFails) throw new Error(state.serviceClientError);
  return { from: () => { const query = {select:()=>query,eq:()=>query,maybeSingle:async()=>({data:state.credential,error:state.credentialError?{message:state.credentialError}:null})};return query; } };
 } }));
+vi.mock('@/lib/auth/current-api-actor', () => ({ requireCurrentApiActor: async ({scope}:{scope:string}) => {
+ const {createClient}=await import('@/lib/supabase/server');
+ const {createServiceRoleClient}=await import('@/lib/supabase/service-role');
+ try { const admin=createServiceRoleClient(); return {actor:{id:'actor',organizationId:'org',appRole:'owner',client:await createClient(),admin}}; }
+ catch(error){ logError(scope,error,{action:'create_service_client'}); return {response:Response.json({error:'Server configuration error'},{status:503})}; }
+}, revalidateCurrentApiActor: async (actor:unknown) => state.revalidateSequence.length > 0 && !state.revalidateSequence.shift() ? {response:Response.json({error:'Access changed'},{status:403})} : {actor} }));
+vi.mock('@/lib/supabase/service-role-facility-access',()=>({serviceRoleUserHasFacilityAccess:async()=>state.facilityAccessSequence.length > 0 ? state.facilityAccessSequence.shift() : state.facilityAccess}));
 vi.mock('@/lib/reputation/google-oauth', () => ({ refreshAccessToken: state.refreshGoogle }));
 vi.mock('@/lib/reputation/google-business-reviews', () => ({ GOOGLE_IMPORTED_REPLY_PLACEHOLDER:'placeholder', resolveGoogleLocationParent:state.resolveGoogle, buildGoogleReviewResourceName:state.buildGoogle, putGoogleReviewReply:state.publishGoogle }));
 vi.mock('@/lib/reputation/yelp-fusion', () => ({ YELP_IMPORTED_REPLY_PLACEHOLDER:'placeholder' }));
@@ -23,7 +30,7 @@ vi.mock('@/lib/reputation/yelp-partner-reviews', () => ({ yelpPartnerReviewPostK
 vi.mock('@/lib/observability/logger',()=>({logError}));
 import { POST as googlePost } from '@/app/api/reputation/replies/[id]/post-google/route';
 import { POST as yelpPost } from '@/app/api/reputation/replies/[id]/post-yelp/route';
-beforeEach(()=>{state.stored='Old draft';state.saveFails=false;state.finalizeFails=false;state.serviceClientFails=false;state.serviceClientError='service client failed';state.saveErrorMessage='save failed';state.credential={refresh_token:'local-test-token'};state.credentialError=null;state.updates=[];state.buildGoogle.mockReset().mockReturnValue('accounts/a/locations/b/reviews/r');state.refreshGoogle.mockReset().mockResolvedValue({access_token:'test-access'});state.resolveGoogle.mockReset().mockResolvedValue('accounts/a/locations/b');state.publishGoogle.mockReset();state.publishYelp.mockReset();logError.mockReset();});
+beforeEach(()=>{state.stored='Old draft';state.saveFails=false;state.finalizeFails=false;state.serviceClientFails=false;state.serviceClientError='service client failed';state.facilityAccess=true;state.facilityAccessSequence=[];state.revalidateSequence=[];state.saveErrorMessage='save failed';state.credential={refresh_token:'local-test-token'};state.credentialError=null;state.updates=[];state.buildGoogle.mockReset().mockReturnValue('accounts/a/locations/b/reviews/r');state.refreshGoogle.mockReset().mockResolvedValue({access_token:'test-access'});state.resolveGoogle.mockReset().mockResolvedValue('accounts/a/locations/b');state.publishGoogle.mockReset();state.publishYelp.mockReset();logError.mockReset();});
 for (const [platform,post,publish] of [['google_business',googlePost,state.publishGoogle],['yelp',yelpPost,state.publishYelp]] as const) {
  it(`${platform} publishes the visible saved text and not the old draft`, async()=>{
   state.platform=platform;
@@ -82,7 +89,25 @@ it('google logs service-client initialization failure without publishing',async(
  const payload=await response.json();
  expect(response.status).toBe(503);expect(payload).toEqual({error:'Server configuration error'});
  expect(JSON.stringify(payload)).not.toContain(sentinel);expect(state.publishGoogle).not.toHaveBeenCalled();
- expect(logError).toHaveBeenCalledWith('reputation.replies.post-google',expect.any(Error),{action:'create-service-client',replyId:'reply'});
+ expect(logError).toHaveBeenCalledWith('reputation.replies.post-google',expect.any(Error),{action:'create_service_client'});
+});
+
+it('google does not publish when current facility access is denied',async()=>{
+ state.platform='google_business';state.facilityAccess=false;
+ const response=await googlePost(new Request('https://local.test/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reply_body:'Visible revised draft',expected_reply_body:'Old draft'})}),{params:Promise.resolve({id:'reply'})});
+ expect(response.status).toBe(404);expect(state.publishGoogle).not.toHaveBeenCalled();expect(state.updates).toHaveLength(0);
+});
+
+it('google does not refresh, resolve, or publish after the actor is demoted at the second check',async()=>{
+ state.platform='google_business';state.revalidateSequence=[true,false];
+ const response=await googlePost(new Request('https://local.test/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reply_body:'Visible revised draft',expected_reply_body:'Old draft'})}),{params:Promise.resolve({id:'reply'})});
+ expect(response.status).toBe(403);expect(state.refreshGoogle).not.toHaveBeenCalled();expect(state.resolveGoogle).not.toHaveBeenCalled();expect(state.publishGoogle).not.toHaveBeenCalled();
+});
+
+it('google does not refresh, resolve, or publish after facility access is revoked at the second check',async()=>{
+ state.platform='google_business';state.facilityAccessSequence=[true,false];
+ const response=await googlePost(new Request('https://local.test/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reply_body:'Visible revised draft',expected_reply_body:'Old draft'})}),{params:Promise.resolve({id:'reply'})});
+ expect(response.status).toBe(404);expect(state.refreshGoogle).not.toHaveBeenCalled();expect(state.resolveGoogle).not.toHaveBeenCalled();expect(state.publishGoogle).not.toHaveBeenCalled();
 });
 
 it('google does not expose a credential lookup failure',async()=>{

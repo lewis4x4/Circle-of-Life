@@ -1,245 +1,59 @@
-/**
- * POST   /api/admin/users/[id]/facility-access              — Grant facility access
- * DELETE /api/admin/users/[id]/facility-access/[facilityId] — Revoke facility access
- */
-
 import { NextRequest, NextResponse } from "next/server";
-import {
-  actorCanAccessTargetUser,
-  actorHasOrgWideFacilityScope,
-  listActorAccessibleFacilityIds,
-  requireAdminApiActor,
-} from "@/lib/admin/api-auth";
-import { canManageUser } from "@/lib/rbac";
+import { requireAdminApiActor } from "@/lib/admin/api-auth";
 import { grantFacilityAccessSchema } from "@/lib/validation/user-management";
-import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
+import { commitExpansiveUserAccess, commitRestrictiveUserAccess } from "@/lib/admin/user-access-lifecycle";
+import { logError } from "@/lib/observability/logger";
+import { UUID_STRING_RE } from "@/lib/supabase/env";
 
-interface RouteContext {
-  params: Promise<{ id: string; facilityId?: string }>;
-}
+interface RouteContext { params: Promise<{ id: string; facilityId?: string }> }
 
-// ── POST: Grant Facility Access ───────────────────────────────────
-
-export async function POST(request: NextRequest, ctx: RouteContext) {
-  const auth = await requireAdminApiActor({
-    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
-  });
+export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = await requireAdminApiActor({ allowedRoles: ["owner", "org_admin", "facility_admin", "manager"] });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
-
-  const { id: targetUserId } = await ctx.params;
-
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
+  const { id } = await context.params;
+  if (!UUID_STRING_RE.test(id)) return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+  let body: unknown;
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = grantFacilityAccessSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation error", details: parsed.error.flatten() },
-      { status: 422 },
-    );
+  if (!parsed.success) return NextResponse.json({ error: "Validation error", details: parsed.error.flatten() }, { status: 422 });
+  try {
+    // The atomic command checks current actor/target/facility and resolves a
+    // same-key receipt BEFORE testing whether the grant already exists.
+    const result = await commitExpansiveUserAccess(actor.admin, {
+      targetUserId: id, actingUserId: actor.id, organizationId: actor.organization_id,
+      operation: "grant_facility", facilityIds: [parsed.data.facility_id],
+      primaryFacilityId: parsed.data.is_primary ? parsed.data.facility_id : undefined,
+      requestKey: request.headers.get("idempotency-key"),
+    });
+    return NextResponse.json({ data: result, sync_status: result.sync_status },
+      { status: result.sync_status === "synchronized" ? 201 : 202 });
+  } catch (error) {
+    logError("admin.users.facility_access", error, { action: "grant", targetUserId: id });
+    return NextResponse.json({ error: "Facility access command could not complete. Refresh current access before retrying." }, { status: 409 });
   }
-  const { facility_id, is_primary } = parsed.data;
-
-  const admin = actor.admin;
-  const actorFacilityIds = await listActorAccessibleFacilityIds(actor);
-
-  // Verify target user exists and belongs to same org
-  const { data: target } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", targetUserId)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (!target || target.organization_id !== actor.organization_id!) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-  if (!canManageUser(actor.app_role, target.app_role)) {
-    return NextResponse.json({ error: "Cannot modify this user" }, { status: 403 });
-  }
-  if (!(await actorCanAccessTargetUser(actor, targetUserId))) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-  if (
-    !actorHasOrgWideFacilityScope(actor) &&
-    !actorFacilityIds.includes(facility_id)
-  ) {
-    return NextResponse.json({ error: "Facility not found" }, { status: 404 });
-  }
-
-  // Verify facility belongs to org
-  const { data: facility } = await admin
-    .from("facilities")
-    .select("id, name")
-    .eq("id", facility_id)
-    .eq("organization_id", actor.organization_id!)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (!facility) {
-    return NextResponse.json({ error: "Facility not found" }, { status: 404 });
-  }
-
-  // Check for existing access
-  const { data: existing } = await admin
-    .from("user_facility_access")
-    .select("id")
-    .eq("user_id", targetUserId)
-    .eq("facility_id", facility_id)
-    .is("revoked_at", null)
-    .maybeSingle();
-  if (existing) {
-    return NextResponse.json({ error: "User already has access to this facility" }, { status: 409 });
-  }
-
-  // If is_primary, clear previous primary
-  if (is_primary) {
-    await admin
-      .from("user_facility_access")
-      .update({ is_primary: false })
-      .eq("user_id", targetUserId)
-      .eq("is_primary", true)
-      .is("revoked_at", null);
-  }
-
-  // Grant access
-  const { data: accessRow, error: insertErr } = await admin
-    .from("user_facility_access")
-    .insert({
-      user_id: targetUserId,
-      facility_id,
-      organization_id: actor.organization_id!,
-      is_primary,
-      granted_by: actor.id,
-    })
-    .select("id, facility_id, is_primary, granted_at, granted_by")
-    .single();
-  if (insertErr) {
-    return NextResponse.json({ error: "Failed to grant access" }, { status: 500 });
-  }
-
-  // Audit
-  await writeUserAuditEntry({
-    organizationId: actor.organization_id!,
-    actingUserId: actor.id,
-    targetUserId,
-    action: "grant_access",
-    resourceType: "facility_access",
-    changes: { before: {}, after: { facility_id, is_primary } },
-  });
-
-  return NextResponse.json(
-    {
-      data: { ...accessRow, facility_name: facility.name },
-    },
-    { status: 201 },
-  );
 }
 
-// ── DELETE: Revoke Facility Access ────────────────────────────────
-
-export async function DELETE(request: NextRequest, ctx: RouteContext) {
-  const auth = await requireAdminApiActor({
-    allowedRoles: ["owner", "org_admin", "facility_admin", "manager"],
-  });
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  const auth = await requireAdminApiActor({ allowedRoles: ["owner", "org_admin", "facility_admin", "manager"] });
   if ("response" in auth) return auth.response;
   const { actor } = auth;
-
-  const { id: targetUserId, facilityId } = await ctx.params;
-  if (!facilityId) {
-    return NextResponse.json({ error: "Missing facility ID" }, { status: 400 });
+  const { id, facilityId } = await context.params;
+  if (!UUID_STRING_RE.test(id) || !facilityId || !UUID_STRING_RE.test(facilityId)) {
+    return NextResponse.json({ error: "Invalid user or facility ID" }, { status: 400 });
   }
-
-  const admin = actor.admin;
-  const actorFacilityIds = await listActorAccessibleFacilityIds(actor);
-  if (
-    !actorHasOrgWideFacilityScope(actor) &&
-    !actorFacilityIds.includes(facilityId)
-  ) {
-    return NextResponse.json({ error: "Access grant not found" }, { status: 404 });
+  try {
+    // A successful last-facility revoke removes the shared scope. The database
+    // may still return its authenticated same-actor receipt on a lost-response retry.
+    const result = await commitRestrictiveUserAccess(actor.admin, {
+      targetUserId: id, actingUserId: actor.id, organizationId: actor.organization_id,
+      operation: "revoke_facility", facilityId, requestKey: request.headers.get("idempotency-key"),
+    });
+    return result.sync_status === "synchronized" ? new NextResponse(null, { status: 204 }) :
+      NextResponse.json({ data: result, sync_status: result.sync_status }, { status: 202 });
+  } catch (error) {
+    logError("admin.users.facility_access", error, { action: "revoke", targetUserId: id });
+    return NextResponse.json({ error: "Facility access command could not complete. Refresh current access before retrying." }, { status: 409 });
   }
-
-  const { data: target } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", targetUserId)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (!target || target.organization_id !== actor.organization_id) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-  if (!canManageUser(actor.app_role, target.app_role)) {
-    return NextResponse.json({ error: "Cannot modify this user" }, { status: 403 });
-  }
-  if (!(await actorCanAccessTargetUser(actor, targetUserId))) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  // Find the active access row
-  const { data: accessRow } = await admin
-    .from("user_facility_access")
-    .select("id, user_id, facility_id, is_primary")
-    .eq("user_id", targetUserId)
-    .eq("facility_id", facilityId)
-    .is("revoked_at", null)
-    .maybeSingle();
-  if (!accessRow) {
-    return NextResponse.json({ error: "Access grant not found" }, { status: 404 });
-  }
-
-  const now = new Date().toISOString();
-
-  // Revoke
-  await admin
-    .from("user_facility_access")
-    .update({ revoked_at: now, revoked_by: actor.id })
-    .eq("id", accessRow.id);
-
-  // If it was primary, promote the most recent other facility
-  if (accessRow.is_primary) {
-    const { data: otherAccess } = await admin
-      .from("user_facility_access")
-      .select("id")
-      .eq("user_id", targetUserId)
-      .is("revoked_at", null)
-      .order("granted_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (otherAccess) {
-      await admin
-        .from("user_facility_access")
-        .update({ is_primary: true })
-        .eq("id", otherAccess.id);
-    }
-  }
-
-  // Check if user has any remaining facilities
-  const { count } = await admin
-    .from("user_facility_access")
-    .select("id", { count: "exact" })
-    .eq("user_id", targetUserId)
-    .is("revoked_at", null);
-
-  // If no facilities remain, soft-delete user
-  if (count === 0) {
-    await admin
-      .from("user_profiles")
-      .update({ is_active: false, deleted_at: now, updated_at: now })
-      .eq("id", targetUserId);
-  }
-
-  // Audit
-  await writeUserAuditEntry({
-    organizationId: actor.organization_id!,
-    actingUserId: actor.id,
-    targetUserId,
-    action: "revoke_access",
-    resourceType: "facility_access",
-    changes: { before: { facility_id: facilityId, is_primary: accessRow.is_primary }, after: { revoked_at: now } },
-  });
-
-  return new NextResponse(null, { status: 204 });
 }

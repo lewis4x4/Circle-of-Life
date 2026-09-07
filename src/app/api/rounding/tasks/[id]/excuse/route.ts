@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 
 type Body = {
   reason?: string;
@@ -11,12 +11,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can excuse tasks" }, { status: 403 });
   }
@@ -37,11 +35,13 @@ export async function POST(
   }
 
   const taskId = (await params).id;
+  const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: task, error: taskError } = await context.admin
     .from("resident_observation_tasks")
     .select("id, organization_id, facility_id, status")
     .eq("id", taskId)
     .eq("organization_id", context.organizationId)
+    .in("facility_id", accessibleFacilityIds)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -62,7 +62,11 @@ export async function POST(
     return NextResponse.json({ error: `Task is already ${task.status} and cannot be excused` }, { status: 409 });
   }
 
-  const { error: updateError } = await context.admin
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId: task.facility_id });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+
+  const { error: updateError } = await context.actor.client
     .from("resident_observation_tasks")
     .update({
       status: "excused",
@@ -70,7 +74,8 @@ export async function POST(
       excused_by: context.userId,
     })
     .eq("id", task.id)
-    .eq("organization_id", context.organizationId);
+    .eq("organization_id", context.organizationId)
+    .eq("facility_id", task.facility_id);
 
   if (updateError) {
     logError("rounding.tasks.excuse.update", updateError, { taskId: task.id });

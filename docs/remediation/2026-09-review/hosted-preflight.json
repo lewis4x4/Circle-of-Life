@@ -1,0 +1,26 @@
+{
+  "project": "manfqmasfqppukpobpld",
+  "reviewed_migration_hashes": {
+    "319_review_access_boundaries.sql": "6a1c95a70220c07a7365644a33d144888aabd59392e87c691e43a3b4174f0ae3",
+    "320_september_business_integrity.sql": "09ca9b6678042d4b3ec2a10ae6ca5093302dad67244d673a7c470207fb86a109",
+    "321_clinical_review_integrity.sql": "c188ae28f108370d1e5c040c45f05ee158807d474a4817178ba8d496af81ab16",
+    "322_dietary_verified_actions.sql": "ced8fe14b658f16a40ad39a63107e54610c1882c3408f221480fb35c65f96ccc",
+    "323_review_report_outputs.sql": "13b1c66fa79da8198fa1b705ff01a3a80f25bf80166368f41ebf2cffec299272",
+    "324_september_office_integrity.sql": "8be63a13efeda2905ec00a7f78e1061d216db4c6e2e79bfdd29336199c948c50",
+    "325_review_med_tech_controlled_count_access.sql": "66e98b30996c4bd1fd74ddf3e995ef6e7378d7966d89c759203dd66d35d67d07",
+    "326_sys_001_authoritative_actor_state.sql": "1ce412ff33690ee7deee064489bd063874f51e4cc3397997a39e577dab8b3869",
+    "327_sys_001e_lifecycle_authorization.sql": "b96c188c3255f5940e29210e0afac67b5408e7385e1e3a29fde56078d2538b5f",
+    "328_ingest_generation_integrity.sql": "4978f452fda7ceb9210d126284f2b9efabf24bfa00e52d1050f0b5e250f467aa"
+  },
+  "hook_enabled": false,
+  "hook_uri": null,
+  "site_url": "https://circleoflifealf.com",
+  "pitr_enabled": true,
+  "physical_backup_data": {
+    "earliest_physical_backup_date_unix": 1788191257,
+    "latest_physical_backup_date_unix": 1788796057
+  },
+  "profile_versions": "1|26",
+  "invalid_witness_methods": "0",
+  "ledger_tail": "20260514180000|staff_role_enum_values\n20260514180707|homewood_round2_employee_seed\n20260514203302|homewood_round2_ar_intake_may_2026\n20260814153636|revoke_anon_security_definer_rpc_execute\n20260814200926|family_portal_messages_one_way\n20260814201004|col_discovery_round_cadence_jessica_2026_08_14\n20260814201013|snack_logs_time_and_passer_only\n20260814201022|revoke_anon_col_discovery_round_rpcs\n20260814201741|pin_col_discovery_helper_search_path\n317|referral_lead_closure_reasons\n318|col_facility_entity_names"
+}

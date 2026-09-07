@@ -15,6 +15,11 @@ import {
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { isRateLimited } from "../_shared/rate-limit.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import {
+  CurrentActorError,
+  currentActorErrorResponse,
+  requireCurrentActor,
+} from "../_shared/current-actor.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                         */
@@ -63,20 +68,19 @@ Deno.serve(async (req) => {
   }
 
   // --- Auth ---
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "");
-  const {
-    data: { user },
-    error: authError,
-  } = await admin.auth.getUser(token);
-  if (authError || !user) {
+  let actorAuth;
+  try {
+    actorAuth = await requireCurrentActor(req, { allowedRoles: ALLOWED_ROLES });
+  } catch (error) {
     t.log({ event: "auth_failed", outcome: "blocked" });
-    return jsonResponse({ error: "Unauthorized" }, 401, origin);
+    return currentActorErrorResponse(error, getCorsHeaders(origin));
   }
+  const { actor } = actorAuth;
+  const user = { id: actor.userId };
   if (isRateLimited(user.id)) {
     return jsonResponse({ error: "Rate limit exceeded. Try again in a minute." }, 429, origin);
   }
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   // --- Parse body ---
   let body: { assumptions?: Assumptions; facility_id?: string };
@@ -113,27 +117,13 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "new_beds must be between 0 and 500" }, 400, origin);
   }
 
-  // --- Profile + role check ---
-  const { data: profile } = await admin
-    .from("user_profiles")
-    .select("app_role, organization_id")
-    .eq("id", user.id)
-    .single();
-
-  const role = String(profile?.app_role ?? user.app_metadata?.app_role ?? "caregiver");
-  const organizationId = profile?.organization_id as string | undefined;
-
-  if (!organizationId) {
-    return jsonResponse({ error: "Profile has no organization" }, 403, origin);
-  }
-  if (!ALLOWED_ROLES.includes(role)) {
-    t.log({ event: "role_denied", outcome: "blocked", role });
-    return jsonResponse({ error: "Insufficient permissions" }, 403, origin);
-  }
+  const organizationId = actor.organizationId;
 
   // --- Load facilities + baseline KPIs ---
   try {
-    const allFacilities = await loadFacilitiesForOrganization(admin, organizationId);
+    const allFacilities = (await loadFacilitiesForOrganization(admin, organizationId)).filter((facility) =>
+      actor.accessibleFacilityIds.includes(facility.id)
+    );
     const facilities = body.facility_id
       ? allFacilities.filter((f) => f.id === body.facility_id)
       : allFacilities;
@@ -199,6 +189,7 @@ Deno.serve(async (req) => {
       facilities_count: facilities.length,
     });
 
+    await actorAuth.revalidate(body.facility_id ?? null);
     return jsonResponse(
       {
         ok: true,
@@ -221,6 +212,9 @@ Deno.serve(async (req) => {
       origin,
     );
   } catch (err) {
+    if (err instanceof CurrentActorError) {
+      return currentActorErrorResponse(err, getCorsHeaders(origin));
+    }
     t.log({ event: "scenario_failed", outcome: "error", error_message: String(err) });
     return jsonResponse({ error: "Scenario computation failed" }, 500, origin);
   }

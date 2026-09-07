@@ -15,9 +15,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 export async function GET(request: Request) {
   const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  if ("response" in auth) return auth.response;
 
   const { context } = auth;
   const { searchParams } = new URL(request.url);

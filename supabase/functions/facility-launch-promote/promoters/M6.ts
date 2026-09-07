@@ -180,6 +180,7 @@ async function promotePostedRates(
   if (rows.length === 0) return counts;
 
   if (!ctx.dry_run) {
+    await ctx.revalidate();
     const { data, error } = await ctx.admin.rpc(
       "promote_facility_launch_m6_rates",
       {

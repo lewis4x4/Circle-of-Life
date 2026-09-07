@@ -1,0 +1,26 @@
+{
+  "scope": "SYS-001 authorization/lifecycle and SYS-008 overlap only; stop before next roadmap task",
+  "unit": {
+    "passed": 3148,
+    "failed": 0,
+    "skipped": 2,
+    "files": 521
+  },
+  "edge": {
+    "passed": 88,
+    "failed": 0,
+    "runtime_network": "denied",
+    "knowledge_agent_baseline_typing": "one test uses no-check as previously documented; remaining tests typechecked"
+  },
+  "ingest_typecheck": "PASS cached dependencies nodeModulesDir=none; no dependency or lock changes",
+  "database": {
+    "migrations": 332,
+    "probes": 14,
+    "engine": "native PostgreSQL17 with Supabase stubs"
+  },
+  "integrated_gate": "test-results/agent-gates/2026-09-07T16-20-04-890Z-SYS-001-RELEASE-FINAL.json",
+  "verdict": "PASS",
+  "independent_source_reviews": "approved after all surfaced defects fixed",
+  "hosted_release": "Haven migrations319-329 and hooks verified; authenticated preview owner API and current/revoked Edge actor verified; main merge/production application pending",
+  "ui_scope": "public home 4 viewports +axe1route; component tests for editor; no authenticated clinical UAT"
+}

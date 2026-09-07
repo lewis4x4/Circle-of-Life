@@ -19,7 +19,7 @@ DO $$ BEGIN
 END $$;
 
 CREATE TEMP TABLE access_fixture AS
-SELECT gen_random_uuid() actor, gen_random_uuid() manager, gen_random_uuid() run_id, gen_random_uuid() resident,
+SELECT gen_random_uuid() actor, gen_random_uuid() actor_session, gen_random_uuid() manager, gen_random_uuid() run_id, gen_random_uuid() resident,
   f.id facility, f.organization_id org, gen_random_uuid() definition FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM access_fixture) THEN RAISE EXCEPTION 'Local replay seed facility required'; END IF; END $$;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
@@ -30,8 +30,12 @@ SELECT actor,actor||'@review.invalid','Review actor','caregiver'::public.app_rol
 UNION ALL SELECT manager,manager||'@review.invalid','Review manager','manager'::public.app_role,org,true FROM access_fixture
 ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT actor,facility,org FROM access_fixture;
-SELECT set_config('request.jwt.claims',jsonb_build_object('sub',actor,'role','authenticated','app_role','caregiver','organization_id',org,
-  'app_metadata',jsonb_build_object('app_role','caregiver','organization_id',org))::text,true) FROM access_fixture;
+INSERT INTO auth.sessions(id,user_id) SELECT actor_session,actor FROM access_fixture;
+SELECT set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
+  'iat',extract(epoch FROM clock_timestamp())::bigint,'auth_claim_version',p.auth_claim_version,
+  'role','authenticated','app_role','caregiver','organization_id',f.org,
+  'app_metadata',jsonb_build_object('app_role','caregiver','organization_id',f.org))::text,true)
+FROM access_fixture f JOIN public.user_profiles p ON p.id=f.actor;
 GRANT SELECT ON access_fixture TO authenticated;
 SET LOCAL ROLE authenticated;
 UPDATE public.user_profiles SET full_name='Safe profile edit' WHERE id=(SELECT actor FROM access_fixture);

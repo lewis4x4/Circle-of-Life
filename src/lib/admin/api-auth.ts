@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { ADMIN_ELIGIBLE_ROLES, type AppRole } from "@/lib/rbac";
+import { requireCurrentApiActor } from "@/lib/auth/current-api-actor";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { createClient } from "@/lib/supabase/server";
 import { serviceRoleUserHasFacilityAccess } from "@/lib/supabase/service-role-facility-access";
 
 type AdminClient = ReturnType<typeof createServiceRoleClient>;
-
-type AdminProfileRow = {
-  id: string;
-  organization_id: string | null;
-  app_role: AppRole | null;
-};
 
 export type AdminApiActor = {
   id: string;
@@ -29,50 +23,21 @@ const ORG_WIDE_ROLES = new Set<AppRole>(["owner", "org_admin"]);
 export async function requireAdminApiActor(options?: {
   allowedRoles?: readonly AppRole[];
 }): Promise<RequireAdminApiActorResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: sessionError,
-  } = await supabase.auth.getUser();
-
-  if (sessionError || !user) {
-    return {
-      response: NextResponse.json({ error: "Not authenticated" }, { status: 401 }),
-    };
-  }
-
-  const admin = createServiceRoleClient();
-  const { data: profile, error: profileError } = await admin
-    .from("user_profiles")
-    .select("id, organization_id, app_role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  const actor = profile as AdminProfileRow | null;
-  if (profileError || !actor?.organization_id || !actor.app_role) {
-    return {
-      response: NextResponse.json({ error: "Profile not found" }, { status: 403 }),
-    };
-  }
-
   const allowedRoles = options?.allowedRoles
-    ? new Set<AppRole>(options.allowedRoles)
-    : new Set<AppRole>(Array.from(ADMIN_ELIGIBLE_ROLES) as AppRole[]);
-
-  if (!allowedRoles.has(actor.app_role)) {
-    return {
-      response: NextResponse.json({ error: "Insufficient permissions" }, { status: 403 }),
-    };
-  }
+    ? options.allowedRoles
+    : (Array.from(ADMIN_ELIGIBLE_ROLES) as AppRole[]);
+  const result = await requireCurrentApiActor({
+    allowedRoles,
+    scope: "admin.api-auth",
+  });
+  if ("response" in result) return result;
 
   return {
     actor: {
-      id: actor.id,
-      organization_id: actor.organization_id,
-      app_role: actor.app_role,
-      admin,
+      id: result.actor.id,
+      organization_id: result.actor.organizationId,
+      app_role: result.actor.appRole,
+      admin: result.actor.admin,
     },
   };
 }
@@ -107,7 +72,6 @@ export async function actorCanAccessFacility(actor: AdminApiActor, facilityId: s
     userId: actor.id,
     facilityId,
     organizationId: actor.organization_id,
-    appRole: actor.app_role,
   });
 }
 
