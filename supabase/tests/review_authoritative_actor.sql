@@ -7,6 +7,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT nullif(auth.jwt()->>'sub','')::uuid
 $$;
+CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$
+  SELECT nullif(auth.jwt()->>'role','')
+$$;
 
 CREATE TEMP TABLE actor_fixture AS
 SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,
@@ -16,11 +19,17 @@ SELECT gen_random_uuid() actor,gen_random_uuid() actor_session,
   gen_random_uuid() mismatch_user,gen_random_uuid() mismatch_session,
   gen_random_uuid() second_resident,gen_random_uuid() storage_object,gen_random_uuid() storage_object_two,
   gen_random_uuid() operation_task,gen_random_uuid() defer_task,gen_random_uuid() defer_failure_task,
+  gen_random_uuid() rounding_task,gen_random_uuid() rounding_reassign_task,gen_random_uuid() rounding_terminal_task,
+  gen_random_uuid() rounding_terminal_log,gen_random_uuid() rounding_terminal_assignment,
+  gen_random_uuid() rounding_staff,gen_random_uuid() rounding_other_staff,
+  gen_random_uuid() rounding_plan,gen_random_uuid() rounding_rule,gen_random_uuid() rounding_flag,
   gen_random_uuid() perf_marker,
   f.id facility,f.organization_id organization,r.id resident
 FROM public.facilities f JOIN public.residents r
   ON r.facility_id=f.id AND r.organization_id=f.organization_id AND r.deleted_at IS NULL
-WHERE f.deleted_at IS NULL LIMIT 1;
+WHERE f.deleted_at IS NULL
+  AND f.name IN ('Oakridge ALF','Rising Oaks ALF','Homewood Lodge ALF','Grande Cypress ALF')
+LIMIT 1;
 DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM actor_fixture) THEN RAISE EXCEPTION 'SYS-001 seeded facility/resident required'; END IF; END $$;
 
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
@@ -62,6 +71,71 @@ UNION ALL
 SELECT defer_failure_task,organization,facility,'SYS-001 atomic defer failure task','safety','daily',current_date,'pending'
 FROM actor_fixture;
 
+INSERT INTO public.staff(
+  id,user_id,facility_id,organization_id,first_name,last_name,staff_role,employment_status,hire_date
+)
+SELECT rounding_staff,actor,facility,organization,'SYS-001','Rounding actor',
+  'cna'::public.staff_role,'active'::public.employment_status,current_date
+FROM actor_fixture
+UNION ALL
+SELECT rounding_other_staff,NULL,facility,organization,'SYS-001','Other assignee',
+  'cna'::public.staff_role,'active'::public.employment_status,current_date
+FROM actor_fixture;
+INSERT INTO public.resident_observation_plans(
+  id,organization_id,facility_id,resident_id,status,source_type,effective_from,rationale
+)
+SELECT rounding_plan,organization,facility,resident,'active','manual',now(),'SYS-001 rounding authorization plan'
+FROM actor_fixture;
+INSERT INTO public.resident_observation_plan_rules(
+  id,plan_id,organization_id,facility_id,resident_id,interval_type,interval_minutes,grace_minutes
+)
+SELECT rounding_rule,rounding_plan,organization,facility,resident,'fixed_minutes',60,15
+FROM actor_fixture;
+INSERT INTO public.resident_observation_tasks(
+  id,organization_id,facility_id,resident_id,plan_id,plan_rule_id,assigned_staff_id,
+  scheduled_for,due_at,grace_ends_at,status
+)
+SELECT rounding_task,organization,facility,resident,rounding_plan,rounding_rule,rounding_staff,
+  now()-interval '30 minutes',now()+interval '30 minutes',now()+interval '45 minutes',
+  'upcoming'::public.resident_observation_task_status
+FROM actor_fixture
+UNION ALL
+SELECT rounding_reassign_task,organization,facility,resident,rounding_plan,rounding_rule,rounding_staff,
+  now()+interval '1 hour',now()+interval '2 hours',now()+interval '2 hours 15 minutes',
+  'due_soon'::public.resident_observation_task_status
+FROM actor_fixture
+UNION ALL
+SELECT rounding_terminal_task,organization,facility,resident,rounding_plan,rounding_rule,rounding_staff,
+  now()-interval '2 hours',now()-interval '1 hour',now()-interval '45 minutes',
+  'completed_on_time'::public.resident_observation_task_status
+FROM actor_fixture;
+INSERT INTO public.resident_observation_assignments(
+  organization_id,facility_id,resident_id,task_id,staff_id,assignment_type,created_by
+)
+SELECT organization,facility,resident,rounding_task,rounding_staff,'primary',actor FROM actor_fixture;
+INSERT INTO public.resident_observation_assignments(
+  organization_id,facility_id,resident_id,task_id,staff_id,assignment_type,created_by
+)
+SELECT organization,facility,resident,rounding_reassign_task,rounding_staff,'primary',actor FROM actor_fixture;
+INSERT INTO public.resident_observation_assignments(
+  id,organization_id,facility_id,resident_id,task_id,staff_id,assignment_type,created_by
+)
+SELECT rounding_terminal_assignment,organization,facility,resident,rounding_terminal_task,rounding_staff,'primary',actor
+FROM actor_fixture;
+INSERT INTO public.resident_observation_logs(
+  id,organization_id,facility_id,resident_id,task_id,assigned_staff_id,staff_id,
+  observed_at,entered_at,entry_mode,quick_status,created_by
+)
+SELECT rounding_terminal_log,organization,facility,resident,rounding_terminal_task,rounding_staff,rounding_staff,
+  now()-interval '1 hour',now()-interval '1 hour','live','awake',actor FROM actor_fixture;
+UPDATE public.resident_observation_tasks AS task SET completed_log_id=fixture.rounding_terminal_log
+FROM actor_fixture AS fixture WHERE task.id=fixture.rounding_terminal_task;
+INSERT INTO public.resident_observation_integrity_flags(
+  id,organization_id,facility_id,resident_id,staff_id,flag_type,severity,status
+)
+SELECT rounding_flag,organization,facility,resident,rounding_staff,'sys001_authority','medium','open'
+FROM actor_fixture;
+
 GRANT SELECT ON actor_fixture TO authenticated, service_role;
 CREATE FUNCTION pg_temp.set_claims(p_user uuid,p_session uuid,p_version jsonb,p_claimed_role text)
 RETURNS void LANGUAGE plpgsql AS $$
@@ -79,6 +153,15 @@ BEGIN
     RAISE EXCEPTION 'SYS-001 unexpectedly accepted: %',p_case;
   EXCEPTION WHEN OTHERS THEN IF SQLSTATE<>'PGRST' THEN RAISE; END IF; END;
 END $$;
+CREATE FUNCTION pg_temp.rounding_completion_payload() RETURNS jsonb LANGUAGE sql AS $$
+  SELECT jsonb_build_object(
+    'observed_at',now(),'entered_at',now(),'entry_mode','live','quick_status','awake',
+    'distress_present',false,'breathing_concern',false,'pain_concern',false,
+    'toileting_assisted',false,'hydration_offered',false,'repositioned',false,
+    'skin_concern_observed',false,'fall_hazard_observed',false,'refused_assistance',false,
+    'intervention_codes','[]'::jsonb,'exception_present',false,'completion_status','completed_on_time'
+  )
+$$;
 
 -- Hook emits real integer authority claims and replaces stale role/org metadata.
 DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; version integer; BEGIN
@@ -248,6 +331,12 @@ GRANT USAGE ON SCHEMA public, haven TO service_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT INSERT ON public.operation_audit_log TO service_role;
 GRANT UPDATE ON public.user_profiles,public.facilities,public.user_facility_access TO service_role;
+UPDATE public.resident_observation_assignments SET released_at=now()
+WHERE task_id=(SELECT rounding_task FROM actor_fixture) AND staff_id=(SELECT rounding_staff FROM actor_fixture);
+INSERT INTO public.resident_observation_assignments(
+  organization_id,facility_id,resident_id,task_id,staff_id,assignment_type,created_by
+)
+SELECT organization,facility,resident,rounding_task,rounding_other_staff,'reassignment',actor FROM actor_fixture;
 SELECT set_config('request.jwt.claims','{"role":"service_role"}',true);
 SET LOCAL ROLE service_role;
 DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
@@ -275,13 +364,162 @@ DO $$ DECLARE f actor_fixture%ROWTYPE; result jsonb; BEGIN SELECT * INTO STRICT 
   IF (SELECT status FROM public.operation_task_instances WHERE id=f.defer_task)<>'pending' THEN
     RAISE EXCEPTION 'Rejected stale actor mutated deferred task';
   END IF;
+  BEGIN
+    PERFORM public.apply_col_discovery_round_observation_plan(
+      f.resident,f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor)
+    );
+    RAISE EXCEPTION 'Service rounding RPC trusted stale actor role';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.apply_col_discovery_round_observation_plan(
+      f.resident,f.actor,'caregiver',f.mismatch_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor)
+    );
+    RAISE EXCEPTION 'Service discovery RPC accepted another user session';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.complete_rounding_task_review(
+      f.rounding_task,f.actor,'caregiver',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),
+      f.organization,f.facility,f.rounding_staff,pg_temp.rounding_completion_payload()
+    );
+    RAISE EXCEPTION 'Stale task assignee completed after active reassignment';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  IF (SELECT status FROM public.resident_observation_tasks WHERE id=f.rounding_task)<>'upcoming'
+     OR EXISTS(SELECT 1 FROM public.resident_observation_logs WHERE task_id=f.rounding_task) THEN
+    RAISE EXCEPTION 'Rejected stale assignee left a completion mutation';
+  END IF;
 END $$;
 RESET ROLE;
 UPDATE public.user_profiles SET app_role='owner' WHERE id=(SELECT actor FROM actor_fixture);
+UPDATE public.staff SET employment_status='suspended' WHERE id=(SELECT rounding_staff FROM actor_fixture);
 SET LOCAL ROLE service_role;
-DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; request_key text; defer_at timestamptz:=pg_catalog.clock_timestamp()+interval '1 second'; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+DO $$ DECLARE f actor_fixture%ROWTYPE; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+  BEGIN
+    PERFORM public.complete_rounding_task_review(
+      f.rounding_task,f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),
+      f.organization,f.facility,f.rounding_staff,pg_temp.rounding_completion_payload()
+    );
+    RAISE EXCEPTION 'Manager without active staff completed rounding task';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  IF (SELECT status FROM public.resident_observation_tasks WHERE id=f.rounding_task)<>'upcoming'
+     OR EXISTS(SELECT 1 FROM public.resident_observation_logs WHERE task_id=f.rounding_task) THEN
+    RAISE EXCEPTION 'Manager without staff left a completion mutation';
+  END IF;
+END $$;
+RESET ROLE;
+UPDATE public.staff SET employment_status='active' WHERE id=(SELECT rounding_staff FROM actor_fixture);
+UPDATE public.resident_observation_assignments SET released_at=now()
+WHERE task_id=(SELECT rounding_task FROM actor_fixture) AND staff_id=(SELECT rounding_other_staff FROM actor_fixture)
+  AND released_at IS NULL;
+UPDATE public.resident_observation_assignments SET released_at=NULL
+WHERE task_id=(SELECT rounding_task FROM actor_fixture) AND staff_id=(SELECT rounding_staff FROM actor_fixture);
+UPDATE public.staff SET employment_status='terminated' WHERE id=(SELECT rounding_other_staff FROM actor_fixture);
+SET LOCAL ROLE service_role;
+DO $$ DECLARE f actor_fixture%ROWTYPE; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
+  BEGIN
+    PERFORM public.reassign_rounding_task_review(
+      f.rounding_reassign_task,f.rounding_other_staff,'terminated assignee',f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility
+    );
+    RAISE EXCEPTION 'Terminated staff accepted for rounding reassignment';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.update_rounding_integrity_flag_review(
+      f.rounding_flag,'assign','terminated assignee',f.rounding_other_staff,f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility
+    );
+    RAISE EXCEPTION 'Terminated staff accepted for integrity assignment';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  IF (SELECT assigned_staff_id FROM public.resident_observation_tasks WHERE id=f.rounding_reassign_task)<>f.rounding_staff
+     OR (SELECT assigned_to_staff_id FROM public.resident_observation_integrity_flags WHERE id=f.rounding_flag) IS NOT NULL THEN
+    RAISE EXCEPTION 'Rejected inactive assignee changed rounding state';
+  END IF;
+END $$;
+RESET ROLE;
+UPDATE public.staff SET employment_status='active' WHERE id=(SELECT rounding_other_staff FROM actor_fixture);
+SET LOCAL ROLE service_role;
+DO $$ DECLARE f actor_fixture%ROWTYPE; first_result jsonb; replay_result jsonb; request_key text; rounding_plan uuid; rounding_replay uuid; terminal_audit_before integer; defer_at timestamptz:=pg_catalog.clock_timestamp()+interval '1 second'; BEGIN SELECT * INTO STRICT f FROM actor_fixture;
   IF public.complete_operation_task_review(f.operation_task,f.actor,'owner','current owner completion','{}')<>'completed' THEN
     RAISE EXCEPTION 'Current service task actor could not complete task';
+  END IF;
+  IF (public.complete_rounding_task_review(
+      f.rounding_task,f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),
+      f.organization,f.facility,f.rounding_staff,pg_temp.rounding_completion_payload()
+    )->>'status')<>'completed_on_time' THEN
+    RAISE EXCEPTION 'Current rounding manager could not complete task';
+  END IF;
+  IF (SELECT count(*) FROM public.resident_observation_logs WHERE task_id=f.rounding_task)<>1
+     OR (SELECT completed_log_id FROM public.resident_observation_tasks WHERE id=f.rounding_task) IS NULL THEN
+    RAISE EXCEPTION 'Atomic rounding completion did not persist one log receipt';
+  END IF;
+  SELECT count(*) INTO terminal_audit_before FROM public.audit_log
+  WHERE (table_name='resident_observation_tasks' AND record_id=f.rounding_terminal_task)
+     OR (table_name='resident_observation_assignments' AND record_id=f.rounding_terminal_assignment);
+  BEGIN
+    PERFORM public.reassign_rounding_task_review(
+      f.rounding_terminal_task,f.rounding_other_staff,'terminal overwrite attempt',f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility
+    );
+    RAISE EXCEPTION 'Terminal rounding task was reassigned';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM<>'Observation task cannot be reassigned from its current status' THEN RAISE; END IF;
+  END;
+  IF (SELECT status FROM public.resident_observation_tasks WHERE id=f.rounding_terminal_task)<>'completed_on_time'
+     OR (SELECT completed_log_id FROM public.resident_observation_tasks WHERE id=f.rounding_terminal_task)<>f.rounding_terminal_log
+     OR (SELECT count(*) FROM public.resident_observation_assignments WHERE task_id=f.rounding_terminal_task)<>1
+     OR (SELECT count(*) FROM public.audit_log
+         WHERE (table_name='resident_observation_tasks' AND record_id=f.rounding_terminal_task)
+            OR (table_name='resident_observation_assignments' AND record_id=f.rounding_terminal_assignment))<>terminal_audit_before THEN
+    RAISE EXCEPTION 'Rejected terminal reassignment changed status, receipt, assignment, or audit';
+  END IF;
+  IF (public.reassign_rounding_task_review(
+      f.rounding_reassign_task,f.rounding_other_staff,'current reassignment',f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility
+    )->>'status')<>'reassigned' THEN RAISE EXCEPTION 'Current rounding reassignment failed'; END IF;
+  IF (public.update_rounding_integrity_flag_review(
+      f.rounding_flag,'assign','current assignment',f.rounding_other_staff,f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility
+    )->>'assigned_staff_id') IS DISTINCT FROM f.rounding_other_staff::text THEN
+    RAISE EXCEPTION 'Current integrity assignment failed';
+  END IF;
+  IF public.generate_rounding_tasks_review(
+      jsonb_build_array(jsonb_build_object(
+        'organization_id',f.organization,'facility_id',f.facility,'resident_id',f.resident,
+        'plan_id',f.rounding_plan,'plan_rule_id',f.rounding_rule,'assigned_staff_id',f.rounding_other_staff,
+        'scheduled_for',now()+interval '2 hours','due_at',now()+interval '3 hours',
+        'grace_ends_at',now()+interval '3 hours 15 minutes','status','upcoming','notes','SYS-001 generation proof'
+      )),f.actor,'owner',f.actor_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor),f.organization,f.facility
+    )<>1 THEN RAISE EXCEPTION 'Current rounding generation failed'; END IF;
+  BEGIN
+    PERFORM public.apply_col_discovery_round_observation_plan(
+      f.resident,f.actor,'owner',f.mismatch_session,
+      (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor)
+    );
+    RAISE EXCEPTION 'Discovery plan accepted another user session for a current owner';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  rounding_plan:=public.apply_col_discovery_round_observation_plan(
+    f.resident,f.actor,'owner',f.actor_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor)
+  );
+  rounding_replay:=public.apply_col_discovery_round_observation_plan(
+    f.resident,f.actor,'owner',f.actor_session,
+    (SELECT auth_claim_version FROM public.user_profiles WHERE id=f.actor)
+  );
+  IF rounding_plan IS NULL OR rounding_replay IS DISTINCT FROM rounding_plan
+     OR (SELECT created_by FROM public.resident_observation_plans WHERE id=rounding_plan) IS DISTINCT FROM f.actor THEN
+    RAISE EXCEPTION 'Current service rounding actor did not receive one attributed replay-safe plan';
   END IF;
   request_key:=pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
     'operation-defer-v1:'||f.actor::text||':'||f.defer_task::text,'UTF8'
@@ -358,6 +596,22 @@ DO $$ BEGIN
   IF EXISTS(SELECT 1 FROM pg_policies WHERE schemaname='storage' AND tablename='objects'
     AND policyname LIKE 'storage_wf_owner_%' AND coalesce(qual,with_check) NOT LIKE '%authorized_user_id%') THEN
     RAISE EXCEPTION 'Workspace Storage owner policy lacks current actor'; END IF;
+  IF has_function_privilege('service_role','public.apply_col_discovery_round_observation_plan(uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','public.apply_col_discovery_round_observation_plan(uuid,uuid,text,uuid,integer)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.apply_col_discovery_round_observation_plan(uuid,uuid,text,uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Rounding service RPC grants incorrect';
+  END IF;
+  IF has_function_privilege('authenticated','public.complete_rounding_task_review(uuid,uuid,text,uuid,integer,uuid,uuid,uuid,jsonb)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.complete_rounding_task_review(uuid,uuid,text,uuid,integer,uuid,uuid,uuid,jsonb)','EXECUTE')
+     OR has_function_privilege('authenticated','public.reassign_rounding_task_review(uuid,uuid,text,uuid,text,uuid,integer,uuid,uuid)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.reassign_rounding_task_review(uuid,uuid,text,uuid,text,uuid,integer,uuid,uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','public.update_rounding_integrity_flag_review(uuid,text,text,uuid,uuid,text,uuid,integer,uuid,uuid)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.update_rounding_integrity_flag_review(uuid,text,text,uuid,uuid,text,uuid,integer,uuid,uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','public.generate_rounding_tasks_review(jsonb,uuid,text,uuid,integer,uuid,uuid)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.generate_rounding_tasks_review(jsonb,uuid,text,uuid,integer,uuid,uuid)','EXECUTE')
+     OR has_function_privilege('service_role','haven.assert_rounding_service_actor(uuid,text,uuid,integer,uuid,uuid,boolean,boolean)','EXECUTE') THEN
+    RAISE EXCEPTION 'Rounding command grants incorrect';
+  END IF;
 END $$;
 
 -- Scaled operational/reporting fixtures exercise real hot policies. Restore the

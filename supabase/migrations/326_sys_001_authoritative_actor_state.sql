@@ -706,5 +706,404 @@ END $$;
 REVOKE ALL ON FUNCTION public.defer_operation_task_review(uuid,uuid,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.defer_operation_task_review(uuid,uuid,text,timestamptz,text,text) TO service_role;
 
+-- Rounding's request-scoped writes use current RLS at the statement boundary.
+-- Keep its staff and manager policies aligned with the current actor helpers.
+CREATE OR REPLACE FUNCTION haven.current_staff_ids()
+RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $function$
+  SELECT staff.id
+  FROM public.staff AS staff
+  WHERE staff.user_id=(SELECT haven.authorized_user_id())
+    AND staff.organization_id=(SELECT haven.organization_id())
+    AND staff.employment_status='active'
+    AND staff.deleted_at IS NULL
+    AND staff.facility_id IN(SELECT haven.accessible_facility_ids())
+$function$;
+REVOKE ALL ON FUNCTION haven.current_staff_ids() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION haven.current_staff_ids() TO authenticated,service_role;
+
+DROP POLICY IF EXISTS resident_observation_escalations_update ON public.resident_observation_escalations;
+CREATE POLICY resident_observation_escalations_update ON public.resident_observation_escalations
+FOR UPDATE TO authenticated USING(
+  organization_id=(SELECT haven.organization_id()) AND deleted_at IS NULL
+  AND (SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse')
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+) WITH CHECK(
+  organization_id=(SELECT haven.organization_id())
+  AND (SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse')
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+);
+
+DROP POLICY IF EXISTS roa_update_policy ON public.resident_observation_assignments;
+CREATE POLICY roa_update_policy ON public.resident_observation_assignments
+FOR UPDATE TO authenticated USING(
+  organization_id=(SELECT haven.organization_id())
+  AND (SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse')
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+) WITH CHECK(
+  organization_id=(SELECT haven.organization_id())
+  AND (SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse')
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+);
+
+DROP POLICY IF EXISTS resident_watch_events_insert ON public.resident_watch_events;
+CREATE POLICY resident_watch_events_insert ON public.resident_watch_events
+FOR INSERT TO authenticated WITH CHECK(
+  organization_id=(SELECT haven.organization_id())
+  AND (SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse')
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+);
+
+DROP POLICY IF EXISTS resident_observation_exceptions_insert ON public.resident_observation_exceptions;
+CREATE POLICY resident_observation_exceptions_insert ON public.resident_observation_exceptions
+FOR INSERT TO authenticated WITH CHECK(
+  organization_id=(SELECT haven.organization_id())
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+  AND ((SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse') OR EXISTS(
+    SELECT 1 FROM public.resident_observation_logs AS log
+    WHERE log.id=public.resident_observation_exceptions.log_id
+      AND log.organization_id=public.resident_observation_exceptions.organization_id
+      AND log.facility_id=public.resident_observation_exceptions.facility_id
+      AND log.created_by=(SELECT haven.authorized_user_id()) AND log.deleted_at IS NULL
+  ))
+);
+
+DROP POLICY IF EXISTS resident_observation_integrity_flags_insert ON public.resident_observation_integrity_flags;
+CREATE POLICY resident_observation_integrity_flags_insert ON public.resident_observation_integrity_flags
+FOR INSERT TO authenticated WITH CHECK(
+  organization_id=(SELECT haven.organization_id())
+  AND facility_id IN(SELECT haven.accessible_facility_ids())
+  AND ((SELECT haven.app_role()) IN('owner','org_admin','facility_admin','nurse') OR (
+    staff_id IN(SELECT haven.current_staff_ids()) AND EXISTS(
+      SELECT 1 FROM public.resident_observation_logs AS log
+      WHERE log.id=public.resident_observation_integrity_flags.log_id
+        AND log.organization_id=public.resident_observation_integrity_flags.organization_id
+        AND log.facility_id=public.resident_observation_integrity_flags.facility_id
+        AND log.created_by=(SELECT haven.authorized_user_id()) AND log.deleted_at IS NULL
+    )
+  ))
+);
+
+-- Internal verifier for service-only rounding commands. Signed claim facts are
+-- extracted server-side after getUser/getClaims and matched to locked current
+-- Auth, session, profile, facility, grant, and staff rows.
+CREATE OR REPLACE FUNCTION haven.assert_rounding_service_actor(
+  p_actor_id uuid,p_actor_role text,p_session_id uuid,p_claim_version integer,
+  p_organization_id uuid,p_facility_id uuid,p_manager_only boolean,p_require_staff boolean
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $function$
+DECLARE
+  v_role text;
+  v_organization uuid;
+  v_version integer;
+  v_has_grant boolean:=false;
+  v_staff_id uuid;
+BEGIN
+  PERFORM 1 FROM public.facilities AS facility
+  WHERE facility.id=p_facility_id AND facility.organization_id=p_organization_id AND facility.deleted_at IS NULL
+  FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Rounding actor is no longer authorized' USING ERRCODE='42501'; END IF;
+
+  SELECT true INTO v_has_grant FROM public.user_facility_access AS access
+  WHERE access.user_id=p_actor_id AND access.organization_id=p_organization_id
+    AND access.facility_id=p_facility_id AND access.revoked_at IS NULL
+  FOR SHARE;
+
+  SELECT profile.app_role::text,profile.organization_id,profile.auth_claim_version
+  INTO v_role,v_organization,v_version
+  FROM public.user_profiles AS profile
+  JOIN auth.users AS auth_user ON auth_user.id=profile.id
+  JOIN auth.sessions AS session ON session.id=p_session_id AND session.user_id=profile.id
+  WHERE profile.id=p_actor_id AND profile.is_active AND profile.deleted_at IS NULL
+    AND auth_user.deleted_at IS NULL
+    AND (auth_user.banned_until IS NULL OR auth_user.banned_until<=pg_catalog.now())
+  FOR SHARE OF profile,auth_user,session;
+
+  IF v_role IS NULL OR v_role IS DISTINCT FROM p_actor_role
+     OR v_organization IS DISTINCT FROM p_organization_id
+     OR NOT(p_claim_version=v_version OR (p_claim_version IS NULL AND v_version=1))
+     OR (p_manager_only AND v_role NOT IN('owner','org_admin','facility_admin','nurse'))
+     OR (v_role NOT IN('owner','org_admin') AND NOT v_has_grant) THEN
+    RAISE EXCEPTION 'Rounding actor is no longer authorized' USING ERRCODE='42501';
+  END IF;
+
+  SELECT staff.id INTO v_staff_id FROM public.staff AS staff
+  WHERE staff.user_id=p_actor_id AND staff.organization_id=p_organization_id
+    AND staff.facility_id=p_facility_id AND staff.employment_status='active' AND staff.deleted_at IS NULL
+  ORDER BY staff.id LIMIT 1 FOR SHARE;
+  IF p_require_staff AND v_staff_id IS NULL THEN
+    RAISE EXCEPTION 'An active staff profile is required' USING ERRCODE='42501';
+  END IF;
+  RETURN pg_catalog.jsonb_build_object('role',v_role,'staff_id',v_staff_id);
+END $function$;
+REVOKE ALL ON FUNCTION haven.assert_rounding_service_actor(uuid,text,uuid,integer,uuid,uuid,boolean,boolean)
+  FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.generate_rounding_tasks_review(
+  p_rows jsonb,p_actor_id uuid,p_actor_role text,p_session_id uuid,p_claim_version integer,
+  p_organization_id uuid,p_facility_id uuid
+)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $function$
+DECLARE v_count integer;
+BEGIN
+  PERFORM haven.assert_rounding_service_actor(p_actor_id,p_actor_role,p_session_id,p_claim_version,
+    p_organization_id,p_facility_id,true,false);
+  IF pg_catalog.jsonb_typeof(p_rows) IS DISTINCT FROM 'array' THEN
+    RAISE EXCEPTION 'Invalid rounding task payload' USING ERRCODE='22023';
+  END IF;
+  IF EXISTS(
+    SELECT 1 FROM pg_catalog.jsonb_to_recordset(p_rows) AS row(
+      organization_id uuid,facility_id uuid,resident_id uuid,plan_id uuid,plan_rule_id uuid
+    )
+    WHERE row.organization_id IS DISTINCT FROM p_organization_id OR row.facility_id IS DISTINCT FROM p_facility_id
+      OR NOT EXISTS(SELECT 1 FROM public.residents AS resident WHERE resident.id=row.resident_id
+        AND resident.organization_id=p_organization_id AND resident.facility_id=p_facility_id AND resident.deleted_at IS NULL)
+      OR NOT EXISTS(SELECT 1 FROM public.resident_observation_plans AS plan WHERE plan.id=row.plan_id
+        AND plan.organization_id=p_organization_id AND plan.facility_id=p_facility_id AND plan.resident_id=row.resident_id
+        AND plan.deleted_at IS NULL)
+  ) THEN RAISE EXCEPTION 'Invalid rounding task scope' USING ERRCODE='42501'; END IF;
+
+  INSERT INTO public.resident_observation_tasks(
+    organization_id,entity_id,facility_id,resident_id,plan_id,plan_rule_id,watch_instance_id,
+    shift_assignment_id,assigned_staff_id,scheduled_for,due_at,grace_ends_at,status,notes
+  ) SELECT row.organization_id,row.entity_id,row.facility_id,row.resident_id,row.plan_id,row.plan_rule_id,
+      row.watch_instance_id,row.shift_assignment_id,row.assigned_staff_id,row.scheduled_for,row.due_at,
+      row.grace_ends_at,row.status::public.resident_observation_task_status,row.notes
+    FROM pg_catalog.jsonb_to_recordset(p_rows) AS row(
+      organization_id uuid,entity_id uuid,facility_id uuid,resident_id uuid,plan_id uuid,plan_rule_id uuid,
+      watch_instance_id uuid,shift_assignment_id uuid,assigned_staff_id uuid,scheduled_for timestamptz,
+      due_at timestamptz,grace_ends_at timestamptz,status text,notes text
+    )
+  ON CONFLICT(resident_id,plan_rule_id,due_at) WHERE deleted_at IS NULL AND plan_rule_id IS NOT NULL
+  DO UPDATE SET entity_id=excluded.entity_id,facility_id=excluded.facility_id,plan_id=excluded.plan_id,
+    watch_instance_id=excluded.watch_instance_id,shift_assignment_id=excluded.shift_assignment_id,
+    assigned_staff_id=excluded.assigned_staff_id,scheduled_for=excluded.scheduled_for,
+    grace_ends_at=excluded.grace_ends_at,status=excluded.status,notes=excluded.notes;
+  GET DIAGNOSTICS v_count=ROW_COUNT;
+  RETURN v_count;
+END $function$;
+REVOKE ALL ON FUNCTION public.generate_rounding_tasks_review(jsonb,uuid,text,uuid,integer,uuid,uuid)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.generate_rounding_tasks_review(jsonb,uuid,text,uuid,integer,uuid,uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.complete_rounding_task_review(
+  p_task_id uuid,p_actor_id uuid,p_actor_role text,p_session_id uuid,p_claim_version integer,
+  p_organization_id uuid,p_facility_id uuid,p_actual_staff_id uuid,p_payload jsonb
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $function$
+DECLARE
+  v_task public.resident_observation_tasks%ROWTYPE;
+  v_actor jsonb;
+  v_role text;
+  v_staff_id uuid;
+  v_has_active_assignment boolean;
+  v_is_active_assignee boolean;
+  v_log_id uuid;
+  v_status public.resident_observation_task_status;
+BEGIN
+  SELECT * INTO STRICT v_task FROM public.resident_observation_tasks
+  WHERE id=p_task_id AND organization_id=p_organization_id AND facility_id=p_facility_id AND deleted_at IS NULL
+  FOR UPDATE;
+  v_actor:=haven.assert_rounding_service_actor(p_actor_id,p_actor_role,p_session_id,p_claim_version,
+    p_organization_id,p_facility_id,false,true);
+  v_role:=v_actor->>'role';
+  v_staff_id:=(v_actor->>'staff_id')::uuid;
+  IF v_staff_id IS DISTINCT FROM p_actual_staff_id THEN
+    RAISE EXCEPTION 'Rounding actor staff identity changed' USING ERRCODE='42501';
+  END IF;
+
+  PERFORM 1 FROM public.resident_observation_assignments AS assignment
+  WHERE assignment.task_id=v_task.id AND assignment.organization_id=p_organization_id
+    AND assignment.facility_id=p_facility_id AND assignment.released_at IS NULL
+  ORDER BY assignment.id FOR SHARE;
+  SELECT EXISTS(SELECT 1 FROM public.resident_observation_assignments AS assignment
+      WHERE assignment.task_id=v_task.id AND assignment.organization_id=p_organization_id
+        AND assignment.facility_id=p_facility_id AND assignment.released_at IS NULL),
+    EXISTS(SELECT 1 FROM public.resident_observation_assignments AS assignment
+      WHERE assignment.task_id=v_task.id AND assignment.organization_id=p_organization_id
+        AND assignment.facility_id=p_facility_id AND assignment.released_at IS NULL
+        AND assignment.staff_id=v_staff_id)
+  INTO v_has_active_assignment,v_is_active_assignee;
+
+  IF v_role NOT IN('owner','org_admin','facility_admin','nurse')
+     AND NOT(CASE WHEN v_has_active_assignment THEN v_is_active_assignee ELSE v_task.assigned_staff_id=v_staff_id END) THEN
+    RAISE EXCEPTION 'Rounding task assignee changed' USING ERRCODE='42501';
+  END IF;
+  IF v_task.status IN('completed_on_time','completed_late','excused') THEN
+    RAISE EXCEPTION 'Observation task is no longer completable' USING ERRCODE='P0001';
+  END IF;
+  v_status:=(p_payload->>'completion_status')::public.resident_observation_task_status;
+  IF v_status NOT IN('completed_on_time','completed_late') THEN
+    RAISE EXCEPTION 'Invalid completion status' USING ERRCODE='22023';
+  END IF;
+
+  INSERT INTO public.resident_observation_logs(
+    organization_id,entity_id,facility_id,resident_id,task_id,assigned_staff_id,staff_id,
+    observed_at,entered_at,entry_mode,quick_status,resident_location,resident_position,resident_state,
+    distress_present,breathing_concern,pain_concern,toileting_assisted,hydration_offered,repositioned,
+    skin_concern_observed,fall_hazard_observed,refused_assistance,intervention_codes,exception_present,
+    note,late_reason,created_by
+  ) VALUES(
+    v_task.organization_id,v_task.entity_id,v_task.facility_id,v_task.resident_id,v_task.id,
+    v_task.assigned_staff_id,v_staff_id,(p_payload->>'observed_at')::timestamptz,
+    (p_payload->>'entered_at')::timestamptz,(p_payload->>'entry_mode')::public.resident_observation_entry_mode,
+    (p_payload->>'quick_status')::public.resident_observation_quick_status,p_payload->>'resident_location',
+    p_payload->>'resident_position',p_payload->>'resident_state',
+    coalesce((p_payload->>'distress_present')::boolean,false),coalesce((p_payload->>'breathing_concern')::boolean,false),
+    coalesce((p_payload->>'pain_concern')::boolean,false),coalesce((p_payload->>'toileting_assisted')::boolean,false),
+    coalesce((p_payload->>'hydration_offered')::boolean,false),coalesce((p_payload->>'repositioned')::boolean,false),
+    coalesce((p_payload->>'skin_concern_observed')::boolean,false),coalesce((p_payload->>'fall_hazard_observed')::boolean,false),
+    coalesce((p_payload->>'refused_assistance')::boolean,false),ARRAY(SELECT pg_catalog.jsonb_array_elements_text(
+      coalesce(p_payload->'intervention_codes','[]'::jsonb))),coalesce((p_payload->>'exception_present')::boolean,false),
+    p_payload->>'note',p_payload->>'late_reason',p_actor_id
+  ) RETURNING id INTO v_log_id;
+
+  IF nullif(p_payload->>'exception_type','') IS NOT NULL THEN
+    INSERT INTO public.resident_observation_exceptions(
+      organization_id,entity_id,facility_id,resident_id,log_id,exception_type,severity,requires_follow_up,follow_up_status
+    ) VALUES(v_task.organization_id,v_task.entity_id,v_task.facility_id,v_task.resident_id,v_log_id,
+      (p_payload->>'exception_type')::public.resident_observation_exception_type,
+      coalesce(nullif(p_payload->>'exception_severity',''),'medium')::public.resident_observation_severity,true,'open');
+  END IF;
+
+  UPDATE public.resident_observation_tasks SET status=v_status,completed_log_id=v_log_id,updated_by=p_actor_id
+  WHERE id=v_task.id;
+  RETURN pg_catalog.jsonb_build_object('log_id',v_log_id,'status',v_status::text);
+END $function$;
+REVOKE ALL ON FUNCTION public.complete_rounding_task_review(uuid,uuid,text,uuid,integer,uuid,uuid,uuid,jsonb)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.complete_rounding_task_review(uuid,uuid,text,uuid,integer,uuid,uuid,uuid,jsonb)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.reassign_rounding_task_review(
+  p_task_id uuid,p_new_staff_id uuid,p_reason text,p_actor_id uuid,p_actor_role text,
+  p_session_id uuid,p_claim_version integer,p_organization_id uuid,p_facility_id uuid
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $function$
+DECLARE v_task public.resident_observation_tasks%ROWTYPE; v_released_at timestamptz:=pg_catalog.now();
+BEGIN
+  SELECT * INTO STRICT v_task FROM public.resident_observation_tasks
+  WHERE id=p_task_id AND organization_id=p_organization_id AND facility_id=p_facility_id AND deleted_at IS NULL FOR UPDATE;
+  PERFORM haven.assert_rounding_service_actor(p_actor_id,p_actor_role,p_session_id,p_claim_version,
+    p_organization_id,p_facility_id,true,false);
+  -- The live board treats these as actionable work. Missed is retained as
+  -- evidence; escalated has no documented reassignment transition and fails
+  -- closed. Reassigned remains actionable for a later supervisor handoff.
+  IF v_task.completed_log_id IS NOT NULL OR v_task.status NOT IN(
+    'upcoming','due_soon','due_now','overdue','critically_overdue','reassigned'
+  ) THEN
+    RAISE EXCEPTION 'Observation task cannot be reassigned from its current status' USING ERRCODE='P0001';
+  END IF;
+  PERFORM 1 FROM public.staff AS staff WHERE staff.id=p_new_staff_id AND staff.organization_id=p_organization_id
+    AND staff.facility_id=p_facility_id AND staff.employment_status='active' AND staff.deleted_at IS NULL FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Assigned staff member is unavailable' USING ERRCODE='42501'; END IF;
+  PERFORM 1 FROM public.resident_observation_assignments AS assignment
+    WHERE assignment.task_id=v_task.id AND assignment.released_at IS NULL ORDER BY assignment.id FOR UPDATE;
+  IF v_task.assigned_staff_id IS NOT NULL THEN
+    UPDATE public.resident_observation_assignments SET released_at=v_released_at
+    WHERE task_id=v_task.id AND staff_id=v_task.assigned_staff_id AND organization_id=p_organization_id
+      AND facility_id=p_facility_id AND released_at IS NULL;
+  END IF;
+  INSERT INTO public.resident_observation_assignments(
+    organization_id,entity_id,facility_id,resident_id,task_id,shift_assignment_id,staff_id,
+    assignment_type,assigned_at,reason,created_by
+  ) VALUES(p_organization_id,v_task.entity_id,p_facility_id,v_task.resident_id,v_task.id,
+    v_task.shift_assignment_id,p_new_staff_id,'reassignment',v_released_at,p_reason,p_actor_id);
+  UPDATE public.resident_observation_tasks SET assigned_staff_id=p_new_staff_id,
+    reassigned_from_staff_id=v_task.assigned_staff_id,reassignment_reason=p_reason,status='reassigned',updated_by=p_actor_id
+  WHERE id=v_task.id;
+  RETURN pg_catalog.jsonb_build_object('task_id',v_task.id,'assigned_staff_id',p_new_staff_id,'status','reassigned');
+END $function$;
+REVOKE ALL ON FUNCTION public.reassign_rounding_task_review(uuid,uuid,text,uuid,text,uuid,integer,uuid,uuid)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.reassign_rounding_task_review(uuid,uuid,text,uuid,text,uuid,integer,uuid,uuid)
+  TO service_role;
+
+CREATE OR REPLACE FUNCTION public.update_rounding_integrity_flag_review(
+  p_flag_id uuid,p_action text,p_note text,p_assigned_staff_id uuid,p_actor_id uuid,p_actor_role text,
+  p_session_id uuid,p_claim_version integer,p_organization_id uuid,p_facility_id uuid
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $function$
+DECLARE v_flag public.resident_observation_integrity_flags%ROWTYPE; v_status text; v_now timestamptz:=pg_catalog.now();
+BEGIN
+  SELECT * INTO STRICT v_flag FROM public.resident_observation_integrity_flags
+  WHERE id=p_flag_id AND organization_id=p_organization_id AND facility_id=p_facility_id AND deleted_at IS NULL FOR UPDATE;
+  PERFORM haven.assert_rounding_service_actor(p_actor_id,p_actor_role,p_session_id,p_claim_version,
+    p_organization_id,p_facility_id,true,false);
+  IF p_action='assign' THEN
+    IF p_assigned_staff_id IS NOT NULL THEN
+      PERFORM 1 FROM public.staff AS staff WHERE staff.id=p_assigned_staff_id AND staff.organization_id=p_organization_id
+        AND staff.facility_id=p_facility_id AND staff.employment_status='active' AND staff.deleted_at IS NULL FOR SHARE;
+      IF NOT FOUND THEN RAISE EXCEPTION 'Assigned staff member is unavailable' USING ERRCODE='42501'; END IF;
+    END IF;
+    UPDATE public.resident_observation_integrity_flags SET assigned_to_staff_id=p_assigned_staff_id,
+      assigned_at=CASE WHEN p_assigned_staff_id IS NULL THEN NULL ELSE v_now END,
+      disposition_note=CASE WHEN coalesce(p_note,'')='' THEN disposition_note ELSE p_note END,
+      reviewed_by=p_actor_id,updated_by=p_actor_id WHERE id=v_flag.id RETURNING status::text INTO v_status;
+  ELSIF p_action='start_review' THEN
+    IF v_flag.status<>'open' THEN RAISE EXCEPTION 'Integrity flag state changed'; END IF;
+    UPDATE public.resident_observation_integrity_flags SET status='in_progress',
+      disposition_note=CASE WHEN coalesce(p_note,'')='' THEN disposition_note ELSE p_note END,
+      reviewed_by=p_actor_id,updated_by=p_actor_id WHERE id=v_flag.id RETURNING status::text INTO v_status;
+  ELSIF p_action IN('resolve','dismiss') THEN
+    IF v_flag.status IN('resolved','dismissed') THEN RAISE EXCEPTION 'Integrity flag state changed'; END IF;
+    UPDATE public.resident_observation_integrity_flags SET status=p_action::public.resident_observation_follow_up_status,
+      disposition_note=coalesce(nullif(p_note,''),CASE WHEN p_action='resolve'
+        THEN 'Resolved from the Smart Rounding integrity review queue.'
+        ELSE 'Dismissed from the Smart Rounding integrity review queue.' END),
+      reviewed_by=p_actor_id,updated_by=p_actor_id WHERE id=v_flag.id RETURNING status::text INTO v_status;
+  ELSE RAISE EXCEPTION 'Invalid integrity action' USING ERRCODE='22023'; END IF;
+  RETURN pg_catalog.jsonb_build_object('id',v_flag.id,'status',v_status,'assigned_staff_id',p_assigned_staff_id);
+END $function$;
+REVOKE ALL ON FUNCTION public.update_rounding_integrity_flag_review(uuid,text,text,uuid,uuid,text,uuid,integer,uuid,uuid)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.update_rounding_integrity_flag_review(uuid,text,text,uuid,uuid,text,uuid,integer,uuid,uuid)
+  TO service_role;
+
+-- The browser-facing one-argument discovery command continues to use current
+-- RLS authority. Service-role routes must use this actor-bound overload so a
+-- stale route snapshot cannot bypass current role, organization, or grant.
+CREATE OR REPLACE FUNCTION public.apply_col_discovery_round_observation_plan(
+  p_resident_id uuid,
+  p_actor_id uuid,
+  p_actor_role text,
+  p_session_id uuid,
+  p_claim_version integer
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=''
+AS $$
+DECLARE
+  v_resident public.residents%ROWTYPE;
+  v_actor jsonb;
+  v_claims jsonb;
+  v_plan_id uuid;
+BEGIN
+  SELECT resident.* INTO STRICT v_resident
+  FROM public.residents AS resident
+  JOIN public.facilities AS facility
+    ON facility.id=resident.facility_id
+   AND facility.organization_id=resident.organization_id
+   AND facility.deleted_at IS NULL
+  WHERE resident.id=p_resident_id AND resident.deleted_at IS NULL
+  FOR UPDATE OF resident
+  FOR SHARE OF facility;
+
+  v_actor:=haven.assert_rounding_service_actor(p_actor_id,p_actor_role,p_session_id,p_claim_version,
+    v_resident.organization_id,v_resident.facility_id,true,false);
+
+  v_claims:=coalesce(nullif(pg_catalog.current_setting('request.jwt.claims',true),''),'{}')::jsonb;
+  v_claims:=pg_catalog.jsonb_set(v_claims,'{role}',pg_catalog.to_jsonb('service_role'::text),true);
+  v_claims:=pg_catalog.jsonb_set(v_claims,'{sub}',pg_catalog.to_jsonb(p_actor_id::text),true);
+  PERFORM pg_catalog.set_config('request.jwt.claims',v_claims::text,true);
+  v_plan_id:=public.apply_col_discovery_round_observation_plan(p_resident_id);
+  RETURN v_plan_id;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.apply_col_discovery_round_observation_plan(uuid) FROM service_role;
+REVOKE ALL ON FUNCTION public.apply_col_discovery_round_observation_plan(uuid,uuid,text,uuid,integer)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_col_discovery_round_observation_plan(uuid,uuid,text,uuid,integer) TO service_role;
+
 NOTIFY pgrst, 'reload schema';
 NOTIFY pgrst, 'reload config';

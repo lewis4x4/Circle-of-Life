@@ -26,10 +26,8 @@ function initBreakdown(label: string): BreakdownEntry {
 }
 
 export async function GET(request: Request) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
   const { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {

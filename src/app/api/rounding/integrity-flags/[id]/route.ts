@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 
 type Action = "assign" | "start_review" | "resolve" | "dismiss";
 
@@ -15,12 +15,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can manage integrity flags" }, { status: 403 });
   }
@@ -43,11 +41,13 @@ export async function PATCH(
   }
 
   const flagId = (await params).id;
+  const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: flag, error: flagError } = await context.admin
     .from("resident_observation_integrity_flags")
     .select("id, organization_id, facility_id, status")
     .eq("id", flagId)
     .eq("organization_id", context.organizationId)
+    .in("facility_id", accessibleFacilityIds)
     .is("deleted_at", null)
     .maybeSingle();
 
@@ -78,6 +78,7 @@ export async function PATCH(
           .eq("id", assignedStaffId)
           .eq("facility_id", flag.facility_id)
           .eq("organization_id", context.organizationId)
+          .eq("employment_status", "active")
           .is("deleted_at", null)
           .maybeSingle();
 
@@ -114,21 +115,37 @@ export async function PATCH(
       break;
   }
 
-  const { error: updateError } = await context.admin
-    .from("resident_observation_integrity_flags")
-    .update(patch)
-    .eq("id", flag.id)
-    .eq("organization_id", context.organizationId);
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId: flag.facility_id });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+  const { data: updated, error: updateError } = await context.admin.rpc(
+    "update_rounding_integrity_flag_review" as never,
+    {
+      p_flag_id: flag.id,
+      p_action: action,
+      p_note: note,
+      p_assigned_staff_id: body.assignedStaffId?.trim() || null,
+      p_actor_id: context.userId,
+      p_actor_role: context.appRole,
+      p_session_id: context.sessionId,
+      p_claim_version: context.authClaimVersion,
+      p_organization_id: context.organizationId,
+      p_facility_id: flag.facility_id,
+    } as never,
+  );
 
   if (updateError) {
     logError("rounding.integrity-flags.update", updateError, { flagId: flag.id, action });
-    return NextResponse.json({ error: "Could not update integrity flag" }, { status: 500 });
+    return NextResponse.json(
+      { error: updateError.code === "42501" ? "No longer authorized to update this integrity flag" : "Could not update integrity flag" },
+      { status: updateError.code === "42501" ? 403 : 500 },
+    );
   }
 
   return NextResponse.json({
     ok: true,
     id: flag.id,
-    status: patch.status,
-    assignedToStaffId: patch.assigned_to_staff_id ?? null,
+    status: (updated as { status?: string } | null)?.status ?? patch.status,
+    assignedToStaffId: (updated as { assigned_staff_id?: string | null } | null)?.assigned_staff_id ?? null,
   });
 }

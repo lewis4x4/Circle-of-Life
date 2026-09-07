@@ -14,7 +14,7 @@ The 119 indexed review entries are accounted for: **117 corrected in source (inc
 
 ## Evidence
 
-The post-review SYS-001 hardening is split into the database authority proof in [SYS-001-DATABASE-AUTHORIZATION.md](SYS-001-DATABASE-AUTHORIZATION.md) and the user-derived Next/service-role route proof in [SYS-001B-NEXT-AUTHORIZATION.md](SYS-001B-NEXT-AUTHORIZATION.md). Both remain source-only until the matched migration and application build pass their hosted signed-token checks.
+The post-review SYS-001 hardening is split into the database authority proof in [SYS-001-DATABASE-AUTHORIZATION.md](SYS-001-DATABASE-AUTHORIZATION.md), the general user-derived Next/service-role route proof in [SYS-001B-NEXT-AUTHORIZATION.md](SYS-001B-NEXT-AUTHORIZATION.md), and the fourteen-route rounding boundary in [SYS-001C-ROUNDING-AUTHORIZATION.md](SYS-001C-ROUNDING-AUTHORIZATION.md). All remain source-only until the matched migration and application build pass their hosted signed-token checks.
 
 The current integrated release candidate passed the canonical UI-inclusive gate `test-results/agent-gates/2026-09-06T22-51-06-713Z-REVIEW-LIVE-MERGE-20260906.json`. Required hygiene, tracked-secret scanning, dependency audit, gitleaks, lint, migration sequence, production build, stress, design-review, and accessibility checks passed. Design review covered **4 screenshots**; axe covered **1 route**. Full Vitest also passed **3,026 tests across 500 files**, with **2 skipped**, **0 failed**, in **67.19 seconds**; its source-map warning was nonfatal. The canonical gate's Docker migration replay was optional and returned a successful **SKIP** because Docker was unavailable; it is not the database proof.
 

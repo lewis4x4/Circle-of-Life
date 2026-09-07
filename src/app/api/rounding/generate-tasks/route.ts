@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { logError } from "@/lib/observability/logger";
-import { assertRoundingFacilityAccess, getRoundingRequestContext, isRoundingManagerRole } from "@/lib/rounding/auth";
+import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 import { generateObservationTasks } from "@/lib/rounding/generate-observation-tasks";
 import type { GeneratedTaskInput, PlanRuleInput } from "@/lib/rounding/types";
 
@@ -75,12 +75,10 @@ function buildShiftWindow(shiftDate?: string, shift?: Body["shift"]) {
 }
 
 export async function POST(request: Request) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
-  const { context } = auth;
+  let { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
     return NextResponse.json({ error: "Only clinical and facility leaders can generate tasks" }, { status: 403 });
   }
@@ -102,7 +100,13 @@ export async function POST(request: Request) {
   if (!body.planId && !requestedFacilityId) {
     return NextResponse.json({ error: "facilityId is required when planId is not provided" }, { status: 400 });
   }
+  if (requestedFacilityId && !(await assertRoundingFacilityAccess(context, requestedFacilityId))) {
+    return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
+  }
 
+  const accessibleFacilityIds = body.planId
+    ? await getAccessibleRoundingFacilityIds(context)
+    : [];
   const basePlanQuery = context.admin
     .from("resident_observation_plans")
     .select("id, resident_id, facility_id, entity_id")
@@ -111,7 +115,7 @@ export async function POST(request: Request) {
     .is("deleted_at", null);
 
   const { data: plansData, error: plansError } = body.planId
-    ? await basePlanQuery.eq("id", body.planId)
+    ? await basePlanQuery.eq("id", body.planId).in("facility_id", accessibleFacilityIds)
     : await basePlanQuery.eq("facility_id", requestedFacilityId!);
 
   if (plansError) {
@@ -134,8 +138,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Plan facility does not match requested facility" }, { status: 400 });
   }
 
-  const hasAccess = await assertRoundingFacilityAccess(context, facilityId);
-  if (!hasAccess) {
+  if (!(await assertRoundingFacilityAccess(context, facilityId))) {
     return NextResponse.json({ error: "No access to this facility" }, { status: 403 });
   }
 
@@ -270,22 +273,34 @@ export async function POST(request: Request) {
     notes: task.notes ?? null,
   }));
 
-  const { data: insertedRows, error: insertError } = await context.admin
-    .from("resident_observation_tasks")
-    .upsert(rows, {
-      onConflict: "resident_id,plan_rule_id,due_at",
-      ignoreDuplicates: false,
-    })
-    .select("id");
+  const freshAuth = await revalidateRoundingRequestContext(context, { managerOnly: true, facilityId });
+  if ("response" in freshAuth) return freshAuth.response;
+  context = freshAuth.context;
+
+  const { data: insertedCount, error: insertError } = await context.admin.rpc(
+    "generate_rounding_tasks_review" as never,
+    {
+      p_rows: rows,
+      p_actor_id: context.userId,
+      p_actor_role: context.appRole,
+      p_session_id: context.sessionId,
+      p_claim_version: context.authClaimVersion,
+      p_organization_id: context.organizationId,
+      p_facility_id: facilityId,
+    } as never,
+  );
 
   if (insertError) {
     logError("rounding.generate-tasks", insertError, { action: "insert_tasks", facilityId, rowCount: rows.length });
-    return NextResponse.json({ error: "Could not create observation tasks" }, { status: 500 });
+    return NextResponse.json(
+      { error: insertError.code === "42501" ? "No longer authorized to generate tasks" : "Could not create observation tasks" },
+      { status: insertError.code === "42501" ? 403 : 500 },
+    );
   }
 
   return NextResponse.json({
     generated: generated.length,
-    inserted: insertedRows?.length ?? 0,
+    inserted: typeof insertedCount === "number" ? insertedCount : 0,
     plans: plans.length,
     windowStart: windowStart.toISOString(),
     windowEnd: windowEnd.toISOString(),

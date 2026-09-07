@@ -13,10 +13,8 @@ type HistoryRow = {
 };
 
 export async function GET(request: NextRequest) {
-  const auth = await getRoundingRequestContext();
-  if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
+  const auth = await getRoundingRequestContext({ managerOnly: true });
+  if ("response" in auth) return auth.response;
 
   const { context } = auth;
   if (!isRoundingManagerRole(context.appRole)) {
@@ -47,6 +45,7 @@ export async function GET(request: NextRequest) {
     .from("audit_log")
     .select("id, record_id, action, changed_fields, user_id, created_at")
     .eq("table_name", "resident_observation_integrity_flags")
+    .eq("organization_id", context.organizationId)
     .eq("facility_id", facilityId)
     .in("record_id", ids)
     .order("created_at", { ascending: false })
@@ -64,6 +63,7 @@ export async function GET(request: NextRequest) {
     const { data: profiles } = await context.admin
       .from("user_profiles")
       .select("id, full_name")
+      .eq("organization_id", context.organizationId)
       .in("id", userIds);
     for (const row of profiles ?? []) {
       nameById.set(row.id, row.full_name?.trim() || row.id);
