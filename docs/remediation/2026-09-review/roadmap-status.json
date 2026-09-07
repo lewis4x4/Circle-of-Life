@@ -9,8 +9,18 @@
       "id": "NAV-001",
       "severity": "P1",
       "title": "Seven implemented workflows redirect or link to missing canonical pages",
-      "status": "open",
-      "evidence": []
+      "status": "source_verified_review_pending",
+      "evidence": [
+        "src/lib/navigation/canonical-admin-route-registry.test.ts",
+        "src/app/(admin)/finance/forecast/page.tsx",
+        "src/app/(admin)/finance/close/page.tsx",
+        "src/app/(admin)/finance/trust/page.tsx",
+        "src/app/(admin)/reports/history/[id]/page.tsx",
+        "src/app/(admin)/training/inservice/new/page.tsx",
+        "src/app/(admin)/transportation/requests/new/page.tsx",
+        "src/app/(admin)/transportation/requests/[id]/page.tsx"
+      ],
+      "notes": "All seven canonical page modules and the configured legacy redirect segments are present in the reconciled source baseline. Path-existence and redirect-configuration regression passes. Independent review remains pending; no authenticated browser navigation is claimed."
     },
     {
       "id": "NAV-002",
@@ -52,8 +62,15 @@
       "id": "NAV-006",
       "severity": "P2",
       "title": "Executive subsection navigation excludes keyboard and hides its mobile fallback",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/app/(admin)/executive/executive-hub-nav.tsx",
+        "src/app/(admin)/executive/executive-hub-nav.test.tsx",
+        "src/app/(admin)/executive/executive-hub-nav.source.test.ts",
+        "src/components/executive/ExecutiveOverviewPageClient.tsx",
+        "src/app/(admin)/executive/alerts/page.tsx"
+      ],
+      "notes": "Primary route links use normal keyboard focus and aria-current. Overview and alerts mount the responsive navigation directly, including its mobile trigger. Independent review remains pending; no authenticated narrow-viewport browser session is claimed."
     },
     {
       "id": "NAV-007",
@@ -150,8 +167,13 @@
       "id": "FL-009",
       "severity": "P1",
       "title": "Controlled-substance count cards omit the resident and dose identity",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/components/controlled-substance/ControlledCountConsole.tsx",
+        "src/components/controlled-substance/PendingCountReceipt.tsx",
+        "src/components/controlled-substance/controlled-medication-identity.test.tsx"
+      ],
+      "notes": "Count entry and witness receipt show supported resident name, medication dose details, and the stable resident_medications identifier. Missing resident identity blocks the count. Independent Astra clinical review remains pending; no live clinical workflow is claimed."
     },
     {
       "id": "FL-010",
@@ -290,8 +312,12 @@
       "id": "BUS-005",
       "severity": "P2",
       "title": "Certification staff-load failures are presented as an empty selector",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/app/(admin)/certifications/new/page.tsx",
+        "src/app/(admin)/certifications/new/page.test.tsx"
+      ],
+      "notes": "The staff selector distinguishes successful-empty from failed retrieval, exposes retry, and retains entered form input. Independent review remains pending; no authenticated RLS failure is claimed."
     },
     {
       "id": "BUS-006",
