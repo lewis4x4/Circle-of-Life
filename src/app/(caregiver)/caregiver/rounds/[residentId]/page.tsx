@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -31,6 +31,53 @@ function displayName(person?: { first_name: string | null; last_name: string | n
   return [person?.preferred_name ?? person?.first_name ?? null, person?.last_name ?? null].filter(Boolean).join(" ");
 }
 
+type RetryOwner = NonNullable<CompletionPayload["retryOwner"]>;
+type PendingRound = {
+  payload: CompletionPayload;
+  task: TaskApiRow;
+  residentId: string;
+  owner: RetryOwner;
+  busy: boolean;
+  reasonRequired: boolean;
+  error: string | null;
+};
+// Match the drawer lifecycle: retain uncertain clinical requests in this tab only,
+// partitioned by original signed session and task. Never persist drafts to storage.
+const pendingRounds = new Map<string, PendingRound>();
+const acknowledgedRounds = new Map<string, string>();
+const listeners = new Set<() => void>();
+function publish() { listeners.forEach((listener) => listener()); }
+function subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }
+function ownerKey(owner: RetryOwner) {
+  return JSON.stringify([owner.userId, owner.sessionId, owner.organizationId, owner.facilityId]);
+}
+function roundKey(owner: RetryOwner, residentId: string, taskId: string) {
+  return `${ownerKey(owner)}:${residentId}:${taskId}`;
+}
+async function currentOwner(organizationId: string, facilityId: string): Promise<RetryOwner> {
+  const { data, error } = await createClient().rpc("haven_current_edge_actor" as never);
+  const actor = data as { user_id?: string; session_id?: string; organization_id?: string } | null;
+  if (error || !actor?.user_id || !actor.session_id || actor.organization_id !== organizationId || !facilityId) {
+    throw new Error("Current account authorization is unavailable. Sign in to record observations.");
+  }
+  return { userId: actor.user_id, sessionId: actor.session_id, organizationId, facilityId };
+}
+
+async function assertOriginalSession(owner: RetryOwner) {
+  // This is an identity guard, not authorization. The server validates retryOwner
+  // against the verified actor. Reading the local session also works offline.
+  const { data, error } = await createClient().auth.getSession();
+  const session = data.session;
+  let sessionId: unknown;
+  try {
+    const encoded = session?.access_token.split(".")[1] ?? "";
+    sessionId = (JSON.parse(atob(encoded.replace(/-/g, "+").replace(/_/g, "/"))) as { session_id?: unknown }).session_id;
+  } catch { /* Missing or malformed session identity fails closed below. */ }
+  if (error || session?.user.id !== owner.userId || sessionId !== owner.sessionId) {
+    throw new Error("The account or session changed. Sign in as the original operator to retry this observation.");
+  }
+}
+
 export default function CaregiverResidentRoundPage() {
   const supabase = useMemo(() => createClient(), []);
   const roundingSync = useRoundingOfflineSync();
@@ -38,120 +85,141 @@ export default function CaregiverResidentRoundPage() {
   const searchParams = useSearchParams();
   const residentId = params?.residentId ?? "";
   const taskIdFromQuery = searchParams.get("taskId");
-
-  const [queueOwner, setQueueOwner] = useState<{ ownerUserId: string; organizationId: string; facilityId: string } | null>(null);
+  const [owner, setOwner] = useState<RetryOwner | null>(null);
   const [facilityId, setFacilityId] = useState<string | null>(null);
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [residentName, setResidentName] = useState("Resident");
   const [task, setTask] = useState<TaskApiRow | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const requestRef = useRef<{ scope: string; requestId: string; observedAt: string } | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    setSuccessMessage(null);
-
-    if (!isBrowserSupabaseConfigured()) {
-      setLoadError("Supabase is not configured.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const resolved = await loadCaregiverFacilityContext(supabase);
-      if (!resolved.ok) {
-        throw new Error(resolved.error);
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sign in to record observations.");
-      setQueueOwner({ ownerUserId: user.id, organizationId: resolved.ctx.organizationId, facilityId: resolved.ctx.facilityId });
-      setFacilityId(resolved.ctx.facilityId);
-      setFacilityName(resolved.ctx.facilityName);
-      const response = await fetch(
-        `/api/rounding/tasks?facilityId=${encodeURIComponent(resolved.ctx.facilityId)}&residentId=${encodeURIComponent(residentId)}&limit=20`,
-        { cache: "no-store" },
-      );
-      const json = (await response.json()) as { error?: string; tasks?: TaskApiRow[] };
-      if (!response.ok) {
-        throw new Error(json.error ?? "Could not load resident rounds");
-      }
-
-      const tasks = json.tasks ?? [];
-      const selected =
-        tasks.find((candidate) => candidate.id === taskIdFromQuery) ??
-        tasks.find(
-          (candidate) =>
-            candidate.derived_status !== "completed_on_time" && candidate.derived_status !== "completed_late",
-        ) ??
-        tasks[0] ??
-        null;
-
-      setTask(selected);
-      setResidentName(displayName(selected?.residents) || "Resident");
-    } catch (error) {
-      setTask(null);
-      setLoadError(error instanceof Error ? error.message : "Could not load resident round.");
-    } finally {
-      setLoading(false);
-    }
-  }, [residentId, supabase, taskIdFromQuery]);
+  const routeScope = `${residentId}:${taskIdFromQuery ?? ""}`;
+  const [loadedScope, setLoadedScope] = useState<string | null>(null);
+  const activeScope = useRef<string | null>(null);
+  const key = owner && task ? roundKey(owner, residentId, task.id) : "";
+  const pending = useSyncExternalStore(subscribe, () => pendingRounds.get(key), () => undefined);
+  const successMessage = useSyncExternalStore(subscribe, () => acknowledgedRounds.get(key), () => undefined);
+  const submitting = pending?.busy ?? false;
 
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function submitRound(payload: CompletionPayload) {
-    if (!task || !queueOwner || submitting) return;
-    const scope = `${queueOwner.ownerUserId}:${queueOwner.organizationId}:${queueOwner.facilityId}:${task.id}`;
-    if (requestRef.current?.scope !== scope) {
-      requestRef.current = { scope, requestId: crypto.randomUUID(), observedAt: payload.observedAt ?? new Date().toISOString() };
-    }
-    payload = { ...payload, requestId: requestRef.current.requestId, observedAt: requestRef.current.observedAt };
-    setSubmitting(true);
-    setLoadError(null);
-    try {
-      if (!navigator.onLine) {
-        await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
-        setSuccessMessage("Round queued for sync. It will upload automatically when the device reconnects.");
+    let active = true;
+    let generation = 0;
+    async function load() {
+      const attempt = ++generation;
+      const isCurrent = () => active && attempt === generation;
+      activeScope.current = null;
+      setLoading(true);
+      setOwner(null);
+      setLoadError(null);
+      try {
+        if (!isBrowserSupabaseConfigured()) throw new Error("Supabase is not configured.");
+        const resolved = await loadCaregiverFacilityContext(supabase);
+        if (!resolved.ok) throw new Error(resolved.error);
+        const nextOwner = await currentOwner(resolved.ctx.organizationId, resolved.ctx.facilityId);
+        const response = await fetch(
+          `/api/rounding/tasks?facilityId=${encodeURIComponent(nextOwner.facilityId)}&residentId=${encodeURIComponent(residentId)}&limit=20`,
+          { cache: "no-store" },
+        );
+        const json = (await response.json()) as { error?: string; tasks?: TaskApiRow[] };
+        if (!response.ok) throw new Error(json.error ?? "Could not load resident rounds");
+        if (!isCurrent()) return;
+        const retained = [...pendingRounds.values()].find((round) =>
+          ownerKey(round.owner) === ownerKey(nextOwner) && round.residentId === residentId &&
+          (!taskIdFromQuery || round.task.id === taskIdFromQuery));
+        const tasks = json.tasks ?? [];
+        const selected = retained?.task ?? (taskIdFromQuery
+          ? tasks.find((candidate) => candidate.id === taskIdFromQuery)
+          : tasks.find((candidate) => !candidate.derived_status.startsWith("completed_"))) ?? null;
+        setOwner(nextOwner);
+        setFacilityId(nextOwner.facilityId);
+        setFacilityName(resolved.ctx.facilityName);
+        setTask(selected);
+        setResidentName(displayName(selected?.residents) || "Resident");
+        setLoadedScope(routeScope);
+        activeScope.current = selected ? roundKey(nextOwner, residentId, selected.id) : null;
+      } catch (error) {
+        if (!isCurrent()) return;
         setTask(null);
+        setLoadError(error instanceof Error ? error.message : "Could not load resident round.");
+        setLoadedScope(routeScope);
+      } finally {
+        if (isCurrent()) setLoading(false);
+      }
+    }
+    void load();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "TOKEN_REFRESHED" && event !== "INITIAL_SESSION") {
+        activeScope.current = null;
+        setOwner(null);
+        void Promise.resolve().then(load);
+      }
+    });
+    return () => { active = false; activeScope.current = null; subscription.unsubscribe(); };
+  }, [residentId, routeScope, supabase, taskIdFromQuery]);
+
+  async function submitRound(draft: CompletionPayload) {
+    if (!task || !owner || activeScope.current !== key || acknowledgedRounds.has(key)) return;
+    const previous = pendingRounds.get(key);
+    if (previous?.busy) return;
+    const payload: CompletionPayload = previous ? {
+      ...previous.payload,
+      ...(previous.reasonRequired ? { lateReason: draft.lateReason?.trim() || null } : {}),
+    } : { ...draft, requestId: crypto.randomUUID(), observedAt: new Date().toISOString(), retryOwner: owner };
+    const round: PendingRound = { payload, owner, task, residentId, busy: true, reasonRequired: false, error: null };
+    pendingRounds.set(key, round);
+    publish();
+    let reasonRequired = false;
+    function acknowledge(message: string) {
+      acknowledgedRounds.set(key, message);
+      pendingRounds.delete(key);
+      publish();
+    }
+    async function preserve() {
+      // The queue validates the signed-in user too; the retained payload carries
+      // the original session and facility for server-side retry validation.
+      await assertOriginalSession(round.owner);
+      await queueRoundingCompletion(round.task.id, round.residentId, payload, {
+        ownerUserId: round.owner.userId, organizationId: round.owner.organizationId, facilityId: round.owner.facilityId,
+      });
+    }
+    try {
+      await assertOriginalSession(owner);
+      if (activeScope.current !== key) throw new Error("Observation retained. Reopen this round to retry.");
+      if (!navigator.onLine) {
+        await preserve();
+        acknowledge("Round queued for sync. It will upload automatically when the device reconnects.");
         return;
       }
-
-      const response = await fetch(`/api/rounding/tasks/${task.id}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      if (ownerKey(await currentOwner(owner.organizationId, owner.facilityId)) !== ownerKey(owner)) {
+        throw new Error("The account or session changed. Sign in as the original operator to retry this observation.");
+      }
+      if (activeScope.current !== key) throw new Error("Observation retained. Reopen this round to retry.");
+      const response = await fetch(`/api/rounding/tasks/${round.task.id}/complete`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
-      const json = (await response.json()) as { error?: string };
+      const json = (await response.json()) as { error?: string; ok?: boolean; reasonRequired?: boolean };
       if (response.status === 409) {
-        await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
-        setLoadError("This observation conflicts with a saved completion. It is retained in the Outbox for reconciliation.");
+        await preserve();
+        acknowledge("This observation conflicts with a saved completion. It is retained in the Outbox for reconciliation.");
         return;
       }
       if (!response.ok) {
+        reasonRequired = response.status === 400 && json.reasonRequired === true;
         throw new Error(json.error ?? "Could not complete round");
       }
-      setSuccessMessage("Round saved successfully.");
-      await load();
+      if (json.ok !== true) throw new Error("Save acknowledgment was incomplete. Retry the original observation.");
+      acknowledge("Round saved successfully.");
     } catch (error) {
+      let failure = error;
       if (shouldQueueRoundingRequest(error)) {
         try {
-          await queueRoundingCompletion(task.id, residentId, payload, queueOwner);
-          setSuccessMessage("Connection lost. Round queued for sync and will upload automatically.");
-          setTask(null);
-        } catch (queueError) {
-          setLoadError(queueError instanceof Error ? queueError.message : "Could not preserve the observation in the Outbox. Keep this draft open.");
-        }
-      } else {
-        setLoadError(error instanceof Error ? error.message : "Could not complete round.");
+          await preserve();
+          acknowledge("Connection lost. Round queued for sync and will upload automatically.");
+          return;
+        } catch (queueError) { failure = queueError; }
       }
-    } finally {
-      setSubmitting(false);
+      pendingRounds.set(key, { ...round, busy: false, reasonRequired,
+        error: failure instanceof Error ? failure.message : "Could not preserve the observation. Keep this draft open." });
+      publish();
     }
   }
 
@@ -171,7 +239,7 @@ export default function CaregiverResidentRoundPage() {
     [facilityName, task, taskQueuedLocally],
   );
 
-  if (loading) {
+  if (loading || loadedScope !== routeScope) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -199,9 +267,9 @@ export default function CaregiverResidentRoundPage() {
         ) : null}
       </div>
 
-      {loadError ? (
+      {loadError || pending?.error ? (
         <Card className="border-destructive/30 bg-destructive/10 text-foreground">
-          <CardContent className="py-4 text-sm">{loadError}</CardContent>
+          <CardContent className="py-4 text-sm">{loadError ?? pending?.error}</CardContent>
         </Card>
       ) : null}
 
@@ -211,7 +279,7 @@ export default function CaregiverResidentRoundPage() {
         </Card>
       ) : null}
 
-      {!task || taskQueuedLocally ? (
+      {!task || !owner || successMessage || (!pending && (taskQueuedLocally || task.derived_status.startsWith("completed_"))) ? (
         <div className="space-y-4">
           <CaregiverRoundsEmptyNotice copy={emptyCopy} cadenceReminder={cadenceReminder} />
           <Link href="/caregiver/rounds">
@@ -222,6 +290,9 @@ export default function CaregiverResidentRoundPage() {
         </div>
       ) : (
         <QuickObservationForm
+          key={key}
+          pendingPayload={pending?.payload}
+          reasonRequired={pending?.reasonRequired}
           residentName={residentName}
           dueLabel={`Due at ${new Date(task.due_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}${facilityId ? ` · Facility ${facilityId.slice(-4)}` : ""}`}
           facilityId={facilityId}

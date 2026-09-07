@@ -1,0 +1,90 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Section 2
+
+stdout | ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx > preserves original clinical content on retry after server failure
+{"failure":"server failure","first":{"quickStatus":"distressed","residentLocation":"Resident Room","residentPosition":"Lying Down","residentState":"Resting in Bed","hydrationOffered":false,"toiletingAssisted":false,"repositioned":false,"fallHazardObserved":false,"note":"Original distressed observation","lateReason":null,"exceptionType":null,"distressPresent":true,"refusedAssistance":false,"requestId":"034c8d24-3484-43dd-8f39-40aeb20938ab","observedAt":"2026-09-07T23:27:14.920Z"},"retry":{"quickStatus":"awake","residentLocation":"Resident Room","residentPosition":"Lying Down","residentState":"Resting in Bed","hydrationOffered":false,"toiletingAssisted":false,"repositioned":false,"fallHazardObserved":false,"note":"Later edited observation","lateReason":null,"exceptionType":null,"distressPresent":false,"refusedAssistance":false,"requestId":"034c8d24-3484-43dd-8f39-40aeb20938ab","observedAt":"2026-09-07T23:27:14.920Z"}}
+
+stdout | ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx > preserves original clinical content on retry after failed outbox preservation
+{"failure":"failed outbox preservation","first":{"quickStatus":"distressed","residentLocation":"Resident Room","residentPosition":"Lying Down","residentState":"Resting in Bed","hydrationOffered":false,"toiletingAssisted":false,"repositioned":false,"fallHazardObserved":false,"note":"Original distressed observation","lateReason":null,"exceptionType":null,"distressPresent":true,"refusedAssistance":false,"requestId":"2687937d-1649-4665-ae43-456f7a86b347","observedAt":"2026-09-07T23:27:15.012Z"},"retry":{"quickStatus":"awake","residentLocation":"Resident Room","residentPosition":"Lying Down","residentState":"Resting in Bed","hydrationOffered":false,"toiletingAssisted":false,"repositioned":false,"fallHazardObserved":false,"note":"Later edited observation","lateReason":null,"exceptionType":null,"distressPresent":false,"refusedAssistance":false,"requestId":"2687937d-1649-4665-ae43-456f7a86b347","observedAt":"2026-09-07T23:27:15.012Z"}}
+
+ ❯ ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx (2 tests | 2 failed) 287ms
+   × preserves original clinical content on retry after server failure 146ms
+   × preserves original clinical content on retry after failed outbox preservation 139ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx > preserves original clinical content on retry after server failure
+AssertionError: expected { quickStatus: 'awake', …(14) } to deeply equal { quickStatus: 'distressed', …(14) }
+
+- Expected
++ Received
+
+@@ -1,14 +1,14 @@
+  {
+-   "distressPresent": true,
++   "distressPresent": false,
+    "exceptionType": null,
+    "fallHazardObserved": false,
+    "hydrationOffered": false,
+    "lateReason": null,
+-   "note": "Original distressed observation",
++   "note": "Later edited observation",
+    "observedAt": "2026-09-07T23:27:14.920Z",
+-   "quickStatus": "distressed",
++   "quickStatus": "awake",
+    "refusedAssistance": false,
+    "repositioned": false,
+    "requestId": "034c8d24-3484-43dd-8f39-40aeb20938ab",
+    "residentLocation": "Resident Room",
+    "residentPosition": "Lying Down",
+
+ ❯ ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx:46:22
+     44|  await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
+     45|  console.log(JSON.stringify({failure, first:captured[0], retry:capture…
+     46|  expect(captured[1]).toEqual(captured[0]);
+       |                      ^
+     47| });
+     48|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx > preserves original clinical content on retry after failed outbox preservation
+AssertionError: expected { quickStatus: 'awake', …(14) } to deeply equal { quickStatus: 'distressed', …(14) }
+
+- Expected
++ Received
+
+@@ -1,14 +1,14 @@
+  {
+-   "distressPresent": true,
++   "distressPresent": false,
+    "exceptionType": null,
+    "fallHazardObserved": false,
+    "hydrationOffered": false,
+    "lateReason": null,
+-   "note": "Original distressed observation",
++   "note": "Later edited observation",
+    "observedAt": "2026-09-07T23:27:15.012Z",
+-   "quickStatus": "distressed",
++   "quickStatus": "awake",
+    "refusedAssistance": false,
+    "repositioned": false,
+    "requestId": "2687937d-1649-4665-ae43-456f7a86b347",
+    "residentLocation": "Resident Room",
+    "residentPosition": "Lying Down",
+
+ ❯ ../../.hermes/tmp/agent-runs/haven-s2-release-01a07e17/client-review-caregiver-retry.test.tsx:46:22
+     44|  await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
+     45|  console.log(JSON.stringify({failure, first:captured[0], retry:capture…
+     46|  expect(captured[1]).toEqual(captured[0]);
+       |                      ^
+     47| });
+     48|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  19:27:13
+   Duration  1.51s (transform 412ms, setup 125ms, import 700ms, tests 287ms, environment 216ms)
