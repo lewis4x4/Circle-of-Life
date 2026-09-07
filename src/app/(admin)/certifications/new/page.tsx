@@ -46,6 +46,7 @@ export default function AdminNewCertificationPage() {
 
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [staffLoading, setStaffLoading] = useState(true);
+  const [staffLoadError, setStaffLoadError] = useState<string | null>(null);
 
   const [staffId, setStaffId] = useState("");
   const [certType, setCertType] = useState("bls_cpr");
@@ -59,6 +60,7 @@ export default function AdminNewCertificationPage() {
 
   const loadStaff = useCallback(async () => {
     setStaffLoading(true);
+    setStaffLoadError(null);
     try {
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
         setStaffList([]);
@@ -82,8 +84,11 @@ export default function AdminNewCertificationPage() {
           name: `${s.last_name?.trim() ?? ""}, ${s.first_name?.trim() ?? ""}`.replace(/^, |, $/g, "").trim() || "Staff",
         })),
       );
-    } catch {
+    } catch (err) {
       setStaffList([]);
+      setStaffLoadError(
+        err instanceof Error && err.message ? err.message : "Could not load eligible staff.",
+      );
     } finally {
       setStaffLoading(false);
     }
@@ -249,9 +254,18 @@ export default function AdminNewCertificationPage() {
                   </option>
                 ))}
               </select>
-              {facilityReady && !staffLoading && staffList.length === 0 && (
+              {staffLoadError ? (
+                <div className="flex items-center justify-between gap-3" role="alert">
+                  <p className="text-xs text-red-700 dark:text-red-300">
+                    Eligible staff could not be loaded: {staffLoadError}
+                  </p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void loadStaff()}>
+                    Retry staff load
+                  </Button>
+                </div>
+              ) : facilityReady && !staffLoading && staffList.length === 0 ? (
                 <p className="text-xs text-amber-700 dark:text-amber-300">No active staff in this facility.</p>
-              )}
+              ) : null}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -320,7 +334,7 @@ export default function AdminNewCertificationPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={submitting || !facilityReady || staffLoading || staffList.length === 0}>
+            <Button type="submit" disabled={submitting || !facilityReady || staffLoading || Boolean(staffLoadError) || staffList.length === 0}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

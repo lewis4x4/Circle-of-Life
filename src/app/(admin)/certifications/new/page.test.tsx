@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminNewCertificationPage from "./page";
@@ -10,6 +10,7 @@ const pageSource = fs.readFileSync(path.resolve(import.meta.dirname, "./page.tsx
 const mocks = vi.hoisted(() => ({
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   user: { id: "user-1" } as { id: string } | null,
+  staffQueryError: null as Error | null,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -30,7 +31,7 @@ vi.mock("@/lib/supabase/client", () => ({
         eq: () => query,
         is: () => query,
         order: () => query,
-        limit: async () => ({ data: [], error: null }),
+        limit: async () => ({ data: [], error: mocks.staffQueryError }),
       };
       return query;
     },
@@ -41,6 +42,7 @@ describe("AdminNewCertificationPage", () => {
   beforeEach(() => {
     mocks.selectedFacilityId = "11111111-1111-1111-1111-111111111111";
     mocks.user = { id: "user-1" };
+    mocks.staffQueryError = null;
   });
 
   afterEach(() => {
@@ -73,5 +75,20 @@ describe("AdminNewCertificationPage", () => {
 
     expect(await screen.findByText("No active staff in this facility.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save certification" })).toBeDisabled();
+  });
+
+  it("distinguishes a failed staff load from an empty facility and retains entered form input on retry", async () => {
+    mocks.staffQueryError = new Error("Permission denied");
+
+    render(<AdminNewCertificationPage />);
+
+    expect(await screen.findByText(/Eligible staff could not be loaded: Permission denied/)).toBeInTheDocument();
+    expect(screen.queryByText("No active staff in this facility.")).not.toBeInTheDocument();
+
+    const credentialName = screen.getByPlaceholderText("e.g. American Heart BLS — Healthcare Provider");
+    fireEvent.change(credentialName, { target: { value: "Medication administration" } });
+    fireEvent.click(screen.getByRole("button", { name: "Retry staff load" }));
+
+    expect(credentialName).toHaveValue("Medication administration");
   });
 });
