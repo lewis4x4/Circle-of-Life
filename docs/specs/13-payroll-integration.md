@@ -59,3 +59,11 @@ Migration uses **`haven.organization_id()`**, **`haven.accessible_facility_ids()
 ## Definition of done
 
 - Migration `088` applies; types updated; segment gates **PASS** when UI ships.
+
+## BUS-006 source freshness (migration 341)
+
+Draft time-record imports now refresh transactionally from currently approved punches. The existing global `time_record:<id>` key and line identity remain unchanged; another batch keeps its ownership. A database-controlled source revision tracks punch changes. Draft downloads and departures from draft validate current source approval, identity, scope, pay-period membership, revision and stored hour payload under locks. Duration and REG/OT formulas are unchanged.
+
+If a punch becomes unapproved, deleted or outside the period, refresh reports review work instead of silently removing wages. The operator can correct/reapprove and refresh, or explicitly exclude the ineligible line from the draft. Exclusion preserves its payload, audit history and global ownership; later eligible refresh restores the same line. Eligible punches cannot be excluded through this action.
+
+Non-draft lines and historical exported/voided batches are frozen. Queued/failed batches may return to draft for refresh; entry to queued/exported validates freshness. Reapproved excluded punches block current export until refresh restores their existing line. Exported downloads retain stored line payloads without applying subsequent punch corrections. Legacy records have no original-file archive; staff display names still come from the current staff record, so these downloads are not represented as byte-for-byte original files. No download automatically marks a batch exported. Post-export payroll adjustments remain outside this repair. Non-exported downloads continue to require source validation.
