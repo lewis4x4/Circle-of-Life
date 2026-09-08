@@ -1,8 +1,8 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import AdminInvoiceDetailPage from "./page";
+import AdminInvoiceDetailPage from "../../../admin/billing/invoices/[id]/page";
 
 const mocks = vi.hoisted(() => ({
   invoiceId: "b5000000-0000-0000-0000-0000000000a1",
@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
   params: { id: "b5000000-0000-0000-0000-0000000000a1" },
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
   appRole: "admin" as string,
+  canPost: false,
+  existingJournal: null as { id: string } | null,
+  post: vi.fn(),
   client: { from: () => ({}) as unknown },
 }));
 
@@ -36,8 +39,8 @@ vi.mock("../../billing-invoice-ledger", () => ({
   mapDbInvoiceStatusToUi: (s: string) => s,
   mapDbPayerTypeToUi: () => "private_pay",
 }));
-vi.mock("@/lib/finance/post-to-gl", () => ({ postInvoiceToGl: vi.fn() }));
-vi.mock("@/lib/finance/load-finance-context", () => ({ canMutateFinance: () => false }));
+vi.mock("@/lib/finance/post-to-gl", () => ({ postInvoiceToGl: mocks.post }));
+vi.mock("@/lib/finance/load-finance-context", () => ({ canMutateFinance: () => mocks.canPost }));
 vi.mock("@/design-system/components/record-detail", () => ({
   RecordDetailHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
   RecordDetailSection: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -57,7 +60,7 @@ function makeClient() {
     subtotal: 0,
     adjustments: 0,
     tax: 0,
-    total: 0,
+    total: 1000,
     amount_paid: 0,
     balance_due: 0,
     payer_type: "private_pay",
@@ -84,7 +87,7 @@ function makeClient() {
       if (table === "invoices") return builder(invoice);
       if (table === "invoice_line_items") return builder(null, []);
       if (table === "residents") return builder({ id: mocks.residentId, first_name: "A", last_name: "B" });
-      if (table === "journal_entries") return builder(null);
+      if (table === "journal_entries") return builder(mocks.existingJournal);
       return builder(null);
     },
   };
@@ -92,6 +95,8 @@ function makeClient() {
 
 describe("AdminInvoiceDetailPage invoice title", () => {
   beforeEach(() => {
+    mocks.canPost = false;
+    mocks.existingJournal = null;
     mocks.params = { id: mocks.invoiceId };
     mocks.selectedFacilityId = mocks.facilityId;
     mocks.client = makeClient();
@@ -99,6 +104,22 @@ describe("AdminInvoiceDetailPage invoice title", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("requires a verified receipt even when a source journal header already exists", async () => {
+    mocks.canPost = true;
+    mocks.existingJournal = { id: "existing-draft" };
+    mocks.post.mockResolvedValue({ ok: false, error: "Draft journal existing-draft requires review" });
+    render(<AdminInvoiceDetailPage />);
+    expect(await screen.findByRole("link", { name: "Review existing journal entry" })).toHaveAttribute("href", "/admin/finance/journal-entries/existing-draft");
+    expect(screen.queryByText(/Previously posted to GL/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Post to GL" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Draft journal existing-draft requires review");
+    expect(screen.queryByText(/Posted to GL/)).toBeNull();
+    mocks.post.mockResolvedValue({ ok: true, journalEntryId: "existing-draft", alreadyPosted: false });
+    fireEvent.click(screen.getByRole("button", { name: "Post to GL" }));
+    expect(await screen.findByText("Commit successful. Posted to GL.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View journal entry" })).toHaveAttribute("href", "/admin/finance/journal-entries/existing-draft");
   });
 
   it("formats internal persist keys in the detail header", async () => {

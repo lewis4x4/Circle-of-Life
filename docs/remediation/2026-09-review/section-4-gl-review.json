@@ -1,0 +1,19 @@
+{
+  "verdict": "APPROVE",
+  "reviewer": "fresh-context independent native agent gl_posting_review",
+  "resolved_findings": [
+    "Direct privileged line-history helper rechecks current actor/org/role after account waits.",
+    "NULL source types reject explicitly."
+  ],
+  "source_sha256": {
+    "supabase/migrations/340_atomic_source_gl_posting.sql": "f7ed989fa9eca3e5de6197114b0e540e296d90e3414ef57bc8132e20a36c9205",
+    "supabase/tests/review_section4_source_gl.sql": "971d4612f06bc6f1e319299314fb280ec34c49c8f0b5a416da3d3da52f1683ad",
+    "src/lib/finance/post-to-gl.ts": "b43ec59ba427911725eaa01a180b79c5ceae943737e4f21fe94a4616b40d9f37",
+    "src/lib/finance/post-to-gl.test.ts": "e6bffe33b8c767626a49d7f937c0c02e791bf0e4195f9a9006d783fa61532994",
+    "src/app/(admin)/billing/invoices/[id]/page.tsx": "87e5674f51a555c9a77d4aa677f57650976b420393b320dd6fe22b6282aefb2e",
+    "src/app/(admin)/billing/invoices/[id]/page.test.tsx": "9548a88043bd7846a0ba930ba265c207183215576f87aa8d1294a37dbd4ad293"
+  },
+  "blocking_findings": [],
+  "gate": "test-results/agent-gates/2026-09-08T14-17-27-644Z-section-4-bus003.json",
+  "focused_tests": 8
+}

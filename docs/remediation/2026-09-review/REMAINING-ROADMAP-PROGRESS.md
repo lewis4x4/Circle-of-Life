@@ -48,10 +48,16 @@ Migration 339 creates PO allocator/header/initial lines/immutable receipt atomic
 
 A real receiving update exposed a preexisting missing `po_line_items.updated_by` referenced by its timestamp trigger. The nullable actor FK repairs that path without changing the global trigger. Fifteen canonical rendered tests, actual SQL rollback/authorization/receiving tests and identical-request concurrency passed (one header, two lines, one receipt, one allocator increment). Native gate replay passed 342 migrations/23 probes. Independent review APPROVE. Original gate failed due BigInt literal syntax under the existing compiler target; constructors preserve exact arithmetic and the target. Final typecheck and strict UI gate PASS: `test-results/agent-gates/2026-09-08T13-39-36-811Z-section-4-bus002-final.json`. Mission alignment: pass. Not deployed.
 
+## Completed segment: Section 4 / BUS-003
+
+Migration 340 and a thin source-posting adapter replace partial client journal creation. Verified posted entries are the only already-posted success. Empty drafts with no line history and exact valid drafts recover without replacing identities; malformed/voided/changed-source cases remain intact with a review path. A complete rule/default pair is selected in one configuration snapshot. Source, accounts, journal parents and periods are protected against concurrent changes, including absent-month closure and line reparenting. Manual multi-line journals remain supported.
+
+Posted-header lock and line-history helpers retain current authority, including direct helper calls after blocking waits. The invoice page no longer declares posting from a loaded header. Missing `updated_by` fields on period/rule tables were repaired after real shared-trigger failures. Eight focused tests and actual SQL/concurrency cases passed; gate replay passed 343 migrations/24 probes. Typecheck and strict UI gate PASS: `test-results/agent-gates/2026-09-08T14-17-27-644Z-section-4-bus003.json`. Fresh independent review APPROVE. Mission alignment: pass. Not deployed.
+
 ## Remaining sequence
 
-- Section 3 source implementation/review complete; Section 4 BUS-001 and BUS-002 complete; BUS-003 is next.
-- Section 4 remaining: BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
+- Section 3 source implementation/review complete; Section 4 BUS-001, BUS-002 and BUS-003 complete; BUS-006 is next.
+- Section 4 remaining: BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
 - Section 5: NAV-004, NAV-005, NAV-008, NAV-010, NAV-011, SYS-007.
 - Section 6: NAV-007, FL-002, FL-008, FL-010, FL-013, FL-014.
 - Section 7: FL-003, FL-004, FL-005, FL-011, SUP-001, SUP-002.

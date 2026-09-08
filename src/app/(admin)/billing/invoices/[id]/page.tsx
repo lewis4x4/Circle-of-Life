@@ -93,6 +93,7 @@ export default function AdminInvoiceDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [glPosting, setGlPosting] = useState(false);
   const [glResult, setGlResult] = useState<{ journalEntryId: string; alreadyPosted?: boolean } | null>(null);
+  const [existingJournalId, setExistingJournalId] = useState<string | null>(null);
   const [glError, setGlError] = useState<string | null>(null);
   const [canPost, setCanPost] = useState(false);
 
@@ -103,6 +104,9 @@ export default function AdminInvoiceDetailPage() {
       return;
     }
     setIsLoading(true);
+    setGlResult(null);
+    setExistingJournalId(null);
+    setCanPost(false);
     setError(null);
     setNotFound(false);
     try {
@@ -160,7 +164,7 @@ export default function AdminInvoiceDetailPage() {
           .is("deleted_at", null)
           .maybeSingle();
         if (existingJe.data) {
-          setGlResult({ journalEntryId: existingJe.data.id, alreadyPosted: true });
+          setExistingJournalId(existingJe.data.id);
         }
       }
     } catch (err) {
@@ -369,6 +373,11 @@ export default function AdminInvoiceDetailPage() {
               <p className="text-sm text-destructive bg-destructive/10 p-3 border border-destructive/30 rounded-[8px]" role="alert">
                 {glError}
               </p>
+            )}
+            {existingJournalId && !glResult && (
+              <Link href={`/admin/finance/journal-entries/${existingJournalId}`} className="text-sm underline">
+                Review existing journal entry
+              </Link>
             )}
             {glResult ? (
               <div className="flex flex-wrap items-center gap-4 rounded-[8px] border border-success/20 bg-success/10 p-[14px]">

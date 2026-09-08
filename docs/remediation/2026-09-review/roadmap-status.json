@@ -392,8 +392,15 @@
       "id": "BUS-003",
       "severity": "P1",
       "title": "Retry treats an unposted journal draft as already posted",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/340_atomic_source_gl_posting.sql",
+        "supabase/tests/review_section4_source_gl.sql",
+        "docs/remediation/2026-09-review/section-4-gl-evidence.md",
+        "docs/remediation/2026-09-review/section-4-gl-review.json",
+        "test-results/agent-gates/2026-09-08T14-17-27-644Z-section-4-bus003.json"
+      ],
+      "notes": "One atomic source-posting RPC verifies posted status and current source facts; safe empty/valid drafts recover in place, ambiguous history remains intact with review link. Source/account/period/line guards preserve manual journals and block races. Helpers recheck current authority after waits. Eight focused tests, 343 migrations/24 probes, concurrency/fault injection, typecheck and strict UI gate passed; independent review approved. Not deployed."
     },
     {
       "id": "BUS-004",

@@ -1,0 +1,14 @@
+NOTICE:  PASS: NULL posting/helper input and NULL stored journal source type reject
+NOTICE:  PASS: invoice/payment atomic posting, exact retry, current-source mismatch, historical configuration
+NOTICE:  PASS: empty and exact draft recovery retain identity; ambiguous, wrong totals, deleted history, voided reject without deletion; rule precedence
+NOTICE:  PASS: header/line/audit/final-post failures roll back; inactive account, closed period, source entity mismatch reject
+NOTICE:  PASS: legitimate three-line manual journal posts; manual closed-period bypass and direct posted INSERT fail
+NOTICE:  PASS: line reparent trigger protects old posted parent even with privileged writes
+NOTICE:  PASS: current actor deactivation, role and tenant changes reject original receipt
+PASS: observed overlapping source calls produce one journal and truthful first/retry receipts
+PASS: concurrent source write serialized with posting, outcome and rollback verified
+PASS: concurrent account write serialized with posting, outcome and rollback verified
+PASS: concurrent absent_period write serialized with posting, outcome and rollback verified
+PASS: concurrent existing_period write serialized with posting, outcome and rollback verified
+PASS: actor revoked during observed account-lock wait cannot mutate or receive posting success
+PASS: direct history helper denied after actor revocation during observed account-lock wait; no history facts returned

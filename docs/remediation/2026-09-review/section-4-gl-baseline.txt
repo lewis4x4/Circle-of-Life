@@ -1,0 +1,108 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Remaining Roadmap
+
+ ❯ src/lib/finance/post-to-gl.test.ts (6 tests | 6 failed) 10ms
+     × does not interpret an existing draft header as a posted receipt 6ms
+     × accepts only a complete posted receipt 1ms
+     × accepts only a complete posted receipt 0ms
+     × uses only source identity and preserves retry status 0ms
+     × uses only source identity and preserves retry status 0ms
+     × returns transport failures without claiming success 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/finance/post-to-gl.test.ts > atomic source GL posting > does not interpret an existing draft header as a posted receipt
+AssertionError: expected { ok: true, …(2) } to deeply equal { ok: false, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "error": "Draft journal draft requires review",
+-   "ok": false,
++   "alreadyPosted": true,
++   "journalEntryId": "draft",
++   "ok": true,
+  }
+
+ ❯ src/lib/finance/post-to-gl.test.ts:11:92
+      9|     query.select.mockReturnValue(query); query.eq.mockReturnValue(quer…
+     10|     const client = { from: vi.fn().mockReturnValue(query), rpc: vi.fn(…
+     11|     expect(await postInvoiceToGl(client as unknown as SupabaseClient<D…
+       |                                                                                            ^
+     12|   });
+     13|   it.each([postInvoiceToGl, postPaymentToGl])("accepts only a complete…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/lib/finance/post-to-gl.test.ts > atomic source GL posting > accepts only a complete posted receipt
+TypeError: supabase.from is not a function
+ ❯ postInvoiceToGl src/lib/finance/post-to-gl.ts:71:6
+     69| ): Promise<PostResult> {
+     70|   const existing = await supabase
+     71|     .from("journal_entries")
+       |      ^
+     72|     .select("id")
+     73|     .eq("source_type", "invoice")
+ ❯ src/lib/finance/post-to-gl.test.ts:16:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/lib/finance/post-to-gl.test.ts > atomic source GL posting > accepts only a complete posted receipt
+TypeError: supabase.from is not a function
+ ❯ postPaymentToGl src/lib/finance/post-to-gl.ts:205:6
+    203| ): Promise<PostResult> {
+    204|   const existing = await supabase
+    205|     .from("journal_entries")
+       |      ^
+    206|     .select("id")
+    207|     .eq("source_type", "payment")
+ ❯ src/lib/finance/post-to-gl.test.ts:16:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/lib/finance/post-to-gl.test.ts > atomic source GL posting > uses only source identity and preserves retry status
+TypeError: supabase.from is not a function
+ ❯ postInvoiceToGl src/lib/finance/post-to-gl.ts:71:6
+     69| ): Promise<PostResult> {
+     70|   const existing = await supabase
+     71|     .from("journal_entries")
+       |      ^
+     72|     .select("id")
+     73|     .eq("source_type", "invoice")
+ ❯ src/lib/finance/post-to-gl.test.ts:22:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/lib/finance/post-to-gl.test.ts > atomic source GL posting > uses only source identity and preserves retry status
+TypeError: supabase.from is not a function
+ ❯ postPaymentToGl src/lib/finance/post-to-gl.ts:205:6
+    203| ): Promise<PostResult> {
+    204|   const existing = await supabase
+    205|     .from("journal_entries")
+       |      ^
+    206|     .select("id")
+    207|     .eq("source_type", "payment")
+ ❯ src/lib/finance/post-to-gl.test.ts:22:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/lib/finance/post-to-gl.test.ts > atomic source GL posting > returns transport failures without claiming success
+TypeError: supabase.from is not a function
+ ❯ postPaymentToGl src/lib/finance/post-to-gl.ts:205:6
+    203| ): Promise<PostResult> {
+    204|   const existing = await supabase
+    205|     .from("journal_entries")
+       |      ^
+    206|     .select("id")
+    207|     .eq("source_type", "payment")
+ ❯ src/lib/finance/post-to-gl.test.ts:28:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed (6)
+   Start at  09:52:28
+   Duration  516ms (transform 32ms, setup 85ms, import 24ms, tests 10ms, environment 276ms)
+
