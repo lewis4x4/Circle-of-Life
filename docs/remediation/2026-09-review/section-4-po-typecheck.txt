@@ -1,0 +1,7 @@
+
+> circle-of-life@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.typecheck.json --incremental false
+
+src/app/(admin)/vendors/purchase-orders/new/page.tsx(39,34): error TS2737: BigInt literals are not available when targeting lower than ES2020.
+src/app/(admin)/vendors/purchase-orders/new/page.tsx(40,46): error TS2737: BigInt literals are not available when targeting lower than ES2020.
+src/app/(admin)/vendors/purchase-orders/new/page.tsx(40,55): error TS2737: BigInt literals are not available when targeting lower than ES2020.

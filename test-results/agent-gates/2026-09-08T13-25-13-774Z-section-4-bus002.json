@@ -1,0 +1,121 @@
+{
+  "segment": "section-4-bus002",
+  "timestamp": "2026-09-08T13:25:13.774Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 33,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 539,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 1337,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 9772,
+      "stdout": "[gitleaks] detector regression PASS: generic-api-key remains active\n[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n9:25AM INF 1904 commits scanned.\n9:25AM INF scanned ~53334848 bytes (53.33 MB) in 9.1s\n9:25AM INF no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 73221,
+      "stdout": "Constitution lint passed for smart-rounding scope (30 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 175,
+      "stdout": "[migrations:check] PASS: 342 migration(s) in /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/supabase/migrations — sequence 001..339\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": true,
+      "command": "npm run migrations:verify:pg",
+      "status": "passed",
+      "duration_ms": 15969,
+      "stdout": "[migrations:verify:pg] PASS (342 migration files, 23 SQL probes; native PostgreSQL with Supabase stubs)\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 103429,
+      "stdout": "[migrations:check] PASS: 342 migration(s) in /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/supabase/migrations — sequence 001..339\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.11 (Turbopack)\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 34.2s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 512ms\n  Running TypeScript ...\n",
+      "stderr": "Failed to type check.\n\n./src/app/(admin)/vendors/purchase-orders/new/page.tsx:39:34\nType error: BigInt literals are not available when targeting lower than ES2020.\n\n  \u001b[90m37 |\u001b[0m \u001b[36mfunction\u001b[0m lineTotalCents(quantity: string, unitCost: string): number {\n  \u001b[90m38 |\u001b[0m   \u001b[36mconst\u001b[0m [whole, fraction = \u001b[32m\"\"\u001b[0m] = quantity.split(\u001b[32m\".\"\u001b[0m);\n\u001b[31m\u001b[1m>\u001b[0m \u001b[90m39 |\u001b[0m   \u001b[36mconst\u001b[0m scaled = \u001b[33mBigInt\u001b[0m(whole) * \u001b[35m10000\u001b[0mn + \u001b[33mBigInt\u001b[0m(fraction.padEnd(\u001b[35m4\u001b[0m, \u001b[32m\"0\"\u001b[0m));\n  \u001b[90m   |\u001b[0m                                  \u001b[31m\u001b[1m^\u001b[0m\n  \u001b[90m40 |\u001b[0m   \u001b[36mreturn\u001b[0m \u001b[33mNumber\u001b[0m((scaled * \u001b[33mBigInt\u001b[0m(unitCost) + \u001b[35m5000\u001b[0mn) / \u001b[35m10000\u001b[0mn);\n  \u001b[90m41 |\u001b[0m }\n  \u001b[90m42 |\u001b[0m\nNext.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 430,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 2,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Haven Remaining Roadmap/test-results/agent-gates/2026-09-08T13-25-13-774Z-section-4-bus002.json"
+  ]
+}

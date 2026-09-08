@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { VendorHubNav } from "../../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,8 +17,32 @@ import type { Database } from "@/types/database";
 type FacilityMini = { id: string; name: string };
 type VendorMini = { id: string; name: string };
 
+type CreatePurchaseOrderRequest = {
+  p_request_id: string; p_expected_caller: string; p_facility_id: string;
+  p_vendor_id: string; p_order_date: string;
+  p_lines: { description: string; quantity: number; unit_cost_cents: number }[];
+};
+type PurchaseOrderReceipt = {
+  request_id: string; purchase_order_id: string; po_number: string;
+  facility_id: string; vendor_id: string; total_cents: number; line_count: number;
+};
+// Narrow migration339's command locally until the generated schema is refreshed.
+type PurchaseOrderCommandClient = {
+  rpc(name: "create_purchase_order", args: CreatePurchaseOrderRequest): PromiseLike<{
+    data: PurchaseOrderReceipt | null; error: { code: string; message: string } | null;
+  }>;
+};
+
+// Decimal quantity * integer cents, rounded half up exactly as PostgreSQL numeric.
+function lineTotalCents(quantity: string, unitCost: string): number {
+  const [whole, fraction = ""] = quantity.split(".");
+  const scaled = BigInt(whole) * BigInt(10000) + BigInt(fraction.padEnd(4, "0"));
+  return Number((scaled * BigInt(unitCost) + BigInt(5000)) / BigInt(10000));
+}
+
 export default function NewPurchaseOrderPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const { organizationId, appRole } = useHavenAuth();
   type AppRole = Database["public"]["Enums"]["app_role"];
   const role = appRole as AppRole;
@@ -31,6 +56,11 @@ export default function NewPurchaseOrderPage() {
   const [unitCents, setUnitCents] = useState("1000");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pending, setPending] = useState(false);
+  const submitting = useRef(false);
+  const ambiguous = useRef(false);
+  const request = useRef<CreatePurchaseOrderRequest | null>(null);
+  const requestOrganization = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!organizationId) return;
@@ -51,69 +81,58 @@ export default function NewPurchaseOrderPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!organizationId || !canSubmit || !facilityId || !vendorId) return;
+    if (submitting.current) return;
+    submitting.current = true;
     setSaving(true);
     setLoadError(null);
-
-    const { data: vf, error: vfe } = await supabase
-      .from("vendor_facilities")
-      .select("id")
-      .eq("vendor_id", vendorId)
-      .eq("facility_id", facilityId)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (vfe || !vf) {
-      setLoadError("Link this vendor to the selected facility first (vendor profile).");
+    try {
+      if (!request.current && (!/^\d+(?:\.\d{1,4})?$/.test(qty) || Number(qty) <= 0 || Number(qty) >= 100000000
+        || !/^\d+$/.test(unitCents) || Number(unitCents) > 2147483647
+        || lineTotalCents(qty, unitCents) > 2147483647 || !lineDesc.trim() || !orderDate)) {
+        throw new Error("Enter a description, a positive quantity with up to four decimal places, and nonnegative whole-cent costs within the supported range.");
+      }
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const actor = sessionData.session?.user.id;
+      if (sessionError || !actor) throw new Error("Sign in with the original account to confirm this purchase order.");
+      if (request.current && (request.current.p_expected_caller !== actor || requestOrganization.current !== organizationId)) {
+        throw new Error("Return to the original account and organization to retry this purchase order.");
+      }
+      const args = request.current ?? {
+        p_request_id: crypto.randomUUID(), p_expected_caller: actor, p_facility_id: facilityId,
+        p_vendor_id: vendorId, p_order_date: orderDate,
+        p_lines: [{ description: lineDesc.trim(), quantity: Number(qty), unit_cost_cents: Number(unitCents) }],
+      };
+      request.current = args;
+      requestOrganization.current = organizationId;
+      setPending(true);
+      const { data, error } = await (supabase as unknown as PurchaseOrderCommandClient).rpc("create_purchase_order", args);
+      if (error) {
+        // Only the first definite transaction rollback permits corrected details.
+        // A later denial cannot resolve an earlier lost response.
+        if (!ambiguous.current && ["P0001", "42501", "23514", "23503", "22003", "22007", "22P02"].includes(error.code)) {
+          request.current = null;
+          requestOrganization.current = null;
+          setPending(false);
+        }
+        throw error;
+      }
+      const receipt = data;
+      if (!receipt?.purchase_order_id || !receipt.po_number || receipt.request_id !== args.p_request_id
+        || receipt.facility_id !== args.p_facility_id || receipt.vendor_id !== args.p_vendor_id
+        || receipt.line_count !== 1 || receipt.total_cents !== lineTotalCents(String(args.p_lines[0].quantity), String(args.p_lines[0].unit_cost_cents))) {
+        throw new Error("The purchase order receipt could not be confirmed.");
+      }
+      router.push(`/admin/vendors/purchase-orders/${receipt.purchase_order_id}`);
+    } catch (error) {
+      if (request.current) ambiguous.current = true;
+      const message = (error as { message?: string })?.message ?? "Purchase order is not confirmed.";
+      setLoadError(message + (request.current
+        ? " Retry the same request to confirm its outcome. Details are locked; keep this page open until confirmed."
+        : " Nothing was created. Correct the details and try again."));
+    } finally {
+      submitting.current = false;
       setSaving(false);
-      return;
     }
-
-    const { data: poNum, error: rpcErr } = await supabase.rpc("allocate_vendor_po_number", {
-      p_organization_id: organizationId,
-    });
-    if (rpcErr || !poNum) {
-      setLoadError(rpcErr?.message ?? "Could not allocate PO number.");
-      setSaving(false);
-      return;
-    }
-
-    const q = Number.parseFloat(qty) || 1;
-    const uc = Number.parseInt(unitCents, 10) || 0;
-    const lineTotal = Math.round(q * uc);
-
-    const { data: po, error: poErr } = await supabase
-      .from("purchase_orders")
-      .insert({
-        organization_id: organizationId,
-        vendor_id: vendorId,
-        facility_id: facilityId,
-        po_number: poNum,
-        status: "draft",
-        order_date: orderDate,
-        total_cents: lineTotal,
-      })
-      .select("id")
-      .single();
-    if (poErr || !po) {
-      setLoadError(poErr?.message ?? "Could not create PO.");
-      setSaving(false);
-      return;
-    }
-
-    const { error: liErr } = await supabase.from("po_line_items").insert({
-      organization_id: organizationId,
-      purchase_order_id: po.id,
-      line_number: 1,
-      description: lineDesc || "Line 1",
-      quantity: q,
-      unit_cost_cents: uc,
-      line_total_cents: lineTotal,
-    });
-    setSaving(false);
-    if (liErr) {
-      setLoadError(liErr.message);
-      return;
-    }
-    window.location.href = `/admin/vendors/purchase-orders/${po.id}`;
   }
 
   return (
@@ -142,6 +161,7 @@ export default function NewPurchaseOrderPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="max-w-lg space-y-4">
+              <fieldset disabled={pending || saving} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="fac">Facility</Label>
                 <select
@@ -194,12 +214,13 @@ export default function NewPurchaseOrderPage() {
                   <Input id="uc" value={unitCents} onChange={(ev) => setUnitCents(ev.target.value)} inputMode="numeric" />
                 </div>
               </div>
+              </fieldset>
               <button
                 type="submit"
                 className={cn(buttonVariants())}
                 disabled={saving || !facilityId || !vendorId}
               >
-                {saving ? "Creating…" : "Create draft PO"}
+                {saving ? "Creating…" : pending ? "Retry same purchase order" : "Create draft PO"}
               </button>
             </form>
           </CardContent>

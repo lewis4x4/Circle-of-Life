@@ -1,0 +1,5 @@
+NOTICE:  PASS: exact and changed retries, decimal totals, invalid numbers, mutable drafts, direct INSERT denial
+NOTICE:  PASS: header, initial line, receipt and audit injected failures roll back number/header/lines/receipt/audit; receipts immutable
+NOTICE:  PASS: vendor visible through second accessible facility, original PO SELECT and creation receipt remain denied without original facility link
+NOTICE:  PASS: live role/facility/vendor-link receipt authorization and existing approval guard
+PASS: actual SQL rollback/authorization/draft-edit regression and concurrent identical caller requests: matching receipt, one header, two lines, one receipt, one allocator increment

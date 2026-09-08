@@ -378,8 +378,15 @@
       "id": "BUS-002",
       "severity": "P2",
       "title": "A failed PO line save leaves an orphan header and duplicates on retry",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/339_atomic_purchase_order_creation.sql",
+        "supabase/tests/review_section4_purchase_order.sql",
+        "docs/remediation/2026-09-review/section-4-po-evidence.md",
+        "docs/remediation/2026-09-review/section-4-po-review.json",
+        "test-results/agent-gates/2026-09-08T13-39-36-811Z-section-4-bus002-final.json"
+      ],
+      "notes": "Allocator/header/initial lines/audit/immutable receipt commit together. Current target-PO authority and exact caller/request payload govern replay; later legitimate drafts/receiving remain editable. Added missing line updated_by required by existing receiving trigger. Fifteen rendered tests, actual rollback/concurrency, 342 migrations/23 probes, typecheck and strict UI gate passed; independent review approved. Initial TS-target gate failure retained; exact arithmetic preserved. Not deployed."
     },
     {
       "id": "BUS-003",

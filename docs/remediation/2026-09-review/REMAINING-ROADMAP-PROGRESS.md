@@ -32,7 +32,7 @@ Final independent review APPROVE with source hashes in `section-3-fl001-review.j
 
 ## Integration follow-up to inspect
 
-The older `generate-emar-schedule` Edge producer was observed to use UTC clock construction and a 500-order read cap. Its deployment/current interaction with the new canonical pass producer needs final integration verification; do not claim its scheduling semantics were repaired by FL-001. Existing admission override/bed inventory mismatch and temporary-block admission behavior also need integration scrutiny. Preserve named Homewood staff/device acceptance as NOT RUN until actually performed.
+The older `generate-emar-schedule` Edge producer was observed to use UTC clock construction and a 500-order read cap. Its deployment/current interaction with the new canonical pass producer needs final integration verification; do not claim its scheduling semantics were repaired by FL-001. Existing admission override/bed inventory mismatch and temporary-block admission behavior also need integration scrutiny. Include authorization changes during database-lock waits when reviewing new financial definer commands; do not assume pre-call denial probes establish in-flight revocation semantics. Preserve named Homewood staff/device acceptance as NOT RUN until actually performed.
 
 ## Completed segment: Section 4 / BUS-001
 
@@ -40,12 +40,18 @@ Migration 338 commits payment, invoice application and caller-bound immutable re
 
 Pending request/payload/actor/facility is retained while mounted. Initial definite rejection unlocks; any ambiguous attempt preserves the original request through subsequent denials. Renewed same-actor sessions can retrieve under current authority. Unavailable explicit invoices remain visible; valid prefills beyond50 options are fetched directly. Full browser-reload persistence is not claimed.
 
-Fresh-context independent review APPROVE. Nine focused UI tests, 341migrations/22SQLprobes, supported typecheck and strict UI gate PASS (`test-results/agent-gates/2026-09-08T13-01-19-330Z-section-4-bus001.json`). Final concurrency: two6000-cent requests against10000 yield one payment/receipt, amount_paid6000,balance4000,one rejection. Fault injection covers payment/invoice/receipt/audit rollback. Mission alignment: pass. Not deployed.
+Fresh-context independent review APPROVE. Nine focused UI tests, 341 migrations / 22 SQL probes, supported typecheck and strict UI gate PASS (`test-results/agent-gates/2026-09-08T13-01-19-330Z-section-4-bus001.json`). Final concurrency: two synthetic 6000-cent requests against a 10000-cent balance yield one payment/receipt, amount_paid 6000, balance 4000, and one rejection. Fault injection covers payment/invoice/receipt/audit rollback. Mission alignment: pass. Not deployed.
+
+## Completed segment: Section 4 / BUS-002
+
+Migration 339 creates PO allocator/header/initial lines/immutable receipt atomically with expected caller binding and current target-PO authorization. Exact creation replay does not overwrite later legitimate draft edits. Initial definite errors allow editing; ambiguity preserves the mounted request. No full browser reload persistence is claimed. Existing all-role creation vendor-link preflight remains a creation requirement; receipt access for facility administrators follows the stricter original-facility PO policy, not broader directory visibility.
+
+A real receiving update exposed a preexisting missing `po_line_items.updated_by` referenced by its timestamp trigger. The nullable actor FK repairs that path without changing the global trigger. Fifteen canonical rendered tests, actual SQL rollback/authorization/receiving tests and identical-request concurrency passed (one header, two lines, one receipt, one allocator increment). Native gate replay passed 342 migrations/23 probes. Independent review APPROVE. Original gate failed due BigInt literal syntax under the existing compiler target; constructors preserve exact arithmetic and the target. Final typecheck and strict UI gate PASS: `test-results/agent-gates/2026-09-08T13-39-36-811Z-section-4-bus002-final.json`. Mission alignment: pass. Not deployed.
 
 ## Remaining sequence
 
-- Section 3 source implementation/review complete; Section 4 BUS-001 complete; BUS-002 is next.
-- Section 4 remaining: BUS-002, BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
+- Section 3 source implementation/review complete; Section 4 BUS-001 and BUS-002 complete; BUS-003 is next.
+- Section 4 remaining: BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
 - Section 5: NAV-004, NAV-005, NAV-008, NAV-010, NAV-011, SYS-007.
 - Section 6: NAV-007, FL-002, FL-008, FL-010, FL-013, FL-014.
 - Section 7: FL-003, FL-004, FL-005, FL-011, SUP-001, SUP-002.

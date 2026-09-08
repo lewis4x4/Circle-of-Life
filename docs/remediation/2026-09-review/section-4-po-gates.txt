@@ -1,0 +1,85 @@
+
+> circle-of-life@0.1.0 segment:gates
+> node scripts/agent-gates/run-segment-gates.mjs --segment section-4-bus002 --ui
+
+[segment:gates][hygiene.env-example] start node scripts/check-env-example.mjs
+[segment:gates][hygiene.env-example][stdout] [check:env-example] PASS
+[segment:gates][hygiene.env-example] finish status=passed required=true duration_ms=33
+[segment:gates][hygiene.tracked-secrets-scan] start node scripts/check-tracked-secrets.mjs
+[segment:gates][hygiene.tracked-secrets-scan][stdout] [check:secrets] PASS
+[segment:gates][hygiene.tracked-secrets-scan] finish status=passed required=true duration_ms=539
+[segment:gates][hygiene.npm-audit] start npm run audit:ci
+[segment:gates][hygiene.npm-audit][stdout] found 0 vulnerabilities
+[segment:gates][hygiene.npm-audit] finish status=passed required=true duration_ms=1337
+[segment:gates][security.gitleaks] start npm run secrets:gitleaks
+[segment:gates][security.gitleaks][stdout] [gitleaks] detector regression PASS: generic-api-key remains active
+[segment:gates][security.gitleaks][stderr] 
+[segment:gates][security.gitleaks][stderr]     ○
+[segment:gates][security.gitleaks][stderr]     │╲
+[segment:gates][security.gitleaks][stderr]     │ ○
+[segment:gates][security.gitleaks][stderr]     ○ ░
+[segment:gates][security.gitleaks][stderr]     ░    gitleaks
+[segment:gates][security.gitleaks][stderr] 
+[segment:gates][security.gitleaks][stderr] 9:25AM INF 1904 commits scanned.
+[segment:gates][security.gitleaks][stderr] 9:25AM INF scanned ~53334848 bytes (53.33 MB) in 9.1s
+[segment:gates][security.gitleaks][stderr] 9:25AM INF no leaks found
+[segment:gates][security.gitleaks][stdout] [gitleaks] PASS
+[segment:gates][security.gitleaks] finish status=passed required=true duration_ms=9772
+[segment:gates][qa.eslint] start npm run lint
+[segment:gates][qa.eslint] still running elapsed_ms=30114 command="npm run lint"
+[segment:gates][qa.eslint] still running elapsed_ms=60214 command="npm run lint"
+[segment:gates][qa.eslint][stderr] [BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/src/types/database.ts as it exceeds the max of 500KB.
+[segment:gates][qa.eslint][stdout] Constitution lint passed for smart-rounding scope (30 files).
+[segment:gates][qa.eslint] finish status=passed required=true duration_ms=73221
+[segment:gates][qa.migration-sequence] start npm run migrations:check
+[segment:gates][qa.migration-sequence][stdout] [migrations:check] PASS: 342 migration(s) in /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/supabase/migrations — sequence 001..339
+[segment:gates][qa.migration-sequence] finish status=passed required=true duration_ms=175
+[segment:gates][qa.migrations-apply-postgres] start npm run migrations:verify:pg
+[segment:gates][qa.migrations-apply-postgres][stdout] [migrations:verify:pg] PASS (342 migration files, 23 SQL probes; native PostgreSQL with Supabase stubs)
+[segment:gates][qa.migrations-apply-postgres] finish status=passed required=true duration_ms=15969
+[segment:gates][qa.root-build] start npm run build
+[segment:gates][qa.root-build][stdout] [migrations:check] PASS: 342 migration(s) in /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/supabase/migrations — sequence 001..339
+[segment:gates][qa.root-build][stdout] [check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated
+[segment:gates][qa.root-build][stdout] [check-memory-care] PASS
+[segment:gates][qa.root-build][stdout] ▲ Next.js 16.2.11 (Turbopack)
+[segment:gates][qa.root-build][stdout] - Experiments (use with caution):
+[segment:gates][qa.root-build][stdout]   · clientTraceMetadata
+[segment:gates][qa.root-build][stdout]   · optimizePackageImports
+[segment:gates][qa.root-build][stdout] 
+[segment:gates][qa.root-build][stdout]   Creating an optimized production build ...
+[segment:gates][qa.root-build] still running elapsed_ms=34146 command="npm run build"
+[segment:gates][qa.root-build][stdout] ✓ Compiled successfully in 34.2s
+[segment:gates][qa.root-build][stdout]   Running next.config.js provided runAfterProductionCompile ...
+[segment:gates][qa.root-build][stdout] ✓ Completed runAfterProductionCompile in 512ms
+[segment:gates][qa.root-build][stdout]   Running TypeScript ...
+[segment:gates][qa.root-build] still running elapsed_ms=69227 command="npm run build"
+[segment:gates][qa.root-build] still running elapsed_ms=99278 command="npm run build"
+[segment:gates][qa.root-build][stderr] Failed to type check.
+[segment:gates][qa.root-build][stderr] 
+[segment:gates][qa.root-build][stderr] ./src/app/(admin)/vendors/purchase-orders/new/page.tsx:39:34
+[segment:gates][qa.root-build][stderr] Type error: BigInt literals are not available when targeting lower than ES2020.
+[segment:gates][qa.root-build][stderr] 
+[segment:gates][qa.root-build][stderr]   [90m37 |[0m [36mfunction[0m lineTotalCents(quantity: string, unitCost: string): number {
+[segment:gates][qa.root-build][stderr]   [90m38 |[0m   [36mconst[0m [whole, fraction = [32m""[0m] = quantity.split([32m"."[0m);
+[segment:gates][qa.root-build][stderr] [31m[1m>[0m [90m39 |[0m   [36mconst[0m scaled = [33mBigInt[0m(whole) * [35m10000[0mn + [33mBigInt[0m(fraction.padEnd([35m4[0m, [32m"0"[0m));
+[segment:gates][qa.root-build][stderr]   [90m   |[0m                                  [31m[1m^[0m
+[segment:gates][qa.root-build][stderr]   [90m40 |[0m   [36mreturn[0m [33mNumber[0m((scaled * [33mBigInt[0m(unitCost) + [35m5000[0mn) / [35m10000[0mn);
+[segment:gates][qa.root-build][stderr]   [90m41 |[0m }
+[segment:gates][qa.root-build][stderr]   [90m42 |[0m
+[segment:gates][qa.root-build][stderr] Next.js build worker exited with code: 1 and signal: null
+[segment:gates][qa.root-build] finish status=failed required=true duration_ms=103429
+[segment:gates][hygiene.nextjs-deprecation-signal] start (derived from npm run build output)
+[segment:gates][hygiene.nextjs-deprecation-signal] finish status=passed required=false
+[segment:gates][qa.web-build] start npm run build (apps/web)
+[segment:gates][qa.web-build] finish status=skipped required=false
+[segment:gates][chaos.stress-suite] start npm run stress:test
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: suite loaded
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: Number.parseInt rejects garbage
+[segment:gates][chaos.stress-suite][stdout] PASS	stress: parallel microtasks both ran
+[segment:gates][chaos.stress-suite][stdout] ADVISORY	stress: add ALF/home-care workflow simulations when resident and census models exist
+[segment:gates][chaos.stress-suite] finish status=passed required=true duration_ms=430
+[segment:gates][cdo.preview-prerequisite] start start verified UI preview
+[segment:gates][cdo.preview-prerequisite] finish status=failed required=true
+
+[segment:gates] verdict=FAIL artifact=/Users/brianlewis/Circle of Life/Haven Remaining Roadmap/test-results/agent-gates/2026-09-08T13-25-13-774Z-section-4-bus002.json
+
