@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-07T23:42:12.781804+00:00",
+  "project_ref": "manfqmasfqppukpobpld",
+  "scope": "Atomic public,haven schema and data snapshot; hosted managed schemas additionally protected by PITR",
+  "backup_file": "/Users/brianlewis/Circle of Life/Haven Release Backups/2026-09-07-section-2/clinical-schemas.dump",
+  "bytes": 6848003,
+  "sha256": "c83117a02253565ca0717101896a921e525540117d3dad658724722da9f91771",
+  "catalog_entries": 6416,
+  "verified_readable_archive": true,
+  "mode": "directory0700/file0600",
+  "prior_attempt": "Docker-based CLI dump timed out at240s; empty schema.sql retained; native pg_dump succeeded"
+}

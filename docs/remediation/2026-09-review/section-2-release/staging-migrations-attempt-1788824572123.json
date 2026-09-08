@@ -1,0 +1,1034 @@
+{
+  "startedAt": "2026-09-07T23:41:42.512Z",
+  "target": "isolated local Supabase",
+  "source": "8065f050a586d5ba378ab10ad95fcaffe20e8dc5",
+  "authHelpersStubbed": false,
+  "checks": [
+    {
+      "name": "001_enum_types.sql",
+      "pass": true,
+      "sha256": "6a7dd62ad7df96a3a639437b503c2eed3eff1a742c70fedb0be2332480315699"
+    },
+    {
+      "name": "002_core_hierarchy.sql",
+      "pass": true,
+      "sha256": "a3703beaccd572c543c3f43170dbc04b938854d81be205909e2275e558175540"
+    },
+    {
+      "name": "003_user_rbac.sql",
+      "pass": true,
+      "sha256": "e9d366e848c549f3cac02b417d6d8069693f26413cd3a74dcf89379417491cef"
+    },
+    {
+      "name": "004_haven_rls_helpers.sql",
+      "pass": true,
+      "sha256": "d8d624ee71a162924da2411022980eb9fb908eb86d24f1058d63df356db82b10"
+    },
+    {
+      "name": "005_rls_policies.sql",
+      "pass": true,
+      "sha256": "9f3f3fad5c3b4b459226b11aa91bb97646c23e853a4e38aaf86e4e6c3a0a2dd1"
+    },
+    {
+      "name": "006_audit_triggers.sql",
+      "pass": true,
+      "sha256": "500cb3e9b917641943d3d307f2cb0a6e79d38d7b5818a058daec99a1db7677ac"
+    },
+    {
+      "name": "007_census_daily_log.sql",
+      "pass": true,
+      "sha256": "490700c0edcbc0fc5d2a5706552bbd9fd743e873fd63bc28878b6a78f1f90b1f"
+    },
+    {
+      "name": "008_seed_col_organization.sql",
+      "pass": true,
+      "sha256": "d9ffb57c31604efe39574a16fc53b847b94431039d17c3a95f824fb3f250a1ab"
+    },
+    {
+      "name": "009_residents.sql",
+      "pass": true,
+      "sha256": "3fa99be5c93998d2c9458e7e8cfb6d3977c524d56bc3484be340bdf56cffe0b8"
+    },
+    {
+      "name": "010_care_plans.sql",
+      "pass": true,
+      "sha256": "40e8a889849575c823cbb70af6a593950d5da1e8274f4ff050175ced1fe3dbe5"
+    },
+    {
+      "name": "011_resident_clinical_assets.sql",
+      "pass": true,
+      "sha256": "2b52b0275c29f47e9df9d220828346763e98df751a234bfa0bc9937099a1cb80"
+    },
+    {
+      "name": "012_assessment_templates.sql",
+      "pass": true,
+      "sha256": "4cd5e513465c8c7a184b5930f453abab4b918f81e664c123bcc225302590bb6a"
+    },
+    {
+      "name": "013_resident_profile_rls.sql",
+      "pass": true,
+      "sha256": "5a46e984ceb0184bdee1f07e22e7286d1b9cb2388c6387d9e27a2a8587bab0e1"
+    },
+    {
+      "name": "014_resident_profile_audit_triggers.sql",
+      "pass": true,
+      "sha256": "94f5722c2334a08821c996543ceaeafbf82243e1ac0b971e46ef6d9242d51d73"
+    },
+    {
+      "name": "015_daily_logs_and_adl.sql",
+      "pass": true,
+      "sha256": "c83807adb2e93d3bdc77cd9cf67e04030a4bcbb58f0e8acdb424a71ce6536da0"
+    },
+    {
+      "name": "016_resident_medications_emar.sql",
+      "pass": true,
+      "sha256": "5b81518b0db52fa4ebee3d261703be492379182641f285320a167a23e8414c68"
+    },
+    {
+      "name": "017_behavioral_condition_handoff.sql",
+      "pass": true,
+      "sha256": "588217f0fb813e6487205380e1f81405a13239e1ec4033dc36e25559853a34c0"
+    },
+    {
+      "name": "018_activities.sql",
+      "pass": true,
+      "sha256": "8dbf9f7345ef35b87e01e03dd7819f33bc9ab896e540277ad34877ff7c4b3a66"
+    },
+    {
+      "name": "019_daily_operations_rls.sql",
+      "pass": true,
+      "sha256": "c7fd97bc0d08e8a663805aae36681f13559c5bb07ac32bf9e16efa90c01e9749"
+    },
+    {
+      "name": "020_daily_operations_audit_triggers.sql",
+      "pass": true,
+      "sha256": "125e9dd689f536f7d30f4b2d11be44b5adedbbd689b0955b2e5de7d8950381e6"
+    },
+    {
+      "name": "021_incident_reporting_schema.sql",
+      "pass": true,
+      "sha256": "4a78988241d605b154fa626e98a47a0f0ee1a72982a0a1427f733857a22ac0b5"
+    },
+    {
+      "name": "022_incident_reporting_rls.sql",
+      "pass": true,
+      "sha256": "c230bfb31e02efe7d4e41b6288acd00cc07460202c9f59b9378b0eba67d96a32"
+    },
+    {
+      "name": "023_incident_reporting_audit_triggers.sql",
+      "pass": true,
+      "sha256": "724552b1a49e5a93a4ab13bb06acd5ae4c8be07af44cc47e8acbb1f6f7a61a6b"
+    },
+    {
+      "name": "024_staff_management_schema.sql",
+      "pass": true,
+      "sha256": "63470fa6efa2596ae8f0e160de283b693722fe5bf51ed1a88048b6841204c844"
+    },
+    {
+      "name": "025_staff_management_rls.sql",
+      "pass": true,
+      "sha256": "7d82ff1c16a576e2b78db7525d820547eee88818c5b8f5da3c3658a45b05e2b1"
+    },
+    {
+      "name": "026_staff_management_audit_triggers.sql",
+      "pass": true,
+      "sha256": "c11f8a48c5609835477ae112752c6819644ad385ff5f33cc3d79107ee8fcef62"
+    },
+    {
+      "name": "027_billing_and_collections_schema.sql",
+      "pass": true,
+      "sha256": "b440660292fbfb29e27e46917271db3d2f590f1b71df241bfe83dd2c396f7c41"
+    },
+    {
+      "name": "028_billing_and_collections_rls.sql",
+      "pass": true,
+      "sha256": "7dbd9d2134f52cf1a240d9fed4f9652e2a2aa9544956e9ff2fd624c0bf94b933"
+    },
+    {
+      "name": "029_billing_and_collections_audit_triggers.sql",
+      "pass": true,
+      "sha256": "aa939e32aa4cc2893159d6e24550699d3e82d854491a322fd7e2fffceaa651cf"
+    },
+    {
+      "name": "030_allocate_incident_number.sql",
+      "pass": true,
+      "sha256": "14c55709486ffa7c251e1a680f046d2ecf555dfb25dd20dc90b94b663227e613"
+    },
+    {
+      "name": "031_family_calendar_rls.sql",
+      "pass": true,
+      "sha256": "b7dcf4136c60f1effa363e81563c71024b5e3e458c8bf940cf64885b361649e8"
+    },
+    {
+      "name": "032_family_portal_messages.sql",
+      "pass": true,
+      "sha256": "f1770811f637087802a91b8a1f989a49c0de9fd3ba15624c42e616a95bf846e9"
+    },
+    {
+      "name": "033_seed_oakridge_demo_data.sql",
+      "pass": true,
+      "sha256": "cd6ebd4a4fa469f5e69ef43284ab8212d19ec0433989f634eb6bc5635c4f2555"
+    },
+    {
+      "name": "034_tighten_resident_profile_rls.sql",
+      "pass": true,
+      "sha256": "a0b8619737c995e3e2c9443649d7ab59a6b64238ca0bf41e6e0cb43233f46ce6"
+    },
+    {
+      "name": "035_care_planning_advanced.sql",
+      "pass": true,
+      "sha256": "b9b16e7794443e2bb19c3e4d153c32d436f03c51ee8811f4241ca52a17723bb0"
+    },
+    {
+      "name": "036_care_plan_review_alerts_insert_policy.sql",
+      "pass": true,
+      "sha256": "35c2de65d4c33b6efb2ebd057070fd14d630958fc3d8453d97bd4b7821e2c31e"
+    },
+    {
+      "name": "037_medication_management_advanced.sql",
+      "pass": true,
+      "sha256": "dc2af84717090fd7fcc9a67a97a2be361324d0a982b898c0b4799a7085af3805"
+    },
+    {
+      "name": "038_infection_control.sql",
+      "pass": true,
+      "sha256": "9d17319f874615c974a24331d2a18b896f59eb960d2162ef33eb80d6f5699e74"
+    },
+    {
+      "name": "039_compliance_engine.sql",
+      "pass": true,
+      "sha256": "90197e0ff0b9ec85bb28404be33d51061669b9bdbf21082aff016a6ec83ce3db"
+    },
+    {
+      "name": "040_entity_facility_finance.sql",
+      "pass": true,
+      "sha256": "2bf755873f732008cea39faf75ce737fb3b08c43d344e82438cc7852ed87ec37"
+    },
+    {
+      "name": "041_journal_draft_soft_delete.sql",
+      "pass": true,
+      "sha256": "85ff3ec808c3ef30c09759f4f1f81682e4aa7891a49574d041087bac8fa5f91b"
+    },
+    {
+      "name": "042_enhanced_finance_gl_settings.sql",
+      "pass": true,
+      "sha256": "61cf81f4a909635b1ae9356602e5ede63d7f25bcadd988e3383361ccda598941"
+    },
+    {
+      "name": "043_gl_budget_lines.sql",
+      "pass": true,
+      "sha256": "12dadacc1f18dc4f12749307628b2a15644308e30f9aefb9afc464cd265e49ab"
+    },
+    {
+      "name": "044_insurance_risk_finance.sql",
+      "pass": true,
+      "sha256": "4af0627682b41e2c48a5a274fe8cdd92032e2eb2dee3f7497bd0bd86fa39b191"
+    },
+    {
+      "name": "045_insurance_date_integrity.sql",
+      "pass": true,
+      "sha256": "a4f3a4f14faaea21acc4d19d7c9de4232fc1569c790ee06ce7ce5870b40224b8"
+    },
+    {
+      "name": "046_vendor_contract_management.sql",
+      "pass": true,
+      "sha256": "5343ccfe6cd9c21e5c0eb203a00c80dc20a8504236756ad24dc09a6f74ba06ef"
+    },
+    {
+      "name": "047_executive_intelligence.sql",
+      "pass": true,
+      "sha256": "4495ae9c976475f4d6280bd91042566d72ee9087e3175068d62562417c6e43c5"
+    },
+    {
+      "name": "048_finance_enhanced.sql",
+      "pass": true,
+      "sha256": "b49ed972e4ecaedba5bd72ec15143024069e39732215ea9d90895f219a59077f"
+    },
+    {
+      "name": "049_insurance_enhanced.sql",
+      "pass": true,
+      "sha256": "b65d8e5e7b43e2fa381d3816a5a7014a8c255a396ce9643640a1a3a56f844d74"
+    },
+    {
+      "name": "050_platform_audit_log_access.sql",
+      "pass": true,
+      "sha256": "b13b1f0271bd7e3831bff511a2a02bb3741e768a07aee85c703dd288491253f0"
+    },
+    {
+      "name": "051_platform_auth_role_reconciliation.sql",
+      "pass": true,
+      "sha256": "ede991159ee239d4d82f61ed50a839dd369f1c6df89cf281cc5cc71516693cfe"
+    },
+    {
+      "name": "052_platform_regulatory_jurisdiction.sql",
+      "pass": true,
+      "sha256": "826c184f087f21cae35db3675e2be729a7ed59fd6f4acf0b6a9ec0abdd9377e7"
+    },
+    {
+      "name": "053_platform_search_index.sql",
+      "pass": true,
+      "sha256": "d88c1820921fd62714a8b840574352887dc47d7d2913d352b41d235f4f8f5f6a"
+    },
+    {
+      "name": "054_pwa_offline_emar.sql",
+      "pass": true,
+      "sha256": "1d2421f9a7b2ddbe55ee3efb92a58c35ba622dae0c2d0ba4516c087db71ec925"
+    },
+    {
+      "name": "055_pwa_push_notifications.sql",
+      "pass": true,
+      "sha256": "975a8f4ef436450dc56602ab93637c79e9524b3cf0995717356b3bf84a89e479"
+    },
+    {
+      "name": "056_resident_advance_directives.sql",
+      "pass": true,
+      "sha256": "ee9c8c1b1b112050c50a86d599d9fdc9c85f151080b4dc9257d0e90e4e815d2f"
+    },
+    {
+      "name": "057_emar_witness_device.sql",
+      "pass": true,
+      "sha256": "67097a1f67c4420ca88a1c088e82144cff2d13bafe0aae6d839b232d038fc257"
+    },
+    {
+      "name": "058_incident_regulatory_timers.sql",
+      "pass": true,
+      "sha256": "92ad1dcd497c33a2e57918b500a306fb2b4a77e50cc1a6d34bf61514426d54d6"
+    },
+    {
+      "name": "059_staff_credentials_background.sql",
+      "pass": true,
+      "sha256": "f272e545df736f2b3e3e6365c5c127a15f07cbfb6e0f4124f98dd9e54397d327"
+    },
+    {
+      "name": "060_billing_trust_ar_matview.sql",
+      "pass": true,
+      "sha256": "90f70705109dafa967e9d02bd82c098de5664aa1063f9ec97bac5cec840b20aa"
+    },
+    {
+      "name": "061_care_plan_billing_version_lock.sql",
+      "pass": true,
+      "sha256": "d21c4ccbe998e8cb85888021835c6eaf0ee838a5ed2c8d6117671f5a99e6f9a8"
+    },
+    {
+      "name": "062_medication_rxnorm_witness.sql",
+      "pass": true,
+      "sha256": "06371e73a66992f06db3acc059aac8c391cab2190e0111df678740a58e10cbb0"
+    },
+    {
+      "name": "063_infection_jurisdiction_labs.sql",
+      "pass": true,
+      "sha256": "38b3c331624c05ce30305886171326399e9ac3caa41cf78e00d191984f7b8070"
+    },
+    {
+      "name": "064_compliance_citation_keys.sql",
+      "pass": true,
+      "sha256": "09b851b1b535dea4799b55468facd6fe697656405c49d5b9518c7efeb841ae05"
+    },
+    {
+      "name": "065_finance_intercompany.sql",
+      "pass": true,
+      "sha256": "18abf3526b1ea0465a6701a5a835e4e9b18faa9980888136813f9022e29379fc"
+    },
+    {
+      "name": "066_insurance_osha_allocation.sql",
+      "pass": true,
+      "sha256": "0658ecb454b5372f5ca0de2cb65f051a86ef0b1da14232d1272a1acca3029229"
+    },
+    {
+      "name": "067_vendor_match_storage_scorecard.sql",
+      "pass": true,
+      "sha256": "9c6669e0a7360488dcd38cae54202339f02cef4a6ceb9b573336ce8d4887ec00"
+    },
+    {
+      "name": "068_ai_invocation_framework.sql",
+      "pass": true,
+      "sha256": "fcc062fd395e4b1b7dfea0a232a46d9ad4914c6d51b29285dc654c245ac7a9c7"
+    },
+    {
+      "name": "069_shift_swap_requests_rls_tighten.sql",
+      "pass": true,
+      "sha256": "67a7736d19711f36a1129d960d5d86b70a063e3f5dd888298b924d761b4a0229"
+    },
+    {
+      "name": "070_incident_rca.sql",
+      "pass": true,
+      "sha256": "e26f001f9726976bc2d1d0c7b24d04e580f96b8fbea33e1c40cc43184c025532"
+    },
+    {
+      "name": "071_invoices_facility_resident_period_unique.sql",
+      "pass": true,
+      "sha256": "8f58014ee2fafb77ef918df59f7ef113d555c22eede7757e06ddec7d38dd3d97"
+    },
+    {
+      "name": "072_staffing_ratio_snapshots_insert_policy.sql",
+      "pass": true,
+      "sha256": "489a9eb3bd23f9ca3174351360c2e6d3609b036f1ddc9bcf25bc8ef4ffd2fbdf"
+    },
+    {
+      "name": "073_time_records_admin_rls.sql",
+      "pass": true,
+      "sha256": "a28393f2f5dcb363caa39746bb43b21b2cdcfcf06062bef7acde6fa409539f72"
+    },
+    {
+      "name": "074_incident_rca_investigation_status.sql",
+      "pass": true,
+      "sha256": "4e150ee957472d3b15ef1467ca53dc0fed84dee0c8cd4657b472464f02011069"
+    },
+    {
+      "name": "075_referral_inquiry_schema.sql",
+      "pass": true,
+      "sha256": "6fb987286e8d39a8033bd29eae7269d1c2e9b62c22168fe5c9d7ac1f4dcd00cc"
+    },
+    {
+      "name": "076_referral_inquiry_rls_audit.sql",
+      "pass": true,
+      "sha256": "2d547f44ed56a219427cb93541dfe2c70c232c48cd7089dea14f19822c6ac1f4"
+    },
+    {
+      "name": "077_admissions_move_in_schema.sql",
+      "pass": true,
+      "sha256": "d82f53879e123ba6163d96898ab80d2916fb9e5ac13664f55ee8d8e7c3fb17b7"
+    },
+    {
+      "name": "078_admissions_move_in_rls_audit.sql",
+      "pass": true,
+      "sha256": "6287b93e75fd929e2ecb5b68dbee9d494a1976655c2034e96899139239f9c76e"
+    },
+    {
+      "name": "079_discharge_transition_schema.sql",
+      "pass": true,
+      "sha256": "c737f37a7d577dd9896519f5a5dc874212b40274693f3637f7287b1dfc800c19"
+    },
+    {
+      "name": "080_discharge_transition_rls_audit.sql",
+      "pass": true,
+      "sha256": "03d665709b57f3b1acb35588757dfc914e4b06a44a5ca27d776bc0967514fd5d"
+    },
+    {
+      "name": "081_quality_metrics_schema.sql",
+      "pass": true,
+      "sha256": "005e071f8bb6305ef2f62c84cbc20877d9e5fa4aa1b9a87c4ec08f0abf0f5c0d"
+    },
+    {
+      "name": "082_quality_metrics_rls_audit.sql",
+      "pass": true,
+      "sha256": "6cc3dd9c9cb6c2d49dc4e8899fa7056f2fe29b634de43cfa53af87819e658752"
+    },
+    {
+      "name": "083_family_portal_module_schema.sql",
+      "pass": true,
+      "sha256": "492cd2ed1386f98103be5d131694ad57fe90ea077fe692625b6c40caffbad0f4"
+    },
+    {
+      "name": "084_family_portal_module_rls_audit.sql",
+      "pass": true,
+      "sha256": "e67d7143fefd66db96b33eff379dd4f8684110682dd0d1e5b04ebdd4d16d1204"
+    },
+    {
+      "name": "085_executive_intelligence_v2.sql",
+      "pass": true,
+      "sha256": "618c75302eaec89327480b377955836fa1bdc7b20f275220828e03950f038dd5"
+    },
+    {
+      "name": "086_competency_demonstrations_schema.sql",
+      "pass": true,
+      "sha256": "30dc4a20f5c676e3f3f7c081066a4a0a8b74ab0daeb0aeba1c24a6e23b1634a2"
+    },
+    {
+      "name": "087_competency_demonstrations_rls_audit.sql",
+      "pass": true,
+      "sha256": "d0901c57d26d2f7a6084d8f5e126bb3ac70675408ec76d2c6916ce35ed6e72eb"
+    },
+    {
+      "name": "088_payroll_integration.sql",
+      "pass": true,
+      "sha256": "5303706daea2362abeb9aee5e45fcb46dbc1b26fcc3568b905a8c61055dc8e34"
+    },
+    {
+      "name": "089_dietary_nutrition.sql",
+      "pass": true,
+      "sha256": "16ea9628d4fae8d206c14e2e6180acc6316aab9af219e9c5df89ec2d378072d2"
+    },
+    {
+      "name": "090_transportation.sql",
+      "pass": true,
+      "sha256": "8fae85b402fc7044a775ab41bec9106931300cdcfa62c86fd644b6db09d8eb64"
+    },
+    {
+      "name": "091_referral_hl7_inbound.sql",
+      "pass": true,
+      "sha256": "5305db495bb66f3ba928ae015651c61bbee54b558c313138fdcae85416218744"
+    },
+    {
+      "name": "092_reputation.sql",
+      "pass": true,
+      "sha256": "777681ea852e3e9805bc0134e39824bdbaf182a5a884a0f971d652bd1d9e4399"
+    },
+    {
+      "name": "093_backfill_oakridge_demo_auth_users.sql",
+      "pass": true,
+      "sha256": "6d690c2604f447524a9479943a6f38a1451a931b8309dd76a76b631dd5b7284c"
+    },
+    {
+      "name": "094_normalize_oakridge_demo_emails.sql",
+      "pass": true,
+      "sha256": "cfbb6177c33c9903b3cd1016c9fa98b5fb12a1130ea4dd539d910b4a6de4fb3d"
+    },
+    {
+      "name": "095_restore_default_auth_instance.sql",
+      "pass": true,
+      "sha256": "221e269bef9fea122b31eba774d3a335dda2ed3dbaaab3993df16b88084888e7"
+    },
+    {
+      "name": "096_executive_intelligence_v3.sql",
+      "pass": true,
+      "sha256": "38d939eaa865374e85e25f2f798f72f5e9a52742b403515d5a43fb1f465ad32f"
+    },
+    {
+      "name": "097_fix_exec_intelligence_audit.sql",
+      "pass": true,
+      "sha256": "0c3ba2b93a18f612bf2fae929bac8b4d1a056f8d5b9412c36d61e6321f5227cd"
+    },
+    {
+      "name": "098_resident_assurance_schema.sql",
+      "pass": true,
+      "sha256": "7c15b57dc09b2f4c00034452e64bcc3d806a9c3200a91d21820ac5169d035357"
+    },
+    {
+      "name": "099_resident_assurance_rls.sql",
+      "pass": true,
+      "sha256": "9c24a9411961e9f4d8801e64c94c2f9dbe3a7ce01261590c5160d84dff75a6c0"
+    },
+    {
+      "name": "100_resident_assurance_audit.sql",
+      "pass": true,
+      "sha256": "306f9e1787c15de14698199fa86de993c73e459c0d5edbe4d9c6769bcf8c32f2"
+    },
+    {
+      "name": "101_resident_assurance_seed.sql",
+      "pass": true,
+      "sha256": "53b50ed283471d96f832b10d92b534a3a045238943234ff967f5a008c48a9e76"
+    },
+    {
+      "name": "102_reporting_module_schema.sql",
+      "pass": true,
+      "sha256": "6bd3c7178a6e9ed85483c9975027a2209304b0596f92354849c8177f5822a652"
+    },
+    {
+      "name": "103_reporting_module_rls.sql",
+      "pass": true,
+      "sha256": "5e060748c066614bd0236dfc14efd788cca25f4fed89e687d9d1ec860e0d22aa"
+    },
+    {
+      "name": "104_reporting_module_audit.sql",
+      "pass": true,
+      "sha256": "c24220f8b8828c314a75a51761213f24bb7d53e6cc14cff5c5dc63e7fa65f4b8"
+    },
+    {
+      "name": "105_reporting_module_seed.sql",
+      "pass": true,
+      "sha256": "9d045c770636cf5d55e814be05afceef140b556bcfebf0d3849796a32bde5c89"
+    },
+    {
+      "name": "106_reporting_saved_views_backfill.sql",
+      "pass": true,
+      "sha256": "a9f42b4a289cc3cea4e0baefcb76f8ce2b7db061b5f75dfb81e4507764c9b7bf"
+    },
+    {
+      "name": "107_resident_assurance_indexes_rls_patch.sql",
+      "pass": true,
+      "sha256": "8ce3fceb3e65205f24946e9a79fea00be3eb5cca6b15d504dead5a1c84d52227"
+    },
+    {
+      "name": "108_onboarding_responses.sql",
+      "pass": true,
+      "sha256": "d7dd1cdd446d3112944dadc12ec1a0e739be63e6dd91fe8343b046537e1d6f8f"
+    },
+    {
+      "name": "109_onboarding_question_tiers.sql",
+      "pass": true,
+      "sha256": "0472ec6d77123b20695f2920da47f1c08c1cd2e68e79eb4d0567dac83dc68b4a"
+    },
+    {
+      "name": "110_oakridge_demo_auth_app_role_metadata.sql",
+      "pass": true,
+      "sha256": "127cbbb767b607bd6f93139de0f605695d160079e0d3ec267f4b82a59c249b18"
+    },
+    {
+      "name": "111_user_profiles_updated_by_and_email_sync.sql",
+      "pass": true,
+      "sha256": "0525217fe932b57771f9a51c7212147815233fbb76bedfa883ae0f9e92770d94"
+    },
+    {
+      "name": "112_resident_transport_requests.sql",
+      "pass": true,
+      "sha256": "6713b2c1938de2d56057cfab5c2b9e8056a398190d83b9456709190db965e651"
+    },
+    {
+      "name": "113_mileage_logs_and_fleet_wheelchair.sql",
+      "pass": true,
+      "sha256": "ca1b9836b42dea11854f64962d46f6ff5d558736d36dafb471f154b5743fe80c"
+    },
+    {
+      "name": "114_organization_transport_settings.sql",
+      "pass": true,
+      "sha256": "edc8ee5196ef36464c89ce85b9d6445d296dc275bd874391f12a4c2b48a77921"
+    },
+    {
+      "name": "115_competency_certificate_storage.sql",
+      "pass": true,
+      "sha256": "14bc1d3edffcd80a113c096f5523467846f36e8ee43b7f8f1d3bfdb46cbc7a9b"
+    },
+    {
+      "name": "116_training_programs_staff_completions.sql",
+      "pass": true,
+      "sha256": "0ea351b3f8d358138054fd23610bfe1320fcdcef37e4fb4059354a3461021d6a"
+    },
+    {
+      "name": "117_training_completion_certificate_storage_rls.sql",
+      "pass": true,
+      "sha256": "f83f0591fb1c0c6f643c81970821bbea5c9cd4fed8d9af44c8f72d7789adf252"
+    },
+    {
+      "name": "118_inservice_log_sessions.sql",
+      "pass": true,
+      "sha256": "5673d03eab679d8457fd53654af9df50bdcfea77491eee85360a36559e7ee323"
+    },
+    {
+      "name": "119_reputation_google_oauth_credentials.sql",
+      "pass": true,
+      "sha256": "35a3727adc1212bb3e94ebf6329e719fc0964284eaaaaa20704d73612b57acc8"
+    },
+    {
+      "name": "120_col_multi_facility_demo_seed.sql",
+      "pass": true,
+      "sha256": "812b0d97fb858ce08ad3cbfc628cfdab4b50f1fae5275497ebe1421fc2301ddb"
+    },
+    {
+      "name": "121_user_management_enum_columns.sql",
+      "pass": true,
+      "sha256": "f01fe5981396aa53d48c937c7a1bb999ab5b406d3dacdc7f71d2739be57255d6"
+    },
+    {
+      "name": "122_role_permissions_audit_log.sql",
+      "pass": true,
+      "sha256": "071c00d489b0061adf3801d50a1ae009019ec2be0438337d010a0f6ef66ea1c3"
+    },
+    {
+      "name": "123_user_management_rls_updates.sql",
+      "pass": true,
+      "sha256": "a39c4870096e727569eee888d3bab2255022679acfe4f8546b8d2f041008b7ff"
+    },
+    {
+      "name": "124_compliance_rules.sql",
+      "pass": true,
+      "sha256": "a568113a1faa1d44b83cd1f53c064ad383d263a7e1d9ec3b9eeabcf6ca4c62e7"
+    },
+    {
+      "name": "125_emergency_preparedness.sql",
+      "pass": true,
+      "sha256": "80e8f3df05d1e56da790c6e0c951a72d1222335cd67361fdbcc3e6378451ecc8"
+    },
+    {
+      "name": "126_knowledge_base.sql",
+      "pass": true,
+      "sha256": "c2a6ec0e4b1d11867b748c13c0b9910bb551c8a830dd8ee8ea3d55984deb423a"
+    },
+    {
+      "name": "127_compliance_rule_executor.sql",
+      "pass": true,
+      "sha256": "d25d628a1d5952480990ec68dfc7ed8085c0d3a09ff2df25bfcfec23ab7525a4"
+    },
+    {
+      "name": "128_compliance_rules_expanded.sql",
+      "pass": true,
+      "sha256": "bde8583e6342d3b26ff322d67928ece2de1d496d3b83dc546387bc4f8db04ff2"
+    },
+    {
+      "name": "129_resident_assurance_seed.sql",
+      "pass": true,
+      "sha256": "53b50ed283471d96f832b10d92b534a3a045238943234ff967f5a008c48a9e76"
+    },
+    {
+      "name": "130_kb_security_and_schema_reconciliation.sql",
+      "pass": true,
+      "sha256": "b87718f7dee615572bf70eacc06e6a11c7986d2849fe6b4878181cd6cb807f39"
+    },
+    {
+      "name": "131_facility_admin_portal.sql",
+      "pass": true,
+      "sha256": "48408b599035c7f281c8e8e0245091f11cc6ae74e83d44cc11d95ba074bde623"
+    },
+    {
+      "name": "132_kb_markdown_column.sql",
+      "pass": true,
+      "sha256": "addc97939c25bee8560ee3e7aae33e200ed500699109d561e2e0eedf1930e7f2"
+    },
+    {
+      "name": "133_reporting_module_schema.sql",
+      "pass": true,
+      "sha256": "2a43301b9d2c03ef70a01cd96fbdee7e82377219943d88a82cb1831be6ddf1fd"
+    },
+    {
+      "name": "134_reporting_module_rls.sql",
+      "pass": true,
+      "sha256": "992327c8b5c8afd31eb245feffefc42f86762bfddc696e7abfd8e62798c0c81d"
+    },
+    {
+      "name": "135_reporting_module_audit.sql",
+      "pass": true,
+      "sha256": "a3b7900151e8197233da3c2c1028a83bac7bb4d567d0b881c2f05b8b1ee84412"
+    },
+    {
+      "name": "136_kb_compliance_integration.sql",
+      "pass": true,
+      "sha256": "81178164cb06931092272e1f2d6fa03f732048cdefb436c24ee8ba52b93183cc"
+    },
+    {
+      "name": "137_track_e_col_seed_corrections.sql",
+      "pass": true,
+      "sha256": "dd648e6e9dbb3f9348ef025200f85e1c907ef54f63fc98af849a111acfff7ba4"
+    },
+    {
+      "name": "138_track_e_facility_alf_license_type.sql",
+      "pass": true,
+      "sha256": "7d3deeff4c2ac5000ac7ab48d76b94a7402c138ca487df1b635b1d30218ae656"
+    },
+    {
+      "name": "139_track_e_adl_assessments.sql",
+      "pass": true,
+      "sha256": "658798b781e9591808a39b4088483931b1071e053f4faac5c4bf0630e0f2d7b0"
+    },
+    {
+      "name": "140_track_e_rate_confirmed.sql",
+      "pass": true,
+      "sha256": "f9e791c61c7214da2a386a5144379c00f3af84666fb3e056c0a56e9a38e7e262"
+    },
+    {
+      "name": "141_track_e_form_1823_and_admission_docs.sql",
+      "pass": true,
+      "sha256": "cecb2f9174a12a7f3ae02ea2f64d8433f21264f02079afa9d044df3b234c8463"
+    },
+    {
+      "name": "142_track_e_discharge_reason_expansion.sql",
+      "pass": true,
+      "sha256": "e01e034d025d80e0f2ee58b047ee896d0f0c8a1451543a8d24b47231fbeed244"
+    },
+    {
+      "name": "143_track_e_staff_discipline_records.sql",
+      "pass": true,
+      "sha256": "5f7910de13a54de6e370134108778acaa1643ec78f4926e70ec44d0cdca4d22e"
+    },
+    {
+      "name": "144_track_e_enum_parity_batch.sql",
+      "pass": true,
+      "sha256": "c3027ac920f6be4cd3c47342d4f2747c8feae9891f0f6f1d504af216f06dcdb6"
+    },
+    {
+      "name": "145_track_e_fl_statutes_module_links.sql",
+      "pass": true,
+      "sha256": "ca92f01dd0a34677967ef5b75b8c1ab22a4f58f294906a434e678e1642da287e"
+    },
+    {
+      "name": "146_kb_seed_getting_started.sql",
+      "pass": true,
+      "sha256": "444882af082c1f00268195378e59f3b45e6ca78eda771223021757da123cf314"
+    },
+    {
+      "name": "147_grace_foundation.sql",
+      "pass": true,
+      "sha256": "22a45a12d1cfd1ff96852c33a5ae8e89ff1a0f07583e52eeef772cbc944ae8c5"
+    },
+    {
+      "name": "148_grace_flow_engine.sql",
+      "pass": true,
+      "sha256": "ddd6b5793778c8aaaab26363f4b3ec7940274349f3f3aa6588ffb8af78bd4712"
+    },
+    {
+      "name": "149_search_tool_dashboard.sql",
+      "pass": true,
+      "sha256": "adfa2b0eff76f77e7b2b3f74f044008a6186a1299cb916aa8e9f71a3455bfde5"
+    },
+    {
+      "name": "150_seed_search_tool_policy_defaults.sql",
+      "pass": true,
+      "sha256": "039b1b8f6f831d3d030038f3c8db0ec99e4ff3b49c1093c2ea965be167b0ca80"
+    },
+    {
+      "name": "151_seed_col_executive_metrics.sql",
+      "pass": true,
+      "sha256": "3cc8c1df1b3df9cd4179a222ddbc650640ba6a16f0f1d7722486902bb9a41e97"
+    },
+    {
+      "name": "152_seed_col_payroll_and_assurance_facilities.sql",
+      "pass": true,
+      "sha256": "6f392ebcbb27fdbd6356b35707057ccd35ea38c9adde43cdd850a5d5c97ad120"
+    },
+    {
+      "name": "153_care_plan_signature.sql",
+      "pass": true,
+      "sha256": "47a2880e675b938a767c41e0a791d06b960f9456926ff606f1d7413a88c90f44"
+    },
+    {
+      "name": "154_exec_alert_threshold_rules.sql",
+      "pass": true,
+      "sha256": "2d9d43771f1f609afe311174f1502a392a27a3332e9d8dcc402d01f889afa34e"
+    },
+    {
+      "name": "155_resident_assurance_intelligence.sql",
+      "pass": true,
+      "sha256": "4fef0bfac22aa1d4f247964aa30f886908c7f5518856f4c0f605e3acfec85d33"
+    },
+    {
+      "name": "156_watch_protocol_auto_trigger.sql",
+      "pass": true,
+      "sha256": "00cd5bb633cf23a9b7bb7f0cc3ee5153d28289fcc4c79eab1c9de9533931d225"
+    },
+    {
+      "name": "157_resident_assurance_alert_rules.sql",
+      "pass": true,
+      "sha256": "8cd82e7a06d5586d624cb33eeae5b20f4e08d45fdd52306b48ed3a1ff34db554"
+    },
+    {
+      "name": "158_fix_watch_trigger_race_condition.sql",
+      "pass": true,
+      "sha256": "5a6572d16ac74dd408230b65a3255290a333612b2eab0b67b1f7560e0096ac4b"
+    },
+    {
+      "name": "159_col_licensure_survey_data.sql",
+      "pass": true,
+      "sha256": "4c34b3dc61ce445463663578942e7c488d8fbb137c4ffd58ff31b4539fb629a0"
+    },
+    {
+      "name": "160_reset_demo_user_passwords.sql",
+      "pass": true,
+      "sha256": "3cb57bcb52f93a84a056eacfc7078a9e01042766aa9c84af9988b6168efacf48"
+    },
+    {
+      "name": "161_seed_missing_role_demo_users.sql",
+      "pass": true,
+      "sha256": "5fa177bc6f8722f0dea67f30c4bf9f9082dc4ccb593afe9ddb54a9178ba7f72e"
+    },
+    {
+      "name": "162_reload_postgrest_schema_cache.sql",
+      "pass": true,
+      "sha256": "8d57b8434c4b0097259b232fe320b4e4547149343c3bcd6001701e762468252e"
+    },
+    {
+      "name": "163_force_postgrest_schema_reload.sql",
+      "pass": true,
+      "sha256": "34687ffe0948a8b123876273b9cc5517744c90a175adaac6f486bcb5692ed33a"
+    },
+    {
+      "name": "164_fix_demo_auth_identities.sql",
+      "pass": true,
+      "sha256": "15dcf12a9e164e64db66e41ea9e2cd2aeae405d87a82dd65e6541ac03aba042f"
+    },
+    {
+      "name": "165_nuke_and_rebuild_broken_demo_auth.sql",
+      "pass": true,
+      "sha256": "9a9cf4f0d8417333a2cbd42a82c24cde9e989a8e839e29527d92d70eaadea7e5"
+    },
+    {
+      "name": "166_rebuild_demo_auth_with_triggers.sql",
+      "pass": true,
+      "sha256": "d303f9b79174abc2d20a879f9615eeca73b73cb170e639b6f362b7aa8cc34bc2"
+    },
+    {
+      "name": "167_diagnose_auth_schema.sql",
+      "pass": true,
+      "sha256": "acacae95fc6c82a21129f3fddd07401ab13ffaf062965d8e1f947b409b0ff4a7"
+    },
+    {
+      "name": "168_fix_null_token_columns.sql",
+      "pass": true,
+      "sha256": "b24a4b75e293b863674425b064a550c54e81f808defdcdf8dc2c15a6a3ae0241"
+    },
+    {
+      "name": "169_add_med_tech_role.sql",
+      "pass": true,
+      "sha256": "0b8e48d495db94ad652cf197e470d7326868e89ed0f1b0cb9449405c4d3c1b42"
+    },
+    {
+      "name": "170_seed_med_tech_demo_user.sql",
+      "pass": true,
+      "sha256": "028552633e1b0ae39952df0e2402676a46f8a98b68220b4a205b47d6326927cf"
+    },
+    {
+      "name": "171_med_tech_cockpit_tables.sql",
+      "pass": true,
+      "sha256": "17e7e46d7e494bb9593594ca03035f00756e5f01ebfda86032176b28c141179a"
+    },
+    {
+      "name": "172_extend_emar_for_med_passes.sql",
+      "pass": true,
+      "sha256": "cb018f65572ea54c9566e6580ca09a43b62ea88ccbb1a635a47f3ee1b19be9b5"
+    },
+    {
+      "name": "173_seed_med_tech_cockpit_demo.sql",
+      "pass": true,
+      "sha256": "62dd0eba4728617ef8bea64d470617170af0e492a03ffbc45dff1af1aca5563d"
+    },
+    {
+      "name": "174_dietary_command_deck_tables.sql",
+      "pass": true,
+      "sha256": "3962174ebade5d93992492146a4143d839877948a971a98f57a4c490fde3c0a0"
+    },
+    {
+      "name": "175_seed_dietary_demo.sql",
+      "pass": true,
+      "sha256": "27e26c4cc448330cd214ef30d2ce5c27abfeab8474c85feb476fdc04e7668757"
+    },
+    {
+      "name": "176_grace_memory_compiler.sql",
+      "pass": true,
+      "sha256": "029af3c0e61c26516b827a05c5476c469380a646025511dd540486f277da2469"
+    },
+    {
+      "name": "177_pilot_feedback_submissions.sql",
+      "pass": true,
+      "sha256": "8fa003bdd76b9b16a900087a5f7a877384bd65e459cddac07f0ff3b23fc0de7c"
+    },
+    {
+      "name": "178_promote_demo_admin_to_owner.sql",
+      "pass": true,
+      "sha256": "e880939079c356ada6e616010708382e6fd972f3ebdab624b34aa2cf85bce454"
+    },
+    {
+      "name": "179_update_col_admin_contacts.sql",
+      "pass": true,
+      "sha256": "cef3528b080d9a94459ab0b5b95a8e33f50fc7d1f540660df024a4932221c740"
+    },
+    {
+      "name": "180_allow_med_tech_incident_capture.sql",
+      "pass": true,
+      "sha256": "023cf0ba2cc32b670402e0fa2dcbe82e70b24c242167ce08d39ecbc82c41bbfb"
+    },
+    {
+      "name": "181_fix_watch_auto_trigger_for_current_incident_schema.sql",
+      "pass": true,
+      "sha256": "4d385ba3050aaef6ccb1f936b79ebc2b887a25be2e17f71977e0baf7a31ce3fb"
+    },
+    {
+      "name": "182_seed_specialist_role_demo_users.sql",
+      "pass": true,
+      "sha256": "3e684f398dcfded575505dbf7a5a9a357d26d60978a5100232652ea5311d7821"
+    },
+    {
+      "name": "183_fix_incident_sequence_audit_trigger.sql",
+      "pass": true,
+      "sha256": "e03be8990c8e08bcea95f225f17d122c3136764acef7c6745d32d114ece1872c"
+    },
+    {
+      "name": "184_harden_incident_number_allocator_against_seeded_data.sql",
+      "pass": true,
+      "sha256": "f3f00885be359614acc44dd96fbc6fd73a02f0839154191d37598c7f1b54f459"
+    },
+    {
+      "name": "185_executive_standup_metric_registry.sql",
+      "pass": true,
+      "sha256": "c759b9ca612b11db18b5a0f2edbedc83c132f18865e1c989a3ed39e453acebfd"
+    },
+    {
+      "name": "186_executive_standup_snapshots.sql",
+      "pass": true,
+      "sha256": "3da238fc83d79f8b99939f2a4d65e4432479dbc90e160289a41ae1846ff0fb40"
+    },
+    {
+      "name": "187_executive_standup_rls_audit.sql",
+      "pass": true,
+      "sha256": "87c9ee9be9720896612c096ddbc29d33d50c6540524c70800e2f3680ba6cf4f6"
+    },
+    {
+      "name": "188_executive_standup_import_jobs.sql",
+      "pass": true,
+      "sha256": "2b9bad68869029728da296a3300ffa6166b4659e8734c5fb38dbd61f5caa920d"
+    },
+    {
+      "name": "189_staff_attendance_callouts.sql",
+      "pass": true,
+      "sha256": "e3a6749f37574b9524d9d2db987deca9ff518a91337dd546798da925d85534d4"
+    },
+    {
+      "name": "190_staff_requisitions.sql",
+      "pass": true,
+      "sha256": "02e70feee7a43910c952f9201015315242354690c19380fd8fd4cfbfffe07e02"
+    },
+    {
+      "name": "191_referral_outreach_activities.sql",
+      "pass": true,
+      "sha256": "5472d2aea6b2bb6c97e605242b5421c6651284c10ff80f28700104f487ca0518"
+    },
+    {
+      "name": "192_bed_inventory_classification.sql",
+      "pass": true,
+      "sha256": "75c7fb3687e54c4cc88e3ae4f41af7453170e30e9316972ad24f0b5c8ed66181"
+    },
+    {
+      "name": "193_report_export_storage_bucket.sql",
+      "pass": true,
+      "sha256": "7f25beac294227ed67ee0465a282973b03569dc4238cea9301ec097988f03041"
+    },
+    {
+      "name": "194_resident_assurance_integrity_assignment.sql",
+      "pass": true,
+      "sha256": "e63bf306a150a672e99ba6ae6c18664ff6cfa973b358bb86482928b37ddb85ff"
+    },
+    {
+      "name": "195_operation_task_templates.sql",
+      "pass": true,
+      "sha256": "0815724b09b0cb6c54e8cbd758f3728139d300f137522295f92b061cc25b1b54"
+    },
+    {
+      "name": "196_operation_task_instances.sql",
+      "pass": true,
+      "sha256": "92580d227fb563e8f21aba9e94b3c0af43b00c68127a998395a5083ad371be74"
+    },
+    {
+      "name": "197_facility_assets.sql",
+      "pass": true,
+      "sha256": "c59c22f3823645358c8d3dec39ffa3e6d45b2e876b57e9644476409b5e3c1ba1"
+    },
+    {
+      "name": "198_staffing_adequacy_snapshots.sql",
+      "pass": true,
+      "sha256": "02aa47787c25d6b5f18e065dcb97575723aa54540f42af81f9fdf82b528d2f82"
+    },
+    {
+      "name": "199_operation_audit_log.sql",
+      "pass": true,
+      "sha256": "e656c3c87cb4f239af0114841139f5d1a7758cdbec5f646bf703f882f81c652f"
+    },
+    {
+      "name": "200_oce_seed_data.sql",
+      "pass": true,
+      "sha256": "dd16ed0525b86229160392a2464ebd3cdb149cf9d4af8189e15e004ba3b483b2"
+    },
+    {
+      "name": "201_oce_reconciliation_and_generation_guard.sql",
+      "pass": true,
+      "sha256": "7d6bdc2fb5472524af81bc0b298461fb1343aff37b91046cf0abfdd226baf5c4"
+    },
+    {
+      "name": "20260514180000_staff_role_enum_values.sql",
+      "pass": true,
+      "sha256": "3a0bd2a09f24a8dc4d3dacc9b3f8404d9c8377a7c69022074d1e06696ba9d53f"
+    },
+    {
+      "name": "20260514180707_homewood_round2_employee_seed.sql",
+      "pass": false,
+      "error": "ERROR:  insert or update on table \"staff\" violates foreign key constraint \"staff_created_by_fkey\"\nDETAIL:  Key (created_by)=(00000000-0000-0000-0000-000000000001) is not present in table \"users\".\n",
+      "exitCode": 3
+    }
+  ],
+  "completedAt": "2026-09-07T23:41:45.560Z",
+  "pass": false,
+  "localPrerequisites": {
+    "nativeSupabaseAuthHelpers": true,
+    "syntheticForeignKeyActors": [
+      "00000000-0000-0000-0000-000000000001",
+      "062c3cfb-53a5-4482-814a-cbef2b028760"
+    ],
+    "reason": "Historical source seed migrations reference these Auth IDs; only synthetic local user rows were inserted. No Auth helper or authorization function stubs."
+  }
+}

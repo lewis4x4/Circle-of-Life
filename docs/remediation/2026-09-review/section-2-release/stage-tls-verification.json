@@ -1,0 +1,39 @@
+{
+  "verifiedAt": "2026-09-08T00:09:16.129Z",
+  "proxy": "https://127.0.0.1:59231",
+  "upstream": "http://127.0.0.1:59221",
+  "certificateTrust": "NODE_EXTRA_CA_CERTS set to exact local certificate; TLS validation enabled",
+  "cspBypassed": false,
+  "httpSettingsParity": true,
+  "emailLoginEnabled": true,
+  "publicSignupDisabled": true,
+  "signedActorOverTls": true,
+  "syntheticMetadataAlignedRoles": [
+    "caregiver",
+    "facility_admin",
+    "family",
+    "nurse",
+    "org_admin",
+    "owner"
+  ],
+  "webSocket": "Upgrade forwarding implemented; actual Realtime service disabled in local stack",
+  "pid": 12336,
+  "execSession": 70506,
+  "authAliasCleanup": {
+    "duplicateAlias": "auth",
+    "originalContainerStopped": true,
+    "originalHadActiveEndpoint": false,
+    "detachedOriginalContainer": "supabase_auth_haven-s2-release-01a07e17_original",
+    "network": "haven-s2-release-01a07e17",
+    "remainingNetworks": [],
+    "causeOfEarlierTimeouts": "Not proven: original had no active endpoint or IP before detach"
+  },
+  "freshCaregiverTlsSignIn": {
+    "status": 200,
+    "userMetadataRole": "caregiver"
+  },
+  "gatewayRecovery": {
+    "action": "Restart only run-owned Kong gateway after observed504 to local Auth upstream",
+    "productionChanged": false
+  }
+}

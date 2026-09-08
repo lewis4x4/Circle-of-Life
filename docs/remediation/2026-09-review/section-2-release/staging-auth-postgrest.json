@@ -1,0 +1,304 @@
+{
+  "startedAt": "2026-09-07T23:51:12.535Z",
+  "target": "isolated local Supabase",
+  "source": "c959a7edbaa7f0b8806bebab4301bd4cb2ed2646",
+  "authHelpersStubbed": false,
+  "checks": [
+    {
+      "name": "PostgREST pre-request guard configured",
+      "pass": true
+    },
+    {
+      "name": "owner Auth signed hook claims",
+      "pass": true
+    },
+    {
+      "name": "owner current actor",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "owner quality role/facility/tenant boundary",
+      "pass": true,
+      "status": 200,
+      "expected": 2,
+      "rows": [
+        {
+          "organization_id": "05d3ceaa-9937-4ac7-af79-cd4b6fffee89",
+          "facility_id": "3cc4fd09-a995-4a40-9139-d556224e2498",
+          "value_numeric": 9
+        },
+        {
+          "organization_id": "05d3ceaa-9937-4ac7-af79-cd4b6fffee89",
+          "facility_id": "e26d5678-6a25-4441-aa02-ef908d9b58ef",
+          "value_numeric": 8
+        }
+      ]
+    },
+    {
+      "name": "org_admin Auth signed hook claims",
+      "pass": true
+    },
+    {
+      "name": "org_admin current actor",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "org_admin quality role/facility/tenant boundary",
+      "pass": true,
+      "status": 200,
+      "expected": 2,
+      "rows": [
+        {
+          "organization_id": "05d3ceaa-9937-4ac7-af79-cd4b6fffee89",
+          "facility_id": "3cc4fd09-a995-4a40-9139-d556224e2498",
+          "value_numeric": 9
+        },
+        {
+          "organization_id": "05d3ceaa-9937-4ac7-af79-cd4b6fffee89",
+          "facility_id": "e26d5678-6a25-4441-aa02-ef908d9b58ef",
+          "value_numeric": 8
+        }
+      ]
+    },
+    {
+      "name": "facility_admin Auth signed hook claims",
+      "pass": true
+    },
+    {
+      "name": "facility_admin current actor",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "facility_admin quality role/facility/tenant boundary",
+      "pass": true,
+      "status": 200,
+      "expected": 1,
+      "rows": [
+        {
+          "organization_id": "05d3ceaa-9937-4ac7-af79-cd4b6fffee89",
+          "facility_id": "e26d5678-6a25-4441-aa02-ef908d9b58ef",
+          "value_numeric": 8
+        }
+      ]
+    },
+    {
+      "name": "nurse Auth signed hook claims",
+      "pass": true
+    },
+    {
+      "name": "nurse current actor",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "nurse quality role/facility/tenant boundary",
+      "pass": true,
+      "status": 200,
+      "expected": 1,
+      "rows": [
+        {
+          "organization_id": "05d3ceaa-9937-4ac7-af79-cd4b6fffee89",
+          "facility_id": "e26d5678-6a25-4441-aa02-ef908d9b58ef",
+          "value_numeric": 8
+        }
+      ]
+    },
+    {
+      "name": "quality correction and retained history",
+      "pass": true
+    },
+    {
+      "name": "caregiver Auth signed hook claims",
+      "pass": true
+    },
+    {
+      "name": "caregiver current actor",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "caregiver quality role/facility/tenant boundary",
+      "pass": true,
+      "status": 200,
+      "expected": 0,
+      "rows": []
+    },
+    {
+      "name": "family Auth signed hook claims",
+      "pass": true
+    },
+    {
+      "name": "family current actor",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "family quality role/facility/tenant boundary",
+      "pass": true,
+      "status": 200,
+      "expected": 0,
+      "rows": []
+    },
+    {
+      "name": "search current authorized source",
+      "pass": true,
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "name": "search transferred source hidden from former facility",
+      "pass": true,
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "search stale index cannot override live source scope",
+      "pass": true,
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "family facility grant alone cannot disclose resident",
+      "pass": true,
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "linked family search",
+      "pass": true,
+      "status": 200,
+      "rows": 1
+    },
+    {
+      "name": "fresh family token revoked link denies search",
+      "pass": true,
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "expired cryptographically signed local JWT denied",
+      "pass": true,
+      "status": 401,
+      "code": "PGRST303",
+      "source": "real Auth claims with expired timestamps, re-signed using isolated local JWT secret"
+    },
+    {
+      "name": "caregiver direct finalize",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "manager forged finalize",
+      "pass": true,
+      "status": 403,
+      "code": "42501"
+    },
+    {
+      "name": "caregiver protected pointer",
+      "pass": true,
+      "status": 403,
+      "code": "42501"
+    },
+    {
+      "name": "manager protected assignment",
+      "pass": true,
+      "status": 403,
+      "code": "42501"
+    },
+    {
+      "name": "receipt table private",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "authenticated cannot call privileged completion",
+      "pass": true,
+      "status": 403,
+      "code": "42501"
+    },
+    {
+      "name": "late reason rejection null",
+      "pass": true,
+      "status": 400,
+      "code": "22023"
+    },
+    {
+      "name": "late reason rejection \"\"",
+      "pass": true,
+      "status": 400,
+      "code": "22023"
+    },
+    {
+      "name": "late reason rejection \"\\t\\n \"",
+      "pass": true,
+      "status": 400,
+      "code": "22023"
+    },
+    {
+      "name": "late reason rejection \"
+﻿\"",
+      "pass": true,
+      "status": 400,
+      "code": "22023"
+    },
+    {
+      "name": "privileged completion revalidates real signed actor session",
+      "pass": true,
+      "status": 200,
+      "result": {
+        "log_id": "5caddfae-1c11-4e3a-a9c2-f333da899da2",
+        "status": "completed_on_time",
+        "replayed": false,
+        "integrityFlagCreated": true,
+        "suspiciousPatternFlagCreated": false
+      }
+    },
+    {
+      "name": "exact receipt replay",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "replay appends no audit or clinical evidence",
+      "pass": true
+    },
+    {
+      "name": "changed receipt payload conflicts",
+      "pass": true,
+      "status": 409,
+      "code": "23505"
+    },
+    {
+      "name": "old signed version denied after grant revocation",
+      "pass": true,
+      "status": 401,
+      "code": "HAVEN_AUTHORIZATION_STALE"
+    },
+    {
+      "name": "fresh version still denies revoked facility",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "disabled signed actor denied",
+      "pass": true,
+      "status": 401
+    },
+    {
+      "name": "deleted Auth session signed token denied",
+      "pass": true,
+      "status": 401
+    },
+    {
+      "name": "lost session authority denies receipt replay",
+      "pass": true,
+      "status": 403,
+      "code": "42501"
+    }
+  ],
+  "completedAt": "2026-09-07T23:51:18.106Z",
+  "pass": true
+}

@@ -1,0 +1,54 @@
+{
+  "checked_at": "2026-09-07T23:57:40.161Z",
+  "base_url": "https://deploy-preview-456--circleoflifealf.netlify.app",
+  "pilot_users": [
+    {
+      "role": "owner",
+      "login_ok": false,
+      "shell_route_ok": false,
+      "admin_facility_filter_ok": null,
+      "cross_shell_ok": null,
+      "cross_shell_probes": [],
+      "shell_url": null,
+      "error": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "role": "facility_admin",
+      "login_ok": false,
+      "shell_route_ok": false,
+      "admin_facility_filter_ok": null,
+      "cross_shell_ok": null,
+      "cross_shell_probes": [],
+      "shell_url": null,
+      "error": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    },
+    {
+      "role": "caregiver",
+      "login_ok": false,
+      "shell_route_ok": false,
+      "admin_facility_filter_ok": null,
+      "cross_shell_ok": null,
+      "cross_shell_probes": [],
+      "shell_url": null,
+      "error": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n  navigated to \"https://deploy-preview-456--circleoflifealf.netlify.app/login?email=[REDACTED]&password=[REDACTED]\"\n============================================================"
+    },
+    {
+      "role": "family",
+      "login_ok": false,
+      "shell_route_ok": false,
+      "admin_facility_filter_ok": null,
+      "cross_shell_ok": null,
+      "cross_shell_probes": [],
+      "shell_url": null,
+      "error": "page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n  navigated to \"https://deploy-preview-456--circleoflifealf.netlify.app/login?email=[REDACTED]&password=[REDACTED]\"\n  navigated to \"https://deploy-preview-456--circleoflifealf.netlify.app/login?email=[REDACTED]&password=[REDACTED]\"\n============================================================"
+    }
+  ],
+  "verdict": {
+    "all_login_ok": false,
+    "all_shell_ok": false,
+    "all_cross_shell_ok": true,
+    "all_admin_facility_filter_ok": true,
+    "pass": false
+  },
+  "exit_code": 1
+}

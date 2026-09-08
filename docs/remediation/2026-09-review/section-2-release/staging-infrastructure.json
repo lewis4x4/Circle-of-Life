@@ -1,0 +1,27 @@
+{
+  "target": "isolated haven-s2-release-01a07e17",
+  "authHelpersStubbed": false,
+  "migrationRecovery": [
+    {
+      "migration": "077_admissions_move_in_schema.sql",
+      "failure": "Host psql timeout interrupted migration after first table; second table absent",
+      "recovery": "Checked existing migration77 tables were empty; removed only those new tables and enum types; replayed original migration successfully"
+    },
+    {
+      "migration": "20260514180707_homewood_round2_employee_seed.sql",
+      "failure": "Missing created_by Auth FK00000000-0000-0000-0000-000000000001",
+      "recovery": "Inserted synthetic local Auth row, then replayed original migration"
+    },
+    {
+      "migration": "281_phase1_staff_seed.sql",
+      "failure": "Missing created_by Auth FK062c3cfb-53a5-4482-814a-cbef2b028760",
+      "recovery": "Inserted synthetic local Auth row, then replayed original migration"
+    }
+  ],
+  "authConfiguration": {
+    "observed": "HTTP422 email_provider_disabled for valid synthetic credentials",
+    "cause": "Supabase CLI mapped auth.email.enable_signup=false to GOTRUE_EXTERNAL_EMAIL_ENABLED=false",
+    "correction": "Isolated auth.email.enable_signup=true and GOTRUE_EXTERNAL_EMAIL_ENABLED=true; retain global auth.enable_signup=false and GOTRUE_DISABLE_SIGNUP=true",
+    "scope": "Only local Auth container configuration; DB preserved; no production changes"
+  }
+}

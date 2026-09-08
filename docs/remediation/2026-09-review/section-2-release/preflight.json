@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-09-07T23:36:57.214659+00:00",
+  "production_site": {
+    "id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+    "name": "circleoflifealf",
+    "url": "https://circleoflifealf.com",
+    "repo": "lewis4x4/Circle-of-Life",
+    "production_branch": "main",
+    "previous_deploy_id": "6a9efe82a3d0080008249ce7",
+    "previous_commit": "dfa0a0d312377e774f5ca14c08c93477464f753a"
+  },
+  "database": {
+    "project_ref": "manfqmasfqppukpobpld",
+    "latest_migration": "329",
+    "collation": "en_US.UTF-8",
+    "ctype": "en_US.UTF-8",
+    "unicode_constant_checks": {
+      "accented": true,
+      "dotted_i": true,
+      "contextual_sigma": true
+    },
+    "nonterminal_rounding_tasks": 0,
+    "rounding_logs_past24h": 0,
+    "sessions_refreshed_past1h": 0,
+    "pitr_enabled": true,
+    "walg_enabled": true
+  },
+  "safety": "Metadata and aggregate counts only. No hosted application writes performed. Explicit Haven site ID required because local Netlify default targets Triton.",
+  "release_plan": "Verify full isolated Supabase/Auth and preview; verify backup; confirm quiet cutover again; apply330-333 then publish prebuilt candidate. Application-only rollback to pre331 is unsafe."
+}

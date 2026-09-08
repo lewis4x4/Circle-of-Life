@@ -1,0 +1,27 @@
+{
+  "site": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "scope": "production vs deploy-preview resolved configuration",
+  "checks": {
+    "NEXT_PUBLIC_SUPABASE_URL": {
+      "present": true,
+      "same": true
+    },
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": {
+      "present": true,
+      "same": true
+    },
+    "SUPABASE_SERVICE_ROLE_KEY": {
+      "present": true,
+      "same": true
+    },
+    "NEXT_PUBLIC_SENTRY_DSN": {
+      "present": true,
+      "same": true
+    },
+    "SENTRY_DSN": {
+      "present": true,
+      "same": true
+    }
+  },
+  "secrets_recorded": false
+}

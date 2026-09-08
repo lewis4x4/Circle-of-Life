@@ -1,0 +1,5 @@
+{
+  "status": 400,
+  "authenticated": false,
+  "error_code": "invalid_credentials"
+}
