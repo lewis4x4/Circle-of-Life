@@ -1,0 +1,31 @@
+{
+  "started_at": "2026-09-08T01:52:43.909710+00:00",
+  "project_ref": "manfqmasfqppukpobpld",
+  "site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "new_deploy": "6a9f696ac4fb5d0009dcff1e",
+  "main_commit": "0374725cbdadd39cbc7df99d8656a7e43e594443",
+  "backup_verified": true,
+  "migrations": [
+    {
+      "name": "quality_caller_scope_and_corrections",
+      "version": "330"
+    },
+    {
+      "name": "rounding_completion_receipts",
+      "version": "331"
+    },
+    {
+      "name": "resident_search_current_scope",
+      "version": "332"
+    },
+    {
+      "name": "rounding_javascript_whitespace",
+      "version": "333"
+    }
+  ],
+  "database_committed_at": "2026-09-08T01:52:49.142333+00:00",
+  "status": "activated",
+  "published_at": "2026-09-08T01:52:50.746Z",
+  "completed_at": "2026-09-08T01:52:52.859076+00:00",
+  "automatic_publishing_restored": true
+}

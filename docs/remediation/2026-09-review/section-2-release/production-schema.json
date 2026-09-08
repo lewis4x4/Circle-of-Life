@@ -1,0 +1,14 @@
+{
+  "authenticated_rpc_denied": true,
+  "checked_at": "2026-09-08 01:54:07.950321+00",
+  "core_md5": "180a4bb4f8db4d8e482c559febe065da",
+  "direct_log_mutation_denied": true,
+  "private_core_denied": true,
+  "quality_invoker": true,
+  "receipt_count": 0,
+  "service_rpc_allowed": true,
+  "stale_active_search_rows": 0,
+  "whitespace_trim": true,
+  "core_preserved": true,
+  "pass": true
+}

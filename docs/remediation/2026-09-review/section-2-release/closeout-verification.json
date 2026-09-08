@@ -1,0 +1,50 @@
+{
+  "scope": "documentation closeout",
+  "ledger_changed_findings": [
+    "NAV-001",
+    "NAV-003",
+    "NAV-006",
+    "NAV-009",
+    "FL-009",
+    "SYS-002",
+    "SYS-003",
+    "SYS-004",
+    "BUS-005",
+    "FL-015"
+  ],
+  "unrelated_findings_unchanged": true,
+  "staging_json_decoded_values_unchanged": true,
+  "hosted_migrations_330_333_fresh_read_only_check": "PASS",
+  "runtime_unchanged": true,
+  "original_checkout_preserved_files": 7,
+  "section1_approval_provenance": "user attestation; exact-head independent artifact not recovered",
+  "remaining_acceptance": "named Homewood staff/device UAT; isolated browser failure injection; Sentry access; generic caregiver console errors; disabled family fixture",
+  "native_postgres_replay": {
+    "migrations": 336,
+    "sql_probes": 17,
+    "pass": true,
+    "scope": "Supabase stubs; same repository replay runner"
+  },
+  "docker_replay_attempt": {
+    "status": "interrupted, not counted as passed",
+    "diagnostic": "daemon diagnostic exceeded 15 seconds",
+    "container": "haven-pg-verify-1788833504160",
+    "cleanup": "unconfirmed: exact removal request exceeded 20 seconds; no shared daemon restart"
+  },
+  "segment_gate": {
+    "artifact": "test-results/agent-gates/2026-09-08T02-19-33-420Z-tonight-release-closeout-native.json",
+    "summary": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 3,
+      "blocking_failures": []
+    },
+    "verdict": "PASS"
+  },
+  "production_monitor": {
+    "pass": true,
+    "complete": true,
+    "checks": 93,
+    "elapsed_seconds": 1801
+  }
+}
