@@ -1,0 +1,659 @@
+{
+  "deploy_id": "6aa028b2a2a7920008189a1d",
+  "commit": "adb5ecb954e901610637fcd4b792ab2753d5c018",
+  "migration": "334",
+  "started_at": "2026-09-08T15:32:11.967690+00:00",
+  "elapsed_seconds": 1801,
+  "complete": true,
+  "pass": false,
+  "checks": [
+    {
+      "at": "2026-09-08T15:32:12.680887+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:32:12.988929+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:32:13.255753+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:33:13.563063+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:33:13.846769+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:33:14.193011+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:34:14.505038+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:34:14.710988+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:34:15.096901+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:35:15.314083+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:35:15.520597+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:35:15.835563+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:36:15.958415+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:36:16.331455+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:36:17.054499+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:37:18.760053+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:37:18.951837+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:37:19.225477+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:38:19.540920+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:38:19.821715+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:38:20.092122+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:39:20.436913+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:39:20.624596+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:39:20.924516+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:40:21.899986+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:40:22.135267+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:40:23.023801+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:41:23.131188+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:41:23.257138+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:41:25.988539+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:42:26.386838+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:42:26.497946+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:42:26.868361+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:43:27.216190+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:43:27.420755+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:43:27.654938+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:44:27.943777+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:44:28.048378+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:44:28.354039+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:45:28.571029+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:45:28.667914+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:45:28.913449+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:46:29.189644+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:46:29.590791+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:46:29.826871+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:47:30.185784+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:47:30.409823+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:47:30.692629+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:48:30.862314+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:48:31.210822+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:48:31.566828+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:49:31.710940+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:49:32.070714+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:49:32.374290+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:50:34.417503+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:50:34.576403+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:50:35.719016+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:51:36.066307+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:51:36.391003+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:51:37.007607+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:52:37.246597+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:52:37.610092+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:52:38.905980+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:53:39.016462+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:53:39.130260+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:53:39.495650+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:54:50.639098+00:00",
+      "path": "/",
+      "status": 500,
+      "expected": 200,
+      "pass": false
+    },
+    {
+      "at": "2026-09-08T15:54:50.758103+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:54:57.265061+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:55:58.263130+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:55:58.379337+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:56:11.630217+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:57:14.727621+00:00",
+      "path": "/",
+      "status": 500,
+      "expected": 200,
+      "pass": false
+    },
+    {
+      "at": "2026-09-08T15:57:15.092500+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:57:18.176298+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 500,
+      "expected": 401,
+      "pass": false
+    },
+    {
+      "at": "2026-09-08T15:58:18.373129+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:58:18.494119+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:58:30.064787+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:59:30.267821+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:59:30.496299+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T15:59:30.755205+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:00:30.903577+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:00:31.221157+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:00:31.446855+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:01:31.594524+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:01:31.727923+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:01:32.924896+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:02:12.291898+00:00",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:02:12.389218+00:00",
+      "path": "/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "at": "2026-09-08T16:02:12.774056+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 401,
+      "expected": 401,
+      "pass": true
+    }
+  ],
+  "failed_checks": 3,
+  "limitation": "Sampled HTTP health; Sentry production error-rate access unavailable.",
+  "passed_checks": 87,
+  "failure_recheck": {
+    "checked_at": "2026-09-08T15:59:40.133256+00:00",
+    "deploy_id": "6aa028b2a2a7920008189a1d",
+    "commit_ref": "adb5ecb954e901610637fcd4b792ab2753d5c018",
+    "state": "ready",
+    "published_at": "2026-09-08T15:31:05.418Z",
+    "payroll_deploy_still_published": true,
+    "immediate_recheck": {
+      "/": 200,
+      "/login": 200,
+      "/api/rounding/tasks": 401
+    },
+    "root_cause": "unconfirmed"
+  },
+  "conclusion": "Completed with three transient HTTP 500 failures; final samples healthy. Root cause unconfirmed. This is not a clean monitoring pass."
+}
