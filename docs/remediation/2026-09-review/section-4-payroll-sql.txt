@@ -1,0 +1,6 @@
+PASS: baseline reproduces stale 7.5-hour export after source correction to 8.5 hours
+NOTICE:  PASS: stale source rejected; explicit exclusion/restoration retains identity; forged data rejected; history stable
+PASS: observed concurrent imports retain one line and global source key
+PASS: snapshot waits for concurrent correction and rejects revoked approval
+PASS: concurrent reapproval does not bless stale snapshot; queued refresh restores corrected hours
+PASS: authority revoked during source lock wait prevents privileged snapshot return

@@ -1,0 +1,85 @@
+{
+  "evidence": "Synthetic API + real production React component/CSS in Chromium; not hosted authentication or Storage transport",
+  "viewports": [
+    {
+      "width": 1440,
+      "state": "documents",
+      "overflow": {
+        "width": 1440,
+        "scroll": 1440
+      },
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "state": "readiness",
+      "overflow": {
+        "width": 1440,
+        "scroll": 1440
+      },
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "state": "attendance",
+      "overflow": {
+        "width": 1440,
+        "scroll": 1440
+      },
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "state": "requirements",
+      "overflow": {
+        "width": 1440,
+        "scroll": 1440
+      },
+      "violations": []
+    },
+    {
+      "width": 390,
+      "state": "documents",
+      "overflow": {
+        "width": 390,
+        "scroll": 390
+      },
+      "violations": []
+    },
+    {
+      "width": 390,
+      "state": "readiness",
+      "overflow": {
+        "width": 390,
+        "scroll": 390
+      },
+      "violations": []
+    },
+    {
+      "width": 390,
+      "state": "attendance",
+      "overflow": {
+        "width": 390,
+        "scroll": 390
+      },
+      "violations": []
+    },
+    {
+      "width": 390,
+      "state": "requirements",
+      "overflow": {
+        "width": 390,
+        "scroll": 390
+      },
+      "violations": []
+    }
+  ],
+  "unexpected": [],
+  "scratch": "/Users/brianlewis/.hermes/tmp/agent-runs/employee-file-browser-1788884011742",
+  "status": "passed",
+  "cleanup": {
+    "validated": true,
+    "removedFiles": 37,
+    "retainedManifest": "/Users/brianlewis/.hermes/tmp/agent-runs/employee-file-browser-1788884011742/manifest.json"
+  }
+}

@@ -298,6 +298,10 @@ export default function AdminStaffDetailPage() {
         backLink={{ label: "Roster", href: "/admin/staff" }}
       />
 
+      <Link className={buttonVariants({ variant: "outline" })} href={`/admin/staff/${staffId}/employee-file`}>
+        Employee file & onboarding
+      </Link>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <RecordDetailSection title="Contact">
             <div className="space-y-4 text-sm">

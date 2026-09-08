@@ -949,30 +949,16 @@ async function createAttendanceEvent(input: {
   setAttendanceSaving(true);
   setError(null);
   try {
-    const facilityRes = (await supabase
-      .from("facilities" as never)
-      .select("organization_id")
-      .eq("id", selectedFacilityId)
-      .is("deleted_at", null)
-      .maybeSingle()) as unknown as { data: { organization_id: string } | null; error: QueryError | null };
-    if (facilityRes.error || !facilityRes.data?.organization_id) throw new Error("Could not resolve organization.");
-    const authRes = await supabase.auth.getUser();
-    const userId = authRes.data.user?.id;
-    if (!userId) throw new Error("Sign in required.");
-
-    const insertRes = (await supabase
-      .from("staff_attendance_events" as never)
-      .insert({
-        staff_id: attendanceStaffId,
-        facility_id: selectedFacilityId,
-        organization_id: facilityRes.data.organization_id,
+    const result = await supabase.rpc("haven_employee_file_command" as never, {
+      p_staff_id: attendanceStaffId,
+      p_action: "record_attendance",
+      p_payload: {
         event_type: attendanceEventType,
         occurred_at: facilityDatetimeLocalToUtcIso(attendanceOccurredAt),
         reason: attendanceReason.trim() || null,
-        created_by: userId,
-        updated_by: userId,
-      } as never)) as unknown as { error: QueryError | null };
-    if (insertRes.error) throw insertRes.error;
+      },
+    } as never);
+    if (result.error) throw new Error(result.error.message);
     await onSaved();
   } catch (err) {
     setError(err instanceof Error ? err.message : "Could not create attendance event.");

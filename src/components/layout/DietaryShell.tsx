@@ -90,7 +90,8 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
     <div className="dark min-h-screen bg-background font-sans text-foreground antialiased">
       <header className="flex items-center justify-between gap-4 border-b border-border p-3">
         {userId && <WorkingFacilitySelector userId={userId} onResolved={setWorkingId} />}
-        <Link href="/dietary/acknowledgments" className="underline">Required reading</Link>
+        <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
+              <Link href="/dietary/acknowledgments" className="underline">Required reading</Link>
         <button type="button" onClick={() => { void createClient().auth.signOut({ scope: "local" }).then(({ error }) => { if (error) setExitError(error.message); else router.replace("/login"); }); }}>Sign out</button>
         {exitError && <p role="alert">{exitError}</p>}
       </header>

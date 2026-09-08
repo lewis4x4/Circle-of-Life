@@ -100,7 +100,8 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     <div className="dark">
       <div className="min-h-screen bg-background font-sans text-foreground antialiased">
         <div className="fixed right-4 top-4 z-50">
-          <Link href="/med-tech/acknowledgments" className="mr-3 rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
+          <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
+              <Link href="/med-tech/acknowledgments" className="mr-3 rounded border border-border bg-background px-3 py-2 text-sm">Required reading</Link>
           <PilotFeedbackLauncher shellKind="med-tech" compact />
         </div>
         {children}

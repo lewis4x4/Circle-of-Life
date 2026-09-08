@@ -376,8 +376,18 @@
       "id": "BUS-006",
       "severity": "P2",
       "title": "Payroll exports can retain superseded approved punch values",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/334_payroll_source_freshness.sql",
+        "supabase/tests/review_payroll_freshness.sql",
+        "src/app/(admin)/payroll/[id]/page.tsx",
+        "src/app/(admin)/payroll/[id]/page.test.tsx",
+        "docs/remediation/2026-09-review/section-4-payroll-evidence.md",
+        "docs/remediation/2026-09-review/section-4-payroll-review.json",
+        "docs/remediation/2026-09-review/PAYROLL-BROWSER-PROOF.md",
+        "test-results/agent-gates/2026-09-08T14-43-35-176Z-BUS-006-payroll-freshness.json"
+      ],
+      "notes": "Same-line approved punch refresh, current export freshness validation, explicit exclusion/restoration and immutable historical values. Reapproved exclusions block export; queued/failed batches retain draft recovery. Ten focused tests, 344 migrations/25 SQL probes, concurrency, typecheck and strict UI gate pass; independent source review approved. Isolated authenticated browser proved stale download rejection, same-line refresh and unchanged historical CSV after later correction. Not deployed."
     },
     {
       "id": "DEP-001",
