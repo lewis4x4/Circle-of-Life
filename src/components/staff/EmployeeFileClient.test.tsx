@@ -27,6 +27,10 @@ function fixture(extra: Partial<EmployeeFileData> = {}): EmployeeFileData {
     requirements: [], records: [], signatures: [], dutyEvents: [], attendance: [], correctiveActions: [], canManage: true, canMedical: false, actorId: 'manager-1', ...extra };
 }
 const fetchMock = vi.fn();
+const sourceTemplates = [{ code: 'ORI-01', title: 'New hire packet', category: 'orientation',
+  source_file: 'SECTION 4-5.pdf', source_page: 7, source_excerpt: 'New hire packet',
+  content: 'Draft source requiring applicability review', required_signers: ['employee', 'trainer'],
+  recurrence_status: 'unknown', recurrence_months: null, due_days: null, duty: null }];
 let currentData: EmployeeFileData;
 let mutationError: string | null;
 function mutations() {
@@ -47,6 +51,7 @@ function section(title: string) {
 beforeEach(() => {
   mutationError = null;
   fetchMock.mockReset().mockImplementation(async (_url: string, init?: RequestInit) => {
+    if (_url.endsWith('/catalog')) return { ok: true, json: async () => sourceTemplates };
     if (_url.endsWith('/training')) return { ok: true, json: async () => ({ completions: [], certificates: [], demonstrations: [] }) };
     if (init?.method === 'POST') return { ok: !mutationError, json: async () => mutationError ? { error: mutationError } : { result: 'saved-id' } };
     return { ok: true, json: async () => currentData };
@@ -56,6 +61,22 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('employee file rendered workflows', () => {
+  it('loads packet sources only when requested and supports retry after catalog failure', async () => {
+    const user = await open();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/catalog'))).toBe(false);
+    let resolveCatalog!: (value: unknown) => void;
+    fetchMock.mockImplementationOnce(() => new Promise((resolve) => { resolveCatalog = resolve; }));
+    await user.click(screen.getByRole('button', { name: 'Requirements', exact: true }));
+    expect(screen.getByRole('status')).toHaveTextContent('Loading packet sources');
+    expect(screen.queryByRole('button', { name: 'Save draft version' })).not.toBeInTheDocument();
+    resolveCatalog({ ok: false, json: async () => ({ error: 'Catalog is temporarily unavailable.' }) });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Catalog is temporarily unavailable.');
+    await user.click(screen.getByRole('button', { name: 'Retry catalog' }));
+    await screen.findByRole('heading', { name: 'Create a requirement version' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/admin/staff/staff-1/employee-file/catalog', { cache: 'no-store' });
+    expect(mutations()).toEqual([]);
+  });
+
   it('keeps source drafts out of the checklist and never implies duty readiness', async () => {
     const user = await open(fixture({ requirements: [req({ review_status: 'draft' })] }));
     expect(screen.getByText('No applicable requirements have been approved for this employee yet.')).toBeInTheDocument();
@@ -105,6 +126,7 @@ describe('employee file rendered workflows', () => {
   it('starts applicability empty and sends explicitly entered roles as a draft, never approval', async () => {
     const user = await open();
     await user.click(screen.getByRole('button', { name: 'Requirements', exact: true }));
+    await screen.findByRole('heading', { name: 'Create a requirement version' });
     const form = section('Create a requirement version');
     const roles = form.getByLabelText('Applicable staff roles');
     expect(roles).toHaveValue([]);

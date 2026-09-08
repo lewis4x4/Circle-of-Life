@@ -14,6 +14,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
+const packetTemplates = JSON.parse(await fs.readFile(path.join(root, "docs/employee-lifecycle/requirements.json"), "utf8"));
 const output = path.join(root, "test-results/employee-lifecycle");
 const scratch = path.join(process.env.HOME, ".hermes/tmp/agent-runs", `employee-file-browser-${Date.now()}`);
 await fs.mkdir(scratch, { recursive: true, mode: 0o700 });
@@ -46,6 +47,7 @@ try {
    if(url.origin!==base){report.unexpected.push(`External traffic: ${request.url()}`);return route.abort();}
    if(!url.pathname.startsWith("/api/"))return route.continue();
    if(url.pathname===endpoint && request.method()==="GET")return route.fulfill({json:data});
+   if(url.pathname===`${endpoint}/catalog` && request.method()==="GET")return route.fulfill({json:packetTemplates});
    if(url.pathname===`${endpoint}/training` && request.method()==="GET")return route.fulfill({json:{completions:[],certificates:[],demonstrations:[]}});
    if(url.pathname===`${endpoint}/requirements` && request.method()==="GET")return route.fulfill({json:{profiles:[],grants:[]}});
    if([endpoint,`${endpoint}/requirements`].includes(url.pathname)&&request.method()==="POST"){

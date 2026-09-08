@@ -12,7 +12,9 @@ import { assessAttendanceReview } from "@/lib/staff/attendance-review";
 import { NEW_STAFF_ROLES } from "@/types/staff";
 import { EmployeeMedicalReviewers } from "./EmployeeMedicalReviewers";
 import { EmployeeTrainingEvidence } from "./EmployeeTrainingEvidence";
-import packetTemplates from "../../../docs/employee-lifecycle/requirements.json";
+import { useEmployeeResource } from "@/lib/staff/use-employee-resource";
+
+type SourceTemplate = Pick<EmployeeRequirement, "code" | "title" | "category" | "source_file" | "source_page" | "source_excerpt" | "content" | "required_signers" | "recurrence_status" | "recurrence_months" | "due_days" | "duty">;
 
 const fieldClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 function formatFacilityDateIso(date: Date) { return todayFacilityDateIso(date); }
@@ -149,7 +151,16 @@ function RecordCard({ record, data, endpoint, run, perform, busy }: ActionProps 
   </article>;
 }
 
-function RequirementManager({ data, run, perform, busy }: ActionProps & { data: EmployeeFileData }) {
+function RequirementManager(props: ActionProps & { data: EmployeeFileData }) {
+  const [revision, setRevision] = useState(0);
+  const { data: templates, error } = useEmployeeResource<SourceTemplate[]>(`/api/admin/staff/${props.data.staff.id}/employee-file/catalog`, revision);
+  if (error) return <Panel title="Packet source catalog"><p role="alert">{error}</p><Button onClick={() => setRevision((value) => value + 1)}>Retry catalog</Button></Panel>;
+  if (!templates) return <Panel title="Packet source catalog"><p role="status">Loading packet sources…</p></Panel>;
+  if (!templates.length) return <Panel title="Packet source catalog"><p>No packet sources are available.</p></Panel>;
+  return <LoadedRequirementManager {...props} packetTemplates={templates} />;
+}
+
+function LoadedRequirementManager({ data, run, perform, busy, packetTemplates }: ActionProps & { data: EmployeeFileData; packetTemplates: SourceTemplate[] }) {
   const [selected, setSelected] = useState(packetTemplates[0].code);
   const template = packetTemplates.find((t) => t.code === selected)!;
   const nextVersion = Math.max(0, ...data.requirements.filter((r) => r.code === selected).map((r) => r.version)) + 1;

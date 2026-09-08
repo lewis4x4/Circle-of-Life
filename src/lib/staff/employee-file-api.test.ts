@@ -8,6 +8,7 @@ import { GET as download } from "@/app/api/admin/staff/[id]/employee-file/downlo
 import { GET as reviewerRoster, POST as requirementCommand } from "@/app/api/admin/staff/[id]/employee-file/requirements/route";
 
 import { GET as trainingEvidence } from "@/app/api/admin/staff/[id]/employee-file/training/route";
+import { GET as sourceCatalog } from "@/app/api/admin/staff/[id]/employee-file/catalog/route";
 
 const STAFF = "10000000-0000-4000-8000-000000000001";
 const USER = "10000000-0000-4000-8000-000000000002";
@@ -148,6 +149,27 @@ describe("employee file read and commands", () => {
 });
 
 describe("requirement management", () => {
+  it.each(["owner", "org_admin", "facility_admin", "manager"])("serves the source catalog to scoped %s without caching", async (appRole) => {
+    role = appRole;
+    const response = await sourceCatalog(new Request("http://localhost/catalog"), context());
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    const catalog = await response.json();
+    expect(catalog).toHaveLength(95);
+    expect(catalog[0]).toMatchObject({ code: "ORI-01", source_file: "SECTION 4-5.pdf" });
+    expect(client.rpc).toHaveBeenCalledWith("haven_employee_file_staff", { p_staff_id: STAFF });
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+  it.each(["caregiver", "nurse", "coordinator"])("denies source catalog to %s even with employee-file access", async (appRole) => {
+    role = appRole;
+    const response = await sourceCatalog(new Request("http://localhost/catalog"), context());
+    expect(response.status).toBe(403);
+    expect(await response.json()).not.toHaveProperty("0");
+  });
+  it("denies the catalog when a manager cannot resolve the employee", async () => {
+    results.staff.data = null;
+    expect((await sourceCatalog(new Request("http://localhost/catalog"), context())).status).toBe(404);
+  });
   it("denies self-service users before any requirement mutation", async () => {
     role = "caregiver";
     expect((await requirementCommand(request({ action: "approve", payload: {} }), context())).status).toBe(403);
@@ -260,7 +282,7 @@ describe("reviewer roster and scoped training evidence", () => {
     expect((await trainingEvidence(new Request("http://localhost/training"), context())).status).toBe(404);
     expect(queries.staff_training_completions.select).not.toHaveBeenCalled();
   });
-  it.each([reviewerRoster, trainingEvidence])("preserves authentication rejection on new read endpoints", async (handler) => {
+  it.each([reviewerRoster, trainingEvidence, sourceCatalog])("preserves authentication rejection on new read endpoints", async (handler) => {
     vi.mocked(requireCurrentApiActor).mockResolvedValue({ response: Response.json({ error: "Sign in" }, { status: 401 }) } as never);
     expect((await handler(new Request("http://localhost/evidence"), context())).status).toBe(401);
     expect(client.from).not.toHaveBeenCalled();
