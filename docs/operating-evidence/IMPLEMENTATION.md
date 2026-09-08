@@ -77,3 +77,13 @@ Read consistency limit: this segment removes silent fixed/default caps, but sepa
 
 
 Independent review APPROVE.20 tests passed, one existing opt-in performance test skipped; numeric snapshots unchanged. Actual loader → local PostgREST read5001 records across41 requests with a127-row server cap, preserving scope and including the last current-week record. Supported typecheck and strictgate PASS `test-results/agent-gates/2026-09-08T15-24-17-944Z-hcol-standup-pagination.json`. Evidence `PAGINATION-REVIEW.json`. Simplification: common scoped factory replaces ten repeated capped query builders. Mission alignment: pass for bounded read completeness, not approved financial definitions or operational coverage.
+
+
+## Completed: latest-main integration
+
+Main advanced to `adb5ecb9` with the independent payroll freshness release (PR458). Merge that release into this isolated branch, keeping its migration334. Our unchanged SQL is renumbered: reviewed CSV335, resident-return follow-up336. Historical gate counts remain evidence for their original commits; the combined sequence requires a fresh integration gate. Active Remaining Roadmap worktree was not altered.
+
+
+Independent integration review APPROVE: incoming files match main `adb5ecb9`; renamed SQL content is unchanged; probe comment and source-path references updated. Combined strict gate PASS `test-results/agent-gates/2026-09-08T15-31-54-744Z-hcol-main-integration.json`, including339 migrations/20 SQL probes and full build. Initial full suite had3319 passes and a5-second timeout in unchanged `AppShell.test.tsx`; targeted rerun passed10/10 with the same timeout. With the gate finished, full rerun `npm test -- --maxWorkers=4` passed3320 tests across533 files, two existing opt-in skips. No test/timeout/fixture threshold was weakened. Evidence `INTEGRATION-REVIEW.json`.
+
+Historical segment artifacts retain their original migration counts. Current forward sequence:334 payroll (released main),335 reviewed CSV,336 resident return follow-ups. Active remaining-roadmap changes remain separate and need their own integration/review. No production changes made by this task.

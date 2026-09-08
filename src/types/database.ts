@@ -8116,6 +8116,8 @@ export type Database = {
       }
       payroll_export_lines: {
         Row: {
+          source_revision: number | null
+          exclusion_reason: string | null
           amount_cents: number | null
           batch_id: string
           created_at: string
@@ -8132,6 +8134,8 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          source_revision?: number | null
+          exclusion_reason?: string | null
           amount_cents?: number | null
           batch_id: string
           created_at?: string
@@ -8148,6 +8152,8 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          source_revision?: number | null
+          exclusion_reason?: string | null
           amount_cents?: number | null
           batch_id?: string
           created_at?: string
@@ -14045,6 +14051,7 @@ export type Database = {
       }
       time_records: {
         Row: {
+          payroll_source_revision: number
           actual_hours: number | null
           approved: boolean
           approved_at: string | null
@@ -14074,6 +14081,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          payroll_source_revision?: number
           actual_hours?: number | null
           approved?: boolean
           approved_at?: string | null
@@ -14103,6 +14111,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          payroll_source_revision?: number
           actual_hours?: number | null
           approved?: boolean
           approved_at?: string | null

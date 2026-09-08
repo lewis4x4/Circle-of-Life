@@ -7,7 +7,7 @@
     "src/components/residents/ResidentReturnFollowups.tsx": "9ee6c492df99be37bd7eddc2505a1f0552ac639a4ef41eb063a2633441e8b61a",
     "src/components/residents/ResidentReturnFollowups.test.tsx": "79390ccc372bc8c2eeb2d48f26468edf53990176603b7807233b679dd3cc0f22",
     "src/components/residents/ResidentDetailOverviewClient.tsx": "74195ea237d0b8081565bac0b2a5ed6ba49c2fa5c1e8f9f24140c6f953ce6416",
-    "supabase/migrations/335_resident_return_followups.sql": "c4fdbaf14b03c0694fbc4051175ed71d15cbc5517957d2137eb2562ede781198",
+    "supabase/migrations/336_resident_return_followups.sql": "c4fdbaf14b03c0694fbc4051175ed71d15cbc5517957d2137eb2562ede781198",
     "supabase/tests/review_resident_return_followup.sql": "2aae60547628abfbee078352f01cb3399650fe2f03abe8f1b02fedb2fb7e33a7"
   },
   "react_tests": {

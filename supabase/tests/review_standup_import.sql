@@ -1,4 +1,4 @@
--- Synthetic, rollback-only publication tests. Run after migration 334 as postgres.
+-- Synthetic, rollback-only publication tests. Run after the reviewed standup import migration as postgres.
 BEGIN;
 ALTER ROLE service_role BYPASSRLS;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;

@@ -1,0 +1,39 @@
+{
+  "segment": "hcol-main-integration",
+  "incoming_main": "adb5ecb954e901610637fcd4b792ab2753d5c018",
+  "review": "APPROVE independent integration review",
+  "migration_paths": {
+    "335_reviewed_standup_import.sql": "c1843a25871e36f2686aea431aa8314416e7177901f11ec0f1b7f43608d3f3aa",
+    "336_resident_return_followups.sql": "c4fdbaf14b03c0694fbc4051175ed71d15cbc5517957d2137eb2562ede781198"
+  },
+  "gate": "test-results/agent-gates/2026-09-08T15-31-54-744Z-hcol-main-integration.json",
+  "native_postgres": {
+    "migrations": 339,
+    "sql_probes": 20,
+    "passed": true
+  },
+  "full_suite_attempts": [
+    {
+      "command": "npm test concurrent with integration gate",
+      "passed": 3319,
+      "failed": 1,
+      "skipped": 2,
+      "failure": "Unchanged AppShell search test exceeded original5000ms timeout"
+    },
+    {
+      "command": "npx vitest run src/components/layout/AppShell.test.tsx",
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "command": "npm test -- --maxWorkers=4 after integration gate",
+      "files": 533,
+      "passed": 3320,
+      "failed": 0,
+      "skipped": 2,
+      "duration_seconds": 147.71
+    }
+  ],
+  "thresholds_changed": false,
+  "hosted_verification": false
+}

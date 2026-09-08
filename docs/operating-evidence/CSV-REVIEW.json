@@ -6,8 +6,8 @@
   "source_sha256": {
     "scripts/import-executive-standup-csv.mjs": "9fd5bd8dc0aa5f9b315dde7127326f8be42d1db23738b40468213458e8da63b9",
     "scripts/import-executive-standup-csv.test.mjs": "6ee28f225fcdf16c7b1343f5e5f0eccb4602f2da82d7b48161aa65b1d82a1c11",
-    "supabase/migrations/334_reviewed_standup_import.sql": "c1843a25871e36f2686aea431aa8314416e7177901f11ec0f1b7f43608d3f3aa",
-    "supabase/tests/review_standup_import.sql": "06ce2308dbb7d56b7161520581f81584f23100502491f9b0382e86aec7bcf265"
+    "supabase/migrations/335_reviewed_standup_import.sql": "c1843a25871e36f2686aea431aa8314416e7177901f11ec0f1b7f43608d3f3aa",
+    "supabase/tests/review_standup_import.sql": "d94be3b5d521b2c9f26a734210ed2d7167a777c4a94b118203636039de5974dd"
   },
   "independent_cli_tests": {
     "passed": 12,
@@ -36,5 +36,6 @@
     "Native PostgreSQL with Supabase auth/schema stubs; no hosted behavior claim",
     "Service-role CLI HTTP workflow through local PostgREST14.4; no staff browser UAT",
     "Full HCOL01-28, workbook path and revision UI/export remain open"
-  ]
+  ],
+  "integration_note": "Main integration renumbered identical SQL and updated the probe opening comment; independent integration review approved these nonfunctional changes."
 }
