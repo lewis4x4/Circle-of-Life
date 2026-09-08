@@ -1,5 +1,5 @@
 import type { StandupMetricRow } from "@/lib/executive/standup";
-import { readStandupSourceQuality, standupCoverageLabel } from "@/lib/executive/standup-quality";
+import { readStandupSourceQuality, standupCoverageLabel, hasComparableStandupDefinition } from "@/lib/executive/standup-quality";
 
 function timeLabel(value: string | null | undefined) {
   if (!value || !Number.isFinite(new Date(value).getTime())) return "Unconfirmed";
@@ -14,10 +14,12 @@ export function StandupReportingNotice() {
 
 export function StandupMetricEvidence({ metric, calculatedAt }: { metric: StandupMetricRow | undefined; calculatedAt?: string | null }) {
   const quality = readStandupSourceQuality(metric);
-  const method = quality?.basis === "haven_live_v2" ? "Recorded Haven calculation v2"
-    : quality?.basis === "haven_live_v1" ? "Recorded Haven calculation v1"
-    : quality?.basis === "manual" ? "Operator entry"
-    : quality?.basis === "mixed" ? "Mixed calculation sources" : "Unconfirmed";
+  const methodQuality = quality && ["haven_live_v1", "haven_live_v2"].includes(quality.basis)
+    && (!metric || !hasComparableStandupDefinition(metric, quality)) ? null : quality;
+  const method = methodQuality?.basis === "haven_live_v2" ? "Recorded Haven calculation v2"
+    : methodQuality?.basis === "haven_live_v1" ? "Recorded Haven calculation v1"
+    : methodQuality?.basis === "manual" ? "Operator entry"
+    : methodQuality?.basis === "mixed" ? "Mixed calculation sources" : "Unconfirmed";
   return <details className="mt-2 max-w-xs text-xs text-muted-foreground">
     <summary aria-label={`Source details: ${metric?.label ?? "metric"}`} className="cursor-pointer text-foreground">Source details</summary>
     <dl className="mt-2 space-y-1">
@@ -27,6 +29,7 @@ export function StandupMetricEvidence({ metric, calculatedAt }: { metric: Standu
       <div><dt className="inline font-medium">{quality ? "Calculated: " : "Report generated: "}</dt><dd className="inline">{timeLabel(quality?.calculated_at ?? calculatedAt)}</dd></div>
       {quality?.received_at && <div><dt className="inline font-medium">Entry received: </dt><dd className="inline">{timeLabel(quality.received_at)}</dd></div>}
       <div><dt className="inline font-medium">Record retrieval: </dt><dd className="inline">{quality?.query_complete ? "Completed; recording coverage remains unconfirmed" : "Completeness not recorded"}</dd></div>
+      {metric?.overrideNote?.trim() && <div><dt className="inline font-medium">Review note: </dt><dd className="inline">{metric.overrideNote}</dd></div>}
       {!quality && metric?.freshnessAt && <div>Previously recorded timestamp: {timeLabel(metric.freshnessAt)}. Source provenance is unconfirmed.</div>}
     </dl>
   </details>;

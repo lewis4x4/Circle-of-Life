@@ -1,4 +1,4 @@
-import { canCompareStandupMetrics, qualifyStandupValue, readStandupSourceQuality } from "@/lib/executive/standup-quality";
+import { canCompareStandupMetrics, qualifyStandupValue, readStandupSourceQuality, hasComparableStandupDefinition } from "@/lib/executive/standup-quality";
 import {
   buildStandupComparison,
   hasRecordedPressure,
@@ -101,7 +101,11 @@ function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMet
 }
 
 function methodologyNotes(detail: StandupSnapshotDetail): string[] {
-  const bases = new Set(detail.facilities.flatMap((facility) => Object.values(facility.metrics).map((metric) => readStandupSourceQuality(metric)?.basis)));
+  const bases = new Set(detail.facilities.flatMap((facility) => Object.values(facility.metrics).map((metric) => {
+    const quality = readStandupSourceQuality(metric);
+    if (quality && ["haven_live_v1", "haven_live_v2"].includes(quality.basis) && !hasComparableStandupDefinition(metric, quality)) return undefined;
+    return quality?.basis;
+  })));
   const v2 = bases.has("haven_live_v2");
   const legacy = bases.has("haven_live_v1");
   return [
@@ -162,7 +166,7 @@ export function buildStandupPacketDocument(
       return {
         key: metricKey,
         label: sample?.label ?? metricKey,
-        description: sample?.description ?? "",
+        description: [sample?.description, sample?.overrideNote?.trim() ? `Review note: ${sample.overrideNote}` : null].filter(Boolean).join(" "),
         fromValue: formatMetricValue(previousMetric),
         toValue: formatMetricValue(currentMetric),
         delta: formatMetricDelta(previousMetric, currentMetric),
