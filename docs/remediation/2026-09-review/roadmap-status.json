@@ -378,7 +378,7 @@
       "title": "Payroll exports can retain superseded approved punch values",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/341_payroll_source_freshness.sql",
+        "supabase/migrations/334_payroll_source_freshness.sql",
         "supabase/tests/review_payroll_freshness.sql",
         "src/app/(admin)/payroll/[id]/page.tsx",
         "src/app/(admin)/payroll/[id]/page.test.tsx",
