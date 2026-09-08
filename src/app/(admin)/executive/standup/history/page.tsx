@@ -1,5 +1,7 @@
 "use client";
 
+import { StandupReportingNotice } from "@/components/executive/StandupMetricEvidence";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -156,6 +158,7 @@ export default function ExecutiveStandupHistoryPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandupReportingNotice />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -276,8 +279,8 @@ export default function ExecutiveStandupHistoryPage() {
                         <div>
                           <CardTitle className="text-xl">{row.weekOf}</CardTitle>
                           <CardDescription className="mt-1">
-                            Generated {new Date(row.generatedAt).toLocaleString()}
-                            {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString()}` : ""}
+                            Generated {new Date(row.generatedAt).toLocaleString("en-US", { timeZone: "America/New_York" })}
+                            {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString("en-US", { timeZone: "America/New_York" })}` : ""}
                           </CardDescription>
                         </div>
                         <Badge variant="outline" className={badgeClass(row.status)}>
@@ -288,7 +291,7 @@ export default function ExecutiveStandupHistoryPage() {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Completeness</div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Fields populated</div>
                           <div className="mt-1 font-semibold text-slate-900 dark:text-white">{row.completenessPct.toFixed(0)}%</div>
                         </div>
                         <div>
@@ -359,8 +362,8 @@ export default function ExecutiveStandupHistoryPage() {
                       <div>
                         <div className="font-medium text-slate-900 dark:text-white">{job.sourceFileName}</div>
                         <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                          Created {new Date(job.createdAt).toLocaleString()}
-                          {job.finishedAt ? ` · Finished ${new Date(job.finishedAt).toLocaleString()}` : ""}
+                          Created {new Date(job.createdAt).toLocaleString("en-US", { timeZone: "America/New_York" })}
+                          {job.finishedAt ? ` · Finished ${new Date(job.finishedAt).toLocaleString("en-US", { timeZone: "America/New_York" })}` : ""}
                         </div>
                       </div>
                       <Badge variant="outline" className={badgeClass(job.status)}>
@@ -382,7 +385,7 @@ export default function ExecutiveStandupHistoryPage() {
                       </div>
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Started</div>
-                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? new Date(job.startedAt).toLocaleString() : "Queued"}</div>
+                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? new Date(job.startedAt).toLocaleString("en-US", { timeZone: "America/New_York" }) : "Queued"}</div>
                       </div>
                     </div>
                     {job.errorText ? (

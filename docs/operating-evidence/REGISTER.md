@@ -6,7 +6,7 @@ Source inspection at isolated baseline `9db72d2d`, 8 September 2026. This is an 
 |---|---|---|
 | HCOL-01 | Definition versions and unified ratio components | Existing metric registries; Finance/Operations approval needed. |
 | HCOL-02 | Reviewed imports | Reviewed CSV transaction segment completed and independently approved. Workbook importer and operator staging remain follow-on. |
-| HCOL-03 | Source health and coverage | CSV coverage included; live pagination, freshness, and source absence remain open. |
+| HCOL-03 | Source health and coverage | Reviewed CSV coverage, complete scoped live reads and qualified source metadata completed. Operational capture certification and full source-health workflow remain open. |
 | HCOL-04 | Census and money reconciliation | Reuse admissions/status history and active financial repairs; inclusion policy needed. |
 | HCOL-05 | Historical meeting view | CSV original revision archive completed; complete UI/export/decision version pinning remains open. |
 | HCOL-06 | Person, episode and contact | Existing lead demographics and converted resident link; separate identity/contacts remain open. |

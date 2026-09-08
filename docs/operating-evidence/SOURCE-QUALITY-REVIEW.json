@@ -1,0 +1,62 @@
+{
+  "segment": "hcol-source-quality",
+  "review": "APPROVE independent source and presentation review",
+  "source_sha256": {
+    "src/app/(admin)/executive/standup/[week]/board/page.tsx": "124b06755444890317ab6cf813d2acd8c08d28dd8b96e3c19cd9a04f66ea9fc0",
+    "src/app/(admin)/executive/standup/[week]/page.tsx": "2dafc6eac80721e1b022a4ea074ee734252d8288e3068b932f1fa588e5565931",
+    "src/app/(admin)/executive/standup/compare/page.tsx": "76e012f8c5a73a20a094d28d4793563debf9c7e4a3b46a892dc743bb65551275",
+    "src/app/(admin)/executive/standup/history/page.tsx": "e6dd1613782f1489cbd8b3303c8354f238e9fc7f8d60542a7b58d820eae44f15",
+    "src/app/(admin)/executive/standup/page.tsx": "af9f7e6cb8236e98a1546a0f4a59485d39639fe9fc5a919b9c15b6a5f7b12013",
+    "src/lib/executive/__snapshots__/standup-live.test.ts.snap": "83d1993789d77ec80fc0cda75ea374a996c743e78827e6522d401dcec6decd2b",
+    "src/lib/executive/executive-display-copy.test.ts": "3ecc94a75f335281f00708820335e98f93d7450ad66c61d42ce21704178c6bfc",
+    "src/lib/executive/executive-display-copy.ts": "0bc982590e52585297123aa03c41d887438138c243a21d38b7241697bf4c6e27",
+    "src/lib/executive/standup-live.test.ts": "a2dc0aa45977b64ced9a7e7e5126f15031270ef6ab6449da29d1617a369784de",
+    "src/lib/executive/standup-packet.ts": "99b1699e3aabb9057469534280356d618ae82346d15ba86b25fb3af57ec35a43",
+    "src/lib/executive/standup-pdf.ts": "9e9368163100171348d9e055b4a2cadfe19de12de879f7e8f3ed4dec64d434f0",
+    "src/lib/executive/standup.ts": "b18c88ce08a4037d2120b2fae738425fa8899da6d46e01961904212c4129fdc1",
+    "src/components/executive/StandupMetricEvidence.tsx": "7edf19a219027e7be164ed5d40ceb0073a029d01fc356939f871284040bfb0f8",
+    "src/components/executive/StandupMetricEvidence.test.tsx": "1c8c5c43c2f1fd77133b80a3466874704968c68c8f3cd38c1d346d4ec822bb61",
+    "src/lib/executive/standup-quality.ts": "44724adc5b74e887dece177d45cc18206955702de26423e9655bedb0d47d0ec0",
+    "src/lib/executive/standup-quality.test.ts": "a2989bd83d1fb5415b15652a9aa07ca9e60dd2de6ab9d716855dc83528583c5b",
+    "src/lib/executive/standup-quality-export.test.ts": "6f98823bd97dd553d17f69f2bba36a77fa555ca35c44575e4f8e2944ec7563d9",
+    "src/test-fixtures/standup-quality.ts": "2553016f2d437db98adea257e6ca9456de31a54e9b5625c44a65742a4adc9cee"
+  },
+  "tests": {
+    "passed": 119,
+    "existing_opt_in_skipped": 1,
+    "numeric_formulas_and_snapshot_values": "unchanged"
+  },
+  "http": {
+    "passed": true,
+    "transport": "actual loader/draft/save/reload through local PostgREST with signed synthetic owner; native auth stubs",
+    "checks": [
+      "live freshness unknown",
+      "quality metadata survives save/reload",
+      "manual receipt time separate from source-as-of",
+      "malformed legacy provenance preserved",
+      "original two-facility scope retained",
+      "partial total explicitly qualified"
+    ],
+    "partial_label": "Partial: 1 of 2 facilities",
+    "operational_coverage": "unconfirmed"
+  },
+  "browser": {
+    "passed": true,
+    "scope": "actual saved-week page component and source disclosure; synthetic auth/data fixture",
+    "source_disclosure": "Source details\nCoverage: Partial: 0 of 1 facilities\nSource as of: Unconfirmed\nCalculated: Sep 8, 2026, 10:00 AM ET\nRecord retrieval: Completed; recording coverage remains unconfirmed",
+    "overflow": false,
+    "errors": [],
+    "violations": []
+  },
+  "pdf": {
+    "pages": 11,
+    "visual_score": 95,
+    "inspected": "actual production HTML and PDF options; no clipping, blank or orphan-footer pages"
+  },
+  "gate": "test-results/agent-gates/2026-09-08T17-14-46-219Z-hcol-source-quality-final.json",
+  "limits": [
+    "Operational recording coverage unconfirmed",
+    "Jessica-owned worksheet definitions TBD",
+    "No hosted login or staff UAT"
+  ]
+}

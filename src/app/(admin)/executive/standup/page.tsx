@@ -1,5 +1,9 @@
 "use client";
 
+import { hasRecordedPressure } from "@/lib/executive/standup";
+
+import { StandupReportingNotice, StandupMetricEvidence } from "@/components/executive/StandupMetricEvidence";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, FileSpreadsheet, RefreshCw, MessageSquare, TriangleAlert } from "lucide-react";
@@ -136,7 +140,8 @@ export default function ExecutiveStandupPage() {
   }, [load]);
 
   const facilityCards = useMemo(() => {
-    return (live?.facilities ?? []).filter((facility) => facility.facilityId != null).slice(0, 5);
+    const rows = (live?.facilities ?? []).filter((facility) => facility.facilityId != null);
+    return (rows.every(hasRecordedPressure) ? rows : rows.sort((a, b) => a.facilityName.localeCompare(b.facilityName))).slice(0, 5);
   }, [live]);
 
   const leadActions = useMemo(() => actions.slice(0, 3), [actions]);
@@ -177,6 +182,7 @@ export default function ExecutiveStandupPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandupReportingNotice />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -199,7 +205,7 @@ export default function ExecutiveStandupPage() {
               </Badge>
               {draftStatus ? (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
-                  Draft {draftStatus.status} · {draftStatus.completenessPct.toFixed(0)}% complete
+                  Draft {draftStatus.status} · {draftStatus.completenessPct.toFixed(0)}% fields populated
                 </Badge>
               ) : (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider">
@@ -283,8 +289,8 @@ export default function ExecutiveStandupPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Facility pressure board</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Ranked by live operating pressure. Total row is shown in the workbook tables below.</p>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Facility source review</h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Recorded facility inputs; source gaps must be reviewed before operational comparisons. Totals are shown below.</p>
             </div>
             <Link href="/admin/facilities" className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-300">
               Open facilities →
@@ -306,11 +312,11 @@ export default function ExecutiveStandupPage() {
                       <div className="flex items-center justify-between"><span>Hospital / rehab</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.hospital_and_rehab_total)}</span></div>
                       <div className="flex items-center justify-between"><span>Overtime</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.overtime_hours)}</span></div>
                       <div className="pt-2">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Why red</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Review notes</div>
                         <ul className="mt-2 space-y-1 text-xs">
                           {(actions.find((row) => row.facilityId === facility.facilityId)?.whyRed.length
                             ? actions.find((row) => row.facilityId === facility.facilityId)?.whyRed
-                            : ["No active red flags beyond the current summary."])?.map((item) => (
+                            : ["Source review is required before assessing operational pressure."])?.map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ul>
@@ -338,7 +344,7 @@ export default function ExecutiveStandupPage() {
                         <div className="font-semibold text-slate-900 dark:text-white">{action.facilityName}</div>
                         <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{action.topConcern}</div>
                       </div>
-                      <Badge variant="outline">Pressure {action.pressureScore}</Badge>
+                      <Badge variant="outline">{(live?.facilities ?? []).some((facility) => facility.facilityId === action.facilityId && hasRecordedPressure(facility)) ? `Recorded score ${action.pressureScore}` : "Pressure unavailable"}</Badge>
                     </div>
                     <ul className="mt-3 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
                       {action.interventions.map((item) => (
@@ -364,7 +370,7 @@ export default function ExecutiveStandupPage() {
                   <div key={`${action.facilityId}-variance`} className="rounded-xl border border-slate-200/80 px-4 py-3 dark:border-white/10">
                     <div className="font-semibold text-slate-900 dark:text-white">{action.facilityName}</div>
                     <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
-                      {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material week-over-week deltas from the last published packet."]).map((item) => (
+                      {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No comparable movement to report; check source coverage."]).map((item) => (
                         <li key={item}>{item}</li>
                       ))}
                     </ul>
@@ -412,6 +418,7 @@ export default function ExecutiveStandupPage() {
                               {metric ? (
                                 <div className="space-y-2">
                                   <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(metric)}</div>
+                                  <StandupMetricEvidence metric={metric} calculatedAt={live?.generatedAt} />
                                   <div className="flex flex-wrap gap-1.5">
                                     <Badge variant="outline" className={sourceBadgeClass(metric)}>{metric.sourceMode}</Badge>
                                     <Badge variant="outline" className={confidenceBadgeClass(metric)}>{metric.confidenceBand}</Badge>

@@ -1,5 +1,9 @@
 "use client";
 
+import { hasRecordedPressure } from "@/lib/executive/standup";
+
+import { StandupReportingNotice, StandupMetricEvidence } from "@/components/executive/StandupMetricEvidence";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -316,15 +320,17 @@ export default function ExecutiveStandupWeekDetailPage() {
   return (
     <div className="w-full space-y-6 pb-12">
       <ExecutiveHubNav />
+        <StandupReportingNotice />
 
       <RecordDetailHeader
+        className="[&>div]:flex-col [&>div>div]:max-w-full sm:[&>div]:flex-row"
         title={`Standup Week ${week}`}
-        subtitle="Draft weeks can be completed in-app. Published weeks remain immutable for owner trust and week-over-week comparison."
+        subtitle="Draft weeks can be completed in-app. Review source coverage before comparing published weeks."
         backLink={{ label: "Standup pack", href: "/admin/executive/standup" }}
         statusChips={
           detail ? (
             <Badge variant="outline" className="tabular-nums text-[10px] uppercase tracking-wider">
-              {detail.snapshot.status} · {detail.snapshot.completenessPct.toFixed(0)}% complete
+              {detail.snapshot.status} · {detail.snapshot.completenessPct.toFixed(0)}% fields populated
             </Badge>
           ) : undefined
         }
@@ -403,9 +409,9 @@ export default function ExecutiveStandupWeekDetailPage() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[
-              { label: "Generated", value: new Date(detail.snapshot.generatedAt).toLocaleString() },
-              { label: "Published", value: detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet" },
-              { label: "Completeness", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
+              { label: "Calculated", value: new Date(detail.snapshot.generatedAt).toLocaleString("en-US", { timeZone: "America/New_York" }) },
+              { label: "Published", value: detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString("en-US", { timeZone: "America/New_York" }) : "Not yet" },
+              { label: "Fields populated", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
               { label: "Confidence", value: <span className="capitalize">{detail.snapshot.confidenceBand}</span> },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-[8px] border border-border bg-card p-[14px] transition-all duration-[var(--motion-duration)] hover:-translate-y-0.5">
@@ -449,7 +455,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                         <div className="font-semibold text-foreground">{action.facilityName}</div>
                         <div className="mt-1 text-sm text-muted-foreground">{action.topConcern}</div>
                       </div>
-                      <Badge variant="outline" className="tabular-nums shrink-0">Pressure {action.pressureScore}</Badge>
+                      <Badge variant="outline" className="tabular-nums shrink-0">{(detail?.facilities ?? []).some((facility) => facility.facilityId === action.facilityId && hasRecordedPressure(facility)) ? `Recorded score ${action.pressureScore}` : "Pressure unavailable"}</Badge>
                     </div>
                     <div className="mt-4 space-y-3">
                       {[
@@ -516,7 +522,7 @@ export default function ExecutiveStandupWeekDetailPage() {
           <RecordDetailSection title="Publish gating">
             <p className="mb-4 text-sm text-muted-foreground">Published weeks stay immutable, so the draft must clear these checks before publish.</p>
             <div className="space-y-3">
-              <div className={`rounded-[8px] border px-4 py-3 text-sm ${publishReadiness.canPublish ? "border-success/20 bg-success/10 text-success" : "border-warning/20 bg-warning/10 text-warning"}`}>
+              <div className={`rounded-[8px] border px-4 py-3 text-sm ${publishReadiness.canPublish ? "border-success/20 bg-success/10 text-success" : "border-warning/20 bg-warning/10 text-foreground"}`}>
                 {publishReadiness.canPublish ? "This packet is ready to publish." : "This packet still has publish blockers."}
               </div>
               <ul className="space-y-2 text-sm text-foreground">
@@ -632,6 +638,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                                       </div>
                                     </div>
                                   )}
+                                  <StandupMetricEvidence metric={metric} calculatedAt={detail?.snapshot.generatedAt} />
                                 </td>
                               );
                             })}
@@ -639,6 +646,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                               <td className="px-3 py-3 align-top">
                                 <div className="space-y-2">
                                   <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(totals.metrics[metricKey])}</div>
+                                  <StandupMetricEvidence metric={totals.metrics[metricKey]} calculatedAt={detail?.snapshot.generatedAt} />
                                   <div className="flex flex-wrap gap-1.5">
                                     <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
                                     <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>

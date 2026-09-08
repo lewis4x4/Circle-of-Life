@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { qualityReference, QUALITY_FIXTURE_IDS } from "@/test-fixtures/standup-quality";
 
 import { FORMAT_USD_NO_AMOUNT_POSTED_COPY } from "@/lib/insurance/format-money";
 
@@ -208,7 +209,7 @@ describe("formatExecutiveSurveyDeficiencyCount", () => {
     expect(formatExecutiveSurveyDeficiencyCount(undefined)).toBe(EXECUTIVE_NO_DEFICIENCY_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveSurveyDeficiencyCount(0)).toBe("0");
   });
 });
@@ -219,7 +220,7 @@ describe("formatExecutiveOpenIncidentCount", () => {
     expect(formatExecutiveOpenIncidentCount(undefined)).toBe(EXECUTIVE_NO_INCIDENT_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveOpenIncidentCount(0)).toBe("0");
   });
 });
@@ -230,7 +231,7 @@ describe("formatExecutiveOpenInvoiceCount", () => {
     expect(formatExecutiveOpenInvoiceCount(undefined)).toBe(EXECUTIVE_NO_INVOICE_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveOpenInvoiceCount(0)).toBe("0");
   });
 });
@@ -241,7 +242,7 @@ describe("formatExecutiveCertsExpiringCount", () => {
     expect(formatExecutiveCertsExpiringCount(undefined)).toBe(EXECUTIVE_NO_CERT_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveCertsExpiringCount(0)).toBe("0");
   });
 });
@@ -252,7 +253,7 @@ describe("formatExecutiveInHouseCount", () => {
     expect(formatExecutiveInHouseCount(undefined)).toBe(EXECUTIVE_NO_IN_HOUSE_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveInHouseCount({ inHouse: 0, hospital: 0, onLeave: 0, onHold: 0, total: 0 })).toBe("0");
   });
 
@@ -266,7 +267,7 @@ describe("formatExecutiveHospitalCount", () => {
     expect(formatExecutiveHospitalCount(null)).toBe(EXECUTIVE_NO_HOSPITAL_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveHospitalCount({ inHouse: 5, hospital: 0, onLeave: 0, onHold: 0, total: 5 })).toBe("0");
   });
 });
@@ -276,7 +277,7 @@ describe("formatExecutiveOnLeaveCount", () => {
     expect(formatExecutiveOnLeaveCount(undefined)).toBe(EXECUTIVE_NO_LEAVE_COUNT_POSTED_COPY);
   });
 
-  it("keeps real zero as 0", () => {
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
     expect(formatExecutiveOnLeaveCount({ inHouse: 5, hospital: 0, onLeave: 0, onHold: 0, total: 5 })).toBe("0");
   });
 });
@@ -356,8 +357,8 @@ describe("formatStandupMetricValue", () => {
     expect(formatStandupMetricValue(undefined, "Current AR")).toBe("No current AR posted");
   });
 
-  it("keeps real zero as 0", () => {
-    expect(formatStandupMetricValue(standupMetric({ valueNumeric: 0 }))).toBe("0");
+  it("keeps zero explicitly recorded without attesting source coverage", () => {
+    expect(formatStandupMetricValue(standupMetric({ valueNumeric: 0 }))).toBe("0 recorded");
   });
 
   it("uses manual copy for unresolved manual rows", () => {
@@ -385,9 +386,14 @@ describe("formatStandupMetricDelta", () => {
     ).toBe(EXECUTIVE_STANDUP_NO_DELTA_COPY);
   });
 
-  it("reports no change for identical values", () => {
-    expect(formatStandupMetricDelta(standupMetric({ valueNumeric: 10 }), standupMetric({ valueNumeric: 10 }))).toBe(
+  it("reports no change for comparable recorded values", () => {
+    expect(formatStandupMetricDelta(standupMetric({ valueNumeric: 10, sourceRefJson: [qualityReference(QUALITY_FIXTURE_IDS, QUALITY_FIXTURE_IDS)] }), standupMetric({ valueNumeric: 10, sourceRefJson: [qualityReference(QUALITY_FIXTURE_IDS, QUALITY_FIXTURE_IDS)] }))).toBe(
       "No change",
     );
   });
+});
+
+
+it("does not infer comparable scopes from equal legacy values", () => {
+  expect(formatStandupMetricDelta(standupMetric({ valueNumeric: 10 }), standupMetric({ valueNumeric: 10 }))).toContain("Comparison unavailable");
 });

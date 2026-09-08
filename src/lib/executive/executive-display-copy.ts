@@ -6,6 +6,7 @@
 import { portfolioStripKpiEmptyCopy } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import type { PresenceCensus } from "@/lib/executive/presence-census";
 import type { StandupMetricRow } from "@/lib/executive/standup";
+import { canCompareStandupMetrics, qualifyStandupValue } from "@/lib/executive/standup-quality";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import {
   PORTFOLIO_OCCUPANCY_NO_POSTED_COPY,
@@ -246,10 +247,10 @@ export function formatStandupMetricValue(metric: StandupMetricRow | undefined, f
     }
     return formatExecutiveNoMetricPostedCopy(metric.label);
   }
-  if (metric.valueType === "currency") return STANDUP_USD.format(metric.valueNumeric / 100);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
+  const value = metric.valueType === "currency" ? STANDUP_USD.format(metric.valueNumeric / 100)
+    : metric.valueType === "hours" ? `${metric.valueNumeric.toFixed(2)} hrs`
+    : metric.valueType === "percent" ? `${metric.valueNumeric.toFixed(1)}%` : `${metric.valueNumeric}`;
+  return qualifyStandupValue(metric, value);
 }
 
 /** Week-over-week standup delta — missing either side names the gap. */
@@ -260,6 +261,7 @@ export function formatStandupMetricDelta(
   if (!metricLeft || !metricRight || metricLeft.valueNumeric == null || metricRight.valueNumeric == null) {
     return EXECUTIVE_STANDUP_NO_DELTA_COPY;
   }
+  if (!canCompareStandupMetrics(metricLeft, metricRight)) return "Comparison unavailable: source coverage or scope is unconfirmed.";
   const delta = metricRight.valueNumeric - metricLeft.valueNumeric;
   if (delta === 0) return "No change";
   if (metricRight.valueType === "currency") {

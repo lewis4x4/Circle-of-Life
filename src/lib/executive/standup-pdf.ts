@@ -1,4 +1,6 @@
+import { qualifyStandupValue, readStandupSourceQuality, standupCoverageLabel } from "@/lib/executive/standup-quality";
 import {
+  hasRecordedPressure,
   type StandupMetricRow,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
@@ -27,10 +29,15 @@ function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
   if (!metric) return "—";
   if (metric.valueText?.trim()) return metric.valueText.trim();
   if (metric.valueNumeric == null) return "—";
-  if (metric.valueType === "currency") return formatCurrencyFromCents(metric.valueNumeric);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
+  const value = metric.valueType === "currency" ? formatCurrencyFromCents(metric.valueNumeric)
+    : metric.valueType === "hours" ? `${metric.valueNumeric.toFixed(2)} hrs`
+    : metric.valueType === "percent" ? `${metric.valueNumeric.toFixed(1)}%` : `${metric.valueNumeric}`;
+  return qualifyStandupValue(metric, value);
+}
+
+function metricSourceCaption(metric: StandupMetricRow | undefined): string {
+  const sourceAt = readStandupSourceQuality(metric)?.source_as_of;
+  return `${standupCoverageLabel(metric)}${sourceAt ? ` · Source as of ${formatDateTimeDisplay(sourceAt)} ET` : ""}`;
 }
 
 function formatDateTimeDisplay(value: string | null): string {
@@ -38,6 +45,7 @@ function formatDateTimeDisplay(value: string | null): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString("en-US", {
+    timeZone: "America/New_York",
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -72,7 +80,8 @@ function toneForPressure(score: number, max: number): "ok" | "warn" | "risk" {
 }
 
 function deltaChip(delta: string | null | undefined): string {
-  if (!delta || delta === "—") return `<span class="chip flat">— flat</span>`;
+  if (!delta || delta === "—") return `<span class="chip flat">Comparison unavailable</span>`;
+  if (/^comparison unavailable/i.test(delta)) return `<span class="chip flat">Unavailable</span>`;
   if (/no change/i.test(delta)) return `<span class="chip flat">— flat</span>`;
   if (delta.startsWith("+")) return `<span class="chip up">▲ ${escapeHtml(delta.slice(1))}</span>`;
   if (delta.startsWith("-")) return `<span class="chip down">▼ ${escapeHtml(delta.slice(1))}</span>`;
@@ -154,7 +163,8 @@ export function buildStandupBoardPrintHtml(
   const coverStats = coverStatPool.slice(0, 4);
 
   // -------- pressure leaderboard --------
-  const rankedFacilities = facilities.slice().sort((a, b) => b.pressureScore - a.pressureScore);
+  const rankingAvailable = facilities.length > 0 && facilities.every(hasRecordedPressure);
+  const rankedFacilities = rankingAvailable ? facilities.slice().sort((a, b) => b.pressureScore - a.pressureScore) : [];
   const maxPressure = Math.max(1, ...rankedFacilities.map((f) => f.pressureScore));
   const pressureRows = rankedFacilities
     .map((facility, index) => {
@@ -180,16 +190,18 @@ export function buildStandupBoardPrintHtml(
   const facilityScorecards = packet.narrative.facilityActions
     .slice(0, 6)
     .map((action) => {
+      const sourceFacility = facilities.find((facility) => facility.facilityId === action.facilityId);
+      const available = !!sourceFacility && hasRecordedPressure(sourceFacility);
       const pct = Math.round((action.pressureScore / maxPressure) * 100);
-      const tone = toneForPressure(action.pressureScore, maxPressure);
+      const tone = rankingAvailable && available ? toneForPressure(action.pressureScore, maxPressure) : "neutral";
       const whyRed =
         action.whyRed.length > 0
           ? action.whyRed
-          : ["No active red flags beyond the summary concern."];
+          : ["No confirmed assessment is available; review source coverage."];
       const flags =
         action.varianceFlags.length > 0
           ? action.varianceFlags
-          : ["No material week-over-week delta against the prior published packet."];
+          : ["No comparable movement to report; check source coverage."];
       return `
         <article class="facility-card">
           <div class="facility-card-head">
@@ -199,11 +211,11 @@ export function buildStandupBoardPrintHtml(
               <div class="meta">${escapeHtml(action.topConcern)}</div>
             </div>
             <div class="pressure-badge pressure-badge-${tone}">
-              <div class="pressure-badge-label">Pressure</div>
-              <div class="pressure-badge-value figure">${action.pressureScore}</div>
+              <div class="pressure-badge-label">Recorded score</div>
+              ${available ? `<div class="pressure-badge-value figure">${action.pressureScore}</div>` : '<div class="meta">Unavailable</div>'}
             </div>
           </div>
-          <div class="rank-bar"><span class="rank-fill rank-fill-${tone}" style="width: ${Math.max(pct, 4)}%"></span></div>
+          ${rankingAvailable && available ? `<div class="rank-bar"><span class="rank-fill rank-fill-${tone}" style="width: ${Math.max(pct, 4)}%"></span></div>` : ""}
           <div class="facility-card-body">
             <div class="facility-block">
               <div class="block-eyebrow">Why now</div>
@@ -298,6 +310,7 @@ export function buildStandupBoardPrintHtml(
                       return `<td>
                         <div class="value figure">${escapeHtml(formatMetricDisplay(m))}</div>
                         <div class="micro">${sourceChip(m.sourceMode)} ${confidencePill(m.confidenceBand)}</div>
+                        <div class="metric-desc">${escapeHtml(metricSourceCaption(m))}</div>
                       </td>`;
                     })
                     .join("");
@@ -307,6 +320,7 @@ export function buildStandupBoardPrintHtml(
                         return `<td class="col-total">
                           <div class="value figure primary">${escapeHtml(formatMetricDisplay(m))}</div>
                           <div class="micro">${sourceChip(m.sourceMode)} ${confidencePill(m.confidenceBand)}</div>
+                        <div class="metric-desc">${escapeHtml(metricSourceCaption(m))}</div>
                         </td>`;
                       })()
                     : "";
@@ -339,7 +353,7 @@ export function buildStandupBoardPrintHtml(
           <div class="panel-eyebrow">Portfolio shifts</div>
           <ul class="rich-list">${(packet.comparison.portfolioDeltas.length > 0
             ? packet.comparison.portfolioDeltas
-            : ["No material portfolio deltas between these weeks."])
+            : ["No comparable movement to report; check source coverage."])
             .map((item) => `<li>${escapeHtml(item)}</li>`)
             .join("")}</ul>
         </div>
@@ -348,19 +362,19 @@ export function buildStandupBoardPrintHtml(
             .slice(0, 6)
             .map((facility) => {
               const pressureDelta = facility.pressureDelta;
-              const sign = pressureDelta > 0 ? "+" : "";
+              const sign = pressureDelta != null && pressureDelta > 0 ? "+" : "";
               const chipClass =
-                pressureDelta > 0
+                pressureDelta != null && pressureDelta > 0
                   ? "chip up bad"
-                  : pressureDelta < 0
+                  : pressureDelta != null && pressureDelta < 0
                     ? "chip down good"
                     : "chip flat";
-              const arrow = pressureDelta > 0 ? "▲" : pressureDelta < 0 ? "▼" : "—";
+              const arrow = pressureDelta != null && pressureDelta > 0 ? "▲" : pressureDelta != null && pressureDelta < 0 ? "▼" : "—";
               return `
                 <article class="mini-card">
                   <div class="mini-card-head">
                     <h3>${escapeHtml(facility.facilityName)}</h3>
-                    <span class="${chipClass} figure">${arrow} ${sign}${pressureDelta}</span>
+                    <span class="${chipClass} figure">${pressureDelta == null ? "Comparison unavailable" : `${arrow} ${sign}${pressureDelta}`}</span>
                   </div>
                   <div class="meta">${escapeHtml(packet.comparison!.fromWeek)} → ${escapeHtml(packet.comparison!.toWeek)}</div>
                   <div class="meta meta-divided">
@@ -370,7 +384,7 @@ export function buildStandupBoardPrintHtml(
                   </div>
                   <ul>${(facility.metricDeltas.length > 0
                     ? facility.metricDeltas
-                    : ["No material metric shifts."])
+                    : ["No comparable movement to report; check source coverage."])
                     .map((item) => `<li>${escapeHtml(item)}</li>`)
                     .join("")}</ul>
                 </article>
@@ -713,7 +727,7 @@ export function buildStandupBoardPrintHtml(
       .op-table tbody tr:last-child td { border-bottom: 0; }
       .op-table tbody tr:nth-child(even) td { background: #FBFCFE; }
       .op-table .col-metric { width: 34%; }
-      .op-table .col-num { text-align: right; white-space: nowrap; }
+      .op-table .col-num { text-align: right; white-space: normal; }
       .op-table .col-tag { text-align: left; white-space: nowrap; }
       .op-table .metric-label { font-weight: 700; color: var(--ink); font-size: 10pt; }
       .op-table .metric-desc { margin-top: 2px; font-size: 8.5pt; color: var(--muted); line-height: 1.35; }
@@ -782,7 +796,7 @@ export function buildStandupBoardPrintHtml(
       </div>
 
       <div class="cover-headline">
-        <div class="cover-kicker">Weekly executive standup · Confidence ${escapeHtml(packet.confidenceBand)} · ${completenessPct}% complete</div>
+        <div class="cover-kicker">Recorded data · Financial worksheet definitions TBD · Confidence ${escapeHtml(packet.confidenceBand)} · ${completenessPct}% fields populated</div>
         <h1 class="cover-title">Circle of Life Portfolio.</h1>
         <div class="cover-sub">${escapeHtml(packet.focusStatement)}</div>
       </div>
@@ -804,7 +818,7 @@ export function buildStandupBoardPrintHtml(
           <div class="cover-foot-block">
             <div class="eyebrow">Prepared by</div>
             <div class="value">${escapeHtml(packet.generatedBy)}</div>
-            <div class="sub">Generated ${escapeHtml(generatedAtDisplay)}</div>
+            <div class="sub">Calculated ${escapeHtml(generatedAtDisplay)} ET · Source as of: unconfirmed</div>
           </div>
           <div class="cover-foot-block">
             <div class="eyebrow">Published</div>
@@ -827,12 +841,12 @@ export function buildStandupBoardPrintHtml(
           <div>
             <div class="eyebrow">Owner briefing</div>
             <h1>Executive Brief</h1>
-            <p class="lede">One-page operating read for ${escapeHtml(weekLabel)}. The single highest-value signal, what shifted, and what to do next.</p>
+            <p class="lede">One-page operating read for ${escapeHtml(weekLabel)}. Recorded values, comparable changes and source-review needs.</p>
           </div>
           <div class="status-pills">
             <span class="pill pill-${statusTone}"><span class="dot"></span>${escapeHtml(packet.status)}</span>
             <span class="pill pill-${confidenceTone}"><span class="dot"></span>${escapeHtml(packet.confidenceBand)} confidence</span>
-            <span class="pill pill-${completenessTone}"><span class="dot"></span>${completenessPct}% complete</span>
+            <span class="pill pill-${completenessTone}"><span class="dot"></span>${completenessPct}% fields populated</span>
             <span class="pill pill-mono">v${packet.version}</span>
           </div>
         </div>
@@ -842,7 +856,7 @@ export function buildStandupBoardPrintHtml(
         <div class="brief-focus">
           <div class="eyebrow">Primary focus this week</div>
           <div class="headline">${escapeHtml(packet.focusStatement)}</div>
-          <div class="meta">This is the single highest-value read from the packet right now.</div>
+          <div class="meta">Review this recorded-data summary alongside its coverage qualifications.</div>
         </div>
         <div class="brief-spotlight">
           <div class="eyebrow">Facility spotlight</div>
@@ -850,12 +864,12 @@ export function buildStandupBoardPrintHtml(
             packet.spotlightFacility
               ? `
                 <div class="headline">${escapeHtml(packet.spotlightFacility.facilityName)}</div>
-                <div class="meta">${escapeHtml(packet.spotlightFacility.topConcern)} · Pressure ${packet.spotlightFacility.pressureScore}</div>
+                <div class="meta">${escapeHtml(packet.spotlightFacility.topConcern)} · Recorded score ${packet.spotlightFacility.pressureScore}</div>
                 <ul style="margin-top:10px;">${packet.spotlightFacility.interventions
                   .map((item) => `<li>${escapeHtml(item)}</li>`)
                   .join("")}</ul>
               `
-              : `<div class="meta" style="margin-top:10px;">No facility is flagged above portfolio baseline this week.</div>`
+              : `<div class="meta" style="margin-top:10px;">No comparable facility spotlight is available; review source scope.</div>`
           }
           <div class="gauge">
             <svg width="66" height="66" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
@@ -866,7 +880,7 @@ export function buildStandupBoardPrintHtml(
             </svg>
             <div>
               <div class="gauge-value figure">${completenessPct}%</div>
-              <div class="gauge-label">Packet completeness</div>
+              <div class="gauge-label">Fields populated</div>
             </div>
           </div>
         </div>
@@ -910,14 +924,14 @@ export function buildStandupBoardPrintHtml(
       <div class="kpi-grid">${kpiGrid}</div>
 
       <div class="op-section-head" style="margin-top:22px; margin-bottom:10px;">
-        <div class="op-section-eyebrow">Facility pressure leaderboard</div>
-        <h3>Who needs attention first</h3>
+        <div class="op-section-eyebrow">Recorded-score review</div>
+        <h3>${rankingAvailable ? "Relative ordering of recorded inputs" : "Ranking unavailable: source scope needs review"}</h3>
       </div>
-      <div class="leaderboard">${pressureRows}</div>
+      <div class="leaderboard">${rankingAvailable ? pressureRows : "<p>Ranking unavailable: one or more facilities have incomplete or unconfirmed source scope.</p>"}</div>
 
       <div class="panel" style="margin-top:12px;">
         <div class="panel-eyebrow">Trust notes</div>
-        <ul class="rich-list">${narrativeQuality || "<li>No data quality warnings for this packet.</li>"}</ul>
+        <ul class="rich-list">${narrativeQuality || "<li>Source quality has not been confirmed.</li>"}</ul>
       </div>
 
       <div class="doc-foot">
@@ -931,7 +945,7 @@ export function buildStandupBoardPrintHtml(
       <div class="page-head">
         <div class="eyebrow">Facility scorecards</div>
         <h1>By-Facility Detail</h1>
-        <p class="lede">Per-facility pressure, why it is or isn't red, variance flags, and owner-ready interventions.</p>
+        <p class="lede">Per-facility recorded inputs, source qualifications and suggested review actions.</p>
       </div>
       <div class="cards-grid">${facilityScorecards}</div>
       <div class="doc-foot">

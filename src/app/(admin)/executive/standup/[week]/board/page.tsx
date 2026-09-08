@@ -1,5 +1,9 @@
 "use client";
 
+import { hasRecordedPressure } from "@/lib/executive/standup";
+
+import { StandupReportingNotice } from "@/components/executive/StandupMetricEvidence";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Printer, RefreshCw } from "lucide-react";
@@ -149,6 +153,7 @@ export default function ExecutiveStandupBoardPage() {
       <div className="mx-auto max-w-6xl px-6 py-8 print:px-4">
         <div className="print:hidden">
           <RecordDetailHeader
+        className="[&>div]:flex-col [&>div>div]:max-w-full sm:[&>div]:flex-row"
             title="Executive Standup Board View"
             subtitle="Print or save this page as PDF for a board-ready packet."
             backLink={{ label: "Back to draft", href: `/admin/executive/standup/${week}` }}
@@ -192,6 +197,8 @@ export default function ExecutiveStandupBoardPage() {
           </div>
         ) : null}
 
+        <StandupReportingNotice />
+
         {loading ? (
           <Card className="rounded-lg border border-border bg-card shadow-sm">
             <CardContent
@@ -227,7 +234,7 @@ export default function ExecutiveStandupBoardPage() {
                     {[
                       { label: "Status", value: <span className="capitalize">{detail.snapshot.status}</span> },
                       { label: "Confidence", value: <span className="capitalize">{detail.snapshot.confidenceBand}</span> },
-                      { label: "Completeness", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
+                      { label: "Fields populated", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
                     ].map(({ label, value }) => (
                       <div key={label} className="rounded-[8px] border border-border bg-muted/10 px-4 py-4">
                         <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
@@ -240,12 +247,12 @@ export default function ExecutiveStandupBoardPage() {
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Prepared</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{new Date(detail.snapshot.generatedAt).toLocaleString("en-US", { timeZone: "America/New_York" })}</div>
                   </div>
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Published</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString("en-US", { timeZone: "America/New_York" }) : "Not yet"}</div>
                     <div className="mt-2 tabular-nums text-muted-foreground">Version {detail.snapshot.publishedVersion}</div>
                   </div>
                 </div>
@@ -299,21 +306,21 @@ export default function ExecutiveStandupBoardPage() {
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
               <Card className="border-border shadow-none">
                 <CardHeader>
-                  <CardTitle>Facility ranking</CardTitle>
+                  <CardTitle>Recorded facility scores</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {detail?.facilities.filter((facility) => facility.facilityId != null)
                     .slice()
-                    .sort((a, b) => b.pressureScore - a.pressureScore)
-                    .map((facility, index) => (
+                    .sort((a, b) => a.facilityName.localeCompare(b.facilityName))
+                    .map((facility) => (
                       <div key={facility.facilityId} className="flex items-center justify-between border-b border-border pb-3 text-sm last:border-none">
                         <div>
-                          <div className="font-semibold text-foreground">{index + 1}. {facility.facilityName}</div>
+                          <div className="font-semibold text-foreground">{facility.facilityName}</div>
                           <div className="text-muted-foreground">{facility.topConcern}</div>
                         </div>
                         <div className="text-right">
                           <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Pressure</div>
-                          <div className="font-semibold tabular-nums text-foreground">{facility.pressureScore}</div>
+                          <div className="font-semibold tabular-nums text-foreground">{hasRecordedPressure(facility) ? facility.pressureScore : "Unavailable"}</div>
                         </div>
                       </div>
                     ))}
@@ -356,7 +363,7 @@ export default function ExecutiveStandupBoardPage() {
                     <CardTitle>Data quality</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-foreground">
-                    {(packet.narrative.dataQuality.length > 0 ? packet.narrative.dataQuality : ["No data quality warnings."]).map((item) => (
+                    {(packet.narrative.dataQuality.length > 0 ? packet.narrative.dataQuality : ["Source quality has not been confirmed."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
@@ -383,12 +390,12 @@ export default function ExecutiveStandupBoardPage() {
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between gap-3">
                           <span>{action.facilityName}</span>
-                          <span className="text-sm font-medium tabular-nums text-muted-foreground">Pressure {action.pressureScore}</span>
+                          <span className="text-sm font-medium tabular-nums text-muted-foreground">{(detail?.facilities ?? []).some((facility) => facility.facilityId === action.facilityId && hasRecordedPressure(facility)) ? `Recorded score ${action.pressureScore}` : "Pressure unavailable"}</span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4 text-sm text-foreground">
                         <div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Why red</div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Review notes</div>
                           <ul className="mt-2 space-y-1">
                             {(action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the summary concern."]).map((item) => (
                               <li key={item}>{item}</li>
@@ -398,7 +405,7 @@ export default function ExecutiveStandupBoardPage() {
                         <div>
                           <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Variance flags</div>
                           <ul className="mt-2 space-y-1">
-                            {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No material week-over-week delta against the prior published packet."]).map((item) => (
+                            {(action.varianceFlags.length > 0 ? action.varianceFlags : ["No comparable movement to report; check source coverage."]).map((item) => (
                               <li key={item}>{item}</li>
                             ))}
                           </ul>
@@ -474,7 +481,7 @@ export default function ExecutiveStandupBoardPage() {
                     <CardTitle>{packet.comparison.headline}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-foreground">
-                    {(packet.comparison.portfolioDeltas.length > 0 ? packet.comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => (
+                    {(packet.comparison.portfolioDeltas.length > 0 ? packet.comparison.portfolioDeltas : ["No comparable movement to report; check source coverage."]).map((item) => (
                       <p key={item}>{item}</p>
                     ))}
                   </CardContent>
@@ -486,7 +493,7 @@ export default function ExecutiveStandupBoardPage() {
                         <CardTitle className="flex items-center justify-between gap-3">
                           <span>{facility.facilityName}</span>
                           <span className="text-sm font-medium tabular-nums text-muted-foreground">
-                            {facility.pressureDelta > 0 ? "+" : ""}{facility.pressureDelta} pressure
+                            {facility.pressureDelta == null ? "Comparison unavailable" : `${facility.pressureDelta > 0 ? "+" : ""}${facility.pressureDelta} pressure`}
                           </span>
                         </CardTitle>
                       </CardHeader>
@@ -494,7 +501,7 @@ export default function ExecutiveStandupBoardPage() {
                         <p>{packet.comparison!.fromWeek}: {facility.concernFrom}</p>
                         <p>{packet.comparison!.toWeek}: {facility.concernTo}</p>
                         <ul className="space-y-1">
-                          {(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No material metric shifts for this facility."]).map((item) => (
+                          {(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No comparable movement to report; check source coverage."]).map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ul>

@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toZonedTime } from "date-fns-tz";
 
+import { canCompareStandupMetrics, readStandupSourceQuality, type StandupSourceQuality } from "./standup-quality";
+
 import type { Database } from "@/types/database";
 import {
   FACILITY_OPERATOR_TZ,
@@ -130,7 +132,8 @@ export type StandupComparisonFacility = {
   facilityName: string;
   pressureFrom: number;
   pressureTo: number;
-  pressureDelta: number;
+  pressureDelta: number | null;
+  comparisonAvailable: boolean;
   concernFrom: string;
   concernTo: string;
   metricDeltas: string[];
@@ -505,7 +508,7 @@ function metricTemplate(
   valueNumeric: number | null,
   {
     confidenceBand = valueNumeric == null ? "low" : definition.sourceMode === "auto" ? "high" : "medium",
-    freshnessAt = valueNumeric == null ? null : new Date().toISOString(),
+    freshnessAt = null,
     sourceRefJson = valueNumeric == null ? [] : [],
     overrideNote = valueNumeric == null ? "Needs manual or future system capture." : null,
   }: {
@@ -524,6 +527,19 @@ function metricTemplate(
     sourceRefJson,
     overrideNote,
   };
+}
+
+function sourceQuality(
+  calculatedAt: string,
+  expected: string[] | null,
+  contributing: string[],
+  basis: StandupSourceQuality["basis"],
+  receivedAt: string | null = null,
+  queryComplete = true,
+): StandupSourceQuality {
+  return { kind: "source_quality", version: 1, calculated_at: calculatedAt, source_as_of: null,
+    received_at: receivedAt, query_complete: queryComplete, period_coverage: "unconfirmed",
+    expected_facility_ids: expected, contributing_facility_ids: contributing, basis };
 }
 
 function initializeMetricMap(): Record<string, StandupMetricRow> {
@@ -549,39 +565,44 @@ function computePressureScore(metrics: Record<string, StandupMetricRow>): { scor
   const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
 
   let score = 0;
-  let topConcern = "Stable operating picture";
+  let topConcern = "No recorded pressure threshold reached; source coverage is unconfirmed.";
 
   if (currentAr > 150_000_00) {
     score += 3;
-    topConcern = "AR pressure is elevated";
+    topConcern = "Recorded AR exceeds the pressure threshold; source coverage is unconfirmed.";
   }
   if (totalBedsOpen === 0) {
     score += 2;
-    topConcern = "No bed availability";
+    topConcern = "Recorded open-bed count is 0; confirm current capacity.";
   }
   if (hospitalAndRehab >= 3) {
     score += 2;
-    topConcern = "Hospital / rehab volume is elevated";
+    topConcern = "Recorded hospital/rehab count exceeds the pressure threshold; confirm source coverage.";
   }
   if (terminations > 0) {
     score += 1;
-    topConcern = "Recent terminations need staffing attention";
+    topConcern = "Terminations are recorded; confirm staffing source coverage.";
   }
   if (overtime >= 20) {
     score += 1;
-    topConcern = "Overtime pressure is building";
+    topConcern = "Recorded overtime exceeds the pressure threshold; confirm source coverage.";
   }
   if (callouts >= 3) {
     score += 1;
-    topConcern = "Callout volume is elevated";
+    topConcern = "Recorded callouts exceed the pressure threshold; confirm source coverage.";
   }
   if (openPositions >= 2) {
     score += 1;
-    topConcern = "Open positions are affecting coverage";
+    topConcern = "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.";
   }
 
+  if (!PRESSURE_METRIC_KEYS.every((key) => hasRecordedValue(metrics[key]))) topConcern = "Operational pressure unavailable: recorded source scope is incomplete or unknown.";
   return { score, topConcern };
 }
+
+const PRESSURE_METRIC_KEYS = ["current_ar_cents", "total_beds_open", "hospital_and_rehab_total", "terminations_last_week", "overtime_hours", "callouts_last_week", "current_open_positions"] as const;
+const hasRecordedValue = (metric: StandupMetricRow | undefined) => canCompareStandupMetrics(metric, metric);
+export const hasRecordedPressure = (facility: StandupFacilityLive) => PRESSURE_METRIC_KEYS.every((key) => hasRecordedValue(facility.metrics[key]));
 
 function buildPressureReasons(metrics: Record<string, StandupMetricRow>): string[] {
   const reasons: string[] = [];
@@ -593,14 +614,15 @@ function buildPressureReasons(metrics: Record<string, StandupMetricRow>): string
   const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
   const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
 
-  if (currentAr > 150_000_00) reasons.push(`Open AR is elevated at ${formatCurrencyFromCents(currentAr)}.`);
-  if (totalBedsOpen === 0) reasons.push("No beds are currently open.");
-  if (hospitalAndRehab >= 3) reasons.push(`${hospitalAndRehab} residents are in hospital or rehab status.`);
-  if (terminations > 0) reasons.push(`${terminations} terminations were recorded in the last week.`);
-  if (overtime >= 20) reasons.push(`Overtime reached ${metrics.overtime_hours.valueNumeric?.toFixed(2) ?? overtime} hours.`);
-  if (callouts >= 3) reasons.push(`${callouts} callouts were logged in the last week.`);
-  if (openPositions >= 2) reasons.push(`${openPositions} open positions are still unfilled.`);
+  if (hasRecordedValue(metrics.current_ar_cents) && currentAr > 150_000_00) reasons.push(`Recorded open AR is ${formatCurrencyFromCents(currentAr)}.`);
+  if (hasRecordedValue(metrics.total_beds_open) && totalBedsOpen === 0) reasons.push("Recorded open-bed count is 0; confirm current capacity.");
+  if (hasRecordedValue(metrics.hospital_and_rehab_total) && hospitalAndRehab >= 3) reasons.push(`${hospitalAndRehab} residents are recorded in hospital or rehab status.`);
+  if (hasRecordedValue(metrics.terminations_last_week) && terminations > 0) reasons.push(`${terminations} terminations were recorded in the last week.`);
+  if (hasRecordedValue(metrics.overtime_hours) && overtime >= 20) reasons.push(`Recorded overtime is ${metrics.overtime_hours.valueNumeric?.toFixed(2) ?? overtime} hours.`);
+  if (hasRecordedValue(metrics.callouts_last_week) && callouts >= 3) reasons.push(`${callouts} callouts were logged in the last week.`);
+  if (hasRecordedValue(metrics.current_open_positions) && openPositions >= 2) reasons.push(`${openPositions} open positions are recorded.`);
 
+  if (PRESSURE_METRIC_KEYS.some((key) => !hasRecordedValue(metrics[key]))) reasons.push("Source scope is incomplete or unknown; review recorded data before assessing operational pressure.");
   return reasons;
 }
 
@@ -611,12 +633,12 @@ function buildFacilityVarianceFlags(
   if (!previous) return [];
 
   const flags = [
-    deltaLine("AR", current.metrics.current_ar_cents.valueNumeric ?? null, previous.metrics.current_ar_cents.valueNumeric ?? null, formatCurrencyFromCents),
-    deltaLine("Census", current.metrics.current_total_census.valueNumeric ?? null, previous.metrics.current_total_census.valueNumeric ?? null),
-    deltaLine("Open beds", current.metrics.total_beds_open.valueNumeric ?? null, previous.metrics.total_beds_open.valueNumeric ?? null),
-    deltaLine("Callouts", current.metrics.callouts_last_week.valueNumeric ?? null, previous.metrics.callouts_last_week.valueNumeric ?? null),
-    deltaLine("Overtime", current.metrics.overtime_hours.valueNumeric ?? null, previous.metrics.overtime_hours.valueNumeric ?? null, (value) => value == null ? "—" : `${value.toFixed(2)} hrs`),
-    deltaLine("Open positions", current.metrics.current_open_positions.valueNumeric ?? null, previous.metrics.current_open_positions.valueNumeric ?? null),
+    deltaLine("AR", current.metrics.current_ar_cents, previous.metrics.current_ar_cents, formatCurrencyFromCents),
+    deltaLine("Census", current.metrics.current_total_census, previous.metrics.current_total_census),
+    deltaLine("Open beds", current.metrics.total_beds_open, previous.metrics.total_beds_open),
+    deltaLine("Callouts", current.metrics.callouts_last_week, previous.metrics.callouts_last_week),
+    deltaLine("Overtime", current.metrics.overtime_hours, previous.metrics.overtime_hours, (value) => value == null ? "—" : `${value.toFixed(2)} hrs`),
+    deltaLine("Open positions", current.metrics.current_open_positions, previous.metrics.current_open_positions),
   ].filter((flag): flag is string => Boolean(flag));
 
   return flags.slice(0, 4);
@@ -631,17 +653,17 @@ function buildFacilityInterventions(metrics: Record<string, StandupMetricRow>): 
   const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
   const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
 
-  if (currentAr > 150_000_00) {
-    interventions.push("Review the largest receivable balances, payer holds, and collection assignments today.");
+  if (hasRecordedValue(metrics.current_ar_cents) && currentAr > 150_000_00) {
+    interventions.push("Review the recorded receivable balances and confirm source coverage before deciding collection priorities.");
   }
-  if (totalBedsOpen === 0 || hospitalAndRehab >= 3) {
-    interventions.push("Confirm discharge/return timing and release blocked beds before accepting additional move-ins.");
+  if ((hasRecordedValue(metrics.total_beds_open) && totalBedsOpen === 0) || (hasRecordedValue(metrics.hospital_and_rehab_total) && hospitalAndRehab >= 3)) {
+    interventions.push("Review recorded bed and hospital/rehab counts and confirm current circumstances before capacity decisions.");
   }
-  if (callouts >= 3 || overtime >= 20 || openPositions >= 2) {
-    interventions.push("Escalate staffing coverage: PRN/agency fill, requisition follow-up, and shift rebalancing today.");
+  if ((hasRecordedValue(metrics.callouts_last_week) && callouts >= 3) || (hasRecordedValue(metrics.overtime_hours) && overtime >= 20) || (hasRecordedValue(metrics.current_open_positions) && openPositions >= 2)) {
+    interventions.push("Review recorded staffing counts and confirm source coverage before staffing decisions.");
   }
   if (interventions.length === 0) {
-    interventions.push("Maintain current operating plan and monitor changes at the next standup refresh.");
+    interventions.push("Review recorded counts and confirm source coverage before drawing operational conclusions.");
   }
 
   return interventions.slice(0, 3);
@@ -664,7 +686,7 @@ export function buildStandupActionEngine(
         facilityId: facility.facilityId,
         facilityName: facility.facilityName,
         pressureScore: facility.pressureScore,
-        topConcern: facility.topConcern,
+        topConcern: hasRecordedPressure(facility) ? "Review recorded pressure indicators; source coverage is unconfirmed." : "Operational pressure unavailable until source scope is reviewed.",
         whyRed,
         varianceFlags,
         interventions,
@@ -675,25 +697,19 @@ export function buildStandupActionEngine(
 
 export function buildStandupInsights(facilities: StandupFacilityLive[]): string[] {
   const liveFacilities = facilities.filter((facility) => facility.facilityId != null);
-  const top = [...liveFacilities].sort((a, b) => b.pressureScore - a.pressureScore).slice(0, 3);
   const insights: string[] = [];
-
-  if (top.length > 0) {
-    insights.push(`${top[0].facilityName} is the highest-pressure facility right now: ${top[0].topConcern}.`);
+  if (liveFacilities.length > 0 && liveFacilities.every(hasRecordedPressure)) {
+    const top = [...liveFacilities].sort((a, b) => b.pressureScore - a.pressureScore)[0];
+    insights.push(`${top.facilityName} has the highest recorded pressure score; source coverage remains unconfirmed.`);
+  } else {
+    insights.push("Pressure ranking unavailable: recorded source scope is incomplete or unknown.");
   }
-
-  const highestAr = [...liveFacilities].sort(
-    (a, b) => (b.metrics.current_ar_cents.valueNumeric ?? 0) - (a.metrics.current_ar_cents.valueNumeric ?? 0),
-  )[0];
-  if (highestAr && (highestAr.metrics.current_ar_cents.valueNumeric ?? 0) > 0) {
-    insights.push(`${highestAr.facilityName} has the highest open AR at ${highestAr.metrics.current_ar_cents.valueNumeric ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(highestAr.metrics.current_ar_cents.valueNumeric / 100) : "—"}.`);
+  if (liveFacilities.length > 0 && liveFacilities.every((facility) => hasRecordedValue(facility.metrics.current_ar_cents))) {
+    const highestAr = [...liveFacilities].sort((a, b) => b.metrics.current_ar_cents.valueNumeric! - a.metrics.current_ar_cents.valueNumeric!)[0];
+    if (highestAr.metrics.current_ar_cents.valueNumeric! > 0) insights.push(`${highestAr.facilityName} has the highest recorded open AR at ${formatCurrencyFromCents(highestAr.metrics.current_ar_cents.valueNumeric)}; source coverage is unconfirmed.`);
   }
-
-  const noBedFlex = liveFacilities.filter((facility) => (facility.metrics.total_beds_open.valueNumeric ?? 0) === 0);
-  if (noBedFlex.length > 0) {
-    insights.push(`${noBedFlex.map((facility) => facility.facilityName).join(", ")} currently has no open bed capacity.`);
-  }
-
+  const recordedZeroBeds = liveFacilities.filter((facility) => hasRecordedValue(facility.metrics.total_beds_open) && facility.metrics.total_beds_open.valueNumeric === 0);
+  if (recordedZeroBeds.length > 0) insights.push(`${recordedZeroBeds.map((facility) => facility.facilityName).join(", ")} has a recorded open-bed count of 0; confirm current capacity.`);
   return insights.slice(0, 3);
 }
 
@@ -753,7 +769,7 @@ export function evaluateStandupPublishReadiness(
     blockers.push("Review notes are required before publish.");
   }
   if (detail.snapshot.completenessPct < 85) {
-    blockers.push(`Completeness is ${detail.snapshot.completenessPct.toFixed(0)}%; target is at least 85% before publish.`);
+    blockers.push(`${detail.snapshot.completenessPct.toFixed(0)}% of fields are populated; at least 85% is required before publish.`);
   }
   if (lowConfidence > 0) {
     blockers.push(`${lowConfidence} metric cells remain low confidence and require review.`);
@@ -772,12 +788,12 @@ export function buildStandupComparison(
   const fromTotals = fromDetail.facilities.find((facility) => facility.facilityId == null) ?? null;
   const toTotals = toDetail.facilities.find((facility) => facility.facilityId == null) ?? null;
   const portfolioDeltas = [
-    deltaLine("AR", toTotals?.metrics.current_ar_cents.valueNumeric ?? null, fromTotals?.metrics.current_ar_cents.valueNumeric ?? null, formatCurrencyFromCents),
-    deltaLine("Census", toTotals?.metrics.current_total_census.valueNumeric ?? null, fromTotals?.metrics.current_total_census.valueNumeric ?? null),
-    deltaLine("Open beds", toTotals?.metrics.total_beds_open.valueNumeric ?? null, fromTotals?.metrics.total_beds_open.valueNumeric ?? null),
-    deltaLine("Hospital / rehab", toTotals?.metrics.hospital_and_rehab_total.valueNumeric ?? null, fromTotals?.metrics.hospital_and_rehab_total.valueNumeric ?? null),
-    deltaLine("Callouts", toTotals?.metrics.callouts_last_week.valueNumeric ?? null, fromTotals?.metrics.callouts_last_week.valueNumeric ?? null),
-    deltaLine("Overtime", toTotals?.metrics.overtime_hours.valueNumeric ?? null, fromTotals?.metrics.overtime_hours.valueNumeric ?? null, (value) => value == null ? "—" : `${value.toFixed(2)} hrs`),
+    deltaLine("AR", toTotals?.metrics.current_ar_cents, fromTotals?.metrics.current_ar_cents, formatCurrencyFromCents),
+    deltaLine("Census", toTotals?.metrics.current_total_census, fromTotals?.metrics.current_total_census),
+    deltaLine("Open beds", toTotals?.metrics.total_beds_open, fromTotals?.metrics.total_beds_open),
+    deltaLine("Hospital / rehab", toTotals?.metrics.hospital_and_rehab_total, fromTotals?.metrics.hospital_and_rehab_total),
+    deltaLine("Callouts", toTotals?.metrics.callouts_last_week, fromTotals?.metrics.callouts_last_week),
+    deltaLine("Overtime", toTotals?.metrics.overtime_hours, fromTotals?.metrics.overtime_hours, (value) => value == null ? "—" : `${value.toFixed(2)} hrs`),
   ].filter((line): line is string => Boolean(line));
 
   const fromByFacilityId = new Map(fromDetail.facilities.filter((facility) => facility.facilityId != null).map((facility) => [facility.facilityId, facility] as const));
@@ -789,14 +805,15 @@ export function buildStandupComparison(
       const fromFacility = fromByFacilityId.get(facilityId) ?? null;
       const toFacility = toByFacilityId.get(facilityId) ?? null;
       const facilityName = toFacility?.facilityName ?? fromFacility?.facilityName ?? "Facility";
+      const comparisonAvailable = PRESSURE_METRIC_KEYS.every((key) => canCompareStandupMetrics(fromFacility?.metrics[key], toFacility?.metrics[key]));
       const pressureFrom = fromFacility?.pressureScore ?? 0;
       const pressureTo = toFacility?.pressureScore ?? 0;
       const metricDeltas = [
-        deltaLine("AR", toFacility?.metrics.current_ar_cents.valueNumeric ?? null, fromFacility?.metrics.current_ar_cents.valueNumeric ?? null, formatCurrencyFromCents),
-        deltaLine("Census", toFacility?.metrics.current_total_census.valueNumeric ?? null, fromFacility?.metrics.current_total_census.valueNumeric ?? null),
-        deltaLine("Open beds", toFacility?.metrics.total_beds_open.valueNumeric ?? null, fromFacility?.metrics.total_beds_open.valueNumeric ?? null),
-        deltaLine("Callouts", toFacility?.metrics.callouts_last_week.valueNumeric ?? null, fromFacility?.metrics.callouts_last_week.valueNumeric ?? null),
-        deltaLine("Open positions", toFacility?.metrics.current_open_positions.valueNumeric ?? null, fromFacility?.metrics.current_open_positions.valueNumeric ?? null),
+        deltaLine("AR", toFacility?.metrics.current_ar_cents, fromFacility?.metrics.current_ar_cents, formatCurrencyFromCents),
+        deltaLine("Census", toFacility?.metrics.current_total_census, fromFacility?.metrics.current_total_census),
+        deltaLine("Open beds", toFacility?.metrics.total_beds_open, fromFacility?.metrics.total_beds_open),
+        deltaLine("Callouts", toFacility?.metrics.callouts_last_week, fromFacility?.metrics.callouts_last_week),
+        deltaLine("Open positions", toFacility?.metrics.current_open_positions, fromFacility?.metrics.current_open_positions),
       ].filter((line): line is string => Boolean(line));
 
       return {
@@ -804,18 +821,21 @@ export function buildStandupComparison(
         facilityName,
         pressureFrom,
         pressureTo,
-        pressureDelta: pressureTo - pressureFrom,
-        concernFrom: fromFacility?.topConcern ?? "No prior concern",
-        concernTo: toFacility?.topConcern ?? "No current concern",
+        pressureDelta: comparisonAvailable ? pressureTo - pressureFrom : null,
+        comparisonAvailable,
+        concernFrom: fromFacility ? computePressureScore(fromFacility.metrics).topConcern : "Prior recorded scope unavailable",
+        concernTo: toFacility ? computePressureScore(toFacility.metrics).topConcern : "Current recorded scope unavailable",
         metricDeltas,
       };
     })
-    .sort((a, b) => Math.abs(b.pressureDelta) - Math.abs(a.pressureDelta) || b.pressureTo - a.pressureTo || a.facilityName.localeCompare(b.facilityName));
+    .sort((a, b) => Math.abs(b.pressureDelta ?? 0) - Math.abs(a.pressureDelta ?? 0) || b.pressureTo - a.pressureTo || a.facilityName.localeCompare(b.facilityName));
 
-  const highestShift = facilityComparisons[0];
+  const highestShift = facilityComparisons.find((facility) => facility.comparisonAvailable);
   const headline = highestShift
-    ? `${highestShift.facilityName} changed the most between ${fromDetail.snapshot.weekOf} and ${toDetail.snapshot.weekOf}.`
-    : `Comparison ready for ${fromDetail.snapshot.weekOf} versus ${toDetail.snapshot.weekOf}.`;
+    ? highestShift.pressureDelta === 0
+      ? `No recorded pressure change among comparable facilities.${facilityComparisons.some((facility) => !facility.comparisonAvailable) ? " Other facility comparisons are unavailable." : ""}`
+      : `${highestShift.facilityName} has the largest recorded pressure change between ${fromDetail.snapshot.weekOf} and ${toDetail.snapshot.weekOf}.`
+    : `Comparison unavailable: recorded source scope is missing, partial, or different.`;
 
   return {
     fromWeek: fromDetail.snapshot.weekOf,
@@ -912,7 +932,10 @@ function formatCurrencyFromCents(value: number | null): string {
   }).format(value / 100);
 }
 
-function deltaLine(label: string, current: number | null, previous: number | null, formatter?: (value: number | null) => string): string | null {
+function deltaLine(label: string, currentMetric: StandupMetricRow | undefined, previousMetric: StandupMetricRow | undefined, formatter?: (value: number | null) => string): string | null {
+  if (!canCompareStandupMetrics(currentMetric, previousMetric)) return `${label}: comparison unavailable for unconfirmed or different source scope.`;
+  const current = currentMetric?.valueNumeric;
+  const previous = previousMetric?.valueNumeric;
   if (current == null || previous == null || current === previous) return null;
   const delta = current - previous;
   const direction = delta > 0 ? "up" : "down";
@@ -1167,6 +1190,7 @@ export async function fetchExecutiveStandupLive(
   organizationId: string,
   facilityId: string | null,
 ): Promise<ExecutiveStandupLive> {
+  const calculatedAt = new Date().toISOString();
   const facilities = (await readStandupPages<FacilityMini>((from, to) => {
     let query = supabase
       .from("facilities" as never)
@@ -1443,6 +1467,11 @@ export async function fetchExecutiveStandupLive(
       { sourceRefJson: [{ table: "referral_outreach_activities", mode: "non_provider" }] },
     );
 
+    for (const metric of Object.values(metrics)) {
+      metric.sourceRefJson.push({ ...sourceQuality(calculatedAt, [facility.id], metric.valueNumeric == null ? [] : [facility.id],
+        metric.valueNumeric == null ? "unknown" : "haven_live_v1", null, metric.valueNumeric != null) });
+    }
+
     const { score, topConcern } = computePressureScore(metrics);
     return {
       facilityId: facility.id,
@@ -1461,6 +1490,10 @@ export async function fetchExecutiveStandupLive(
       pressureScore: 0,
       topConcern: "No facilities available",
     });
+  }
+
+  for (const facility of liveFacilities.filter((row) => row.facilityId == null)) {
+    for (const metric of Object.values(facility.metrics)) metric.sourceRefJson.push({ ...sourceQuality(calculatedAt, [], [], "unknown", null, false) });
   }
 
   const totalMetrics = initializeMetricMap();
@@ -1491,6 +1524,16 @@ export async function fetchExecutiveStandupLive(
     });
   }
 
+  for (const metric of Object.values(totalMetrics)) {
+    const contributors = metric.key === "average_rent_cents"
+      ? Array.from(new Set(totalCurrentMonthInvoices.length > 0
+        ? totalCurrentMonthInvoices.map((row) => row.facility_id)
+        : residentRows.filter((row) => row.monthly_total_rate != null && row.monthly_total_rate > 0).map((row) => row.facility_id)))
+      : liveFacilities.filter((facility) => facility.facilityId != null && facility.metrics[metric.key]?.valueNumeric != null).map((facility) => facility.facilityId!);
+    metric.sourceRefJson.push({ ...sourceQuality(calculatedAt, facilityIds, contributors, metric.valueNumeric == null ? "unknown" : "haven_live_v1", null, metric.valueNumeric != null) });
+    if (!facilityIds.length || contributors.length !== facilityIds.length) metric.confidenceBand = "low";
+  }
+
   const { score, topConcern } = computePressureScore(totalMetrics);
   liveFacilities.push({
     facilityId: null,
@@ -1501,7 +1544,7 @@ export async function fetchExecutiveStandupLive(
   });
 
   return {
-    generatedAt: new Date().toISOString(),
+    generatedAt: calculatedAt,
     weekOf,
     completedLastWeekStart,
     completedLastWeekEnd,
@@ -1542,6 +1585,7 @@ export async function generateExecutiveStandupDraft(
       completeness_pct: completenessPct,
       summary_json: {
         live_generated_at: live.generatedAt,
+        source_facility_ids: live.facilities.flatMap((facility) => facility.facilityId == null ? [] : [facility.facilityId]),
         facility_count: live.facilities.filter((facility) => facility.facilityId != null).length,
       },
     } as never)
@@ -1583,6 +1627,11 @@ export async function generateExecutiveStandupDraft(
   return snapshotRes.data;
 }
 
+// Preserve legacy JSON verbatim while allowing new provenance entries to append safely.
+function preservedSourceRefs(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : value === undefined ? [] : [value];
+}
+
 export async function saveStandupMetricInput(
   supabase: SupabaseClient<Database>,
   input: {
@@ -1602,6 +1651,15 @@ export async function saveStandupMetricInput(
   if (!definition) {
     throw new Error("Unknown standup metric.");
   }
+
+  const receivedAt = new Date().toISOString();
+  const headerFetch = await supabase.from("exec_standup_snapshots" as never)
+    .select("summary_json").eq("id", input.snapshotId).eq("organization_id", input.organizationId).is("deleted_at", null).single();
+  const header = headerFetch as unknown as { data: { summary_json: Record<string, unknown> | null } | null; error: { message: string } | null };
+  if (header.error || !header.data) throw new Error(header.error?.message ?? "Snapshot unavailable.");
+  const storedScope = header.data.summary_json?.source_facility_ids;
+  const originalScope = Array.isArray(storedScope) && storedScope.every((id): id is string => typeof id === "string" && id.trim().length > 0)
+    && new Set(storedScope).size === storedScope.length ? storedScope : null;
 
   const effectiveSourceMode =
     input.sourceMode ?? (definition.sourceMode === "forecast" ? "forecast" : "manual");
@@ -1648,6 +1706,18 @@ export async function saveStandupMetricInput(
     if (manualResult.error) throw new Error(manualResult.error.message);
   }
 
+  const existingMetricFetch = await supabase
+    .from("exec_standup_snapshot_metrics" as never)
+    .select("id, source_ref_json")
+    .eq("snapshot_id", input.snapshotId)
+    .eq("organization_id", input.organizationId)
+    .eq("facility_id", input.facilityId)
+    .eq("metric_key", input.metricKey)
+    .is("deleted_at", null)
+    .maybeSingle();
+  const existingMetricResult = existingMetricFetch as unknown as { data: { id: string; source_ref_json: Array<Record<string, unknown>> | null } | null; error: { message: string } | null };
+  if (existingMetricResult.error) throw new Error(existingMetricResult.error.message);
+
   const metricPayload = {
     snapshot_id: input.snapshotId,
     organization_id: input.organizationId,
@@ -1659,22 +1729,13 @@ export async function saveStandupMetricInput(
     value_text: input.valueText ?? null,
     source_mode: effectiveSourceMode,
     confidence_band: confidenceBand,
-    freshness_at: new Date().toISOString(),
-    source_ref_json: [{ mode: effectiveSourceMode, entry: "standup_input" }],
+    freshness_at: null,
+    source_ref_json: [...preservedSourceRefs(existingMetricResult.data?.source_ref_json), { mode: effectiveSourceMode, entry: "standup_input" },
+      { ...sourceQuality(receivedAt, originalScope?.includes(input.facilityId) ? [input.facilityId] : null,
+        input.valueNumeric == null ? [] : [input.facilityId], "manual", receivedAt) }],
     override_note: input.note ?? null,
     updated_by: input.userId,
   };
-
-  const existingMetricFetch = await supabase
-    .from("exec_standup_snapshot_metrics" as never)
-    .select("id")
-    .eq("snapshot_id", input.snapshotId)
-    .eq("facility_id", input.facilityId)
-    .eq("metric_key", input.metricKey)
-    .is("deleted_at", null)
-    .maybeSingle();
-  const existingMetricResult = existingMetricFetch as unknown as { data: { id: string } | null; error: { message: string } | null };
-  if (existingMetricResult.error) throw new Error(existingMetricResult.error.message);
 
   if (existingMetricResult.data?.id) {
     const metricUpdateRes = await supabase
@@ -1694,17 +1755,22 @@ export async function saveStandupMetricInput(
     if (metricInsertResult.error) throw new Error(metricInsertResult.error.message);
   }
 
-  const facilityMetricFetch = await supabase
+  const metricRows = await readStandupPages<SnapshotMetricDbRow>((from, to) => supabase
     .from("exec_standup_snapshot_metrics" as never)
     .select("id, facility_id, section_key, metric_key, metric_label, value_numeric, value_text, source_mode, confidence_band, freshness_at, source_ref_json, override_note")
-    .eq("snapshot_id", input.snapshotId)
-    .eq("metric_key", input.metricKey)
-    .is("deleted_at", null);
-
-  const facilityMetricResult = facilityMetricFetch as unknown as { data: SnapshotMetricDbRow[] | null; error: { message: string } | null };
-  if (facilityMetricResult.error) throw new Error(facilityMetricResult.error.message);
-
-  const facilityRows = (facilityMetricResult.data ?? []).filter((row) => row.facility_id != null);
+    .eq("snapshot_id", input.snapshotId).eq("organization_id", input.organizationId)
+    .eq("metric_key", input.metricKey).is("deleted_at", null).order("id", { ascending: true }).range(from, to) as unknown as PromiseLike<StandupPageResult<SnapshotMetricDbRow>>);
+  const facilityRows = metricRows.filter((row) => row.facility_id != null);
+  const contributingRows = facilityRows.filter((row) => row.value_numeric != null);
+  const contributors = Array.from(new Set(contributingRows.map((row) => row.facility_id!)));
+  const qualities = contributingRows.map((row) => readStandupSourceQuality({ sourceRefJson: row.source_ref_json }));
+  const bases = new Set(qualities.map((quality) => quality?.basis ?? "unknown"));
+  const totalBasis: StandupSourceQuality["basis"] = bases.size === 0 || bases.has("unknown") ? "unknown"
+    : bases.size === 1 ? [...bases][0] : "mixed";
+  const totalQueryComplete = qualities.every((quality) => quality?.query_complete === true);
+  const totalScopeComplete = originalScope != null && originalScope.length > 0 && contributors.length === originalScope.length
+    && contributors.every((id) => originalScope.includes(id));
+  const existingTotal = metricRows.find((row) => row.facility_id == null);
   const totalValue = aggregateSnapshotMetricValue(input.metricKey, facilityRows);
 
   const totalMetricPayload = {
@@ -1717,30 +1783,22 @@ export async function saveStandupMetricInput(
     value_numeric: totalValue,
     value_text: null,
     source_mode: effectiveSourceMode === "forecast" ? "forecast" : definition.sourceMode === "auto" ? "auto" : "manual",
-    confidence_band: confidenceBand,
-    freshness_at: new Date().toISOString(),
-    source_ref_json: [{ mode: "facility_rollup", metric_key: input.metricKey }],
+    confidence_band: totalScopeComplete && totalQueryComplete && totalBasis !== "unknown" ? confidenceBand : "low",
+    freshness_at: null,
+    source_ref_json: [...preservedSourceRefs(existingTotal?.source_ref_json),
+      ...facilityRows.flatMap((row) => preservedSourceRefs(row.source_ref_json).filter((ref) => !(ref != null && typeof ref === "object" && "kind" in ref && ref.kind === "source_quality"))),
+      { mode: "facility_rollup", metric_key: input.metricKey },
+      { ...sourceQuality(receivedAt, originalScope, contributors, totalBasis, null, totalQueryComplete) }],
     override_note: totalValue == null ? "Waiting on facility inputs." : null,
     totals_included: true,
     updated_by: input.userId,
   };
 
-  const existingTotalFetch = await supabase
-    .from("exec_standup_snapshot_metrics" as never)
-    .select("id")
-    .eq("snapshot_id", input.snapshotId)
-    .is("facility_id", null)
-    .eq("metric_key", input.metricKey)
-    .is("deleted_at", null)
-    .maybeSingle();
-  const existingTotalResult = existingTotalFetch as unknown as { data: { id: string } | null; error: { message: string } | null };
-  if (existingTotalResult.error) throw new Error(existingTotalResult.error.message);
-
-  if (existingTotalResult.data?.id) {
+  if (existingTotal?.id) {
     const totalMetricUpdateRes = await supabase
       .from("exec_standup_snapshot_metrics" as never)
       .update(totalMetricPayload as never)
-      .eq("id", existingTotalResult.data.id);
+      .eq("id", existingTotal.id);
     const totalMetricUpdateResult = totalMetricUpdateRes as unknown as { error: { message: string } | null };
     if (totalMetricUpdateResult.error) throw new Error(totalMetricUpdateResult.error.message);
   } else {
@@ -1754,15 +1812,10 @@ export async function saveStandupMetricInput(
     if (totalMetricInsertResult.error) throw new Error(totalMetricInsertResult.error.message);
   }
 
-  const allMetricFetch = await supabase
-    .from("exec_standup_snapshot_metrics" as never)
-    .select("value_numeric, value_text")
-    .eq("snapshot_id", input.snapshotId)
-    .is("deleted_at", null);
-  const allMetricResult = allMetricFetch as unknown as { data: Array<{ value_numeric: number | null; value_text: string | null }> | null; error: { message: string } | null };
-  if (allMetricResult.error) throw new Error(allMetricResult.error.message);
-
-  const allRows = allMetricResult.data ?? [];
+  const allRows = await readStandupPages<{ value_numeric: number | null; value_text: string | null }>((from, to) => supabase
+    .from("exec_standup_snapshot_metrics" as never).select("value_numeric, value_text")
+    .eq("snapshot_id", input.snapshotId).eq("organization_id", input.organizationId).is("deleted_at", null)
+    .order("id", { ascending: true }).range(from, to) as unknown as PromiseLike<StandupPageResult<{ value_numeric: number | null; value_text: string | null }>>);
   const completedCount = allRows.filter((row) => row.value_numeric != null || (row.value_text ?? "").trim() !== "").length;
   const completenessPct = allRows.length > 0 ? Math.round((completedCount / allRows.length) * 10000) / 100 : 0;
 
@@ -1843,28 +1896,30 @@ export function buildStandupNarrative(
   const changes = [
     deltaLine(
       "Open AR",
-      totals?.metrics.current_ar_cents.valueNumeric ?? null,
-      previousTotals?.metrics.current_ar_cents.valueNumeric ?? null,
+      totals?.metrics.current_ar_cents,
+      previousTotals?.metrics.current_ar_cents,
       formatCurrencyFromCents,
     ),
     deltaLine(
       "Census",
-      totals?.metrics.current_total_census.valueNumeric ?? null,
-      previousTotals?.metrics.current_total_census.valueNumeric ?? null,
+      totals?.metrics.current_total_census,
+      previousTotals?.metrics.current_total_census,
     ),
     deltaLine(
       "Open beds",
-      totals?.metrics.total_beds_open.valueNumeric ?? null,
-      previousTotals?.metrics.total_beds_open.valueNumeric ?? null,
+      totals?.metrics.total_beds_open,
+      previousTotals?.metrics.total_beds_open,
     ),
     deltaLine(
       "Callouts",
-      totals?.metrics.callouts_last_week.valueNumeric ?? null,
-      previousTotals?.metrics.callouts_last_week.valueNumeric ?? null,
+      totals?.metrics.callouts_last_week,
+      previousTotals?.metrics.callouts_last_week,
     ),
   ].filter((line): line is string => Boolean(line));
 
-  const dataQuality: string[] = [];
+  const dataQuality: string[] = ["Source activity and period coverage remain unconfirmed; recorded values do not establish operational completeness."];
+  const unknownSourceRows = current.facilities.flatMap((facility) => Object.values(facility.metrics)).filter((metric) => !readStandupSourceQuality(metric));
+  if (unknownSourceRows.length > 0) dataQuality.push(`${unknownSourceRows.length} metric cells have unknown or legacy source metadata.`);
   if (unresolved.length > 0) {
     dataQuality.push(`${unresolved.length} metric cells are still unresolved in the current packet.`);
   }
@@ -1873,9 +1928,9 @@ export function buildStandupNarrative(
     dataQuality.push(`${lowConfidence.length} metric cells are marked low confidence and should be reviewed before publishing.`);
   }
 
-  const headline = topFacility
-    ? `${topFacility.facilityName} is the highest-pressure facility this week.`
-    : "Portfolio packet is ready for executive review.";
+  const headline = topFacility && currentFacilities.every(hasRecordedPressure)
+    ? `${topFacility.facilityName} has the highest recorded pressure score; source coverage is unconfirmed.`
+    : "Review recorded source coverage before assessing portfolio pressure.";
 
   const actions = facilityActions
     .slice(0, 3)

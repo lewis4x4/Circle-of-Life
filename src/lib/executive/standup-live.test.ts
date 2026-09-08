@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Database } from "@/types/database";
 import { addFacilityCalendarDays, facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
 import { fetchExecutiveStandupLive, standupCalendarWindow } from "./standup";
+import { canCompareStandupMetrics, qualifyStandupValue, readStandupSourceQuality, standupCoverageLabel } from "./standup-quality";
 
 type Row = Record<string, unknown>;
 type Tables = Record<string, Row[] | null>;
@@ -133,6 +134,52 @@ describe("live standup behavior", () => {
     const result = await fetchExecutiveStandupLive(client({ facilities: [{ id: facilityId(1), name: "Empty facility", total_licensed_beds: 10, organization_id: organizationId, deleted_at: null }] }).supabase, organizationId, null);
     expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBe(10);
     expect(result.facilities[0].metrics.average_rent_cents.valueNumeric).toBeNull();
+  });
+
+  it("advances calculation time while source freshness and source coverage remain unconfirmed", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-05T16:00:00Z"));
+    const tables = { facilities: [{ id: facilityId(1), name: "Empty facility", total_licensed_beds: 10, organization_id: organizationId, deleted_at: null }] };
+    const first = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
+    vi.setSystemTime(new Date("2026-09-05T17:00:00Z"));
+    const second = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
+    expect(first.generatedAt).not.toBe(second.generatedAt);
+    for (const facility of second.facilities) for (const row of Object.values(facility.metrics)) expect(row.freshnessAt).toBeNull();
+    const row = second.facilities[0].metrics.current_ar_cents;
+    expect(row.valueNumeric).toBe(0);
+    expect(qualifyStandupValue(row, "$0")).toBe("$0 recorded");
+    expect(standupCoverageLabel(row)).toBe("Coverage unconfirmed");
+    expect(readStandupSourceQuality(row)).toMatchObject({ calculated_at: second.generatedAt, source_as_of: null, received_at: null, query_complete: true });
+    expect(row.sourceRefJson).toContainEqual({ table: "invoices", mode: "open_balance" });
+  });
+
+  it("keeps a partial average subtotal numerically unchanged and suppresses its comparison", async () => {
+    const tables = {
+      facilities: [1,2].map((id) => ({ id: facilityId(id), name: `Facility ${id}`, total_licensed_beds: 10, organization_id: organizationId, deleted_at: null })),
+      residents: [{ id: "rate", facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "active", monthly_total_rate: 125000 }],
+    };
+    const live = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
+    const total = live.facilities.find((facility) => facility.facilityName === "Totals")!.metrics.average_rent_cents;
+    expect(total.valueNumeric).toBe(125000);
+    expect(total.confidenceBand).toBe("low");
+    expect(readStandupSourceQuality(total)).toMatchObject({ expected_facility_ids: [facilityId(1),facilityId(2)], contributing_facility_ids: [facilityId(1)], basis: "haven_live_v1" });
+    expect(qualifyStandupValue(total, "$1,250")).toBe("$1,250 — partial 1/2");
+    expect(canCompareStandupMetrics(total,total)).toBe(false);
+  });
+
+  it("counts only the selected portfolio average source branch as contributing", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });vi.setSystemTime(new Date("2026-09-08T14:00:00Z"));
+    const tables = {
+      facilities: [1,2].map((id) => ({ id: facilityId(id), name: `Facility ${id}`, total_licensed_beds: 10, organization_id: organizationId, deleted_at: null })),
+      residents: [{ facility_id: facilityId(2), organization_id: organizationId, deleted_at: null, status: "active", monthly_total_rate: 125000 }],
+      invoices: [{ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "sent", total: 200000, balance_due: 100, period_start: "2026-09-01" }],
+    };
+    const live = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
+    expect(live.facilities.filter((facility) => facility.facilityId).every((facility) => facility.metrics.average_rent_cents.valueNumeric != null)).toBe(true);
+    const total = live.facilities.find((facility) => facility.facilityName === "Totals")!.metrics.average_rent_cents;
+    expect(total.valueNumeric).toBe(200000);
+    expect(total.confidenceBand).toBe("low");
+    expect(readStandupSourceQuality(total)?.contributing_facility_ids).toEqual([facilityId(1)]);
   });
 
   it.each(["facilities", "invoices", "residents", "staff", "time_records", "beds", "staff_attendance_events", "staff_requisitions", "admission_cases", "referral_outreach_activities", "referral_leads"])("continues to reject %s query errors", async (table) => {

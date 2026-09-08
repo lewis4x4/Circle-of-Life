@@ -1,5 +1,7 @@
 "use client";
 
+import { StandupReportingNotice } from "@/components/executive/StandupMetricEvidence";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -129,6 +131,7 @@ export default function ExecutiveStandupComparePage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandupReportingNotice />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -193,7 +196,7 @@ export default function ExecutiveStandupComparePage() {
                 <div>
                   <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Portfolio deltas</div>
                   <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
-                    {(comparison.portfolioDeltas.length > 0 ? comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => (
+                    {(comparison.portfolioDeltas.length > 0 ? comparison.portfolioDeltas : ["No comparable movement to report; check source coverage."]).map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -235,10 +238,10 @@ export default function ExecutiveStandupComparePage() {
                           {comparison.toWeek}: {facility.concernTo}
                         </div>
                       </div>
-                      <Badge variant="outline">{facility.pressureDelta > 0 ? `+${facility.pressureDelta}` : facility.pressureDelta} pressure</Badge>
+                      <Badge variant="outline">{facility.pressureDelta == null ? "Comparison unavailable" : `${facility.pressureDelta > 0 ? "+" : ""}${facility.pressureDelta} pressure`}</Badge>
                     </div>
                     <ul className="mt-3 space-y-1 text-sm text-slate-700 dark:text-zinc-300">
-                      {(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No material metric shifts for this facility."]).map((item) => (
+                      {(facility.metricDeltas.length > 0 ? facility.metricDeltas : ["No comparable movement to report; check source coverage."]).map((item) => (
                         <li key={item}>{item}</li>
                       ))}
                     </ul>

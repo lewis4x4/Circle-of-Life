@@ -1,5 +1,7 @@
+import { canCompareStandupMetrics, qualifyStandupValue } from "@/lib/executive/standup-quality";
 import {
   buildStandupComparison,
+  hasRecordedPressure,
   buildStandupNarrative,
   STANDUP_SECTION_LABELS,
   type StandupComparison,
@@ -81,14 +83,15 @@ function formatMetricValue(metric: StandupMetricRow | undefined): string {
   if (!metric) return "—";
   if (metric.valueText?.trim()) return metric.valueText.trim();
   if (metric.valueNumeric == null) return "—";
-  if (metric.valueType === "currency") return USD.format(metric.valueNumeric / 100);
-  if (metric.valueType === "hours") return `${metric.valueNumeric.toFixed(2)} hrs`;
-  if (metric.valueType === "percent") return `${metric.valueNumeric.toFixed(1)}%`;
-  return `${metric.valueNumeric}`;
+  const value = metric.valueType === "currency" ? USD.format(metric.valueNumeric / 100)
+    : metric.valueType === "hours" ? `${metric.valueNumeric.toFixed(2)} hrs`
+    : metric.valueType === "percent" ? `${metric.valueNumeric.toFixed(1)}%` : `${metric.valueNumeric}`;
+  return qualifyStandupValue(metric, value);
 }
 
 function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMetricRow | undefined): string {
   if (!left || !right || left.valueNumeric == null || right.valueNumeric == null) return "—";
+  if (!canCompareStandupMetrics(left, right)) return "Comparison unavailable: source coverage or scope is unconfirmed.";
   const delta = right.valueNumeric - left.valueNumeric;
   if (delta === 0) return "No change";
   if (right.valueType === "currency") return `${delta > 0 ? "+" : "-"}${USD.format(Math.abs(delta) / 100)}`;
@@ -99,21 +102,20 @@ function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMet
 
 function methodologyNotes(): string[] {
   return [
-    "Current AR and uncollected AR totals come from open invoice balances in the selected organization scope.",
-    "Average rent is derived from current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.",
-    "Bed availability uses standup bed classifications plus temporary block status so open-bed math reflects real placement constraints.",
-    "Forecast rows represent planned commitments for the week and should not be read as live census or discharge facts.",
-    "Low-confidence or manual values are intentionally labeled to preserve packet trust when upstream system data is incomplete.",
+    "Recorded AR uses nonnegative balances from draft, sent, partial and overdue invoices in the selected scope; uncollected AR filters past due dates. COL worksheet mappings remain TBD.",
+    "The existing invoice average uses the month containing the reporting week's Monday. A facility falls back to positive resident rates only with no qualifying invoices; portfolio fallback occurs only when there are no qualifying invoices across the portfolio.",
+    "Bed figures depend on recorded inventory, classifications and blocks. The legacy licensed-minus-census fallback is an estimate and does not establish usable accommodation.",
+    "Expected-event fields are provisional recorded outlooks. Verify pending versus completed events; these values are not actual arrival or discharge evidence.",
   ];
 }
 
 function legendItems(): StandupPacketLegendItem[] {
   return [
-    { label: "auto", description: "Live system fact from structured source data." },
+    { label: "auto", description: "Calculated from recorded system data; capture coverage may be incomplete." },
     { label: "forecast", description: "Planned expectation for the standup week." },
     { label: "manual", description: "Operator-entered value retained for trust and auditability." },
     { label: "hybrid", description: "Computed with fallback review or partial system dependency." },
-    { label: "high / medium / low confidence", description: "Trust signal for the displayed metric." },
+    { label: "high / medium / low confidence", description: "Recorded calculation confidence, not an attestation of source coverage or approved business definitions." },
   ];
 }
 
@@ -126,7 +128,7 @@ function summarizeFocusStatement(
 ): string {
   if (narrative.actions.length > 0) return narrative.actions[0];
   if (narrative.bullets.length > 0) return narrative.bullets[0];
-  return "Portfolio stable; continue using the packet to monitor change, trust, and intervention priority.";
+  return "Source review is required before drawing operating conclusions.";
 }
 
 export function buildStandupPacketDocument(
@@ -198,7 +200,7 @@ export function buildStandupPacketDocument(
     };
   });
 
-  const spotlightFacility = narrative.facilityActions[0]
+  const spotlightFacility = detail.facilities.filter((facility) => facility.facilityId != null).every(hasRecordedPressure) && narrative.facilityActions[0] && detail.facilities.some((facility) => facility.facilityId === narrative.facilityActions[0].facilityId && hasRecordedPressure(facility))
     ? {
         facilityName: narrative.facilityActions[0].facilityName,
         pressureScore: narrative.facilityActions[0].pressureScore,
@@ -234,6 +236,6 @@ export function buildStandupPacketDocument(
     comparison,
     sections,
     appendixSections,
-    methodology: methodologyNotes(),
+    methodology: ["Financial worksheet definitions remain TBD. Recorded Haven values are not certified as equivalent to COL worksheets.", "Calculation time is not source-as-of time. Recording coverage is unconfirmed unless supported by explicit source evidence; fields populated is not operational completeness.", ...methodologyNotes()],
   };
 }

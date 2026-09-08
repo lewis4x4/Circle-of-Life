@@ -3,7 +3,7 @@
 exports[`live standup behavior > preserves metrics and inclusive/exclusive week boundaries at 2026-03-09T16:00:00Z 1`] = `
 [
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -30,7 +30,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -57,7 +57,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -84,7 +84,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -111,7 +111,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -138,7 +138,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "10 (medium)",
       "ar_goal_cents": "null (low)",
@@ -170,7 +170,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
 exports[`live standup behavior > preserves metrics and inclusive/exclusive week boundaries at 2026-09-05T16:00:00Z 1`] = `
 [
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -197,7 +197,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -224,7 +224,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -251,7 +251,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -278,7 +278,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -305,7 +305,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "10 (medium)",
       "ar_goal_cents": "null (low)",
@@ -337,7 +337,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
 exports[`live standup behavior > preserves metrics and inclusive/exclusive week boundaries at 2026-11-02T17:00:00Z 1`] = `
 [
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -364,7 +364,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -391,7 +391,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -418,7 +418,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -445,7 +445,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -472,7 +472,7 @@ exports[`live standup behavior > preserves metrics and inclusive/exclusive week 
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "10 (medium)",
       "ar_goal_cents": "null (low)",
@@ -531,7 +531,7 @@ exports[`live standup behavior > preserves null datasets and the no-facilities p
     "score": 0,
   },
   {
-    "concern": "No bed availability",
+    "concern": "Operational pressure unavailable: recorded source scope is incomplete or unknown.",
     "metrics": {
       "admissions_expected": "null (low)",
       "ar_goal_cents": "null (low)",
@@ -563,7 +563,7 @@ exports[`live standup behavior > preserves null datasets and the no-facilities p
 exports[`live standup behavior > preserves single-facility scope, totals, and missing-bed capacity fallback 1`] = `
 [
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
@@ -590,7 +590,7 @@ exports[`live standup behavior > preserves single-facility scope, totals, and mi
     "score": 2,
   },
   {
-    "concern": "Open positions are affecting coverage",
+    "concern": "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.",
     "metrics": {
       "admissions_expected": "2 (medium)",
       "ar_goal_cents": "null (low)",
