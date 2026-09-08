@@ -1,0 +1,409 @@
+BEGIN
+ALTER ROLE
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+GRANT
+SELECT 1
+DO
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+GRANT
+GRANT
+SET
+INSERT 0 1
+psql:supabase/tests/review_rounding_completion_receipts.sql:105: NOTICE:  PASS: core and late integrity commit together
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:106: NOTICE:  PASS: one task log
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:107: NOTICE:  PASS: one linked exception
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:108: NOTICE:  PASS: one linked integrity flag
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:109: NOTICE:  PASS: one durable receipt
+ round_assert
+--------------
+
+(1 row)
+
+SELECT 1
+psql:supabase/tests/review_rounding_completion_receipts.sql:111: NOTICE:  PASS: identical replay returns original response
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:112: NOTICE:  PASS: identical retry is acknowledged as replay
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:113: NOTICE:  PASS: online to offline replay ignores delivery and server-derived metadata
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:114: NOTICE:  PASS: replay does not append audit or clinical rows
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:115: NOTICE:  PASS: same request with changed clinical payload conflicts
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:116: NOTICE:  PASS: same request with changed task conflicts
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:117: NOTICE:  PASS: different request cannot complete finished task
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:118: NOTICE:  PASS: another authorized actor cannot replay somebody else receipt
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:119: NOTICE:  PASS: foreign organization task is hidden
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:120: NOTICE:  PASS: foreign facility task is hidden
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:121: NOTICE:  PASS: stale claimed role denies replay
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+UPDATE 1
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:125: NOTICE:  PASS: revocation denies receipt replay
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+UPDATE 1
+UPDATE 1
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:130: NOTICE:  PASS: disabled actor cannot replay
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+UPDATE 1
+UPDATE 1
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:135: NOTICE:  PASS: terminated staff cannot replay
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+UPDATE 1
+DELETE 1
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:140: NOTICE:  PASS: deleted session cannot replay
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+INSERT 0 1
+UPDATE 1
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:145: NOTICE:  PASS: changed assignment denies receipt replay
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+UPDATE 1
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: rollback on resident_observation_logs failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: no partial state after resident_observation_logs failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: rollback on resident_observation_exceptions failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: no partial state after resident_observation_exceptions failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: rollback on resident_observation_tasks failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: no partial state after resident_observation_tasks failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: rollback on resident_observation_integrity_flags failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: no partial state after resident_observation_integrity_flags failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: rollback on rounding_completion_receipts failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: no partial state after rounding_completion_receipts failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: rollback on audit_log failure
+psql:supabase/tests/review_rounding_completion_receipts.sql:173: NOTICE:  PASS: no partial state after audit_log failure
+DO
+RESET
+ round_claims
+--------------
+
+(1 row)
+
+SET
+ set_config |  set_config
+------------+--------------
+ trusted    | service_role
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:180: NOTICE:  PASS: direct observation edit denied
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:181: NOTICE:  PASS: direct observation insertion denied
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:182: NOTICE:  PASS: direct completed-log pointer denied
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:184: NOTICE:  PASS: caregiver cannot directly finalize assigned task
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:185: NOTICE:  PASS: receipts not visible to authenticated clients
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:186: NOTICE:  PASS: authenticated caller cannot invoke service command
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+ round_claims
+--------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:190: NOTICE:  PASS: manager cannot forge completion using allowed status column
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:191: NOTICE:  PASS: manager cannot forge excusing actor
+ round_reject
+--------------
+
+(1 row)
+
+UPDATE 1
+psql:supabase/tests/review_rounding_completion_receipts.sql:193: NOTICE:  PASS: manager excusal remains authorized and attributed
+ round_assert
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:194: NOTICE:  PASS: stale manager excuse cannot overwrite completion
+ round_reject
+--------------
+
+(1 row)
+
+RESET
+GRANT
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:199: NOTICE:  PASS: receipt immutable with accidental future grant
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:200: NOTICE:  PASS: clinical log immutable with accidental future grant
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:201: NOTICE:  PASS: stale service escalation cannot overwrite completion
+ round_reject
+--------------
+
+(1 row)
+
+psql:supabase/tests/review_rounding_completion_receipts.sql:202: NOTICE:  PASS: private core is unavailable to service role
+ round_assert
+--------------
+
+(1 row)
+
+RESET
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task organization_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task facility_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task assigned_staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task completed_log_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change task notes
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log observed_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log entered_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log created_by
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log task_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log quick_status
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log note
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot directly change log deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: owner cannot delete a task
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task organization_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task facility_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task assigned_staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task completed_log_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change task notes
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log observed_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log entered_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log created_by
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log task_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log quick_status
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log note
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot directly change log deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: org_admin cannot delete a task
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task organization_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task facility_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task assigned_staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task completed_log_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change task notes
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log observed_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log entered_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log created_by
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log task_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log quick_status
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log note
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot directly change log deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: facility_admin cannot delete a task
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task organization_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task facility_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task assigned_staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task completed_log_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change task notes
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log observed_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log entered_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log created_by
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log task_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log quick_status
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log note
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot directly change log deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: nurse cannot delete a task
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task organization_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task facility_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task assigned_staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task completed_log_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change task notes
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log observed_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log entered_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log created_by
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log task_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log quick_status
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log note
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot directly change log deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: caregiver cannot delete a task
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task organization_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task facility_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task assigned_staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task completed_log_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change task notes
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log observed_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log entered_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log staff_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log created_by
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log resident_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log task_id
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log quick_status
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log note
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot directly change log deleted_at
+psql:supabase/tests/review_rounding_completion_receipts.sql:219: NOTICE:  PASS: family cannot delete a task
+DO
+ROLLBACK

@@ -1,0 +1,19 @@
+{
+  "run_id": "haven-section2-01a07dac",
+  "verified_at": "2026-09-07T21:52:09.066014+00:00",
+  "postgres_stopped": true,
+  "validated_by": "jarvis-storage-steward cleanup-run (preview validation followed by exact creating-run deletion)",
+  "removed_files": 3510,
+  "removed_empty_directories": 28,
+  "private_manifests": [
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-files-0-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-files-1-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-files-2-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-files-3-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-files-4-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-dirs-10-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-dirs-9-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-section2-01a07dac/cleanup-dirs-8-manifest.json"
+  ],
+  "retained": "Private ownership and cleanup manifests/receipts only; review worktree, dependencies and build output retained outside scratch"
+}

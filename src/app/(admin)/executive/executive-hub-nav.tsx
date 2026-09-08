@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sheet";
 
 /**
- * Primary tabs render in a segmented control. Secondary tabs live in a
+ * Primary links render in a segmented control. Secondary links live in a
  * "More ▾" dropdown anchored to the right edge of the strip. Mobile collapses
  * everything into a Sheet-driven nav drawer. Total strip height: h-9.
  */
@@ -44,12 +44,8 @@ const SECONDARY = [
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
 ] as const;
 
-function isPrimaryHrefActive(pathname: string, href: string) {
+function isHrefActive(pathname: string, href: string) {
   if (href === "/admin/executive") return pathname === "/admin/executive";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function isSecondaryHrefActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -72,31 +68,31 @@ export function ExecutiveHubNav() {
     return SECONDARY.filter((item) => canOpenExecutiveHubHref(appRole, item.href));
   }, [appRole, authLoading]);
 
-  const activeSecondary = useMemo(
-    () => secondaryItems.find((item) => isSecondaryHrefActive(pathname, item.href)),
-    [pathname, secondaryItems],
+  // Choose once across both groups so a child destination wins over its parent.
+  const activeHref = useMemo(
+    () => [...primaryItems, ...secondaryItems]
+      .filter((item) => isHrefActive(pathname, item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href,
+    [pathname, primaryItems, secondaryItems],
   );
+  const activeSecondary = secondaryItems.find((item) => item.href === activeHref);
 
   return (
     <>
       {/* Desktop / tablet: segmented control + More dropdown */}
       <nav
-        role="tablist"
         aria-label="Executive intelligence sections"
         className={cn(
           "hidden md:inline-flex h-9 items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-1",
         )}
       >
         {primaryItems.map((item) => {
-          const active = isPrimaryHrefActive(pathname, item.href);
+          const active = item.href === activeHref;
           return (
             <Link
               key={item.href}
               href={item.href}
-              role="tab"
-              aria-selected={active}
               aria-current={active ? "page" : undefined}
-              tabIndex={active ? 0 : -1}
               data-state={active ? "active" : "inactive"}
               className={cn(
                 "inline-flex h-7 items-center rounded-md px-3 text-[12px] font-medium",
@@ -133,7 +129,7 @@ export function ExecutiveHubNav() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-1">
               {secondaryItems.map((item) => {
-                const active = isSecondaryHrefActive(pathname, item.href);
+                const active = item.href === activeHref;
                 return (
                   <DropdownMenuItem
                     key={item.href}
@@ -186,7 +182,7 @@ export function ExecutiveHubNav() {
             onClick={() => setMobileOpen(false)}
           >
             {[...primaryItems, ...secondaryItems].map((item) => {
-              const active = isPrimaryHrefActive(pathname, item.href);
+              const active = item.href === activeHref;
               return (
                 <Link
                   key={item.href}

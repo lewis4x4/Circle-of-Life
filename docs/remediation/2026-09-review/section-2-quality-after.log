@@ -1,0 +1,73 @@
+BEGIN
+GRANT
+GRANT
+CREATE FUNCTION
+SELECT 1
+ALTER TABLE
+UPDATE 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 5
+GRANT
+ set_config
+------------
+ {}
+(1 row)
+
+SET
+             probe              | count
+--------------------------------+-------
+ SYS-002 no-profile leaked rows |     0
+(1 row)
+
+RESET
+              probe              | count
+---------------------------------+-------
+ FL-015 conflicting current rows |     1
+(1 row)
+
+SET
+DO
+RESET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+                                                                       set_config
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"sub": "44e98964-c2f8-44ec-aa33-66605f728a67", "role": "authenticated", "session_id": "a209231b-30b7-438f-9db5-e9f49ef144a6", "auth_claim_version": 2}
+(1 row)
+
+SET
+DO
+RESET
+INSERT 0 1
+DO
+UPDATE 1
+DO
+DO
+UPDATE 1
+                                                                       set_config
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"sub": "44e98964-c2f8-44ec-aa33-66605f728a67", "role": "authenticated", "session_id": "a209231b-30b7-438f-9db5-e9f49ef144a6", "auth_claim_version": 9}
+(1 row)
+
+UPDATE 1
+                                                                        set_config
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"sub": "44e98964-c2f8-44ec-aa33-66605f728a67", "role": "authenticated", "session_id": "a209231b-30b7-438f-9db5-e9f49ef144a6", "auth_claim_version": 10}
+(1 row)
+
+SET
+DO
+RESET
+UPDATE 1
+SET
+DO
+RESET
+                                                                       result
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ PASS Section 2 quality: no-profile, tenant, facility, six roles, revocation, disable, latest period, correction, ties, deletion, preserved history
+(1 row)
+
+ROLLBACK

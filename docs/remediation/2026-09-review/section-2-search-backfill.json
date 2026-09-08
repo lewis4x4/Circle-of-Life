@@ -1,0 +1,7 @@
+{
+  "verdict": "PASS",
+  "repair_assertions": 5,
+  "migration": "332",
+  "environment": "run-owned native PostgreSQL with synthetic fixtures",
+  "migration_files_replayed": 335
+}

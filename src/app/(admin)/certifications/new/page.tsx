@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Award, Loader2 } from "lucide-react";
@@ -46,6 +46,9 @@ export default function AdminNewCertificationPage() {
 
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [staffLoading, setStaffLoading] = useState(true);
+  const [staffLoadError, setStaffLoadError] = useState<string | null>(null);
+  const [staffFacilityId, setStaffFacilityId] = useState<string | null>(null);
+  const staffRequest = useRef({ generation: 0, facilityId: null as string | null });
 
   const [staffId, setStaffId] = useState("");
   const [certType, setCertType] = useState("bls_cpr");
@@ -57,8 +60,21 @@ export default function AdminNewCertificationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const staffScopeCurrent = staffFacilityId === selectedFacilityId;
+  const visibleStaff = staffScopeCurrent && !staffLoading ? staffList : [];
+  const eligibleStaffId = visibleStaff.some((staff) => staff.id === staffId) ? staffId : "";
+  const visibleStaffError = staffScopeCurrent ? staffLoadError : null;
+
   const loadStaff = useCallback(async () => {
+    const request = { generation: staffRequest.current.generation + 1, facilityId: selectedFacilityId };
+    staffRequest.current = request;
+    const isCurrent = () => staffRequest.current.generation === request.generation
+      && staffRequest.current.facilityId === request.facilityId;
+    setStaffFacilityId(request.facilityId);
+    setStaffList([]);
+    setStaffId("");
     setStaffLoading(true);
+    setStaffLoadError(null);
     try {
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
         setStaffList([]);
@@ -75,6 +91,7 @@ export default function AdminNewCertificationPage() {
         data: { id: string; first_name: string; last_name: string }[] | null;
         error: QueryError | null;
       };
+      if (!isCurrent()) return;
       if (err) throw err;
       setStaffList(
         (data ?? []).map((s) => ({
@@ -82,15 +99,23 @@ export default function AdminNewCertificationPage() {
           name: `${s.last_name?.trim() ?? ""}, ${s.first_name?.trim() ?? ""}`.replace(/^, |, $/g, "").trim() || "Staff",
         })),
       );
-    } catch {
+    } catch (err) {
+      if (!isCurrent()) return;
       setStaffList([]);
+      setStaffLoadError(
+        err instanceof Error && err.message ? err.message : "Could not load eligible staff.",
+      );
     } finally {
-      setStaffLoading(false);
+      if (isCurrent()) setStaffLoading(false);
     }
   }, [supabase, selectedFacilityId]);
 
   useEffect(() => {
     void loadStaff();
+    return () => {
+      // Invalidate success, error and finally handlers on facility change/unmount.
+      staffRequest.current = { generation: staffRequest.current.generation + 1, facilityId: null };
+    };
   }, [loadStaff]);
 
   const loadFacilityOrg = useCallback(async () => {
@@ -114,7 +139,7 @@ export default function AdminNewCertificationPage() {
       setError("Select a facility in the header first.");
       return;
     }
-    if (!staffId.trim()) {
+    if (staffLoading || visibleStaffError || !eligibleStaffId) {
       setError("Choose a staff member.");
       return;
     }
@@ -128,10 +153,12 @@ export default function AdminNewCertificationPage() {
       return;
     }
 
+    const request = staffRequest.current;
     setSubmitting(true);
     setError(null);
     try {
       const orgId = await loadFacilityOrg();
+      if (staffRequest.current !== request) return;
       if (!orgId) {
         setError("Could not resolve organization for this facility.");
         return;
@@ -142,7 +169,7 @@ export default function AdminNewCertificationPage() {
       }
 
       const payload: Record<string, unknown> = {
-        staff_id: staffId,
+        staff_id: eligibleStaffId,
         facility_id: selectedFacilityId,
         organization_id: orgId,
         certification_type: certType,
@@ -237,21 +264,30 @@ export default function AdminNewCertificationPage() {
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Staff member</label>
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={staffId}
+                value={eligibleStaffId}
                 onChange={(e) => setStaffId(e.target.value)}
-                disabled={staffLoading || !facilityReady}
+                disabled={staffLoading || !staffScopeCurrent || !facilityReady}
                 required
               >
                 <option value="">Select staff…</option>
-                {staffList.map((s) => (
+                {visibleStaff.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
                 ))}
               </select>
-              {facilityReady && !staffLoading && staffList.length === 0 && (
+              {visibleStaffError ? (
+                <div className="flex items-center justify-between gap-3" role="alert">
+                  <p className="text-xs text-red-700 dark:text-red-300">
+                    Eligible staff could not be loaded: {visibleStaffError}
+                  </p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void loadStaff()}>
+                    Retry staff load
+                  </Button>
+                </div>
+              ) : facilityReady && staffScopeCurrent && !staffLoading && visibleStaff.length === 0 ? (
                 <p className="text-xs text-amber-700 dark:text-amber-300">No active staff in this facility.</p>
-              )}
+              ) : null}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -320,7 +356,7 @@ export default function AdminNewCertificationPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={submitting || !facilityReady || staffLoading || staffList.length === 0}>
+            <Button type="submit" disabled={submitting || !facilityReady || staffLoading || Boolean(visibleStaffError) || !eligibleStaffId}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

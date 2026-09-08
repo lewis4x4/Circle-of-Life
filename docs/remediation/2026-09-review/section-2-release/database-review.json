@@ -1,0 +1,25 @@
+{
+  "reviewed_head": "8065f050a586d5ba378ab10ad95fcaffe20e8dc5",
+  "baseline": "5686876cb7917c0a809f0adb7e9ba67b595a3e03",
+  "reviewer": "section2_database_review independent native subagent",
+  "verdict": "APPROVE database lane",
+  "file_count": 10,
+  "migration_files": 336,
+  "sql_probes": 17,
+  "concurrency_cases": 4,
+  "backfill_checks": 5,
+  "findings": [],
+  "rollout_constraints": [
+    "Old API requires coordinated cutover with migration331; application-only rollback unsafe",
+    "Already loaded old clients require refresh",
+    "Local C-locale SQL lowercase differs for accented Unicode; hosted en_US.UTF-8 constant probes match tested JS cases"
+  ],
+  "coverage": [
+    "migrations330-333",
+    "four changed SQL tests",
+    "two Python runners",
+    "preserved core/actor/session/grant helper",
+    "RLS/audit/receipt/quality/family/search call chains"
+  ],
+  "hosted_writes": false
+}

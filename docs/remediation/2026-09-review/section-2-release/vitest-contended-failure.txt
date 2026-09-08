@@ -1,0 +1,266 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Section 2
+
+8:04:39 PM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Section 2/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Section 2/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Section%202/node_modules/vite/dist/node/chunks/node.js:19691:22)
+ ❯ src/components/layout/AppShell.test.tsx (10 tests | 2 failed) 25376ms
+     × still surfaces non-common destinations when the operator searches 5318ms
+     × navigates when a filtered destination is chosen 5104ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/layout/AppShell.test.tsx > AppShell all-sections jump list > still surfaces non-common destinations when the operator searches
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/components/layout/AppShell.test.tsx:214:3
+    212|   });
+    213|
+    214|   it("still surfaces non-common destinations when the operator searche…
+       |   ^
+    215|     const user = userEvent.setup();
+    216|     renderAppShell();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/layout/AppShell.test.tsx > AppShell all-sections jump list > navigates when a filtered destination is chosen
+TestingLibraryElementError: Unable to find an accessible element with the role "option" and name `/clinical desk/i`
+
+Here are the accessible roles:
+
+  group:
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"group/input-group relative flex h-8 w-full min-w-0 items-center border transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:bg-input/50 has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-3 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5 h-8! rounded-[9px] border-input bg-background shadow-none! *:data-[slot=input-group-addon]:pl-2! has-[[data-slot=command-input]:focus-visible]:ring-2 has-[[data-slot=command-input]:focus-visible]:ring-ring has-[[data-slot=command-input]:focus-visible]:ring-offset-0"[39m
+    [33mdata-slot[39m=[32m"input-group"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4 order-first pl-2 has-[>button]:ml-[-0.3rem] has-[>kbd]:ml-[-0.15rem]"[39m
+    [33mdata-align[39m=[32m"inline-start"[39m
+    [33mdata-slot[39m=[32m"input-group-addon"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  Name "Available pages":
+  [36m<div[39m
+    [33maria-labelledby[39m=[32m"radix-_r_et_"[39m
+    [33mcmdk-group-items[39m=[32m""[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "":
+  [36m<input[39m
+    [33maria-autocomplete[39m=[32m"list"[39m
+    [33maria-controls[39m=[32m"radix-_r_ep_"[39m
+    [33maria-expanded[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"Search or jump to a section"[39m
+    [33maria-labelledby[39m=[32m"radix-_r_eq_"[39m
+    [33mautocomplete[39m=[32m"off"[39m
+    [33mautocorrect[39m=[32m"off"[39m
+    [33mclass[39m=[32m"w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50"[39m
+    [33mcmdk-input[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"command-input"[39m
+    [33mid[39m=[32m"radix-_r_er_"[39m
+    [33mplaceholder[39m=[32m"Search all sections…"[39m
+    [33mrole[39m=[32m"combobox"[39m
+    [33mspellcheck[39m=[32m"false"[39m
+    [33mtype[39m=[32m"text"[39m
+    [33mvalue[39m=[32m"ledgeclinical"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listbox:
+
+  Name "Suggestions":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Suggestions"[39m
+    [33mclass[39m=[32m"no-scrollbar max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none"[39m
+    [33mcmdk-list[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"command-list"[39m
+    [33mid[39m=[32m"radix-_r_ep_"[39m
+    [33mrole[39m=[32m"listbox"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  presentation:
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"py-6 text-center text-sm"[39m
+    [33mcmdk-empty[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"command-empty"[39m
+    [33mrole[39m=[32m"presentation"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<div[39m
+    [33mclass[39m=[32m"overflow-hidden p-1 text-foreground **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground"[39m
+    [33mcmdk-group[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"command-group"[39m
+    [33mdata-value[39m=[32m"Available pages"[39m
+    [33mrole[39m=[32m"presentation"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"z-50 flex origin-(--transform-origin) flex-col rounded-lg bg-popover text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 w-[min(22rem,calc(100vw-1rem))] gap-0 p-0 sm:w-72"[39m
+  [33mdata-align[39m=[32m"start"[39m
+  [33mdata-base-ui-focusable[39m=[32m""[39m
+  [33mdata-open[39m=[32m""[39m
+  [33mdata-side[39m=[32m"bottom"[39m
+  [33mdata-slot[39m=[32m"popover-content"[39m
+  [33mdata-testid[39m=[32m"all-sections-jump-list"[39m
+  [33mid[39m=[32m"_r_e8_"[39m
+  [33mrole[39m=[32m"dialog"[39m
+  [33mtabindex[39m=[32m"-1"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"flex size-full flex-col overflow-hidden rounded-[9px] bg-card p-[11px] text-card-foreground"[39m
+    [33mcmdk-root[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"command"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+  [36m>[39m
+    [36m<label[39m
+      [33mcmdk-label[39m=[32m""[39m
+      [33mfor[39m=[32m"radix-_r_er_"[39m
+      [33mid[39m=[32m"radix-_r_eq_"[39m
+      [33mstyle[39m=[32m"position: absolute; width: 1px; height: 1px; padding: 0px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0px;"[39m
+    [36m/>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-1 pb-0"[39m
+      [33mdata-slot[39m=[32m"command-input-wrapper"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"group/input-group relative flex h-8 w-full min-w-0 items-center border transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-disabled:bg-input/50 has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-3 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:bg-input/30 dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5 h-8! rounded-[9px] border-input bg-background shadow-none! *:data-[slot=input-group-addon]:pl-2! has-[[data-slot=command-input]:focus-visible]:ring-2 has-[[data-slot=command-input]:focus-visible]:ring-ring has-[[data-slot=command-input]:focus-visible]:ring-offset-0"[39m
+        [33mdata-slot[39m=[32m"input-group"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<input[39m
+          [33maria-autocomplete[39m=[32m"list"[39m
+          [33maria-controls[39m=[32m"radix-_r_ep_"[39m
+          [33maria-expanded[39m=[32m"true"[39m
+          [33maria-label[39m=[32m"Search or jump to a section"[39m
+          [33maria-labelledby[39m=[32m"radix-_r_eq_"[39m
+          [33mautocomplete[39m=[32m"off"[39m
+          [33mautocorrect[39m=[32m"off"[39m
+          [33mclass[39m=[32m"w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50"[39m
+          [33mcmdk-input[39m=[32m""[39m
+          [33mdata-slot[39m=[32m"command-input"[39m
+          [33mid[39m=[32m"radix-_r_er_"[39m
+          [33mplaceholder[39m=[32m"Search all sections…"[39m
+          [33mrole[39m=[32m"combobox"[39m
+          [33mspellcheck[39m=[32m"false"[39m
+          [33mtype[39m=[32m"text"[39m
+          [33mvalue[39m=[32m"ledgeclinical"[39m
+        [36m/>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4 order-first pl-2 has-[>button]:ml-[-0.3rem] has-[>kbd]:ml-[-0.15rem]"[39m
+          [33mdata-align[39m=[32m"inline-start"[39m
+          [33mdata-slot[39m=[32m"input-group-addon"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-search size-4 shrink-0 opacity-50"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m21 21-4.34-4.34"[39m
+            [36m/>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"11"[39m
+              [33mcy[39m=[32m"11"[39m
+              [33mr[39m=[32m"8"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33maria-label[39m=[32m"Suggestions"[39m
+      [33mclass[39m=[32m"no-scrollbar max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none"[39m
+      [33mcmdk-list[39m=[32m""[39m
+      [33mdata-slot[39m=[32m"command-list"[39m
+      [33mid[39m=[32m"radix-_r_ep_"[39m
+      [33mrole[39m=[32m"listbox"[39m
+      [33mtabindex[39m=[32m"-1"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mcmdk-list-sizer[39m=[32m""[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"py-6 text-center text-sm"[39m
+          [33mcmdk-empty[39m=[32m""[39m
+          [33mdata-slot[39m=[32m"command-empty"[39m
+          [33mrole[39m=[32m"presentation"[39m
+        [36m>[39m
+          [0mNo matches.[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"overflow-hidden p-1 text-foreground **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground"[39m
+          [33mcmdk-group[39m=[32m""[39m
+          [33mdata-slot[39m=[32m"command-group"[39m
+          [33mdata-value[39m=[32m"Available pages"[39m
+          [33mrole[39m=[32m"presentation"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mcmdk-group-heading[39m=[32m""[39m
+            [33mid[39m=[32m"radix-_r_et_"[39m
+          [36m>[39m
+            [0mAvailable pages[0m
+          [36m</div>[39m
+          [36m<div[39m
+            [33maria-labelledby[39m=[32m"radix-_r_et_"[39m
+            [33mcmdk-group-items[39m=[32m""[39m
+            [33mrole[39m=[32m"group"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/layout/AppShell.test.tsx:244:39
+    242|     await user.type(search, "clinical");
+    243|
+    244|     await user.click(within(jumpList).getByRole("option", { name: /cli…
+       |                                       ^
+    245|
+    246|     expect(pushMock).toHaveBeenCalledWith("/admin/assessments/overdue"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 529 passed (530)
+      Tests  2 failed | 3290 passed | 2 skipped (3294)
+   Start at  20:04:15
+   Duration  120.09s (transform 98.42s, setup 122.42s, import 716.59s, tests 150.37s, environment 497.84s)

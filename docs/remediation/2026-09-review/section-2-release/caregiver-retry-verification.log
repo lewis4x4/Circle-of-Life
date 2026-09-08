@@ -1,0 +1,14 @@
+COMMAND: ['npx', 'vitest', 'run', 'src/app/(caregiver)/caregiver/rounds/[residentId]/page.test.tsx', 'src/components/rounding/QuickObservationForm.test.tsx', 'src/components/rounding/QuickCheckDrawer.test.tsx', 'src/lib/pwa/rounding-owner.test.ts']
+EXIT: 0
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Section 2
+
+
+ Test Files  4 passed (4)
+      Tests  39 passed (39)
+   Start at  19:35:58
+   Duration  7.40s (transform 2.18s, setup 602ms, import 3.09s, tests 8.31s, environment 1.80s)
+
+
+COMMAND: ['npx', 'eslint', 'src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx', 'src/app/(caregiver)/caregiver/rounds/[residentId]/page.test.tsx', 'src/components/rounding/QuickObservationForm.tsx', 'src/components/rounding/QuickObservationForm.test.tsx']
+EXIT: 0

@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-09-07T23:08:50.822941+00:00",
+  "reviewed_head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+  "files": {
+    "src/app/(admin)/admin/rounding/live/page.tsx": "a05b5a4d8c87a09a6377e2870e94b5a0b8d4028e24bde5f70198bd5c1339de46",
+    "src/app/(admin)/search/page.test.tsx": "8af082216c94ecb0dd8fa6bc4260fca30850de54149002f330f553e59464eb26",
+    "src/app/(admin)/search/page.tsx": "532de27eeff76c70a1a9b080486a221c78f1ec3688beda88979b920ecaed4301",
+    "src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts": "7e11747eab63f2730f0a80418b7184268c7c96eb20d007345aa1cfbc17aed52e",
+    "src/app/api/rounding/tasks/[id]/complete/route.ts": "ea5c4f53226e7fbdff8f17e71341f441fa15e4557a94ec9751b28883192de176",
+    "src/components/rounding/QuickCheckDrawer.test.tsx": "e9d3343330aabbc42efeb2ba484a9efed2364af1013af83daf566e1377acac86",
+    "src/components/rounding/QuickCheckDrawer.tsx": "65d25d14812e0ae55af27705719e1c02dfc2eb892056557b9561a5cb95d3153d",
+    "src/lib/rounding/types.ts": "e8cc4543893fd42f7554f23df3c51c7cb071a585c0a2e665c13c6d2bc178db7a",
+    "supabase/migrations/333_rounding_javascript_whitespace.sql": "40fc92aef7b2d0ec0d6b4055400421dc41cedfc7e7fbba3f4d61ed44c46c660e",
+    "supabase/tests/review_rounding_completion_receipts.sql": "ef88cc3cb923fb14c036dbcd4b1f184bc8666439de2f5a011443f8ae8790518b"
+  },
+  "roadmap_unchanged": true
+}

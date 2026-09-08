@@ -1,0 +1,33 @@
+{
+  "mechanism": "No-email one-time links for verified existing canonical demo accounts; no password or role changes",
+  "project": "manfqmasfqppukpobpld",
+  "checks": [
+    {
+      "role": "owner",
+      "status": "signed",
+      "existing_identity_verified": true,
+      "claim_version": 1
+    },
+    {
+      "role": "facility_admin",
+      "status": "signed",
+      "existing_identity_verified": true,
+      "claim_version": 1
+    },
+    {
+      "role": "caregiver",
+      "status": "signed",
+      "existing_identity_verified": true,
+      "claim_version": 1
+    },
+    {
+      "role": "family",
+      "status": "unavailable",
+      "authUserExists": true,
+      "profileExists": true,
+      "active": false,
+      "profileRole": "family",
+      "identityMatches": true
+    }
+  ]
+}

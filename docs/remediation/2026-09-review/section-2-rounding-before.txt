@@ -1,0 +1,38 @@
+BEGIN
+ALTER ROLE
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+GRANT
+SELECT 1
+DO
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+SET
+psql:supabase/tests/review_rounding_completion_receipts.sql:70: NOTICE:  REPRODUCED SYS-003: identical lost-response replay fails despite committed log c5bae39c-cbd3-4d05-be83-d1820ed37efa
+psql:supabase/tests/review_rounding_completion_receipts.sql:70: NOTICE:  REPRODUCED SYS-003: atomic core commits late exception completion without required integrity flag
+DO
+RESET
+GRANT
+ round_claims
+--------------
+
+(1 row)
+
+SET
+UPDATE 1
+UPDATE 1
+psql:supabase/tests/review_rounding_completion_receipts.sql:82: NOTICE:  REPRODUCED SYS-004: assigned caregiver directly finalizes task without log and rewrites clinical observation time
+DO
+RESET
+ROLLBACK

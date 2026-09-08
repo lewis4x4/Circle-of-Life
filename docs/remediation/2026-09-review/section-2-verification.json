@@ -1,0 +1,180 @@
+{
+  "verified_at": "2026-09-07T21:51:12.997312+00:00",
+  "branch": "codex/haven-section-2-database-rounding",
+  "approved_baseline": "5686876cb7917c0a809f0adb7e9ba67b595a3e03",
+  "status": "implemented_review_pending",
+  "changed_files": [
+    "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+    "docs/remediation/2026-09-review/roadmap-status.json",
+    "docs/remediation/2026-09-review/section-2-baseline.json",
+    "docs/remediation/2026-09-review/section-2-cleanup.json",
+    "docs/remediation/2026-09-review/section-2-client-before.txt",
+    "docs/remediation/2026-09-review/section-2-concurrency.json",
+    "docs/remediation/2026-09-review/section-2-core-preservation.json",
+    "docs/remediation/2026-09-review/section-2-quality-after.log",
+    "docs/remediation/2026-09-review/section-2-quality-before.log",
+    "docs/remediation/2026-09-review/section-2-rounding-after.txt",
+    "docs/remediation/2026-09-review/section-2-rounding-before.txt",
+    "docs/remediation/2026-09-review/section-2-search-after.txt",
+    "docs/remediation/2026-09-review/section-2-search-backfill.json",
+    "docs/remediation/2026-09-review/section-2-search-before.txt",
+    "docs/remediation/2026-09-review/section-2-search-ui-before.txt",
+    "docs/remediation/2026-09-review/section-2-verification.json",
+    "docs/specs/10-quality-metrics.md",
+    "docs/specs/25-resident-assurance-engine.md",
+    "docs/specs/FRONTEND-CONTRACT.md",
+    "public/sw.js",
+    "scripts/verify-rounding-concurrency.py",
+    "scripts/verify-search-backfill.py",
+    "src/app/(admin)/search/page.test.tsx",
+    "src/app/(admin)/search/page.tsx",
+    "src/app/(caregiver)/caregiver/rounds/[residentId]/page.test.tsx",
+    "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx",
+    "src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts",
+    "src/app/api/rounding/tasks/[id]/complete/route.ts",
+    "src/components/rounding/QuickCheckDrawer.test.tsx",
+    "src/components/rounding/QuickCheckDrawer.tsx",
+    "src/lib/pwa/rounding-owner.test.ts",
+    "src/lib/pwa/rounding-sync-integrity.test.ts",
+    "src/lib/pwa/rounding-sync.ts",
+    "src/lib/rounding/types.ts",
+    "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
+    "supabase/migrations/331_rounding_completion_receipts.sql",
+    "supabase/migrations/332_resident_search_current_scope.sql",
+    "supabase/tests/review_authoritative_actor.sql",
+    "supabase/tests/review_rounding_completion_receipts.sql",
+    "supabase/tests/review_section2_quality.sql",
+    "supabase/tests/review_section2_search.sql",
+    "test-results/agent-gates/2026-09-07T21-08-14-258Z-section-2a-quality.json",
+    "test-results/agent-gates/2026-09-07T21-29-10-136Z-section-2b-rounding.json",
+    "test-results/agent-gates/2026-09-07T21-32-47-720Z-section-2b-rounding-final.json",
+    "test-results/agent-gates/2026-09-07T21-42-38-327Z-section-2c-search.json",
+    "test-results/agent-gates/2026-09-07T21-46-15-507Z-section-2c-search-final.json"
+  ],
+  "changed_roadmap_entries": [
+    "NAV-003",
+    "NAV-009",
+    "SYS-002",
+    "SYS-003",
+    "SYS-004",
+    "FL-015"
+  ],
+  "other_roadmap_objects_unchanged": true,
+  "full_vitest": {
+    "command": "npx vitest run",
+    "exit_code": 0,
+    "files_passed": 528,
+    "tests_passed": 3242,
+    "tests_failed": 0,
+    "tests_skipped": 2,
+    "output_summary": [
+      "Test Files  528 passed (528)",
+      "Tests  3242 passed | 2 skipped (3244)",
+      "Start at  17:46:16",
+      "Duration  27.05s (transform 23.81s, setup 30.43s, import 180.85s, tests 25.23s, environment 99.70s)"
+    ],
+    "skips": [
+      "src/lib/executive/standup-live.test.ts: measures synthetic five-facility processing (HAVEN_PERF_BENCH)",
+      "src/lib/residents/roster-format-performance.test.ts: measures 1000 roster timestamps (HAVEN_PERF_BENCH)"
+    ]
+  },
+  "focused_vitest": {
+    "exit_code": 0,
+    "files_passed": 33,
+    "tests_passed": 331,
+    "tests_failed": 0,
+    "output_summary": [
+      "Test Files  33 passed (33)",
+      "Tests  331 passed (331)",
+      "Start at  17:49:29",
+      "Duration  2.49s (transform 1.53s, setup 1.40s, import 5.50s, tests 2.78s, environment 6.79s)"
+    ]
+  },
+  "typecheck": {
+    "command": "npm run typecheck -- --incremental false",
+    "exit_code": 0
+  },
+  "local_database": {
+    "migration_files": 335,
+    "sql_probes": 17,
+    "rounding_named_assertions": 149,
+    "search_named_assertions": 15,
+    "search_backfill_assertions": 5,
+    "real_concurrency_cases": 4,
+    "environment": "PostgreSQL 17 with Supabase stubs; isolated run-owned cluster"
+  },
+  "core_preservation": {
+    "approved_core_source": "327_sys_001e_lifecycle_authorization.sql",
+    "preserved_core_sha256": "0ed9df11e44d17b65e7ac8f1419ec2e163662190a134c3f5d61869b0ce76cc84",
+    "body_exact_match": true,
+    "authoritative_helper_migrations_326_327_unchanged": true
+  },
+  "gates": [
+    {
+      "artifact": "test-results/agent-gates/2026-09-07T21-08-14-258Z-section-2a-quality.json",
+      "verdict": "PASS",
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "skipped": 3
+      },
+      "failed_checks": []
+    },
+    {
+      "artifact": "test-results/agent-gates/2026-09-07T21-29-10-136Z-section-2b-rounding.json",
+      "verdict": "PASS",
+      "counts": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 1
+      },
+      "failed_checks": []
+    },
+    {
+      "artifact": "test-results/agent-gates/2026-09-07T21-32-47-720Z-section-2b-rounding-final.json",
+      "verdict": "PASS",
+      "counts": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 1
+      },
+      "failed_checks": []
+    },
+    {
+      "artifact": "test-results/agent-gates/2026-09-07T21-42-38-327Z-section-2c-search.json",
+      "verdict": "FAIL",
+      "counts": {
+        "passed": 11,
+        "failed": 1,
+        "skipped": 1
+      },
+      "failed_checks": [
+        "qa.eslint"
+      ]
+    },
+    {
+      "artifact": "test-results/agent-gates/2026-09-07T21-46-15-507Z-section-2c-search-final.json",
+      "verdict": "PASS",
+      "counts": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 1
+      },
+      "failed_checks": []
+    }
+  ],
+  "hosted_writes": false,
+  "pr_created": false,
+  "merged": false,
+  "deployed": false,
+  "section3_started": false,
+  "review_required": "Independent GPT-6 Astra High",
+  "limits": [
+    "Hosted signed-token Auth/PostgREST acceptance not performed",
+    "Actual offline-device disconnect and named clinical user UAT not performed",
+    "UI design and axe gates cover the public root; authenticated workflow proof is rendered tests and SQL",
+    "Legacy completions without a request receipt may still require outbox reconciliation",
+    "Quality equal-created_at ties use documented UUID ordering; clinical chronology is not inferred",
+    "No direct-write clinical amendment workflow added; accepted logs and receipts are immutable"
+  ]
+}

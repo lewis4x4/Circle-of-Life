@@ -1,0 +1,109 @@
+{
+  "verified_at": "2026-09-07T23:15:40.025292+00:00",
+  "reviewed_head": "6d90e3197ac59e757addd2ac3e401dcbd12865f1",
+  "approved_baseline": "5686876cb7917c0a809f0adb7e9ba67b595a3e03",
+  "branch": "codex/haven-section-2-database-rounding",
+  "status": "implemented_review_pending",
+  "bounded_correction_review": "APPROVE; zero outstanding source findings",
+  "mission_alignment": "pass for bounded source corrections; Section 2 approval remains pending",
+  "scope": [
+    "S2-R1",
+    "S2-R2",
+    "S2-R3"
+  ],
+  "source_hashes": "section-2-corrections-source.json",
+  "final_source_hashes_match": true,
+  "prior_committed_migrations_unchanged": true,
+  "roadmap_unchanged": true,
+  "full_vitest": {
+    "command": "npx vitest run",
+    "exit_code": 0,
+    "files_passed": 528,
+    "tests_passed": 3273,
+    "tests_skipped": 2,
+    "tests_failed": 0,
+    "existing_skips": [
+      "standup-live HAVEN_PERF_BENCH",
+      "roster-format-performance HAVEN_PERF_BENCH"
+    ],
+    "notice": "Vite warns that the installed TypeScript package lacks typescript.js.map; no test failure. Log retained."
+  },
+  "typecheck": {
+    "command": "npm run typecheck -- --incremental false",
+    "exit_code": 0
+  },
+  "focused": {
+    "drawer_tests_passed": 18,
+    "api_tests_passed": 28,
+    "search_tests_passed": 9,
+    "red_evidence": [
+      "section-2-r1-drawer-before.txt",
+      "section-2-r1-api-before.txt",
+      "section-2-r2-regressions.json",
+      "section-2-r3-before.txt"
+    ]
+  },
+  "database": {
+    "environment": "isolated PostgreSQL 17 with Supabase stubs and synthetic rows",
+    "migration_files": 336,
+    "sql_probes": 17,
+    "concurrency_cases_passed": 4,
+    "new_blank_reason_rejections": 26,
+    "new_pattern_completions": 15,
+    "hosted_writes": false
+  },
+  "gate": {
+    "artifact": "test-results/agent-gates/2026-09-07T23-10-14-040Z-section-2-review-corrections-final.json",
+    "verdict": "PASS",
+    "counts": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 1
+    },
+    "advisory_overrides": [],
+    "ui_coverage": "Four public-root viewport screenshots, axe on public root; no authenticated workflow acceptance"
+  },
+  "review": "section-2-corrections-review.json",
+  "cleanup": "section-2-corrections-cleanup.json",
+  "limits": [
+    "Pending drawer records live in tab memory and do not survive page reload or tab closure",
+    "Hosted signed-token Auth/PostgREST not validated",
+    "Real-device recovery and clock alignment not validated",
+    "Named clinical UAT not performed",
+    "No PR, merge, deployment, hosted migration application or Section 3 performed",
+    "Whole Section 2 independent re-review remains required"
+  ],
+  "correction_changed_files": [
+    "docs/remediation/2026-09-review/SECTION-2-CORRECTIONS.md",
+    "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+    "docs/remediation/2026-09-review/section-2-corrections-cleanup.json",
+    "docs/remediation/2026-09-review/section-2-corrections-concurrency.json",
+    "docs/remediation/2026-09-review/section-2-corrections-gates-final.txt",
+    "docs/remediation/2026-09-review/section-2-corrections-gates.txt",
+    "docs/remediation/2026-09-review/section-2-corrections-review.json",
+    "docs/remediation/2026-09-review/section-2-corrections-source.json",
+    "docs/remediation/2026-09-review/section-2-corrections-typecheck.txt",
+    "docs/remediation/2026-09-review/section-2-corrections-verification.json",
+    "docs/remediation/2026-09-review/section-2-corrections-vitest.txt",
+    "docs/remediation/2026-09-review/section-2-r1-api-after.txt",
+    "docs/remediation/2026-09-review/section-2-r1-api-before.txt",
+    "docs/remediation/2026-09-review/section-2-r1-drawer-after.txt",
+    "docs/remediation/2026-09-review/section-2-r1-drawer-before.txt",
+    "docs/remediation/2026-09-review/section-2-r2-regressions.json",
+    "docs/remediation/2026-09-review/section-2-r3-after.txt",
+    "docs/remediation/2026-09-review/section-2-r3-before.txt",
+    "src/app/(admin)/admin/rounding/live/page.tsx",
+    "src/app/(admin)/search/page.test.tsx",
+    "src/app/(admin)/search/page.tsx",
+    "src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts",
+    "src/app/api/rounding/tasks/[id]/complete/route.ts",
+    "src/components/rounding/QuickCheckDrawer.test.tsx",
+    "src/components/rounding/QuickCheckDrawer.tsx",
+    "src/lib/rounding/types.ts",
+    "supabase/migrations/333_rounding_javascript_whitespace.sql",
+    "supabase/tests/review_rounding_completion_receipts.sql",
+    "test-results/agent-gates/2026-09-07T23-05-37-184Z-section-2-review-corrections.json",
+    "test-results/agent-gates/2026-09-07T23-10-14-040Z-section-2-review-corrections-final.json"
+  ],
+  "evidence_format": "Text logs normalize line endings and trailing presentation whitespace only; structured gate JSON retains raw check outputs."
+}

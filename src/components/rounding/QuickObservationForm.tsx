@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Mic, MicOff, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -101,25 +101,29 @@ export function QuickObservationForm({
   dueLabel,
   facilityId,
   submitting,
+  pendingPayload,
+  reasonRequired = false,
   onSubmit,
 }: {
   residentName: string;
   dueLabel: string;
   facilityId?: string | null;
   submitting?: boolean;
+  pendingPayload?: CompletionPayload;
+  reasonRequired?: boolean;
   onSubmit: (payload: CompletionPayload) => Promise<void> | void;
 }) {
-  const [quickStatus, setQuickStatus] = useState<ObservationQuickStatus>("awake");
-  const [residentLocation, setResidentLocation] = useState(DEFAULT_LOCATION);
-  const [residentPosition, setResidentPosition] = useState(DEFAULT_POSITION);
-  const [residentState, setResidentState] = useState(DEFAULT_STATE);
-  const [lateReason, setLateReason] = useState("");
-  const [note, setNote] = useState("");
-  const [exceptionType, setExceptionType] = useState<ObservationExceptionType | "">("");
-  const [hydrationOffered, setHydrationOffered] = useState(false);
-  const [toiletingAssisted, setToiletingAssisted] = useState(false);
-  const [repositioned, setRepositioned] = useState(false);
-  const [fallHazardObserved, setFallHazardObserved] = useState(false);
+  const [quickStatus, setQuickStatus] = useState<ObservationQuickStatus>(pendingPayload?.quickStatus ?? "awake");
+  const [residentLocation, setResidentLocation] = useState(pendingPayload?.residentLocation ?? DEFAULT_LOCATION);
+  const [residentPosition, setResidentPosition] = useState(pendingPayload?.residentPosition ?? DEFAULT_POSITION);
+  const [residentState, setResidentState] = useState(pendingPayload?.residentState ?? DEFAULT_STATE);
+  const [lateReason, setLateReason] = useState(pendingPayload?.lateReason ?? "");
+  const [note, setNote] = useState(pendingPayload?.note ?? "");
+  const [exceptionType, setExceptionType] = useState<ObservationExceptionType | "">(pendingPayload?.exceptionType ?? "");
+  const [hydrationOffered, setHydrationOffered] = useState(pendingPayload?.hydrationOffered ?? false);
+  const [toiletingAssisted, setToiletingAssisted] = useState(pendingPayload?.toiletingAssisted ?? false);
+  const [repositioned, setRepositioned] = useState(pendingPayload?.repositioned ?? false);
+  const [fallHazardObserved, setFallHazardObserved] = useState(pendingPayload?.fallHazardObserved ?? false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const [locationOptions, setLocationOptions] = useState<string[]>(FALLBACK_LOCATION_OPTIONS);
   const [positionOptions, setPositionOptions] = useState<string[]>(FALLBACK_POSITION_OPTIONS);
@@ -127,6 +131,9 @@ export function QuickObservationForm({
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const voiceRecorder = useGraceVoiceRecorder();
+  const readOnly = Boolean(pendingPayload) || Boolean(submitting);
+  const readOnlyRef = useRef(readOnly);
+  useEffect(() => { readOnlyRef.current = readOnly; }, [readOnly]);
 
   useEffect(() => {
     const facilityIdParam = facilityId ?? "";
@@ -162,10 +169,11 @@ export function QuickObservationForm({
   }, [facilityId]);
 
   useEffect(() => {
+    if (readOnly) return;
     if (!locationOptions.includes(residentLocation)) setResidentLocation(locationOptions[0] ?? "");
     if (!positionOptions.includes(residentPosition)) setResidentPosition(positionOptions[0] ?? "");
     if (!stateOptions.includes(residentState)) setResidentState(stateOptions[0] ?? "");
-  }, [locationOptions, positionOptions, residentLocation, residentPosition, residentState, stateOptions]);
+  }, [locationOptions, positionOptions, residentLocation, residentPosition, residentState, stateOptions, readOnly]);
 
   const needsDetails = useMemo(
     () => hasAbnormalStatus(quickStatus) || !!exceptionType || fallHazardObserved || note.length > 0,
@@ -173,6 +181,7 @@ export function QuickObservationForm({
   );
 
   async function toggleVoiceCapture() {
+    if (readOnlyRef.current) return;
     setVoiceError(null);
 
     if (!voiceRecorder.supported) {
@@ -193,6 +202,7 @@ export function QuickObservationForm({
       const audio = await voiceRecorder.stop();
       if (!audio) throw new Error("No audio captured.");
       const transcript = await transcribeGraceAudio(audio);
+      if (readOnlyRef.current) return;
       setVoiceTranscript(transcript);
       const parsed = parseVoiceCheckoff(transcript);
       setQuickStatus(parsed.quickStatus);
@@ -214,7 +224,11 @@ export function QuickObservationForm({
   }
 
   async function submitForm() {
-    const payload: CompletionPayload = {
+    if (submitting || voiceBusy || voiceRecorder.recording) return;
+    const payload: CompletionPayload = pendingPayload ? {
+      ...pendingPayload,
+      ...(reasonRequired ? { lateReason: lateReason.trim() || null } : {}),
+    } : {
       quickStatus,
       residentLocation,
       residentPosition,
@@ -243,6 +257,8 @@ export function QuickObservationForm({
         <CardDescription className="text-zinc-400">{dueLabel}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {pendingPayload ? <p role="status">This observation is retained. Retry sends the original details until saving is confirmed.</p> : null}
+        <fieldset disabled={readOnly} className="space-y-4">
         <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -342,10 +358,12 @@ export function QuickObservationForm({
           </div>
         ) : null}
 
+        </fieldset>
         <div className="space-y-1">
           <label className="text-xs font-medium uppercase tracking-wider text-zinc-400">Late entry reason (if needed)</label>
           <input
             value={lateReason}
+            disabled={Boolean(submitting) || (Boolean(pendingPayload) && !reasonRequired)}
             onChange={(event) => setLateReason(event.target.value)}
             className="h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-100 placeholder:text-zinc-600"
             placeholder="Required only for late entries"
@@ -357,7 +375,7 @@ export function QuickObservationForm({
           size="lg"
           className="min-h-11 w-full bg-emerald-600 text-white hover:bg-emerald-500"
           onClick={() => void submitForm()}
-          disabled={submitting}
+          disabled={submitting || voiceBusy || voiceRecorder.recording}
         >
           {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Complete round
@@ -388,7 +406,7 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         className="h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-100"
       >
-        {options.map((option) => (
+        {[...new Set([value, ...options])].map((option) => (
           <option key={option || "__empty"} value={option}>
             {(labels?.[option] ?? option) || "None"}
           </option>

@@ -1,0 +1,116 @@
+{
+  "base": "https://deploy-preview-456--circleoflifealf.netlify.app",
+  "startedAt": "2026-09-08T00:46:00.650Z",
+  "checks": [
+    {
+      "name": "SSR login is POST and credential controls disabled",
+      "pass": true
+    },
+    {
+      "name": "owner cookie session /admin/residents",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/admin/residents"
+    },
+    {
+      "name": "owner cookie session /admin/quality",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/admin/quality"
+    },
+    {
+      "name": "owner cookie session /admin/search",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/admin/search"
+    },
+    {
+      "name": "owner hydrated shell",
+      "pass": true,
+      "pageErrorNames": [
+        "Error"
+      ]
+    },
+    {
+      "name": "owner cross-shell denial",
+      "pass": true,
+      "requestedPath": "/caregiver/rounds",
+      "actualPath": "/admin/executive"
+    },
+    {
+      "name": "owner invalid completion rejected without writes",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "facility_admin cookie session /admin/residents",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/admin/residents"
+    },
+    {
+      "name": "facility_admin cookie session /admin/quality",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/admin/quality"
+    },
+    {
+      "name": "facility_admin cookie session /admin/search",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/admin/search"
+    },
+    {
+      "name": "facility_admin hydrated shell",
+      "pass": true,
+      "pageErrorNames": [
+        "Error",
+        "Error"
+      ]
+    },
+    {
+      "name": "facility_admin cross-shell denial",
+      "pass": true,
+      "requestedPath": "/caregiver/rounds",
+      "actualPath": "/admin"
+    },
+    {
+      "name": "facility_admin invalid completion rejected without writes",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "caregiver cookie session /caregiver/rounds",
+      "pass": true,
+      "status": 200,
+      "actualPath": "/caregiver/rounds"
+    },
+    {
+      "name": "caregiver hydrated shell",
+      "pass": true,
+      "pageErrorNames": [
+        "Error",
+        "Error"
+      ]
+    },
+    {
+      "name": "caregiver cross-shell denial",
+      "pass": true,
+      "requestedPath": "/admin/search",
+      "actualPath": "/caregiver"
+    },
+    {
+      "name": "caregiver invalid completion rejected without writes",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "Unauthenticated completion denied",
+      "pass": true,
+      "status": 401
+    }
+  ],
+  "clinicalWrites": false,
+  "completedAt": "2026-09-08T00:47:52.942Z",
+  "pass": true
+}

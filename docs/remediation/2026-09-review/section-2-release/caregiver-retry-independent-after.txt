@@ -1,0 +1,8 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Section 2
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  19:37:03
+   Duration  2.19s (transform 422ms, setup 103ms, import 660ms, tests 755ms, environment 276ms)

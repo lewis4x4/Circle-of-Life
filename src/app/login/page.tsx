@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useSyncExternalStore, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -29,6 +29,10 @@ const SIGN_IN_UNAVAILABLE_MESSAGE =
 const SESSION_VERIFICATION_ERROR_MESSAGE =
   "Could not verify your session. Check your connection, then refresh this page.";
 
+// The server and initial hydration render must remain inert. React switches to
+// the client snapshot only once event handlers are attached.
+function subscribeToHydration() { return () => {}; }
+
 function readSafeNextDestination(): string | null {
   if (typeof window === "undefined") return null;
   const next = new URLSearchParams(window.location.search).get("next");
@@ -50,6 +54,7 @@ function LoginForbiddenNotice() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const supabase = React.useMemo(() => createClient(), []);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
@@ -161,6 +166,7 @@ export default function LoginPage() {
   });
 
   async function onSubmit(data: LoginFormData) {
+    if (!hydrated) return;
     setGlobalError(null);
     setResetNotice(null);
     if (!isBrowserSupabaseConfigured()) {
@@ -196,6 +202,7 @@ export default function LoginPage() {
   }
 
   async function requestPasswordReset() {
+    if (!hydrated) return;
     setGlobalError(null);
     setResetNotice(null);
 
@@ -277,7 +284,13 @@ export default function LoginPage() {
           <Card className="border border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-md">
             <CardContent className="p-7 sm:p-9">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                  {!hydrated ? (
+                    <p role="status" className="flex items-center gap-2 text-sm text-slate-300">
+                      <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                      Preparing secure sign-in…
+                    </p>
+                  ) : null}
                   <FormField
                     control={form.control}
                     name="email"
@@ -288,7 +301,7 @@ export default function LoginPage() {
                           <Input
                             placeholder="name@organization.com"
                             type="email"
-                            disabled={form.formState.isSubmitting}
+                            disabled={!hydrated || form.formState.isSubmitting}
                             className="h-12 border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500"
                             {...field}
                           />
@@ -308,7 +321,7 @@ export default function LoginPage() {
                           <button
                             type="button"
                             onClick={() => void requestPasswordReset()}
-                            disabled={form.formState.isSubmitting || resetRequesting}
+                            disabled={!hydrated || form.formState.isSubmitting || resetRequesting}
                             className="tap-responsive text-xs font-medium text-amber-400 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {resetRequesting ? "Sending..." : "Forgot password?"}
@@ -318,7 +331,7 @@ export default function LoginPage() {
                           <Input
                             type="password"
                             placeholder="Enter your password"
-                            disabled={form.formState.isSubmitting}
+                            disabled={!hydrated || form.formState.isSubmitting}
                             className="h-12 border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500"
                             {...field}
                           />
@@ -329,7 +342,7 @@ export default function LoginPage() {
                   />
 
                   <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input className="h-4 w-4 rounded border-slate-600 bg-slate-950/70" type="checkbox" />
+                    <input className="h-4 w-4 rounded border-slate-600 bg-slate-950/70" type="checkbox" disabled={!hydrated || form.formState.isSubmitting} />
                     Remember me
                   </label>
 
@@ -352,7 +365,7 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="h-12 w-full tap-responsive bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
-                    disabled={form.formState.isSubmitting || !isBrowserSupabaseConfigured()}
+                    disabled={!hydrated || form.formState.isSubmitting || !isBrowserSupabaseConfigured()}
                   >
                     {form.formState.isSubmitting ? (
                       <>

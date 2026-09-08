@@ -9,8 +9,19 @@
       "id": "NAV-001",
       "severity": "P1",
       "title": "Seven implemented workflows redirect or link to missing canonical pages",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/lib/navigation/canonical-admin-route-registry.test.ts",
+        "scripts/verify-section-1-routes.mjs",
+        "src/app/(admin)/admin/finance/forecast/page.tsx",
+        "src/app/(admin)/admin/finance/close/page.tsx",
+        "src/app/(admin)/admin/finance/trust/page.tsx",
+        "src/app/(admin)/admin/reports/history/[id]/page.tsx",
+        "src/app/(admin)/admin/training/inservice/new/page.tsx",
+        "src/app/(admin)/admin/transportation/requests/new/page.tsx",
+        "src/app/(admin)/admin/transportation/requests/[id]/page.tsx"
+      ],
+      "notes": "Independent review found the prior registry checked legacy modules. Seven canonical /admin wrappers now reuse those implementations; actual imports, redirect resolution and production manifest checks replace the shallow assertions. Correction remains pending fresh independent review; no authenticated navigation acceptance is claimed."
     },
     {
       "id": "NAV-002",
@@ -31,8 +42,16 @@
       "id": "NAV-003",
       "severity": "P1",
       "title": "Resident search entries keep their former facility authorization scope",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/332_resident_search_current_scope.sql",
+        "supabase/tests/review_section2_search.sql",
+        "scripts/verify-search-backfill.py",
+        "src/app/(admin)/search/page.tsx",
+        "src/app/(admin)/search/page.test.tsx",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "NAV-004",
@@ -52,8 +71,16 @@
       "id": "NAV-006",
       "severity": "P2",
       "title": "Executive subsection navigation excludes keyboard and hides its mobile fallback",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/app/(admin)/executive/executive-hub-nav.tsx",
+        "src/app/(admin)/executive/executive-hub-nav.test.tsx",
+        "src/app/(admin)/executive/executive-hub-nav.source.test.ts",
+        "src/components/executive/ExecutiveOverviewPageClient.tsx",
+        "src/app/(admin)/executive/alerts/page.tsx",
+        "src/app/(admin)/executive/executive-sections-pages.test.tsx"
+      ],
+      "notes": "A single most-specific permitted destination is current; Overview matches exactly. Rendered tests open the mobile drawer on Alerts and Standup history and mount the real navigation through both Overview and Alerts pages. Role filtering and keyboard focus remain supported. Correction remains pending fresh independent review."
     },
     {
       "id": "NAV-007",
@@ -73,8 +100,16 @@
       "id": "NAV-009",
       "severity": "P2",
       "title": "Unified Search promises record types the repository never indexes",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/332_resident_search_current_scope.sql",
+        "supabase/tests/review_section2_search.sql",
+        "scripts/verify-search-backfill.py",
+        "src/app/(admin)/search/page.tsx",
+        "src/app/(admin)/search/page.test.tsx",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "NAV-010",
@@ -150,8 +185,16 @@
       "id": "FL-009",
       "severity": "P1",
       "title": "Controlled-substance count cards omit the resident and dose identity",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/lib/medications/controlled-count-identity.ts",
+        "src/components/controlled-substance/ControlledCountConsole.tsx",
+        "src/components/medication/CountInitiationModal.tsx",
+        "src/components/controlled-substance/PendingCountReceipt.tsx",
+        "src/components/controlled-substance/controlled-count-entry-points.test.tsx",
+        "src/components/controlled-substance/controlled-medication-identity.test.tsx"
+      ],
+      "notes": "Both entry points use shared usable legal-name validation. Saved count identities are resolved by persisted medication references within facility scope, including inactive medications. Unresolved identity blocks co-signing with retry recovery. Correction remains pending fresh independent Astra clinical review; no live clinical action or hosted acceptance is claimed."
     },
     {
       "id": "FL-010",
@@ -196,22 +239,41 @@
       "id": "SYS-002",
       "severity": "P1",
       "title": "quality view bypasses tenant and role RLS",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
+        "supabase/tests/review_section2_quality.sql",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; independent review and hosted acceptance pending."
     },
     {
       "id": "SYS-003",
       "severity": "P1",
       "title": "observation completion is not atomic or replay-safe",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/331_rounding_completion_receipts.sql",
+        "supabase/tests/review_rounding_completion_receipts.sql",
+        "scripts/verify-rounding-concurrency.py",
+        "docs/remediation/2026-09-review/section-2-concurrency.json",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "SYS-004",
       "severity": "P1",
       "title": "direct observation writes bypass protected completion fields",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/331_rounding_completion_receipts.sql",
+        "supabase/tests/review_rounding_completion_receipts.sql",
+        "scripts/verify-rounding-concurrency.py",
+        "docs/remediation/2026-09-review/section-2-concurrency.json",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Independent review and hosted acceptance pending."
     },
     {
       "id": "SYS-005",
@@ -290,8 +352,12 @@
       "id": "BUS-005",
       "severity": "P2",
       "title": "Certification staff-load failures are presented as an empty selector",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "src/app/(admin)/certifications/new/page.tsx",
+        "src/app/(admin)/certifications/new/page.test.tsx"
+      ],
+      "notes": "Retry recovery retains all credential fields and repeats facility, active-employment and soft-delete filters. A follow-up independent review identified stale facility responses; generation/facility guards now reject obsolete success/error/finally results, invalidate old staff selection, and require current-roster eligibility before save. Deferred-response regressions cover both reported races, pending loading, A-B-A and an in-flight organization lookup. Remains implemented_review_pending for fresh independent review; no authenticated RLS acceptance claimed."
     },
     {
       "id": "BUS-006",
@@ -323,8 +389,13 @@
       "id": "FL-015",
       "severity": "P2",
       "title": "The latest quality-result view returns conflicting rows for a corrected period",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_review_pending",
+      "evidence": [
+        "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
+        "supabase/tests/review_section2_quality.sql",
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+      ],
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; independent review and hosted acceptance pending."
     },
     {
       "id": "SUP-001",

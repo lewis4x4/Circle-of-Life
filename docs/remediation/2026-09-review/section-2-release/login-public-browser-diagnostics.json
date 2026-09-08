@@ -1,0 +1,26 @@
+[
+  {
+    "origin": "https://deploy-preview-456--circleoflifealf.netlify.app",
+    "errors": [],
+    "failed": [],
+    "buttonDisabled": false,
+    "forms": [
+      {
+        "method": "get",
+        "action": "/login"
+      }
+    ]
+  },
+  {
+    "origin": "https://circleoflifealf.com",
+    "errors": [],
+    "failed": [],
+    "buttonDisabled": false,
+    "forms": [
+      {
+        "method": "get",
+        "action": "/login"
+      }
+    ]
+  }
+]

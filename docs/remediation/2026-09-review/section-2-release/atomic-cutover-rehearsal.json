@@ -1,0 +1,7 @@
+{
+  "target": "isolated native PostgreSQL",
+  "atomic_release_transaction": true,
+  "baseline_files": 332,
+  "forward_migrations": 4,
+  "ledger_atomic_with_ddl": true
+}

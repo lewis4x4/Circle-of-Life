@@ -87,6 +87,10 @@ export type ObservationTaskRow = {
 };
 
 export type CompletionPayload = {
+  /** Stable across online retries and offline delivery of the same observation. */
+  requestId?: string;
+  /** Authority that owns a retained drawer attempt; checked again before mutation. */
+  retryOwner?: { userId: string; sessionId: string; organizationId: string; facilityId: string };
   offline?: { ownerUserId: string; organizationId: string; facilityId: string; queueId: string };
   observedAt?: string;
   quickStatus: ObservationQuickStatus;

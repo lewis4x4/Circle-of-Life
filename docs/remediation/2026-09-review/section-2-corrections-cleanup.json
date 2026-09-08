@@ -1,0 +1,65 @@
+{
+  "completed_at": "2026-09-07T23:13:48.409370+00:00",
+  "run_id": "haven-s2-corrections-01a07e17",
+  "server_stopped": true,
+  "server_pid": 16931,
+  "file_count": 988,
+  "directory_count": 27,
+  "exact_run_provenance": true,
+  "records": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-files-0-manifest.json",
+      "validation": {
+        "planned_count": 900,
+        "removed_count": 0,
+        "status": "planned"
+      },
+      "removed_count": 900
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-files-1-manifest.json",
+      "validation": {
+        "planned_count": 88,
+        "removed_count": 0,
+        "status": "planned"
+      },
+      "removed_count": 88
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-dirs-10-manifest.json",
+      "validation": {
+        "planned_count": 9,
+        "removed_count": 0,
+        "status": "planned"
+      },
+      "removed_count": 9
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-dirs-9-manifest.json",
+      "validation": {
+        "planned_count": 17,
+        "removed_count": 0,
+        "status": "planned"
+      },
+      "removed_count": 17
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-dirs-8-manifest.json",
+      "validation": {
+        "planned_count": 1,
+        "removed_count": 0,
+        "status": "planned"
+      },
+      "removed_count": 1
+    }
+  ],
+  "retained": [
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-dirs-10-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-dirs-8-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-dirs-9-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-files-0-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/cleanup-files-1-manifest.json",
+    "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-corrections-01a07e17/manifest.json"
+  ],
+  "note": "Storage Steward validates exact manifests; generic deferred deletion disabled. Creating run removed only its exact disposable artifacts after validation. Existing source, worktrees, environments and application data preserved."
+}

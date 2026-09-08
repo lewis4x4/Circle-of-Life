@@ -1,0 +1,72 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Section 2
+
+ ❯ src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts (28 tests | 12 failed) 16ms
+     × rejects a retry with changed original userId before mutation 2ms
+     × rejects a retry with changed original sessionId before mutation 1ms
+     × rejects a retry with changed original organizationId before mutation 0ms
+     × rejects a retry with changed original facilityId before mutation 0ms
+     × rechecks retry userId after authority revalidation 0ms
+     × rechecks retry sessionId after authority revalidation 0ms
+     × rechecks retry organizationId after authority revalidation 0ms
+     × rejects malformed retry owner null 0ms
+     × rejects malformed retry owner undefined 0ms
+     × rejects malformed retry owner {} 1ms
+     × rejects malformed retry owner "invalid" 0ms
+     × rejects malformed retry owner {"userId":"user-1","sessionId":null,"organizationId":"org-1","facilityId":"facility-1"} 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects a retry with changed original userId before mutation
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects a retry with changed original sessionId before mutation
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects a retry with changed original organizationId before mutation
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects a retry with changed original facilityId before mutation
+TypeError: Cannot destructure property 'data' of '(intermediate value)' as it is undefined.
+ ❯ Module.POST src/app/api/rounding/tasks/[id]/complete/route.ts:124:17
+    122|   }
+    123|
+    124|   const { data: completionData, error: logInsertError } = await contex…
+       |                 ^
+    125|     "complete_rounding_task_review" as never,
+    126|     {
+ ❯ src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts:147:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rechecks retry userId after authority revalidation
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rechecks retry sessionId after authority revalidation
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rechecks retry organizationId after authority revalidation
+TypeError: Cannot destructure property 'data' of '(intermediate value)' as it is undefined.
+ ❯ Module.POST src/app/api/rounding/tasks/[id]/complete/route.ts:124:17
+    122|   }
+    123|
+    124|   const { data: completionData, error: logInsertError } = await contex…
+       |                 ^
+    125|     "complete_rounding_task_review" as never,
+    126|     {
+ ❯ src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts:154:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects malformed retry owner null
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects malformed retry owner undefined
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects malformed retry owner {}
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects malformed retry owner "invalid"
+ FAIL  src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts > completion receipt HTTP contract > rejects malformed retry owner {"userId":"user-1","sessionId":null,"organizationId":"org-1","facilityId":"facility-1"}
+TypeError: Cannot destructure property 'data' of '(intermediate value)' as it is undefined.
+ ❯ Module.POST src/app/api/rounding/tasks/[id]/complete/route.ts:124:17
+    122|   }
+    123|
+    124|   const { data: completionData, error: logInsertError } = await contex…
+       |                 ^
+    125|     "complete_rounding_task_review" as never,
+    126|     {
+ ❯ src/app/api/rounding/tasks/[id]/complete/route-current-authority.test.ts:160:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  12 failed | 16 passed (28)
+   Start at  19:00:29
+   Duration  272ms (transform 36ms, setup 33ms, import 57ms, tests 16ms, environment 99ms)

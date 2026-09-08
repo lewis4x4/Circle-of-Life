@@ -1,0 +1,16 @@
+{
+  "verdict": "APPROVE bounded login safety change",
+  "reviewer": "section2_client_review independent native subagent",
+  "tests": 4,
+  "change": "POST fallback and server/initial-hydration disabled credentials prevent nativeGET credential URLs",
+  "full_vitest": {
+    "files": 530,
+    "passed": 3292,
+    "skipped": 2,
+    "failed": 0,
+    "command": "npx vitest run --maxWorkers=4"
+  },
+  "typecheck": "PASS",
+  "gate": "test-results/agent-gates/2026-09-08T00-04-14-350Z-section-2-release-login-safe.json",
+  "retained_failure": "Initial highly parallel run timed out two unchanged AppShell assertions; retained vitest-contended-failure.txt; same tests/thresholds pass at four workers"
+}

@@ -244,7 +244,7 @@ async function flushQueue() {
             "Content-Type": "application/json",
             "x-haven-sync": "service-worker",
           },
-          body: JSON.stringify({ ...item.payload, offline: { ownerUserId: item.ownerUserId, organizationId: item.organizationId, facilityId: item.facilityId, queueId: item.id }, observedAt: item.payload.observedAt || item.queuedAt }),
+          body: JSON.stringify({ ...item.payload, requestId: item.payload.requestId || item.id, offline: { ownerUserId: item.ownerUserId, organizationId: item.organizationId, facilityId: item.facilityId, queueId: item.id }, observedAt: item.payload.observedAt || item.queuedAt }),
           credentials: "same-origin",
         });
 

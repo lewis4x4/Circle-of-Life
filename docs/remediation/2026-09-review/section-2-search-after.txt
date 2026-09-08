@@ -1,0 +1,208 @@
+BEGIN
+GRANT
+GRANT
+CREATE FUNCTION
+SELECT 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:32: NOTICE:  PASS: resident initially indexed in authorized facility
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+                probe                | stale
+-------------------------------------+-------
+ NAV-003 index retained former scope | f
+(1 row)
+
+SET
+                  probe                  | count
+-----------------------------------------+-------
+ NAV-003 former facility name disclosure |     0
+(1 row)
+
+psql:supabase/tests/review_section2_search.sql:38: NOTICE:  PASS: former facility cannot retrieve transferred resident
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+psql:supabase/tests/review_section2_search.sql:40: NOTICE:  PASS: trigger updates denormalized authority columns
+ search_assert
+---------------
+
+(1 row)
+
+INSERT 0 1
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:44: NOTICE:  PASS: new facility grant sees transferred resident
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:49: NOTICE:  PASS: fresh-version revoked grant denies search
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+SET
+psql:supabase/tests/review_section2_search.sql:54: NOTICE:  PASS: stale index scope is denied by live resident authority
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:59: NOTICE:  PASS: former tenant cannot retrieve moved resident
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:63: NOTICE:  PASS: new tenant sees its resident
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:68: NOTICE:  PASS: facility grant alone does not expose unlinked resident to family
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+INSERT 0 1
+SET
+psql:supabase/tests/review_section2_search.sql:72: NOTICE:  PASS: linked family source access is preserved
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:77: NOTICE:  PASS: revoked family link denies resident search
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+ search_claims
+---------------
+
+(1 row)
+
+UPDATE 1
+UPDATE 1
+SET
+psql:supabase/tests/review_section2_search.sql:84: NOTICE:  PASS: soft-deleted source is hidden even with a stale live index row
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+ search_claims
+---------------
+
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:89: NOTICE:  PASS: restored source is visible before account disable
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+UPDATE 1
+SET
+psql:supabase/tests/review_section2_search.sql:93: NOTICE:  PASS: disabled account cannot search
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+ set_config
+------------
+ {}
+(1 row)
+
+SET
+psql:supabase/tests/review_section2_search.sql:97: NOTICE:  PASS: no-profile caller cannot search
+ search_assert
+---------------
+
+(1 row)
+
+RESET
+ROLLBACK

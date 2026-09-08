@@ -1,0 +1,112 @@
+{
+  "checked_at": "2026-09-07T21:02:34.324366+00:00",
+  "approved_head": "5686876cb7917c0a809f0adb7e9ba67b595a3e03",
+  "approval_source": "User prerequisite attestation; fetched origin Section 1 matches exact supplied head",
+  "project": "manfqmasfqppukpobpld",
+  "hosted_access": "BEGIN READ ONLY; migration version/name metadata only",
+  "local_count": 332,
+  "local_max_number": 329,
+  "hosted_numbered_tail": [
+    {
+      "version": "317",
+      "name": "referral_lead_closure_reasons"
+    },
+    {
+      "version": "318",
+      "name": "col_facility_entity_names"
+    },
+    {
+      "version": "319",
+      "name": "review_access_boundaries"
+    },
+    {
+      "version": "320",
+      "name": "september_business_integrity"
+    },
+    {
+      "version": "321",
+      "name": "clinical_review_integrity"
+    },
+    {
+      "version": "322",
+      "name": "dietary_verified_actions"
+    },
+    {
+      "version": "323",
+      "name": "review_report_outputs"
+    },
+    {
+      "version": "324",
+      "name": "september_office_integrity"
+    },
+    {
+      "version": "325",
+      "name": "review_med_tech_controlled_count_access"
+    },
+    {
+      "version": "326",
+      "name": "sys_001_authoritative_actor_state"
+    },
+    {
+      "version": "327",
+      "name": "sys_001e_lifecycle_authorization"
+    },
+    {
+      "version": "328",
+      "name": "ingest_generation_integrity"
+    },
+    {
+      "version": "329",
+      "name": "authorization_error_http_contract"
+    }
+  ],
+  "hosted_timestamp_versions": [
+    {
+      "version": "20260514180000",
+      "name": "staff_role_enum_values"
+    },
+    {
+      "version": "20260514180707",
+      "name": "homewood_round2_employee_seed"
+    },
+    {
+      "version": "20260514203302",
+      "name": "homewood_round2_ar_intake_may_2026"
+    },
+    {
+      "version": "20260814153636",
+      "name": "revoke_anon_security_definer_rpc_execute"
+    },
+    {
+      "version": "20260814200926",
+      "name": "family_portal_messages_one_way"
+    },
+    {
+      "version": "20260814201004",
+      "name": "col_discovery_round_cadence_jessica_2026_08_14"
+    },
+    {
+      "version": "20260814201013",
+      "name": "snack_logs_time_and_passer_only"
+    },
+    {
+      "version": "20260814201022",
+      "name": "revoke_anon_col_discovery_round_rpcs"
+    },
+    {
+      "version": "20260814201741",
+      "name": "pin_col_discovery_helper_search_path"
+    }
+  ],
+  "section2_numbering": [
+    330,
+    331,
+    332
+  ],
+  "final_hosted_metadata_recheck": {
+    "checked_at": "2026-09-07T21:46:46.266807+00:00",
+    "query": "READ ONLY version/name ledger entries with 3-digit version >=330",
+    "rows": [],
+    "section2_hosted_migrations_applied": false
+  }
+}

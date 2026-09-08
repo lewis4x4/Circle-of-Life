@@ -1,0 +1,952 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Section 2
+
+ ❯ src/app/(admin)/search/page.test.tsx (5 tests | 4 failed) 3726ms
+     × explains resident-only indexing and links to the existing specialist modules 30ms
+     × queries only maintained resident sources and gives a source-specific empty result 345ms
+     × keeps retrieval failure distinct from an empty result and supports retry 1339ms
+     × discards a late response for an obsolete search 1668ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/search/page.test.tsx > truthful supported search > explains resident-only indexing and links to the existing specialist modules
+TestingLibraryElementError: Unable to find an element with the text: /Resident names are searched here/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 flex-col lg:-mx-10"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"relative flex min-h-0 min-w-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-y-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"mx-auto w-full max-w-4xl px-4 pb-8 pt-6 sm:px-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"inline-flex w-fit items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-200"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-message-square size-3.5 text-primary-400"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mFind records[0m
+                [36m</div>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl"[39m
+                [36m>[39m
+                  [0mUnified Search[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"max-w-xl text-base leading-relaxed text-zinc-400"[39m
+                [36m>[39m
+                  [0mSearch indexed residents, staff, vendors, and incidents across your organization. This is[0m
+                  [0m [0m
+                  [36m<strong[39m
+                    [33mclass[39m=[32m"font-medium text-zinc-200"[39m
+                  [36m>[39m
+                    [0mlexical[0m
+                  [36m</strong>[39m
+                  [0m (keyword) search over linked records—not generative Q&A.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary-500/40 hover:bg-primary-950/30"[39m
+                [33mhref[39m=[32m"/admin/knowledge"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-book-open size-5 text-white"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 7v14"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-left"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"block text-xs font-semibold uppercase tracking-wide text-zinc-500"[39m
+                  [36m>[39m
+                    [0mPolicies & docs[0m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex items-center gap-1 text-sm font-medium text-zinc-200"[39m
+                  [36m>[39m
+                    [0mOpen Knowledge Base[0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-arrow-up-right size-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M7 7h10v10"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M7 17 17 7"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mb-10 flex flex-col items-center gap-10"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33m...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/(admin)/search/page.test.tsx:18:19
+     16|   it("explains resident-only indexing and links to the existing specia…
+     17|     render(<Page />);
+     18|     expect(screen.getByText(/Resident names are searched here/)).toBeT…
+       |                   ^
+     19|     expect(screen.getByRole("link", { name: /Staff.*Open staff search/…
+     20|     expect(screen.getByRole("link", { name: /Vendors.*Open vendor dire…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/app/(admin)/search/page.test.tsx > truthful supported search > queries only maintained resident sources and gives a source-specific empty result
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'source_table', 'residents' ]
+
+Number of calls: 0
+
+ ❯ src/app/(admin)/search/page.test.tsx:28:22
+     26|     render(<Page />); search("Synthetic");
+     27|     await waitFor(() => expect(mocks.limit).toHaveBeenCalled());
+     28|     expect(mocks.eq).toHaveBeenCalledWith("source_table", "residents");
+       |                      ^
+     29|     expect(mocks.textSearch).toHaveBeenCalledWith("search_tsv", "Synth…
+     30|     expect(await screen.findByText("No matching residents")).toBeTruth…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/app/(admin)/search/page.test.tsx > truthful supported search > keeps retrieval failure distinct from an empty result and supports retry
+TestingLibraryElementError: Unable to find an element with the text: No matching residents. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 flex-col lg:-mx-10"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"relative flex min-h-0 min-w-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-y-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"mx-auto w-full max-w-4xl px-4 pb-8 pt-6 sm:px-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"inline-flex w-fit items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-200"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-message-square size-3.5 text-primary-400"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mFind records[0m
+                [36m</div>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl"[39m
+                [36m>[39m
+                  [0mUnified Search[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"max-w-xl text-base leading-relaxed text-zinc-400"[39m
+                [36m>[39m
+                  [0mSearch indexed residents, staff, vendors, and incidents across your organization. This is[0m
+                  [0m [0m
+                  [36m<strong[39m
+                    [33mclass[39m=[32m"font-medium text-zinc-200"[39m
+                  [36m>[39m
+                    [0mlexical[0m
+                  [36m</strong>[39m
+                  [0m (keyword) search over linked records—not generative Q&A.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary-500/40 hover:bg-primary-950/30"[39m
+                [33mhref[39m=[32m"/admin/knowledge"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-book-open size-5 text-white"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 7v14"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-left"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"block text-xs font-semibold uppercase tracking-wide text-zinc-500"[39m
+                  [36m>[39m
+                    [0mPolicies & docs[0m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex items-center gap-1 text-sm font-medium text-zinc-200"[39m
+                  [36m>[39m
+                    [0mOpen Knowledge Base[0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-arrow-up-right size-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M7 7h10v10"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M7 17 17 7"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<section[39m
+              [33maria-live[39m=[32m"polite"[39m
+              [33mclass[39m=[32m"space-y-4"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center justify-between gap-2 border-b border-zinc-800/90 pb-3"[39m
+              [36m>[39m
+                [36m<h2[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-zinc-300"[39m
+                [36m>[39m
+                  [0mResults[0m
+                [36m</h2>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"font-mono text-xs tabular-nums text-zinc-500"[39m
+                [36m>[39m
+                  [0m0[0m
+                  [0m match[0m
+                  [0mes[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"rounded-2xl border border-dashed border-zinc-700/80 bg-zinc-900/40 px-6 py-14 text-center"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"font-medium text-zinc-300"[39m
+                [36m>[39m
+                  [0mNo matches[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mx-auto mt-2 max-w-md text-sm text-zinc-500"[39m
+                [36m>[39m
+                  [0mTry another spelling, a shorter word, or search from the suggestions above. Knowledge Base answers policy questions; this index finds [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-zinc-400"[39m
+                  [36m>[39m
+                    [0mnamed records[0m
+                  [36m</span>[39m
+                  [0m.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"shrink-0 border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-4  pb-[max(1rem,env(safe-area-inset-bottom))]"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"mx-auto flex w-full max-w-4xl items-end gap-2 rounded-2xl border border-zinc-700/90 bg-zinc-900/90 p-2 pl-3 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/5"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative mb-0.5 flex min-w-0 flex-1 items-center gap-2 pl-1"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-search size-5 shrink-0 text-zinc-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"11"[39m
+                  [33mcy[39m=[32m"11"[39m
+                  [33mr[39m=[32m"8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Unified search query"[39m
+                [33mautocomplete[39m=[32m"off"[39m
+                [33mclass[39m=[32m"w-full min-w-0 rounded-[var(--radius)] border-input py-1 transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm h-11 border-0 bg-transparent px-0 text-base text-zinc-100 shadow-none placeholder:text-zinc-600 focus-visible:ring-0"[39m
+                [33mdata-slot[39m=[32m"input"[39m
+                [33mid[39m=[32m"admin-search-q"[39m
+                [33mplaceholder[39m=[32m"Search residents, staff, vendors, incidents…"[39m
+                [33mvalue[39m=[32m"Synthetic"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"group/button relative inline-flex items-center justify-center border border-transparent text-sm whitespace-nowrap normal-case tracking-normal transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 font-semibold hover:shadow-[var(--shadow-glow)] gap-1.5 py-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3 h-11 shrink-0 rounded-xl bg-primary-600 px-5 text-white hover:bg-primary-500 dark:bg-primary-600 dark:hover:bg-primary-500"[39m
+              [33mdata-slot[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mSearch[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mx-auto mt-2 max-w-4xl px-1 text-center text-[11px] text-zinc-600"[39m
+          [36m>[39m
+            [0mMinimum 2 characters. For policy questions and document-grounded answers, use[0m
+            [0m [0m
+            [36m<a[39m
+              [33mclass[39m=[32m"text-primary-400 underline-offset-2 hover:text-primary-300 hover:underline"[39m
+              [33mhref[39m=[32m"/admin/knowledge"[39m
+            [36m>[39m
+              [0mKnowledge Base[0m
+            [36m</a>[39m
+            [0m.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 flex-col lg:-mx-10"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"relative flex min-h-0 min-w-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-y-auto"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"mx-auto w-full max-w-4xl px-4 pb-8 pt-6 sm:px-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col gap-3"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"inline-flex w-fit items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-200"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-message-square size-3.5 text-primary-400"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mFind records[0m
+                [36m</div>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl"[39m
+                [36m>[39m
+                  [0mUnified Search[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"max-w-xl text-base leading-relaxed text-zinc-400"[39m
+                [36m>[39m
+                  [0mSearch indexed residents, staff, vendors, and incidents across your organization. This is[0m
+                  [0m [0m
+                  [36m<strong[39m
+                    [33mclass[39m=[32m"font-medium text-zinc-200"[39m
+                  [36m>[39m
+                    [0mlexical[0m
+                  [36m</strong>[39m
+                  [0m (keyword) search over linked records—not generative Q&A.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<a[39m
+                [33mclass[39m=[32m"group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary-500/40 hover:bg-primary-950/30"[39m
+                [33mhref[39m=[32m"/admin/knowledge"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-book-open size-5 text-white"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 7v14"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-left"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"block text-xs font-semibold uppercase tracking-wide text-zinc-500"[39m
+                  [36m>[39m
+                    [0mPolicies & docs[0m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex items-center gap-1 text-sm font-medium text-zinc-200"[39m
+                  [36m>[39m
+                    [0mOpen Knowledge Base[0m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-arrow-up-right size-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M7 7h10v10"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M7 17 17 7"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</a>[39m
+            [36m</div>[39m
+            [36m<section[39m
+              [33maria-live[39m=[32m"polite"[39m
+              [33mclass[39m=[32m"space-y-4"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center justify-between gap-2 border-b border-zinc-800/90 pb-3"[39m
+              [36m>[39m
+                [36m<h2[39m
+                  [33mclass[39m=[32m"text-sm font-semibold text-zinc-300"[39m
+                [36m>[39m
+                  [0mResults[0m
+                [36m</h2>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"font-mono text-xs tabular-nums text-zinc-500"[39m
+                [36m>[39m
+                  [0m0[0m
+                  [0m match[0m
+                  [0mes[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"rounded-2xl border border-dashed border-zinc-700/80 bg-zinc-900/40 px-6 py-14 text-center"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"font-medium text-zinc-300"[39m
+                [36m>[39m
+                  [0mNo matches[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mx-auto mt-2 max-w-md text-sm text-zinc-500"[39m
+                [36m>[39m
+                  [0mTry another spelling, a shorter word, or search from the suggestions above. Knowledge Base answers policy questions; this index finds [0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-zinc-400"[39m
+                  [36m>[39m
+                    [0mnamed records[0m
+                  [36m</span>[39m
+                  [0m.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"shrink-0 border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-4  pb-[max(1rem,env(safe-area-inset-bottom))]"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"mx-auto flex w-full max-w-4xl items-end gap-2 rounded-2xl border border-zinc-700/90 bg-zinc-900/90 p-2 pl-3 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/5"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"relative mb-0.5 flex min-w-0 flex-1 items-center gap-2 pl-1"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-search size-5 shrink-0 text-zinc-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"11"[39m
+                  [33mcy[39m=[32m"11"[39m
+                  [33mr[39m=[32m"8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Unified search query"[39m
+                [33mautocomplete[39m=[32m"off"[39m
+                [33mclass[39m=[32m"w-full min-w-0 rounded-[var(--radius)] border-input py-1 transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm h-11 border-0 bg-transparent px-0 text-base text-zinc-100 shadow-none placeholder:text-zinc-600 focus-visible:ring-0"[39m
+                [33mdata-slot[39m=[32m"input"[39m
+                [33mid[39m=[32m"admin-search-q"[39m
+                [33mplaceholder[39m=[32m"Search residents, staff, vendors, incidents…"[39m
+                [33mvalue[39m=[32m"Synthetic"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"group/button relative inline-flex items-center justify-center border border-transparent text-sm whitespace-nowrap normal-case tracking-normal transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 font-semibold hover:shadow-[var(--shadow-glow)] gap-1.5 py-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3 h-11 shrink-0 rounded-xl bg-primary-600 px-5 text-white hover:bg-primary-500 dark:bg-primary-600 dark:hover:bg-primary-500"[39m
+              [33mdata-slot[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mSearch[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"mx-auto mt-2 max-w-4xl px-1 text-center text-[11px] text-zinc-600"[39m
+          [36m>[39m
+            [0mMinimum 2 characters. For policy questions and document-grounded answers, use[0m
+            [0m [0m
+            [36m<a[39m
+              [33mclass[39m=[32m"text-primary-400 underline-offset-2 hover:text-primary-300 hover:underline"[39m
+              [33mhref[39m=[32m"/admin/knowledge"[39m
+            [36m>[39m
+              [0mKnowledge Base[0m
+            [36m</a>[39m
+            [0m.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/(admin)/search/page.test.tsx:45:18
+     43|     expect(screen.queryByText("No matching residents")).toBeNull();
+     44|     fireEvent.click(screen.getByRole("button", { name: "Search" }));
+     45|     await screen.findByText("No matching residents");
+       |                  ^
+     46|   });
+     47|   it("discards a late response for an obsolete search", async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/app/(admin)/search/page.test.tsx > truthful supported search > discards a late response for an obsolete search
+AssertionError: expected <a …(2)></a> to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"-mx-6 -mt-6 mb-0 flex min-h-0 max-h-[calc(100dvh-7.5rem)] h-[calc(100dvh-7.5rem)] flex-1 flex-col lg:-mx-10"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"relative flex min-h-0 min-w-0 flex-1 flex-col bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(99,102,241,0.12),transparent)] dark:bg-[#050505]"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-h-0 flex-1 overflow-y-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mx-auto w-full max-w-4xl px-4 pb-8 pt-6 sm:px-6"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-col gap-3"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"inline-flex w-fit items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-200"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-message-square size-3.5 text-primary-400"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                    [0mFind records[0m
+                  [36m</div>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"text-3xl font-semibold tracking-tight text-zinc-100 sm:text-4xl"[39m
+                  [36m>[39m
+                    [0mUnified Search[0m
+                  [36m</h1>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"max-w-xl text-base leading-relaxed text-zinc-400"[39m
+                  [36m>[39m
+                    [0mSearch indexed residents, staff, vendors, and incidents across your organization. This is[0m
+                    [0m [0m
+                    [36m<strong[39m
+                      [33mclass[39m=[32m"font-medium text-zinc-200"[39m
+                    [36m>[39m
+                      [0mlexical[0m
+                    [36m</strong>[39m
+                    [0m (keyword) search over linked records—not generative Q&A.[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+                [36m<a[39m
+                  [33mclass[39m=[32m"group flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-3 transition hover:border-primary-500/40 hover:bg-primary-950/30"[39m
+                  [33mhref[39m=[32m"/admin/knowledge"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex size-10 items-center justify-center rounded-xl shadow-lg shadow-[var(--shadow-card)]"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-book-open size-5 text-white"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M12 7v14"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-left"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"block text-xs font-semibold uppercase tracking-wide text-zinc-500"[39m
+                    [36m>[39m
+                      [0mPolicies & docs[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"flex items-center gap-1 text-sm font-medium text-zinc-200"[39m
+                    [36m>[39m
+                      [0mOpen Knowledge Base[0m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-arrow-up-right size-3.5 opacity-70 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mheight[39m=[32m"24"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"24"[39m
+                        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M7 7h10v10"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M7 17 17 7"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</a>[39m
+              [36m</div>[39m
+              [36m<section[39m
+                [33maria-live[39m=[32m"polite"[39m
+                [33mclass[39m=[32m"space-y-4"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-center justify-between gap-2 border-b border-zinc-800/90 pb-3"[39m
+                [36m>[39m
+                  [36m<h2[39m
+                    [33mclass[39m=[32m"text-sm font-semibold text-zinc-300"[39m
+                  [36m>[39m
+                    [0mResults[0m
+                  [36m</h2>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"font-mono text-xs tabular-nums text-zinc-500"[39m
+                  [36m>[39m
+                    [0m1[0m
+                    [0m match[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<ul[39m
+                  [33mclass[39m=[32m"space-y-2 pb-4"[39m
+                [36m>[39m
+                  [36m<li[39m
+                    [33mclass[39m=[32m"rounded-2xl border border-zinc-800/90 bg-zinc-900/50 transition hover:border-primary-500/35 hover:bg-zinc-900/90"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"min-w-0 flex-1"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"mb-1 flex flex-wrap items-center gap-2"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"rounded-md bg-zinc-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400"[39m
+                          [36m>[39m
+                            [0mResident[0m
+                          [36m</span>[39m
+                        [36m</div>[39m
+                        [36m<a[39m
+                          [33mclass[39m=[32m"font-medium text-primary-300 underline-offset-4 hover:text-primary-200 hover:underline"[39m
+                          [33mhref[39m=[32m"/admin/residents/resident"[39m
+                        [36m>[39m
+                          [0mObsolete result[0m
+                        [36m</a>[39m
+                      [36m</div>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"flex shrink-0 items-center gap-2 text-xs text-zinc-500"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"inline-flex items-center gap-1 rounded-lg bg-zinc-800/80 px-2.5 py-1 text-zinc-300"[39m
+                        [36m>[39m
+                          [0mSynthetic facility[0m
+                        [36m</span>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</section>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"shrink-0 border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-4  pb-[max(1rem,env(safe-area-inset-bottom))]"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mx-auto flex w-full max-w-4xl items-end gap-2 rounded-2xl border border-zinc-700/90 bg-zinc-900/90 p-2 pl-3 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] ring-1 ring-white/5"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"relative mb-0.5 flex min-w-0 flex-1 items-center gap-2 pl-1"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-search size-5 shrink-0 text-zinc-500"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"11"[39m
+                    [33mcy[39m=[32m"11"[39m
+                    [33mr[39m=[32m"8"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [36m<input[39m
+                  [33maria-label[39m=[32m"Unified search query"[39m
+                  [33mautocomplete[39m=[32m"off"[39m
+                  [33mclass[39m=[32m"w-full min-w-0 rounded-[var(--radius)] border-input py-1 transition-colors duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm h-11 border-0 bg-transparent px-0 text-base text-zinc-100 shadow-none placeholder:text-zinc-600 focus-visible:ring-0"[39m
+                  [33mdata-slot[39m=[32m"input"[39m
+                  [33mid[39m=[32m"admin-search-q"[39m
+                  [33mplaceholder[39m=[32m"Search residents, staff, vendors, incidents…"[39m
+                  [33mvalue[39m=[32m"Current"[39m
+                [36m/>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"group/button relative inline-flex items-center justify-center border border-transparent text-sm whitespace-nowrap normal-case tracking-normal transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 font-semibold hover:shadow-[var(--shadow-glow)] gap-1.5 py-2.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3 h-11 shrink-0 rounded-xl bg-primary-600 px-5 text-white hover:bg-primary-500 dark:bg-primary-600 dark:hover:bg-primary-500"[39m
+                [33mdata-slot[39m=[32m"button"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mSearch[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mx-auto mt-2 max-w-4xl px-1 text-center text-[11px] text-zinc-600"[39m
+            [36m>[39m
+              [0mMinimum 2 characters. For policy questions and document-grounded answers, use[0m
+              [0m [0m
+              [36m<a[39m
+                [33mclass[39m=[32m"text-primary-400 underline-offset-2 hover:text-primary-300 hover:underline"[39m
+                [33mhref[39m=[32m"/admin/knowledge"[39m
+              [36m>[39m
+                [0mKnowledge Base[0m
+              [36m</a>[39m
+              [0m.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected:
+null
+
++ Received:
+<a
+  class="font-medium text-primary-300 underline-offset-4 hover:text-primary-200 hover:underline"
+  href="/admin/residents/resident"
+>
+  Obsolete result
+</a>
+
+ ❯ src/app/(admin)/search/page.test.tsx:55:71
+     53|     await screen.findByRole("link", { name: "Current result" });
+     54|     await act(async () => { resolveOld({ data: [resident("Obsolete res…
+     55|     await waitFor(() => expect(screen.queryByText("Obsolete result")).…
+       |                                                                       ^
+     56|     expect(screen.getByRole("link", { name: "Current result" })).toBeT…
+     57|   });
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 1 passed (5)
+   Start at  17:38:35
+   Duration  4.06s (transform 51ms, setup 31ms, import 139ms, tests 3.73s, environment 97ms)

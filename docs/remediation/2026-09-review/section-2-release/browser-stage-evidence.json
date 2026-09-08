@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-09-08T01:43:58.240Z",
+  "source": "05c9a1792c909186eae6b0865ed87ddbbb03acee",
+  "target": "isolated local Next app and real Supabase Auth/PostgREST",
+  "checks": [
+    {
+      "name": "production login is inert before JavaScript hydration",
+      "pass": true
+    }
+  ],
+  "screenshots": [],
+  "localTLS": {
+    "target": "https://127.0.0.1:59231",
+    "trust": "Chromium SPKI exception for exact run-owned self-signed certificate",
+    "cspBypassed": false
+  },
+  "pass": false,
+  "failure": "Signed synthetic session unavailable caregiver"
+}
