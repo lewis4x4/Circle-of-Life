@@ -8,6 +8,12 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   {
+    href: "/admin/medications/shifts",
+    title: "Medication shift assignments",
+    description: "Assign clinical medication work and residents to eligible staff.",
+    icon: ClipboardList,
+  },
+  {
     href: "/admin/medications/verbal-orders",
     title: "Verbal orders",
     description: "Pending co-signatures and implementation status.",

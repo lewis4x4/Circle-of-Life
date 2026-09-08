@@ -22,9 +22,21 @@ Migration 336 couples discharge and exact matching bed release. Scope/occupant/e
 
 Baseline SQL and rendered regressions failed. Final gate replay passed 339 migrations/20 probes, including nurse discharge, failure rollback and scope checks. Actual reservation overlap passed: reservation rejects while occupied and waits for discharge before creating a hold. Three rendered tests and supported typecheck passed. Independent source review APPROVE. Strict UI gate PASS: `test-results/agent-gates/2026-09-08T11-50-27-089Z-section-3-fl007.json`. Public-root screenshots/axe are not authenticated staff acceptance. Mission alignment: pass. Not deployed.
 
+## Completed segment: Section 3 / FL-001
+
+Migration 337 provides explicit manager clinical assignments and operator-owned start/refresh commands. The manager page links from medication management; the cockpit has a real assignment-start journey. This does not publish staffing drafts or record payroll time. Current actor/facility/staff/resident/order eligibility is checked. Exact saved creation requests remain confirmable after later eligibility changes; starting always rechecks current eligibility. Pending creation payload is retained while mounted, including across facility switches and ambiguous-then-definite failure. Browser reload persistence is not claimed.
+
+Scheduled passes use prescription dates, frequency and facility-local slots. Repeated fall clock time uses the first occurrence to match the existing caregiver client; nonexistent spring times and unspecified cadence require nurse review. PRN doses are not fabricated. Existing eMAR/dose locks, holds and independent signature command remain. Direct untrusted activation, generated-pass creation/schedule edits and mismatched eMAR evidence cannot bypass production. Resident assignment changes are audited. Departed residents/inactive orders and externally documented doses leave the visible queue without rewriting history. Queries paginate response rows and chunk identifier URLs. Expired refresh reaches assignment selection; handoff uses actual window end.
+
+Final independent review APPROVE with source hashes in `section-3-fl001-review.json`. Actual six-create/six-start concurrency converged to one shift, assignment, pass and start event, zero fabricated eMAR. Final full suite: 534 files, 3310 passed, two existing opt-in skips. Supported typecheck PASS. Native replay: 340 migrations and 21 probes PASS. Strict UI gate PASS: `test-results/agent-gates/2026-09-08T12-33-15-603Z-section-3-fl001.json`. Root screenshots/axe do not establish authenticated clinical browser UAT. Mission alignment: pass for Section 3 engineering. Not deployed.
+
+## Integration follow-up to inspect
+
+The older `generate-emar-schedule` Edge producer was observed to use UTC clock construction and a 500-order read cap. Its deployment/current interaction with the new canonical pass producer needs final integration verification; do not claim its scheduling semantics were repaired by FL-001. Existing admission override/bed inventory mismatch and temporary-block admission behavior also need integration scrutiny. Preserve named Homewood staff/device acceptance as NOT RUN until actually performed.
+
 ## Remaining sequence
 
-- Section 3: FL-001 operational med-tech shift and pass producer next.
+- Section 3 source implementation/review complete; Section 4 is next.
 - Section 4: BUS-001, BUS-002, BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
 - Section 5: NAV-004, NAV-005, NAV-008, NAV-010, NAV-011, SYS-007.
 - Section 6: NAV-007, FL-002, FL-008, FL-010, FL-013, FL-014.

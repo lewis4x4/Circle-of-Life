@@ -24,6 +24,10 @@ type QueryFilters = Record<string, unknown> & {
   _in?: QueryColumnValues;
   _is?: QueryColumnValue;
   _single?: boolean;
+  _gte?: QueryColumnValue;
+  _gt?: QueryColumnValue;
+  _lte?: QueryColumnValue;
+  _lt?: QueryColumnValue;
 };
 type QueryResult = { data: unknown; error: { message?: string } | null };
 type DynamicQuery = PromiseLike<QueryResult> & {
@@ -33,6 +37,11 @@ type DynamicQuery = PromiseLike<QueryResult> & {
   is(col: string, val: unknown): DynamicQuery;
   maybeSingle(): DynamicQuery;
   eq(col: string, val: unknown): DynamicQuery;
+  gte(col: string, val: unknown): DynamicQuery;
+  gt(col: string, val: unknown): DynamicQuery;
+  lte(col: string, val: unknown): DynamicQuery;
+  lt(col: string, val: unknown): DynamicQuery;
+  range(from: number, to: number): DynamicQuery;
 };
 type DynamicSupabase = {
   from(table: string): {
@@ -49,6 +58,7 @@ interface ShiftData {
   residents: ResidentItem[];
   tape: TapeEvent[];
   shiftId: string;
+  handoffTime: string;
   loading: boolean;
   error: string | null;
 }
@@ -80,7 +90,7 @@ function mapTapeKind(eventType: string): TapeEvent["kind"] {
 }
 
 function fmtTime(ts: string): string {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/New_York" });
 }
 
 function elapsed(clockedIn: string | null): string {
@@ -99,25 +109,48 @@ function facilityLabelFrom(row: QueryRow | null | undefined): string {
 /** Raw Supabase query helper — casts to bypass generated type depth issues */
 async function q(table: string, select: string, filters: QueryFilters = {}) {
   const sb = createClient();
-  const { _order, _limit, _in, _is, _single, ...eqFilters } = filters;
-  let query = (sb as unknown as DynamicSupabase).from(table).select(select);
-  if (_order) query = query.order(_order.col, _order.opts);
-  if (typeof _limit === "number") query = query.limit(_limit);
-  if (_in) query = query.in(_in.col, _in.vals);
-  if (_is) query = query.is(_is.col, _is.val);
-  if (_single) query = query.maybeSingle();
-  for (const [k, v] of Object.entries(eqFilters)) {
-    query = query.eq(k, v);
+  const { _order, _limit, _in, _is, _single, _gte, _gt, _lte, _lt, ...eqFilters } = filters;
+  const build = () => {
+    let query = (sb as unknown as DynamicSupabase).from(table).select(select);
+    if (_order) query = query.order(_order.col, _order.opts);
+    query = query.order("id", { ascending: true });
+    if (typeof _limit === "number") query = query.limit(_limit);
+    if (_in) query = query.in(_in.col, _in.vals);
+    if (_is) query = query.is(_is.col, _is.val);
+    if (_gte) query = query.gte(_gte.col, _gte.val);
+    if (_gt) query = query.gt(_gt.col, _gt.val);
+    if (_lte) query = query.lte(_lte.col, _lte.val);
+    if (_lt) query = query.lt(_lt.col, _lt.val);
+    for (const [key, value] of Object.entries(eqFilters)) query = query.eq(key, value);
+    return query;
+  };
+  if (_single) return await build().maybeSingle();
+  if (typeof _limit === "number") return await build();
+  const rows: unknown[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const page = await build().range(offset, offset + 499);
+    if (page.error) return { data: null, error: page.error };
+    if (!Array.isArray(page.data)) throw new Error("Medication shift data was not returned");
+    rows.push(...page.data);
+    if (page.data.length < 500) return { data: rows, error: null };
   }
-  const { data, error } = await query;
-  return { data: data as QueryRow[] | QueryRow | null, error };
+}
+
+// Bound request URLs as well as response pages for large clinical queues.
+async function qForIds(table: string, columns: string, filters: QueryFilters, column: string, ids: readonly unknown[]): Promise<QueryResult> {
+  const results = await Promise.all(Array.from({ length: Math.ceil(ids.length / 100) }, (_, index) =>
+    q(table, columns, { ...filters, _in: { col: column, vals: ids.slice(index * 100, (index + 1) * 100) } }),
+  ));
+  const failed = results.find(result => result.error);
+  if (failed) return failed;
+  return { data: results.flatMap(result => Array.isArray(result.data) ? result.data : []), error: null };
 }
 
 export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } {
   const [data, setData] = useState<ShiftData>({
     userId: "",
     shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: UNRESOLVED_UNIT_LABEL, assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
-    passes: [], residents: [], tape: [], shiftId: "", loading: true, error: null,
+    passes: [], residents: [], tape: [], shiftId: "", handoffTime: "", loading: true, error: null,
   });
 
   const load = useCallback(async () => {
@@ -129,6 +162,8 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
       // Active shift
       const shiftRes = await q("med_tech_shifts", "*", {
         user_id: user.id, status: "active",
+        _lte: { col: "shift_start", val: new Date().toISOString() },
+        _gt: { col: "shift_end", val: new Date().toISOString() },
         _is: { col: "deleted_at", val: null },
         _order: { col: "shift_start", opts: { ascending: false } },
         _limit: 1, _single: true,
@@ -144,6 +179,7 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
       const facilityRes = shift.facility_id
         ? await q("facilities", "name", { id: shift.facility_id, _single: true })
         : { data: null };
+      if (!facilityRes.data || ("error" in facilityRes && facilityRes.error)) throw new Error("Current facility access is unavailable. Refresh your session or contact an administrator.");
       const facilityLabel = facilityLabelFrom(facilityRes.data as QueryRow | null);
 
       // Profile
@@ -153,17 +189,30 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
 
       // Shift residents with resident details
       const srRes = await q("med_tech_shift_residents",
-        "resident_id, priority, residents(id, first_name, last_name, preferred_name)",
+        "resident_id, priority, residents(id, first_name, last_name, preferred_name, status, facility_id, deleted_at)",
         { shift_id: shift.id, _order: { col: "priority", opts: { ascending: true } } });
       if (srRes.error) throw new Error(srRes.error.message ?? "Resident assignments unavailable");
-      const shiftResidents = (srRes.data ?? []) as QueryRow[];
+      const shiftResidents = ((srRes.data ?? []) as QueryRow[]).filter(row => {
+        const resident = row.residents as QueryRow | null;
+        return resident?.status === "active" && resident.facility_id === shift.facility_id && !resident.deleted_at;
+      });
 
       // Med passes with medication details
       const mpRes = await q("med_passes",
-        "*, resident_medications(medication_name, strength, form, route, instructions, controlled_schedule, witness_required)",
+        "*, resident_medications(medication_name, strength, form, route, instructions, controlled_schedule, witness_required, status, deleted_at)",
         { shift_id: shift.id, _is: { col: "deleted_at", val: null }, _order: { col: "scheduled_time", opts: { ascending: true } } });
       if (mpRes.error) throw new Error(mpRes.error.message ?? "Medication pass data unavailable");
       const passes = (mpRes.data ?? []) as QueryRow[];
+      const medicationIds = [...new Set(passes.map(pass => pass.resident_medication_id))];
+      const emar = await qForIds("emar_records", "resident_medication_id,scheduled_time,status", {
+        facility_id: shift.facility_id,
+        _is: { col: "deleted_at", val: null },
+        _gte: { col: "scheduled_time", val: shift.shift_start },
+        _lt: { col: "scheduled_time", val: shift.shift_end },
+      }, "resident_medication_id", medicationIds);
+      if (emar.error) throw new Error(emar.error.message ?? "Dose status unavailable");
+      const doseKey = (row: QueryRow) => `${row.resident_medication_id}|${row.scheduled_time ? new Date(row.scheduled_time as string).toISOString() : ""}`;
+      const documented = new Set(((emar.data ?? []) as QueryRow[]).filter(row => row.status !== "scheduled").map(doseKey));
 
       // Tape events
       const tRes = await q("shift_tape_events", "*",
@@ -173,15 +222,19 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
 
       // Active holds
       const rids = shiftResidents.map(sr => sr.resident_id);
-      const holdRes = await q("pre_pass_holds", "resident_id",
-        { active: true, _in: { col: "resident_id", vals: rids } });
+      const holdRes = await qForIds("pre_pass_holds", "resident_id",
+        { active: true }, "resident_id", rids);
       if (holdRes.error) throw new Error(holdRes.error.message ?? "Hold status unavailable");
       const holdRids = new Set(((holdRes.data ?? []) as QueryRow[]).map(h => h.resident_id));
 
       // ── Build UI data ──
 
       const passItems: MedPassItem[] = passes
-        .filter(p => p.status === "pending" || p.status === "overdue")
+        .filter(p => {
+          const med = p.resident_medications as QueryRow | null;
+          return (p.status === "pending" || p.status === "overdue") && med?.status === "active" && !med.deleted_at
+            && shiftResidents.some(row => row.resident_id === p.resident_id) && !documented.has(doseKey(p));
+        })
         .map(p => {
           const med = p.resident_medications as QueryRow | null;
           const { status, minutes } = derivePassStatus(p.status as string, p.scheduled_time as string | null);
@@ -270,7 +323,7 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
           shiftType,
         },
         passes: passItems, residents: resItems, tape: tapeItems,
-        shiftId: shift.id as string, loading: false, error: null,
+        shiftId: shift.id as string, handoffTime: endH, loading: false, error: null,
       });
     } catch (err) {
       setData(d => ({ ...d, loading: false, error: err instanceof Error ? err.message : "Unknown error" }));

@@ -1,0 +1,9 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Remaining Roadmap
+
+
+ Test Files  5 passed (5)
+      Tests  17 passed (17)
+   Start at  08:30:31
+   Duration  3.03s (transform 1.50s, setup 803ms, import 5.07s, tests 972ms, environment 2.18s)
+

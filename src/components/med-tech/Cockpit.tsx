@@ -13,13 +13,26 @@ import { IncidentModal } from "./IncidentModal";
 import type { MedPassItem } from "./PassCard";
 import type { ResidentItem } from "./ResidentRail";
 import { useShiftCurrent } from "@/hooks/med-tech/useShiftCurrent";
+import { ShiftStart } from "./ShiftStart";
+import { startMedicationShift } from "@/lib/med-tech/shift-commands";
+import { Button } from "@/components/ui/button";
 
 export function Cockpit() {
   const [activePass, setActivePass]         = useState<MedPassItem | null>(null);
   const [activeResident, setActiveResident] = useState<ResidentItem | null>(null);
   const [incidentOpen, setIncidentOpen]     = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState("");
 
-  const { userId, shift, passes, residents, tape, shiftId, loading, error, refresh } = useShiftCurrent();
+  const { userId, shift, passes, residents, tape, shiftId, handoffTime, loading, error, refresh } = useShiftCurrent();
+
+  async function refreshQueue() {
+    setRefreshing(true);
+    setRefreshError("");
+    try { await startMedicationShift(shiftId); }
+    catch (failure) { setRefreshError(failure instanceof Error ? failure.message : "The medication queue could not be refreshed."); }
+    finally { await refresh(); setRefreshing(false); }
+  }
 
   if (loading) {
     return (
@@ -32,34 +45,17 @@ export function Cockpit() {
     );
   }
 
+  if (error === "No active shift") {
+    return <div className="mx-auto max-w-xl p-6"><ShiftStart onStarted={refresh} /></div>;
+  }
   if (error) {
-    const noShift = error === "No active shift";
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div
-          className={
-            noShift
-              ? "max-w-md rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center"
-              : "max-w-md rounded-2xl border border-rose-500/30 bg-rose-500/10 px-6 py-5 text-center"
-          }
-        >
-          <h2
-            className={
-              noShift
-                ? "text-lg font-semibold text-slate-200 mb-2"
-                : "text-lg font-semibold text-rose-300 mb-2"
-            }
-          >
-            {noShift ? "Cockpit is waiting on a shift" : "Shift Not Available"}
-          </h2>
-          <p className="text-sm text-slate-400">
-            {noShift
-              ? "The Med-Tech cockpit lights up once a med-tech is clocked in. Start a shift from the scheduling system and this page will populate with the live med pass."
-              : error}
-          </p>
-        </div>
+    return <div className="flex min-h-screen items-center justify-center p-6">
+      <div className="max-w-md space-y-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center">
+        <h2 className="text-lg font-semibold">Shift not available</h2>
+        <p role="alert">{error}</p>
+        <Button variant="outline" onClick={() => void refresh()}>Retry loading shift</Button>
       </div>
-    );
+    </div>;
   }
 
   return (
@@ -71,6 +67,10 @@ export function Cockpit() {
       <ShiftBar {...shift} />
 
       <div className="px-4 pb-4 md:px-6">
+        <div className="mb-3 space-y-2">
+          <Button variant="outline" disabled={refreshing} onClick={() => void refreshQueue()}>{refreshing ? "Refreshing…" : "Refresh medication queue"}</Button>
+          {refreshError && <p role="alert">{refreshError}</p>}
+        </div>
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 ">
           <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
             <span>Medication Pass</span>
@@ -96,7 +96,7 @@ export function Cockpit() {
         />
       </div>
 
-      <ShiftTape events={tape} handoffTime="15:00" />
+      <ShiftTape events={tape} handoffTime={handoffTime} />
 
       {/* Med pass modal */}
       {activePass && (

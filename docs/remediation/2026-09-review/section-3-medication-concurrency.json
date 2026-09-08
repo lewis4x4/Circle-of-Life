@@ -1,0 +1,14 @@
+{
+  "environment": "run-owned PostgreSQL with Auth stubs",
+  "migration_files": 340,
+  "concurrent_create_requests": 6,
+  "concurrent_start_requests": 6,
+  "final_state": {
+    "shifts": 1,
+    "assignments": 1,
+    "passes": 1,
+    "start_events": 1,
+    "emar": 0
+  },
+  "passed": true
+}

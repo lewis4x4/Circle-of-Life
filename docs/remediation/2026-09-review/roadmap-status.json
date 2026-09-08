@@ -135,8 +135,16 @@
       "id": "FL-001",
       "severity": "P1",
       "title": "The med-tech shift and pass queue has no operational producer",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/337_operational_medication_shifts.sql",
+        "supabase/tests/review_section3_medication_shifts.sql",
+        "scripts/verify-medication-shift-concurrency.py",
+        "docs/remediation/2026-09-review/section-3-medication-concurrency.json",
+        "docs/remediation/2026-09-review/section-3-fl001-review.json",
+        "test-results/agent-gates/2026-09-08T12-33-15-603Z-section-3-fl001.json"
+      ],
+      "notes": "Managers assign explicit clinical windows/residents; the assigned operator starts and refreshes real prescribed pass queues. Current authority, idempotence, cadence/DST, direct-write evidence guards and complete reads are enforced. Six concurrent create/start calls converge. Full 534-file suite/3310 tests, typecheck, 340 migrations/21 probes and strict UI gate pass. Independent source review approved; not deployed or clinically accepted."
     },
     {
       "id": "FL-002",

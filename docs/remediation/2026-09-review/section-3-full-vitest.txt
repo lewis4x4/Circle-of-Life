@@ -1,0 +1,19 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Remaining Roadmap
+
+8:28:50 AM [vite] (client) Failed to load source map for /Users/brianlewis/Circle of Life/Haven Remaining Roadmap/node_modules/typescript/lib/typescript.js.
+Error: An error occurred while trying to read the map file at typescript.js.map
+Error: ENOENT: no such file or directory, open '/Users/brianlewis/Circle of Life/Haven Remaining Roadmap/node_modules/typescript/lib/typescript.js.map'
+    at Object.readFileSync (node:fs:440:20)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/node_modules/vite/dist/node/chunks/node.js:18736:13
+    at readFromFileMap (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/node_modules/vite/dist/node/chunks/node.js:18436:13)
+    at Object.exports.fromMapFileComment (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/node_modules/vite/dist/node/chunks/node.js:18530:12)
+    at Object.exports.fromMapFileSource (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/node_modules/vite/dist/node/chunks/node.js:18541:22)
+    at extractSourcemapFromFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/node_modules/vite/dist/node/chunks/node.js:18722:87)
+    at loadAndTransform (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/node_modules/vite/dist/node/chunks/node.js:19691:22)
+
+ Test Files  534 passed (534)
+      Tests  3310 passed | 2 skipped (3312)
+   Start at  08:27:22
+   Duration  126.25s (transform 44.24s, setup 37.78s, import 194.26s, tests 31.15s, environment 138.75s)
+
