@@ -1,0 +1,44 @@
+{
+  "segment": "hcol-referral-tour",
+  "review": "APPROVE independent implementation and final UI source review; zero page diagnostics",
+  "source_sha256": {
+    "src/app/(admin)/admin/referrals/[id]/page.tsx": "4eda90845b16a79f6013684a2ea5a1182cae4bd3746d091173f6573735f59ac4",
+    "src/app/(admin)/admin/referrals/[id]/page.test.tsx": "4ecc1f437fef59218abc6a0049e0939d6767e0c78d68498e6b85e880ec67d33a"
+  },
+  "focused_tests": 7,
+  "independent_tests_including_wall_clock": 12,
+  "browser": {
+    "passed": true,
+    "transport": "actual referral page component -> SupabaseJS -> local PostgREST -> PostgreSQL; synthetic signed actor and navigation/auth harness",
+    "checks": [
+      "tour edit preserves assignment",
+      "unsaved notes survive other section save",
+      "notes save uses returned version",
+      "concurrent stage/assignment change blocks stale save",
+      "stale date draft remains visible"
+    ],
+    "overflow": false,
+    "violations": [],
+    "errors": []
+  },
+  "visual": {
+    "score": 95,
+    "verdict": "pass",
+    "category_match": true,
+    "differences": [
+      "Intentional mobile header stacking keeps title, instructions and actions readable."
+    ],
+    "suggestions": [],
+    "reasoning": "The final mobile render preserves card hierarchy and readable feedback. Actual local database browser checks, overflow and axe all pass.",
+    "threshold": 90,
+    "next_actions": [
+      "Finish independent review and strict UI gate."
+    ]
+  },
+  "gate": "test-results/agent-gates/2026-09-08T15-05-52-440Z-hcol-referral-tour.json",
+  "limits": [
+    "Synthetic navigation/auth shell with signed local actor; not hosted login or full Next route UAT",
+    "No new business pipeline or Jessica closure vocabulary",
+    "No explicit owner reassignment UI or complete HCOL08 next-action model"
+  ]
+}

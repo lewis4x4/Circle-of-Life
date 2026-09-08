@@ -5,17 +5,17 @@ Source inspection at isolated baseline `9db72d2d`, 8 September 2026. This is an 
 | Proposal | Requirement | Reconciliation / remaining work |
 |---|---|---|
 | HCOL-01 | Definition versions and unified ratio components | Existing metric registries; Finance/Operations approval needed. |
-| HCOL-02 | Reviewed imports | CSV transaction segment in progress. Workbook importer and operator staging remain follow-on. |
+| HCOL-02 | Reviewed imports | Reviewed CSV transaction segment completed and independently approved. Workbook importer and operator staging remain follow-on. |
 | HCOL-03 | Source health and coverage | CSV coverage included; live pagination, freshness, and source absence remain open. |
 | HCOL-04 | Census and money reconciliation | Reuse admissions/status history and active financial repairs; inclusion policy needed. |
-| HCOL-05 | Historical meeting view | CSV original revision archive in progress; complete UI/export/decision version pinning remains open. |
+| HCOL-05 | Historical meeting view | CSV original revision archive completed; complete UI/export/decision version pinning remains open. |
 | HCOL-06 | Person, episode and contact | Existing lead demographics and converted resident link; separate identity/contacts remain open. |
 | HCOL-07 | Temperature, stage and outcome | Existing workflow stage; independent interest level and actual-arrival reconciliation remain open. |
-| HCOL-08 | Accountable next action | Existing tour owner; editor overwrite confirmed. Next action/backup/acknowledgment remain open. |
+| HCOL-08 | Accountable next action | Tour owner preservation and stale-save protection completed with independent approval. Next action/backup/acknowledgment remain open. |
 | HCOL-09 | Verified readiness dependencies | Reuse admission cases, document checklist and migration 321 clearance; qualified review policy needed. |
 | HCOL-10 | Usable accommodation | Existing rooms/beds; configuration constraints/history and current usability need integration. |
 | HCOL-11 | Reservation integrity | Reuse migration 321 and active FL-007; review dates and cross-workflow scenarios remain open. |
-| HCOL-12 | Absence and communication truth | Presence currently stamps notification without evidence; secondary renewal failure not durable. |
+| HCOL-12 | Absence and communication truth | Implicit notification stamping removed; durable return-document follow-up and explicit human review completed. Full absence and communication capture remain open. |
 | HCOL-13 | Internal referrals/transfers | Existing facility scope; receiving acknowledgment, preference and attribution remain open. |
 | HCOL-14 | Placement closure reasons | Migration 317 catalog/schema exists; approved vocabulary and operator capture remain open. COL-23/35 not live-verified. |
 | HCOL-15 | Scheduled activity outcomes | Existing tour timestamps; outcomes/rescheduling/source cohorts/costs remain open. |
@@ -25,7 +25,7 @@ Source inspection at isolated baseline `9db72d2d`, 8 September 2026. This is an 
 | HCOL-19 | Owed/collected/promised | Reuse billing collections, rate quotes and active BUS-001 receipts; Finance definitions needed. |
 | HCOL-20 | Room/equipment readiness | Reuse maintenance and active BUS-002 receiving; readiness dependencies remain open. |
 | HCOL-21 | Service-provider handoffs | External acceptance/start/contact workflow remains unverified. |
-| HCOL-22 | Durable recovery and coverage | Reuse lifecycle/offline; mounted-only receipts in active repairs do not establish reload recovery. |
+| HCOL-22 | Durable recovery and coverage | Return-document follow-up survives reload; other lifecycle/offline receipts and cross-facility recovery remain open. |
 | HCOL-23 | Meeting decisions and actions | Existing executive actions; Front Office owns officer work. Attribution/acceptance remain explicit. |
 | HCOL-24 | Assumption-based forecasts | Existing scenarios; reliable preceding events, saved assumptions and backtesting needed. |
 | HCOL-25 | Growth and quality measures | Existing quality data; approved definitions/coverage and access needed. |

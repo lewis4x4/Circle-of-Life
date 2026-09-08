@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
@@ -85,6 +85,7 @@ export default function AdminReferralLeadDetailPage() {
   const [notesDraft, setNotesDraft] = useState("");
   const [tourScheduledDraft, setTourScheduledDraft] = useState("");
   const [tourCompletedDraft, setTourCompletedDraft] = useState("");
+  const saveInFlight = useRef(false);
   const [actionLoading, setActionLoading] = useState<"status" | "notes" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -154,25 +155,42 @@ export default function AdminReferralLeadDetailPage() {
     kind: "status" | "notes",
     successMessage: string,
   ) {
-    if (!lead) return;
+    if (!lead || saveInFlight.current) return;
+    if (!user) { setActionMessage(null); setActionError("Session expired. Sign in again before saving the lead."); return; }
+    saveInFlight.current = true;
     setActionLoading(kind);
     setActionError(null);
     setActionMessage(null);
     try {
-      const { error: updateError } = await supabase
+      const { data: updatedData, error: updateError } = await supabase
         .from("referral_leads")
         .update({
           ...patch,
           updated_at: new Date().toISOString(),
           updated_by: user?.id ?? null,
         })
-        .eq("id", lead.id);
-      if (updateError) throw updateError;
+        .eq("id", lead.id)
+        .eq("updated_at", lead.updated_at)
+        .is("deleted_at", null)
+        .select("*, referral_sources(name)")
+        .single();
+      if (updateError) {
+        if (updateError.code === "PGRST116") throw new Error("This lead changed or is no longer available. Your edits are still here; reload and review the latest record before saving.");
+        throw updateError;
+      }
+      if (!updatedData) throw new Error("Could not confirm the saved lead. Your edits are still here.");
+      const updatedLead = updatedData as LeadDetail;
+      setLead(updatedLead);
+      // A section save must not erase unsaved work in the other sections.
+      if ("status" in patch) setStatusDraft(updatedLead.status as EditableLeadStatus);
+      if ("notes" in patch) setNotesDraft(updatedLead.notes ?? "");
+      if ("tour_scheduled_for" in patch) setTourScheduledDraft(updatedLead.tour_scheduled_for ? utcIsoToFacilityDatetimeLocal(updatedLead.tour_scheduled_for) : "");
+      if ("tour_completed_at" in patch) setTourCompletedDraft(updatedLead.tour_completed_at ? utcIsoToFacilityDatetimeLocal(updatedLead.tour_completed_at) : "");
       setActionMessage(successMessage);
-      await load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not update lead.");
     } finally {
+      saveInFlight.current = false;
       setActionLoading(null);
     }
   }
@@ -200,12 +218,13 @@ export default function AdminReferralLeadDetailPage() {
     <div className="mx-auto max-w-3xl space-y-8">
       <RecordDetailHeader
         title="Lead detail"
+        className="[&>div]:flex-col sm:[&>div]:flex-row"
         subtitle="Pipeline workspace for status, handoff, and prospect context."
         backLink={{ label: "Referrals", href: "/admin/referrals" }}
         actions={leadActions}
       />
 
-      <ReferralsHubNav />
+      <div className="[&_[role=tab]]:text-foreground"><ReferralsHubNav /></div>
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -225,24 +244,24 @@ export default function AdminReferralLeadDetailPage() {
       ) : (
         <>
           {actionError ? (
-            <p className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p role="alert" className="rounded-[8px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-foreground">
               {actionError}
             </p>
           ) : null}
           {actionMessage ? (
-            <p className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+            <p role="status" className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-foreground">
               {actionMessage}
             </p>
           ) : null}
           {wrongFacility ? (
-            <p className="rounded-[8px] border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning">
+            <p className="rounded-[8px] border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-foreground">
               This lead belongs to another facility. Switch the facility in the header to{" "}
               <span className="font-mono text-xs">{lead.facility_id}</span> to align context.
             </p>
           ) : null}
 
           {linkedAdmissionCaseId ? (
-            <p className="rounded-[8px] border border-info/20 bg-info/10 px-4 py-3 text-sm text-info">
+            <p className="rounded-[8px] border border-info/20 bg-info/10 px-4 py-3 text-sm text-foreground">
               This lead already has an active admission case. Continue the workflow from that case instead of starting a duplicate handoff.
             </p>
           ) : null}
@@ -268,6 +287,7 @@ export default function AdminReferralLeadDetailPage() {
                       Pipeline status
                     </label>
                     <select
+                      disabled={actionLoading !== null}
                       id="lead-status"
                       value={statusDraft}
                       onChange={(event) => setStatusDraft(event.target.value as EditableLeadStatus)}
@@ -284,7 +304,7 @@ export default function AdminReferralLeadDetailPage() {
                       ))}
                     </select>
                     {cannotSetConverted ? (
-                      <p className="text-xs text-warning">
+                      <p className="text-xs text-muted-foreground">
                         `Converted` requires a linked resident conversion record. Use the admissions workflow first.
                       </p>
                     ) : null}
@@ -293,7 +313,7 @@ export default function AdminReferralLeadDetailPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={actionLoading === "status" || statusDraft === lead.status}
+                      disabled={actionLoading !== null || statusDraft === lead.status}
                       onClick={() => void updateLead({ status: statusDraft }, "status", "Lead status saved.")}
                     >
                       {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save status"}
@@ -343,6 +363,7 @@ export default function AdminReferralLeadDetailPage() {
                 <label className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour scheduled for (ET)</span>
                   <input
+                    disabled={actionLoading !== null}
                     type="datetime-local"
                     value={tourScheduledDraft}
                     onChange={(event) => setTourScheduledDraft(event.target.value)}
@@ -353,6 +374,7 @@ export default function AdminReferralLeadDetailPage() {
                 <label className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour completed at (ET)</span>
                   <input
+                    disabled={actionLoading !== null}
                     type="datetime-local"
                     value={tourCompletedDraft}
                     onChange={(event) => setTourCompletedDraft(event.target.value)}
@@ -365,7 +387,7 @@ export default function AdminReferralLeadDetailPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={actionLoading === "status"}
+                  disabled={actionLoading !== null}
                   onClick={() =>
                     void (() => {
                       const scheduledIso = tourScheduledDraft
@@ -380,7 +402,6 @@ export default function AdminReferralLeadDetailPage() {
                           status: nextStatus,
                           tour_scheduled_for: scheduledIso,
                           tour_completed_at: completedIso,
-                          tour_owner_user_id: user?.id ?? null,
                         },
                         "status",
                         nextStatus === statusDraft ? "Tour workflow saved." : `Tour workflow saved and status moved to ${formatStatus(nextStatus)}.`,
@@ -397,6 +418,8 @@ export default function AdminReferralLeadDetailPage() {
           <RecordDetailSection title="Notes">
             <div className="space-y-3">
               <textarea
+                disabled={actionLoading !== null}
+                aria-label="Lead notes"
                 value={notesDraft}
                 onChange={(event) => setNotesDraft(event.target.value)}
                 rows={5}
@@ -406,7 +429,7 @@ export default function AdminReferralLeadDetailPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={actionLoading === "notes" || notesDraft === (lead.notes ?? "")}
+                  disabled={actionLoading !== null || notesDraft === (lead.notes ?? "")}
                   onClick={() => void updateLead({ notes: notesDraft.trim() || null }, "notes", "Lead notes saved.")}
                 >
                   {actionLoading === "notes" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save notes"}

@@ -57,3 +57,14 @@ Strict UI gate PASS: `test-results/agent-gates/2026-09-08T14-46-39-693Z-hcol-ret
 Simplification: removed the direct secondary Form 1823 write from the presence picker. The database persists follow-up once; current-authority retry or explicit human review closes it with evidence. No automatic communication timestamp or clinical clearance is fabricated.
 
 Remaining HCOL-12/22 scope: explicit communication-event capture, full absence coordination and cross-facility transfer recovery. This slice intentionally fails closed when resident facility differs from captured follow-up facility; integration must provide authorized transfer handoff/reassignment before claiming recovery across transfers. Manual-review input remains mounted on uncertain results; server follow-up survives reload, but unsaved free-text notes do not persist across reload. No browser PHI cache was introduced. Mission alignment: pass for this bounded engineering repair.
+
+## Completed bounded segment: preserve referral assignment and concurrent work
+
+Bounded HCOL-08/15 technical correction. Tour-date edits must omit assignment changes, preserving whichever tour owner is current in the database. Lead saves must confirm a matched row and reject stale loaded versions rather than silently overwriting another operator's stage, notes or assignment. This does not approve Jessica's closure vocabulary or add new business stages.
+
+
+Focused tests: 7 passed; independent tests including wall-clock helpers: 12 passed. Actual page component → Supabase JS → local PostgREST → PostgreSQL browser checks preserved assignment, kept unrelated notes, confirmed subsequent saves against the returned version and rejected a concurrent stage/assignment change without losing the edited date. All saves serialize, and a success updates only its saved draft fields. Mobile header and feedback/tab contrast were repaired after browser/axe findings; no shared component changed. Final mobile visual95, no overflow/axe/page errors.
+
+Strict UIgate PASS `test-results/agent-gates/2026-09-08T15-05-52-440Z-hcol-referral-tour.json` (full build, lint, audit,338 migration/19 SQL replay, component-harness design/axe). Browser evidence uses a synthetic navigation/auth harness and signed local actor; no hosted login or full Next route UAT claimed. HCOL08 assignment acceptance/backup and HCOL15 tour outcomes remain open. Jessica's vocabulary untouched. Mission alignment: pass for this bounded repair.
+
+Final independent implementation and UI source review APPROVE; zero diagnostics.
