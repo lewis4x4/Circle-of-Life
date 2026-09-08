@@ -21,6 +21,7 @@ import {
   polstMolstFriendly,
 } from "@/components/residents/resident-clinical-overview-widgets";
 import { ResidentDetailTabStrip, type ResidentDetailHrefConfig } from "@/components/residents/ResidentDetailTabStrip";
+import { ResidentReturnFollowups } from "@/components/residents/ResidentReturnFollowups";
 import { ResidentPresenceControl } from "@/components/residents/ResidentPresenceControl";
 import { HoldDeclineReturnButton } from "@/components/residents/HoldDeclineReturnButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -436,6 +437,8 @@ export function ResidentDetailOverviewClient({
       <div className="w-full shrink-0">
         <ResidentDetailTabStrip hrefs={hrefs} active="overview" />
       </div>
+
+      <ResidentReturnFollowups residentId={detail.id} refreshKey={detail.rawStatus} />
 
       <div className="grid flex-1 grid-cols-1 gap-5 lg:min-h-[480px] lg:grid-cols-12 lg:gap-6">
         <div className="flex flex-col gap-4 lg:col-span-3">

@@ -32,3 +32,28 @@ The first gate failed because an isolated-worktree dependency symlink fell outsi
 Simplification: CSV publication now uses one atomic RPC instead of per-week DELETE/PATCH/POST sequences. Missing data and uncertain definitions remain visible. Full HCOL-02/03/05 includes further workbook, UI, non-import publication, definition and source-health work.
 
 Mission alignment: pass for this bounded engineering segment. Full HCOL implementation is not yet complete. No deployment or staff UAT claimed.
+
+## Owner clarification: business definitions (8 September 2026)
+
+Brian confirmed there is no single approved definitions page for Current AR, average rent, census inclusion or referral closure vocabulary. Jessica Murphy is the primary domain source of truth for vocabularies/forms/cadences. Keep independent technical repairs moving; use TBD placeholders and do not encode weekly worksheet assumptions into reporting or closure logic before Jessica's approval.
+
+- Census reference: `docs/specs/COL-RESPONSE-LOG-2026-05-06.md` §2, Jessica-confirmed active / bed_hold_hospital / bed_hold_vacation / discharged, driving census and admissions/discharges. Billable days are separate from physical presence. Medicaid per-provider hold billability remains open. Charter measure: current census against licensed beds.
+- Weekly Current AR / average rent / uncollected AR definitions: TBD. January archived worksheets are operational evidence; Module 16 AR aging does not approve COL's worksheet semantics.
+- Referral closure reasons: TBD pending Jessica's vocabulary capture. Existing product pipeline enum stays separate from business loss reasons; do not invent or harden “said no / why” categories.
+
+These inputs block only dependent definitions/calculations/import mappings and policy activation. They do not block truthful communication records, preservation of assignments/history, transactional integrity or recovery repairs.
+
+## Completed bounded segment: presence truth and durable return follow-up
+
+Bounded HCOL-12/22 repair. Remove the client-created notification timestamp while preserving existing legacy values. Capture a pending return-document follow-up in the same database transaction as hospital-to-active status history, retaining the existing renewal rule. Retry documentation independently under current authority; show missing/changed evidence for human review rather than overriding newer work. Add a persistent resident panel with retry and explicit documented human-review resolution.
+
+This segment does not define new clinical criteria, hold billability, absence deadlines, external message delivery or Jessica-owned vocabulary. Explicit communication-event capture and the full absence-management model remain follow-on requirements.
+
+
+Independent review APPROVE; 13 rendered tests passed. Native replay passed 338 migrations / 19 SQL probes. Actual lock-wait revocation tests denied writes after facility revocation and session deletion; duplicate retries converged on one completion. Local React → Supabase JS → PostgREST → PostgreSQL browser workflow verified actual hospital return, injected document failure, pending persistence after reload and successful retry. Authentication used signed synthetic claims and native auth/schema stubs; hosted login and staff UAT are not claimed.
+
+Strict UI gate PASS: `test-results/agent-gates/2026-09-08T14-46-39-693Z-hcol-return-followup.json`. Its UI/a11y target is a component harness; complete Next build and native SQL replay also passed. Mobile visual verdict 95; no overflow, axe violations or page errors. Reviewed source/evidence: `RETURN-REVIEW.json`.
+
+Simplification: removed the direct secondary Form 1823 write from the presence picker. The database persists follow-up once; current-authority retry or explicit human review closes it with evidence. No automatic communication timestamp or clinical clearance is fabricated.
+
+Remaining HCOL-12/22 scope: explicit communication-event capture, full absence coordination and cross-facility transfer recovery. This slice intentionally fails closed when resident facility differs from captured follow-up facility; integration must provide authorized transfer handoff/reassignment before claiming recovery across transfers. Manual-review input remains mounted on uncertain results; server follow-up survives reload, but unsaved free-text notes do not persist across reload. No browser PHI cache was introduced. Mission alignment: pass for this bounded engineering repair.

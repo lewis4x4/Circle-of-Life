@@ -1,0 +1,151 @@
+{
+  "segment": "hcol-return-followup",
+  "review": "APPROVE independent review_import agent",
+  "source_sha256": {
+    "src/components/residents/ResidentPresenceControl.tsx": "87cf0c3e4a0eedb2b44777c4447bbd60694b3b3ed47e077868333dbe6951dea8",
+    "src/components/residents/ResidentPresenceControl.test.tsx": "015aed33b95544462b1cec0816d590007d2223a845a61f329734c2c083d9e663",
+    "src/components/residents/ResidentReturnFollowups.tsx": "9ee6c492df99be37bd7eddc2505a1f0552ac639a4ef41eb063a2633441e8b61a",
+    "src/components/residents/ResidentReturnFollowups.test.tsx": "79390ccc372bc8c2eeb2d48f26468edf53990176603b7807233b679dd3cc0f22",
+    "src/components/residents/ResidentDetailOverviewClient.tsx": "74195ea237d0b8081565bac0b2a5ed6ba49c2fa5c1e8f9f24140c6f953ce6416",
+    "supabase/migrations/335_resident_return_followups.sql": "c4fdbaf14b03c0694fbc4051175ed71d15cbc5517957d2137eb2562ede781198",
+    "supabase/tests/review_resident_return_followup.sql": "2aae60547628abfbee078352f01cb3399650fe2f03abe8f1b02fedb2fb7e33a7"
+  },
+  "react_tests": {
+    "passed": 13,
+    "skipped": 0
+  },
+  "native_sql": {
+    "migration_files": 338,
+    "sql_probes": 19
+  },
+  "concurrency": {
+    "database": "hcol_return_concurrency_335",
+    "checks": [
+      "Live revocation committed during observed resident lock wait rejects retry with42501",
+      "Blocked revoked retry leaves pending evidence and original document unchanged",
+      "Concurrent retries converge on one completed attempt",
+      "Concurrent retries return identical durable evidence",
+      "Session deletion committed during document lock wait rejects retry with42501",
+      "Session revocation leaves pending evidence and document unchanged"
+    ],
+    "replayed_files": 339,
+    "observed_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        23370
+      ]
+    },
+    "revoked_retry": {
+      "error": "42501",
+      "message": "Current clinical authorization required"
+    },
+    "state_after_revocation": {
+      "status": "pending",
+      "attempt_count": 0,
+      "document_status": "received"
+    },
+    "duplicate_outcomes": [
+      {
+        "id": "e8541cf6-dde5-4e3b-8e2f-61c8051c8430",
+        "code": "renewal_marked",
+        "status": "completed",
+        "outcome": "completed",
+        "attempt_count": 1,
+        "completion_kind": "automatic_renewal",
+        "completion_evidence": {
+          "forms": [
+            {
+              "id": "723b7975-d7b5-4c71-9a15-654394eaa5d9",
+              "status": "renewal_due",
+              "updated_at": "2026-09-08T10:45:42.504885-04:00"
+            }
+          ],
+          "meaning": "Existing hospital-return renewal reminder; not clinical approval"
+        }
+      },
+      {
+        "id": "e8541cf6-dde5-4e3b-8e2f-61c8051c8430",
+        "code": "renewal_marked",
+        "status": "completed",
+        "outcome": "completed",
+        "attempt_count": 1,
+        "completion_kind": "automatic_renewal",
+        "completion_evidence": {
+          "forms": [
+            {
+              "id": "723b7975-d7b5-4c71-9a15-654394eaa5d9",
+              "status": "renewal_due",
+              "updated_at": "2026-09-08T10:45:42.504885-04:00"
+            }
+          ],
+          "meaning": "Existing hospital-return renewal reminder; not clinical approval"
+        }
+      }
+    ],
+    "document_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        23370
+      ]
+    },
+    "revoked_session_retry": {
+      "error": "42501",
+      "message": "Current clinical authorization required"
+    },
+    "status": "PASS",
+    "database_dropped": true
+  },
+  "component_browser": {
+    "component_browser": true,
+    "backend": "synthetic mocked responses",
+    "checks": [
+      "retry failure visible",
+      "reload finds pending work",
+      "explicit report selection",
+      "review note preserved on uncertain result",
+      "successful review removes pending action"
+    ],
+    "overflow": false,
+    "violations": [],
+    "errors": []
+  },
+  "database_browser": {
+    "passed": true,
+    "transport": "actual React components -> Supabase JS -> local PostgREST14.4 -> PostgreSQL17",
+    "identity": "signed synthetic authenticated JWT with current Haven user/session/facility checks; getUser fixture and auth schema stubs, no hosted login",
+    "checks": [
+      "hospital return commits actual presence and one followup",
+      "no fabricated communication timestamp",
+      "real document failure leaves followup pending",
+      "browser reload restores actual active presence and pending work",
+      "retry after fault removal completes captured document update"
+    ],
+    "afterReturn": {
+      "status": "active",
+      "notified": null,
+      "followups": 1
+    },
+    "final": {
+      "status": "completed",
+      "attempt_count": 2,
+      "document_status": "renewal_due"
+    },
+    "errors": []
+  },
+  "gate": "test-results/agent-gates/2026-09-08T14-46-39-693Z-hcol-return-followup.json",
+  "gate_ui_scope": "actual components and shared CSS in a synthetic Vite harness, not full authenticated resident route",
+  "visual_verdict": {
+    "score": 95,
+    "verdict": "pass",
+    "category_match": true,
+    "differences": [
+      "Intentional new return-follow-up card uses the reference card border, spacing, typography and subdued supporting text."
+    ],
+    "suggestions": [],
+    "reasoning": "Desktop and mobile synthetic component renders match the reference styling. Wrapped selected-report metadata makes identity readable; mobile browser checks found no overflow, page errors or axe violations.",
+    "threshold": 90,
+    "next_actions": [
+      "Complete strict gate and preserve limited evidence scope."
+    ]
+  }
+}
