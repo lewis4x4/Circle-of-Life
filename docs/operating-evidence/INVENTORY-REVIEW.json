@@ -1,0 +1,80 @@
+{
+  "segment": "hcol-inventory-pending-events",
+  "review": "APPROVE independent source/presentation review; zero diagnostics",
+  "source_sha256": {
+    "src/components/executive/StandupMetricEvidence.test.tsx": "45d4fce2e39c2abebda5337c0874f80ab4b64184de3d91b144974e9f8b4137d5",
+    "src/components/executive/StandupMetricEvidence.tsx": "a698063bc7a6df776d1cee3918af4d4908f4569e048a756c5bda1f86d8ba107b",
+    "src/lib/executive/__snapshots__/standup-live.test.ts.snap": "bb513d36b1c07d1a4324ec91c7e19e6da3f47664cc5c796b591c1ac1e7d766e0",
+    "src/lib/executive/executive-display-copy.ts": "744114d8e6eab54df59c6268d40d9bb3b4ac2b91b7d638aa7ffd33afd10d0a6b",
+    "src/lib/executive/standup-live.test.ts": "80266222a9779a82da547ea58ea72f92d088c314ff7e30ba0a93277d802e7121",
+    "src/lib/executive/standup-packet.ts": "c9323c7a1ee0061d028ddb10c2378bbfc741c4d6bb636acc3bd722c5f0dc8692",
+    "src/lib/executive/standup-pdf.ts": "c517a8af4f374fe91c7b7e01a1ee64de0470534b42819ee84a7acbe4313af1f0",
+    "src/lib/executive/standup-quality-export.test.ts": "02f71436cd71ec7bf177097a094646807e994215970beb8ea40d9d13cfa47759",
+    "src/lib/executive/standup-quality.test.ts": "4e8c63254eb1ece3ea09428869d1582f3ba877974cecfdb949635ef62299453d",
+    "src/lib/executive/standup-quality.ts": "c6bda7ca75e9737fe4785dae542f9272976fd5ff25d60c1fb91bcbbd61fda006",
+    "src/lib/executive/standup.ts": "368ae29bf19744f1e5d03c41f274eef34567e86808b853cca8dce2e321dde736"
+  },
+  "tests": {
+    "passed": 145,
+    "files": 11,
+    "existing_opt_in_perf_skipped": 1,
+    "financial_and_census_snapshot_values": "unchanged"
+  },
+  "http": {
+    "passed": true,
+    "transport": "actual loader -> Supabase JS -> local PostgREST14.4 -> PostgreSQL17; synthetic signed actor/native auth stubs",
+    "observed": {
+      "total_beds_open": 2,
+      "private_beds_open": null,
+      "sp_female_beds_open": null,
+      "sp_male_beds_open": null,
+      "sp_flexible_beds_open": null,
+      "admissions_expected": 2,
+      "expected_discharges": 2,
+      "tours_expected": 1,
+      "provider_activities_expected": 1
+    },
+    "no_inventory": "unknown; no licensed-capacity fallback",
+    "basis": "haven_live_v2",
+    "checks": [
+      "blocked, occupied, held and reserved beds excluded",
+      "unclassified open bed retained only in total",
+      "actual arrival excluded, move_in readiness and draft target retained",
+      "terminal and pre-admission discharge targets excluded",
+      "completed tours excluded even when scheduled date remains",
+      "planned provider events only"
+    ]
+  },
+  "manual_http": {
+    "passed": true,
+    "transport": "actual manualsave and reload through local PostgREST; signed synthetic owner",
+    "facility_value": 321,
+    "total_value": null,
+    "total_preserved_unit": "hours",
+    "total_preserved_section": "staffing",
+    "review_note": "Unit-definition mismatch: review saved contributor and total definitions before calculating a total.",
+    "total_basis": "unknown"
+  },
+  "browser": {
+    "passed": true,
+    "scope": "actual saved-week page component and source disclosure; synthetic auth/data fixture",
+    "source_disclosure": "Source details\nMethod: Recorded Haven calculation v1\nCoverage: Partial: 0 of 1 facilities\nSource as of: Unconfirmed\nCalculated: Sep 8, 2026, 10:00 AM ET\nRecord retrieval: Completed; recording coverage remains unconfirmed\nReview note: Unit-definition mismatch: review saved contributor and total definitions before calculating a total.",
+    "overflow": false,
+    "errors": [],
+    "violations": []
+  },
+  "pdf": {
+    "pages": 11,
+    "visual_score": 95,
+    "methodology_and_unit_review_note": "rendered and visually inspected; no clipping or orphan-footer page"
+  },
+  "gate": "test-results/agent-gates/2026-09-08T18-21-26-176Z-hcol-inventory-pending-events-final.json",
+  "interrupted_attempt": "Initial gate intentionally stopped during build to incorporate independent-review corrections; no pass claimed for that run",
+  "limits": [
+    "Financial worksheet definitions remain TBD with Jessica",
+    "No clinical suitability or operational capture attestation",
+    "Draft admission inclusion and broader outreach semantics remain provisional",
+    "Manual input and portfolio rebuild are separate requests",
+    "No hosted login or staff UAT"
+  ]
+}

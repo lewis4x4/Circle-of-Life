@@ -261,7 +261,7 @@ export function formatStandupMetricDelta(
   if (!metricLeft || !metricRight || metricLeft.valueNumeric == null || metricRight.valueNumeric == null) {
     return EXECUTIVE_STANDUP_NO_DELTA_COPY;
   }
-  if (!canCompareStandupMetrics(metricLeft, metricRight)) return "Comparison unavailable: source coverage or scope is unconfirmed.";
+  if (!canCompareStandupMetrics(metricLeft, metricRight)) return "Comparison unavailable: source coverage, scope or calculation definitions do not support a comparison.";
   const delta = metricRight.valueNumeric - metricLeft.valueNumeric;
   if (delta === 0) return "No change";
   if (metricRight.valueType === "currency") {

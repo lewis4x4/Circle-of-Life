@@ -37,7 +37,7 @@ function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
 
 function metricSourceCaption(metric: StandupMetricRow | undefined): string {
   const sourceAt = readStandupSourceQuality(metric)?.source_as_of;
-  return `${standupCoverageLabel(metric)}${sourceAt ? ` · Source as of ${formatDateTimeDisplay(sourceAt)} ET` : ""}`;
+  return `${standupCoverageLabel(metric)}${sourceAt ? ` · Source as of ${formatDateTimeDisplay(sourceAt)} ET` : ""}${metric?.overrideNote?.trim() ? ` · Review note: ${metric.overrideNote}` : ""}`;
 }
 
 function formatDateTimeDisplay(value: string | null): string {

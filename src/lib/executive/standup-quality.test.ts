@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Database } from "@/types/database";
-import { saveStandupMetricInput, generateExecutiveStandupDraft, buildStandupComparison, buildStandupNarrative, hasRecordedPressure, type StandupSnapshotDetail, STANDUP_METRIC_DEFINITIONS } from "./standup";
-import { canCompareStandupMetrics, qualifyStandupValue, readStandupSourceQuality, standupCoverageLabel, type StandupSourceQuality } from "./standup-quality";
+import { saveStandupMetricInput, generateExecutiveStandupDraft, fetchStandupSnapshotDetail, buildStandupComparison, buildStandupNarrative, hasRecordedPressure, type StandupSnapshotDetail, STANDUP_METRIC_DEFINITIONS } from "./standup";
+import { canCompareStandupMetrics, qualifyStandupValue, readStandupSourceQuality, readStandupMetricDefinition, standupCoverageLabel, type StandupSourceQuality } from "./standup-quality";
 
 const when = "2026-09-08T14:00:00.000Z";
 const a = "00000000-0000-4000-8000-000000000001";
@@ -11,7 +11,7 @@ const quality = (overrides: Partial<StandupSourceQuality> = {}): StandupSourceQu
   kind: "source_quality", version: 1, calculated_at: when, source_as_of: null, received_at: null,
   query_complete: true, period_coverage: "unconfirmed", expected_facility_ids: [a,b], contributing_facility_ids: [a,b], basis: "haven_live_v1", ...overrides,
 });
-const metric = (q: StandupSourceQuality | null = quality(), value = 0) => ({ key: "current_ar_cents", valueType: "currency", valueNumeric: value, valueText: null, sourceRefJson: q ? [{ table: "invoices" }, q] : [{ table: "invoices" }] });
+const metric = (q: StandupSourceQuality | null = quality(), value = 0) => ({ key: "current_ar_cents", valueType: "currency", valueNumeric: value, valueText: null, sourceRefJson: q ? [{ table: "invoices" }, ...(q.basis === "haven_live_v2" ? [{ kind: "metric_definition", version: 1, key: "current_ar_cents", label: "Recorded AR", description: "Recorded open balance", value_type: "currency", source_mode: "auto", section_key: "ar_census", calculation_basis: "haven_live_v2" }] : []), q] : [{ table: "invoices" }] });
 
 afterEach(() => vi.useRealTimers());
 
@@ -40,6 +40,8 @@ describe("standup source quality", () => {
     expect(canCompareStandupMetrics({ ...metric(), valueText: "" }, { ...metric(), valueText: "  " })).toBe(true);
   });
   it("only compares full matching recorded live scopes", () => {
+    expect(canCompareStandupMetrics(metric(quality({ basis: "haven_live_v2" })),metric(quality({ basis: "haven_live_v2" })))).toBe(true);
+    expect(canCompareStandupMetrics(metric(),metric(quality({ basis: "haven_live_v2" })))).toBe(false);
     expect(canCompareStandupMetrics({ ...metric(), key: "census" }, metric())).toBe(false);
     expect(canCompareStandupMetrics({ ...metric(), valueType: "count" }, metric())).toBe(false);
     expect(canCompareStandupMetrics({ ...metric(), key: undefined }, metric())).toBe(false);
@@ -64,6 +66,21 @@ describe("standup source quality", () => {
     expect(narrative.facilityActions[0].whyRed.join(" ")).toMatch(/Source scope is incomplete or unknown/);
     expect(narrative.actions.join(" ")).not.toMatch(/Maintain current|release blocked|Escalate staffing/);
     expect(narrative.actions.join(" ")).toMatch(/confirm source coverage/);
+  });
+
+  it("rejects contradictory or malformed definitions while retaining v1 and manual historical metadata", () => {
+    const valid = metric(quality({ basis: "haven_live_v2" }));
+    const definition = readStandupMetricDefinition(valid)!;
+    expect(canCompareStandupMetrics(valid,valid)).toBe(true);
+    for (const patch of [{ calculation_basis: "haven_live_v1" }, { value_type: "count" }, { source_mode: "invalid" }, { version: 2 }]) {
+      const bad = { ...valid, sourceRefJson: [{ ...definition, ...patch }, quality({ basis: "haven_live_v2" })] };
+      expect(canCompareStandupMetrics(bad,bad)).toBe(false);
+    }
+    expect(canCompareStandupMetrics({ ...valid,sourceRefJson: [quality({ basis: "haven_live_v2" })] },valid)).toBe(false);
+    expect(canCompareStandupMetrics(metric(),metric())).toBe(true);
+    for (const basis of ["manual","mixed"] as const) {
+      expect(readStandupMetricDefinition({ ...valid,sourceRefJson: [definition,quality({ basis })] })?.description).toBe(definition.description);
+    }
   });
 
   it("does not invent a greatest change when comparable pressure scores are unchanged", () => {
@@ -130,6 +147,40 @@ function persistenceClient(scope: string[] | null) {
   return { client,rows,header,queries };
 }
 
+describe("historical standup definitions", () => {
+  it("preserves saved labels, descriptions and timestamps instead of adopting live v2 semantics", async () => {
+    const stored = [
+      { id: "old-bed",facility_id: a,metric_key: "total_beds_open",metric_label: "Legacy licensed-minus-census estimate",value_numeric: 99,value_text: null,source_mode: "auto",freshness_at: "2025-01-01T00:00:00Z",confidence_band: "high",override_note: null,
+        source_ref_json: [{ kind: "metric_definition",version: 1,key: "total_beds_open",label: "Captured label",description: "The historical estimate used licensed capacity less census.",value_type: "hours",source_mode: "auto",section_key: "staffing",calculation_basis: "haven_live_v1" },quality()] },
+      { id: "old-admission",facility_id: a,metric_key: "admissions_expected",metric_label: "Original admission target label",value_numeric: 4,value_text: null,source_mode: "manual",freshness_at: null,confidence_band: "low",override_note: null,source_ref_json: [{ kind: "metric_definition",version: 1,key: "admissions_expected",description: "Invalid unit and unrecognized method must not become historical authority",value_type: "invented",calculation_basis: "future" }] },
+    ];
+    const client = { from(table: string) {
+      const query = {
+        select() { return query; },eq() { return query; },is() { return query; },order() { return query; },
+        maybeSingle() { return Promise.resolve({ data: { id: "historical",week_of: "2025-01-06",generated_by: null,published_by: null },error: null }); },
+        then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: table === "facilities" ? [{ id: a,name: "Historical facility",total_licensed_beds: 100 }] : stored,error: null }).then(resolve); },
+      };return query;
+    } } as unknown as SupabaseClient<Database>;
+    const loaded = await fetchStandupSnapshotDetail(client,"org","2025-01-06");
+    const metrics = loaded!.facilities.find((facility) => facility.facilityId === a)!.metrics;
+    expect(metrics.total_beds_open.label).toBe("Legacy licensed-minus-census estimate");
+    expect(metrics.total_beds_open.description).toBe("The historical estimate used licensed capacity less census.");
+    expect(metrics.total_beds_open.valueNumeric).toBe(99);
+    expect(metrics.total_beds_open.valueType).toBe("hours");
+    expect(metrics.total_beds_open.sectionKey).toBe("staffing");
+    const allRecorded = Object.fromEntries(STANDUP_METRIC_DEFINITIONS.map((definition) => [definition.key,{ ...metric(quality(),1), ...definition, confidenceBand: "high" as const, freshnessAt: null, overrideNote: null }]));
+    const facility = { facilityId: a,facilityName: "Unit guard",metrics: allRecorded,pressureScore: 1,topConcern: "Recorded" };
+    expect(hasRecordedPressure(facility)).toBe(true);
+    facility.metrics.total_beds_open = metrics.total_beds_open;
+    expect(hasRecordedPressure(facility)).toBe(false);
+    expect(metrics.total_beds_open.freshnessAt).toBe("2025-01-01T00:00:00Z");
+    expect(metrics.total_beds_open.sourceRefJson).toEqual(stored[0].source_ref_json);
+    expect(metrics.admissions_expected.label).toBe("Original admission target label");
+    expect(metrics.admissions_expected.description).toMatch(/Historical definition unconfirmed/);
+    expect(metrics.admissions_expected.sourceMode).toBe("manual");
+  });
+});
+
 describe("generated standup source scope", () => {
   it("persists the captured facility scope and row provenance without claiming source freshness", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });vi.setSystemTime(new Date(when));
@@ -158,6 +209,38 @@ describe("generated standup source scope", () => {
 });
 
 describe("manual standup receipt and original scope", () => {
+  it.each(["different_total_unit","invalid_contributor_unit"])("withholds a mixed-unit total for %s while preserving the facility save", async (scenario) => {
+    const fixture = persistenceClient([a,b]);
+    const definition = { kind: "metric_definition",version: 1,key: "current_ar_cents",label: "Saved",description: "Saved calculation",value_type: "currency",source_mode: "auto",section_key: "ar_census",calculation_basis: "haven_live_v1" };
+    for (const row of fixture.rows) row.source_ref_json = [...row.source_ref_json as unknown[],{ ...definition,
+      value_type: scenario === "different_total_unit" && row.facility_id == null ? "hours" : scenario === "invalid_contributor_unit" && row.facility_id === b ? "invalid_unit" : "currency" }];
+    await saveStandupMetricInput(fixture.client,{ snapshotId: "snapshot",organizationId: "org",weekOf: "2026-09-07",facilityId: a,metricKey: "current_ar_cents",userId: "user",valueNumeric: 25 });
+    const total = fixture.rows.find((row) => row.id === "row-total")!;
+    expect(fixture.rows.find((row) => row.id === "row-a")!.value_numeric).toBe(25);
+    expect(total.value_numeric).toBeNull();
+    expect(total.override_note).toMatch(/Unit-definition mismatch/);
+    expect(total.confidence_band).toBe("low");
+    expect(readStandupSourceQuality({ sourceRefJson: total.source_ref_json })).toMatchObject({ basis: "unknown",contributing_facility_ids: [] });
+  });
+
+  it("retains the total definition instead of adopting the last contributing facility definition", async () => {
+    const fixture = persistenceClient([a,b]);
+    const definition = { kind: "metric_definition",version: 1,key: "current_ar_cents",label: "Original total",description: "Original total description",value_type: "currency",source_mode: "auto",section_key: "staffing",calculation_basis: "haven_live_v1" };
+    for (const row of fixture.rows) {
+      const refs = row.source_ref_json as unknown[];
+      row.section_key = row.facility_id == null ? "staffing" : "marketing";
+      row.source_ref_json = [...refs,row.facility_id == null ? definition : { ...definition,label: "Contributor",description: "Contributor description must not replace total",value_type: "currency",section_key: "ar_census" }];
+    }
+    await saveStandupMetricInput(fixture.client,{ snapshotId: "snapshot",organizationId: "org",weekOf: "2026-09-07",facilityId: a,metricKey: "current_ar_cents",userId: "user",valueNumeric: 0 });
+    const total = fixture.rows.find((row) => row.id === "row-total")!;
+    expect(readStandupMetricDefinition({ key: "current_ar_cents",sourceRefJson: total.source_ref_json })).toMatchObject({ description: "Original total description",value_type: "currency",section_key: "staffing" });
+    expect((total.source_ref_json as Array<Record<string,unknown>>).filter((ref) => ref.kind === "metric_definition")).toHaveLength(1);
+    expect(total.source_ref_json).toContainEqual({ table: "invoices" });
+    expect(total.value_numeric).toBe(70);
+    expect(total.section_key).toBe("staffing");
+    expect(fixture.rows.find((row) => row.id === "row-a")!.section_key).toBe("marketing");
+  });
+
   it.each([null, [null], { old_receipt: "preserved" }, "legacy reference", 42].map((raw) => ({ raw })))("preserves arbitrary legacy provenance $raw without failing after the manual write", async ({ raw }) => {
     const fixture = persistenceClient([a,b]);
     for (const row of fixture.rows) row.source_ref_json = raw;

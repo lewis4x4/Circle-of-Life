@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toZonedTime } from "date-fns-tz";
 
-import { canCompareStandupMetrics, readStandupSourceQuality, type StandupSourceQuality } from "./standup-quality";
+import { canCompareStandupMetrics, readStandupSourceQuality, readStandupMetricDefinition, type StandupSourceQuality } from "./standup-quality";
 
 import type { Database } from "@/types/database";
 import {
@@ -197,6 +197,7 @@ type BedMini = {
   current_resident_id: string | null;
   standup_availability_class: "private" | "sp_female" | "sp_male" | "sp_flexible" | null;
   is_temporarily_blocked: boolean | null;
+  reserved_for_admission_case_id: string | null;
 };
 
 type AttendanceEventMini = {
@@ -214,6 +215,7 @@ type AdmissionCaseMini = {
   facility_id: string;
   status: string;
   target_move_in_date: string | null;
+  actual_arrival_at: string | null;
 };
 
 type OutreachActivityMini = {
@@ -364,7 +366,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Total Beds Open",
     valueType: "count",
     sourceMode: "auto",
-    description: "Licensed beds minus current census.",
+    description: "Recorded available, unoccupied, unblocked, unreserved bed inventory. Missing inventory is unknown.",
   },
   {
     key: "admissions_expected",
@@ -372,7 +374,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Admissions Expected",
     valueType: "count",
     sourceMode: "forecast",
-    description: "Expected admissions for the current standup week.",
+    description: "Recorded non-cancelled admission targets this week without actual arrival evidence; draft inclusion remains provisional.",
   },
   {
     key: "hospital_and_rehab_total",
@@ -388,7 +390,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Expected Discharges",
     valueType: "count",
     sourceMode: "forecast",
-    description: "Expected discharges during the current standup week.",
+    description: "Recorded discharge targets this week for residents in active, hospital-hold, or LOA states.",
   },
   {
     key: "callouts_last_week",
@@ -428,7 +430,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Tours Expected",
     valueType: "count",
     sourceMode: "auto",
-    description: "Expected tours for the current standup week.",
+    description: "Recorded scheduled tours this week without a completion timestamp or completed status.",
   },
   {
     key: "provider_activities_expected",
@@ -436,7 +438,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Activities on the calendar to be completed by Home Health Providers",
     valueType: "count",
     sourceMode: "auto",
-    description: "Provider calendar activities expected during the week.",
+    description: "Recorded planned home-health-provider activities in this standup week; excludes completed and cancelled activities.",
   },
   {
     key: "outreach_engagements",
@@ -529,6 +531,11 @@ function metricTemplate(
   };
 }
 
+function metricDefinitionRef(metric: StandupMetricDefinition): Record<string, unknown> {
+  return { kind: "metric_definition", version: 1, key: metric.key, label: metric.label, description: metric.description,
+    value_type: metric.valueType, source_mode: metric.sourceMode, section_key: metric.sectionKey, calculation_basis: "haven_live_v2" };
+}
+
 function sourceQuality(
   calculatedAt: string,
   expected: string[] | null,
@@ -596,13 +603,18 @@ function computePressureScore(metrics: Record<string, StandupMetricRow>): { scor
     topConcern = "Recorded open positions exceed the pressure threshold; confirm staffing source coverage.";
   }
 
-  if (!PRESSURE_METRIC_KEYS.every((key) => hasRecordedValue(metrics[key]))) topConcern = "Operational pressure unavailable: recorded source scope is incomplete or unknown.";
+  if (!PRESSURE_METRIC_KEYS.every((key) => hasRecordedValue(metrics[key], key))) topConcern = "Operational pressure unavailable: recorded source scope is incomplete or unknown.";
   return { score, topConcern };
 }
 
 const PRESSURE_METRIC_KEYS = ["current_ar_cents", "total_beds_open", "hospital_and_rehab_total", "terminations_last_week", "overtime_hours", "callouts_last_week", "current_open_positions"] as const;
-const hasRecordedValue = (metric: StandupMetricRow | undefined) => canCompareStandupMetrics(metric, metric);
-export const hasRecordedPressure = (facility: StandupFacilityLive) => PRESSURE_METRIC_KEYS.every((key) => hasRecordedValue(facility.metrics[key]));
+const PRESSURE_UNITS: Record<(typeof PRESSURE_METRIC_KEYS)[number], StandupValueType> = {
+  current_ar_cents: "currency", total_beds_open: "count", hospital_and_rehab_total: "count", terminations_last_week: "count",
+  overtime_hours: "hours", callouts_last_week: "count", current_open_positions: "count",
+};
+const hasRecordedValue = (metric: StandupMetricRow | undefined, expectedKey = metric?.key) => expectedKey != null && metric?.key === expectedKey
+  && metric.valueType === PRESSURE_UNITS[expectedKey as keyof typeof PRESSURE_UNITS] && canCompareStandupMetrics(metric, metric);
+export const hasRecordedPressure = (facility: StandupFacilityLive) => PRESSURE_METRIC_KEYS.every((key) => hasRecordedValue(facility.metrics[key], key));
 
 function buildPressureReasons(metrics: Record<string, StandupMetricRow>): string[] {
   const reasons: string[] = [];
@@ -614,15 +626,15 @@ function buildPressureReasons(metrics: Record<string, StandupMetricRow>): string
   const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
   const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
 
-  if (hasRecordedValue(metrics.current_ar_cents) && currentAr > 150_000_00) reasons.push(`Recorded open AR is ${formatCurrencyFromCents(currentAr)}.`);
-  if (hasRecordedValue(metrics.total_beds_open) && totalBedsOpen === 0) reasons.push("Recorded open-bed count is 0; confirm current capacity.");
-  if (hasRecordedValue(metrics.hospital_and_rehab_total) && hospitalAndRehab >= 3) reasons.push(`${hospitalAndRehab} residents are recorded in hospital or rehab status.`);
-  if (hasRecordedValue(metrics.terminations_last_week) && terminations > 0) reasons.push(`${terminations} terminations were recorded in the last week.`);
-  if (hasRecordedValue(metrics.overtime_hours) && overtime >= 20) reasons.push(`Recorded overtime is ${metrics.overtime_hours.valueNumeric?.toFixed(2) ?? overtime} hours.`);
-  if (hasRecordedValue(metrics.callouts_last_week) && callouts >= 3) reasons.push(`${callouts} callouts were logged in the last week.`);
-  if (hasRecordedValue(metrics.current_open_positions) && openPositions >= 2) reasons.push(`${openPositions} open positions are recorded.`);
+  if (hasRecordedValue(metrics.current_ar_cents, "current_ar_cents") && currentAr > 150_000_00) reasons.push(`Recorded open AR is ${formatCurrencyFromCents(currentAr)}.`);
+  if (hasRecordedValue(metrics.total_beds_open, "total_beds_open") && totalBedsOpen === 0) reasons.push("Recorded open-bed count is 0; confirm current capacity.");
+  if (hasRecordedValue(metrics.hospital_and_rehab_total, "hospital_and_rehab_total") && hospitalAndRehab >= 3) reasons.push(`${hospitalAndRehab} residents are recorded in hospital or rehab status.`);
+  if (hasRecordedValue(metrics.terminations_last_week, "terminations_last_week") && terminations > 0) reasons.push(`${terminations} terminations were recorded in the last week.`);
+  if (hasRecordedValue(metrics.overtime_hours, "overtime_hours") && overtime >= 20) reasons.push(`Recorded overtime is ${metrics.overtime_hours.valueNumeric?.toFixed(2) ?? overtime} hours.`);
+  if (hasRecordedValue(metrics.callouts_last_week, "callouts_last_week") && callouts >= 3) reasons.push(`${callouts} callouts were logged in the last week.`);
+  if (hasRecordedValue(metrics.current_open_positions, "current_open_positions") && openPositions >= 2) reasons.push(`${openPositions} open positions are recorded.`);
 
-  if (PRESSURE_METRIC_KEYS.some((key) => !hasRecordedValue(metrics[key]))) reasons.push("Source scope is incomplete or unknown; review recorded data before assessing operational pressure.");
+  if (PRESSURE_METRIC_KEYS.some((key) => !hasRecordedValue(metrics[key], key))) reasons.push("Source scope is incomplete or unknown; review recorded data before assessing operational pressure.");
   return reasons;
 }
 
@@ -653,13 +665,13 @@ function buildFacilityInterventions(metrics: Record<string, StandupMetricRow>): 
   const callouts = metrics.callouts_last_week.valueNumeric ?? 0;
   const openPositions = metrics.current_open_positions.valueNumeric ?? 0;
 
-  if (hasRecordedValue(metrics.current_ar_cents) && currentAr > 150_000_00) {
+  if (hasRecordedValue(metrics.current_ar_cents, "current_ar_cents") && currentAr > 150_000_00) {
     interventions.push("Review the recorded receivable balances and confirm source coverage before deciding collection priorities.");
   }
-  if ((hasRecordedValue(metrics.total_beds_open) && totalBedsOpen === 0) || (hasRecordedValue(metrics.hospital_and_rehab_total) && hospitalAndRehab >= 3)) {
+  if ((hasRecordedValue(metrics.total_beds_open, "total_beds_open") && totalBedsOpen === 0) || (hasRecordedValue(metrics.hospital_and_rehab_total, "hospital_and_rehab_total") && hospitalAndRehab >= 3)) {
     interventions.push("Review recorded bed and hospital/rehab counts and confirm current circumstances before capacity decisions.");
   }
-  if ((hasRecordedValue(metrics.callouts_last_week) && callouts >= 3) || (hasRecordedValue(metrics.overtime_hours) && overtime >= 20) || (hasRecordedValue(metrics.current_open_positions) && openPositions >= 2)) {
+  if ((hasRecordedValue(metrics.callouts_last_week, "callouts_last_week") && callouts >= 3) || (hasRecordedValue(metrics.overtime_hours, "overtime_hours") && overtime >= 20) || (hasRecordedValue(metrics.current_open_positions, "current_open_positions") && openPositions >= 2)) {
     interventions.push("Review recorded staffing counts and confirm source coverage before staffing decisions.");
   }
   if (interventions.length === 0) {
@@ -704,11 +716,11 @@ export function buildStandupInsights(facilities: StandupFacilityLive[]): string[
   } else {
     insights.push("Pressure ranking unavailable: recorded source scope is incomplete or unknown.");
   }
-  if (liveFacilities.length > 0 && liveFacilities.every((facility) => hasRecordedValue(facility.metrics.current_ar_cents))) {
+  if (liveFacilities.length > 0 && liveFacilities.every((facility) => hasRecordedValue(facility.metrics.current_ar_cents, "current_ar_cents"))) {
     const highestAr = [...liveFacilities].sort((a, b) => b.metrics.current_ar_cents.valueNumeric! - a.metrics.current_ar_cents.valueNumeric!)[0];
     if (highestAr.metrics.current_ar_cents.valueNumeric! > 0) insights.push(`${highestAr.facilityName} has the highest recorded open AR at ${formatCurrencyFromCents(highestAr.metrics.current_ar_cents.valueNumeric)}; source coverage is unconfirmed.`);
   }
-  const recordedZeroBeds = liveFacilities.filter((facility) => hasRecordedValue(facility.metrics.total_beds_open) && facility.metrics.total_beds_open.valueNumeric === 0);
+  const recordedZeroBeds = liveFacilities.filter((facility) => hasRecordedValue(facility.metrics.total_beds_open, "total_beds_open") && facility.metrics.total_beds_open.valueNumeric === 0);
   if (recordedZeroBeds.length > 0) insights.push(`${recordedZeroBeds.map((facility) => facility.facilityName).join(", ")} has a recorded open-bed count of 0; confirm current capacity.`);
   return insights.slice(0, 3);
 }
@@ -805,7 +817,8 @@ export function buildStandupComparison(
       const fromFacility = fromByFacilityId.get(facilityId) ?? null;
       const toFacility = toByFacilityId.get(facilityId) ?? null;
       const facilityName = toFacility?.facilityName ?? fromFacility?.facilityName ?? "Facility";
-      const comparisonAvailable = PRESSURE_METRIC_KEYS.every((key) => canCompareStandupMetrics(fromFacility?.metrics[key], toFacility?.metrics[key]));
+      const comparisonAvailable = fromFacility != null && toFacility != null && hasRecordedPressure(fromFacility) && hasRecordedPressure(toFacility)
+        && PRESSURE_METRIC_KEYS.every((key) => canCompareStandupMetrics(fromFacility.metrics[key], toFacility.metrics[key]));
       const pressureFrom = fromFacility?.pressureScore ?? 0;
       const pressureTo = toFacility?.pressureScore ?? 0;
       const metricDeltas = [
@@ -885,8 +898,14 @@ function composeSnapshotFacilities(
     const facility = facilityMap.get(row.facility_id ?? null);
     if (!facility) continue;
 
+    const capturedDefinition = readStandupMetricDefinition({ key: row.metric_key, sourceRefJson: row.source_ref_json });
     facility.metrics[row.metric_key] = {
       ...definition,
+      label: row.metric_label,
+      description: capturedDefinition?.description ?? "Historical definition unconfirmed; this saved value has no valid captured description. Current live calculation descriptions do not apply.",
+      valueType: capturedDefinition?.value_type ?? definition.valueType,
+      sectionKey: capturedDefinition?.section_key ?? (Object.hasOwn(STANDUP_SECTION_LABELS, row.section_key) ? row.section_key as StandupSectionKey : definition.sectionKey),
+      sourceMode: row.source_mode,
       valueNumeric: row.value_numeric,
       valueText: row.value_text,
       freshnessAt: row.freshness_at,
@@ -1241,12 +1260,12 @@ export async function fetchExecutiveStandupLive(
     readSource<ResidentMini>("residents", "facility_id, status, discharge_target_date, monthly_total_rate"),
     readSource<StaffMini>("staff", "facility_id, termination_date"),
     readSource<TimeRecordMini>("time_records", "facility_id, overtime_hours, clock_in"),
-    readSource<BedMini>("beds", "facility_id, status, current_resident_id, standup_availability_class, is_temporarily_blocked"),
+    readSource<BedMini>("beds", "facility_id, status, current_resident_id, standup_availability_class, is_temporarily_blocked, reserved_for_admission_case_id"),
     readSource<AttendanceEventMini>("staff_attendance_events", "facility_id, event_type, occurred_at"),
     readSource<RequisitionMini>("staff_requisitions", "facility_id, status"),
-    readSource<AdmissionCaseMini>("admission_cases", "facility_id, status, target_move_in_date"),
+    readSource<AdmissionCaseMini>("admission_cases", "facility_id, status, target_move_in_date, actual_arrival_at"),
     readSource<OutreachActivityMini>("referral_outreach_activities", "facility_id, activity_type, status, scheduled_for, performed_for_week"),
-    readSource<{ facility_id: string; status: string; tour_scheduled_for: string | null }>("referral_leads", "facility_id, status, tour_scheduled_for"),
+    readSource<{ facility_id: string; status: string; tour_scheduled_for: string | null; tour_completed_at: string | null }>("referral_leads", "facility_id, status, tour_scheduled_for, tour_completed_at"),
   ]);
 
   // These bounds are identical for every row in this load, including DST weeks.
@@ -1283,19 +1302,23 @@ export async function fetchExecutiveStandupLive(
         .map((row) => Math.max(0, row.balance_due ?? 0)),
     );
     const currentTotalCensus = facilityResidents.filter((row) => ["active", "hospital_hold", "loa"].includes(row.status ?? "")).length;
-    const openBeds = facilityBeds.filter((row) => row.current_resident_id == null && !row.is_temporarily_blocked && (row.status ?? "available") === "available");
-    const totalBedsOpen = facilityBeds.length > 0 ? openBeds.length : Math.max(0, (facility.total_licensed_beds ?? 0) - currentTotalCensus);
-    const spFemaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_female").length;
-    const spMaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_male").length;
-    const spFlexibleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_flexible").length;
-    const privateBedsOpen = openBeds.filter((row) => row.standup_availability_class === "private").length;
+    const openBeds = facilityBeds.filter((row) => row.status === "available" && row.current_resident_id === null
+      && row.is_temporarily_blocked === false && row.reserved_for_admission_case_id === null);
+    const hasInventory = facilityBeds.length > 0;
+    const hasClassifiedOpenInventory = hasInventory && openBeds.every((row) => row.standup_availability_class != null
+      && ["private", "sp_female", "sp_male", "sp_flexible"].includes(row.standup_availability_class));
+    const totalBedsOpen = hasInventory ? openBeds.length : null;
+    const spFemaleBedsOpen = hasClassifiedOpenInventory ? openBeds.filter((row) => row.standup_availability_class === "sp_female").length : null;
+    const spMaleBedsOpen = hasClassifiedOpenInventory ? openBeds.filter((row) => row.standup_availability_class === "sp_male").length : null;
+    const spFlexibleBedsOpen = hasClassifiedOpenInventory ? openBeds.filter((row) => row.standup_availability_class === "sp_flexible").length : null;
+    const privateBedsOpen = hasClassifiedOpenInventory ? openBeds.filter((row) => row.standup_availability_class === "private").length : null;
     const hospitalAndRehab = facilityResidents.filter((row) => ["hospital_hold", "loa"].includes(row.status ?? "")).length;
     const admissionsExpected = facilityAdmissionCases.filter((row) => {
-      if (!row.target_move_in_date || row.status === "cancelled") return false;
+      if (!row.target_move_in_date || row.actual_arrival_at != null || row.status === "cancelled") return false;
       return row.target_move_in_date >= weekOf && row.target_move_in_date <= thisWeekEnd;
     }).length;
     const expectedDischarges = facilityResidents.filter((row) => {
-      if (!row.discharge_target_date) return false;
+      if (!row.discharge_target_date || !["active", "hospital_hold", "loa"].includes(row.status ?? "")) return false;
       return row.discharge_target_date >= weekOf && row.discharge_target_date <= thisWeekEnd;
     }).length;
     const calloutsLastWeek = facilityAttendance.filter((row) => {
@@ -1313,11 +1336,11 @@ export async function fetchExecutiveStandupLive(
         .reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
     ) / 100;
     const toursExpected = facilityTours.filter((row) => {
-      if (!row.tour_scheduled_for || ["lost", "merged"].includes(row.status)) return false;
+      if (!row.tour_scheduled_for || row.tour_completed_at != null || ["lost", "merged", "tour_completed"].includes(row.status)) return false;
       return inThisWeek(row.tour_scheduled_for);
     }).length;
     const providerActivitiesExpected = facilityOutreach.filter((row) => {
-      if (row.status === "cancelled" || row.activity_type !== "home_health_provider") return false;
+      if (row.status !== "planned" || row.activity_type !== "home_health_provider") return false;
       return row.performed_for_week === weekOf
         || (row.scheduled_for != null && inThisWeek(row.scheduled_for));
     }).length;
@@ -1382,27 +1405,35 @@ export async function fetchExecutiveStandupLive(
     metrics.total_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "total_beds_open")!,
       totalBedsOpen,
-      { sourceRefJson: facilityBeds.length > 0 ? [{ table: "beds", field: "standup_availability_class" }] : [{ table: "facilities", field: "total_licensed_beds" }, { table: "residents", field: "status" }] },
+      { sourceRefJson: [{ table: "beds", mode: "available_unoccupied_unblocked_unreserved" }], overrideNote: hasInventory ? null : "No bed inventory recorded; licensed capacity is not availability evidence." },
     );
     metrics.sp_female_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_female_beds_open")!,
       spFemaleBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }],
+        overrideNote: !hasInventory ? "No bed inventory recorded; category availability is unknown."
+          : !hasClassifiedOpenInventory ? "Bed classification is missing or unrecognized; category availability is unknown." : null },
     );
     metrics.sp_male_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_male_beds_open")!,
       spMaleBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }],
+        overrideNote: !hasInventory ? "No bed inventory recorded; category availability is unknown."
+          : !hasClassifiedOpenInventory ? "Bed classification is missing or unrecognized; category availability is unknown." : null },
     );
     metrics.sp_flexible_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_flexible_beds_open")!,
       spFlexibleBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }],
+        overrideNote: !hasInventory ? "No bed inventory recorded; category availability is unknown."
+          : !hasClassifiedOpenInventory ? "Bed classification is missing or unrecognized; category availability is unknown." : null },
     );
     metrics.private_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "private_beds_open")!,
       privateBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }],
+        overrideNote: !hasInventory ? "No bed inventory recorded; category availability is unknown."
+          : !hasClassifiedOpenInventory ? "Bed classification is missing or unrecognized; category availability is unknown." : null },
     );
     metrics.hospital_and_rehab_total = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "hospital_and_rehab_total")!,
@@ -1418,7 +1449,7 @@ export async function fetchExecutiveStandupLive(
       expectedDischarges,
       {
         confidenceBand: "medium",
-        sourceRefJson: [{ table: "residents", field: "discharge_target_date" }],
+        sourceRefJson: [{ table: "residents", field: "discharge_target_date", included_statuses: ["active", "hospital_hold", "loa"] }],
         overrideNote: expectedDischarges > 0 ? "Derived from resident discharge target dates for the standup week." : "No discharge targets recorded for this week.",
       },
     );
@@ -1427,7 +1458,7 @@ export async function fetchExecutiveStandupLive(
       admissionsExpected,
       {
         confidenceBand: admissionsExpected > 0 ? "medium" : "low",
-        sourceRefJson: [{ table: "admission_cases", field: "target_move_in_date" }],
+        sourceRefJson: [{ table: "admission_cases", field: "target_move_in_date", actual_arrival_at: null, excluded_statuses: ["cancelled"] }],
         overrideNote: admissionsExpected > 0 ? "Derived from admission cases targeting move-in during the standup week." : "No admission cases target this standup week.",
       },
     );
@@ -1454,12 +1485,12 @@ export async function fetchExecutiveStandupLive(
     metrics.tours_expected = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "tours_expected")!,
       toursExpected,
-      { sourceRefJson: [{ table: "referral_leads", field: "tour_scheduled_for" }] },
+      { sourceRefJson: [{ table: "referral_leads", field: "tour_scheduled_for", tour_completed_at: null, excluded_statuses: ["lost", "merged", "tour_completed"] }] },
     );
     metrics.provider_activities_expected = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "provider_activities_expected")!,
       providerActivitiesExpected,
-      { sourceRefJson: [{ table: "referral_outreach_activities", activity_type: "home_health_provider" }] },
+      { sourceRefJson: [{ table: "referral_outreach_activities", activity_type: "home_health_provider", status: "planned" }] },
     );
     metrics.outreach_engagements = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "outreach_engagements")!,
@@ -1468,8 +1499,8 @@ export async function fetchExecutiveStandupLive(
     );
 
     for (const metric of Object.values(metrics)) {
-      metric.sourceRefJson.push({ ...sourceQuality(calculatedAt, [facility.id], metric.valueNumeric == null ? [] : [facility.id],
-        metric.valueNumeric == null ? "unknown" : "haven_live_v1", null, metric.valueNumeric != null) });
+      metric.sourceRefJson.push(metricDefinitionRef(metric), { ...sourceQuality(calculatedAt, [facility.id], metric.valueNumeric == null ? [] : [facility.id],
+        metric.valueNumeric == null ? "unknown" : "haven_live_v2", null, metric.valueNumeric != null) });
     }
 
     const { score, topConcern } = computePressureScore(metrics);
@@ -1493,7 +1524,7 @@ export async function fetchExecutiveStandupLive(
   }
 
   for (const facility of liveFacilities.filter((row) => row.facilityId == null)) {
-    for (const metric of Object.values(facility.metrics)) metric.sourceRefJson.push({ ...sourceQuality(calculatedAt, [], [], "unknown", null, false) });
+    for (const metric of Object.values(facility.metrics)) metric.sourceRefJson.push(metricDefinitionRef(metric), { ...sourceQuality(calculatedAt, [], [], "unknown", null, false) });
   }
 
   const totalMetrics = initializeMetricMap();
@@ -1530,7 +1561,7 @@ export async function fetchExecutiveStandupLive(
         ? totalCurrentMonthInvoices.map((row) => row.facility_id)
         : residentRows.filter((row) => row.monthly_total_rate != null && row.monthly_total_rate > 0).map((row) => row.facility_id)))
       : liveFacilities.filter((facility) => facility.facilityId != null && facility.metrics[metric.key]?.valueNumeric != null).map((facility) => facility.facilityId!);
-    metric.sourceRefJson.push({ ...sourceQuality(calculatedAt, facilityIds, contributors, metric.valueNumeric == null ? "unknown" : "haven_live_v1", null, metric.valueNumeric != null) });
+    metric.sourceRefJson.push(metricDefinitionRef(metric), { ...sourceQuality(calculatedAt, facilityIds, contributors, metric.valueNumeric == null ? "unknown" : "haven_live_v2", null, metric.valueNumeric != null) });
     if (!facilityIds.length || contributors.length !== facilityIds.length) metric.confidenceBand = "low";
   }
 
@@ -1708,23 +1739,23 @@ export async function saveStandupMetricInput(
 
   const existingMetricFetch = await supabase
     .from("exec_standup_snapshot_metrics" as never)
-    .select("id, source_ref_json")
+    .select("id, metric_label, section_key, source_ref_json")
     .eq("snapshot_id", input.snapshotId)
     .eq("organization_id", input.organizationId)
     .eq("facility_id", input.facilityId)
     .eq("metric_key", input.metricKey)
     .is("deleted_at", null)
     .maybeSingle();
-  const existingMetricResult = existingMetricFetch as unknown as { data: { id: string; source_ref_json: Array<Record<string, unknown>> | null } | null; error: { message: string } | null };
+  const existingMetricResult = existingMetricFetch as unknown as { data: { id: string; metric_label: string; section_key: string; source_ref_json: Array<Record<string, unknown>> | null } | null; error: { message: string } | null };
   if (existingMetricResult.error) throw new Error(existingMetricResult.error.message);
 
   const metricPayload = {
     snapshot_id: input.snapshotId,
     organization_id: input.organizationId,
     facility_id: input.facilityId,
-    section_key: definition.sectionKey,
+    section_key: existingMetricResult.data?.section_key ?? definition.sectionKey,
     metric_key: input.metricKey,
-    metric_label: definition.label,
+    metric_label: existingMetricResult.data?.metric_label ?? definition.label,
     value_numeric: input.valueNumeric ?? null,
     value_text: input.valueText ?? null,
     source_mode: effectiveSourceMode,
@@ -1771,25 +1802,34 @@ export async function saveStandupMetricInput(
   const totalScopeComplete = originalScope != null && originalScope.length > 0 && contributors.length === originalScope.length
     && contributors.every((id) => originalScope.includes(id));
   const existingTotal = metricRows.find((row) => row.facility_id == null);
-  const totalValue = aggregateSnapshotMetricValue(input.metricKey, facilityRows);
+  const savedUnit = (row: SnapshotMetricDbRow | undefined): StandupValueType | null => {
+    if (!row) return definition.valueType;
+    const captured = readStandupMetricDefinition({ key: row.metric_key, sourceRefJson: row.source_ref_json });
+    if (captured) return captured.value_type;
+    const hasExplicitCapture = preservedSourceRefs(row.source_ref_json).some((ref) => ref != null && typeof ref === "object" && "kind" in ref && ref.kind === "metric_definition");
+    return hasExplicitCapture ? null : definition.valueType;
+  };
+  const totalUnit = savedUnit(existingTotal);
+  const unitMismatch = totalUnit == null || contributingRows.some((row) => savedUnit(row) !== totalUnit);
+  const totalValue = unitMismatch ? null : aggregateSnapshotMetricValue(input.metricKey, facilityRows);
 
   const totalMetricPayload = {
     snapshot_id: input.snapshotId,
     organization_id: input.organizationId,
     facility_id: null,
-    section_key: definition.sectionKey,
+    section_key: existingTotal?.section_key ?? definition.sectionKey,
     metric_key: input.metricKey,
-    metric_label: definition.label,
+    metric_label: existingTotal?.metric_label ?? definition.label,
     value_numeric: totalValue,
     value_text: null,
     source_mode: effectiveSourceMode === "forecast" ? "forecast" : definition.sourceMode === "auto" ? "auto" : "manual",
-    confidence_band: totalScopeComplete && totalQueryComplete && totalBasis !== "unknown" ? confidenceBand : "low",
+    confidence_band: totalScopeComplete && totalQueryComplete && totalBasis !== "unknown" && !unitMismatch ? confidenceBand : "low",
     freshness_at: null,
     source_ref_json: [...preservedSourceRefs(existingTotal?.source_ref_json),
-      ...facilityRows.flatMap((row) => preservedSourceRefs(row.source_ref_json).filter((ref) => !(ref != null && typeof ref === "object" && "kind" in ref && ref.kind === "source_quality"))),
+      ...facilityRows.flatMap((row) => preservedSourceRefs(row.source_ref_json).filter((ref) => !(ref != null && typeof ref === "object" && "kind" in ref && (ref.kind === "source_quality" || ref.kind === "metric_definition")))),
       { mode: "facility_rollup", metric_key: input.metricKey },
-      { ...sourceQuality(receivedAt, originalScope, contributors, totalBasis, null, totalQueryComplete) }],
-    override_note: totalValue == null ? "Waiting on facility inputs." : null,
+      { ...sourceQuality(receivedAt, originalScope, unitMismatch ? [] : contributors, unitMismatch ? "unknown" : totalBasis, null, totalQueryComplete) }],
+    override_note: unitMismatch ? "Unit-definition mismatch: review saved contributor and total definitions before calculating a total." : totalValue == null ? "Waiting on facility inputs." : null,
     totals_included: true,
     updated_by: input.userId,
   };
