@@ -1,0 +1,122 @@
+{
+  "segment": "REVIEW-20260906",
+  "timestamp": "2026-09-06T15:57:09.155Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 29,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 187,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 594,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 8490,
+      "stdout": "[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n11:57AM INF 2018 commits scanned.\n11:57AM INF scanned ~46771587 bytes (46.77 MB) in 8.27s\n11:57AM INF no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "failed",
+      "duration_ms": 129324,
+      "stdout": "\n/Users/brianlewis/Circle of Life/Circle-of-Life/src/app/(admin)/admin/operations/page.tsx\n  446:162  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities\n  523:162  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities\n  595:162  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities\n\n✖ 3 problems (3 errors, 0 warnings)\n\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Circle-of-Life/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "passed",
+      "duration_ms": 723,
+      "stdout": "[migrations:check] PASS: 326 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..316\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": true,
+      "command": "npm run migrations:verify:pg",
+      "status": "passed",
+      "duration_ms": 58939,
+      "stdout": "[migrations:verify:pg] PASS (326 migration files, 10 SQL probes; native PostgreSQL with Supabase stubs)\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 147035,
+      "stdout": "[migrations:check] PASS: 326 migration(s) in /Users/brianlewis/Circle of Life/Circle-of-Life/supabase/migrations — sequence 001..316\n[check:admin-shell] PASS: all 21 top-level (admin) route prefix(es) are gated\n[check-memory-care] PASS\n▲ Next.js 16.2.11 (Turbopack)\n- Environments: .env.local\n- Experiments (use with caution):\n  · clientTraceMetadata\n  · optimizePackageImports\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 50s\n  Running next.config.js provided runAfterProductionCompile ...\n✓ Completed runAfterProductionCompile in 1375ms\n  Running TypeScript ...\n  Finished TypeScript in 79s ...\n  Collecting page data using 15 workers ...\n  Generating static pages using 15 workers (0/447) ...\n",
+      "stderr": "Error occurred prerendering page \"/admin/v2/quality\". Read more: https://nextjs.org/docs/messages/prerender-error\nError: No QueryClient set, use QueryClientProvider to set one\n    at <unknown> (.next/server/chunks/ssr/_1jjfh1e._.js:2:16153)\n    at <unknown> (.next/server/chunks/ssr/_1jjfh1e._.js:2:17749)\n    at <unknown> (.next/server/chunks/ssr/src_app_(admin)_admin_quality_page_tsx_0ee_ei6._.js:2:1703) {\n  digest: '2895201550'\n}\nExport encountered an error on /(admin)/admin/v2/quality/page: /admin/v2/quality, exiting the build.\n⨯ Next.js build worker exited with code: 1 and signal: null\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 2184,
+      "stdout": "PASS\tstress: suite loaded\nPASS\tstress: Number.parseInt rejects garbage\nPASS\tstress: parallel microtasks both ran\nADVISORY\tstress: add ALF/home-care workflow simulations when resident and census models exist\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 3,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.eslint",
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Circle-of-Life/test-results/agent-gates/2026-09-06T15-57-09-155Z-REVIEW-20260906.json"
+  ]
+}
