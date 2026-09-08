@@ -1,4 +1,4 @@
-import { canCompareStandupMetrics, qualifyStandupValue } from "@/lib/executive/standup-quality";
+import { canCompareStandupMetrics, qualifyStandupValue, readStandupSourceQuality } from "@/lib/executive/standup-quality";
 import {
   buildStandupComparison,
   hasRecordedPressure,
@@ -91,7 +91,7 @@ function formatMetricValue(metric: StandupMetricRow | undefined): string {
 
 function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMetricRow | undefined): string {
   if (!left || !right || left.valueNumeric == null || right.valueNumeric == null) return "—";
-  if (!canCompareStandupMetrics(left, right)) return "Comparison unavailable: source coverage or scope is unconfirmed.";
+  if (!canCompareStandupMetrics(left, right)) return "Comparison unavailable: source coverage, scope or calculation definitions do not support a comparison.";
   const delta = right.valueNumeric - left.valueNumeric;
   if (delta === 0) return "No change";
   if (right.valueType === "currency") return `${delta > 0 ? "+" : "-"}${USD.format(Math.abs(delta) / 100)}`;
@@ -100,12 +100,18 @@ function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMet
   return `${delta > 0 ? "+" : "-"}${Math.abs(delta)}`;
 }
 
-function methodologyNotes(): string[] {
+function methodologyNotes(detail: StandupSnapshotDetail): string[] {
+  const bases = new Set(detail.facilities.flatMap((facility) => Object.values(facility.metrics).map((metric) => readStandupSourceQuality(metric)?.basis)));
+  const v2 = bases.has("haven_live_v2");
+  const legacy = bases.has("haven_live_v1");
   return [
-    "Recorded AR uses nonnegative balances from draft, sent, partial and overdue invoices in the selected scope; uncollected AR filters past due dates. COL worksheet mappings remain TBD.",
-    "The existing invoice average uses the month containing the reporting week's Monday. A facility falls back to positive resident rates only with no qualifying invoices; portfolio fallback occurs only when there are no qualifying invoices across the portfolio.",
-    "Bed figures depend on recorded inventory, classifications and blocks. The legacy licensed-minus-census fallback is an estimate and does not establish usable accommodation.",
-    "Expected-event fields are provisional recorded outlooks. Verify pending versus completed events; these values are not actual arrival or discharge evidence.",
+    "Haven live AR uses nonnegative balances from draft, sent, partial and overdue invoices in the selected scope; uncollected AR filters past due dates. COL worksheet mappings remain TBD.",
+    "The Haven live invoice average uses the month containing the reporting week's Monday. A facility falls back to positive resident rates only with no qualifying invoices; portfolio fallback occurs only when there are no qualifying invoices across the portfolio.",
+    v2 ? "V2 bed counts require available, unoccupied, unblocked and unreserved records. Missing inventory or classifications remain unknown; counts do not establish clinical suitability."
+      : "Historical bed figures may include licensed-minus-census estimates. Review captured definitions; these figures do not establish usable accommodation.",
+    v2 ? "V2 outlooks exclude recorded arrivals and completed tours; provider activity must be planned. Admission targets can include drafts and remain provisional, not arrival evidence."
+      : "Historical expected-event fields may include completed events. Review captured definitions before using them as pending forecasts.",
+    ...(v2 && legacy ? ["This report contains multiple calculation versions; different methods are not compared."] : []),
   ];
 }
 
@@ -236,6 +242,6 @@ export function buildStandupPacketDocument(
     comparison,
     sections,
     appendixSections,
-    methodology: ["Financial worksheet definitions remain TBD. Recorded Haven values are not certified as equivalent to COL worksheets.", "Calculation time is not source-as-of time. Recording coverage is unconfirmed unless supported by explicit source evidence; fields populated is not operational completeness.", ...methodologyNotes()],
+    methodology: ["Financial worksheet definitions remain TBD. Recorded Haven values are not certified as equivalent to COL worksheets.", "Calculation time is not source-as-of time. Recording coverage is unconfirmed unless supported by explicit source evidence; fields populated is not operational completeness.", ...methodologyNotes(detail)],
   };
 }

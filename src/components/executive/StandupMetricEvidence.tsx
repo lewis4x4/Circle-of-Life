@@ -14,9 +14,14 @@ export function StandupReportingNotice() {
 
 export function StandupMetricEvidence({ metric, calculatedAt }: { metric: StandupMetricRow | undefined; calculatedAt?: string | null }) {
   const quality = readStandupSourceQuality(metric);
+  const method = quality?.basis === "haven_live_v2" ? "Recorded Haven calculation v2"
+    : quality?.basis === "haven_live_v1" ? "Recorded Haven calculation v1"
+    : quality?.basis === "manual" ? "Operator entry"
+    : quality?.basis === "mixed" ? "Mixed calculation sources" : "Unconfirmed";
   return <details className="mt-2 max-w-xs text-xs text-muted-foreground">
     <summary aria-label={`Source details: ${metric?.label ?? "metric"}`} className="cursor-pointer text-foreground">Source details</summary>
     <dl className="mt-2 space-y-1">
+      <div><dt className="inline font-medium">Method: </dt><dd className="inline">{method}</dd></div>
       <div><dt className="inline font-medium">Coverage: </dt><dd className="inline">{standupCoverageLabel(metric)}</dd></div>
       <div><dt className="inline font-medium">Source as of: </dt><dd className="inline">{timeLabel(quality?.source_as_of)}</dd></div>
       <div><dt className="inline font-medium">{quality ? "Calculated: " : "Report generated: "}</dt><dd className="inline">{timeLabel(quality?.calculated_at ?? calculatedAt)}</dd></div>

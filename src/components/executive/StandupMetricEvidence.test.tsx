@@ -16,6 +16,15 @@ describe("standup source evidence", () => {
     expect(screen.getByText(/recording coverage remains unconfirmed/)).toBeInTheDocument();
   });
 
+  it("identifies the captured method without assigning a current method to legacy values", () => {
+    const metric = standupQualityFixture().facilities[0].metrics.current_total_census;
+    const v2 = { ...metric, sourceRefJson: metric.sourceRefJson.map((entry) => entry && typeof entry === "object" && entry.kind === "source_quality" ? { ...entry, basis: "haven_live_v2" } : entry) };
+    const view = render(<StandupMetricEvidence metric={v2} />);
+    expect(screen.getByText("Method:").parentElement).toHaveTextContent("Recorded Haven calculation v2");
+    view.rerender(<StandupMetricEvidence metric={{ ...metric, sourceRefJson: [] }} />);
+    expect(screen.getByText("Method:").parentElement).toHaveTextContent("Unconfirmed");
+  });
+
   it("preserves a legacy timestamp without claiming confirmed source provenance", () => {
     const metric = { ...standupQualityFixture().facilities[0].metrics.current_total_census, sourceRefJson: [], freshnessAt: "2026-01-05T12:00:00Z" };
     render(<StandupMetricEvidence metric={metric} calculatedAt={QUALITY_FIXTURE_TIME} />);

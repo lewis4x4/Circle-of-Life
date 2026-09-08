@@ -5,6 +5,20 @@ import { buildStandupBoardPrintHtml } from "./standup-pdf";
 import { standupQualityFixture } from "@/test-fixtures/standup-quality";
 
 describe("consistent standup source qualifications", () => {
+  it("qualifies historical methods and identifies corrected inventory methodology", () => {
+    const current = standupQualityFixture();
+    const historical = buildStandupPacketDocument(current);
+    expect(historical.methodology.join(" ")).toContain("Historical bed figures may include");
+    for (const facility of current.facilities) {
+      for (const metric of Object.values(facility.metrics)) {
+        metric.sourceRefJson = metric.sourceRefJson.map((entry) => entry && typeof entry === "object" && entry.kind === "source_quality" ? { ...entry, basis: "haven_live_v2" } : entry);
+      }
+    }
+    const corrected = buildStandupPacketDocument(current);
+    expect(corrected.methodology.join(" ")).toContain("V2 bed counts require available, unoccupied, unblocked and unreserved records");
+    expect(corrected.methodology.join(" ")).toContain("targets can include drafts");
+  });
+
   it("preserves recorded zero and partial scope through UI, packet and PDF HTML", () => {
     const current = standupQualityFixture();
     const previous = standupQualityFixture("2026-08-31");

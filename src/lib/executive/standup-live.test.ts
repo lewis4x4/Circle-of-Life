@@ -79,7 +79,7 @@ function fixture(now: Date, repeats = 1): Tables {
         add("admission_cases", { status: i === 1 ? "cancelled" : "pending", target_move_in_date: i % 2 ? w.weekOf : null });
         add("referral_leads", { status: i === 3 ? "lost" : "new", tour_scheduled_for: stamp });
         add("referral_outreach_activities", { status: i === 5 ? "cancelled" : "planned", activity_type: i % 2 ? "home_health_provider" : "community_event", scheduled_for: stamp, performed_for_week: i === 0 ? w.weekOf : null });
-        if (f !== 5) add("beds", { status: i === 5 ? "occupied" : null, current_resident_id: i === 4 ? "resident" : null, is_temporarily_blocked: i === 3, standup_availability_class: ["private", "sp_female", "sp_male", "sp_flexible", null, "private"][i] });
+        if (f !== 5) add("beds", { reserved_for_admission_case_id: null, status: i === 5 ? "occupied" : null, current_resident_id: i === 4 ? "resident" : null, is_temporarily_blocked: i === 3, standup_availability_class: ["private", "sp_female", "sp_male", "sp_flexible", null, "private"][i] });
       });
     }
   }
@@ -115,7 +115,7 @@ describe("live standup behavior", () => {
     }
   });
 
-  it("preserves single-facility scope, totals, and missing-bed capacity fallback", async () => {
+  it("preserves single-facility scope, totals, and unknown availability when bed inventory is missing", async () => {
     const now = new Date("2026-09-05T16:00:00Z");
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(now);
@@ -123,7 +123,7 @@ describe("live standup behavior", () => {
     const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, facilityId(5));
     expect(summary(result)).toMatchSnapshot();
     expect(result.facilities.map((f) => f.facilityId)).toEqual([facilityId(5), null]);
-    expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBe(46);
+    expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBeNull();
     for (const query of mock.queries) expect(query.operations).toContainEqual(["eq", query.table === "facilities" ? "id" : "facility_id", facilityId(5)]);
   });
 
@@ -132,7 +132,7 @@ describe("live standup behavior", () => {
     vi.setSystemTime(new Date("2026-09-05T16:00:00Z"));
     expect(summary(await fetchExecutiveStandupLive(client({}).supabase, organizationId, null))).toMatchSnapshot();
     const result = await fetchExecutiveStandupLive(client({ facilities: [{ id: facilityId(1), name: "Empty facility", total_licensed_beds: 10, organization_id: organizationId, deleted_at: null }] }).supabase, organizationId, null);
-    expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBe(10);
+    expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBeNull();
     expect(result.facilities[0].metrics.average_rent_cents.valueNumeric).toBeNull();
   });
 
@@ -162,7 +162,7 @@ describe("live standup behavior", () => {
     const total = live.facilities.find((facility) => facility.facilityName === "Totals")!.metrics.average_rent_cents;
     expect(total.valueNumeric).toBe(125000);
     expect(total.confidenceBand).toBe("low");
-    expect(readStandupSourceQuality(total)).toMatchObject({ expected_facility_ids: [facilityId(1),facilityId(2)], contributing_facility_ids: [facilityId(1)], basis: "haven_live_v1" });
+    expect(readStandupSourceQuality(total)).toMatchObject({ expected_facility_ids: [facilityId(1),facilityId(2)], contributing_facility_ids: [facilityId(1)], basis: "haven_live_v2" });
     expect(qualifyStandupValue(total, "$1,250")).toBe("$1,250 — partial 1/2");
     expect(canCompareStandupMetrics(total,total)).toBe(false);
   });
@@ -180,6 +180,46 @@ describe("live standup behavior", () => {
     expect(total.valueNumeric).toBe(200000);
     expect(total.confidenceBand).toBe("low");
     expect(readStandupSourceQuality(total)?.contributing_facility_ids).toEqual([facilityId(1)]);
+  });
+
+  it("uses only explicit usable inventory and keeps missing classification unknown", async () => {
+    const scope = { facility_id: facilityId(1), organization_id: organizationId, deleted_at: null };
+    const available = { ...scope, status: "available", current_resident_id: null, is_temporarily_blocked: false, reserved_for_admission_case_id: null, standup_availability_class: "private" };
+    const tables = { facilities: [{ id: facilityId(1), name: "Inventory", total_licensed_beds: 900, organization_id: organizationId, deleted_at: null }],
+      beds: [available, { ...available,status: null }, { ...available,status: "hold" }, { ...available,status: "maintenance" },
+        { ...available,current_resident_id: "resident" }, { ...available,is_temporarily_blocked: true }, { ...available,reserved_for_admission_case_id: "admission" },
+        { ...available,is_temporarily_blocked: null }, { ...available,standup_availability_class: null }],
+    };
+    const live = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
+    const metrics = live.facilities.find((facility) => facility.facilityId)!.metrics;
+    expect(metrics.total_beds_open.valueNumeric).toBe(2);
+    for (const key of ["sp_female_beds_open","sp_male_beds_open","sp_flexible_beds_open","private_beds_open"]) {
+      expect(metrics[key].valueNumeric).toBeNull();
+      expect(metrics[key].confidenceBand).toBe("low");
+      expect(metrics[key].overrideNote).toMatch(/classification is missing or unrecognized/);
+    }
+    expect(metrics.total_beds_open.sourceRefJson).toContainEqual(expect.objectContaining({ kind: "metric_definition",calculation_basis: "haven_live_v2" }));
+  });
+
+  it("separates pending dates from arrival and completion evidence without redefining outreach", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });vi.setSystemTime(new Date("2026-09-08T14:00:00Z"));
+    const scope = { facility_id: facilityId(1), organization_id: organizationId, deleted_at: null };
+    const day = "2026-09-09";const stamp = "2026-09-09T14:00:00Z";
+    const tables = { facilities: [{ id: facilityId(1), name: "Pending", total_licensed_beds: 900, organization_id: organizationId, deleted_at: null }],
+      admission_cases: ["pending_clearance","bed_reserved","move_in","draft","cancelled"].map((status) => ({ ...scope,status,target_move_in_date: day,actual_arrival_at: null as string | null }))
+        .concat([{ ...scope,status: "move_in",target_move_in_date: day,actual_arrival_at: stamp }]),
+      residents: ["active","hospital_hold","loa","discharged","deceased","inquiry","pending_admission"].map((status) => ({ ...scope,status,discharge_target_date: day })),
+      referral_leads: [{ ...scope,status: "tour_scheduled",tour_scheduled_for: stamp,tour_completed_at: null },
+        { ...scope,status: "tour_completed",tour_scheduled_for: stamp,tour_completed_at: null },
+        { ...scope,status: "application_pending",tour_scheduled_for: stamp,tour_completed_at: stamp }],
+      referral_outreach_activities: ["planned","completed","cancelled"].flatMap((status) => ["home_health_provider","community_event"].map((activity_type) => ({ ...scope,status,activity_type,scheduled_for: stamp,performed_for_week: "2026-09-07" }))),
+    };
+    const metrics = (await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null)).facilities.find((facility) => facility.facilityId)!.metrics;
+    expect(metrics.admissions_expected.valueNumeric).toBe(4); // move_in is readiness; existing draft inclusion is provisional.
+    expect(metrics.expected_discharges.valueNumeric).toBe(3);
+    expect(metrics.tours_expected.valueNumeric).toBe(1);
+    expect(metrics.provider_activities_expected.valueNumeric).toBe(1);
+    expect(metrics.outreach_engagements.valueNumeric).toBe(2); // Existing ambiguous planned/completed outreach calculation is unchanged.
   });
 
   it.each(["facilities", "invoices", "residents", "staff", "time_records", "beds", "staff_attendance_events", "staff_requisitions", "admission_cases", "referral_outreach_activities", "referral_leads"])("continues to reject %s query errors", async (table) => {
