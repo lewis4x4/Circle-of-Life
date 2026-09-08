@@ -47,6 +47,8 @@
     "homewood:perf-baseline": "node scripts/homewood/perf-baseline.mjs",
     "homewood:a11y-baseline": "node scripts/homewood/a11y-baseline.mjs",
     "homewood:preflight": "node scripts/homewood/preflight.mjs",
+    "homewood:import-ar": "node scripts/homewood/import-ar-to-live.mjs",
+    "homewood:import-ar:apply": "node scripts/homewood/import-ar-to-live.mjs --apply --verbose",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "demo:seed:danger": "node scripts/demo/seed-demo-data.mjs",
     "demo:reset:danger": "node scripts/demo/reset-demo-data.mjs",
