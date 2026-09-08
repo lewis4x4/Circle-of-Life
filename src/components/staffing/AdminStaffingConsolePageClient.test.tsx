@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,6 +11,8 @@ import type {
   SnapshotRow,
   StaffOption,
 } from "@/lib/staffing/load-staffing-console";
+
+import * as staffingLoader from "@/lib/staffing/load-staffing-console";
 
 const mocks = vi.hoisted(() => ({
   useFacilityStoreMock: vi.fn(),
@@ -109,6 +111,7 @@ describe("<AdminStaffingConsolePageClient />", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("shows named loading copy while staffing data refetches", () => {
@@ -217,46 +220,48 @@ describe("<AdminStaffingConsolePageClient />", () => {
     }
   });
 
-  it("persists attendance occurred_at from Eastern datetime-local without a 4-hour shift", async () => {
+  it("saves a callout through the reviewed-command RPC with Eastern time and reloads attendance", async () => {
     const user = userEvent.setup();
-    const insertMock = vi.fn().mockReturnValue({ error: null });
-    const fromMock = vi.fn((table: string) => {
-      if (table === "facilities") {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              is: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: { organization_id: "org-1" },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
-        };
-      }
-      if (table === "staff_attendance_events") {
-        return { insert: insertMock };
-      }
-      throw new Error(`unexpected table ${table}`);
-    });
-
-    mocks.createClientMock.mockReturnValue({
-      from: fromMock,
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
-    });
-
+    const rpcMock = vi.fn().mockResolvedValue({ data: { id: "new-event" }, error: null });
+    const fromMock = vi.fn();
+    mocks.createClientMock.mockReturnValue({ rpc: rpcMock, from: fromMock });
+    vi.spyOn(staffingLoader, "fetchSnapshotsFromSupabase").mockResolvedValue(loadedProps.initialSnapshots);
+    vi.spyOn(staffingLoader, "fetchExpiredCertificationWarnings").mockResolvedValue(loadedProps.initialCertWarnings);
+    vi.spyOn(staffingLoader, "fetchShiftAssignmentGaps").mockResolvedValue(loadedProps.initialShiftGaps);
+    vi.spyOn(staffingLoader, "fetchStaffOptions").mockResolvedValue(loadedProps.initialStaffOptions);
+    vi.spyOn(staffingLoader, "fetchStaffRequisitions").mockResolvedValue(loadedProps.initialRequisitions);
+    const reload = vi.spyOn(staffingLoader, "fetchAttendanceEvents").mockResolvedValue([
+      ...loadedProps.initialAttendance,
+      { id: "new-event", event_type: "callout", occurred_at: "2026-08-20T20:06:00.000Z", reason: "Reviewed command test", staff: { first_name: "Ava", last_name: "Lopez" } },
+    ]);
     render(<AdminStaffingConsolePageClient {...loadedProps} />);
-
     await user.selectOptions(screen.getByLabelText(/^staff member$/i), "staff-1");
-    await user.clear(screen.getByLabelText(/^occurred at \(et\)$/i));
-    await user.type(screen.getByLabelText(/^occurred at \(et\)$/i), "2026-08-20T16:06");
+    fireEvent.change(screen.getByLabelText(/^occurred at \(et\)$/i), { target: { value: "2026-08-20T16:06" } });
+    await user.type(screen.getByLabelText(/^reason or note$/i), "  Reviewed command test  ");
     await user.click(screen.getByRole("button", { name: /save attendance event/i }));
+    expect(rpcMock).toHaveBeenCalledExactlyOnceWith("haven_employee_file_command", {
+      p_staff_id: "staff-1", p_action: "record_attendance",
+      p_payload: { event_type: "callout", occurred_at: "2026-08-20T20:06:00.000Z", reason: "Reviewed command test" },
+    });
+    expect(fromMock).not.toHaveBeenCalled();
+    expect(await screen.findByText("Reviewed command test")).toBeInTheDocument();
+    expect(reload).toHaveBeenCalledWith(baseFacilityId);
+    expect(screen.getByLabelText(/^staff member$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/^reason or note$/i)).toHaveValue("");
+  });
 
-    expect(insertMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        occurred_at: "2026-08-20T20:06:00.000Z",
-      }),
-    );
+  it("shows rejected attendance saves without direct-table fallback or a success refresh", async () => {
+    const user = userEvent.setup();
+    const rpcMock = vi.fn().mockResolvedValue({ data: null, error: { message: "Independent manager access required." } });
+    const fromMock = vi.fn();
+    const reload = vi.spyOn(staffingLoader, "fetchAttendanceEvents");
+    mocks.createClientMock.mockReturnValue({ rpc: rpcMock, from: fromMock });
+    render(<AdminStaffingConsolePageClient {...loadedProps} />);
+    await user.selectOptions(screen.getByLabelText(/^staff member$/i), "staff-1");
+    await user.click(screen.getByRole("button", { name: /save attendance event/i }));
+    await waitFor(() => expect(screen.getByText("Independent manager access required.")).toBeInTheDocument());
+    expect(screen.getByText("Workforce console unavailable")).toBeInTheDocument();
+    expect(fromMock).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
   });
 });
