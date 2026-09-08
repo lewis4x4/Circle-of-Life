@@ -1,0 +1,25 @@
+{
+  "verdict": "APPROVE",
+  "reviewer": "independent native agent payroll_review",
+  "resolved_findings": [
+    "Current export must reject reapproved excluded punches until same-line refresh restores them.",
+    "Queued/failed batches must retain recovery to draft; historical exported values remain frozen."
+  ],
+  "blocking_findings": [],
+  "source_sha256": {
+    "supabase/migrations/341_payroll_source_freshness.sql": "4801112cc77b0922807bf81685aa40908e3b6887a74a93cb0749d14d970ef285",
+    "supabase/tests/review_payroll_freshness.sql": "f998af7704996171a8435b48832bf5de5116de3c558e33b3134aa89f4e7b8fc7",
+    "src/app/(admin)/payroll/[id]/page.tsx": "9a0141e61191067db35bc23fda835afd3ee807a6ba0a6c2b6a669e80f178a5fb",
+    "src/app/(admin)/payroll/[id]/page.test.tsx": "7b5a263e5c306a86360496295f708ca626c69219ccfe8120d1d75d2ce9374972",
+    "src/types/database.ts": "9049e58c82b14348731f988b36671160a925f98339180544a33300252b23544d"
+  },
+  "focused_tests": 10,
+  "sql_replay": {
+    "migrations": 344,
+    "probes": 25,
+    "result": "PASS",
+    "auth": "Supabase stubs in disposable PostgreSQL database"
+  },
+  "review_limit": "Source review; parent executed verification.",
+  "gate": "test-results/agent-gates/2026-09-08T14-43-35-176Z-BUS-006-payroll-freshness.json"
+}
