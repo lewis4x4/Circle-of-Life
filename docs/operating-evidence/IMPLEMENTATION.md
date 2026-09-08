@@ -68,3 +68,12 @@ Focused tests: 7 passed; independent tests including wall-clock helpers: 12 pass
 Strict UIgate PASS `test-results/agent-gates/2026-09-08T15-05-52-440Z-hcol-referral-tour.json` (full build, lint, audit,338 migration/19 SQL replay, component-harness design/axe). Browser evidence uses a synthetic navigation/auth harness and signed local actor; no hosted login or full Next route UAT claimed. HCOL08 assignment acceptance/backup and HCOL15 tour outcomes remain open. Jessica's vocabulary untouched. Mission alignment: pass for this bounded repair.
 
 Final independent implementation and UI source review APPROVE; zero diagnostics.
+
+## Completed bounded segment: complete scoped reporting reads
+
+Bounded HCOL03 correction: paginate facilities and all ten standup sources beyond server/default read caps; repeat organization/facility/soft-delete filters on every page; reject later-page failures rather than returning partial totals. No operational query runs for an empty accessible facility set. Preserve existing calculations, dates and definitions in this slice; those calculations are not newly approved COL worksheet semantics. Source freshness, operational completeness, usable-bed truth and pending/actual forecast separation remain separate follow-ups.
+
+Read consistency limit: this segment removes silent fixed/default caps, but separate offset pages are not a transaction-consistent database snapshot under concurrent inserts/deletes. It does not certify a historical publication cutoff or operational capture coverage; source-owned snapshot/aggregation work remains open.
+
+
+Independent review APPROVE.20 tests passed, one existing opt-in performance test skipped; numeric snapshots unchanged. Actual loader → local PostgREST read5001 records across41 requests with a127-row server cap, preserving scope and including the last current-week record. Supported typecheck and strictgate PASS `test-results/agent-gates/2026-09-08T15-24-17-944Z-hcol-standup-pagination.json`. Evidence `PAGINATION-REVIEW.json`. Simplification: common scoped factory replaces ten repeated capped query builders. Mission alignment: pass for bounded read completeness, not approved financial definitions or operational coverage.

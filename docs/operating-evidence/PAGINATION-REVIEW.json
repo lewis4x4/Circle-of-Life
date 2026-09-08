@@ -1,0 +1,38 @@
+{
+  "segment": "hcol-standup-pagination",
+  "review": "APPROVE independent source review; zero diagnostics on both files",
+  "source_sha256": {
+    "src/lib/executive/standup.ts": "0b66bcb03a6ce656a2c879c30db1ba48f723780be012faefb6a16cd46378e802",
+    "src/lib/executive/standup-live.test.ts": "1b999997f17279f4db4990411dd42f2f9badce76ba7ea001055fcb9f6455b0da"
+  },
+  "tests": {
+    "passed": 20,
+    "existing_opt_in_perf_skipped": 1,
+    "existing_numeric_snapshots": "unchanged"
+  },
+  "http": {
+    "passed": true,
+    "source_rows": 5001,
+    "server_page_cap": 127,
+    "requested_page_size": 1000,
+    "current_week_recorded_outreach": 1,
+    "outreach_page_count": 41,
+    "last_page": {
+      "table": "referral_outreach_activities",
+      "offset": 5001,
+      "limit": 1000,
+      "rows": 0,
+      "org": "eq.ee3527be-eb4a-4077-baf7-b2d69a53b666",
+      "facility": "eq.f3428027-eb96-4c2f-b79f-69ed38662460"
+    },
+    "all_requests_scoped": true,
+    "definition_status": "Existing computation exercised, not approved as COL business definition",
+    "transport": "actual standup loader -> SupabaseJS -> local PostgREST14.4 -> PostgreSQL17; signed synthetic owner and native auth stubs"
+  },
+  "limits": [
+    "Offset pages are not a transaction-consistent snapshot under concurrent inserts/deletes",
+    "Business formulas, source freshness and capture coverage remain unapproved or unchanged",
+    "No hosted verification"
+  ],
+  "gate": "test-results/agent-gates/2026-09-08T15-24-17-944Z-hcol-standup-pagination.json"
+}

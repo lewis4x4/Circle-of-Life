@@ -13,7 +13,7 @@ const organizationId = "00000000-0000-4000-8000-000000000099";
 const facilityId = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
 
 // Model the loader's read-only query contract without requiring hosted data.
-function client(tables: Tables, failedTable?: string) {
+function client(tables: Tables, failedTable?: string, options: { serverCap?: number; failOffset?: number } = {}) {
   const queries: Array<{ table: string; operations: unknown[][] }> = [];
   return {
     queries,
@@ -21,16 +21,29 @@ function client(tables: Tables, failedTable?: string) {
       from(table: string) {
         const operations: unknown[][] = [];
         queries.push({ table, operations });
-        let rows = tables[table];
+        const sourceRows: Row[] | undefined = tables[table]?.map((row, index) => ({ id: `${table}-${String(index).padStart(8, "0")}`, ...row }));
+        let offset = 0;
+        let rangeEnd = Infinity;
+        let requestedLimit = Infinity;
         const query = {
           select(columns: string) { operations.push(["select", columns]); return query; },
-          eq(column: string, value: unknown) { operations.push(["eq", column, value]); rows = rows?.filter((r) => r[column] === value); return query; },
-          is(column: string, value: unknown) { operations.push(["is", column, value]); rows = rows?.filter((r) => r[column] === value); return query; },
-          in(column: string, values: unknown[]) { operations.push(["in", column, values]); rows = rows?.filter((r) => values.includes(r[column])); return query; },
-          order(column: string) { operations.push(["order", column]); rows = rows?.slice().sort((a, b) => String(a[column]).localeCompare(String(b[column]))); return query; },
-          limit(count: number) { operations.push(["limit", count]); rows = rows?.slice(0, count); return query; },
+          eq(column: string, value: unknown) { operations.push(["eq", column, value]); return query; },
+          is(column: string, value: unknown) { operations.push(["is", column, value]); return query; },
+          in(column: string, values: unknown[]) { operations.push(["in", column, values]); return query; },
+          order(column: string) { operations.push(["order", column]); return query; },
+          range(from: number, to: number) { operations.push(["range", from, to]); offset = from; rangeEnd = to; return query; },
+          limit(count: number) { operations.push(["limit", count]); requestedLimit = count; return query; },
           then(resolve: (value: unknown) => unknown) {
-            return Promise.resolve({ data: rows ?? null, error: table === failedTable ? { message: `failed ${table}` } : null }).then(resolve);
+            // PostgREST applies predicates before ORDER/LIMIT regardless of builder call order.
+            let rows = sourceRows?.filter((row) => operations.every(([op, column, value]) => {
+              if (op === "eq" || op === "is") return row[column as string] === value;
+              if (op === "in") return (value as unknown[]).includes(row[column as string]);
+              return true;
+            }));
+            const ordering = operations.find(([op]) => op === "order")?.[1] as string | undefined;
+            if (ordering) rows = rows?.slice().sort((a, b) => String(a[ordering]).localeCompare(String(b[ordering])));
+            rows = rows?.slice(offset, rangeEnd + 1).slice(0, requestedLimit);
+            return Promise.resolve({ data: rows?.slice(0, options.serverCap ?? Infinity) ?? null, error: table === failedTable && (options.failOffset === undefined || offset >= options.failOffset) ? { message: `failed ${table}` } : null }).then(resolve);
           },
         };
         return query;
@@ -93,7 +106,7 @@ describe("live standup behavior", () => {
       expect(facility.metrics.overtime_hours.valueNumeric).toBe(3.25);
       expect(facility.metrics.tours_expected.valueNumeric).toBe(1);
     }
-    expect(mock.queries).toHaveLength(11);
+    expect([...new Set(mock.queries.map((query) => query.table))].sort()).toEqual(Object.keys(fixture(now)).sort());
     for (const query of mock.queries) {
       expect(query.operations).toContainEqual(["eq", "organization_id", organizationId]);
       expect(query.operations).toContainEqual(["is", "deleted_at", null]);
@@ -123,7 +136,7 @@ describe("live standup behavior", () => {
   });
 
   it.each(["facilities", "invoices", "residents", "staff", "time_records", "beds", "staff_attendance_events", "staff_requisitions", "admission_cases", "referral_outreach_activities", "referral_leads"])("continues to reject %s query errors", async (table) => {
-    await expect(fetchExecutiveStandupLive(client({}, table).supabase, organizationId, null)).rejects.toThrow(`failed ${table}`);
+    await expect(fetchExecutiveStandupLive(client(fixture(new Date("2026-09-05T16:00:00Z")), table).supabase, organizationId, null)).rejects.toThrow(`failed ${table}`);
   });
 
   it.skipIf(!process.env.HAVEN_PERF_BENCH)("measures synthetic five-facility processing", async () => {
@@ -138,5 +151,57 @@ describe("live standup behavior", () => {
       if (i > 0) times.push(performance.now() - start);
     }
     writeFileSync(`${process.env.HAVEN_PERF_BENCH}/standup.json`, JSON.stringify({ benchmark: "standup-29400-rows", medianMs: times.sort((a, b) => a - b)[2] }));
+  });
+});
+
+
+describe("complete scoped standup reads", () => {
+  it("includes current activity after more than 5,000 historical records", async () => {
+    const now = new Date("2026-09-08T16:00:00Z");
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now);
+    const tables = fixture(now);
+    tables.staff_attendance_events = Array.from({ length: 5001 }, (_, index) => ({
+      id: String(index).padStart(8, "0"), organization_id: organizationId, facility_id: facilityId(1), deleted_at: null,
+      event_type: "callout", occurred_at: index === 5000 ? "2026-09-02T12:00:00Z" : "2000-01-01T12:00:00Z",
+    }));
+    const mock = client(tables);
+    const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, facilityId(1));
+    expect(result.facilities[0].metrics.callouts_last_week.valueNumeric).toBe(1);
+    const pages = mock.queries.filter((query) => query.table === "staff_attendance_events");
+    expect(pages.some((query) => query.operations.some((op) => op[0] === "range" && Number(op[1]) >= 5000))).toBe(true);
+    for (const query of pages) {
+      expect(query.operations).toContainEqual(["eq", "organization_id", organizationId]);
+      expect(query.operations).toContainEqual(["eq", "facility_id", facilityId(1)]);
+      expect(query.operations).toContainEqual(["is", "deleted_at", null]);
+      expect(query.operations).toContainEqual(["order", "id"]);
+    }
+  });
+
+  it("continues below the requested page size and preserves all scope predicates", async () => {
+    const now = new Date("2026-09-05T16:00:00Z");
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(now);
+    const expected = await fetchExecutiveStandupLive(client(fixture(now)).supabase, organizationId, null);
+    const mock = client(fixture(now), undefined, { serverCap: 2 });
+    const actual = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
+    expect(summary(actual)).toEqual(summary(expected));
+    expect(actual.facilities.filter((row) => row.facilityId)).toHaveLength(5);
+    for (const query of mock.queries) {
+      expect(query.operations).toContainEqual(["eq", "organization_id", organizationId]);
+      expect(query.operations).toContainEqual(["is", "deleted_at", null]);
+      if (query.table !== "facilities") expect(query.operations).toContainEqual(["in", "facility_id", [1,2,3,4,5].map(facilityId)]);
+      if (query.table === "invoices") expect(query.operations).toContainEqual(["in", "status", ["draft", "sent", "partial", "overdue"]]);
+    }
+  });
+
+  it("rejects a later-page error rather than returning partial totals", async () => {
+    const mock = client(fixture(new Date("2026-09-05T16:00:00Z")), "time_records", { serverCap: 2, failOffset: 2 });
+    await expect(fetchExecutiveStandupLive(mock.supabase, organizationId, null)).rejects.toThrow("failed time_records");
+  });
+
+  it("does not query operational data when the accessible facility set is empty", async () => {
+    const mock = client({ facilities: [], residents: [{ organization_id: organizationId, facility_id: facilityId(1), deleted_at: null, status: "active" }] });
+    const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
+    expect(result.facilities[0].facilityName).toBe("No facilities in scope");
+    expect(mock.queries.every((query) => query.table === "facilities")).toBe(true);
   });
 });

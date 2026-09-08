@@ -1147,26 +1147,39 @@ export async function fetchStandupSnapshotDetail(
   };
 }
 
+type StandupPageResult<T> = { data: T[] | null; error: { message: string } | null };
+
+async function readStandupPages<T>(
+  makePage: (from: number, to: number) => PromiseLike<StandupPageResult<T>>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (;;) {
+    const result = await makePage(rows.length, rows.length + 999);
+    if (result.error) throw new Error(result.error.message);
+    const page = result.data ?? [];
+    if (page.length === 0) return rows;
+    rows.push(...page);
+  }
+}
+
 export async function fetchExecutiveStandupLive(
   supabase: SupabaseClient<Database>,
   organizationId: string,
   facilityId: string | null,
 ): Promise<ExecutiveStandupLive> {
-  let facilitiesQuery = supabase
-    .from("facilities" as never)
-    .select("id, name, total_licensed_beds")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .order("name", { ascending: true });
-
-  if (isValidFacilityIdForQuery(facilityId)) {
-    facilitiesQuery = facilitiesQuery.eq("id", facilityId);
-  }
-
-  const facilitiesRes = (await facilitiesQuery) as unknown as { data: FacilityMini[] | null; error: { message: string } | null };
-  if (facilitiesRes.error) throw new Error(facilitiesRes.error.message);
-
-  const facilities = facilitiesRes.data ?? [];
+  const facilities = (await readStandupPages<FacilityMini>((from, to) => {
+    let query = supabase
+      .from("facilities" as never)
+      .select("id, name, total_licensed_beds")
+      .eq("organization_id", organizationId)
+      .is("deleted_at", null)
+      .order("id", { ascending: true })
+      .range(from, to);
+    if (isValidFacilityIdForQuery(facilityId)) {
+      query = query.eq("id", facilityId);
+    }
+    return query as unknown as PromiseLike<StandupPageResult<FacilityMini>>;
+  })).sort((a, b) => a.name.localeCompare(b.name));
   const facilityIds = facilities.map((row) => row.id);
   const {
     todayIso,
@@ -1177,128 +1190,40 @@ export async function fetchExecutiveStandupLive(
     monthYm,
   } = standupCalendarWindow();
 
-  let invoicesQ = supabase
-    .from("invoices" as never)
-    .select("facility_id, balance_due, due_date, total, period_start, deleted_at, status")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .in("status", ["draft", "sent", "partial", "overdue"])
-    .limit(5000);
-
-  let residentsQ = supabase
-    .from("residents" as never)
-    .select("facility_id, status, discharge_target_date, monthly_total_rate")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let staffQ = supabase
-    .from("staff" as never)
-    .select("facility_id, termination_date")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let timeQ = supabase
-    .from("time_records" as never)
-    .select("facility_id, overtime_hours, clock_in")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let bedsQ = supabase
-    .from("beds" as never)
-    .select("facility_id, status, current_resident_id, standup_availability_class, is_temporarily_blocked")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let attendanceQ = supabase
-    .from("staff_attendance_events" as never)
-    .select("facility_id, event_type, occurred_at")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let requisitionsQ = supabase
-    .from("staff_requisitions" as never)
-    .select("facility_id, status")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let admissionCasesQ = supabase
-    .from("admission_cases" as never)
-    .select("facility_id, status, target_move_in_date")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let outreachQ = supabase
-    .from("referral_outreach_activities" as never)
-    .select("facility_id, activity_type, status, scheduled_for, performed_for_week")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let referralToursQ = supabase
-    .from("referral_leads" as never)
-    .select("facility_id, status, tour_scheduled_for")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  if (facilityIds.length > 0 && !isValidFacilityIdForQuery(facilityId)) {
-    invoicesQ = invoicesQ.in("facility_id", facilityIds);
-    residentsQ = residentsQ.in("facility_id", facilityIds);
-    staffQ = staffQ.in("facility_id", facilityIds);
-    timeQ = timeQ.in("facility_id", facilityIds);
-    bedsQ = bedsQ.in("facility_id", facilityIds);
-    attendanceQ = attendanceQ.in("facility_id", facilityIds);
-    requisitionsQ = requisitionsQ.in("facility_id", facilityIds);
-    admissionCasesQ = admissionCasesQ.in("facility_id", facilityIds);
-    outreachQ = outreachQ.in("facility_id", facilityIds);
-    referralToursQ = referralToursQ.in("facility_id", facilityIds);
-  } else if (isValidFacilityIdForQuery(facilityId)) {
-    invoicesQ = invoicesQ.eq("facility_id", facilityId);
-    residentsQ = residentsQ.eq("facility_id", facilityId);
-    staffQ = staffQ.eq("facility_id", facilityId);
-    timeQ = timeQ.eq("facility_id", facilityId);
-    bedsQ = bedsQ.eq("facility_id", facilityId);
-    attendanceQ = attendanceQ.eq("facility_id", facilityId);
-    requisitionsQ = requisitionsQ.eq("facility_id", facilityId);
-    admissionCasesQ = admissionCasesQ.eq("facility_id", facilityId);
-    outreachQ = outreachQ.eq("facility_id", facilityId);
-    referralToursQ = referralToursQ.eq("facility_id", facilityId);
+  function readSource<T>(table: string, columns: string): Promise<T[]> {
+    if (facilityIds.length === 0) return Promise.resolve([]);
+    return readStandupPages<T>((from, to) => {
+      let query = supabase
+        .from(table as never)
+        .select(columns)
+        .eq("organization_id", organizationId)
+        .is("deleted_at", null)
+        .order("id", { ascending: true })
+        .range(from, to);
+      if (isValidFacilityIdForQuery(facilityId)) {
+        query = query.eq("facility_id", facilityId);
+      } else {
+        query = query.in("facility_id", facilityIds);
+      }
+      if (table === "invoices") {
+        query = query.in("status", ["draft", "sent", "partial", "overdue"]);
+      }
+      return query as unknown as PromiseLike<StandupPageResult<T>>;
+    });
   }
 
-  const [invoicesRes, residentsRes, staffRes, timeRes, bedsRes, attendanceRes, requisitionsRes, admissionCasesRes, outreachRes, referralToursRes] = await Promise.all([
-    invoicesQ as unknown as Promise<{ data: InvoiceMini[] | null; error: { message: string } | null }>,
-    residentsQ as unknown as Promise<{ data: ResidentMini[] | null; error: { message: string } | null }>,
-    staffQ as unknown as Promise<{ data: StaffMini[] | null; error: { message: string } | null }>,
-    timeQ as unknown as Promise<{ data: TimeRecordMini[] | null; error: { message: string } | null }>,
-    bedsQ as unknown as Promise<{ data: BedMini[] | null; error: { message: string } | null }>,
-    attendanceQ as unknown as Promise<{ data: AttendanceEventMini[] | null; error: { message: string } | null }>,
-    requisitionsQ as unknown as Promise<{ data: RequisitionMini[] | null; error: { message: string } | null }>,
-    admissionCasesQ as unknown as Promise<{ data: AdmissionCaseMini[] | null; error: { message: string } | null }>,
-    outreachQ as unknown as Promise<{ data: OutreachActivityMini[] | null; error: { message: string } | null }>,
-    referralToursQ as unknown as Promise<{ data: Array<{ facility_id: string; status: string; tour_scheduled_for: string | null }> | null; error: { message: string } | null }>,
+  const [invoiceRows, residentRows, staffRows, timeRows, bedRows, attendanceRows, requisitionRows, admissionCaseRows, outreachRows, referralTourRows] = await Promise.all([
+    readSource<InvoiceMini>("invoices", "facility_id, balance_due, due_date, total, period_start, deleted_at, status"),
+    readSource<ResidentMini>("residents", "facility_id, status, discharge_target_date, monthly_total_rate"),
+    readSource<StaffMini>("staff", "facility_id, termination_date"),
+    readSource<TimeRecordMini>("time_records", "facility_id, overtime_hours, clock_in"),
+    readSource<BedMini>("beds", "facility_id, status, current_resident_id, standup_availability_class, is_temporarily_blocked"),
+    readSource<AttendanceEventMini>("staff_attendance_events", "facility_id, event_type, occurred_at"),
+    readSource<RequisitionMini>("staff_requisitions", "facility_id, status"),
+    readSource<AdmissionCaseMini>("admission_cases", "facility_id, status, target_move_in_date"),
+    readSource<OutreachActivityMini>("referral_outreach_activities", "facility_id, activity_type, status, scheduled_for, performed_for_week"),
+    readSource<{ facility_id: string; status: string; tour_scheduled_for: string | null }>("referral_leads", "facility_id, status, tour_scheduled_for"),
   ]);
-
-  for (const result of [invoicesRes, residentsRes, staffRes, timeRes, bedsRes, attendanceRes, requisitionsRes, admissionCasesRes, outreachRes, referralToursRes]) {
-    if (result.error) throw new Error(result.error.message);
-  }
-
-  const invoiceRows = invoicesRes.data ?? [];
-  const residentRows = residentsRes.data ?? [];
-  const staffRows = staffRes.data ?? [];
-  const timeRows = timeRes.data ?? [];
-  const bedRows = bedsRes.data ?? [];
-  const attendanceRows = attendanceRes.data ?? [];
-  const requisitionRows = requisitionsRes.data ?? [];
-  const admissionCaseRows = admissionCasesRes.data ?? [];
-  const outreachRows = outreachRes.data ?? [];
-  const referralTourRows = referralToursRes.data ?? [];
 
   // These bounds are identical for every row in this load, including DST weeks.
   const inCompletedLastWeek = facilityDateRangePredicate(completedLastWeekStart, completedLastWeekEnd);
