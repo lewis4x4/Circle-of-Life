@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
+import { ReferralNextActionPanel } from "@/components/referrals/ReferralNextActionPanel";
 import { ReferralsHubNav } from "../referrals-hub-nav";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -356,6 +357,8 @@ export default function AdminReferralLeadDetailPage() {
               </dl>
             </div>
           </RecordDetailSection>
+
+          {!wrongFacility && <ReferralNextActionPanel leadId={lead.id} facilityId={lead.facility_id} organizationId={lead.organization_id} />}
 
           <RecordDetailSection title="Tour workflow">
             <div className="space-y-4 text-sm">

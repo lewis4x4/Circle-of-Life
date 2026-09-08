@@ -1,0 +1,285 @@
+{
+  "segment": "hcol-referral-next-action",
+  "review": "APPROVE independent frozen source review including337/338; zero diagnostics;40 independent tests passed",
+  "source_sha256": {
+    "src/app/(admin)/admin/referrals/[id]/page.tsx": "6521b600dd70979ed71832073df8b00e7d548f38c3db7f5a3386f959de508bae",
+    "src/app/admin-list-query-bounds.test.ts": "353c163e375b9e628240ceb562221f7de5a00663718fada286466b02afe9dd5f",
+    "src/components/referrals/AdminReferralsPageClient.test.tsx": "87fe696e6e4cb71ceaa9ccf18c092fef775d7272a53e3150d808fc7dfeb16633",
+    "src/components/referrals/AdminReferralsPageClient.tsx": "45af1c876ef2af322e867fd168efb6ea8aafb522280deeb80793440e04d0d285",
+    "src/lib/referrals/referrals-hub-bootstrap.ts": "56935f140364143644efb075179f3ba08b7d74a0ae9e8a28e8326b899cfcec52",
+    "src/types/database.ts": "3fccee3044c47b73663997fd277e24c45a2c57820cd2da18846c5238c26baafc",
+    "supabase/tests/review_resident_return_followup.sql": "fab178f0b5390f5e36511172d66c399c0389dac3c831626be1c94b88b86a5157",
+    "supabase/tests/review_standup_import.sql": "fff27fab1fc681c6d1d0e791e16082dfbf7efd50ff089e7e1279bfa527dc7c15",
+    "src/components/referrals/ReferralNextActionPanel.test.tsx": "9c6c6afd88c53a6fb3c918d11fe705d8069fea94468ea44bb9b089709a9e36a0",
+    "src/components/referrals/ReferralNextActionPanel.tsx": "81c5b776b456bf2cc3411d7f335a49493391a1d899002df040619bf294d4e40f",
+    "src/lib/referrals/next-action-hub.test.ts": "120a83ebb6cd48f71532bca37e6a623c5536dbd679743e2e9779ce6d20b6480f",
+    "src/lib/referrals/next-action-hub.ts": "06408af0e131e28c44f12562a22a1a4413b74f79b4badac5a19e44ab07a0049e",
+    "src/lib/referrals/next-actions.test.ts": "ddc54edf9b9a6342137af317d5dd399cc386b1c69f323a0da4918db0399305fa",
+    "src/lib/referrals/next-actions.ts": "af5d63d8007e2853586c6578ec03e6385819f73ed2f5e05bcb47ca9845c28f54",
+    "src/lib/referrals/referrals-hub-bootstrap.test.ts": "c65e5fdbc1a488e2915fc7b755c3b2bcf687606102d066733f5956aa7c990d23",
+    "supabase/migrations/337_referral_next_actions.sql": "8dd16e2708c310e2e3bc40f82d929b45333f2aee5e6987b90385334dde3865ae",
+    "supabase/migrations/338_business_conflict_http_status.sql": "64ebb4ae00975089c8f3b58092d95b52cd313e28348fd1e8392b2f9f3b535176",
+    "supabase/tests/review_referral_next_actions.sql": "7337d3fe3b3735a0e8997858abe759e7245ae431332f43ed6a993078fa3ef411"
+  },
+  "targeted_tests": {
+    "passed": 54,
+    "files": 8
+  },
+  "gate": "test-results/agent-gates/2026-09-08T19-32-39-426Z-hcol-referral-next-action.json",
+  "native": {
+    "migrations": 341,
+    "sql_probes": 21
+  },
+  "concurrency": {
+    "checks": [
+      "Actor grant revocation committed during lead lock wait rejects42501",
+      "Candidate deactivation committed during eligibility lock wait rejects42501",
+      "Actor session deletion committed during lead lock wait rejects42501",
+      "All revoked commands leave actions/events/receipts unchanged",
+      "Competing creates produce one open action and one stale conflict",
+      "Concurrent exact replays return original immutable result",
+      "Conflicting request reuse rejects without mutations",
+      "One successful create has exactly one state/event/receipt",
+      "Inaccessible merge target is denied before its held row lock, without a timeout",
+      "Ineligible candidate is denied before its held profile lock, without a timeout",
+      "Target grant remains while source grant is revoked",
+      "Source-only grant revocation during merge target wait rejects42501",
+      "Source facility loss leaves actor claim version unchanged",
+      "Signed actor and target authority remain valid during source-only facility loss",
+      "Source facility loss during target wait rejects despite valid target authority",
+      "Denied source-revoked merge leaves lead unchanged",
+      "Successful receipt becomes unreadable after actor scope revocation"
+    ],
+    "database": "hcol_next_action_verify337",
+    "http_fixture": "action-http-fixture.json",
+    "actor_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        82684
+      ]
+    },
+    "candidate_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        82684
+      ]
+    },
+    "session_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        82684
+      ]
+    },
+    "second_competitor_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        82685
+      ]
+    },
+    "competing_results": [
+      "created",
+      "PT409"
+    ],
+    "source_merge_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        82684
+      ]
+    },
+    "source_facility_merge_wait": {
+      "wait_event_type": "Lock",
+      "blockers": [
+        82684
+      ]
+    },
+    "final_counts": {
+      "actions": "1",
+      "events": "1",
+      "receipts": "1"
+    },
+    "status": "PASS",
+    "verification_database_dropped": true
+  },
+  "http": {
+    "passed": true,
+    "transport": "actual shared client helpers -> SupabaseJS -> local PostgREST14.4 -> PostgreSQL17; signed synthetic current actors/native auth stubs",
+    "lead_id": "a4076360-86aa-4616-ba86-1a22b503a9fe",
+    "checks": [
+      "create with explicit waiting condition",
+      "immutable exact replay; changed payload rejected",
+      "admin cannot acknowledge for owner",
+      "caregiver reads but cannot mutate",
+      "owner acknowledgment and backup acceptance separate",
+      "stale completion rejected",
+      "authorized writer completion with evidence",
+      "atomic replacement retains previous action",
+      "lost stage preserves unresolved work",
+      "soft-delete guard preserves open action",
+      "outsider read denied",
+      "original receipt survives later mutations",
+      "paginated immutable command history"
+    ],
+    "events": 6
+  },
+  "browser": {
+    "passed": true,
+    "scope": "actual referral detail+hub components -> SupabaseJS -> local PostgREST -> PostgreSQL; synthetic navigation/auth with signed actors and native stubs",
+    "findings": [
+      "Lost successful response recovered via exact receipt after reload; identifier-only browser storage",
+      "Owner self-acknowledgment and backup self-acceptance persisted; accepted backup survives owner deactivation",
+      "Concurrent terms change rejects captured stale completion with prompt409 and retains evidence",
+      "Authorized caregiver reads action/history without writer controls",
+      "Evidence-backed completion and expandable recorded before/after history work through the API",
+      "Pipeline missing-action filter reflects completed action on active lead"
+    ],
+    "page_errors": [],
+    "detail_overflow": false,
+    "hub_overflow": false,
+    "detail_axe": [],
+    "hub_axe": []
+  },
+  "forward_conflicts": {
+    "database": "hcol_actions",
+    "organization_id": "9cac0397-7863-461a-872e-0227acf30502",
+    "checks": [
+      "Read synthetic import context through actualHTTP",
+      "Publish synthetic import before stale-version probe",
+      "Stale import returns PT409 promptly overHTTP",
+      "Stale definition context returns PT409 promptly overHTTP",
+      "Complete synthetic manual review before conflict probe",
+      "Conflicting completed manual review returns PT409 promptly overHTTP"
+    ],
+    "stale_import": {
+      "status": 409,
+      "code": "PT409",
+      "elapsed_ms": 23
+    },
+    "stale_context": {
+      "status": 409,
+      "code": "PT409",
+      "elapsed_ms": 23
+    },
+    "conflicting_review": {
+      "status": 409,
+      "code": "PT409",
+      "elapsed_ms": 8
+    },
+    "status": "PASS"
+  },
+  "forward_body_comparison": [
+    {
+      "function": "haven_publish_standup_import",
+      "source": "335_reviewed_standup_import.sql",
+      "conflict_sites": 2,
+      "unchanged_after_reversing_allowed_edits": true,
+      "original_sha256": "07e01fe3a50137099cc9f0665772d6ab816c027777b662515cce5978fcc9a415"
+    },
+    {
+      "function": "haven_resolve_return_document_followup",
+      "source": "336_resident_return_followups.sql",
+      "conflict_sites": 1,
+      "unchanged_after_reversing_allowed_edits": true,
+      "original_sha256": "dfe3756f41b65bf3b6be9756c26043e8d002ec7b001333587e178f9eca9c264d"
+    }
+  ],
+  "first_http_attempt": {
+    "passed": false,
+    "finding": "Deliberate40001 CAS conflict retried by PostgREST14.4; nativeSQLpassdidnotproveHTTP",
+    "observed_database_rollbacks": 57319,
+    "state": "Three prior successful command events; stale command rolled back repeatedly",
+    "mitigation": "Stopped exact owned local API; replace business conflict withPT409, then rerun bounded HTTP verification",
+    "sources": [
+      "https://github.com/PostgREST/postgrest/issues/3673",
+      "https://docs.postgrest.org/en/v14/references/errors.html#raise-errors-with-http-status-codes"
+    ]
+  },
+  "catalog_security": [
+    {
+      "table": "referral_next_action_receipts",
+      "rls": true,
+      "anon_select": false,
+      "authenticated_insert": false,
+      "authenticated_update": false,
+      "authenticated_delete": false
+    },
+    {
+      "table": "referral_next_action_events",
+      "rls": true,
+      "anon_select": false,
+      "authenticated_insert": false,
+      "authenticated_update": false,
+      "authenticated_delete": false
+    },
+    {
+      "table": "referral_next_actions",
+      "rls": true,
+      "anon_select": false,
+      "authenticated_insert": false,
+      "authenticated_update": false,
+      "authenticated_delete": false
+    },
+    {
+      "function": "haven_command_referral_next_action",
+      "definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "config": [
+        "search_path=\"\""
+      ]
+    },
+    {
+      "function": "haven_get_referral_next_action_receipt",
+      "definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "config": [
+        "search_path=\"\""
+      ]
+    },
+    {
+      "function": "haven_list_referral_next_action_assignees",
+      "definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "config": [
+        "search_path=\"\""
+      ]
+    },
+    {
+      "function": "haven_list_referral_next_action_events",
+      "definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "config": [
+        "search_path=\"\""
+      ]
+    },
+    {
+      "function": "haven_list_referral_next_actions",
+      "definer": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "config": [
+        "search_path=\"\""
+      ]
+    }
+  ],
+  "advisor_limit": "Supabase CLI2.101.0 misparsed native Unixsocket URL; no advisor result claimed. Direct catalog/RLS/grant checks and native access probes passed.",
+  "visual_score": 95,
+  "full_suite": {
+    "command": "npm test -- --maxWorkers=4",
+    "files_passed": 540,
+    "tests_passed": 3388,
+    "existing_skips": 2,
+    "duration_seconds": 167.77,
+    "advisory": "Installed TypeScript package references absent typescript.js.map; non-fatal dependency sourcemap warning, exit0."
+  },
+  "limits": [
+    "No hosted login or staff UAT",
+    "Eligibility means current account/facility access, not staffing availability",
+    "Deleted or moved closed lead archive retrieval remains separate",
+    "Recovery journal contains IDs only; no offline draft persistence",
+    "Jessica-owned definitions and closure vocabulary remain TBD",
+    "Other HCOL requirements remain open per REGISTER.md"
+  ]
+}

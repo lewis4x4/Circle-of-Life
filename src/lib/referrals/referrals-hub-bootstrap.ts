@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { listReferralNextActions, type NextActionView, type NextActionCursor } from "@/lib/referrals/next-actions";
 import type { Database } from "@/types/database";
 
 export const REFERRAL_UPCOMING_TOUR_LIMIT = 6;
@@ -69,7 +70,9 @@ export type ReferralsHandoffRollup = {
 };
 
 export type ReferralsHubBootstrap = {
+  scope?: { userId: string; organizationId: string; appRole: string; facilityId: string } | null;
   rows: ReferralsHubLeadRow[];
+  nextActions: NextActionView[];
   upcomingTours: ReferralsHubUpcomingTourRow[];
   outreachRows: ReferralsOutreachRow[];
   activeAdmissionCaseByLeadId: Record<string, ReferralsActiveAdmissionCase>;
@@ -79,7 +82,9 @@ export type ReferralsHubBootstrap = {
 
 export function emptyReferralsHubBootstrap(): ReferralsHubBootstrap {
   return {
+    scope: null,
     rows: [],
+    nextActions: [],
     upcomingTours: [],
     outreachRows: [],
     activeAdmissionCaseByLeadId: {},
@@ -90,6 +95,38 @@ export function emptyReferralsHubBootstrap(): ReferralsHubBootstrap {
 
 type ReferralsQueryResult<T> = { data: T | null; error: { message: string } | null };
 
+export async function loadReferralActionSummary(client: SupabaseClient<Database>, facilityId: string): Promise<NextActionView[]> {
+  const rows: NextActionView[] = [];
+  const seen = new Set<string>();
+  let cursor: NextActionCursor | null = null;
+  do {
+    const page = await listReferralNextActions(client, facilityId, { openOnly: true, cursor, limit: 100 });
+    if (page.items.some((row) => row.facility_id !== facilityId)) throw new Error("Referral action scope changed; refresh the pipeline.");
+    rows.push(...page.items);
+    cursor = page.next_cursor;
+    if (cursor) {
+      const key = `${cursor.created_at}:${cursor.id}`;
+      if (seen.has(key)) throw new Error("Referral action list did not advance; refresh the pipeline.");
+      seen.add(key);
+    }
+  } while (cursor);
+  return rows;
+}
+
+export async function loadReferralLeadRoster(client: SupabaseClient<Database>, facilityId: string): Promise<ReferralsHubLeadRow[]> {
+  const rows: ReferralsHubLeadRow[] = [];
+  for (let offset = 0; ; ) {
+    const { data, error } = await client.from("referral_leads")
+      .select("id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, referral_sources(name)")
+      .eq("facility_id", facilityId).is("deleted_at", null).order("id", { ascending: true }).range(offset, offset + 199);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as ReferralsHubLeadRow[];
+    if (!page.length) break;
+    rows.push(...page); offset += page.length;
+  }
+  return rows;
+}
+
 export async function loadReferralsHubBootstrap(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -98,23 +135,22 @@ export async function loadReferralsHubBootstrap(
     return emptyReferralsHubBootstrap();
   }
 
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) throw new Error("Current sign-in is required to load referrals.");
+  const { data: profile, error: profileError } = await supabase.from("user_profiles")
+    .select("organization_id,app_role").eq("id", authData.user.id).single();
+  if (profileError || !profile?.organization_id || !profile.app_role) throw new Error("Current referral access could not be established.");
+  const scope = { userId: authData.user.id, organizationId: profile.organization_id, appRole: profile.app_role, facilityId: selectedFacilityId };
   const nowIso = new Date().toISOString();
 
   const [
-    { data: list, error: listErr },
+    leadRows,
+    nextActions,
     { data: outreachList, error: outreachErr },
     { data: upcomingTourList, error: upcomingToursErr },
   ] = await Promise.all([
-    supabase
-      .from("referral_leads" as never)
-      .select(
-        "id, first_name, last_name, status, updated_at, created_at, converted_at, email, phone, external_reference, notes, tour_scheduled_for, referral_sources(name)",
-      )
-      .eq("facility_id", selectedFacilityId)
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false }) as unknown as Promise<
-      ReferralsQueryResult<ReferralsHubLeadRow[]>
-    >,
+    loadReferralLeadRoster(supabase, selectedFacilityId),
+    loadReferralActionSummary(supabase, selectedFacilityId),
     supabase
       .from("referral_outreach_activities" as never)
       .select("id, activity_type, status, scheduled_for, performed_for_week, external_partner_name, notes")
@@ -136,11 +172,9 @@ export async function loadReferralsHubBootstrap(
     >,
   ]);
 
-  if (listErr) throw listErr;
   if (outreachErr) throw outreachErr;
   if (upcomingToursErr) throw upcomingToursErr;
 
-  const leadRows = list ?? [];
   const outreachRows = outreachList ?? [];
   const upcomingTours = upcomingTourList ?? [];
 
@@ -237,7 +271,9 @@ export async function loadReferralsHubBootstrap(
   ]);
 
   return {
+    scope,
     rows: leadRows,
+    nextActions,
     upcomingTours,
     outreachRows,
     activeAdmissionCaseByLeadId,

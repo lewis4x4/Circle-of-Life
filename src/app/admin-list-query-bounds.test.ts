@@ -148,7 +148,7 @@ describe("admin list query bounds", () => {
   it("keeps referrals roster unbounded while bounding pipeline/upcoming tours and admissions fanout", () => {
     expect(referralsClientSource).toContain("const REFERRAL_PIPELINE_DISPLAY_LIMIT = 60;");
     expect(referralsBootstrapSource).toContain("export const REFERRAL_UPCOMING_TOUR_LIMIT = 6;");
-    expect(referralsClientSource).toContain(".slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT)");
+    expect(referralsClientSource).toContain(".slice(pipelinePage * REFERRAL_PIPELINE_DISPLAY_LIMIT, (pipelinePage + 1) * REFERRAL_PIPELINE_DISPLAY_LIMIT)");
     expect(referralsBootstrapSource).toContain('.gte("tour_scheduled_for", nowIso)');
     expect(referralsBootstrapSource).toContain(".limit(REFERRAL_UPCOMING_TOUR_LIMIT)");
     expect(referralsClientSource).toContain("Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours");

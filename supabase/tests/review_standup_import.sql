@@ -53,7 +53,7 @@ SELECT pg_temp.standup_assert((SELECT summary_json->>'coverage_basis'='current_a
  AND jsonb_array_length(summary_json->'metric_definitions')=1 FROM public.exec_standup_snapshots WHERE organization_id=(SELECT org FROM standup_fixture)), 'Coverage denominator inputs preserved');
 SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',pg_temp.standup_rows('2091-01-01',1.5))$q$,'22023','Fractional count rejects');
 SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',NULL,'{"2091-01-01":1}')$q$,'22023','Correction requires reason');
-SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',NULL,'{"2091-01-01":0}','Correction')$q$,'40001','Stale preview rejects');
+SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',NULL,'{"2091-01-01":0}','Correction')$q$,'PT409','Stale preview rejects');
 SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',pg_temp.standup_rows()||pg_temp.standup_rows())$q$,'22023','Duplicate source rows reject');
 SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',jsonb_set(pg_temp.standup_rows(),'{0,facility_id}',to_jsonb((SELECT foreign_facility::text FROM standup_fixture))))$q$,'22023','Foreign facility rejects');
 SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('b',pg_temp.standup_rows('2091-02-01')||jsonb_set(pg_temp.standup_rows('2091-03-01'),'{0,metric_key}','"unknown"'),' {"2091-02-01":0,"2091-03-01":0}')$q$,'22023','Invalid late row rolls back file');
@@ -72,7 +72,7 @@ SELECT pg_temp.standup_assert((SELECT count(*) FILTER(WHERE deleted_at IS NULL)=
  FROM public.exec_standup_snapshot_metrics WHERE organization_id=(SELECT org FROM standup_fixture)), 'Replaced metrics soft deleted');
 SELECT pg_temp.standup_assert((SELECT freshness_at IS NULL AND value_numeric=7 FROM public.exec_standup_snapshot_metrics
  WHERE organization_id=(SELECT org FROM standup_fixture) AND deleted_at IS NULL), 'Source freshness remains unknown');
-SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c',pg_temp.standup_rows('2090-12-01')||pg_temp.standup_rows('2091-01-01'),'{"2090-12-01":0,"2091-01-01":1}','Stale correction')$q$,'40001','Stale multiweek file rejects atomically');
+SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c',pg_temp.standup_rows('2090-12-01')||pg_temp.standup_rows('2091-01-01'),'{"2090-12-01":0,"2091-01-01":1}','Stale correction')$q$,'PT409','Stale multiweek file rejects atomically');
 SELECT pg_temp.standup_assert((SELECT count(*)=1 FROM public.exec_standup_snapshots WHERE organization_id=(SELECT org FROM standup_fixture)), 'Stale later week rolls back earlier new week');
 RESET ROLE;
 -- Even privileged table writes cannot rewrite immutable history (not merely an ACL check).
@@ -83,7 +83,7 @@ SELECT pg_temp.standup_reject($q$TRUNCATE public.exec_standup_snapshot_versions$
 UPDATE public.exec_standup_snapshot_metrics SET value_numeric=8 WHERE organization_id=(SELECT org FROM standup_fixture) AND deleted_at IS NULL;
 SELECT pg_temp.standup_assert((SELECT published_version=3 FROM public.exec_standup_snapshots WHERE organization_id=(SELECT org FROM standup_fixture)), 'Direct metric edit invalidates preview version');
 SET LOCAL ROLE service_role;
-SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c',NULL,'{"2091-01-01":2}','Correction')$q$,'40001','Preview predating direct edit rejects');
+SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c',NULL,'{"2091-01-01":2}','Correction')$q$,'PT409','Preview predating direct edit rejects');
 RESET ROLE;
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c')$q$,'42501','Authenticated caller cannot publish');
@@ -96,7 +96,7 @@ RESET ROLE;
 -- A registry change after review cannot silently alter semantics or denominator.
 UPDATE public.exec_standup_metric_definitions SET label='Changed after preview' WHERE organization_id=(SELECT org FROM standup_fixture);
 SET LOCAL ROLE service_role;
-SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c',NULL,'{"2091-01-01":3}','Correction')$q$,'40001','Changed registry invalidates reviewed context');
+SELECT pg_temp.standup_reject($q$SELECT pg_temp.standup_publish('c',NULL,'{"2091-01-01":3}','Correction')$q$,'PT409','Changed registry invalidates reviewed context');
 SELECT pg_temp.standup_assert((pg_temp.standup_publish('a')->>'duplicate')::boolean,'Original retry remains idempotent after registry changes');
 RESET ROLE;
 -- Real current-actor claims exercise organization and portfolio scope, including audit JSON.

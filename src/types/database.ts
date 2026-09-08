@@ -9125,6 +9125,177 @@ export type Database = {
           },
         ]
       }
+      referral_next_actions: {
+        Row: {
+          action_text: string
+          backup_accepted_at: string | null
+          backup_accepted_version: number | null
+          backup_id: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_evidence: string | null
+          created_at: string
+          created_by: string
+          dependency_text: string | null
+          due_at: string | null
+          facility_id: string
+          id: string
+          lead_id: string
+          organization_id: string
+          owner_acknowledged_at: string | null
+          owner_acknowledged_version: number | null
+          owner_id: string
+          status: string
+          superseded_by_action_id: string | null
+          terms_version: number
+          updated_at: string
+          version: number
+          waiting_condition: string | null
+        }
+        Insert: {
+          action_text: string
+          backup_accepted_at?: string | null
+          backup_accepted_version?: number | null
+          backup_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_evidence?: string | null
+          created_at?: string
+          created_by: string
+          dependency_text?: string | null
+          due_at?: string | null
+          facility_id: string
+          id?: string
+          lead_id: string
+          organization_id: string
+          owner_acknowledged_at?: string | null
+          owner_acknowledged_version?: number | null
+          owner_id: string
+          status?: string
+          superseded_by_action_id?: string | null
+          terms_version?: number
+          updated_at?: string
+          version?: number
+          waiting_condition?: string | null
+        }
+        Update: {
+          action_text?: string
+          backup_accepted_at?: string | null
+          backup_accepted_version?: number | null
+          backup_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_evidence?: string | null
+          created_at?: string
+          created_by?: string
+          dependency_text?: string | null
+          due_at?: string | null
+          facility_id?: string
+          id?: string
+          lead_id?: string
+          organization_id?: string
+          owner_acknowledged_at?: string | null
+          owner_acknowledged_version?: number | null
+          owner_id?: string
+          status?: string
+          superseded_by_action_id?: string | null
+          terms_version?: number
+          updated_at?: string
+          version?: number
+          waiting_condition?: string | null
+        }
+        Relationships: []
+      }
+      referral_next_action_events: {
+        Row: {
+          action_id: string
+          actor_id: string
+          actor_name: string
+          after_state: Json
+          before_state: Json | null
+          command: string
+          created_at: string
+          facility_id: string
+          id: string
+          lead_id: string
+          organization_id: string
+          payload: Json
+          request_id: string
+        }
+        Insert: {
+          action_id: string
+          actor_id: string
+          actor_name: string
+          after_state: Json
+          before_state?: Json | null
+          command: string
+          created_at?: string
+          facility_id: string
+          id?: string
+          lead_id: string
+          organization_id: string
+          payload: Json
+          request_id: string
+        }
+        Update: {
+          action_id?: string
+          actor_id?: string
+          actor_name?: string
+          after_state?: Json
+          before_state?: Json | null
+          command?: string
+          created_at?: string
+          facility_id?: string
+          id?: string
+          lead_id?: string
+          organization_id?: string
+          payload?: Json
+          request_id?: string
+        }
+        Relationships: []
+      }
+      referral_next_action_receipts: {
+        Row: {
+          action_id: string | null
+          actor_id: string
+          command: string
+          created_at: string
+          expected_version: number
+          facility_id: string
+          id: string
+          lead_id: string
+          organization_id: string
+          payload: Json
+          result: Json
+        }
+        Insert: {
+          action_id?: string | null
+          actor_id: string
+          command: string
+          created_at?: string
+          expected_version: number
+          facility_id: string
+          id: string
+          lead_id: string
+          organization_id: string
+          payload: Json
+          result: Json
+        }
+        Update: {
+          action_id?: string | null
+          actor_id?: string
+          command?: string
+          created_at?: string
+          expected_version?: number
+          facility_id?: string
+          id?: string
+          lead_id?: string
+          organization_id?: string
+          payload?: Json
+          result?: Json
+        }
+        Relationships: []
+      }
       referral_leads: {
         Row: {
           closed_at: string | null
@@ -15788,6 +15959,53 @@ export type Database = {
       }
     }
     Functions: {
+      haven_command_referral_next_action: {
+        Args: {
+          p_request_id: string
+          p_lead_id: string
+          p_action_id: string | null
+          p_expected_version: number
+          p_command: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      haven_list_referral_next_actions: {
+        Args: {
+          p_facility_id: string
+          p_lead_id?: string | null
+          p_open_only?: boolean
+          p_before_created_at?: string | null
+          p_before_id?: string | null
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      haven_list_referral_next_action_events: {
+        Args: {
+          p_lead_id: string
+          p_action_id?: string | null
+          p_before_created_at?: string | null
+          p_before_id?: string | null
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      haven_list_referral_next_action_assignees: {
+        Args: {
+          p_facility_id: string
+          p_after_user_id?: string | null
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      haven_get_referral_next_action_receipt: {
+        Args: {
+          p_request_id: string
+          p_lead_id: string
+        }
+        Returns: Json
+      }
       record_verified_med_pass_witness: {
         Args: { p_pass_id: string; p_actor_id: string; p_witness_id: string }
         Returns: string

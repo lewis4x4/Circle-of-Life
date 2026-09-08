@@ -29,6 +29,9 @@ import {
   facilityDatetimeLocalToUtcIso,
   nowFacilityDatetimeLocal,
 } from "@/lib/facility-wall-clock";
+import { useHavenAuth } from "@/contexts/haven-auth-context";
+import type { NextActionView } from "@/lib/referrals/next-actions";
+import { REFERRAL_ACTION_FILTERS, matchesReferralActionFilter, referralActionState, type ReferralActionFilter } from "@/lib/referrals/next-action-hub";
 import { Badge } from "@/components/ui/badge";
 import {
   formatReferralsHubOutreachWeek,
@@ -40,6 +43,7 @@ import {
 } from "@/lib/referrals/referrals-hub-display-copy";
 import {
   loadReferralsHubBootstrap,
+  emptyReferralsHubBootstrap,
   REFERRAL_UPCOMING_TOUR_LIMIT,
   type ReferralsActiveAdmissionCase,
   type ReferralsHandoffPhase,
@@ -190,18 +194,40 @@ export type AdminReferralsPageClientProps = {
   serverBootstrapped?: boolean;
 };
 
-export function AdminReferralsPageClient({
+export function AdminReferralsPageClient(props: AdminReferralsPageClientProps) {
+  const { user, organizationId, appRole, loading } = useHavenAuth();
+  const { selectedFacilityId } = useFacilityStore();
+  if (loading) return <p role="status">Checking referral access…</p>;
+  if (!user || !organizationId) return <p role="alert">Sign in to view referrals.</p>;
+  const scope = props.initialBootstrap.scope;
+  const trusted = scope?.userId === user.id && scope.organizationId === organizationId && scope.appRole === appRole && scope.facilityId === selectedFacilityId;
+  return <ReferralsForScope key={`${user.id}:${organizationId}:${appRole}:${selectedFacilityId ?? ""}`} {...props}
+    initialBootstrap={trusted ? props.initialBootstrap : emptyReferralsHubBootstrap()}
+    serverBootstrapped={props.serverBootstrapped && trusted} />;
+}
+
+function ReferralsForScope({
   initialBootstrap,
   initialLoadError,
   initialFacilityId,
   serverBootstrapped = false,
 }: AdminReferralsPageClientProps) {
   const supabase = createClient();
+  const { user, organizationId, appRole } = useHavenAuth();
+  const loadGeneration = useRef(0);
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const scopeKey = `${user?.id ?? ""}:${organizationId ?? ""}:${appRole}:${selectedFacilityId ?? ""}`;
+  const requestScopeRef = useRef(scopeKey);
+  requestScopeRef.current = scopeKey;
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(initialLoadError);
   const [rows, setRows] = useState<LeadRow[]>(initialBootstrap.rows);
+  const [nextActions, setNextActions] = useState<NextActionView[]>(initialBootstrap.nextActions);
+  const [actionFilter, setActionFilter] = useState<ReferralActionFilter>("all");
+  const [actionNow, setActionNow] = useState(() => Date.now());
+  const [pipelinePage, setPipelinePage] = useState(0);
+  const actionByLead = useMemo(() => new Map(nextActions.map((action) => [action.lead_id, action])), [nextActions]);
   const [upcomingTours, setUpcomingTours] = useState<UpcomingTourRow[]>(initialBootstrap.upcomingTours);
   const [activeAdmissionCaseByLeadId, setActiveAdmissionCaseByLeadId] = useState<
     Record<string, ActiveAdmissionCase>
@@ -224,9 +250,9 @@ export function AdminReferralsPageClient({
   const [savingActivity, setSavingActivity] = useState(false);
 
   const filteredRows = useMemo(() => {
-    if (statusFilter === "all") return rows;
-    return rows.filter((r) => r.status === statusFilter);
-  }, [rows, statusFilter]);
+    return rows.filter((r) => (statusFilter === "all" || r.status === statusFilter)
+      && matchesReferralActionFilter(r.status, actionByLead.get(r.id), actionFilter, actionNow));
+  }, [rows, statusFilter, actionByLead, actionFilter, actionNow]);
 
   const displayRows = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -259,12 +285,15 @@ export function AdminReferralsPageClient({
         if (priorityDelta !== 0) return priorityDelta;
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       })
-      .slice(0, REFERRAL_PIPELINE_DISPLAY_LIMIT);
-  }, [activeAdmissionCaseByLeadId, displayRows]);
+      .slice(pipelinePage * REFERRAL_PIPELINE_DISPLAY_LIMIT, (pipelinePage + 1) * REFERRAL_PIPELINE_DISPLAY_LIMIT);
+  }, [activeAdmissionCaseByLeadId, displayRows, pipelinePage]);
 
 
   const applyBootstrap = useCallback((bootstrap: ReferralsHubBootstrap) => {
     setRows(bootstrap.rows);
+    setNextActions(bootstrap.nextActions);
+    setActionNow(Date.now());
+    setPipelinePage(0);
     setUpcomingTours(bootstrap.upcomingTours);
     setOutreachRows(bootstrap.outreachRows);
     setOutreachStatusDrafts(
@@ -276,6 +305,9 @@ export function AdminReferralsPageClient({
   }, []);
 
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current;
+    const requestScope = scopeKey;
+    const isCurrent = () => generation === loadGeneration.current && requestScope === requestScopeRef.current;
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
       skipNextLoadRef.current = false;
       return;
@@ -284,9 +316,11 @@ export function AdminReferralsPageClient({
 
     setLoading(true);
     setLoadError(null);
+    applyBootstrap(emptyReferralsHubBootstrap());
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       applyBootstrap({
         rows: [],
+        nextActions: [],
         upcomingTours: [],
         outreachRows: [],
         activeAdmissionCaseByLeadId: {},
@@ -299,11 +333,13 @@ export function AdminReferralsPageClient({
 
     try {
       const bootstrap = await loadReferralsHubBootstrap(selectedFacilityId, supabase);
-      applyBootstrap(bootstrap);
+      if (isCurrent()) applyBootstrap(bootstrap);
     } catch (e) {
+      if (!isCurrent()) return;
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       applyBootstrap({
         rows: [],
+        nextActions: [],
         upcomingTours: [],
         outreachRows: [],
         activeAdmissionCaseByLeadId: {},
@@ -311,13 +347,21 @@ export function AdminReferralsPageClient({
         hl7Counts: { pending: 0, failed: 0 },
       });
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [applyBootstrap, initialFacilityId, selectedFacilityId, supabase]);
+  }, [applyBootstrap, initialFacilityId, selectedFacilityId, supabase, scopeKey]);
 
   useEffect(() => {
     void load();
+    return () => { loadGeneration.current += 1; };
   }, [load]);
+
+  useEffect(() => {
+    const tick = setInterval(() => setActionNow(Date.now()), 60_000);
+    return () => clearInterval(tick);
+  }, []);
+
+  useEffect(() => { setPipelinePage(0); }, [statusFilter, actionFilter, searchQuery]);
 
   const exportReferralLeadsCsv = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
@@ -501,7 +545,7 @@ export function AdminReferralsPageClient({
             )}
           </div>
         </div>
-        <ReferralsHubNav />
+        <div className="[&_[role=tab]]:text-foreground"><ReferralsHubNav /></div>
       </header>
 
       {noFacility ? (
@@ -914,6 +958,13 @@ export function AdminReferralsPageClient({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex flex-col gap-2 sm:min-w-[200px]">
+                <Label htmlFor="crm-action-filter">Next action</Label>
+                <select id="crm-action-filter" className="h-9 rounded-lg border border-input bg-background px-3 text-sm" value={actionFilter} onChange={(event) => setActionFilter(event.target.value as ReferralActionFilter)}>
+                  {REFERRAL_ACTION_FILTERS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </div>
+              <Button variant="outline" size="sm" disabled={loading} onClick={() => void load()}>Refresh pipeline</Button>
               {rows.length > 0 ? (
                 <p className="text-[12px] text-muted-foreground">
                   {searchQuery.trim() ? (
@@ -943,6 +994,11 @@ export function AdminReferralsPageClient({
              <div className="flex-1 text-right">Updated</div>
            </div>
 
+           {!loading && displayRows.length > REFERRAL_PIPELINE_DISPLAY_LIMIT && <div className="mt-4 flex flex-wrap items-center gap-3" aria-label="Pipeline pages">
+             <Button variant="outline" size="sm" disabled={pipelinePage === 0} onClick={() => setPipelinePage((page) => page - 1)}>Previous referrals</Button>
+             <span className="text-sm">Page {pipelinePage + 1} of {Math.ceil(displayRows.length / REFERRAL_PIPELINE_DISPLAY_LIMIT)}</span>
+             <Button variant="outline" size="sm" disabled={(pipelinePage + 1) * REFERRAL_PIPELINE_DISPLAY_LIMIT >= displayRows.length} onClick={() => setPipelinePage((page) => page + 1)}>Next referrals</Button>
+           </div>}
            <div className="space-y-4 mt-4">
              {noFacility ? (
                <div className="p-8 text-center text-sm font-medium text-muted-foreground">
@@ -958,7 +1014,7 @@ export function AdminReferralsPageClient({
                </div>
              ) : filteredRows.length === 0 ? (
                <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
-                 No leads match this status filter.
+                 No leads match these status and next-action filters.
                </div>
              ) : displayRows.length === 0 ? (
                <div className="p-8 text-center text-sm font-medium text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
@@ -982,9 +1038,10 @@ export function AdminReferralsPageClient({
                             <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
                               {isNew ? <></> : <div className="w-2 h-2 rounded-full bg-primary" />}
                             </div>
-                            <span className="text-[13px] font-semibold text-foreground truncate tracking-tight">
-                               {r.first_name} {r.last_name}
-                            </span>
+                            <div className="min-w-0">
+                              <span className="text-[13px] font-semibold text-foreground tracking-tight">{r.first_name} {r.last_name}</span>
+                              {referralActionState(r.status, actionByLead.get(r.id), actionNow).labels.map((label) => <span key={label} className="mt-1 block text-xs text-foreground">{label}</span>)}
+                            </div>
                           </div>
                           
                           <div className="flex flex-row justify-between lg:justify-start items-center">
