@@ -1,0 +1,8 @@
+{
+  "native_cluster_stopped": true,
+  "files_removed": 978,
+  "empty_directories_removed": 27,
+  "manifests_validated": true,
+  "directory_validation": "First combined directory plan rejected; bottom-up empty-directory batches validated before removal",
+  "docker_exact_container_removal": "unconfirmed; retained exact identity in closeout-verification.json"
+}

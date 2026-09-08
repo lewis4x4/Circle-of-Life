@@ -1,0 +1,61 @@
+{
+  "target": "production signed-token denied-write probes; nonexistent UUID only",
+  "clinicalWrites": false,
+  "checks": [
+    {
+      "role": "owner",
+      "test": "resident_observation_logs protected mutation denied",
+      "status": 403,
+      "pass": true
+    },
+    {
+      "role": "owner",
+      "test": "resident_observation_tasks protected mutation denied",
+      "status": 403,
+      "pass": true
+    },
+    {
+      "role": "owner",
+      "test": "signed current actor",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "role": "facility_admin",
+      "test": "resident_observation_logs protected mutation denied",
+      "status": 403,
+      "pass": true
+    },
+    {
+      "role": "facility_admin",
+      "test": "resident_observation_tasks protected mutation denied",
+      "status": 403,
+      "pass": true
+    },
+    {
+      "role": "facility_admin",
+      "test": "signed current actor",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "role": "caregiver",
+      "test": "resident_observation_logs protected mutation denied",
+      "status": 403,
+      "pass": true
+    },
+    {
+      "role": "caregiver",
+      "test": "resident_observation_tasks protected mutation denied",
+      "status": 403,
+      "pass": true
+    },
+    {
+      "role": "caregiver",
+      "test": "signed current actor",
+      "status": 200,
+      "pass": true
+    }
+  ],
+  "pass": true
+}

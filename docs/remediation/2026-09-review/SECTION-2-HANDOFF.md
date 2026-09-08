@@ -1,5 +1,7 @@
 # Haven Section 2 independent review handoff
 
+Release update: [Section 2 release closeout](section-2-release/RELEASE-CLOSEOUT.md) supersedes the earlier review-only stop boundary and pending status below. The original phased implementation handoff is retained as history.
+
 Follow-up to the independent REQUEST CHANGES review of `6d90e3197ac59e757addd2ac3e401dcbd12865f1`: see [Section 2 corrections](SECTION-2-CORRECTIONS.md) and `section-2-corrections-verification.json` for the S2-R1/R2/R3 fixes and fresh evidence. The original implementation evidence below is retained as history; the correction packet supplements its retry and whitespace claims.
 
 Status: implementation complete; all six corrected entries remain review-pending. Scope is exactly SYS-002, SYS-003, SYS-004, NAV-003, NAV-009, FL-015. Stop for independent GPT-6 Astra High review; no PR, merge, deployment, hosted migration application or Section 3.

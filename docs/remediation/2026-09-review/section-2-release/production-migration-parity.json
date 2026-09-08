@@ -1,0 +1,25 @@
+{
+  "checks": [
+    {
+      "version": "330",
+      "name": "quality_caller_scope_and_corrections",
+      "source_matches_hosted_ledger": true
+    },
+    {
+      "version": "331",
+      "name": "rounding_completion_receipts",
+      "source_matches_hosted_ledger": true
+    },
+    {
+      "version": "332",
+      "name": "resident_search_current_scope",
+      "source_matches_hosted_ledger": true
+    },
+    {
+      "version": "333",
+      "name": "rounding_javascript_whitespace",
+      "source_matches_hosted_ledger": true
+    }
+  ],
+  "pass": true
+}

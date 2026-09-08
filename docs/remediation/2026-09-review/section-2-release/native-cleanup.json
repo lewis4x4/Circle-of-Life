@@ -1,0 +1,55 @@
+{
+  "at": "2026-09-08T02:01:03.315081+00:00",
+  "native_postgres_stopped": true,
+  "files_removed": 982,
+  "empty_dirs_removed": 27,
+  "records": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-release-01a07e17/pg-cleanup-files-0-manifest.json",
+      "removed": 900,
+      "validation": {
+        "planned_count": 900,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-release-01a07e17/pg-cleanup-files-1-manifest.json",
+      "removed": 82,
+      "validation": {
+        "planned_count": 82,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-release-01a07e17/pg-cleanup-dirs-10-manifest.json",
+      "removed": 9,
+      "validation": {
+        "planned_count": 9,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-release-01a07e17/pg-cleanup-dirs-9-manifest.json",
+      "removed": 17,
+      "validation": {
+        "planned_count": 17,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-s2-release-01a07e17/pg-cleanup-dirs-8-manifest.json",
+      "removed": 1,
+      "validation": {
+        "planned_count": 1,
+        "removed_count": 0,
+        "status": "planned"
+      }
+    }
+  ],
+  "docker": "Separate exact resource cleanup remains pending daemon response",
+  "protected": "Backups, source/worktrees and existing application environments retained"
+}

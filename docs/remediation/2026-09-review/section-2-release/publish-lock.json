@@ -1,0 +1,6 @@
+{
+  "site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "previous_deploy": "6a9efe82a3d0080008249ce7",
+  "locked": true,
+  "purpose": "Hold automatic publishing until reviewed main build and database cutover are ready"
+}

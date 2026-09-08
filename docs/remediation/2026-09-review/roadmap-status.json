@@ -9,7 +9,7 @@
       "id": "NAV-001",
       "severity": "P1",
       "title": "Seven implemented workflows redirect or link to missing canonical pages",
-      "status": "implemented_review_pending",
+      "status": "implemented_deployed",
       "evidence": [
         "src/lib/navigation/canonical-admin-route-registry.test.ts",
         "scripts/verify-section-1-routes.mjs",
@@ -19,9 +19,11 @@
         "src/app/(admin)/admin/reports/history/[id]/page.tsx",
         "src/app/(admin)/admin/training/inservice/new/page.tsx",
         "src/app/(admin)/admin/transportation/requests/new/page.tsx",
-        "src/app/(admin)/admin/transportation/requests/[id]/page.tsx"
+        "src/app/(admin)/admin/transportation/requests/[id]/page.tsx",
+        "docs/remediation/2026-09-review/section-2-baseline.json",
+        "docs/remediation/2026-09-review/section-2-release/production-cutover.json"
       ],
-      "notes": "Independent review found the prior registry checked legacy modules. Seven canonical /admin wrappers now reuse those implementations; actual imports, redirect resolution and production manifest checks replace the shallow assertions. Correction remains pending fresh independent review; no authenticated navigation acceptance is claimed."
+      "notes": "Independent review found the prior registry checked legacy modules. Seven canonical /admin wrappers now reuse those implementations; actual imports, redirect resolution and production manifest checks replace the shallow assertions. No authenticated navigation acceptance is claimed. Closeout reconciliation: user attested independent Section 1 approval at 5686876cb7917c0a809f0adb7e9ba67b595a3e03, as recorded in section-2-baseline.json. That ancestor is included in deployed Section 2 runtime 0374725c. The exact-head independent review artifact was not recovered in this closeout; named staff/device acceptance is not claimed."
     },
     {
       "id": "NAV-002",
@@ -42,16 +44,17 @@
       "id": "NAV-003",
       "severity": "P1",
       "title": "Resident search entries keep their former facility authorization scope",
-      "status": "implemented_review_pending",
+      "status": "verified_resolved",
       "evidence": [
         "supabase/migrations/332_resident_search_current_scope.sql",
         "supabase/tests/review_section2_search.sql",
         "scripts/verify-search-backfill.py",
         "src/app/(admin)/search/page.tsx",
         "src/app/(admin)/search/page.test.tsx",
-        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+        "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Independent review and hosted acceptance pending."
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "NAV-004",
@@ -71,16 +74,18 @@
       "id": "NAV-006",
       "severity": "P2",
       "title": "Executive subsection navigation excludes keyboard and hides its mobile fallback",
-      "status": "implemented_review_pending",
+      "status": "implemented_deployed",
       "evidence": [
         "src/app/(admin)/executive/executive-hub-nav.tsx",
         "src/app/(admin)/executive/executive-hub-nav.test.tsx",
         "src/app/(admin)/executive/executive-hub-nav.source.test.ts",
         "src/components/executive/ExecutiveOverviewPageClient.tsx",
         "src/app/(admin)/executive/alerts/page.tsx",
-        "src/app/(admin)/executive/executive-sections-pages.test.tsx"
+        "src/app/(admin)/executive/executive-sections-pages.test.tsx",
+        "docs/remediation/2026-09-review/section-2-baseline.json",
+        "docs/remediation/2026-09-review/section-2-release/production-cutover.json"
       ],
-      "notes": "A single most-specific permitted destination is current; Overview matches exactly. Rendered tests open the mobile drawer on Alerts and Standup history and mount the real navigation through both Overview and Alerts pages. Role filtering and keyboard focus remain supported. Correction remains pending fresh independent review."
+      "notes": "A single most-specific permitted destination is current; Overview matches exactly. Rendered tests open the mobile drawer on Alerts and Standup history and mount the real navigation through both Overview and Alerts pages. Role filtering and keyboard focus remain supported. Closeout reconciliation: user attested independent Section 1 approval at 5686876cb7917c0a809f0adb7e9ba67b595a3e03, as recorded in section-2-baseline.json. That ancestor is included in deployed Section 2 runtime 0374725c. The exact-head independent review artifact was not recovered in this closeout; named staff/device acceptance is not claimed."
     },
     {
       "id": "NAV-007",
@@ -100,16 +105,17 @@
       "id": "NAV-009",
       "severity": "P2",
       "title": "Unified Search promises record types the repository never indexes",
-      "status": "implemented_review_pending",
+      "status": "verified_resolved",
       "evidence": [
         "supabase/migrations/332_resident_search_current_scope.sql",
         "supabase/tests/review_section2_search.sql",
         "scripts/verify-search-backfill.py",
         "src/app/(admin)/search/page.tsx",
         "src/app/(admin)/search/page.test.tsx",
-        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+        "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Independent review and hosted acceptance pending."
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "NAV-010",
@@ -185,16 +191,18 @@
       "id": "FL-009",
       "severity": "P1",
       "title": "Controlled-substance count cards omit the resident and dose identity",
-      "status": "implemented_review_pending",
+      "status": "implemented_deployed",
       "evidence": [
         "src/lib/medications/controlled-count-identity.ts",
         "src/components/controlled-substance/ControlledCountConsole.tsx",
         "src/components/medication/CountInitiationModal.tsx",
         "src/components/controlled-substance/PendingCountReceipt.tsx",
         "src/components/controlled-substance/controlled-count-entry-points.test.tsx",
-        "src/components/controlled-substance/controlled-medication-identity.test.tsx"
+        "src/components/controlled-substance/controlled-medication-identity.test.tsx",
+        "docs/remediation/2026-09-review/section-2-baseline.json",
+        "docs/remediation/2026-09-review/section-2-release/production-cutover.json"
       ],
-      "notes": "Both entry points use shared usable legal-name validation. Saved count identities are resolved by persisted medication references within facility scope, including inactive medications. Unresolved identity blocks co-signing with retry recovery. Correction remains pending fresh independent Astra clinical review; no live clinical action or hosted acceptance is claimed."
+      "notes": "Both entry points use shared usable legal-name validation. Saved count identities are resolved by persisted medication references within facility scope, including inactive medications. Unresolved identity blocks co-signing with retry recovery. No live clinical action or hosted staff acceptance is claimed. Closeout reconciliation: user attested independent Section 1 approval at 5686876cb7917c0a809f0adb7e9ba67b595a3e03, as recorded in section-2-baseline.json. That ancestor is included in deployed Section 2 runtime 0374725c. The exact-head independent review artifact was not recovered in this closeout; named staff/device acceptance is not claimed."
     },
     {
       "id": "FL-010",
@@ -239,41 +247,44 @@
       "id": "SYS-002",
       "severity": "P1",
       "title": "quality view bypasses tenant and role RLS",
-      "status": "implemented_review_pending",
+      "status": "verified_resolved",
       "evidence": [
         "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
         "supabase/tests/review_section2_quality.sql",
-        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+        "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; independent review and hosted acceptance pending."
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SYS-003",
       "severity": "P1",
       "title": "observation completion is not atomic or replay-safe",
-      "status": "implemented_review_pending",
+      "status": "verified_resolved",
       "evidence": [
         "supabase/migrations/331_rounding_completion_receipts.sql",
         "supabase/tests/review_rounding_completion_receipts.sql",
         "scripts/verify-rounding-concurrency.py",
         "docs/remediation/2026-09-review/section-2-concurrency.json",
-        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+        "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Independent review and hosted acceptance pending."
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SYS-004",
       "severity": "P1",
       "title": "direct observation writes bypass protected completion fields",
-      "status": "implemented_review_pending",
+      "status": "verified_resolved",
       "evidence": [
         "supabase/migrations/331_rounding_completion_receipts.sql",
         "supabase/tests/review_rounding_completion_receipts.sql",
         "scripts/verify-rounding-concurrency.py",
         "docs/remediation/2026-09-review/section-2-concurrency.json",
-        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+        "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Independent review and hosted acceptance pending."
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SYS-005",
@@ -352,12 +363,14 @@
       "id": "BUS-005",
       "severity": "P2",
       "title": "Certification staff-load failures are presented as an empty selector",
-      "status": "implemented_review_pending",
+      "status": "implemented_deployed",
       "evidence": [
         "src/app/(admin)/certifications/new/page.tsx",
-        "src/app/(admin)/certifications/new/page.test.tsx"
+        "src/app/(admin)/certifications/new/page.test.tsx",
+        "docs/remediation/2026-09-review/section-2-baseline.json",
+        "docs/remediation/2026-09-review/section-2-release/production-cutover.json"
       ],
-      "notes": "Retry recovery retains all credential fields and repeats facility, active-employment and soft-delete filters. A follow-up independent review identified stale facility responses; generation/facility guards now reject obsolete success/error/finally results, invalidate old staff selection, and require current-roster eligibility before save. Deferred-response regressions cover both reported races, pending loading, A-B-A and an in-flight organization lookup. Remains implemented_review_pending for fresh independent review; no authenticated RLS acceptance claimed."
+      "notes": "Retry recovery retains all credential fields and repeats facility, active-employment and soft-delete filters. A follow-up independent review identified stale facility responses; generation/facility guards now reject obsolete success/error/finally results, invalidate old staff selection, and require current-roster eligibility before save. Deferred-response regressions cover both reported races, pending loading, A-B-A and an in-flight organization lookup. No authenticated RLS acceptance claimed. Closeout reconciliation: user attested independent Section 1 approval at 5686876cb7917c0a809f0adb7e9ba67b595a3e03, as recorded in section-2-baseline.json. That ancestor is included in deployed Section 2 runtime 0374725c. The exact-head independent review artifact was not recovered in this closeout; named staff/device acceptance is not claimed."
     },
     {
       "id": "BUS-006",
@@ -389,13 +402,14 @@
       "id": "FL-015",
       "severity": "P2",
       "title": "The latest quality-result view returns conflicting rows for a corrected period",
-      "status": "implemented_review_pending",
+      "status": "verified_resolved",
       "evidence": [
         "supabase/migrations/330_quality_caller_scope_and_corrections.sql",
         "supabase/tests/review_section2_quality.sql",
-        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md"
+        "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
+        "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; independent review and hosted acceptance pending."
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SUP-001",
@@ -435,10 +449,10 @@
     {
       "id": "OPS-003",
       "severity": "P2",
-      "title": "Completing asset service does not update the asset\u2019s service lifecycle",
+      "title": "Completing asset service does not update the asset’s service lifecycle",
       "status": "open",
       "evidence": []
     }
   ],
-  "stop_boundary": "Phase 0 only: verify NAV-002, SYS-005 and DEP-001, deliver their evidence, then stop. Sections 1 through 8 are not started."
+  "stop_boundary": "Tonight closeout: Phase 0 verification, user-attested Section 1 approval and Section 2 engineering release are recorded. Section 2 runtime 0374725c and migrations 330–333 are deployed. Named Homewood staff/device acceptance remains NOT RUN. Sections 3–8 are not implemented by this closeout; next planned section is 3 (FL-001, FL-006, FL-007, FL-012). SYS-005 remains partially resolved and assigned to Section 4. Historical scope and baseline fields describe the initial Phase 0 record."
 }
