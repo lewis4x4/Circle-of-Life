@@ -7,7 +7,7 @@ GRANT USAGE ON SCHEMA storage TO authenticated;
 GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 CREATE TEMP TABLE employee_fixture AS SELECT gen_random_uuid() admin,gen_random_uuid() worker,gen_random_uuid() employee,gen_random_uuid() admin_staff,gen_random_uuid() nurse,gen_random_uuid() nurse_session,gen_random_uuid() manager,gen_random_uuid() manager_session,
- gen_random_uuid() admin_session,gen_random_uuid() worker_session,f.id facility,f.organization_id org FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
+ gen_random_uuid() admin_session,gen_random_uuid() worker_session,gen_random_uuid() other_facility,gen_random_uuid() other_employee,f.id facility,f.organization_id org FROM public.facilities f WHERE f.deleted_at IS NULL LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
  SELECT admin,admin||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','owner'),'{"full_name":"File manager"}'::jsonb FROM employee_fixture
  UNION ALL SELECT worker,worker||'@review.invalid',jsonb_build_object('organization_id',org,'app_role','caregiver'),'{"full_name":"File employee"}'::jsonb FROM employee_fixture
@@ -29,6 +29,12 @@ BEGIN SELECT * INTO f FROM employee_fixture; v_id:=CASE WHEN p_worker IS NULL TH
 END $$;
 SELECT pg_temp.employee_actor(false);
 INSERT INTO public.staff(id,organization_id,facility_id,user_id,first_name,last_name,staff_role,hire_date) SELECT employee,org,facility,worker,'File','Employee','resident_aide'::public.staff_role,CURRENT_DATE-100 FROM employee_fixture UNION ALL SELECT admin_staff,org,facility,admin,'File','Manager','administrator'::public.staff_role,CURRENT_DATE-100 FROM employee_fixture;
+INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
+ SELECT x.other_facility,f.entity_id,x.org,'Unassigned employee probe','Test only','Test','00000',1 FROM employee_fixture x JOIN public.facilities f ON f.id=x.facility;
+INSERT INTO public.staff(id,organization_id,facility_id,first_name,last_name,staff_role,hire_date)
+ SELECT other_employee,org,other_facility,'Other','Employee','resident_aide',CURRENT_DATE-100 FROM employee_fixture;
+INSERT INTO public.staff_attendance_events(staff_id,facility_id,organization_id,event_type,occurred_at,reason,created_by,updated_by)
+ SELECT other_employee,other_facility,org,'callout',now()-interval '1 hour','Unassigned facility probe',admin,admin FROM employee_fixture;
 CREATE TEMP TABLE employee_receipts(name text PRIMARY KEY,value jsonb);
 GRANT SELECT ON employee_fixture TO authenticated;
 GRANT ALL ON employee_receipts TO authenticated;
@@ -49,7 +55,33 @@ DO $$ DECLARE projected jsonb; BEGIN
  IF EXISTS(SELECT 1 FROM public.haven_employee_file_staff(NULL)) THEN RAISE EXCEPTION 'Null staff lookup exposed manager roster'; END IF;
  IF EXISTS(SELECT 1 FROM public.haven_employee_file_staff(gen_random_uuid())) THEN RAISE EXCEPTION 'Unknown staff identity exposed'; END IF;
 END $$;
+-- Exact old staffing-console payload remains valid even without private staff SELECT.
+INSERT INTO public.staff_attendance_events(staff_id,facility_id,organization_id,event_type,occurred_at,reason,created_by,updated_by)
+ SELECT employee,facility,org,'callout',now()-interval '1 hour','Legacy compatibility probe',manager,manager FROM employee_fixture;
+DO $$ DECLARE baseline jsonb; malicious jsonb; BEGIN
+ SELECT to_jsonb(a) INTO baseline FROM public.staff_attendance_events a WHERE reason='Legacy compatibility probe' AND created_by=(SELECT manager FROM employee_fixture);
+ IF baseline IS NULL OR baseline->>'review_status'<>'pending' THEN RAISE EXCEPTION 'Legacy insert did not remain pending'; END IF;
+ FOR malicious IN SELECT value FROM jsonb_array_elements(jsonb_build_array(
+  '{"review_status":"counted"}'::jsonb,'{"review_status":"excluded"}'::jsonb,
+  '{"review_reason":"Preapproved"}'::jsonb,jsonb_build_object('reviewed_by',auth.uid()),jsonb_build_object('reviewed_at',now()),
+  jsonb_build_object('staff_id',gen_random_uuid()),jsonb_build_object('organization_id',gen_random_uuid()),jsonb_build_object('facility_id',gen_random_uuid()),
+  jsonb_build_object('created_by',(SELECT worker FROM employee_fixture)),jsonb_build_object('updated_by',(SELECT worker FROM employee_fixture)),
+  jsonb_build_object('deleted_at',now()),jsonb_build_object('occurred_at',now()+interval '1 hour'),jsonb_build_object('shift_assignment_id',gen_random_uuid())
+ )) LOOP
+  PERFORM pg_temp.employee_expect(format('INSERT INTO public.staff_attendance_events SELECT (jsonb_populate_record(NULL::public.staff_attendance_events,%L::jsonb)).*',baseline||malicious||jsonb_build_object('id',gen_random_uuid())),'row-level security');
+ END LOOP;
+ PERFORM pg_temp.employee_expect(format('UPDATE public.staff_attendance_events SET review_status=''counted'' WHERE id=%L',baseline->>'id'),'permission denied');
+ PERFORM pg_temp.employee_expect(format('DELETE FROM public.staff_attendance_events WHERE id=%L',baseline->>'id'),'permission denied');
+END $$;
+SELECT pg_temp.employee_actor(NULL);
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.staff_attendance_events WHERE staff_id=(SELECT employee FROM employee_fixture) AND reason='Legacy compatibility probe') THEN RAISE EXCEPTION 'Nurse lost scoped attendance read'; END IF;
+ IF EXISTS(SELECT 1 FROM public.staff_attendance_events WHERE staff_id=(SELECT other_employee FROM employee_fixture)) THEN RAISE EXCEPTION 'Nurse can read unassigned facility attendance'; END IF;
+END $$;
+SELECT pg_temp.employee_expect('INSERT INTO public.staff_attendance_events(staff_id,facility_id,organization_id,event_type,occurred_at,created_by,updated_by) SELECT employee,facility,org,''callout'',now(),nurse,nurse FROM employee_fixture','row-level security');
+SELECT pg_temp.employee_expect(format('SELECT public.haven_employee_file_command(%L,''review_attendance'',%L)',(SELECT employee FROM employee_fixture),jsonb_build_object('id',(SELECT id FROM public.staff_attendance_events WHERE reason='Legacy compatibility probe' AND staff_id=(SELECT employee FROM employee_fixture)),'review_status','counted','review_reason','Nurse attempted review')),'Independent manager required');
 SELECT pg_temp.employee_actor(true);
+SELECT pg_temp.employee_expect('INSERT INTO public.staff_attendance_events(staff_id,facility_id,organization_id,event_type,occurred_at,created_by,updated_by) SELECT employee,facility,org,''callout'',now(),worker,worker FROM employee_fixture','row-level security');
 DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM public.haven_employee_file_staff((SELECT admin_staff FROM employee_fixture))) THEN RAISE EXCEPTION 'Caregiver can resolve nonself without medical grant'; END IF;
  IF (SELECT count(*) FROM public.haven_employee_file_staff(NULL))<>1 THEN RAISE EXCEPTION 'Self lookup must return only linked employee'; END IF;
@@ -163,6 +195,17 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 -- Trigger protections also apply to privileged integration attempts.
+-- Permission-only emergency suspension preserves evidence and the legacy callout bridge.
+REVOKE EXECUTE ON FUNCTION public.haven_employee_file_command(uuid,text,jsonb),public.haven_employee_requirement_command(uuid,text,jsonb) FROM authenticated;
+DO $$ BEGIN
+ IF has_function_privilege('authenticated','public.haven_employee_file_command(uuid,text,jsonb)','EXECUTE') OR has_function_privilege('authenticated','public.haven_employee_requirement_command(uuid,text,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Command suspension retained execute privilege'; END IF;
+ IF NOT has_table_privilege('authenticated','public.staff_attendance_events','INSERT') THEN RAISE EXCEPTION 'Command suspension broke legacy attendance'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.employee_file_records WHERE id=(SELECT (value->>'id')::uuid FROM employee_receipts WHERE name='record')) OR NOT EXISTS(SELECT 1 FROM public.employee_file_signatures WHERE record_id=(SELECT (value->>'id')::uuid FROM employee_receipts WHERE name='record')) OR NOT EXISTS(SELECT 1 FROM storage.objects WHERE name=(SELECT value->>'id' FROM employee_receipts WHERE name='medical')||'/source.pdf') THEN RAISE EXCEPTION 'Command suspension lost employee evidence'; END IF;
+END $$;
+GRANT EXECUTE ON FUNCTION public.haven_employee_file_command(uuid,text,jsonb),public.haven_employee_requirement_command(uuid,text,jsonb) TO authenticated;
+DO $$ BEGIN
+ IF NOT has_function_privilege('authenticated','public.haven_employee_file_command(uuid,text,jsonb)','EXECUTE') OR NOT has_function_privilege('authenticated','public.haven_employee_requirement_command(uuid,text,jsonb)','EXECUTE') THEN RAISE EXCEPTION 'Command restoration failed'; END IF;
+END $$;
 SELECT pg_temp.employee_expect(format('UPDATE public.employee_file_records SET notes=''changed'' WHERE id=%L',(SELECT value->>'id' FROM employee_receipts WHERE name='record')),'Reviewed records are immutable');
 SELECT pg_temp.employee_expect(format('DELETE FROM public.staff_attendance_events WHERE id=%L',(SELECT value->>'id' FROM employee_receipts WHERE name='attendance')),'Employee history cannot be deleted');
 SELECT pg_temp.employee_expect(format('UPDATE public.employee_file_requirements SET content=''changed'' WHERE id=%L',(SELECT value->>'id' FROM employee_receipts WHERE name='requirement')),'Approved requirements are immutable');

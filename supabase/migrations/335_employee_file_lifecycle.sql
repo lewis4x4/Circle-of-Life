@@ -107,7 +107,23 @@ DO $$ DECLARE p record; BEGIN
 END $$;
 REVOKE INSERT,UPDATE,DELETE ON public.staff_attendance_events,public.staff_discipline_records FROM authenticated,anon;
 GRANT SELECT ON public.staff_attendance_events,public.staff_discipline_records TO authenticated;
-CREATE POLICY employee_attendance_read ON public.staff_attendance_events FOR SELECT TO authenticated USING(deleted_at IS NULL AND haven.employee_scope(organization_id,facility_id) AND (haven.employee_manager() OR EXISTS(SELECT 1 FROM public.staff s WHERE s.id=staff_id AND s.user_id=auth.uid())));
+-- Keep the already deployed staffing console working during rollout and frontend rollback.
+-- The definer helper checks identity without granting managers the private staff table.
+CREATE FUNCTION haven.employee_attendance_insert_scope(p_staff uuid,p_org uuid,p_facility uuid,p_shift uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT haven.employee_manager() AND haven.employee_scope(p_org,p_facility)
+ AND EXISTS(SELECT 1 FROM public.staff s WHERE s.id=p_staff AND s.organization_id=p_org AND s.facility_id=p_facility AND s.deleted_at IS NULL)
+ AND (p_shift IS NULL OR EXISTS(SELECT 1 FROM public.shift_assignments a WHERE a.id=p_shift AND a.staff_id=p_staff AND a.facility_id=p_facility))
+$$;
+REVOKE ALL ON FUNCTION haven.employee_attendance_insert_scope(uuid,uuid,uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION haven.employee_attendance_insert_scope(uuid,uuid,uuid,uuid) TO authenticated;
+GRANT INSERT ON public.staff_attendance_events TO authenticated;
+CREATE POLICY employee_attendance_legacy_insert ON public.staff_attendance_events FOR INSERT TO authenticated WITH CHECK(
+ haven.employee_attendance_insert_scope(staff_id,organization_id,facility_id,shift_assignment_id)
+ AND created_by=auth.uid() AND updated_by=auth.uid() AND deleted_at IS NULL AND occurred_at<=now()
+ AND review_status='pending' AND review_reason IS NULL AND reviewed_by IS NULL AND reviewed_at IS NULL
+);
+CREATE POLICY employee_attendance_read ON public.staff_attendance_events FOR SELECT TO authenticated USING(deleted_at IS NULL AND haven.employee_scope(organization_id,facility_id) AND (haven.employee_manager() OR haven.app_role()::text='nurse' OR EXISTS(SELECT 1 FROM public.staff s WHERE s.id=staff_id AND s.user_id=auth.uid())));
 CREATE POLICY employee_discipline_read ON public.staff_discipline_records FOR SELECT TO authenticated USING(deleted_at IS NULL AND haven.employee_scope(organization_id,facility_id) AND (haven.employee_manager() OR EXISTS(SELECT 1 FROM public.staff s WHERE s.id=staff_id AND s.user_id=auth.uid())));
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types) VALUES
  ('employee-personnel','employee-personnel',false,20971520,ARRAY['application/pdf','image/jpeg','image/png']),
