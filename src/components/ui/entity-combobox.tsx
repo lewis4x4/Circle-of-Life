@@ -44,7 +44,8 @@ export type EntityComboboxProps = {
 };
 
 /**
- * Focusable combobox (Command + Popover) for entity pickers — opens on focus for fast keyboard flow.
+ * Entity picker opened by pointer or keyboard activation. Focus restoration must
+ * not reopen the popover after selection or dismissal.
  */
 export function EntityCombobox({
   id,
@@ -82,9 +83,6 @@ export function EntityCombobox({
             "h-10 w-full justify-between px-3 font-normal shadow-none",
             triggerClassName,
           )}
-          onFocus={() => {
-            if (!disabled && !loading) setOpen(true);
-          }}
         >
           <span className={cn("truncate text-left", !selected && "text-muted-foreground")}>
             {loading ? "Loading…" : selected?.label ?? placeholder}
