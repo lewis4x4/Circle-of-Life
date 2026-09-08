@@ -33,7 +33,6 @@ import {
   Check,
   ChevronDown,
   LineChart,
-  Menu as MenuIcon,
   MessageSquare,
   Moon,
   Search,
@@ -49,9 +48,7 @@ import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-c
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -63,6 +60,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AllSectionsMenu } from "@/components/layout/AllSectionsMenu";
 import { HavenShellBrandLink } from "@/components/layout/HavenShellBrandLink";
 import {
   HavenNavLink,
@@ -473,48 +471,11 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   );
 
   const renderAllSectionsMenu = (pillarsForMenu: Pillar[]) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Open all sections menu"
-        className={cn(
-          WORKSPACE_ICON_LG,
-          "transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-      >
-        <MenuIcon className="size-4" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={6}
-        className="w-[min(22rem,calc(100vw-1rem))] sm:w-72"
-      >
-        {pillarsForMenu.map((pillar, pillarIdx) => (
-          <React.Fragment key={pillar.id}>
-            {pillarIdx > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuLabel className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {React.createElement(pillar.icon, { className: "size-3.5", "aria-hidden": true })}
-              {pillar.label}
-            </DropdownMenuLabel>
-            <DropdownMenuGroup>
-              {pillar.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <DropdownMenuItem
-                    key={item.key}
-                    onClick={() => navigate(item.href)}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px]"
-                  >
-                    <Icon className="size-3.5 text-muted-foreground" aria-hidden />
-                    <span>{item.label}</span>
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuGroup>
-          </React.Fragment>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <AllSectionsMenu
+      pillars={pillarsForMenu}
+      onNavigate={navigate}
+      triggerClassName={WORKSPACE_ICON_LG}
+    />
   );
 
   const renderPillarTab = (pillar: Pillar) => {
