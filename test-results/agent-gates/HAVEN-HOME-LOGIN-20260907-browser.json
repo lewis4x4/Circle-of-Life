@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-08T02:38:50.906Z",
+  "scope": "Local browser route verification; no deployment or authenticated UAT",
+  "verdict": "PASS",
+  "checks": {
+    "rootStatus": 307,
+    "location": "/login",
+    "landedPath": "/login",
+    "emailVisible": true,
+    "passwordVisible": true,
+    "marketingHeadingCount": 0
+  }
+}
