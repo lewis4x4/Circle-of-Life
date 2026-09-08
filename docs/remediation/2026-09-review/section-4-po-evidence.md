@@ -25,9 +25,11 @@ No hosted migration, production financial action, global build/typecheck, segmen
 ## SHA256 of verified sources
 
 ```
-1688eaae91e58b73e992eb97ae42a790e96e774976adb9b24da66b8f99f907d4  supabase/migrations/339_atomic_purchase_order_creation.sql
+1688eaae91e58b73e992eb97ae42a790e96e774976adb9b24da66b8f99f907d4  supabase/migrations/340_atomic_purchase_order_creation.sql
 572426b80b866a28704c0ec91410e567de1df826efdb7f470a1cf15751246954  supabase/tests/review_section4_purchase_order.sql
 dd5e754cf682ac17053719e1f922bceb361d1c6ae2ca91291a851ad14ed25f4e  src/app/(admin)/vendors/purchase-orders/new/page.tsx
 935c921a27fa6eb1bd71c014b0c896646ee4ac072db7a41461719bba1c838b2b  src/app/(admin)/vendors/purchase-orders/new/page.test.tsx
 c2969fa7b7e9cd56cd59d6633342005f00b71053aed7e91628becc368bea4e1b  docs/remediation/2026-09-review/section-4-po-concurrency.py
 ```
+
+Migration filenames above use the current release numbering; original review-time numbering and unchanged SQL hashes are recorded in [RELEASE-MIGRATION-NUMBERING.md](RELEASE-MIGRATION-NUMBERING.md). Historical execution statements retain their original numbering.

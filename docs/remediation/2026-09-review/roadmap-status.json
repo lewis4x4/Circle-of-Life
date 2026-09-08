@@ -137,7 +137,7 @@
       "title": "The med-tech shift and pass queue has no operational producer",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/337_operational_medication_shifts.sql",
+        "supabase/migrations/338_operational_medication_shifts.sql",
         "supabase/tests/review_section3_medication_shifts.sql",
         "scripts/verify-medication-shift-concurrency.py",
         "docs/remediation/2026-09-review/section-3-medication-concurrency.json",
@@ -180,7 +180,7 @@
       "title": "Entering a historical assessment can overwrite the resident's current fall risk",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/335_assessment_fall_risk_chronology.sql",
+        "supabase/migrations/336_assessment_fall_risk_chronology.sql",
         "supabase/tests/review_section3_assessment_risk.sql",
         "docs/remediation/2026-09-review/section-3-assessment-concurrency.json",
         "docs/remediation/2026-09-review/section-3-fl006-review.json",
@@ -194,7 +194,7 @@
       "title": "Official discharge leaves the old bed occupied",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/336_atomic_discharge_bed_release.sql",
+        "supabase/migrations/337_atomic_discharge_bed_release.sql",
         "supabase/tests/review_section3_discharge.sql",
         "docs/remediation/2026-09-review/section-3-discharge-concurrency.json",
         "docs/remediation/2026-09-review/section-3-fl007-review.json",
@@ -246,7 +246,7 @@
       "title": "A complete reconciliation can retain its complete label after required evidence is erased",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/334_reconciliation_evidence_invariant.sql",
+        "supabase/migrations/335_reconciliation_evidence_invariant.sql",
         "supabase/tests/review_section3_reconciliation.sql",
         "docs/remediation/2026-09-review/section-3-fl012-review.json",
         "test-results/agent-gates/2026-09-08T11-28-07-433Z-section-3-fl012.json"
@@ -365,7 +365,7 @@
       "title": "Payment success does not confirm invoice application",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/338_atomic_payment_recording.sql",
+        "supabase/migrations/339_atomic_payment_recording.sql",
         "supabase/tests/review_section4_payment.sql",
         "docs/remediation/2026-09-review/section-4-payment-evidence.md",
         "docs/remediation/2026-09-review/section-4-payment-concurrency-final.json",
@@ -380,7 +380,7 @@
       "title": "A failed PO line save leaves an orphan header and duplicates on retry",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/339_atomic_purchase_order_creation.sql",
+        "supabase/migrations/340_atomic_purchase_order_creation.sql",
         "supabase/tests/review_section4_purchase_order.sql",
         "docs/remediation/2026-09-review/section-4-po-evidence.md",
         "docs/remediation/2026-09-review/section-4-po-review.json",
@@ -394,7 +394,7 @@
       "title": "Retry treats an unposted journal draft as already posted",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/340_atomic_source_gl_posting.sql",
+        "supabase/migrations/341_atomic_source_gl_posting.sql",
         "supabase/tests/review_section4_source_gl.sql",
         "docs/remediation/2026-09-review/section-4-gl-evidence.md",
         "docs/remediation/2026-09-review/section-4-gl-review.json",
@@ -428,7 +428,7 @@
       "title": "Payroll exports can retain superseded approved punch values",
       "status": "implemented_reviewed",
       "evidence": [
-        "supabase/migrations/341_payroll_source_freshness.sql",
+        "supabase/migrations/334_payroll_source_freshness.sql",
         "supabase/tests/review_payroll_freshness.sql",
         "src/app/(admin)/payroll/[id]/page.tsx",
         "src/app/(admin)/payroll/[id]/page.test.tsx",

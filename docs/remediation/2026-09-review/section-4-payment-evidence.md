@@ -24,8 +24,10 @@ The first definitive SQL rollback allows correction. Any ambiguous response perm
 
 ## Source hashes (SHA-256)
 
-- `supabase/migrations/338_atomic_payment_recording.sql`: `4fde33aca986e04af11852d9c9ecf9c99bb0b305c9eec1805218a547e93db336`
+- `supabase/migrations/339_atomic_payment_recording.sql`: `4fde33aca986e04af11852d9c9ecf9c99bb0b305c9eec1805218a547e93db336`
 - `supabase/tests/review_section4_payment.sql`: `58a4c0cbb2b871ab32610d276d237932d04653b97f4f297f93e02737f9997f61`
 - `src/app/(admin)/billing/payments/new/page.tsx`: `8074e225af18f1e3c7150962410efe24a4dac0d75da90947a57a706fe22688db`
 - `src/app/(admin)/billing/payments/new/page.test.tsx`: `9f424bd8351797ae64a8d668857cf4b48a3e14a70d81614407090b693bc467d1`
 - `docs/remediation/2026-09-review/section-4-payment-concurrency.py`: `fc38a5f3db565ca014cd574179309a6d574f688730814c588023a2da63d0064e`
+
+Migration filenames above use the current release numbering; original review-time numbering and unchanged SQL hashes are recorded in [RELEASE-MIGRATION-NUMBERING.md](RELEASE-MIGRATION-NUMBERING.md). Historical execution statements retain their original numbering.

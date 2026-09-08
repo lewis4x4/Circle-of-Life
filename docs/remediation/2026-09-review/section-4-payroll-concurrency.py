@@ -32,7 +32,7 @@ assert command('createdb', [db]).returncode == 0
 try:
     sql((root / 'scripts/pg-verify-stub.sql').read_text())
     for migration in sorted((root / 'supabase/migrations').glob('*.sql')):
-        if migration.name.startswith('341_'):
+        if migration.name.startswith('334_payroll_source_freshness'):
             setup = (root / 'supabase/tests/review_payroll_freshness.sql').read_text().split('SET LOCAL ROLE authenticated;')[0]
             sql(setup + "INSERT INTO payroll_export_lines(organization_id,batch_id,staff_id,line_kind,time_record_id,idempotency_key,payload) SELECT org,journal,employee,'time_record_hours',punch,'time_record:'||punch::text,'{\"actual_hours\":7.5}'::jsonb FROM payroll_fixture; UPDATE time_records SET clock_out='2090-01-02 21:00Z' WHERE id=(SELECT punch FROM payroll_fixture); DO $$ BEGIN IF (SELECT public.payroll_export_snapshot(journal)->'lines'->0->'payload'->>'actual_hours' FROM payroll_fixture)<>'7.5' THEN RAISE EXCEPTION 'Baseline stale-payload reproduction changed'; END IF; END $$; ROLLBACK;")
             print('PASS: baseline reproduces stale 7.5-hour export after source correction to 8.5 hours')

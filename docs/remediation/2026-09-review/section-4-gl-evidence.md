@@ -32,7 +32,7 @@ No hosted mutation, browser session, staff UAT, global typecheck/build, segment 
 ## SHA256 of verified sources
 
 ```
-f7ed989fa9eca3e5de6197114b0e540e296d90e3414ef57bc8132e20a36c9205  supabase/migrations/340_atomic_source_gl_posting.sql
+f7ed989fa9eca3e5de6197114b0e540e296d90e3414ef57bc8132e20a36c9205  supabase/migrations/341_atomic_source_gl_posting.sql
 971d4612f06bc6f1e319299314fb280ec34c49c8f0b5a416da3d3da52f1683ad  supabase/tests/review_section4_source_gl.sql
 b43ec59ba427911725eaa01a180b79c5ceae943737e4f21fe94a4616b40d9f37  src/lib/finance/post-to-gl.ts
 e6bffe33b8c767626a49d7f937c0c02e791bf0e4195f9a9006d783fa61532994  src/lib/finance/post-to-gl.test.ts
@@ -40,3 +40,5 @@ e6bffe33b8c767626a49d7f937c0c02e791bf0e4195f9a9006d783fa61532994  src/lib/financ
 9548a88043bd7846a0ba930ba265c207183215576f87aa8d1294a37dbd4ad293  src/app/(admin)/billing/invoices/[id]/page.test.tsx
 72f7a54012445aee64fb55a71438726b905fce6d5f6b21541159e1a73b6310d6  docs/remediation/2026-09-review/section-4-gl-concurrency.py
 ```
+
+Migration filenames above use the current release numbering; original review-time numbering and unchanged SQL hashes are recorded in [RELEASE-MIGRATION-NUMBERING.md](RELEASE-MIGRATION-NUMBERING.md). Historical execution statements retain their original numbering.

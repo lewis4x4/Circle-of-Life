@@ -14,7 +14,7 @@ Import, refresh, error rendering and download actions were browser interactions.
 
 ## Exact source and environment
 
-- Migration `341_payroll_source_freshness.sql` SHA-256: `4801112cc77b0922807bf81685aa40908e3b6887a74a93cb0749d14d970ef285`.
+- Migration `334_payroll_source_freshness.sql` SHA-256: `4801112cc77b0922807bf81685aa40908e3b6887a74a93cb0749d14d970ef285`.
 - Payroll detail page SHA-256: `9a0141e61191067db35bc23fda835afd3ee807a6ba0a6c2b6a669e80f178a5fb`.
 - Private source snapshot used separate Next development server port 3198; it did not share the parent build's `.next` output.
 - Dump/restore cloned the existing synthetic native runtime into owned database `haven_payroll_browser_01a08175`; original database and sibling services were untouched. Clone already contained migration 340; migration 341 applied successfully.
@@ -31,3 +31,5 @@ Retained proof: `proof.json`, `imported.png`, `stale-blocked.png`, `refreshed.pn
 Owned process IDs/ports and exact disposable paths are recorded in `manifest.json` and `cleanup-provenance.json`; steward manifests/logs record exact-path cleanup validation. Run-owned services were stopped and the owned database dropped after proof. Shared native runtime remains available to its owner.
 
 Cleanup limitation: `jarvis-storage-steward cleanup-run --manifest <run-root>/cleanup-0.json` failed closed with `StateSafetyError` (exit 2). The source snapshot remains in the 0700 run root alongside proof; its rejected cleanup was not bypassed. A separate ordinary-file manifest, `cleanup-private-files.json`, containing only the run-owned `clone.dump` and `storage.json`, passed steward validation (exit 0, `planned_count: 2`). Those two exact files were then removed. The root manifest inventories ownership; the sibling `node_modules` symlink target was never changed or deleted. Removal of the retained source snapshot needs resolution of the first steward validation failure.
+
+Migration filenames above use the current release numbering; original review-time numbering and unchanged SQL hashes are recorded in [RELEASE-MIGRATION-NUMBERING.md](RELEASE-MIGRATION-NUMBERING.md). Historical execution statements retain their original numbering.
