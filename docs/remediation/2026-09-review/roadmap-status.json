@@ -54,7 +54,7 @@
         "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
         "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330\u2013333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "NAV-004",
@@ -115,7 +115,7 @@
         "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
         "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330\u2013333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
+      "notes": "Resident trigger updates scope; existing stale/missing rows repaired and live resident RLS rechecked. UI searches only maintained resident names, links other modules, and distinguishes error/empty/current query results. Local transfer, revocation, family linkage, backfill and rendered regressions passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "NAV-010",
@@ -170,8 +170,15 @@
       "id": "FL-006",
       "severity": "P1",
       "title": "Entering a historical assessment can overwrite the resident's current fall risk",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/335_assessment_fall_risk_chronology.sql",
+        "supabase/tests/review_section3_assessment_risk.sql",
+        "docs/remediation/2026-09-review/section-3-assessment-concurrency.json",
+        "docs/remediation/2026-09-review/section-3-fl006-review.json",
+        "test-results/agent-gates/2026-09-08T11-41-10-095Z-section-3-fl006.json"
+      ],
+      "notes": "Current Morse inserts/score corrections project risk atomically using clinical date/creation/UUID ordering. Historical entries and note edits retain current/manual risk. Ambiguous date demotion and ordering-key rewrites reject. 338 migrations/19 probes, two concurrent insertion orders, four rendered/scoring tests, typecheck and strict UI gate passed. Independent source review approved; not deployed or clinically accepted."
     },
     {
       "id": "FL-007",
@@ -260,7 +267,7 @@
         "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
         "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330\u2013333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SYS-003",
@@ -275,7 +282,7 @@
         "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
         "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330\u2013333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SYS-004",
@@ -290,7 +297,7 @@
         "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
         "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330\u2013333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
+      "notes": "Approved atomic completion core preserved; caller-bound immutable receipts and integrity evidence now commit in one transaction. Exact authorized retries return the prior receipt; direct task/log mutations are protected while manager excusal remains supported. Local rollback, concurrency and authorization probes passed. Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SYS-005",
@@ -415,7 +422,7 @@
         "docs/remediation/2026-09-review/SECTION-2-HANDOFF.md",
         "docs/remediation/2026-09-review/section-2-release/RELEASE-CLOSEOUT.md"
       ],
-      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330\u2013333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
+      "notes": "Caller RLS and normative quality read roles enforced; one latest period/correction selected by creation time and stable UUID tie-break. Historical result rows and audit retained. Local SQL matrix passed; Section 2 release closeout: full independent source review approved; PR #456 merged and runtime 0374725c deployed with migrations 330–333. Production catalog, authenticated browser, protected-write denial and session-revocation checks passed. Named staff/device UAT remains separate."
     },
     {
       "id": "SUP-001",
@@ -455,10 +462,10 @@
     {
       "id": "OPS-003",
       "severity": "P2",
-      "title": "Completing asset service does not update the asset\u2019s service lifecycle",
+      "title": "Completing asset service does not update the asset’s service lifecycle",
       "status": "open",
       "evidence": []
     }
   ],
-  "stop_boundary": "Tonight closeout: Phase 0 verification, user-attested Section 1 approval and Section 2 engineering release are recorded. Section 2 runtime 0374725c and migrations 330\u2013333 are deployed. Named Homewood staff/device acceptance remains NOT RUN. Sections 3\u20138 are not implemented by this closeout; next planned section is 3 (FL-001, FL-006, FL-007, FL-012). SYS-005 remains partially resolved and assigned to Section 4. Historical scope and baseline fields describe the initial Phase 0 record."
+  "stop_boundary": "Tonight closeout: Phase 0 verification, user-attested Section 1 approval and Section 2 engineering release are recorded. Section 2 runtime 0374725c and migrations 330–333 are deployed. Named Homewood staff/device acceptance remains NOT RUN. Sections 3–8 are not implemented by this closeout; next planned section is 3 (FL-001, FL-006, FL-007, FL-012). SYS-005 remains partially resolved and assigned to Section 4. Historical scope and baseline fields describe the initial Phase 0 record."
 }

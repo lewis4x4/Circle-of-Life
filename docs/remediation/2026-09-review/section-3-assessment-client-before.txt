@@ -1,0 +1,33 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Remaining Roadmap
+
+ ❯ src/app/(admin)/admin/residents/[id]/assessments/new/page.test.tsx (3 tests | 1 failed) 167ms
+     × saves a historical Morse assessment without a second client fall-risk write 103ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/admin/residents/[id]/assessments/new/page.test.tsx > AssessmentEntryPage assessment date > saves a historical Morse assessment without a second client fall-risk write
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/app/(admin)/admin/residents/[id]/assessments/new/page.test.tsx:139:94
+    137|     await waitFor(() => expect(writes.assessment).toHaveBeenCalledWith…
+    138|     await screen.findByText("Assessment saved");
+    139|     expect(writes.resident.mock.calls.every(([payload]) => !("fall_ris…
+       |                                                                                              ^
+    140|   });
+    141|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  07:35:57
+   Duration  1.73s (transform 284ms, setup 57ms, import 1.17s, tests 167ms, environment 157ms)
+

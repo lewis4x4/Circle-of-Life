@@ -1,0 +1,20 @@
+{
+  "migration_files": 338,
+  "environment": "run-owned PostgreSQL with Auth stubs",
+  "cases": [
+    {
+      "first_assessment_days_ago": 10,
+      "second_assessment_days_ago": 1,
+      "current_risk": "high",
+      "retained_assessments": 2,
+      "passed": true
+    },
+    {
+      "first_assessment_days_ago": 1,
+      "second_assessment_days_ago": 10,
+      "current_risk": "high",
+      "retained_assessments": 2,
+      "passed": true
+    }
+  ]
+}

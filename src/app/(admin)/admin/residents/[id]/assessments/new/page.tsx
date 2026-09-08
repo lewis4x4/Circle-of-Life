@@ -12,7 +12,6 @@ import {
   lookupRiskLevel,
   computeNextDueDate,
   computeAcuityComposite,
-  mapMorseToFallRisk,
   didRiskWorsen,
 } from "@/lib/assessments/scoring";
 import type { AssessmentTemplate, AssessmentTemplateItem } from "@/lib/assessments/types";
@@ -95,23 +94,20 @@ export default function AssessmentEntryPage() {
     [templates, selectedType],
   );
 
-  const liveTotal = useMemo(() => {
+  const liveTotal = (() => {
     if (!selectedTemplate) return null;
     const itemKeys = selectedTemplate.items.map((i) => i.key);
     const answered = itemKeys.filter((k) => watchScores[k] !== undefined);
     if (answered.length === 0) return null;
     return computeTotalScore(watchScores);
-  }, [watchScores, selectedTemplate]);
+  })();
 
   const liveRiskLevel = useMemo(() => {
     if (liveTotal === null || !selectedTemplate) return null;
     return lookupRiskLevel(liveTotal, selectedTemplate.risk_thresholds);
   }, [liveTotal, selectedTemplate]);
 
-  const allAnswered = useMemo(() => {
-    if (!selectedTemplate) return false;
-    return selectedTemplate.items.every((item) => watchScores[item.key] !== undefined);
-  }, [watchScores, selectedTemplate]);
+  const allAnswered = selectedTemplate?.items.every((item) => watchScores[item.key] !== undefined) ?? false;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -189,7 +185,7 @@ export default function AssessmentEntryPage() {
       if (insertErr) throw new Error(insertErr.message);
       setSavedAssessment({ type: data.assessmentType, totalScore, riskLevel });
       }
-      await updateResidentFromAssessment(savedAssessment?.type ?? data.assessmentType, savedAssessment?.totalScore ?? totalScore, savedAssessment?.riskLevel ?? riskLevel);
+      await updateResidentFromAssessment(savedAssessment?.type ?? data.assessmentType, savedAssessment?.riskLevel ?? riskLevel);
 
       setSuccess(true);
     } catch (err) {
@@ -199,13 +195,7 @@ export default function AssessmentEntryPage() {
     }
   }
 
-  async function updateResidentFromAssessment(type: string, totalScore: number, riskLevel: string) {
-    if (type === "morse_fall") {
-      const fallRisk = mapMorseToFallRisk(totalScore);
-      const result = await supabase.from("residents").update({ fall_risk_level: fallRisk }).eq("id", residentId).select("id").single();
-      if (result.error) throw result.error;
-    }
-
+  async function updateResidentFromAssessment(type: string, riskLevel: string) {
     if (["katz_adl", "morse_fall", "braden"].includes(type)) {
       const { data: latestAssessments, error: latestError } = await supabase
         .from("assessments")
@@ -213,7 +203,9 @@ export default function AssessmentEntryPage() {
         .eq("resident_id", residentId)
         .is("deleted_at", null)
         .in("assessment_type", ["katz_adl", "morse_fall", "braden"])
-        .order("assessment_date", { ascending: false });
+        .order("assessment_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
 
       if (latestError) throw latestError;
       const latest: Record<string, { total_score: number | null; risk_level: string | null }> = {};
@@ -241,6 +233,8 @@ export default function AssessmentEntryPage() {
       .eq("assessment_type", type)
       .is("deleted_at", null)
       .order("assessment_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .limit(2);
 
     if (priorError) throw priorError;

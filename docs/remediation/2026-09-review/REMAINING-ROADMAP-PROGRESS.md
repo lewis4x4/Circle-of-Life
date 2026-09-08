@@ -4,13 +4,21 @@ User requested completion through Sections 3–8 and final integration review on
 
 Baseline: freshly fetched origin/main `9db72d2d`. Section 2 engineering release is closed per section-2-release/RELEASE-CLOSEOUT.md. Current independent worktree: `/Users/brianlewis/Circle of Life/Haven Remaining Roadmap`; branch `codex/haven-remaining-roadmap`. Unmerged home-login work and existing source artifacts are preserved in their original checkout.
 
-## Current segment: Section 3 / FL-012
+## Completed segment: Section 3 / FL-012
 
 Migration 334 validates required reconciliation evidence on every write retaining complete status. Existing draft reopening remains the correction path. Regression failed on baseline when pharmacist_reviewed_at was erased. With the repair, 337 migrations and 18 SQL probes passed. Independent source review APPROVE; formal segment gate PASS at `test-results/agent-gates/2026-09-08T11-28-07-433Z-section-3-fl012.json`; typecheck PASS. No deployed change is claimed. Mission alignment: pass for this bounded repair.
 
+## Completed segment: Section 3 / FL-006
+
+Migration 335 serializes current Morse risk projection with assessment writes and preserves historical records. Client no longer performs a second fall-risk update. Rendered interaction exposed stale memoized readiness/live score; both now recompute from current answers. The client red artifact follows the readiness fix and demonstrates the still-present historical risk write before its removal.
+
+Independent review initially requested explicit handling of precedence-demoting date corrections and mutable ordering keys. These now reject with correction messages; final review APPROVE. Native replay: 338 migrations/19 probes PASS. Two actual overlapping authenticated-session insertion orders PASS. Four rendered/scoring tests PASS. Supported typecheck PASS. Strict UI gate PASS: `test-results/agent-gates/2026-09-08T11-41-10-095Z-section-3-fl006.json`. Public-root snapshots/axe do not establish authenticated clinical browser acceptance.
+
+No historical risk backfill or invented manual-source provenance. Privileged assessment removal retains the current risk rather than inferring a lower value; ordinary deletion remains denied by existing RLS. Future-date and score mapping semantics are unchanged. Mission alignment: pass for bounded chronological repair. Not deployed.
+
 ## Remaining sequence
 
-- Section 3: FL-006 chronological assessment risk, FL-007 atomic discharge/bed release, FL-001 operational med-tech shift and pass producer.
+- Section 3: FL-007 atomic discharge/bed release next, then FL-001 operational med-tech shift and pass producer.
 - Section 4: BUS-001, BUS-002, BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
 - Section 5: NAV-004, NAV-005, NAV-008, NAV-010, NAV-011, SYS-007.
 - Section 6: NAV-007, FL-002, FL-008, FL-010, FL-013, FL-014.

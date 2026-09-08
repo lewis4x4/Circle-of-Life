@@ -1,6 +1,7 @@
 import fs from "node:fs";
+import userEvent from "@testing-library/user-event";
 import path from "node:path";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import AssessmentEntryPage from "./page";
@@ -33,6 +34,8 @@ const anonymousTemplate = {
   required_role: ["owner"],
 };
 
+const writes = vi.hoisted(() => ({ resident: vi.fn(), assessment: vi.fn() }));
+
 function makeSupabaseClient() {
   const chain = {
     select: () => chain,
@@ -41,7 +44,7 @@ function makeSupabaseClient() {
     in: () => chain,
     order: () => chain,
     limit: () => chain,
-    update: () => chain,
+    update: (payload: unknown) => { writes.resident(payload); return chain; },
     maybeSingle: async () => ({
       data: {
         first_name: "Sample",
@@ -51,15 +54,16 @@ function makeSupabaseClient() {
       error: null,
     }),
     single: async () => ({ data: null, error: null }),
-    insert: async () => ({ error: null }),
+    insert: async (payload: unknown) => { writes.assessment(payload); return { error: null }; },
     then: (resolve: (value: { data: unknown; error: null }) => unknown) =>
-      Promise.resolve({ data: [anonymousTemplate], error: null }).then(resolve),
+      Promise.resolve({ data: [anonymousTemplate, { ...anonymousTemplate, assessment_type: "morse_fall", name: "Morse Fall Scale" }], error: null }).then(resolve),
   };
 
   return {
     from: (table: string) => {
       if (table === "residents") {
         return {
+          update: chain.update,
           select: () => ({
             eq: () => ({
               maybeSingle: async () => ({
@@ -121,6 +125,18 @@ describe("AssessmentEntryPage assessment date", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("saves a historical Morse assessment without a second client fall-risk write", async () => {
+    render(<AssessmentEntryPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Morse Fall Scale/i }));
+    fireEvent.change(await screen.findByLabelText(/^assessment date \(ET\)$/i), { target: { value: "2020-01-01" } });
+    await userEvent.click(screen.getByRole("radio", { name: /Independent/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Save assessment" })).toBeEnabled());
+    fireEvent.submit(screen.getByRole("button", { name: "Save assessment" }).closest("form")!);
+    await waitFor(() => expect(writes.assessment).toHaveBeenCalledWith(expect.objectContaining({ assessment_date: "2020-01-01", assessment_type: "morse_fall" })));
+    await screen.findByText("Assessment saved");
+    expect(writes.resident.mock.calls.every(([payload]) => !("fall_risk_level" in payload))).toBe(true);
   });
 
   it("uses the shared facility date helper and stamps the assessment date as Eastern", () => {
