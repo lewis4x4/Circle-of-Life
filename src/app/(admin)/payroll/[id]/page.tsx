@@ -74,7 +74,6 @@ export default function AdminPayrollBatchDetailPage() {
     setLoading(true);
     setError(null);
     setImportSummary(null);
-    setTimeImportSummary(null);
     if (!batchId || !facilityReady || !selectedFacilityId) {
       setBatch(null);
       setLines([]);
@@ -137,17 +136,7 @@ export default function AdminPayrollBatchDetailPage() {
         .order("clock_in", { ascending: true }).order("id", { ascending: true }).range(from, to));
       if (trErr) throw trErr;
 
-      const { data: trKeyRows, error: trKeyErr } = await readAllPages((from, to) => supabase
-        .from("payroll_export_lines")
-        .select("idempotency_key", { count: "exact" })
-        .is("deleted_at", null)
-        .like("idempotency_key", "time_record:%").order("id", { ascending: true }).range(from, to));
-      if (trKeyErr) throw trKeyErr;
-
-      const exportedTimeIds = new Set(
-        (trKeyRows ?? []).map((r) => r.idempotency_key.replace(/^time_record:/, "")),
-      );
-      setEligibleTimeRecords((trRows ?? []).filter((tr) => !exportedTimeIds.has(tr.id)));
+      setEligibleTimeRecords(trRows ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load batch.");
       setBatch(null);
@@ -160,6 +149,7 @@ export default function AdminPayrollBatchDetailPage() {
   }, [batchId, facilityReady, selectedFacilityId, supabase]);
 
   useEffect(() => {
+    setTimeImportSummary(null);
     void load();
   }, [load]);
 
@@ -252,57 +242,12 @@ export default function AdminPayrollBatchDetailPage() {
     try {
       if (!user?.id) throw new Error("Sign in required.");
 
-      let added = 0;
-      let skippedOtherBatch = 0;
-
-      const incomplete = eligibleTimeRecords.filter((tr) => !tr.clock_out || tr.actual_hours == null || tr.actual_hours <= 0);
-      if (incomplete.length) throw new Error(`${incomplete.length} approved punch(es) need hours calculated. Reopen and approve them in Time records before importing.`);
-      for (const tr of eligibleTimeRecords) {
-        const idempotencyKey = `time_record:${tr.id}`;
-
-        const { data: existing, error: exErr } = await supabase
-          .from("payroll_export_lines")
-          .select("id, batch_id")
-          .eq("idempotency_key", idempotencyKey)
-          .maybeSingle();
-        if (exErr) throw exErr;
-
-        if (existing) {
-          if (existing.batch_id !== batch.id) skippedOtherBatch += 1;
-          continue;
-        }
-
-        const payload = {
-          time_record_id: tr.id,
-          clock_in: tr.clock_in,
-          clock_out: tr.clock_out,
-          regular_hours: tr.regular_hours,
-          actual_hours: tr.actual_hours,
-          overtime_hours: tr.overtime_hours,
-          break_minutes: tr.break_minutes,
-        };
-
-        const { error: insErr } = await supabase.from("payroll_export_lines").insert({
-          organization_id: batch.organization_id,
-          batch_id: batch.id,
-          staff_id: tr.staff_id,
-          line_kind: "time_record_hours",
-          amount_cents: null,
-          payload,
-          time_record_id: tr.id,
-          idempotency_key: idempotencyKey,
-          created_by: user.id,
-        });
-
-        if (insErr) throw insErr;
-
-        added += 1;
-      }
-
-      const parts = [`${added} line(s) added.`];
-      if (skippedOtherBatch > 0)
-        parts.push(`${skippedOtherBatch} skipped (idempotency key already used in another batch).`);
-      setTimeImportSummary(parts.join(" "));
+      const { data, error: refreshError } = await supabase.rpc("refresh_payroll_time_records" as never, {
+        p_batch_id: batch.id, p_expected_actor: user.id,
+      } as never);
+      if (refreshError) throw new Error(refreshError.message);
+      const receipt = data as unknown as { added: number; refreshed: number; other_batch: number; needs_review: number };
+      setTimeImportSummary(`${receipt.added} added; ${receipt.refreshed} refreshed; ${receipt.other_batch} owned by another batch. ${receipt.needs_review} ineligible line(s) need review: correct and reapprove the punch, or explicitly exclude it below.`);
 
       await load();
       router.refresh();
@@ -313,8 +258,22 @@ export default function AdminPayrollBatchDetailPage() {
     }
   }
 
+  async function excludePunch(lineId: string) {
+    if (!batch || !user?.id || importing || exporting) return;
+    setImporting(true); setError(null);
+    try {
+      const { error: excludeError } = await supabase.rpc("exclude_payroll_draft_punch" as never, {
+        p_batch_id: batch.id, p_line_id: lineId, p_expected_actor: user.id,
+      } as never);
+      if (excludeError) throw new Error(excludeError.message);
+      await load();
+      setTimeImportSummary("Ineligible punch excluded from this draft. Its prior line evidence and global ownership are retained. Correct and reapprove the punch, then refresh to restore it.");
+    } catch (e) { setError(e instanceof Error ? e.message : "Exclusion failed."); }
+    finally { setImporting(false); }
+  }
+
   async function exportBatch(format: "full" | "flat" | "vendor" | "split") {
-    if (!batch || exporting) return;
+    if (!batch || exporting || importing) return;
     setExporting(true); setError(null);
     try {
       const { data, error: snapshotError } = await supabase.rpc("payroll_export_snapshot" as never, { p_batch_id: batch.id } as never);
@@ -408,7 +367,7 @@ export default function AdminPayrollBatchDetailPage() {
                 <Button
                   type="button"
                   onClick={() => void importMileage()}
-                  disabled={importing || eligibleMileage.length === 0}
+                  disabled={importing || exporting || eligibleMileage.length === 0}
                 >
                   {importing ? "Importing…" : "Import mileage into batch"}
                 </Button>
@@ -419,14 +378,14 @@ export default function AdminPayrollBatchDetailPage() {
           {batch.status === "draft" && (
             <RecordDetailSection
               title="Approved time records"
-              description={`Imports approved punches whose clock-in falls in this pay period (America/New_York bounds) and are not already on an export line. Idempotency time_record:{id}. Amount is left to the vendor; hours are in payload_json.`}
+              description="Refreshes this draft from currently approved punches in the pay period (America/New_York). Correct and reapprove changed punches in Time records first. Existing lines keep their identity; another batch retains its ownership."
             >
               <div className="space-y-4">
                 <p className="text-sm">
                   <span className="font-mono font-semibold tabular-nums text-foreground">
                     {eligibleTimeRecords.length}
                   </span>{" "}
-                  eligible punch(es) in range.
+                  approved punch(es) in range, including punches already imported.
                 </p>
                 {timeImportSummary && (
                   <p className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
@@ -436,14 +395,15 @@ export default function AdminPayrollBatchDetailPage() {
                 <Button
                   type="button"
                   onClick={() => void importTimeRecords()}
-                  disabled={importing || eligibleTimeRecords.length === 0}
+                  disabled={importing || exporting}
                 >
-                  {importing ? "Importing…" : "Import time records into batch"}
+                  {importing ? "Importing…" : "Refresh approved punches"}
                 </Button>
               </div>
             </RecordDetailSection>
           )}
 
+          {batch.status === "exported" && <p className="text-sm text-muted-foreground">Historical exported batch: downloads use stored payroll line evidence, without applying later punch corrections. Legacy batches do not contain an original file archive.</p>}
           <RecordDetailSection
             title={`Export lines (${lines.length})`}
             description="Full export includes JSON payload per row. Flat export adds parsed hours (time lines) and miles (mileage) columns without a JSON field. Vendor handoff adds pay-period columns and amount_usd. Hours split adds separate regular_hours / overtime_hours / total_hours for time lines."
@@ -454,7 +414,7 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={exporting || Boolean(exportIssue)}
+                    disabled={exporting || importing || Boolean(exportIssue)}
                     onClick={() => void exportBatch("full")}
                   >
                     CSV (full)
@@ -463,7 +423,7 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={exporting || Boolean(exportIssue)}
+                    disabled={exporting || importing || Boolean(exportIssue)}
                     onClick={() => void exportBatch("flat")}
                   >
                     CSV (flat)
@@ -472,7 +432,7 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={exporting || Boolean(exportIssue)}
+                    disabled={exporting || importing || Boolean(exportIssue)}
                     onClick={() => void exportBatch("vendor")}
                   >
                     CSV (vendor handoff)
@@ -481,7 +441,7 @@ export default function AdminPayrollBatchDetailPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={exporting || Boolean(splitIssue)}
+                    disabled={exporting || importing || Boolean(splitIssue)}
                     title="Regular / overtime / total hours for time lines; generic columns, not vendor-specific layouts."
                     onClick={() => void exportBatch("split")}
                   >
@@ -511,6 +471,12 @@ export default function AdminPayrollBatchDetailPage() {
                         </span>
                       </div>
                       <span className="tabular-nums font-mono">{formatUsdFromCents(line.amount_cents)}</span>
+                      {batch.status === "draft" && line.line_kind === "time_record_hours" && (
+                        <Button type="button" variant="outline" size="sm" disabled={importing || exporting}
+                          onClick={() => void excludePunch(line.id)}>
+                          Exclude ineligible punch from draft
+                        </Button>
+                      )}
                     </li>
                   );
                 })}

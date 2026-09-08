@@ -1,0 +1,4 @@
+Fresh continuation run: 2026-09-08
+Command: npx vitest run src/app/\(admin\)/payroll/\[id\]/page.test.tsx src/lib/payroll/payroll-export-csv.test.ts
+PASS: 2 test files, 10 tests.
+Typecheck: npm run typecheck, exit 0.
