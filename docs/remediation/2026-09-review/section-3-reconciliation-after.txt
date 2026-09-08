@@ -1,0 +1,5 @@
+
+> circle-of-life@0.1.0 migrations:verify:pg
+> node scripts/pg-verify-migrations.mjs
+
+[migrations:verify:pg] PASS (337 migration files, 18 SQL probes; native PostgreSQL with Supabase stubs)

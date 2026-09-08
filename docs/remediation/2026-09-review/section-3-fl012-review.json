@@ -1,0 +1,15 @@
+{
+  "verdict": "APPROVE",
+  "reviewer": "independent native subagent reconciliation_review",
+  "scope": [
+    "supabase/migrations/334_reconciliation_evidence_invariant.sql",
+    "supabase/tests/review_section3_reconciliation.sql"
+  ],
+  "blocking_findings": [],
+  "notes": [
+    "Every complete-state write runs existing evidence checks.",
+    "Explicit draft reopening, RLS and audit remain unchanged.",
+    "Already-invalid legacy completed rows require repair or reopening before update.",
+    "SQL replay supplies runtime evidence; TypeScript-oriented LSP does not validate SQL."
+  ]
+}

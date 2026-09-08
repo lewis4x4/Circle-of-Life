@@ -1,0 +1,19 @@
+
+> circle-of-life@0.1.0 migrations:verify:pg
+> node scripts/pg-verify-migrations.mjs
+
+file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/scripts/pg-verify-migrations.mjs:60
+      if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || "SQL failed"}`);
+                                     ^
+
+Error: review_section3_reconciliation.sql: psql:/Users/brianlewis/Circle of Life/Haven Remaining Roadmap/supabase/tests/review_section3_reconciliation.sql:52: ERROR:  Complete reconciliation accepted erased pharmacist_reviewed_at
+CONTEXT:  PL/pgSQL function inline_code_block line 14 at RAISE
+
+    at nativeVerification (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/scripts/pg-verify-migrations.mjs:60:38)
+    at main (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/scripts/pg-verify-migrations.mjs:79:46)
+    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Remaining%20Roadmap/scripts/pg-verify-migrations.mjs:205:7
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.22.3
