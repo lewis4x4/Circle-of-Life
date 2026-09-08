@@ -1,0 +1,116 @@
+{
+  "status": "investigation_incomplete_request_details_needed",
+  "production_deploy": "6aa028b2a2a7920008189a1d",
+  "production_commit": "adb5ecb954e901610637fcd4b792ab2753d5c018",
+  "original_failures": [
+    {
+      "at": "2026-09-08T15:54:50.639098+00:00",
+      "path": "/",
+      "status": 500,
+      "expected": 200,
+      "pass": false
+    },
+    {
+      "at": "2026-09-08T15:57:14.727621+00:00",
+      "path": "/",
+      "status": 500,
+      "expected": 200,
+      "pass": false
+    },
+    {
+      "at": "2026-09-08T15:57:18.176298+00:00",
+      "path": "/api/rounding/tasks",
+      "status": 500,
+      "expected": 401,
+      "pass": false
+    }
+  ],
+  "fresh_requests": {
+    "comparison_agent": 40,
+    "original_python_user_agent": 20,
+    "unexpected_statuses": 0,
+    "first_at": "2026-09-08T17:28:25.323420+00:00",
+    "last_at": "2026-09-08T17:36:09.754715+00:00",
+    "max_elapsed_ms": 12236
+  },
+  "historical_function_logs": {
+    "window_start": "2026-09-08T15:50:00Z",
+    "window_end": "2026-09-08T16:00:00Z",
+    "entry_count": 9,
+    "levels": [
+      "INFO"
+    ],
+    "reports": [
+      {
+        "at": "2026-09-08T15:50:35.540000+00:00",
+        "message": "Duration: 13 ms\tMemory Usage: 326 MB"
+      },
+      {
+        "at": "2026-09-08T15:51:36.867000+00:00",
+        "message": "Duration: 20 ms\tMemory Usage: 326 MB"
+      },
+      {
+        "at": "2026-09-08T15:52:38.757000+00:00",
+        "message": "Duration: 12 ms\tMemory Usage: 326 MB"
+      },
+      {
+        "at": "2026-09-08T15:53:39.480000+00:00",
+        "message": "Duration: 13 ms\tMemory Usage: 326 MB"
+      },
+      {
+        "at": "2026-09-08T15:54:55.536000+00:00",
+        "message": "Duration: 18 ms\tMemory Usage: 326 MB"
+      },
+      {
+        "at": "2026-09-08T15:56:01.558000+00:00",
+        "message": "Duration: 10437 ms\tMemory Usage: 310 MB"
+      },
+      {
+        "at": "2026-09-08T15:58:19.443000+00:00",
+        "message": "Duration: 11026 ms\tMemory Usage: 308 MB"
+      },
+      {
+        "at": "2026-09-08T15:59:11.631000+00:00",
+        "message": "Duration: 502 ms\tMemory Usage: 323 MB"
+      },
+      {
+        "at": "2026-09-08T15:59:30.732000+00:00",
+        "message": "Duration: 38 ms\tMemory Usage: 326 MB"
+      }
+    ],
+    "edge_log_entries": 0
+  },
+  "live_static_evidence": {
+    "https://circleoflifealf.com/": {
+      "Age": "7305",
+      "Cache-Status": "\"Netlify Durable\"; hit; ttl=31528695",
+      "Etag": "\"qa29pny3c23abx\"",
+      "X-Nextjs-Date": "Tue, 08 Sep 2026 15:32:12 GMT",
+      "X-Nextjs-Prerender": "1, 1"
+    },
+    "https://circleoflifealf.com/login": {
+      "Age": "7303",
+      "Cache-Status": "\"Netlify Durable\"; hit; ttl=31528696",
+      "Etag": "\"s3ruwx4t7ng8v\"",
+      "X-Nextjs-Date": "Tue, 08 Sep 2026 15:32:13 GMT",
+      "X-Nextjs-Prerender": "1, 1"
+    }
+  },
+  "findings": {
+    "payroll_database_path_reached": false,
+    "homepage_prerender_confirmed": true,
+    "no_cookie_api_returns_before_profile_task_queries": true,
+    "application_root_cause_confirmed": false,
+    "delivery_or_runtime_failure": "working hypothesis, not confirmed"
+  },
+  "limitations": [
+    "Original monitor did not retain error bodies or Netlify request IDs.",
+    "No handler report correlates with the failed API request; absence of a log is not proof of cause.",
+    "Netlify Observability request details require a logged-in dashboard; in-app browser awaits user sign-in.",
+    "Sentry read access unavailable.",
+    "Fresh success does not erase the original failures."
+  ],
+  "private_evidence_root": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-http500-20260908-01a08175",
+  "application_changes": false,
+  "deployment_performed": false
+}
