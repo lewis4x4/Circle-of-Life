@@ -1,5 +1,5 @@
 /**
- * COL employment rules (tardy / NCNS) — operational defaults for scheduling integrations.
+ * Historical COL packet thresholds — proposals requiring policy review before operational use.
  */
 
 export enum EmploymentType {
@@ -24,12 +24,12 @@ export function tardiesToAbsenceEquivalent(tardyCount: number): number {
   return Math.floor(tardyCount / TARDIES_PER_ABSENCE);
 }
 
-/** No-call / no-show treated as automatic resignation in policy engine. */
+/** Compatibility guard: no-call/no-show always requires authorized human review. */
 export function isAutoResignationNoCallNoShow(): boolean {
-  return true;
+  return false;
 }
 
-/** Three or more consecutive absent days may require physician statement (policy flag). */
+/** More than three consecutive absent days may require physician statement (policy flag). */
 export function requiresPhysicianStatement(consecutiveAbsentDays: number): boolean {
-  return consecutiveAbsentDays >= 3;
+  return consecutiveAbsentDays > 3;
 }

@@ -1,5 +1,5 @@
 /**
- * Progressive discipline ladder (handoff — absence-based defaults).
+ * Historical draft-source ladder. Labels are proposals, never executable employment actions.
  */
 
 export enum DisciplineAction {
@@ -10,9 +10,7 @@ export enum DisciplineAction {
   TERMINATION = "TERMINATION",
 }
 
-const GOOD_CITIZEN_CLEAN_DAYS = 90;
-
-/** Map rolling absence count to next action (3→verbal … 6→termination). */
+/** @deprecated Historical source label only. Use assessAttendanceReview for candidate notices. */
 export function getDisciplineLevel(absenceCount: number): DisciplineAction {
   if (absenceCount <= 2) return DisciplineAction.NONE;
   if (absenceCount === 3) return DisciplineAction.VERBAL_WARNING;
@@ -21,12 +19,12 @@ export function getDisciplineLevel(absenceCount: number): DisciplineAction {
   return DisciplineAction.TERMINATION;
 }
 
+/** Compatibility guard: approved credits retract an action, never erase occurrence history. */
 export function shouldResetAbsenceCounter(
   lastIncidentAt: Date | null,
   now: Date = new Date(),
 ): boolean {
-  if (!lastIncidentAt) return false;
-  const ms = now.getTime() - lastIncidentAt.getTime();
-  const days = ms / (1000 * 60 * 60 * 24);
-  return days >= GOOD_CITIZEN_CLEAN_DAYS;
+  void lastIncidentAt;
+  void now;
+  return false;
 }

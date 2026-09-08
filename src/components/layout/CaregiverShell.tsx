@@ -173,6 +173,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
               <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />
               <button

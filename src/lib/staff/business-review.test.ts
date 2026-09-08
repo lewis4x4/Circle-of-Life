@@ -6,3 +6,17 @@ it('preserves independent staff IDs and their linked records even for matching n
 });
 
 it("does not mark absent credential evidence current", () => { expect(aggregateCertStatus([])).toBe("not_verified"); });
+
+import { isAutoResignationNoCallNoShow, requiresPhysicianStatement } from './employment-rules';
+import { shouldResetAbsenceCounter } from './discipline';
+
+it('never automatically resigns an employee or resets attendance history', () => {
+ expect(isAutoResignationNoCallNoShow()).toBe(false);
+ expect(shouldResetAbsenceCounter(new Date('2020-01-01'), new Date('2026-09-08'))).toBe(false);
+ expect(shouldResetAbsenceCounter(null)).toBe(false);
+});
+
+it('uses more than three consecutive absence days for the draft physician-statement flag', () => {
+ expect(requiresPhysicianStatement(3)).toBe(false);
+ expect(requiresPhysicianStatement(4)).toBe(true);
+});
