@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import AdminDischargeDetailPage from "./page";
@@ -28,11 +28,14 @@ const mocks = vi.hoisted(() => {
   };
   const query = {
     select: vi.fn(),
+    update: vi.fn(),
+    single: vi.fn().mockResolvedValue({ data: null, error: { message: "No authorized resident row", code: "PGRST116" } }),
     eq: vi.fn(),
     is: vi.fn(),
     maybeSingle: vi.fn().mockResolvedValue({ data: reconciliation, error: null }),
   };
   query.select.mockReturnValue(query);
+  query.update.mockReturnValue(query);
   query.eq.mockReturnValue(query);
   query.is.mockReturnValue(query);
 
@@ -59,6 +62,22 @@ describe("AdminDischargeDetailPage official discharge date", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+  });
+
+  it("does not report discharge success when no authorized resident is returned", async () => {
+    render(<AdminDischargeDetailPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Complete official discharge" }));
+    expect(await screen.findByText("Couldn't complete official discharge. Retry or refresh.")).toBeInTheDocument();
+    expect(screen.queryByText("Official discharge recorded — resident is no longer billable.")).not.toBeInTheDocument();
+    expect(mocks.query.single).toHaveBeenCalled();
+  });
+
+  it("explains an occupancy mismatch without claiming discharge success", async () => {
+    mocks.query.single.mockResolvedValueOnce({ data: null, error: { message: "The resident bed assignment does not match current occupancy; reconcile it before discharge", code: "P0001" } });
+    render(<AdminDischargeDetailPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Complete official discharge" }));
+    expect(await screen.findByText("The bed assignment needs reconciliation before discharge. Ask a facility administrator to review the resident and bed records.")).toBeInTheDocument();
+    expect(screen.queryByText("Official discharge recorded — resident is no longer billable.")).not.toBeInTheDocument();
   });
 
   it("defaults to the Eastern calendar date at 8:05pm ET after UTC rolls over", async () => {

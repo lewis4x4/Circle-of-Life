@@ -16,9 +16,15 @@ Independent review initially requested explicit handling of precedence-demoting 
 
 No historical risk backfill or invented manual-source provenance. Privileged assessment removal retains the current risk rather than inferring a lower value; ordinary deletion remains denied by existing RLS. Future-date and score mapping semantics are unchanged. Mission alignment: pass for bounded chronological repair. Not deployed.
 
+## Completed segment: Section 3 / FL-007
+
+Migration 336 couples discharge and exact matching bed release. Scope/occupant/extra occupancy mismatches reject without partial writes. Terminal residents cannot acquire beds. Existing reservations, holds, maintenance/offline state and temporary blocks are retained. Existing inconsistent records require reconciliation; this does not rewrite all admission/bed-assignment flows.
+
+Baseline SQL and rendered regressions failed. Final gate replay passed 339 migrations/20 probes, including nurse discharge, failure rollback and scope checks. Actual reservation overlap passed: reservation rejects while occupied and waits for discharge before creating a hold. Three rendered tests and supported typecheck passed. Independent source review APPROVE. Strict UI gate PASS: `test-results/agent-gates/2026-09-08T11-50-27-089Z-section-3-fl007.json`. Public-root screenshots/axe are not authenticated staff acceptance. Mission alignment: pass. Not deployed.
+
 ## Remaining sequence
 
-- Section 3: FL-007 atomic discharge/bed release next, then FL-001 operational med-tech shift and pass producer.
+- Section 3: FL-001 operational med-tech shift and pass producer next.
 - Section 4: BUS-001, BUS-002, BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
 - Section 5: NAV-004, NAV-005, NAV-008, NAV-010, NAV-011, SYS-007.
 - Section 6: NAV-007, FL-002, FL-008, FL-010, FL-013, FL-014.

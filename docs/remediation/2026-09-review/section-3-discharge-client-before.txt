@@ -1,0 +1,308 @@
+
+ RUN  v4.1.5 /Users/brianlewis/Circle of Life/Haven Remaining Roadmap
+
+ ❯ src/app/(admin)/admin/discharge/[id]/page.test.tsx (2 tests | 1 failed) 1066ms
+     × does not report discharge success when no authorized resident is returned 1054ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/(admin)/admin/discharge/[id]/page.test.tsx > AdminDischargeDetailPage official discharge date > does not report discharge success when no authorized resident is returned
+TestingLibraryElementError: Unable to find an element with the text: Couldn't complete official discharge. Retry or refresh.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mx-auto max-w-3xl space-y-8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6 flex flex-col gap-3 border-b border-border pb-4"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mclass[39m=[32m"inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] hover:text-foreground"[39m
+          [33mhref[39m=[32m"/pipeline/discharge-management"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+          [36m>[39m
+            [0m←[0m
+          [36m</span>[39m
+          [0mBack to medication reconciliation queue[0m
+        [36m</a>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-0 flex-1 flex-col gap-1.5"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"text-2xl font-semibold tracking-tight text-foreground md:text-3xl"[39m
+              [36m>[39m
+                [0mMedication reconciliation[0m
+              [36m</h1>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm tabular-nums text-muted-foreground"[39m
+            [36m>[39m
+              [0mOperational workspace for discharge reconciliation, pharmacist attestation, and transition notes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success"[39m
+      [36m>[39m
+        [0mOfficial discharge recorded — resident is no longer billable.[0m
+      [36m</p>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Test Resident"[39m
+        [33mclass[39m=[32m"rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)]"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mb-3 flex items-center justify-between gap-3 border-b border-border pb-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex-1"[39m
+          [36m>[39m
+            [36m<h2[39m
+              [33mclass[39m=[32m"text-[14px] font-semibold tracking-normal normal-case text-foreground"[39m
+            [36m>[39m
+              [0mTest Resident[0m
+            [36m</h2>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mt-1 text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0m10000000-0000-4000-8000-000000000001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-6 text-sm"[39m
+          [36m>[39m
+            [36m<dl[39m
+              [33mclass[39m=[32m"grid gap-3 sm:grid-cols-2"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<dt[39m
+                  [33mclass[39m=[32m"text-xs font-medium uppercase tracking-wide text-muted-foreground"[39m
+                [36m>[39m
+                  [0mStatus[0m
+                [36m</dt>[39m
+                [36m<dd[39m
+                  [33mclass[39m=[32m"mt-0.5 capitalize text-foreground"[39m
+                [36m>[39m
+                  [0mpending[0m
+                [36m</dd>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<dt[39m
+                  [33mclass[39m=[32m"text-xs font-medium uppercase tracking-wide text-muted-foreground"[39m
+                [36m>[39m
+                  [0mDischarge target (resident)[0m
+                [36m</dt>[39m
+                [36m<dd[39m
+                  [33mclass[39m=[32m"mt-2 space-y-2"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"[39m
+                    [33mtype[39m=[32m"date"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"group/button relative inline-flex shrink-0 items-center justify-center rounded-[var(--radius)] border font-medium whitespace-nowrap normal-case tracking-normal transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 border-[var(--border-strong)] bg-transparent text-foreground hover:bg-muted/40 aria-expanded:bg-muted/40 h-8 gap-1 px-3.5 py-2 text-[0.8rem] has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 [&_svg:not([class*='size-'])]:size-3.5"[39m
+                    [33mdata-disabled[39m=[32m""[39m
+                    [33mdata-slot[39m=[32m"button"[39m
+                    [33mdisabled[39m=[32m""[39m
+                    [33mtabindex[39m=[32m"0"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSave target[0m
+                  [36m</button>[39m
+                [36m</dd>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<dt[39m
+                  [33mclass[39m=[32m"text-xs font-medium uppercase tracking-wide text-muted-foreground"[39m
+                [36m>[39m
+                  [0mHospice (resident)[0m
+                [36m</dt>[39m
+                [36m<dd[39m
+                  [33mclass[39m=[32m"mt-2 space-y-2"[39m
+                [36m>[39m
+                  [36m<select[39m
+                    [33mclass[39m=[32m"w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"[39m
+                  [36m>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"none"[39m
+                    [36m>[39m
+                      [0mnone[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"pending"[39m
+                    [36m>[39m
+                      [0mpending[0m
+                 ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"mx-auto max-w-3xl space-y-8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"mb-6 flex flex-col gap-3 border-b border-border pb-4"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mclass[39m=[32m"inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] hover:text-foreground"[39m
+          [33mhref[39m=[32m"/pipeline/discharge-management"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+          [36m>[39m
+            [0m←[0m
+          [36m</span>[39m
+          [0mBack to medication reconciliation queue[0m
+        [36m</a>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-0 flex-1 flex-col gap-1.5"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-center gap-3"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"text-2xl font-semibold tracking-tight text-foreground md:text-3xl"[39m
+              [36m>[39m
+                [0mMedication reconciliation[0m
+              [36m</h1>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm tabular-nums text-muted-foreground"[39m
+            [36m>[39m
+              [0mOperational workspace for discharge reconciliation, pharmacist attestation, and transition notes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"rounded-[8px] border border-success/20 bg-success/10 px-4 py-3 text-sm text-success"[39m
+      [36m>[39m
+        [0mOfficial discharge recorded — resident is no longer billable.[0m
+      [36m</p>[39m
+      [36m<section[39m
+        [33maria-label[39m=[32m"Test Resident"[39m
+        [33mclass[39m=[32m"rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60 transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)]"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mb-3 flex items-center justify-between gap-3 border-b border-border pb-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-w-0 flex-1"[39m
+          [36m>[39m
+            [36m<h2[39m
+              [33mclass[39m=[32m"text-[14px] font-semibold tracking-normal normal-case text-foreground"[39m
+            [36m>[39m
+              [0mTest Resident[0m
+            [36m</h2>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mt-1 text-sm text-muted-foreground"[39m
+            [36m>[39m
+              [0m10000000-0000-4000-8000-000000000001[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-6 text-sm"[39m
+          [36m>[39m
+            [36m<dl[39m
+              [33mclass[39m=[32m"grid gap-3 sm:grid-cols-2"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<dt[39m
+                  [33mclass[39m=[32m"text-xs font-medium uppercase tracking-wide text-muted-foreground"[39m
+                [36m>[39m
+                  [0mStatus[0m
+                [36m</dt>[39m
+                [36m<dd[39m
+                  [33mclass[39m=[32m"mt-0.5 capitalize text-foreground"[39m
+                [36m>[39m
+                  [0mpending[0m
+                [36m</dd>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<dt[39m
+                  [33mclass[39m=[32m"text-xs font-medium uppercase tracking-wide text-muted-foreground"[39m
+                [36m>[39m
+                  [0mDischarge target (resident)[0m
+                [36m</dt>[39m
+                [36m<dd[39m
+                  [33mclass[39m=[32m"mt-2 space-y-2"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"[39m
+                    [33mtype[39m=[32m"date"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"group/button relative inline-flex shrink-0 items-center justify-center rounded-[var(--radius)] border font-medium whitespace-nowrap normal-case tracking-normal transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 border-[var(--border-strong)] bg-transparent text-foreground hover:bg-muted/40 aria-expanded:bg-muted/40 h-8 gap-1 px-3.5 py-2 text-[0.8rem] has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 [&_svg:not([class*='size-'])]:size-3.5"[39m
+                    [33mdata-disabled[39m=[32m""[39m
+                    [33mdata-slot[39m=[32m"button"[39m
+                    [33mdisabled[39m=[32m""[39m
+                    [33mtabindex[39m=[32m"0"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0mSave target[0m
+                  [36m</button>[39m
+                [36m</dd>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<dt[39m
+                  [33mclass[39m=[32m"text-xs font-medium uppercase tracking-wide text-muted-foreground"[39m
+                [36m>[39m
+                  [0mHospice (resident)[0m
+                [36m</dt>[39m
+                [36m<dd[39m
+                  [33mclass[39m=[32m"mt-2 space-y-2"[39m
+                [36m>[39m
+                  [36m<select[39m
+                    [33mclass[39m=[32m"w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"[39m
+                  [36m>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"none"[39m
+                    [36m>[39m
+                      [0mnone[0m
+                    [36m</option>[39m
+                    [36m<option[39m
+                      [33mvalue[39m=[32m"pending"[39m
+                    [36m>[39m
+                      [0mpending[0m
+                 ...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/(admin)/admin/discharge/[id]/page.test.tsx:70:25
+     68|     render(<AdminDischargeDetailPage />);
+     69|     fireEvent.click(await screen.findByRole("button", { name: "Complet…
+     70|     expect(await screen.findByText("Couldn't complete official dischar…
+       |                         ^
+     71|     expect(screen.queryByText("Official discharge recorded — resident …
+     72|     expect(mocks.query.single).toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  07:45:53
+   Duration  2.52s (transform 215ms, setup 69ms, import 1.09s, tests 1.07s, environment 199ms)
+

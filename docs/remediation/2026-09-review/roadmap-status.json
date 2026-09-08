@@ -184,8 +184,15 @@
       "id": "FL-007",
       "severity": "P1",
       "title": "Official discharge leaves the old bed occupied",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/336_atomic_discharge_bed_release.sql",
+        "supabase/tests/review_section3_discharge.sql",
+        "docs/remediation/2026-09-review/section-3-discharge-concurrency.json",
+        "docs/remediation/2026-09-review/section-3-fl007-review.json",
+        "test-results/agent-gates/2026-09-08T11-50-27-089Z-section-3-fl007.json"
+      ],
+      "notes": "Resident discharge and exact matching bed release share one transaction; operational blocks/reservations are retained and mismatches reject. Client requires a returned row and explains occupancy reconciliation. 339 migrations/20 probes, actual reservation overlap, three rendered tests, typecheck and strict UI gate passed. Independent source review approved; not deployed or clinically accepted."
     },
     {
       "id": "FL-008",

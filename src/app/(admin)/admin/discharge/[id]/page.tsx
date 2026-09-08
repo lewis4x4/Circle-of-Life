@@ -212,7 +212,9 @@ export default function AdminDischargeDetailPage() {
           updated_at: new Date().toISOString(),
           updated_by: user?.id ?? null,
         })
-        .eq("id", row.resident_id);
+        .eq("id", row.resident_id)
+        .select("id")
+        .single();
       if (updateError) throw updateError;
       setActionMessage(successMessage);
       await load();
@@ -220,7 +222,13 @@ export default function AdminDischargeDetailPage() {
       logSupabasePostgrestError("discharge-detail.official-discharge", err, {
         reconciliationId: row?.id,
       });
-      setActionError("Couldn't complete official discharge. Retry or refresh.");
+      const databaseMessage = (err as { message?: unknown } | null)?.message;
+      setActionError(
+        typeof databaseMessage === "string" &&
+          (databaseMessage.includes("bed assignment") || databaseMessage.includes("cannot assign a different bed"))
+          ? "The bed assignment needs reconciliation before discharge. Ask a facility administrator to review the resident and bed records."
+          : "Couldn't complete official discharge. Retry or refresh.",
+      );
     } finally {
       setActionLoading(null);
     }

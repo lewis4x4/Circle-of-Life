@@ -1,0 +1,21 @@
+{
+  "verdict": "APPROVE",
+  "reviewer": "independent native subagent reconciliation_review",
+  "scope": [
+    "supabase/migrations/336_atomic_discharge_bed_release.sql",
+    "supabase/tests/review_section3_discharge.sql",
+    "src/app/(admin)/admin/discharge/[id]/page.tsx",
+    "src/app/(admin)/admin/discharge/[id]/page.test.tsx"
+  ],
+  "blocking_findings": [],
+  "followups_completed": [
+    "Extra-occupancy and cross-facility rejection probes added.",
+    "Actual overlapping discharge/reservation probe passed.",
+    "Safe actionable occupancy reconciliation error added and rendered test passed."
+  ],
+  "limitations": [
+    "Resident RLS permissions are preserved; this is not a universal bed-assignment rewrite.",
+    "Existing inconsistent occupancy needs explicit reconciliation; no backfill.",
+    "Local PostgreSQL with Auth stubs, not hosted staff acceptance."
+  ]
+}

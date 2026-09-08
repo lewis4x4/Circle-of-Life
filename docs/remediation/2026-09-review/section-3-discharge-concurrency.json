@@ -1,0 +1,13 @@
+{
+  "environment": "run-owned native PostgreSQL with Auth stubs",
+  "migration_files": 339,
+  "reservation_while_occupied": "rejected",
+  "reservation_overlapping_discharge": "passed",
+  "final_state": {
+    "resident_status": "discharged",
+    "resident_bed": null,
+    "bed_status": "hold",
+    "occupant": null,
+    "reservation": "2dbef176-a5fe-4b34-8105-4f8d42293ad8"
+  }
+}
