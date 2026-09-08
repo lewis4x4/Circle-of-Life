@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "environment": "run-owned PostgreSQL with Auth stubs",
+  "scenario": "two concurrent 6000-cent requests against one 10000-cent balance",
+  "committed": 1,
+  "rejected": 1,
+  "observed": {
+    "paid": 6000,
+    "balance": 4000,
+    "payments": 1,
+    "receipts": 1
+  },
+  "asserted_runner": "docs/remediation/2026-09-review/section-4-payment-concurrency.py",
+  "output_log": "docs/remediation/2026-09-review/section-4-payment-concurrency-final.txt"
+}

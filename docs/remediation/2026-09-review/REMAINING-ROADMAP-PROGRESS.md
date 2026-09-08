@@ -34,10 +34,18 @@ Final independent review APPROVE with source hashes in `section-3-fl001-review.j
 
 The older `generate-emar-schedule` Edge producer was observed to use UTC clock construction and a 500-order read cap. Its deployment/current interaction with the new canonical pass producer needs final integration verification; do not claim its scheduling semantics were repaired by FL-001. Existing admission override/bed inventory mismatch and temporary-block admission behavior also need integration scrutiny. Preserve named Homewood staff/device acceptance as NOT RUN until actually performed.
 
+## Completed segment: Section 4 / BUS-001
+
+Migration 338 commits payment, invoice application and caller-bound immutable receipt in one transaction. No silent clamping/partial allocation: amounts exceeding the live invoice balance reject; an unapplied payment requires explicit choice. Existing deposit/refund metadata editing remains; receipt-owned financial identity and deletion are protected. Existing historical payments are not backfilled or represented by fabricated receipts.
+
+Pending request/payload/actor/facility is retained while mounted. Initial definite rejection unlocks; any ambiguous attempt preserves the original request through subsequent denials. Renewed same-actor sessions can retrieve under current authority. Unavailable explicit invoices remain visible; valid prefills beyond50 options are fetched directly. Full browser-reload persistence is not claimed.
+
+Fresh-context independent review APPROVE. Nine focused UI tests, 341migrations/22SQLprobes, supported typecheck and strict UI gate PASS (`test-results/agent-gates/2026-09-08T13-01-19-330Z-section-4-bus001.json`). Final concurrency: two6000-cent requests against10000 yield one payment/receipt, amount_paid6000,balance4000,one rejection. Fault injection covers payment/invoice/receipt/audit rollback. Mission alignment: pass. Not deployed.
+
 ## Remaining sequence
 
-- Section 3 source implementation/review complete; Section 4 is next.
-- Section 4: BUS-001, BUS-002, BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
+- Section 3 source implementation/review complete; Section 4 BUS-001 complete; BUS-002 is next.
+- Section 4 remaining: BUS-002, BUS-003, BUS-006, SYS-006; retain the separately noted SYS-005 partial-resolution scope.
 - Section 5: NAV-004, NAV-005, NAV-008, NAV-010, NAV-011, SYS-007.
 - Section 6: NAV-007, FL-002, FL-008, FL-010, FL-013, FL-014.
 - Section 7: FL-003, FL-004, FL-005, FL-011, SUP-001, SUP-002.

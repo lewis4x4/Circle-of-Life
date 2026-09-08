@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Banknote, Check, Loader2 } from "lucide-react";
@@ -49,6 +49,17 @@ type InvoiceOption = {
 };
 
 type QueryError = { message: string };
+class PaymentConfirmationError extends Error {}
+
+type PaymentRequest = {
+  p_expected_caller: string; p_request_id: string; p_resident_id: string; p_invoice_id: string | null;
+  p_payment_date: string; p_amount_cents: number; p_payment_method: string;
+  p_reference_number: string | null; p_payer_name: string | null; p_notes: string | null;
+};
+type PaymentReceipt = {
+  request_id: string; payment_id: string; resident_id: string;
+  invoice_id: string | null; amount_cents: number; applied_cents: number;
+};
 
 type ResidentRowMini = { id: string; first_name: string | null; last_name: string | null };
 
@@ -95,6 +106,10 @@ export default function AdminNewPaymentPage() {
   const [notes, setNotes] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const request = useRef<PaymentRequest | null>(null);
+  const ambiguous = useRef(false);
+  const requestScope = useRef<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -167,6 +182,20 @@ export default function AdminNewPaymentPage() {
 
         if (err) throw err;
         const rows = data ?? [];
+        // A valid deep link can be older than the first 50 open invoices.
+        // Keep the same resident/status/RLS scope when resolving it directly.
+        if (rid === requestedResidentId && requestedInvoiceId && !rows.some((row) => row.id === requestedInvoiceId)) {
+          const { data: requested, error: requestedError } = (await supabase
+            .from("invoices" as never)
+            .select("id, invoice_number, invoice_date, balance_due, amount_paid, status, period_start, period_end")
+            .eq("id", requestedInvoiceId)
+            .eq("resident_id", rid)
+            .is("deleted_at", null)
+            .in("status", ["draft", "sent", "partial", "overdue"])
+            .maybeSingle()) as { data: InvoiceOption | null; error: QueryError | null };
+          if (requestedError) throw requestedError;
+          if (requested) rows.unshift(requested);
+        }
         setInvoices(rows);
         return rows;
       } catch (err) {
@@ -177,107 +206,74 @@ export default function AdminNewPaymentPage() {
         setInvoicesLoading(false);
       }
     },
-    [supabase],
+    [supabase, requestedResidentId, requestedInvoiceId],
   );
 
   useEffect(() => {
     void loadResidents();
   }, [loadResidents]);
 
-  // Reset the invoice selection when the resident changes, then reconcile the
-  // prefilled invoice against the actually-loaded open invoices: a deep-linked
-  // invoice that is paid/closed/voided is not in the list, so drop it rather
-  // than submitting a payment against an invoice the operator never saw.
-  // The amount field is owned by its useState initializer and stays editable.
+  // A requested invoice remains explicit intent even when it is closed or the
+  // list cannot load. Only an operator selection may turn it into unapplied.
   useEffect(() => {
-    let cancelled = false;
-    const prefillInvoiceId = residentId === requestedResidentId ? requestedInvoiceId : "";
-    setInvoiceId(prefillInvoiceId);
-    if (residentId) {
-      void loadInvoices(residentId).then((rows) => {
-        if (cancelled || !prefillInvoiceId) return;
-        if (!rows.some((i) => i.id === prefillInvoiceId)) setInvoiceId("");
-      });
-    } else {
-      setInvoices([]);
-    }
-    return () => {
-      cancelled = true;
-    };
+    setInvoiceId(residentId === requestedResidentId ? requestedInvoiceId : "");
+    if (residentId) void loadInvoices(residentId);
+    else setInvoices([]);
   }, [loadInvoices, requestedInvoiceId, requestedResidentId, residentId]);
 
   const selectedInvoice = invoices.find((i) => i.id === invoiceId);
   const amountCents = Math.round(parseFloat(amountDollars || "0") * 100);
   const isValid =
-    residentId && amountCents > 0 && paymentMethod && paymentDate;
+    residentId && Number.isSafeInteger(amountCents) && amountCents > 0 && amountCents <= 2147483647 && /^\d+(?:\.\d{1,2})?$/.test(amountDollars) && paymentMethod && paymentDate;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!isValid || submitting) return;
+      if ((!request.current && (!isValid || invoicesLoading || (invoiceId && !selectedInvoice))) || submitting) return;
 
       setSubmitting(true);
       setError(null);
 
       try {
-        const resRow = (await supabase
-          .from("residents" as never)
-          .select("facility_id, organization_id")
-          .eq("id", residentId)
-          .maybeSingle()) as {
-          data: {
-            facility_id: string;
-            organization_id: string;
-          } | null;
-          error: QueryError | null;
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData.session) throw new PaymentConfirmationError("Sign in to confirm this payment with the original account.");
+        const session = sessionData.session;
+        // A renewed session for the same caller can recover the receipt.
+        // The server rechecks current session authority before any receipt return.
+        const scope = JSON.stringify([session.user.id, selectedFacilityId]);
+        if (requestScope.current && requestScope.current !== scope) throw new PaymentConfirmationError("Return to the original account and facility before retrying this payment.");
+        requestScope.current = scope;
+        const args = request.current ?? {
+          p_expected_caller: session.user.id, p_request_id: crypto.randomUUID(), p_resident_id: residentId,
+          p_invoice_id: invoiceId || null, p_payment_date: paymentDate,
+          p_amount_cents: amountCents, p_payment_method: paymentMethod,
+          p_reference_number: referenceNumber.trim() || null,
+          p_payer_name: payerName.trim() || null, p_notes: notes.trim() || null,
         };
-
-        if (resRow.error) throw resRow.error;
-        if (!resRow.data) throw new Error("Resident not found.");
-
-        const entityRow = (await supabase
-          .from("facilities" as never)
-          .select("entity_id")
-          .eq("id", resRow.data.facility_id)
-          .maybeSingle()) as {
-          data: { entity_id: string } | null;
-          error: QueryError | null;
-        };
-
-        if (entityRow.error) throw entityRow.error;
-        if (!entityRow.data) throw new Error("Facility entity not found.");
-
-        const payload = {
-          resident_id: residentId,
-          facility_id: resRow.data.facility_id,
-          organization_id: resRow.data.organization_id,
-          entity_id: entityRow.data.entity_id,
-          invoice_id: selectedInvoice ? invoiceId : null,
-          payment_date: paymentDate,
-          amount: amountCents,
-          payment_method: paymentMethod,
-          reference_number: referenceNumber.trim() || null,
-          payer_name: payerName.trim() || null,
-          notes: notes.trim() || null,
-        };
-
-        const { error: insErr } = await supabase
-          .from("payments" as never)
-          .insert(payload as never);
-        if (insErr) throw insErr;
-
-        if (invoiceId && selectedInvoice) {
-          // Apply atomically server-side (row lock + live balance) so concurrent
-          // payments can't lose an update. RLS still applies (SECURITY INVOKER).
-          await supabase.rpc("apply_invoice_payment" as never, {
-            p_invoice_id: invoiceId,
-            p_amount_cents: amountCents,
-          } as never);
+        request.current = args;
+        setPending(true);
+        const { data, error: commandError } = await supabase.rpc("record_payment" as never, args as never);
+        if (commandError) {
+          // PostgreSQL exceptions confirm transaction rollback. Transport failures
+          // and missing receipts remain ambiguous and must keep their identity.
+          if (!ambiguous.current && ["P0001", "42501", "23514", "23503", "22003", "22007", "22P02"].includes(commandError.code)) {
+            request.current = null;
+            requestScope.current = null;
+            setPending(false);
+          }
+          if (request.current) ambiguous.current = true;
+          throw commandError;
         }
-
+        const receipt = data as PaymentReceipt | null;
+        if (!receipt?.payment_id || receipt.request_id !== args.p_request_id || receipt.amount_cents !== args.p_amount_cents || receipt.resident_id !== args.p_resident_id || receipt.invoice_id !== args.p_invoice_id || receipt.applied_cents !== (args.p_invoice_id ? args.p_amount_cents : 0)) {
+          throw new PaymentConfirmationError("The payment receipt could not be confirmed. Retry this same request.");
+        }
         setSuccess(true);
       } catch (err) {
-        setError(formatLiveDataLoadError(err, "Failed to record payment."));
+        if (request.current) ambiguous.current = true;
+        const rejected = err as { code?: string; message?: string };
+        const message = err instanceof PaymentConfirmationError ? err.message : rejected?.code === "P0001" && rejected.message ? rejected.message : formatLiveDataLoadError(err, "Payment is not confirmed.");
+        setError(message + (request.current ? " Retry the same request to confirm its outcome. Details are locked to prevent a duplicate payment." : " Nothing was recorded. Correct the details and try again."));
       } finally {
         setSubmitting(false);
       }
@@ -294,7 +290,9 @@ export default function AdminNewPaymentPage() {
       referenceNumber,
       payerName,
       notes,
+      selectedFacilityId,
       selectedInvoice,
+      invoicesLoading,
     ],
   );
 
@@ -324,6 +322,10 @@ export default function AdminNewPaymentPage() {
               variant="default"
               size="sm"
               onClick={() => {
+                ambiguous.current = false;
+                requestScope.current = null;
+                request.current = null;
+                setPending(false);
                 setSuccess(false);
                 setResidentId("");
                 setInvoiceId("");
@@ -383,6 +385,7 @@ export default function AdminNewPaymentPage() {
             }}
             className="grid gap-6 sm:grid-cols-2"
           >
+            <fieldset disabled={pending || submitting} className="contents">
             {/* Resident selector */}
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -423,10 +426,6 @@ export default function AdminNewPaymentPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading invoices…
                   </div>
-                ) : invoices.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    No open invoices for this resident.
-                  </p>
                 ) : (
                   <div className="space-y-2">
                     <select
@@ -435,6 +434,7 @@ export default function AdminNewPaymentPage() {
                       className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     >
                       <option value="">Unapplied payment</option>
+                      {invoiceId && !selectedInvoice && <option value={invoiceId}>Selected invoice unavailable — {invoiceId}</option>}
                       {invoices.map((inv) => (
                         <option key={inv.id} value={inv.id}>
                           {formatInvoiceRowNumberForDisplay(inv)} — Balance{" "}
@@ -444,6 +444,7 @@ export default function AdminNewPaymentPage() {
                         </option>
                       ))}
                     </select>
+                    {invoiceId && !selectedInvoice && <p role="alert" className="text-sm text-red-600">The selected invoice is not available as an open invoice. Reload its details or explicitly select another invoice or unapplied payment.</p>}
                     {selectedInvoice && (
                       <div className="flex items-center gap-2">
                         <Badge
@@ -561,6 +562,8 @@ export default function AdminNewPaymentPage() {
               />
             </div>
 
+            </fieldset>
+            {pending && <p className="sm:col-span-2 text-sm">Request: {String(request.current?.p_request_id)}. Keep this page open and retry to recover the confirmed receipt.</p>}
             {error && (
               <div className="sm:col-span-2">
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">
@@ -572,7 +575,7 @@ export default function AdminNewPaymentPage() {
             <div className="sm:col-span-2">
               <Button
                 type="submit"
-                disabled={!isValid || submitting}
+                disabled={submitting || (!pending && (!isValid || invoicesLoading || Boolean(invoiceId && !selectedInvoice)))}
                 className="min-w-[160px]"
               >
                 {submitting ? (
@@ -583,7 +586,7 @@ export default function AdminNewPaymentPage() {
                 ) : (
                   <>
                     <Banknote className="mr-2 h-4 w-4" />
-                    Record payment
+                    {pending ? "Retry same payment" : "Record payment"}
                   </>
                 )}
               </Button>

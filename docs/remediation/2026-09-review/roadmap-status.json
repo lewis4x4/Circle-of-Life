@@ -363,8 +363,16 @@
       "id": "BUS-001",
       "severity": "P1",
       "title": "Payment success does not confirm invoice application",
-      "status": "open",
-      "evidence": []
+      "status": "implemented_reviewed",
+      "evidence": [
+        "supabase/migrations/338_atomic_payment_recording.sql",
+        "supabase/tests/review_section4_payment.sql",
+        "docs/remediation/2026-09-review/section-4-payment-evidence.md",
+        "docs/remediation/2026-09-review/section-4-payment-concurrency-final.json",
+        "docs/remediation/2026-09-review/section-4-payment-review.json",
+        "test-results/agent-gates/2026-09-08T13-01-19-330Z-section-4-bus001.json"
+      ],
+      "notes": "Caller-bound payment, invoice application and immutable receipt commit together. Exact receipts survive source eligibility changes under current same-actor authority. Explicit invoice intent and ambiguous payload are retained; over-allocation rejects without credit-policy invention. Financial identity/delete bypass is protected while deposit/refund metadata remains. Nine focused tests, 341migrations/22probes, same-invoice concurrency, typecheck and UI gate passed; independent review approved. Not deployed."
     },
     {
       "id": "BUS-002",

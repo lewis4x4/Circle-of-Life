@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AdminNewPaymentPage from "./page";
@@ -8,6 +8,8 @@ type AnyRow = Record<string, unknown>;
 const mocks = vi.hoisted(() => ({
   searchParams: new URLSearchParams(""),
   selectedFacilityId: "11111111-1111-1111-1111-111111111111" as string | null,
+  rpc: vi.fn(),
+  actor: "actor",
   client: { from: () => ({}) as unknown },
 }));
 
@@ -31,6 +33,7 @@ function makeClient(opts: {
   residentsList: AnyRow[];
   residentSingle: AnyRow | null;
   invoicesList: AnyRow[];
+  invoiceSingle?: AnyRow | null;
 }) {
   const builder = (listData: AnyRow[], singleData: AnyRow | null) => {
     const q: AnyRow = {
@@ -47,9 +50,11 @@ function makeClient(opts: {
     return q;
   };
   return {
+    auth: { getSession: async () => ({ data: { session: { user: { id: mocks.actor }, access_token: `x.${btoa(JSON.stringify({session_id:"session"}))}.x` } }, error: null }) },
+    rpc: mocks.rpc,
     from: (table: string) => {
       if (table === "residents") return builder(opts.residentsList, opts.residentSingle);
-      if (table === "invoices") return builder(opts.invoicesList, null);
+      if (table === "invoices") return builder(opts.invoicesList, opts.invoiceSingle ?? null);
       return builder([], null);
     },
   };
@@ -81,7 +86,7 @@ describe("AdminNewPaymentPage prefill reconciliation", () => {
     vi.clearAllMocks();
   });
 
-  it("surfaces a deep-linked non-cohort resident and drops a closed prefilled invoice", async () => {
+  it("preserves a deep-linked resident and unavailable invoice intent", async () => {
     const { container } = render(<AdminNewPaymentPage />);
 
     // A1: the prefilled resident (outside the active cohort) is merged in as an option.
@@ -90,14 +95,33 @@ describe("AdminNewPaymentPage prefill reconciliation", () => {
     const selects = () => Array.from(container.querySelectorAll("select"));
     await waitFor(() => expect((selects()[0] as HTMLSelectElement).value).toBe("r-pre"));
 
-    // A2: the invoice select loads and the closed prefill is cleared (not selected).
+    // A2: unavailable invoice intent remains selected until the operator changes it.
     await waitFor(() => {
       const invoiceSelect = selects()[1] as HTMLSelectElement | undefined;
       expect(invoiceSelect).toBeDefined();
-      expect(invoiceSelect!.value).toBe("");
+      expect(invoiceSelect!.value).toBe("inv-closed");
     });
     expect(screen.getByRole("option", { name: /INV-OPEN/ })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: /inv-closed/i })).toBeNull();
+    expect(screen.getByRole("option", { name: /inv-closed/i })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("selected invoice is not available");
+    expect(screen.getByRole("button", { name: "Record payment" })).toBeDisabled();
+  });
+
+  it("resolves a valid requested invoice outside the first page without losing its association", async () => {
+    mocks.searchParams = new URLSearchParams({residentId:"r-a",invoiceId:"inv-older",amount:"10.00"});
+    mocks.client = makeClient({
+      residentsList:[{id:"r-a",first_name:"Amy",last_name:"Active"}],residentSingle:null,
+      invoicesList:Array.from({length:50},(_,index)=>({id:`inv-${index}`,invoice_number:`RECENT-${index}`,balance_due:5000,status:"sent",period_start:"2026-08-01",period_end:"2026-08-31"})),
+      invoiceSingle:{id:"inv-older",invoice_number:"OLDER-OPEN",balance_due:5000,status:"sent",period_start:"2026-01-01",period_end:"2026-01-31"},
+    });
+    render(<AdminNewPaymentPage />);
+    expect(await screen.findByRole("option",{name:/OLDER-OPEN/})).toBeInTheDocument();
+    expect(screen.getAllByRole("combobox")[1]).toHaveValue("inv-older");
+    expect(screen.getByRole("button",{name:"Record payment"})).toBeEnabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    mocks.rpc.mockResolvedValueOnce({data:null,error:{code:"P0001",message:"Test transaction rollback"}});
+    await act(async () => { fireEvent.submit(screen.getByRole("button",{name:"Record payment"}).closest("form")!); });
+    expect(mocks.rpc.mock.lastCall?.[1].p_invoice_id).toBe("inv-older");
   });
 
   it("formats internal persist keys in the invoice picker", async () => {
@@ -146,4 +170,68 @@ describe("AdminNewPaymentPage prefill reconciliation", () => {
       vi.useRealTimers();
     }
   });
+});
+
+describe("atomic payment recording recovery", () => {
+  beforeEach(() => {
+    mocks.rpc.mockReset();
+    mocks.actor = "actor";
+    mocks.selectedFacilityId = "11111111-1111-1111-1111-111111111111";
+    mocks.searchParams = new URLSearchParams({residentId:"r-a", invoiceId:"inv-open", amount:"10.00"});
+    mocks.client = makeClient({ residentsList:[{id:"r-a",first_name:"Amy",last_name:"Active"}], residentSingle:null,
+      invoicesList:[{id:"inv-open",invoice_number:"INV-OPEN",balance_due:5000,status:"sent",period_start:"2026-05-01",period_end:"2026-05-31"}] });
+  });
+  async function submit() {
+    await screen.findByRole("option", {name:/INV-OPEN/});
+    await act(async () => { fireEvent.submit(screen.getByRole("button", {name:"Record payment"}).closest("form")!); });
+  }
+  it("locks an ambiguous attempt and recovers exactly one confirmed receipt", async () => {
+    mocks.rpc.mockResolvedValueOnce({data:null,error:{message:"connection lost"}})
+      .mockImplementationOnce(async (_name, args) => ({error:null,data:{request_id:args.p_request_id,payment_id:"payment",resident_id:args.p_resident_id,invoice_id:args.p_invoice_id,amount_cents:args.p_amount_cents,applied_cents:args.p_amount_cents}}));
+    render(<AdminNewPaymentPage />);
+    await submit();
+    expect(await screen.findByText(/Details are locked/)).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton")).toBeDisabled();
+    expect(screen.queryByText("Payment recorded")).not.toBeInTheDocument();
+    fireEvent.submit(screen.getByRole("button",{name:"Retry same payment"}).closest("form")!);
+    expect(await screen.findByText("Payment recorded")).toBeInTheDocument();
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(2));
+    expect(mocks.rpc.mock.calls[1]).toEqual(mocks.rpc.mock.calls[0]);
+    expect(mocks.rpc.mock.calls[0][0]).toBe("record_payment");
+  });
+  it("allows correction after an initial confirmed rollback", async () => {
+    mocks.rpc.mockResolvedValueOnce({data:null,error:{code:"P0001",message:"Payment must not exceed the current open invoice balance"}});
+    render(<AdminNewPaymentPage />); await submit();
+    expect(await screen.findByText(/Nothing was recorded/)).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton")).not.toBeDisabled();
+  });
+  it("does not unlock an ambiguous request after a later SQL denial", async () => {
+    mocks.rpc.mockRejectedValueOnce(new Error("lost response"))
+      .mockResolvedValueOnce({data:null,error:{code:"42501",message:"access denied"}});
+    render(<AdminNewPaymentPage />); await submit();
+    fireEvent.submit((await screen.findByRole("button",{name:"Retry same payment"})).closest("form")!);
+    expect(await screen.findByText(/Details are locked/)).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton")).toBeDisabled();
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(2));
+    expect(mocks.rpc.mock.calls[1]).toEqual(mocks.rpc.mock.calls[0]);
+  });
+  it("does not report success without a complete matching receipt", async () => {
+    mocks.rpc.mockResolvedValueOnce({data:{payment_id:"payment"},error:null});
+    render(<AdminNewPaymentPage />); await submit();
+    expect(await screen.findByText(/Details are locked/)).toBeInTheDocument();
+    expect(screen.queryByText("Payment recorded")).not.toBeInTheDocument();
+    expect(screen.getByRole("spinbutton")).toBeDisabled();
+  });
+  it("blocks a changed account from retrying and preserves original attribution", async () => {
+    mocks.rpc.mockRejectedValueOnce(new Error("lost response"));
+    render(<AdminNewPaymentPage />); await submit();
+    await screen.findByText(/Details are locked/);
+    expect(mocks.rpc.mock.calls[0][1].p_expected_caller).toBe("actor");
+    mocks.actor = "different-actor";
+    await act(async () => { fireEvent.submit(screen.getByRole("button",{name:"Retry same payment"}).closest("form")!); });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("spinbutton")).toBeDisabled();
+    mocks.actor = "actor";
+  });
+
 });

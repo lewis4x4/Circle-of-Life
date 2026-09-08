@@ -1,0 +1,1 @@
+PASS: concurrent same-invoice payments: one commit, one live-balance rejection; paid=6000, balance=4000, payments=1, receipts=1
