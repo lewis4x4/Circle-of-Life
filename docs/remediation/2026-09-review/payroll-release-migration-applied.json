@@ -1,0 +1,7 @@
+{
+  "version": "334",
+  "name": "payroll_source_freshness",
+  "source_sha256": "4801112cc77b0922807bf81685aa40908e3b6887a74a93cb0749d14d970ef285",
+  "ledger_matches": true,
+  "transaction_committed": true
+}

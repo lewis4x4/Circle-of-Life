@@ -1,0 +1,16 @@
+{
+  "pass": true,
+  "real_auth_helpers": true,
+  "signed_owner_claims": true,
+  "source_test_sha256": "f998af7704996171a8435b48832bf5de5116de3c558e33b3134aa89f4e7b8fc7",
+  "application_grants_unchanged": true,
+  "fixture_transaction_rolled_back": true,
+  "synthetic_staff_remaining": 0,
+  "checks": [
+    "same-line corrected reapproval refresh",
+    "stale export rejection",
+    "excluded reapproval requires refresh",
+    "queued/failed recovery",
+    "historical payload immutability"
+  ]
+}

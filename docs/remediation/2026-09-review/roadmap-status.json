@@ -376,7 +376,7 @@
       "id": "BUS-006",
       "severity": "P2",
       "title": "Payroll exports can retain superseded approved punch values",
-      "status": "implemented_reviewed",
+      "status": "implemented_deployed",
       "evidence": [
         "supabase/migrations/334_payroll_source_freshness.sql",
         "supabase/tests/review_payroll_freshness.sql",
@@ -385,9 +385,11 @@
         "docs/remediation/2026-09-review/section-4-payroll-evidence.md",
         "docs/remediation/2026-09-review/section-4-payroll-review.json",
         "docs/remediation/2026-09-review/PAYROLL-BROWSER-PROOF.md",
+        "docs/remediation/2026-09-review/PAYROLL-RELEASE.md",
+        "docs/remediation/2026-09-review/payroll-release-production-cutover.json",
         "test-results/agent-gates/2026-09-08T14-43-35-176Z-BUS-006-payroll-freshness.json"
       ],
-      "notes": "Same-line approved punch refresh, current export freshness validation, explicit exclusion/restoration and immutable historical values. Reapproved exclusions block export; queued/failed batches retain draft recovery. Ten focused tests, 344 migrations/25 SQL probes, concurrency, typecheck and strict UI gate pass; independent source review approved. Isolated authenticated browser proved stale download rejection, same-line refresh and unchanged historical CSV after later correction. Not deployed."
+      "notes": "Same-line approved punch refresh, current export freshness validation, explicit exclusion/restoration and immutable historical values. Reapproved exclusions block export; queued/failed batches retain draft recovery. Ten focused tests, 344 migrations/25 SQL probes, concurrency, typecheck and strict UI gate pass; independent source review approved. Isolated authenticated browser proved stale download rejection, same-line refresh and unchanged historical CSV after later correction. Released via PR458/mainadb5ecb9 and Netlify6aa028b2a2a7920008189a1d with hosted migration334, signed-owner rollback SQL proof, read-only production browser/API proof. Thirty-minute sampled HTTP monitoring remains in progress; no vendor or named-user acceptance claim."
     },
     {
       "id": "DEP-001",

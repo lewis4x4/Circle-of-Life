@@ -1,0 +1,26 @@
+{
+  "pass": true,
+  "payroll_rpcs": [
+    {
+      "rpc": "payroll_export_snapshot",
+      "status": 403,
+      "code": "42501",
+      "unknown_batch_denied": true
+    },
+    {
+      "rpc": "refresh_payroll_time_records",
+      "status": 403,
+      "code": "42501",
+      "unknown_batch_denied": true
+    },
+    {
+      "rpc": "exclude_payroll_draft_punch",
+      "status": 403,
+      "code": "42501",
+      "unknown_batch_denied": true
+    }
+  ],
+  "only_release_session_signed_out": true,
+  "revoked_session_rejected": 401,
+  "application_records_written": false
+}

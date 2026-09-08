@@ -1,0 +1,126 @@
+{
+  "preview": {
+    "target": "https://deploy-preview-458--circleoflifealf.netlify.app",
+    "commit": "e1f380c1",
+    "at": "2026-09-08T15:26:53.948Z",
+    "checks": [
+      {
+        "route": "/",
+        "status": 200,
+        "finalPath": "/",
+        "observedAt": "2026-09-08T15:23:17Z"
+      },
+      {
+        "route": "/login",
+        "status": 200,
+        "finalPath": "/login",
+        "observedAt": "2026-09-08T15:23:17Z"
+      },
+      {
+        "route": "/admin/payroll",
+        "status": 200,
+        "finalPath": "/admin/payroll",
+        "headings": [
+          "Payroll Export",
+          " Export Batches",
+          "Batches"
+        ],
+        "expectedEmptyState": true,
+        "facilitySelection": "Selected Grande Cypress ALF via actual facility filter menu"
+      }
+    ],
+    "runtimeErrors": [
+      "Framing 'https://app.netlify.com/' violates the following Content Security Policy directive: \"frame-src 'none'\". The request has been blocked.\n"
+    ],
+    "httpErrors": [],
+    "status": "pass",
+    "previewOverlayCsp": [
+      "Framing 'https://app.netlify.com/' violates the following Content Security Policy directive: \"frame-src 'none'\". The request has been blocked.\n"
+    ],
+    "applicationErrors": [],
+    "limitations": [
+      "Read-only preview smoke; no hosted application inserts, updates, deletes or CSV downloads.",
+      "Existing signed owner session reused; no profile changes or CSP bypass.",
+      "Netlify preview overlay iframe is blocked by existing frame-src none CSP; zero application exceptions and zero HTTP errors.",
+      "Payroll has no hosted batches; import, stale-export blocking and historical-value behavior were proven separately in synthetic local browser/database tests."
+    ],
+    "browserClosed": true,
+    "privateEvidenceRoot": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-payroll-release-20260908-01a08175"
+  },
+  "production": {
+    "target": "https://circleoflifealf.com",
+    "commit": "adb5ecb954e901610637fcd4b792ab2753d5c018",
+    "at": "2026-09-08T15:31:33.256Z",
+    "checks": [
+      {
+        "route": "/",
+        "status": 200,
+        "finalPath": "/",
+        "headings": [
+          "Where dignity thrives, and you can be their child again.",
+          "Uncompromising Safety, Proven Regulatory Perfection",
+          "100% Citation-Free AHCA Record",
+          "100% Level 2 FBI Screened Staff",
+          "24/7 Certified Medication eMAR",
+          "Commercial Emergency Generators",
+          "Five Peaceful Estates. One Loving Standard of Care.",
+          "The Plantation on Summers",
+          "Grande Cypress Assisted Living",
+          "Rising Oaks Assisted Living",
+          "Oakridge Assisted Living",
+          "Homewood Lodge Assisted Living",
+          "Interactive Care & Monthly Investment Studio",
+          "A Day in the Life of Your Loved One",
+          "The Gentle Morning Knock",
+          "A Safe, Sunlit Haven of Their Own",
+          "Zero-Barrier Roll-In Safety Shower",
+          "Is It Time for Assisted Living?",
+          "How is your loved one managing their daily medications?",
+          "Food is Fellowship. Every Meal is Made from Scratch.",
+          "Today's Chef Menu",
+          "Built with Love. Designed to Feel Like Home, Not an Institution.",
+          "Conveniently Close to Healthcare, Peaceful Country Setting",
+          "The Plantation on Summers",
+          "Heartfelt Stories from Children Who Found Peace",
+          "Our 5 Communities",
+          "Family Resources",
+          "24/7 Admissions & Crisis"
+        ]
+      },
+      {
+        "route": "/login",
+        "status": 200,
+        "finalPath": "/login",
+        "headings": [
+          "Elevating Human Care."
+        ]
+      },
+      {
+        "route": "/admin/payroll",
+        "status": 200,
+        "finalPath": "/admin/payroll",
+        "headings": [
+          "Payroll Export",
+          " Export Batches",
+          "Batches"
+        ],
+        "expectedEmptyState": true,
+        "facilitySelection": "Selected Grande Cypress ALF through actual facility filter menu"
+      }
+    ],
+    "runtimeErrors": [],
+    "httpErrors": [],
+    "status": "pass",
+    "previewOverlayCsp": [],
+    "applicationErrors": [],
+    "deployId": "6aa028b2a2a7920008189a1d",
+    "browserClosed": true,
+    "normalCsp": true,
+    "hostedApplicationMutations": false,
+    "sessionRevoked": false,
+    "limitations": [
+      "Read-only production browser smoke. No hosted payroll batches exist, so freshness/history behavior is covered by separate SQL rollback regression and synthetic local browser proof."
+    ],
+    "privateEvidenceRoot": "/Users/brianlewis/.hermes/tmp/agent-runs/haven-payroll-release-20260908-01a08175"
+  }
+}

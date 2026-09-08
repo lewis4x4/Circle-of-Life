@@ -1,0 +1,12 @@
+{
+  "site_id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+  "url": "https://circleoflifealf.com",
+  "deploy_id": "6aa028b2a2a7920008189a1d",
+  "commit_ref": "adb5ecb954e901610637fcd4b792ab2753d5c018",
+  "published_at": "2026-09-08T15:31:05.418Z",
+  "verified_at": "2026-09-08T15:31:10.361828+00:00",
+  "state": "ready",
+  "automatic_publishing_restored": true,
+  "migration": "334",
+  "hosted_payroll_probe_passed": true
+}

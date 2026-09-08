@@ -1,0 +1,34 @@
+{
+  "site": {
+    "id": "be2bb95e-ba70-47f8-8d2d-70cd37b9b41a",
+    "name": "circleoflifealf",
+    "ssl_url": "https://circleoflifealf.com"
+  },
+  "published": {
+    "id": "6a9f729d06a33b0008dffd27",
+    "state": "ready",
+    "commit_ref": "9db72d2d8a16e4206e2f62c68712c0775bf8c225",
+    "branch": "main",
+    "published_at": "2026-09-08T02:30:04.729Z"
+  },
+  "build_branch": "main",
+  "migrations": [
+    {
+      "version": "330",
+      "name": "quality_caller_scope_and_corrections"
+    },
+    {
+      "version": "331",
+      "name": "rounding_completion_receipts"
+    },
+    {
+      "version": "332",
+      "name": "resident_search_current_scope"
+    },
+    {
+      "version": "333",
+      "name": "rounding_javascript_whitespace"
+    }
+  ],
+  "payroll_batches": []
+}
