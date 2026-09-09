@@ -31,6 +31,7 @@ jobs:
       - run: npm run test:finance-integration
       - run: npm run test:platform-audit
       - run: npm run test:audit-edge
+      - run: npm run test:finance-webhook
       - run: npm run test:finance-provider-contract
       - name: Required segment gates including SQL replay
         run: npm run segment:gates -- --segment HFA-CI

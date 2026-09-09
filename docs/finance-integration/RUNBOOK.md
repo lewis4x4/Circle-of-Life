@@ -6,6 +6,7 @@ All new external writes remain disabled. Never point migration replay at product
 
 - `npm run test:finance-integration`: executes finance integration Vitest behavioral assertions; emits dated JSON with individual test/acceptance IDs, counts, zero-skip requirement, synthetic target, commit and timing under `test-results/finance-integration`.
 - `npm run test:platform-audit`: executes platform audit Vitest behavioral assertions and emits the same evidence envelope. Shared CSV tests are a narrow starting layer, not complete platform audit coverage.
+- `npm run test:finance-webhook`: executes24 synthetic Deno QBO signature/schema assertions without application permissions and retains case-level JSON, source/test hashes and JUnit. It does not start a receiver or prove durable inbox/provider delivery.
 - `npm run test:audit-edge`: executes Deno audit exporter boundary tests with only CORS environment permission, and retains JUnit plus case-level JSON.
 - `npm run test:finance-provider-contract`: executes four synthetic Node transport/identity assertions, with no provider calls.
 - `npm test`: full source Vitest suite. The generic segment runner does not run it.

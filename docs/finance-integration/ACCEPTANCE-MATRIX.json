@@ -428,10 +428,13 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "integration engineering / security",
-      "evidence": [],
-      "reviewer": null,
+      "evidence": [
+        "docs/finance-integration/F03-WEBHOOK-VALIDATION.md",
+        "test-results/finance-integration/f03-webhook/review.json"
+      ],
+      "reviewer": "root: bounded signature/schema source APPROVE only",
       "verified_at": null,
       "blocked_by": []
     },

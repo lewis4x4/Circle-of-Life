@@ -88,7 +88,8 @@
     "test:platform-audit": "node scripts/finance-integration/run-tests.mjs audit",
     "test:finance-provider": "node scripts/finance-integration/provider-smoke.mjs",
     "test:finance-provider-contract": "node --test scripts/finance-integration/qbo-identity.test.mjs",
-    "test:audit-edge": "node scripts/finance-integration/run-edge-tests.mjs"
+    "test:audit-edge": "node scripts/finance-integration/run-edge-tests.mjs",
+    "test:finance-webhook": "node scripts/finance-integration/run-edge-tests.mjs qbo-webhook"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

@@ -14,7 +14,7 @@
   "baseline_refresh_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
   "upstream_main_commit": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
   "observed_production_deployment_id": "6aa054790bc9d700089b72cb",
-  "candidate_source_base": "786cb210ff47e36fdafcbad63f0962df453433f7",
+  "candidate_source_base": "4c13470c496b5608110021f266584f812dcd66c2",
   "source_review_register": "INDEPENDENT-REVIEWS.json",
   "independent_reviews_scope": "No final release approval; bounded source reviews are in the source review register",
   "candidate_migrations": [
@@ -54,6 +54,11 @@
     "native_sql_probes": 25,
     "gate": "test-results/agent-gates/2026-09-09T04-15-35-939Z-HFA-F03-WORKBENCH.json",
     "real_auth_api": "BLOCKED_EXTERNAL",
-    "provider_and_business_acceptance": "OPEN"
+    "provider_and_business_acceptance": "OPEN",
+    "workbench_ci": {
+      "run_id": 34312150532,
+      "commit": "4c13470c496b5608110021f266584f812dcd66c2",
+      "status": "PASS"
+    }
   }
 }
