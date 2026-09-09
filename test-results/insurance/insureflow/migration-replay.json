@@ -1,0 +1,10 @@
+{
+  "verified_at": "2026-09-09T12:35:46.344788+00:00",
+  "synthetic_only": true,
+  "passed": true,
+  "output": "\n> circle-of-life@0.1.0 migrations:verify:pg\n> node scripts/pg-verify-migrations.mjs\n\n[migrations:verify:pg] PASS (341 migration files, 22 SQL probes; native PostgreSQL with Supabase stubs)\n",
+  "sha256": {
+    "supabase/migrations/338_insureflow_synthetic_receiver.sql": "fcb20df440de9286232c1e62f9282cea3e41554662714cd618703bbbba72a5df",
+    "supabase/tests/review_insureflow_receiver.sql": "9c965b06741c4e42b282571b91bc0cbe889f6e33eb7905506aae5e75793cfde7"
+  }
+}

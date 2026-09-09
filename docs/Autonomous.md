@@ -856,3 +856,17 @@ Run: `git log -15 --oneline` — see commit history for reports UX, doc syncs, T
 | **Segment** | `docs-index-317` |
 | **Mission alignment** | `pass` — index-only; no schema or clinical behavior change. |
 | **BUILD** | README / UNIFIED-ROADMAP / PHASE1-ENV-CONFIRMATION now say next free DDL **`317`**, remote tracking through **`316`**, Track F **built except F4-1**, 37 Edge Function folders. |
+
+## 2026-09-09 — INSUREFLOW-RECEIVER-SYNTHETIC
+
+BOOT: User supplied the source ZIP and confirmed mixed-validity semantics. Work is isolated on `codex/haven-insureflow-receiver`, stacked on insurance PR 462. Source hashes verified; authoring implementation is uncommitted, not represented by its surrounding HEAD.
+
+FIND: Valid complete controls require atomic membership/withdrawal reconciliation despite malformed bodies. Invalid controls reject the page. Agency source summaries require a separate namespace, explicit entity mapping and freshness; no premium conversion or automatic policy/financial/document/AI writes.
+
+RECORD: Implement a synthetic-only receiver, fenced atomic state, read-time visibility projection and read-only agency summaries route. Live transport remains unavailable. Mission alignment: pass for scoped implementation; live acceptance remains blocked on staging configuration, mapping/readers, freshness/withdrawal timing and retention decisions. Verification and exact completion evidence are recorded in `docs/insurance/insureflow/` and the segment gate artifact.
+
+## 2026-09-09 — INSUREFLOW-RECOVERY-EPISODES
+
+FIND: A final repeated-scope-return regression reproduced retry-budget exhaustion after three successful recoveries of the same immutable release. A later recovery incident inherited the completed incident's attempts.
+
+RECORD: Reset attempts only when previously resolved work becomes pending again. Preserve the three-attempt limit for unresolved work and all immutable hash/conflict history. Added a four-cycle regression and independent reproduction; this is a bounded follow-up to PR463, with no database/API/UI or live activation change. Mission alignment: pass.

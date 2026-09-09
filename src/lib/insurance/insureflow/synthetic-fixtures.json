@@ -1,0 +1,608 @@
+{
+  "fixture_format_version": 1,
+  "synthetic_only": true,
+  "description": "All identifiers, organizations, dates and amounts are fabricated. Each scenarios entry contains a provider-shaped v1 envelope. fault_injection_cases are deliberately malformed RECEIVER TEST INPUTS, not examples of guaranteed provider output. Never configure these IDs as a real client crosswalk.",
+  "synthetic_crosswalk_example": {
+    "source_integration_id": "10000000-0000-4000-8000-000000000001",
+    "source_account_id": "20000000-0000-4000-8000-000000000001",
+    "haven_organization_id": "50000000-0000-4000-8000-000000000001",
+    "haven_entity_id": "60000000-0000-4000-8000-000000000001",
+    "approved_for": "synthetic local tests only"
+  },
+  "scenarios": [
+    {
+      "name": "initial_approved_release",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=0&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:01:00Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "release_id": "40000000-0000-4000-8000-000000000001",
+              "sequence": "1"
+            }
+          ],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000001",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "1",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000001",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-GL-0001",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-10-01",
+                "expiration_date": "2027-10-01",
+                "premium": 12500.25,
+                "status": "active"
+              },
+              "created_at": "2026-10-01T00:00:00Z"
+            }
+          ],
+          "next_cursor": "1",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "After synthetic account mapping approval, display release 1 only. Preserve premium as an informational JSON number, with no assumed currency or period."
+    },
+    {
+      "name": "superseded_page_one",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=0&limit=1"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:11:00Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "release_id": "40000000-0000-4000-8000-000000000002",
+              "sequence": "2"
+            }
+          ],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000001",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "1",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:00:00Z"
+            }
+          ],
+          "next_cursor": "1",
+          "has_more": true
+        }
+      },
+      "expected_receiver_behavior": "Replace the complete manifest with release 2. Hide cached release 1 while release 2 body is missing. Same event ID 1 is redacted by current authorization, not an immutable-body conflict."
+    },
+    {
+      "name": "superseded_page_two",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=1&limit=1"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:11:01Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "release_id": "40000000-0000-4000-8000-000000000002",
+              "sequence": "2"
+            }
+          ],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000002",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "2",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000001",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-GL-0001",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-10-01",
+                "expiration_date": "2027-10-01",
+                "premium": 13000.5,
+                "status": "active"
+              },
+              "created_at": "2026-10-01T00:10:00Z"
+            }
+          ],
+          "next_cursor": "2",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "Use this response complete manifest, not a union with prior pages. Display only release 2 after validation and mapping checks."
+    },
+    {
+      "name": "alternate_page_two_withdrawal_between_pages",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=1&limit=1"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:14:01Z",
+          "current_authorized_releases": [],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000002",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "2",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:10:00Z"
+            }
+          ],
+          "next_cursor": "2",
+          "has_more": true
+        }
+      },
+      "expected_receiver_behavior": "Alternative branch: withdrawal occurred after superseded_page_one and before this page. Replace the earlier manifest with this empty complete manifest immediately, despite has_more=true. Event 2 is redacted; never restore release 2 from the first page manifest. Continue at after=2 to read explicit_withdrawal.",
+      "alternative_continuation_of": "superseded_page_one",
+      "continue_with": "explicit_withdrawal"
+    },
+    {
+      "name": "empty_delta_source_moved_out",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=2&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:12:00Z",
+          "current_authorized_releases": [],
+          "events": [],
+          "next_cursor": "2",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "Hide this integration imported policy despite zero new events and unchanged cursor. Leave unrelated Haven manual policies untouched."
+    },
+    {
+      "name": "empty_delta_source_returned_to_scope",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=2&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:13:00Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "release_id": "40000000-0000-4000-8000-000000000002",
+              "sequence": "2"
+            }
+          ],
+          "events": [],
+          "next_cursor": "2",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "The original release is authorized again without a new event. If its body is absent, schedule replay recovery; do not invent a payload or increment a policy version."
+    },
+    {
+      "name": "recovery_replay_from_zero",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=0&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:13:01Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "release_id": "40000000-0000-4000-8000-000000000002",
+              "sequence": "2"
+            }
+          ],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000001",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "1",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:00:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000002",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "2",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000001",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-GL-0001",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-10-01",
+                "expiration_date": "2027-10-01",
+                "premium": 13000.5,
+                "status": "active"
+              },
+              "created_at": "2026-10-01T00:10:00Z"
+            }
+          ],
+          "next_cursor": "2",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "Recover only release 2 body; keep normal cursor at 2. Freshly poll normal cursor before publishing recovery. Local lease and mapping checks still apply."
+    },
+    {
+      "name": "explicit_withdrawal",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=2&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:14:01Z",
+          "current_authorized_releases": [],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000003",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "3",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:14:00Z"
+            }
+          ],
+          "next_cursor": "3",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "Remove current imported visibility. This is withdrawal of a shared summary, not cancellation of the business policy."
+    },
+    {
+      "name": "replay_after_withdrawal",
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=0&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-01T00:14:02Z",
+          "current_authorized_releases": [],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000001",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "1",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:00:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000002",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "2",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:10:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000003",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "3",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-01T00:14:00Z"
+            }
+          ],
+          "next_cursor": "3",
+          "has_more": false
+        }
+      },
+      "expected_receiver_behavior": "No historical released payload is available. Replaying cursor 0 must not resurrect either old summary."
+    }
+  ],
+  "scenario_usage": "The named alternate_page_two_withdrawal_between_pages is an alternative continuation of superseded_page_one, followed by explicit_withdrawal. Other scenarios cover the normal pagination and move-out/move-back path. Do not concatenate all scenario manifests.",
+  "fault_injection_cases": [
+    {
+      "name": "valid_controls_bad_date_and_unrelated_withdrawal",
+      "classification": "valid-control-envelope-invalid-released-body",
+      "intentionally_malformed": true,
+      "initial_receiver_state": {
+        "cursor": "4",
+        "current_authorized_releases": [
+          {
+            "policy_id": "30000000-0000-4000-8000-000000000001",
+            "release_id": "40000000-0000-4000-8000-000000000004",
+            "sequence": "4"
+          }
+        ],
+        "visible_records": [
+          {
+            "release_id": "40000000-0000-4000-8000-000000000004",
+            "snapshot": {
+              "schema_version": 1,
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "account_id": "20000000-0000-4000-8000-000000000001",
+              "policy_number": "SYNTHETIC-GL-0001",
+              "carrier": "Synthetic Example Carrier",
+              "line_of_business": "commercial_general_liability",
+              "named_insured": "Synthetic Care Operations LLC",
+              "effective_date": "2026-10-01",
+              "expiration_date": "2027-10-01",
+              "premium": 12500.25,
+              "status": "active"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=4&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-02T00:08:00Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000002",
+              "release_id": "40000000-0000-4000-8000-000000000006",
+              "sequence": "6"
+            },
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000003",
+              "release_id": "40000000-0000-4000-8000-000000000007",
+              "sequence": "7"
+            }
+          ],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000005",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "5",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-02T00:05:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000006",
+              "policy_id": "30000000-0000-4000-8000-000000000002",
+              "sequence": "6",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000002",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-BAD-DATE-0002",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-02-30",
+                "expiration_date": "2027-10-01",
+                "premium": 12500.25,
+                "status": "active"
+              },
+              "created_at": "2026-10-02T00:06:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000007",
+              "policy_id": "30000000-0000-4000-8000-000000000003",
+              "sequence": "7",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000003",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-VALID-0003",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-10-01",
+                "expiration_date": "2027-10-01",
+                "premium": 12500.25,
+                "status": "active"
+              },
+              "created_at": "2026-10-02T00:07:00Z"
+            }
+          ],
+          "next_cursor": "7",
+          "has_more": false
+        }
+      },
+      "expected_outcome": {
+        "page_controls_accepted": true,
+        "committed_cursor": "7",
+        "visible_policy_ids": [
+          "30000000-0000-4000-8000-000000000003"
+        ],
+        "hidden_policy_ids": [
+          "30000000-0000-4000-8000-000000000001",
+          "30000000-0000-4000-8000-000000000002"
+        ],
+        "quarantine_event_ids": [
+          "40000000-0000-4000-8000-000000000006"
+        ],
+        "durable_recovery_event_ids": [
+          "40000000-0000-4000-8000-000000000006"
+        ],
+        "sync_state": "degraded",
+        "transaction_rule": "Commit manifest replacement, valid body receipt, safe quarantine/recovery, visibility and cursor together. Rollback/crash before commit leaves initial state and cursor 4; retry deduplicates receipts.",
+        "retention_rule": "Do not persist raw unknown fields or offending date text by default; safe IDs, hash, diagnostic code and validator version suffice."
+      }
+    },
+    {
+      "name": "invalid_control_manifest_duplicate_reject_entire_page",
+      "classification": "invalid-control-envelope",
+      "intentionally_malformed": true,
+      "initial_receiver_state": {
+        "cursor": "4",
+        "current_authorized_releases": [
+          {
+            "policy_id": "30000000-0000-4000-8000-000000000001",
+            "release_id": "40000000-0000-4000-8000-000000000004",
+            "sequence": "4"
+          }
+        ],
+        "visible_records": [
+          {
+            "release_id": "40000000-0000-4000-8000-000000000004",
+            "snapshot": {
+              "schema_version": 1,
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "account_id": "20000000-0000-4000-8000-000000000001",
+              "policy_number": "SYNTHETIC-GL-0001",
+              "carrier": "Synthetic Example Carrier",
+              "line_of_business": "commercial_general_liability",
+              "named_insured": "Synthetic Care Operations LLC",
+              "effective_date": "2026-10-01",
+              "expiration_date": "2027-10-01",
+              "premium": 12500.25,
+              "status": "active"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "GET",
+        "path": "/functions/v1/haven-policy-feed?after=4&limit=100"
+      },
+      "response": {
+        "success": true,
+        "data": {
+          "schema_version": 1,
+          "integration_id": "10000000-0000-4000-8000-000000000001",
+          "as_of": "2026-10-02T00:08:00Z",
+          "current_authorized_releases": [
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000002",
+              "release_id": "40000000-0000-4000-8000-000000000006",
+              "sequence": "6"
+            },
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000003",
+              "release_id": "40000000-0000-4000-8000-000000000007",
+              "sequence": "7"
+            },
+            {
+              "policy_id": "30000000-0000-4000-8000-000000000002",
+              "release_id": "40000000-0000-4000-8000-000000000006",
+              "sequence": "6"
+            }
+          ],
+          "events": [
+            {
+              "id": "40000000-0000-4000-8000-000000000005",
+              "policy_id": "30000000-0000-4000-8000-000000000001",
+              "sequence": "5",
+              "kind": "withdrawn",
+              "snapshot": null,
+              "created_at": "2026-10-02T00:05:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000006",
+              "policy_id": "30000000-0000-4000-8000-000000000002",
+              "sequence": "6",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000002",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-BAD-DATE-0002",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-02-30",
+                "expiration_date": "2027-10-01",
+                "premium": 12500.25,
+                "status": "active"
+              },
+              "created_at": "2026-10-02T00:06:00Z"
+            },
+            {
+              "id": "40000000-0000-4000-8000-000000000007",
+              "policy_id": "30000000-0000-4000-8000-000000000003",
+              "sequence": "7",
+              "kind": "released",
+              "snapshot": {
+                "schema_version": 1,
+                "policy_id": "30000000-0000-4000-8000-000000000003",
+                "account_id": "20000000-0000-4000-8000-000000000001",
+                "policy_number": "SYNTHETIC-VALID-0003",
+                "carrier": "Synthetic Example Carrier",
+                "line_of_business": "commercial_general_liability",
+                "named_insured": "Synthetic Care Operations LLC",
+                "effective_date": "2026-10-01",
+                "expiration_date": "2027-10-01",
+                "premium": 12500.25,
+                "status": "active"
+              },
+              "created_at": "2026-10-02T00:07:00Z"
+            }
+          ],
+          "next_cursor": "7",
+          "has_more": false
+        }
+      },
+      "expected_outcome": {
+        "page_controls_accepted": false,
+        "committed_cursor": "4",
+        "quarantine_event_ids": [],
+        "durable_recovery_event_ids": [],
+        "sync_state": "failed",
+        "transaction_rule": "Reject page before trusting any member/body. Do not alter prior membership or cursor; independent freshness/disconnect policy still applies. Store only sanitized page-failure metadata, not untrusted event/body receipts.",
+        "stored_projection_policy_ids_unchanged": [
+          "30000000-0000-4000-8000-000000000001"
+        ],
+        "display_visibility": "Not asserted after a failed control page; the independently configured health, disconnect and freshness checks govern actual display."
+      }
+    }
+  ],
+  "fault_injection_usage": "Each fault-injection case is independent and starts from its stated initial_receiver_state. Validate controls before snapshot bodies. The invalid-control case intentionally also contains a bad body; page rejection must take precedence. Neither case should be included in a validator that expects every fixture to be a valid provider response."
+}
