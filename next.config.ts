@@ -90,6 +90,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname_resolved,
   },
+  // Keep the production build aligned with Haven's existing application
+  // typecheck project. Vitest executes the separate test-source project.
+  typescript: {
+    tsconfigPath: "tsconfig.typecheck.json",
+  },
   /**
    * Route group `(admin)` omits `admin` from the path; `/training` etc. would bypass `/admin/...` URL expectations.
    * Only segments with both `(admin)/<segment>/page.tsx` and `admin/<segment>/page.tsx` are listed.
@@ -122,7 +127,11 @@ const nextConfig: NextConfig = {
     return [
       ...segments.flatMap((seg) => [
         { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
-        { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
+        {
+          source: `/${seg}/:path*`,
+          destination: `/admin/${seg}/:path*`,
+          permanent: true,
+        },
       ]),
       {
         source: "/pipeline/discharge-transition/new",
@@ -172,6 +181,22 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [...securityHeaders],
+      },
+      {
+        // Evidence review embeds only the authorized same-origin document stream.
+        source: "/admin/insurance/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: cspDirectives
+              .map((directive) =>
+                directive === "frame-src 'none'"
+                  ? "frame-src 'self'"
+                  : directive,
+              )
+              .join("; "),
+          },
+        ],
       },
     ];
   },

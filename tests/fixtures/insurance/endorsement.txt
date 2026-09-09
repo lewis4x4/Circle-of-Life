@@ -1,0 +1,7 @@
+SYNTHETIC INSURANCE TEST FIXTURE - NOT REAL COVERAGE
+PAGE 1
+Endorsement to TEST-SHARED-2026
+Effective date of change: 2026-07-01
+Add scheduled location: Example West - 4 Example Lane
+The policy inception remains 2026-01-01 and expiration remains 2027-01-01.
+The existing $2,000,000.00 aggregate remains shared by all locations.

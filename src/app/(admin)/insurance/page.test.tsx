@@ -1,77 +1,98 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import AdminInsuranceHubPage, { INSURANCE_HUB_LOADING_PROFILE_COPY } from "./page";
-
-const authMock = vi.hoisted(() => ({
+import Page from "./page";
+import { workspaceFixture } from "@/components/insurance/test-support/fixtures";
+const auth = vi.hoisted(() => ({
   loading: true,
   organizationId: null as string | null,
   appRole: "owner",
+  user: { id: "user-1" },
 }));
-
-const queryMock = vi.hoisted(() => ({
-  overviewError: null as Error | null,
+vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => auth }));
+vi.mock("@/hooks/useFacilityStore", () => ({
+  useFacilityStore: (select: (s: { selectedFacilityId: null }) => unknown) =>
+    select({ selectedFacilityId: null }),
 }));
-
-vi.mock("@/contexts/haven-auth-context", () => ({
-  useHavenAuth: () => ({
-    organizationId: authMock.organizationId,
-    appRole: authMock.appRole,
-    loading: authMock.loading,
-  }),
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/insurance",
+  useParams: () => ({}),
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
-
-vi.mock("@/lib/supabase/client", () => ({
-  createClient: () => ({}),
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: ({ queryKey }: { queryKey: string[] }) =>
-    queryKey[1] === "hub-overview"
-      ? { data: undefined, isPending: true, error: queryMock.overviewError }
-      : { data: undefined, isPending: true, error: null },
-}));
-
-vi.mock("./insurance-hub-nav", () => ({
-  InsuranceHubNav: () => <nav aria-label="Insurance hub" />,
-}));
-
-describe("AdminInsuranceHubPage organization context", () => {
+describe("Insurance workspace scope and recovery", () => {
   beforeEach(() => {
-    authMock.loading = true;
-    authMock.organizationId = null;
-    authMock.appRole = "owner";
-    queryMock.overviewError = null;
+    auth.loading = true;
+    auth.organizationId = null;
+    auth.appRole = "owner";
+    vi.stubGlobal("fetch", vi.fn());
   });
-
-  it("names the wait and suppresses organization gaps while auth hydrates", () => {
-    render(<AdminInsuranceHubPage />);
-
-    expect(screen.getByRole("status")).toHaveTextContent(INSURANCE_HUB_LOADING_PROFILE_COPY);
-    expect(screen.getByText("Role context will appear when the operator profile is ready.")).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
+  it("waits for profile before requesting data or offering management actions", () => {
+    render(<Page />);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Loading insurance profile",
+    );
+    expect(fetch).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("link", { name: "Upload insurance document" }),
+    ).not.toBeInTheDocument();
   });
-
-  it("shows the named quiet gap after auth resolves without an organization", () => {
-    authMock.loading = false;
-
-    render(<AdminInsuranceHubPage />);
-
-    expect(screen.getByText("No organization on this profile")).toBeInTheDocument();
-    expect(screen.queryByText("Organization missing on profile.")).not.toBeInTheDocument();
+  it("shows the quiet missing organization state after hydration", () => {
+    auth.loading = false;
+    render(<Page />);
+    expect(
+      screen.getByText("No organization on this profile"),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
-
-  it("keeps genuine overview failures in the alert lane", () => {
-    authMock.loading = false;
-    authMock.organizationId = "00000000-0000-4000-8000-00000000org1";
-    queryMock.overviewError = new Error("Unable to load insurance overview.");
-
-    render(<AdminInsuranceHubPage />);
-
-    expect(screen.getByRole("alert")).toHaveTextContent("Unable to load insurance overview.");
-    expect(screen.queryByText("No organization on this profile")).not.toBeInTheDocument();
+  it("recovers a failed request without showing a reassuring zero", async () => {
+    auth.loading = false;
+    auth.organizationId = "org";
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "Workspace unavailable" }), {
+          status: 503,
+        }),
+      )
+      .mockResolvedValueOnce(Response.json(workspaceFixture()));
+    render(<Page />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Workspace unavailable",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Retry loading insurance" }),
+    );
+    expect(await screen.findByText("Not established")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Client retained costs: Unknown/),
+    ).toBeInTheDocument();
+  });
+  it("discards a late owner response after role revocation", async () => {
+    auth.loading = false;
+    auth.organizationId = "org";
+    let finish: (r: Response) => void = () => {};
+    vi.mocked(fetch)
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ ...workspaceFixture(), can_manage: false }),
+      );
+    const view = render(<Page />);
+    auth.appRole = "facility_admin";
+    view.rerender(<Page />);
+    await screen.findByText("Managed by insurance reviewers");
+    finish(Response.json(workspaceFixture()));
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Premiums and retained costs"),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("link", { name: "Upload insurance document" }),
+    ).not.toBeInTheDocument();
   });
 });

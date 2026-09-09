@@ -1,0 +1,22 @@
+SYNTHETIC INSURANCE TEST FIXTURE - NOT REAL COVERAGE
+PAGE 1
+Declarations
+Named insured: Example Care Holdings LLC
+Carrier: Example Mutual Test Company
+Policy number: TEST-SHARED-2026
+Coverage: General liability
+Effective: 2026-01-01
+Expires: 2027-01-01
+Stated annual premium: $90,000.00
+Each occurrence limit: $1,000,000.00
+Shared general aggregate: $2,000,000.00 across all scheduled locations
+Deductible: $5,000.00
+PAGE 2
+Scheduled locations effective 2026-01-01
+Example North - 1 Example Lane
+Example South - 2 Example Lane
+Example East - 3 Example Lane
+The general aggregate is shared by all locations; it is not a separate limit for each location.
+PAGE 3
+SYNTHETIC TEST NOTICE
+This file contains no real insured, policy or coverage.

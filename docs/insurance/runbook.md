@@ -1,0 +1,29 @@
+# Insurance workspace operating contract
+
+## Document custody and processing
+Only current owner/org_admin actors can upload, review or fetch originals. Facility administrators receive approved scoped summaries and may request certificates. A broker role alone grants no insurance data access. Policy lifecycle and verification are distinct: verifying a cancelled record never reinstates coverage.
+
+Upload PDF or UTF-8 text (maximum4MiB) using Upload insurance document. The server validates bytes and hashes originals, stores them without overwrite in private insurance-originals, and only then completes processing. Re-upload identical bytes to recover an interrupted storage/scan operation. Private documents are streamed through an authenticated same-origin API with no-store headers; never use a public bucket or agency credentials in a browser. Legacy facility-vault records categorized insurance_* and their prior versions remain under manager custody; ordinary facility documents keep their original access. Unclassified legacy copies require a custody inventory before real rollout.
+
+PDF structural checks reject incomplete, encrypted or active/embedded-content documents. They are not a malware certification. INSURANCE_SCANNER_URL optionally configures a scanner with an exact hostname allowlist INSURANCE_SCANNER_ALLOWED_HOSTS and server-only INSURANCE_SCANNER_TOKEN. Scanner POST receives binary bytes with content type; response must be JSON {status:clean|infected|unknown}. Only clean clears a configured scan; failed/unknown/infected results preserve quarantine.
+
+Extraction starts only when a manager asks for a review draft. Unsupported document families remain manual review. Policy/declarations can use either an independently deployed restricted adapter or explicit OpenAI opt-in; neither can approve policies. Network/deadline/malformed response failures keep the original and expose retry; abandoned processing leases become retryable after expiration. Reprocessing creates another draft and never overwrites an approved term.
+
+Restricted adapter: INSURANCE_EXTRACTOR_URL (HTTPS, no redirects), exact comma-separated INSURANCE_EXTRACTOR_ALLOWED_HOSTS, optional server-only INSURANCE_EXTRACTOR_TOKEN. POST JSON {instructions,filename,mime_type,file_base64}; return {payload,evidence} matching src/lib/insurance/workspace-types.ts. Requests use authenticated scoped originals; provider-supplied entity/facility IDs are not trusted. Adapter response body is capped at1MiB and complete processing response is deadline-bound.
+
+OpenAI alternative: INSURANCE_OPENAI_ENABLED=true, explicit INSURANCE_OPENAI_MODEL and existing OPENAI_API_KEY. Uses Responses API with store:false and inline PDF input_file, no persisted provider Files object. Do not assume store:false changes all provider retention obligations; establish the actual processing arrangement before enabling. Official interface reference: https://developers.openai.com/api/docs/guides/file-inputs . No provider was called in implementation verification.
+
+## Review and publication
+Review fields beside original pages. Missing values remain unknown. Resolve exact entity and dated location matches; keep original wording/evidence. Every critical field, populated amount, shared-limit declaration and relationship needs source evidence or a labeled manual reason. Changes invalidate the review confirmation. Approve only the displayed saved revision; stale concurrent changes require reload and review.
+
+Use Verify existing policy to retain its ID and existing claim/allocation links. New policy creates another term; renewal links a successor. Endorsements cannot alter term identity/inception/expiration and must preserve the schedule before the change date. A later re-add must be a separate dated interval. Additional coverage lines do not duplicate the term premium. Approved revision history is immutable.
+
+Renewal tasks default to the approving manager and120/90/60/30-day milestones. Configure owner/milestones; readding a system-superseded reminder restores it, while completed or deliberately dismissed tasks remain closed. Certificate requests stay requested/acknowledged/needs information until a manager attaches ready issued-certificate evidence. Uploading a certificate does not create a policy.
+
+## Verification and release
+Run npm test, npm run typecheck and npm run segment:gates -- --segment <scope> --ui. Require migration replay; native PostgreSQL replay may use only the run-owned scratch cluster with Supabase stubs. See acceptance.md and core-validation.md for evidence boundaries and failed attempts. Browser component smoke with mocked APIs verifies browser interactions/PDF rendering separately from real SQL/RPC tests; it cannot establish hosted Auth/Storage behavior.
+
+Before rollout: reconcile migration versions against the chosen project; apply forward migration in staging, verify actual current/revoked/foreign users through Auth, PostgREST, direct Storage, exports and audit queries, evaluate representative authorized/redacted document samples, name reviewers and task owners, and confirm the actual entity roster. No entity/ownership relationships are fabricated by installation. Existing Haven clinical and employee-file acceptance records remain unchanged.
+
+## Hosting envelope
+The buffered multipart endpoint caps originals at4MiB, leaving headroom beneath Netlify's effective4.5MB binary request ceiling. Larger packets must be split into smaller source sections; a reviewed policy may cite several documents. This is an explicit intake limit, not a claim that a20MiB buffered upload will work on hosting. A future direct-to-storage multipart path can raise the limit after separate custody/idempotency testing. Hosting reference: https://docs.netlify.com/build/functions/configuration/ .

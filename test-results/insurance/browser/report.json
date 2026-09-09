@@ -1,0 +1,294 @@
+{
+  "pdf_csp_mode": "sandbox",
+  "fixture_only": true,
+  "scope": "Real Chromium; unchanged Haven components and CSS; mocked auth, Next navigation and insurance API. No production access, provider extraction or database authorization claim.",
+  "checks": [
+    {
+      "name": "upload failure and retained-file retry",
+      "passed": true,
+      "detail": {
+        "attempts": 2
+      }
+    },
+    {
+      "name": "extraction failure and manual-review fallback",
+      "passed": true,
+      "detail": {
+        "attempts": 2
+      }
+    },
+    {
+      "name": "same-origin PDF transport to browser frame",
+      "passed": true,
+      "detail": {
+        "pdf_requests": [
+          {
+            "method": "GET",
+            "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333"
+          }
+        ],
+        "frames": [
+          {
+            "url": "http://127.0.0.1:5173/admin/insurance/documents/33333333-3333-4333-8333-333333333333",
+            "name": ""
+          },
+          {
+            "url": "http://127.0.0.1:5173/api/insurance/documents/33333333-3333-4333-8333-333333333333#page=1",
+            "name": ""
+          },
+          {
+            "url": "chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html",
+            "name": "23B64F7C2CFAAEC456692A82A565CC81"
+          },
+          {
+            "url": "http://127.0.0.1:5173/api/insurance/documents/33333333-3333-4333-8333-333333333333#page=1",
+            "name": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "native PDF viewer displays requested page",
+      "passed": true,
+      "detail": {
+        "page": 2,
+        "inputs": [
+          [
+            {
+              "type": "text",
+              "value": "46%",
+              "label": "Zoom level",
+              "title": ""
+            },
+            {
+              "type": "text",
+              "value": "2",
+              "label": "Page number",
+              "title": ""
+            }
+          ]
+        ],
+        "original_csp": "sandbox; default-src 'none'; frame-ancestors 'self'",
+        "outer_frame_src": "'self'"
+      }
+    },
+    {
+      "name": "source page and per-field evidence controls",
+      "passed": true,
+      "detail": {
+        "source_page": 2,
+        "manual_fields": 8,
+        "document_fields": 1
+      }
+    },
+    {
+      "name": "responsive mobile width",
+      "passed": true,
+      "detail": {
+        "viewport": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "manual draft save and explicit approval navigate to one verified policy",
+      "passed": true,
+      "detail": {
+        "save_calls": 1,
+        "approvals": 1,
+        "premium_cents": null
+      }
+    }
+  ],
+  "screenshots": [
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/document-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/draft-desktop.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/draft-mobile.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/draft-mobile-facts.png",
+    "/Users/brianlewis/Circle of Life/Haven Insurance Workspace/test-results/insurance/browser/policy-desktop.png"
+  ],
+  "axe": [
+    {
+      "name": "draft-desktop",
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "draft-mobile",
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "policy-desktop",
+      "violations": [],
+      "incomplete": []
+    }
+  ],
+  "errors": [],
+  "api_commands": [
+    {
+      "action": "save_draft",
+      "payload": {
+        "id": "47ac50bc-d3c5-40b9-b970-82af469a6dbd",
+        "kind": "new_policy",
+        "document_id": "33333333-3333-4333-8333-333333333333",
+        "payload": {
+          "entity_id": "11111111-1111-4111-8111-111111111111",
+          "policy_type": "general_liability",
+          "carrier_name": "Example carrier",
+          "broker_name": null,
+          "policy_number": "GL-123",
+          "effective_date": "2026-09-01",
+          "expiration_date": "2027-09-01",
+          "premium_cents": null,
+          "aggregate_limit_cents": null,
+          "occurrence_limit_cents": null,
+          "deductible_cents": null,
+          "premium_period": null,
+          "notes": null,
+          "shared_limit": true,
+          "parties": [
+            {
+              "entity_id": "11111111-1111-4111-8111-111111111111",
+              "role": "primary_named_insured",
+              "effective_from": "2026-09-01",
+              "effective_to": null
+            }
+          ],
+          "facilities": [
+            {
+              "facility_id": "22222222-2222-4222-8222-222222222222",
+              "role": "scheduled_location",
+              "effective_from": "2026-09-01",
+              "effective_to": null
+            }
+          ],
+          "coverages": []
+        },
+        "evidence": {
+          "entity_id": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "policy_type": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "carrier_name": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "effective_date": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "expiration_date": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "shared_limit": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "parties.0": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "facilities.0": {
+            "source": "manual",
+            "reason": "Synthetic reviewer checked the sample declarations and dated schedule."
+          },
+          "policy_number": {
+            "source": "document",
+            "document_id": "33333333-3333-4333-8333-333333333333",
+            "page": 2,
+            "excerpt": "Policy number: GL-123"
+          }
+        }
+      }
+    },
+    {
+      "action": "approve_draft",
+      "payload": {
+        "id": "47ac50bc-d3c5-40b9-b970-82af469a6dbd",
+        "revision": 1,
+        "confirm_evidence": true
+      }
+    }
+  ],
+  "native_pdf_inputs": [
+    [
+      {
+        "type": "text",
+        "value": "46%",
+        "label": "Zoom level",
+        "title": ""
+      },
+      {
+        "type": "text",
+        "value": "2",
+        "label": "Page number",
+        "title": ""
+      }
+    ]
+  ],
+  "browser": "147.0.7727.15",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/insurance/workspace"
+    },
+    {
+      "method": "POST",
+      "path": "/api/insurance/documents"
+    },
+    {
+      "method": "POST",
+      "path": "/api/insurance/documents"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333"
+    },
+    {
+      "method": "POST",
+      "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333/extract"
+    },
+    {
+      "method": "POST",
+      "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333/extract"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/documents/33333333-3333-4333-8333-333333333333"
+    },
+    {
+      "method": "POST",
+      "path": "/api/insurance/workspace"
+    },
+    {
+      "method": "POST",
+      "path": "/api/insurance/workspace"
+    },
+    {
+      "method": "GET",
+      "path": "/api/insurance/workspace"
+    }
+  ],
+  "passed": true
+}

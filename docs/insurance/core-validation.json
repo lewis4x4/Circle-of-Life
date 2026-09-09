@@ -1,0 +1,26 @@
+{
+  "scope": "insurance-core",
+  "full_gate": "test-results/agent-gates/2026-09-09T01-40-18-759Z-INSURANCE-CORE-FINAL.json",
+  "vitest": {
+    "passed": 3461,
+    "failed": 0,
+    "skipped": 2
+  },
+  "browser": {
+    "assertions_passed": 7,
+    "axe_violations": 0,
+    "page_errors": 0,
+    "api_auth_navigation": "mocked",
+    "pdf": "native Chromium actual restrictive response headers"
+  },
+  "native_postgres": {
+    "migrations": 339,
+    "sql_probes": 20,
+    "supabase_services": "stubs; current-actor SQL and seeded sessions executed"
+  },
+  "supplemental_change": "Netlify-safe4MiB cap",
+  "supplemental_tests_passed": 18,
+  "independent_sql_review": "APPROVE",
+  "independent_consumer_review": "APPROVE",
+  "hosted_or_real_provider_verified": false
+}
