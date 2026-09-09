@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "scope": "EmployeeFileClient catalog-loading CI request-target race",
+  "timestamp": "2026-09-09T02:40:16.989004+00:00",
+  "sourceCommit": "e25089f3e55e8f5ba917e1cffeda35621053d8e0",
+  "ciFailureRun": "34303020164",
+  "file": "src/components/staff/EmployeeFileClient.test.tsx",
+  "sha256": "848912f837e8e910a7ba6f154bbceb806aa38e6cc1978d83268f82cb834daffe",
+  "componentUnchanged": true,
+  "before": {
+    "phase": "before",
+    "method": "Deterministically issue the independent training request after the global one-shot mock is installed and before clicking Requirements",
+    "exitCode": 1,
+    "missingStatusReproduced": true,
+    "catalogLoadedInsteadOfPending": true,
+    "originalTestSHA256": "9c145a748c12dd69c8497e4b609a435a4064b64b26c9233eb7a42252efe9fc93"
+  },
+  "after": {
+    "command": "npx vitest run src/components/staff/EmployeeFileClient.test.tsx src/components/staff/EmployeeTrainingEvidence.test.tsx",
+    "exitCode": 0,
+    "files": 2,
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0,
+    "forcedInterleavingRetained": true,
+    "loadingAssertionUnchanged": true,
+    "trainingCompletesWhileCatalogPending": true
+  },
+  "staticChecks": {
+    "eslintExitCode": 0,
+    "diffCheckExitCode": 0,
+    "changedFileLspDiagnosticCount": 0
+  },
+  "notes": [
+    "Deferred response is bound to first exact catalog URL, not next global fetch",
+    "Late independent training request is forced before clicking Requirements; prior one-shot mock deterministically failed the same loading assertion and displayed loaded catalog",
+    "Removed9 unsupported exact options from role queries; unchanged string name matchers remain exact, supported byText exact option retained",
+    "No product component or timeout/budget changes",
+    "File-scoped LSP result does not claim the entire full-test tsconfig is clean"
+  ],
+  "independent_review": {
+    "verdict": "APPROVE",
+    "reviewer": "root",
+    "source_sha256": "848912f837e8e910a7ba6f154bbceb806aa38e6cc1978d83268f82cb834daffe",
+    "evidence": "employee-catalog-independent.json",
+    "checks": [
+      "Changed test file passed independently with no skipped cases",
+      "Exact catalog URL receives deferred response; independent training request remains successful",
+      "Original loading/retry/control assertions and timing budgets retained",
+      "Unsupported role-query options removed without changing name strings; supported text-query exact options retained"
+    ]
+  }
+}
