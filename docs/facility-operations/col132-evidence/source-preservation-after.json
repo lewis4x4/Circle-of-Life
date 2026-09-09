@@ -1,0 +1,7 @@
+{
+  "checked_at": "2026-09-09T23:24:43.962563+00:00",
+  "other_worktrees": 19,
+  "dirty_files_rechecked": 12,
+  "differences": [],
+  "writes_by_this_run_outside_isolated_worktree": "Only run-owned scratch and requested Linear update; no other source worktree edited"
+}

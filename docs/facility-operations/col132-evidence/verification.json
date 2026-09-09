@@ -1,0 +1,74 @@
+{
+  "checked_at": "2026-09-09T23:27:07.397893+00:00",
+  "issue": "COL-132",
+  "source_implementation_complete": true,
+  "linear_handoff_state": "In Review",
+  "release_ready": false,
+  "mission_alignment": "pass",
+  "base_commit": "39d41591e8c8110d1df2251ecfc10dd0edb08ae4",
+  "main_baseline": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
+  "catalog": {
+    "source_items": 91,
+    "activity_components": 110,
+    "explicit_unresolved_dispositions": 11,
+    "all_entries_draft": true,
+    "source_payloads_match_database": true,
+    "original_workbook_fingerprint_verified": true,
+    "scheduled_tasks_or_completions_imported": 0
+  },
+  "focused_tests": {
+    "files": 10,
+    "tests": 66,
+    "status": "PASS"
+  },
+  "required_typecheck": "PASS",
+  "full_segment_gate": {
+    "verdict": "FAIL",
+    "artifact": "test-results/agent-gates/2026-09-09T23-22-05-537Z-COL-132-HFO-CATALOG-VERIFIED.json",
+    "artifact_sha256": "5623370515e4486a27e80db7d9b9dce2631041427eb0dd35dadf076d725484cf",
+    "failed_required_checks": [
+      "hygiene.npm-audit",
+      "security.gitleaks"
+    ],
+    "overrides": [],
+    "passing_checks": [
+      "hygiene.env-example",
+      "hygiene.tracked-secrets-scan",
+      "qa.eslint",
+      "qa.migration-sequence",
+      "qa.migrations-apply-postgres",
+      "qa.root-build",
+      "hygiene.nextjs-deprecation-signal",
+      "chaos.stress-suite"
+    ]
+  },
+  "database_proof": {
+    "replay_migrations": 339,
+    "sql_probes": 20,
+    "backfill_and_concurrency_cases": 6,
+    "status": "PASS",
+    "supabase_services": "stubbed",
+    "migration": "supabase/migrations/336_hfo_activity_catalog.sql",
+    "migration_sha256": "a94bc4aef09db3b1f862d92e81c6489e35abba02d79d7d67b52089d28268ee47"
+  },
+  "independent_review": "APPROVE",
+  "other_worktree_heads_unchanged": 19,
+  "original_dirty_files_unchanged": 12,
+  "dependencies_changed": false,
+  "deployment_performed": false,
+  "hosted_auth_storage_tested": false,
+  "operating_acceptance": false,
+  "next_dependency_ready_issue": "COL-133",
+  "after_catalog_review_issue": "COL-135",
+  "remaining_release_gaps": [
+    "Existing npm audit (1 critical,2 high,3 moderate)",
+    "Shared-ref gitleaks findings in Finance history; original gate preserved",
+    "Migration336 collision with other unmerged branches; reconcile before integration",
+    "Hosted Auth/Storage and operating acceptance remain separate"
+  ],
+  "staged_change_secret_scan": {
+    "status": "PASS",
+    "findings": 0
+  },
+  "text_log_normalization": "Trailing whitespace and terminal carriage returns removed; original machine gate JSON retained unchanged"
+}

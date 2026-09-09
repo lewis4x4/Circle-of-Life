@@ -1,0 +1,1042 @@
+{
+  "source": {
+    "name": "Admin Log.xlsx",
+    "sha256": "83b5622b85084ee5af75ee8e6f451ee215cfe3d5cb2f07337e7c32715e988258",
+    "inventoryIntakeId": "HAVEN-ADMIN-20260909"
+  },
+  "items": [
+    {
+      "id": "AL-D01",
+      "sheet": "Daily",
+      "cell": "A2",
+      "source_text": "Marketing calls complete",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q28"
+      ],
+      "proposed_capture": "Call date, contact, outcome and next action"
+    },
+    {
+      "id": "AL-D02",
+      "sheet": "Daily",
+      "cell": "A3",
+      "source_text": "Update referral & maintenace logs",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q28",
+        "Q14"
+      ],
+      "proposed_capture": "Separate referral update from maintenance ticket/status; link both"
+    },
+    {
+      "id": "AL-D03",
+      "sheet": "Daily",
+      "cell": "A4",
+      "source_text": "Check for mail and deliver to residents",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q04",
+        "Q28"
+      ],
+      "proposed_capture": "Mail checked/delivered, date and exception; no resident correspondence copied"
+    },
+    {
+      "id": "AL-D04",
+      "sheet": "Daily",
+      "cell": "A5",
+      "source_text": "Make deposits - Scan copies ",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q16",
+        "Q17"
+      ],
+      "proposed_capture": "Deposit date, receipts, amount, scan and accounting handoff reference"
+    },
+    {
+      "id": "AL-D05",
+      "sheet": "Daily",
+      "cell": "A6",
+      "source_text": "Personally observe all residents for hygiene, health, and psychological status",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Resident review set, observation references, findings and follow-up"
+    },
+    {
+      "id": "AL-D06",
+      "sheet": "Daily",
+      "cell": "A7",
+      "source_text": "Note residents who are not complying with Hygiene Standards for further followed up",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Individual hygiene concern, responsible follow-up and resolution"
+    },
+    {
+      "id": "AL-D07",
+      "sheet": "Daily",
+      "cell": "A8",
+      "source_text": "Review observation logs",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Observation records reviewed, review period, exceptions and reviewer"
+    },
+    {
+      "id": "AL-D08",
+      "sheet": "Daily",
+      "cell": "A9",
+      "source_text": "Review Med Pass for Issues",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "External med-pass record reference and review findings, not dose attestation"
+    },
+    {
+      "id": "AL-D09",
+      "sheet": "Daily",
+      "cell": "A10",
+      "source_text": "Review refused Med list - Follow up with residents & doctor to find solution",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13",
+        "Q24"
+      ],
+      "proposed_capture": "Refusal reference, resident/provider contact and unresolved action"
+    },
+    {
+      "id": "AL-D10",
+      "sheet": "Daily",
+      "cell": "A11",
+      "source_text": "Review Daily Shift Report",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Shift report/version reviewed and unresolved handover items"
+    },
+    {
+      "id": "AL-D11",
+      "sheet": "Daily",
+      "cell": "A12",
+      "source_text": "Review Daily Sanitation Log",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13",
+        "Q14"
+      ],
+      "proposed_capture": "Sanitation log/shift reviewed, failed checks and corrective work"
+    },
+    {
+      "id": "AL-D12",
+      "sheet": "Daily",
+      "cell": "A13",
+      "source_text": "Review  Residents Temp & 02 Log",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q11",
+        "Q13"
+      ],
+      "proposed_capture": "Source readings/log period reviewed, missing readings and follow-up"
+    },
+    {
+      "id": "AL-D13",
+      "sheet": "Daily",
+      "cell": "A14",
+      "source_text": "Review Staff temperature & screening log",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13",
+        "Q20"
+      ],
+      "proposed_capture": "Restricted staff screening review and exceptions"
+    },
+    {
+      "id": "AL-D14",
+      "sheet": "Daily",
+      "cell": "A15",
+      "source_text": "DNR's are updated and in front of Resident Binder",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13",
+        "Q23"
+      ],
+      "proposed_capture": "Applicable signed/current order, version and physical binder verification"
+    },
+    {
+      "id": "AL-D15",
+      "sheet": "Daily",
+      "cell": "A16",
+      "source_text": "Attendance Calendar is Updated",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q11",
+        "Q22"
+      ],
+      "proposed_capture": "Defined attendance record updated and review period"
+    },
+    {
+      "id": "AL-D16",
+      "sheet": "Daily",
+      "cell": "A17",
+      "source_text": "Social Media sent ",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q28"
+      ],
+      "proposed_capture": "Approved content/destination, sent receipt and date"
+    },
+    {
+      "id": "AL-D17",
+      "sheet": "Daily",
+      "cell": "A18",
+      "source_text": "Census is update",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q18"
+      ],
+      "proposed_capture": "Reconciled census period, admission/discharge/absence links and approval"
+    },
+    {
+      "id": "AL-D18",
+      "sheet": "Daily",
+      "cell": "A19",
+      "source_text": "All orders are followed up on and complete",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q13",
+        "Q24"
+      ],
+      "proposed_capture": "Orders with accountable action, due date, result and closure evidence"
+    },
+    {
+      "id": "AL-D19",
+      "sheet": "Daily",
+      "cell": "A20",
+      "source_text": "Admit & Discharge Log is updated",
+      "timing_evidence": "Daily tab, Monday–Friday columns; weekend/holiday/shift/event applicability unresolved.",
+      "question_ids": [
+        "Q15",
+        "Q18"
+      ],
+      "proposed_capture": "Admission/discharge events reconciled with source log"
+    },
+    {
+      "id": "AL-W01",
+      "sheet": "Weekly",
+      "cell": "B1",
+      "source_text": "Generator Log/Carbon Monoxide Log",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Separate generator observed test and CO record; asset, date, readings/outcome"
+    },
+    {
+      "id": "AL-W02",
+      "sheet": "Weekly",
+      "cell": "C1",
+      "source_text": "Update AHCA Website Roster",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q21"
+      ],
+      "proposed_capture": "Roster comparison, changes submitted and confirmation reference"
+    },
+    {
+      "id": "AL-W03",
+      "sheet": "Weekly",
+      "cell": "D1",
+      "source_text": "Update Company Calendar",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q28"
+      ],
+      "proposed_capture": "Calendar version, required events, published date"
+    },
+    {
+      "id": "AL-W04",
+      "sheet": "Weekly",
+      "cell": "E1",
+      "source_text": "AED machine is working and all equipment current",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Asset test, pad/battery/equipment expiry and failed-check action"
+    },
+    {
+      "id": "AL-W05",
+      "sheet": "Weekly",
+      "cell": "F1",
+      "source_text": "Orders have been audited for completion",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Order population reviewed and outstanding/failure follow-up"
+    },
+    {
+      "id": "AL-W06",
+      "sheet": "Weekly",
+      "cell": "G1",
+      "source_text": "Employee Files are up to date including inservices",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Employee requirement/expiry gaps, certificates and reviewer"
+    },
+    {
+      "id": "AL-W07",
+      "sheet": "Weekly",
+      "cell": "I1",
+      "source_text": "Resident Emergency Packets are complete ",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q23",
+        "Q25"
+      ],
+      "proposed_capture": "Resident emergency packet version, contents and physical copy confirmation"
+    },
+    {
+      "id": "AL-W08",
+      "sheet": "Weekly",
+      "cell": "J1",
+      "source_text": "DCF Notify Letter for Admits and DC",
+      "timing_evidence": "Weekly tab; weekday, due time and event deadlines unknown.",
+      "question_ids": [
+        "Q21"
+      ],
+      "proposed_capture": "Admit/discharge event, notice recipient, sent/delivered evidence"
+    },
+    {
+      "id": "AL-M01",
+      "sheet": "Monthly",
+      "cell": "B1",
+      "source_text": "Check Emergency Food Supply",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Food stock/expiry/condition check and replenishment evidence"
+    },
+    {
+      "id": "AL-M02",
+      "sheet": "Monthly",
+      "cell": "C1",
+      "source_text": "Weights completed",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Resident weight/date/unit and missing/outlier review using approved rules"
+    },
+    {
+      "id": "AL-M03",
+      "sheet": "Monthly",
+      "cell": "D1",
+      "source_text": "Review 1823 for accuracy",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "1823 version, accuracy review and qualified update request"
+    },
+    {
+      "id": "AL-M04",
+      "sheet": "Monthly",
+      "cell": "E1",
+      "source_text": "Review Bed Rail Order are up to date",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Applicable bed-rail order/assessment/consent, validity and review"
+    },
+    {
+      "id": "AL-M05",
+      "sheet": "Monthly",
+      "cell": "F1",
+      "source_text": "Fire Drill Complete (6) ",
+      "timing_evidence": "Monthly tab; (6) in label; interview says monthly company practice versus six/year discussion; exact rule unapproved.",
+      "question_ids": [
+        "Q06"
+      ],
+      "proposed_capture": "Actual drill record, scenario, time/shift, participants and corrective action"
+    },
+    {
+      "id": "AL-M06",
+      "sheet": "Monthly",
+      "cell": "G1",
+      "source_text": "Elopement Drill Completed (2)",
+      "timing_evidence": "Monthly tab; (2) in label; interview reports two actual drills/year; review-versus-performance rule unresolved.",
+      "question_ids": [
+        "Q06"
+      ],
+      "proposed_capture": "Actual elopement drill record and required distribution/response evidence"
+    },
+    {
+      "id": "AL-M07",
+      "sheet": "Monthly",
+      "cell": "H1",
+      "source_text": "Census Balanced & Saved",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q18"
+      ],
+      "proposed_capture": "Approved period census, reconciliation and saved immutable version"
+    },
+    {
+      "id": "AL-M08",
+      "sheet": "Monthly",
+      "cell": "I1",
+      "source_text": "Meal Substitutions noted",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Meal/date, planned and substitute item, reason and review"
+    },
+    {
+      "id": "AL-M09",
+      "sheet": "Monthly",
+      "cell": "J1",
+      "source_text": "End of Month File: Census, FPC, Trust ",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q11",
+        "Q19"
+      ],
+      "proposed_capture": "Census/FPC/Trust components, approved version and received acknowledgment"
+    },
+    {
+      "id": "AL-M10",
+      "sheet": "Monthly",
+      "cell": "K1",
+      "source_text": "Activity Calendar Posted",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q28"
+      ],
+      "proposed_capture": "Calendar period/version and evidence posted"
+    },
+    {
+      "id": "AL-M11",
+      "sheet": "Monthly",
+      "cell": "L1",
+      "source_text": "AC Filter Changed",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Asset/location, filter change date, performer and exception"
+    },
+    {
+      "id": "AL-M12",
+      "sheet": "Monthly",
+      "cell": "M1",
+      "source_text": "Monthly MCD Verification",
+      "timing_evidence": "Monthly tab; date/business-day/window unknown.",
+      "question_ids": [
+        "Q11",
+        "Q18"
+      ],
+      "proposed_capture": "Defined MCD verification evidence, period, reviewer and exceptions"
+    },
+    {
+      "id": "AL-A01",
+      "sheet": "Audits - Monthly",
+      "cell": "B1",
+      "source_text": "Med Carts",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Cart audit scope, checks, findings and corrective actions"
+    },
+    {
+      "id": "AL-A02",
+      "sheet": "Audits - Monthly",
+      "cell": "C1",
+      "source_text": "MORS",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q11",
+        "Q13"
+      ],
+      "proposed_capture": "Defined MORS source/version, sample coverage and findings"
+    },
+    {
+      "id": "AL-A03",
+      "sheet": "Audits - Monthly",
+      "cell": "D1",
+      "source_text": "1823 Binder",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q13",
+        "Q23"
+      ],
+      "proposed_capture": "Resident/1823 binder completeness, current versions and gaps"
+    },
+    {
+      "id": "AL-A04",
+      "sheet": "Audits - Monthly",
+      "cell": "E1",
+      "source_text": "Observation Logs",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Observation population/period, audit findings and closure"
+    },
+    {
+      "id": "AL-A05",
+      "sheet": "Audits - Monthly",
+      "cell": "F1",
+      "source_text": "Resident Files/Weights Log",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q13",
+        "Q23"
+      ],
+      "proposed_capture": "Resident file and weight coverage with separate exceptions"
+    },
+    {
+      "id": "AL-A06",
+      "sheet": "Audits - Monthly",
+      "cell": "G1",
+      "source_text": "Orders are accurately completed ",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q13"
+      ],
+      "proposed_capture": "Order audit results and evidence of accurate completion"
+    },
+    {
+      "id": "AL-A07",
+      "sheet": "Audits - Monthly",
+      "cell": "H1",
+      "source_text": "Elopement & Fire Drills Complete (Extinguishers are current)",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q06",
+        "Q14"
+      ],
+      "proposed_capture": "Separate drill coverage review and extinguisher validity check"
+    },
+    {
+      "id": "AL-A08",
+      "sheet": "Audits - Monthly",
+      "cell": "I1",
+      "source_text": "Generator & Carbon Monoxide Log ",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Review generator/CO source logs and gaps, not repeat unobserved test"
+    },
+    {
+      "id": "AL-A09",
+      "sheet": "Audits - Monthly",
+      "cell": "J1",
+      "source_text": "Admit & Discharge Log",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q15",
+        "Q18"
+      ],
+      "proposed_capture": "Event-log reconciliation and missing/corrected transitions"
+    },
+    {
+      "id": "AL-A10",
+      "sheet": "Audits - Monthly",
+      "cell": "K1",
+      "source_text": "Attendance Calendar Reviewed",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q11",
+        "Q22"
+      ],
+      "proposed_capture": "Attendance period, corrections and review receipt"
+    },
+    {
+      "id": "AL-A11",
+      "sheet": "Audits - Monthly",
+      "cell": "L1",
+      "source_text": "HR Files Audited AHCA Roster verified",
+      "timing_evidence": "Monthly audit; scope, due date and distinction from underlying work unconfirmed.",
+      "question_ids": [
+        "Q20",
+        "Q21"
+      ],
+      "proposed_capture": "Employee-file audit and AHCA comparison/submission exceptions"
+    },
+    {
+      "id": "AL-Q01",
+      "sheet": "Quarterly",
+      "cell": "B1",
+      "source_text": "Mail Trust Statements",
+      "timing_evidence": "Quarterly grid; mail-by date/window unknown.",
+      "question_ids": [
+        "Q05",
+        "Q19"
+      ],
+      "proposed_capture": "Statement period, reviewed version, recipient and mailing evidence"
+    },
+    {
+      "id": "AL-Y01",
+      "sheet": "Yearly",
+      "cell": "B1",
+      "source_text": "Menu's are approved by Dietitian",
+      "timing_evidence": "Yearly tab; anniversary/date/expiry rule unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Menu version, qualified approver and approval evidence/date"
+    },
+    {
+      "id": "AL-Y02",
+      "sheet": "Yearly",
+      "cell": "C1",
+      "source_text": "Fire Safety Inspection - Chad Croft",
+      "timing_evidence": "Yearly tab; anniversary/date/expiry rule unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Inspection type, current vendor/contact, certificate, expiry and actions"
+    },
+    {
+      "id": "AL-Y03",
+      "sheet": "Yearly",
+      "cell": "D1",
+      "source_text": "Fire Extinquisher Inspection ",
+      "timing_evidence": "Yearly tab; anniversary/date/expiry rule unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Equipment service/inspection certificate and next due date"
+    },
+    {
+      "id": "AL-Y04",
+      "sheet": "Yearly",
+      "cell": "E1",
+      "source_text": "Fire & Sprinkler Inspectiion",
+      "timing_evidence": "Yearly tab; anniversary/date/expiry rule unknown.",
+      "question_ids": [
+        "Q14"
+      ],
+      "proposed_capture": "Fire/sprinkler inspection reports, due dates and corrective action"
+    },
+    {
+      "id": "AL-Y05",
+      "sheet": "Yearly",
+      "cell": "F1",
+      "source_text": "Hood Cleaning ",
+      "timing_evidence": "Yearly tab; interview reports twice yearly at Oakridge with conflicting earlier site/interval wording. Unresolved.",
+      "question_ids": [
+        "Q09"
+      ],
+      "proposed_capture": "Site/hood applicability, cleaning certificate/date and approved interval"
+    },
+    {
+      "id": "AL-Y06",
+      "sheet": "Yearly",
+      "cell": "G1",
+      "source_text": "Emergency Management Book Update",
+      "timing_evidence": "Yearly tab; anniversary/date/expiry rule unknown.",
+      "question_ids": [
+        "Q14",
+        "Q25"
+      ],
+      "proposed_capture": "Emergency plan version, review/approval and accessible copy"
+    },
+    {
+      "id": "AL-Y07",
+      "sheet": "Yearly",
+      "cell": "H1",
+      "source_text": "Bi-Annual Facility License Renewal ",
+      "timing_evidence": "Yearly tab; cell says Bi-Annual. Exact interval/expiry anchor unknown.",
+      "question_ids": [
+        "Q07"
+      ],
+      "proposed_capture": "License identifier, expiry, renewal application and issued confirmation"
+    },
+    {
+      "id": "AL-N01",
+      "sheet": "New Admission",
+      "cell": "B1",
+      "source_text": "Contract Signed",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15"
+      ],
+      "proposed_capture": "Executed contract version, authorized signers and final document"
+    },
+    {
+      "id": "AL-N02",
+      "sheet": "New Admission",
+      "cell": "C1",
+      "source_text": "1823 Complete",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15"
+      ],
+      "proposed_capture": "Specific Form1823, qualified completion/review and readiness"
+    },
+    {
+      "id": "AL-N03",
+      "sheet": "New Admission",
+      "cell": "D1",
+      "source_text": "DNR",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q13",
+        "Q15"
+      ],
+      "proposed_capture": "DNR applicability, current signed document if applicable and binder copy"
+    },
+    {
+      "id": "AL-N04",
+      "sheet": "New Admission",
+      "cell": "E1",
+      "source_text": "Contact Information complete - Face Sheet Printed",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15"
+      ],
+      "proposed_capture": "Verified contacts/authority, face-sheet version and printed handoff"
+    },
+    {
+      "id": "AL-N05",
+      "sheet": "New Admission",
+      "cell": "F1",
+      "source_text": "Doctor Assigned",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15"
+      ],
+      "proposed_capture": "Assigned physician and confirmation/contact"
+    },
+    {
+      "id": "AL-N06",
+      "sheet": "New Admission",
+      "cell": "G1",
+      "source_text": "Medicaid Application complete if applicable ",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15",
+        "Q18"
+      ],
+      "proposed_capture": "Eligibility/applicability, application submitted and follow-up status"
+    },
+    {
+      "id": "AL-N07",
+      "sheet": "New Admission",
+      "cell": "H1",
+      "source_text": "First Month's Rent Collected in Full",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15",
+        "Q16"
+      ],
+      "proposed_capture": "Actual payment receipt/period and approved exceptions"
+    },
+    {
+      "id": "AL-N08",
+      "sheet": "New Admission",
+      "cell": "I1",
+      "source_text": "Added to Collections on Drive",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Collections case linked to resident, responsible owner and handoff"
+    },
+    {
+      "id": "AL-N09",
+      "sheet": "New Admission",
+      "cell": "J1",
+      "source_text": "Add to Admit / Discharge Log",
+      "timing_evidence": "Per-admission checklist; exact trigger and pre/post-arrival deadlines unknown.",
+      "question_ids": [
+        "Q15",
+        "Q18"
+      ],
+      "proposed_capture": "Confirmed admission event and log reconciliation"
+    },
+    {
+      "id": "AL-C01",
+      "sheet": "Collections - New Admit",
+      "cell": "B1",
+      "source_text": "Payment for first month secured",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Defined secured/received payment state with evidence"
+    },
+    {
+      "id": "AL-C02",
+      "sheet": "Collections - New Admit",
+      "cell": "C1",
+      "source_text": "Person responsible for making monthly payment identified",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Payer identity, relationship, authority and accepted responsibility"
+    },
+    {
+      "id": "AL-C03",
+      "sheet": "Collections - New Admit",
+      "cell": "D1",
+      "source_text": "SSA has been notified of address change",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16",
+        "Q21"
+      ],
+      "proposed_capture": "SSA address-change notice date, channel and confirmation"
+    },
+    {
+      "id": "AL-C04",
+      "sheet": "Collections - New Admit",
+      "cell": "E1",
+      "source_text": "Monthly income verified if applicable",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Income applicability, source/version, reviewer and result"
+    },
+    {
+      "id": "AL-C05",
+      "sheet": "Collections - New Admit",
+      "cell": "F1",
+      "source_text": "IF family making monthly payment - they also signed contract with the resident",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q15",
+        "Q16"
+      ],
+      "proposed_capture": "Applicable family payer signature and executed contract version"
+    },
+    {
+      "id": "AL-C06",
+      "sheet": "Collections - New Admit",
+      "cell": "G1",
+      "source_text": "Family Conference set up to go over payment process",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Conference scheduled, attendees, purpose and separate completion outcome"
+    },
+    {
+      "id": "AL-C07",
+      "sheet": "Collections - New Admit",
+      "cell": "H1",
+      "source_text": "Medicaid Auth is secured and you have documentation",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q18"
+      ],
+      "proposed_capture": "Payer authorization document, effective dates and missing evidence"
+    },
+    {
+      "id": "AL-C08",
+      "sheet": "Collections - New Admit",
+      "cell": "I1",
+      "source_text": "Michelle Norris sent copy of contract",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Confirmed current contract recipient, sent/received status and copy version"
+    },
+    {
+      "id": "AL-C09",
+      "sheet": "Collections - New Admit",
+      "cell": "J1",
+      "source_text": "New admit is added to the drive",
+      "timing_evidence": "Per-new-admit checklist; exact trigger and due deadlines unknown.",
+      "question_ids": [
+        "Q16"
+      ],
+      "proposed_capture": "Authoritative collections record/reference and duplicate-safe transition"
+    },
+    {
+      "id": "AL-E01",
+      "sheet": "Employee File",
+      "cell": "B1",
+      "source_text": "Date of Hire",
+      "timing_evidence": "Hire-date field; event anchor, not recurring.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Verified hire date as an event/clock anchor, not a recurring task"
+    },
+    {
+      "id": "AL-E02",
+      "sheet": "Employee File",
+      "cell": "C1",
+      "source_text": "Inservices assigned",
+      "timing_evidence": "Assignment event; initial/renewal trigger unknown.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Required course assignments by role and applicable policy version"
+    },
+    {
+      "id": "AL-E03",
+      "sheet": "Employee File",
+      "cell": "D1",
+      "source_text": "90 Review Date",
+      "timing_evidence": "Cell says 90 Review Date; unit, anchor and recurrence not stated.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Meaning of 90 review, due anchor, completed review and signoff"
+    },
+    {
+      "id": "AL-E04",
+      "sheet": "Employee File",
+      "cell": "E1",
+      "source_text": "Comm. Disease ",
+      "timing_evidence": "No cadence in cell.",
+      "question_ids": [
+        "Q11",
+        "Q20"
+      ],
+      "proposed_capture": "Meaning and restricted evidence for communicable-disease requirement"
+    },
+    {
+      "id": "AL-E05",
+      "sheet": "Employee File",
+      "cell": "F1",
+      "source_text": "TB Expires Date (Annually)",
+      "timing_evidence": "Cell says annually; expiry anchor/applicability unapproved.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "TB evidence/date/expiry and approved applicability"
+    },
+    {
+      "id": "AL-E06",
+      "sheet": "Employee File",
+      "cell": "G1",
+      "source_text": "CPR Expires Date (Every 2 Years)",
+      "timing_evidence": "Cell says every 2 years; expiry anchor/applicability unapproved.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "CPR certificate/date/expiry and approved applicability"
+    },
+    {
+      "id": "AL-E07",
+      "sheet": "Employee File",
+      "cell": "H1",
+      "source_text": "Background Screening Expires Date (Every 5 years)",
+      "timing_evidence": "Cell says every 5 years; interview also reports 5 years; anchor unapproved.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Screening date/result evidence and verified next deadline"
+    },
+    {
+      "id": "AL-E08",
+      "sheet": "Employee File",
+      "cell": "I1",
+      "source_text": "Food Service Manger Certificate Expires Date (every 5 years)",
+      "timing_evidence": "Cell says every 5 years; anchor/applicability unapproved.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Food-manager certificate/expiry and role/site applicability"
+    },
+    {
+      "id": "AL-E09",
+      "sheet": "Employee File",
+      "cell": "J1",
+      "source_text": "MT 2 Hour Annual Update due",
+      "timing_evidence": "Annual update; 2 hours is training duration.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Two-hour MT course evidence and annual renewal anchor"
+    },
+    {
+      "id": "AL-E10",
+      "sheet": "Employee File",
+      "cell": "K1",
+      "source_text": "Alzheimer Annual Update due",
+      "timing_evidence": "Annual update; due anchor unapproved.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Alzheimer training evidence and annual renewal anchor"
+    },
+    {
+      "id": "AL-E11",
+      "sheet": "Employee File",
+      "cell": "L1",
+      "source_text": "Med Tech 6 hour course Complete date",
+      "timing_evidence": "Completion date; 6 hours is course duration, not recurrence.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Six-hour course completion plus separately approved supervised competencies"
+    },
+    {
+      "id": "AL-E12",
+      "sheet": "Employee File",
+      "cell": "M1",
+      "source_text": "New Hire Inservices Complete",
+      "timing_evidence": "New-hire completion; interview says pre-service before floor and company 30-day policy; exact course matrix unapproved.",
+      "question_ids": [
+        "Q20"
+      ],
+      "proposed_capture": "Applicable initial course set, evidence and before-floor/30-day distinctions"
+    },
+    {
+      "id": "AL-E13",
+      "sheet": "Employee File",
+      "cell": "N1",
+      "source_text": "Update AHCA Roster Website",
+      "timing_evidence": "Employee roster update event; deadline unknown; separate weekly audit.",
+      "question_ids": [
+        "Q21"
+      ],
+      "proposed_capture": "Employee event, roster submission and accepted confirmation"
+    },
+    {
+      "id": "AL-E14",
+      "sheet": "Employee File",
+      "cell": "O1",
+      "source_text": "Manager 12 Hour Update Bianually",
+      "timing_evidence": "Cell says Bianually; 12 hours is duration; interval ambiguous.",
+      "question_ids": [
+        "Q07",
+        "Q20"
+      ],
+      "proposed_capture": "12-hour manager training evidence; ambiguous interval unresolved"
+    },
+    {
+      "id": "AL-H01",
+      "sheet": "Mental Health Facilities",
+      "cell": "B1",
+      "source_text": "Community Support Plan",
+      "timing_evidence": "Monthly grid; interview describes six-month external plans. Review versus renewal/document scope unresolved.",
+      "question_ids": [
+        "Q08",
+        "Q24"
+      ],
+      "proposed_capture": "Separate applicable external plan types, resident, caseworker, signatures, dates and monthly review"
+    }
+  ]
+}

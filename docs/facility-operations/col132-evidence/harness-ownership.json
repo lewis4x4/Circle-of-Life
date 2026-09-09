@@ -1,0 +1,5 @@
+{
+  "unowned_socket_rejected": true,
+  "owned_manifest_accepted_before_invalid_prefix_rejected": true,
+  "database_mutations": false
+}

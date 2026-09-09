@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-09-09T23:19:12.623974+00:00",
+  "source_payloads_exact": true,
+  "source_count": 91,
+  "component_count": 110,
+  "legacy_data": {
+    "operation_task_templates": {
+      "existing_fields_unchanged": true,
+      "before_sha_md5": "f1594558e39d847478aa15b71ef38a47",
+      "after_sha_md5": "f1594558e39d847478aa15b71ef38a47"
+    },
+    "operation_task_instances": {
+      "existing_fields_unchanged": true,
+      "before_sha_md5": "d751713988987e9331980363e24189ce",
+      "after_sha_md5": "d751713988987e9331980363e24189ce"
+    }
+  },
+  "scope": "isolated PostgreSQL with Supabase stubs; no hosted mutations"
+}

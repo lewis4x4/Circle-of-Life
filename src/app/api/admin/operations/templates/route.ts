@@ -14,6 +14,7 @@ import {
 
 const TEMPLATE_SELECT = `
   id,
+  activity_id,
   facility_id,
   name,
   description,

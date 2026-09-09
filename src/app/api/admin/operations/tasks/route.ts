@@ -75,6 +75,7 @@ export async function GET(request: Request) {
       organization_id,
       facility_id,
       template_id,
+      activity_id,
       template_name,
       template_category,
       template_cadence_type,

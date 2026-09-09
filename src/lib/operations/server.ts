@@ -13,6 +13,7 @@ import type {
 
 type OperationTaskRow = {
   id: string;
+  activity_id?: string | null;
   organization_id: string;
   facility_id: string;
   template_id: string | null;
@@ -203,6 +204,7 @@ function shapeOperationTask(
 
   return {
     id: row.id,
+    activity_id: row.activity_id ?? null,
     template_id: row.template_id,
     template_name: row.template_name,
     template_category: row.template_category,

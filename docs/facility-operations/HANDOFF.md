@@ -1,4 +1,8 @@
-# Next bounded issue
+# Current handoff
+
+Read [COL-132-HANDOFF.md](COL-132-HANDOFF.md). COL-132 is implemented and independently reviewed, with strict gates still FAIL on existing audit/shared-history findings; leave it In Review. **COL-133 is next dependency-ready.** The earlier baseline handoff below is retained as history.
+
+# Earlier COL-18 handoff
 
 Complete this COL-18 baseline closeout before selecting the next issue. **COL-132 / HFO-01 is next**, with COL-133 / HFO-05 also dependent only on COL-18. Recheck live Linear blockers and source/main before claiming either is ready at a later time. Neither implementation began in this segment.
 
