@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "cases": [
+    {
+      "name": "native-events-page-parity",
+      "status": "PASS",
+      "rows": 1
+    },
+    {
+      "name": "native-batches-page-parity",
+      "status": "PASS",
+      "rows": 1
+    },
+    {
+      "name": "native-rules-page-parity",
+      "status": "PASS",
+      "rows": 1
+    },
+    {
+      "name": "native-keyset-continuation-parity",
+      "status": "PASS"
+    },
+    {
+      "name": "native-detail-parity-and-session-redaction",
+      "status": "PASS",
+      "members": 2
+    }
+  ],
+  "migration_sha256": "65f4466fe88a7f2dd878de6b588075e21a01953bc2b11fad4af7fbbfb6bf7c56",
+  "reader_sha256": "476ed784b389a4883c6bc1fac24bad4b43a004b1a5d58c144665d7d8bbe22ccd",
+  "driver_sha256": "0c828c72489edb52bb46e727f38e676766dac9ebe4a474d34cfaa14b4c3d359a",
+  "timestamp": "2026-09-09T03:57:23.613Z",
+  "limits": [
+    "Actual nativeSQL RPC results with synthetic Auth stubs; no GoTrue/PostgREST/browser/provider proof."
+  ]
+}

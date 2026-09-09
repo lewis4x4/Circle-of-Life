@@ -884,9 +884,12 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "finance reporting engineering / controller",
-      "evidence": [],
+      "evidence": [
+        "F03-REVIEW-WORKBENCH.md",
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -916,9 +919,12 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "finance reporting engineering / controller",
-      "evidence": [],
+      "evidence": [
+        "F03-REVIEW-WORKBENCH.md",
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -1060,9 +1066,12 @@
       "gate": "engineering",
       "required": true,
       "na_permitted": false,
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "owner": "finance UX engineering / role testers",
-      "evidence": [],
+      "evidence": [
+        "F03-REVIEW-WORKBENCH.md",
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
+      ],
       "reviewer": null,
       "verified_at": null,
       "blocked_by": []
@@ -1095,7 +1104,9 @@
       "status": "IN_PROGRESS",
       "owner": "finance UX engineering / role testers",
       "evidence": [
-        "test-results/finance-integration/cash-scope-review.json"
+        "test-results/finance-integration/cash-scope-review.json",
+        "F03-REVIEW-WORKBENCH.md",
+        "test-results/finance-integration/f03-workbench/browser-independent-review.json"
       ],
       "reviewer": null,
       "verified_at": null,

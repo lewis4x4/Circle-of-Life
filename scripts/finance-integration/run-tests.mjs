@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 const suite = process.argv[2];
-const directories = { finance: ['src/lib/finance-integration', 'src/lib/finance/post-to-gl.test.ts', 'src/lib/finance/forecast.test.ts', 'src/lib/finance/resident-money.test.ts', 'src/lib/finance/format-cents.test.ts', 'src/lib/finance/journal-form-lines.test.ts', 'src/app/(admin)/admin/cash/page.test.tsx', 'src/app/(admin)/finance/journal-entries/new'], audit: ['src/lib/platform-audit'] };
+const directories = { finance: ['src/lib/finance-integration', 'src/lib/finance/post-to-gl.test.ts', 'src/lib/finance/forecast.test.ts', 'src/lib/finance/resident-money.test.ts', 'src/lib/finance/format-cents.test.ts', 'src/lib/finance/journal-form-lines.test.ts', 'src/app/(admin)/admin/cash/page.test.tsx', 'src/app/(admin)/finance/journal-entries/new', 'src/components/finance/FinanceReviewQueueClient.test.tsx'], audit: ['src/lib/platform-audit'] };
 if (!Object.hasOwn(directories, suite)) throw new Error('Expected finance or audit');
 const started = new Date();
 const directory = path.resolve('test-results/finance-integration');

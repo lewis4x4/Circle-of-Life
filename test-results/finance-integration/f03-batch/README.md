@@ -11,3 +11,5 @@ The frozen SQL engine supports exact immutable local review. Accounting classifi
 Raw logs, including earlier failures, remain in the private run manifest at `/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/f03-batch-340/manifest.json`. The native databases are retained for reviewer/parent use. No Docker or hosted infrastructure was changed for this batch slice.
 
 `independent-auth-review.json` and its exact run-specific `independent-auth-probe.py` retain the separate reviewer's APPROVE evidence: 53 regression assertions, 18 controlled races, three invalidation-receipt rollbacks and 72 direct privilege checks. Review counts overlap the author regression suite and must not be summed as unique coverage. The independent probe likewise targets only its manifest-owned native fixture.
+
+Independent money parity evidence and its exact run-specific driver are retained as independent-money-parity.json/.mjs. The13 cases include12 SQL/Zod inputs and one actual public-RPC payload/readback check. Run only with the recorded disposable native database and tsx; these paths and Auth stubs are not a portable or production runner.

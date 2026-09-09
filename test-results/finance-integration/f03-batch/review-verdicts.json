@@ -20,8 +20,10 @@
         "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/batch-340-review.log",
         "/Users/brianlewis/.hermes/tmp/agent-runs/hfa-20260908-01a08335/batch-340-review-manifest.json"
       ],
-      "coverage": "Reviewer reports53 final SQL assertions,12 SQL/Zod corpus cases, actual2-event4-billion-cent RPC payload parsed by summaryPayloadSchema, member-order/DMY replay identity; separate parity driver packaging pending.",
-      "evidence_origin": "Independent reviewer final message; full SQL log retained privately."
+      "coverage": "53 final SQL assertions,12 SQL/Zod corpus cases, actual2-event4-billion-cent RPC payload parsed by summaryPayloadSchema, member-order/DMY replay identity.",
+      "evidence_origin": "Executed independent report and exact driver retained; full SQL log also retained privately.",
+      "evidence": "independent-money-parity.json",
+      "driver": "independent-money-parity.mjs"
     }
   ],
   "remaining": [

@@ -15788,6 +15788,8 @@ export type Database = {
       }
     }
     Functions: {
+      finance_batch_snapshot: { Args: { p_batch: string }; Returns: Json };
+      finance_review_queue: { Args: { p_entity: string; p_facility?: string | null; p_kind?: string; p_after_created_at?: string | null; p_after_id?: string | null; p_limit?: number }; Returns: Json };
       resident_money_snapshot: { Args: { p_organization_id: string; p_facility_id?: string | null }; Returns: Json };
       create_finance_opening_balance: {
         Args: { p_facility_id: string; p_resident_id: string; p_invoice_number: string; p_invoice_date: string; p_due_date: string; p_period_start: string; p_period_end: string; p_amount_cents: number; p_payer_type: string | null; p_payer_name: string | null; p_notes: string | null };

@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/finance/forecast", label: "Forecast" },
   { href: "/admin/finance/close", label: "Close" },
   { href: "/admin/finance/trust", label: "Trust" },
+  { href: "/admin/finance/integration", label: "Accounting review" },
   { href: "/admin/finance/chart-of-accounts", label: "Chart of accounts" },
   { href: "/admin/finance/journal-entries", label: "Journal entries" },
   { href: "/admin/finance/journal-entries/new", label: "New journal" },

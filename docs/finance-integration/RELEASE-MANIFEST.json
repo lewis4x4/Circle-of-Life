@@ -13,5 +13,47 @@
   "independent_reviews": [],
   "baseline_refresh_commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
   "upstream_main_commit": "fad17dcc4bd2dc1deb35400b309c65a047b8de83",
-  "observed_production_deployment_id": "6aa054790bc9d700089b72cb"
+  "observed_production_deployment_id": "6aa054790bc9d700089b72cb",
+  "candidate_source_base": "786cb210ff47e36fdafcbad63f0962df453433f7",
+  "source_review_register": "INDEPENDENT-REVIEWS.json",
+  "independent_reviews_scope": "No final release approval; bounded source reviews are in the source review register",
+  "candidate_migrations": [
+    {
+      "file": "supabase/migrations/336_finance_source_commands.sql",
+      "sha256": "57d5164db0f0195d6926617feb393336534dc39d836b454240582ebd16c35c1f"
+    },
+    {
+      "file": "supabase/migrations/337_audit_export_scope_and_snapshot.sql",
+      "sha256": "0a7448bbc48458f40d96440f66918e2cd83332a8b8e60bbc5fb636de4d4db41c"
+    },
+    {
+      "file": "supabase/migrations/338_resident_money_snapshot.sql",
+      "sha256": "44abf0be26386d51d938e5736d472ed941b83af61a85de986385d5f9f582f069"
+    },
+    {
+      "file": "supabase/migrations/339_finance_event_outbox.sql",
+      "sha256": "ffb4f41d3454b4d8d89c90be538edeef894b8689ce0a16ecee9e431f602e65b3"
+    },
+    {
+      "file": "supabase/migrations/340_finance_batch_approval.sql",
+      "sha256": "0781b4a94290df9e598f7277cb42ee017c53ecaa257e2e4456f3c42553e77201"
+    },
+    {
+      "file": "supabase/migrations/341_finance_review_queue.sql",
+      "sha256": "65f4466fe88a7f2dd878de6b588075e21a01953bc2b11fad4af7fbbfb6bf7c56"
+    }
+  ],
+  "candidate_read_routes": [
+    "/admin/finance/integration",
+    "/finance/integration"
+  ],
+  "candidate_verification": {
+    "full_unit_passed": 3557,
+    "full_unit_skipped": 0,
+    "native_migrations": 344,
+    "native_sql_probes": 25,
+    "gate": "test-results/agent-gates/2026-09-09T04-15-35-939Z-HFA-F03-WORKBENCH.json",
+    "real_auth_api": "BLOCKED_EXTERNAL",
+    "provider_and_business_acceptance": "OPEN"
+  }
 }
