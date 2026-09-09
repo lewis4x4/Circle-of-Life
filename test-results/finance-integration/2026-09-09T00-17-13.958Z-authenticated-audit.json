@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "run_id": "3b767b4f-9bfe-4870-8659-b59ea049fdb2",
+  "suite": "audit",
+  "status": "FAIL",
+  "evidence_layer": "full-local-GoTrue-PostgREST",
+  "target_identity": {
+    "project_id": "hfa-01a08335",
+    "api_url": "http://127.0.0.1:59321",
+    "database_port": 59322,
+    "containers": [
+      {
+        "service": "db",
+        "container_id": "1ad3eb7f2a3a8fa1a827beceba3a630d500dafc529a80a8af767002ddaed22f5"
+      },
+      {
+        "service": "kong",
+        "container_id": "aa2a8b2fe8cdaea424b2d91ccaa139e5c10a8f159c5d3660c231bed9575ef9e2"
+      },
+      {
+        "service": "auth",
+        "container_id": "d227bed3bc99bcf091ad3724e4f861e9304ab33038fc9021305df528d92bf52e"
+      },
+      {
+        "service": "rest",
+        "container_id": "b7e7584ac5fd9655595927d1bc2a0d92eed76e06e4faf4054896ccb5bcefb3cb"
+      }
+    ]
+  },
+  "command": [
+    "/Users/brianlewis/.hermes/node/bin/node",
+    "scripts/finance-integration/authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=audit"
+  ],
+  "exit_code": 1,
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "source_sha256": "fb7b83ad55acf0c199147397c07b1d7386579395117998b2f7fac8a0f3328463",
+  "schema_bootstrap_sha256": "1b69e8c1d74c54d0d4c54ffe025530c370bb9c1e0e819579ccdac07431323207",
+  "fixture_seed_sha256": "8ad1a1fa15f0d0b8ec95688b6b6304d446d3b8e6d8cfabb1a1a162bc5fe865a3",
+  "cases": [
+    {
+      "name": "db: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "kong: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "auth: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "rest: current container identity and port binding verified",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": "hfa-01a08335",
+      "actual": "hfa-01a08335"
+    },
+    {
+      "name": "genuine GoTrue auth schema exists",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "name": "restricted: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "restricted: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "owner: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "owner: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "outsider: GoTrue creates synthetic actor",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: real password sign-in succeeds",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "name": "outsider: signed token matches real GoTrue session and claim version",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "PASS",
+      "expected": {
+        "sessions": 1,
+        "versioned": true
+      },
+      "actual": {
+        "sessions": 1,
+        "versioned": true
+      }
+    },
+    {
+      "name": "real REST row cap is exercised",
+      "acceptance_ids": [
+        "HFA-012",
+        "HFA-059"
+      ],
+      "status": "FAIL",
+      "expected": {
+        "status": 200,
+        "rows": 1000,
+        "count": 2505
+      },
+      "actual": {
+        "status": 206,
+        "rows": 1000,
+        "range": "0-999/2505"
+      }
+    }
+  ],
+  "counts": {
+    "total": 15,
+    "passed": 14,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "failure": "Assertion failed: real REST row cap is exercised",
+  "started_at": "2026-09-09T00:17:13.958Z",
+  "completed_at": "2026-09-09T00:18:11.032Z",
+  "duration_ms": 57074,
+  "limits": [
+    "Synthetic isolated local Auth/PostgREST only. Not hosted production, provider or business acceptance."
+  ]
+}

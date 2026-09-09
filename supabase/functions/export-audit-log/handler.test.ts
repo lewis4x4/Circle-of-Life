@@ -110,3 +110,20 @@ Deno.test("audit export transport failures do not expose provider errors or sour
   const body = await response.text();
   assert(response.status === 500 && !body.includes("sensitive"), "Unexpected errors must be sanitized");
 });
+
+Deno.test("audit export preserves the authoritative pre-request session denial", async () => {
+  const mock = client([{ data: null, error: { code: "HAVEN_AUTHORIZATION_STALE" } }]);
+  const response = await handleAuditExport(request(), () => mock.rpcClient);
+  assert(response.status === 401, "Stale authorization is an authentication denial, not an export-server failure");
+  assert(mock.calls.length === 1, "Denied materialization must not retrieve evidence");
+  const body = await response.json();
+  assert(body.error === "Session authorization changed. Sign in again.", "Denial should give a safe recovery message");
+});
+
+for (const code of ["PGRST301", "PGRST302", "PGRST303"]) {
+  Deno.test(`audit export preserves ${code} authentication denial`, async () => {
+    const mock = client([{ data: null, error: { code } }]);
+    const response = await handleAuditExport(request(), () => mock.rpcClient);
+    assert(response.status === 401 && mock.calls.length === 1, "JWT denial must stop before retrieval");
+  });
+}

@@ -22,7 +22,13 @@ function isSnapshot(value: unknown, jobId: string): value is Snapshot {
 
 function rpcFailure(error: { code?: string }, origin: string | null): Response {
   const jsonResponse = (body: Record<string, unknown>, status: number) => sharedJsonResponse(body, status, origin);
-  if (error.code === "42501" || error.code === "PGRST301") {
+  if (error.code === "HAVEN_AUTHORIZATION_STALE") {
+    return jsonResponse({ error: "Session authorization changed. Sign in again." }, 401);
+  }
+  if (["PGRST301", "PGRST302", "PGRST303"].includes(error.code ?? "")) {
+    return jsonResponse({ error: "Invalid session. Sign in again." }, 401);
+  }
+  if (error.code === "42501") {
     return jsonResponse({ error: "Audit export not authorized" }, 403);
   }
   if (error.code === "22023") return jsonResponse({ error: "Export snapshot unavailable" }, 409);

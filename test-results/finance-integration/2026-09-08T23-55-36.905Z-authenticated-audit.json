@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "run_id": "e6324002-98f9-4de2-9e71-66cfc9a6049c",
+  "suite": "audit",
+  "status": "BLOCKED_EXTERNAL",
+  "evidence_layer": "full-local-GoTrue-PostgREST",
+  "target_identity": null,
+  "command": [
+    "node",
+    "scripts/finance-integration/authenticated-smoke.mjs",
+    "--config=<run-private-configuration>",
+    "--suite=audit"
+  ],
+  "commit": "63e8909a6b17ed11a398052d5baa4de6eec2aeba",
+  "source_sha256": "fa9f0884cd5e4e63f127215bcf9aaedb1e1e8d655991e3f6f3ce165ae99a2736",
+  "fixture_seed_sha256": "4099c6d2088232e9f87d6fffdacbfc79e40eca0f945690222a201efae4276598",
+  "cases": [
+    {
+      "name": "authenticated scenario execution",
+      "acceptance_ids": [
+        "HFA-012"
+      ],
+      "status": "BLOCKED_EXTERNAL",
+      "expected": "scenario completes",
+      "actual": "Private local runtime configuration is required"
+    }
+  ],
+  "counts": {
+    "total": 1,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 1,
+    "skipped": 0
+  },
+  "failure": "Private local runtime configuration is required",
+  "started_at": "2026-09-08T23:55:36.905Z",
+  "completed_at": "2026-09-08T23:55:36.930Z",
+  "duration_ms": 25,
+  "limits": [
+    "Synthetic isolated local Auth/PostgREST only. Not hosted production, provider or business acceptance."
+  ]
+}
